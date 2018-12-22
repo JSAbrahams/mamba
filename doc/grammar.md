@@ -50,7 +50,7 @@ The grammar of the language in extended Backus-Naur form (EBNF).
     additive-operator           ::= "+" | "-" | 
     multiplicative-operator     ::= "*" | "/" | "^" | "mod" 
     equality-operator           ::= "equals" | "is"
-    negational-equality-operator::= "doesntequal" | "isnt"
+    negational-equality-operator::= "notequals" | "isnot"
     relational-operator         ::= "<=" | ">=" | "<" | ">"
     binary-logic-operator       ::= "and" | "or" |
                                     
