@@ -73,6 +73,7 @@ The grammar of the language in extended Backus-Naur form (EBNF).
                                 | "while" expression "do" ( newline indent do-block | expression | statement )
                                 | "for" expression "in" expression "do" 
                                   ( newline indent do-block | expression | statement )
+                                | "loop" (expression | newline indent do-block )
                                 | "continueloop"
                                 | "exitloop"
 

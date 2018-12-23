@@ -6,6 +6,8 @@ enum Token {
     Num(f64),
     String(String),
 
+    ASSIGN,
+
     ADD,
     SUB,
     MUL,
@@ -28,6 +30,16 @@ enum Token {
     RPAREN,
     NEWLINE,
     INDENT,
+
+    LOOP,
+    WHILE,
+    IF,
+    UNLESS,
+    WHEN,
+    THEN,
+    DO,
+    CONTINUELOOP,
+    EXITLOOP
 }
 
 fn token(input: &str) -> Result<Vec<Token>, String> {
@@ -74,6 +86,10 @@ fn get_operator(it: &mut Peekable<Chars>) -> Result<Token, String> {
             Some('=') => {
                 it.next();
                 Ok(Token::LEQ)
+            }
+            Some('-') => {
+                it.next();
+                Ok(Token::ASSIGN)
             }
             _ => Ok(Token::LE)
         }
@@ -173,6 +189,16 @@ fn get_id_or_op(it: &mut Peekable<Chars>) -> Result<Token, String> {
         "equals" => Token::EQUALS,
         "notequals" => Token::NOTEQUALS,
         "mod" => Token::MOD,
+
+        "loop" => Token::LOOP,
+        "while" => Token::WHILE,
+        "if" => Token::IF,
+        "then" => Token::THEN,
+        "unless" => Token::UNLESS,
+        "when" => Token::WHEN,
+        "do" => Token::DO,
+        "continueloop" => Token::CONTINUELOOP,
+        "exitloop" => Token::EXITLOOP,
 
         _ => Token::String(result)
     });
