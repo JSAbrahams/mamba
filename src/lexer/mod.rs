@@ -124,17 +124,11 @@ fn get_operator(it: &mut Peekable<Chars>) -> Result<Token, String> {
 
 fn get_number(it: &mut Peekable<Chars>) -> Result<Token, String> {
     let mut num = String::new();
-    let mut comma = false;
 
     loop {
         match it.next() {
             Some(c) => match c {
-                '.' if (comma) => break,
-                '.' => {
-                    comma = true;
-                    num.push(c);
-                }
-                '0'...'9' => num.push(c),
+                '0'...'9' | '.' => num.push(c),
                 _ => break
             }
             None => break

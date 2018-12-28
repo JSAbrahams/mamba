@@ -46,3 +46,11 @@ fn simple_assign() {
     let tokens = tokenize(source).unwrap();
     assert_eq!(tokens, vec![Token::Id("x".to_string()), Token::ASSIGN, Token::Num(10.0)])
 }
+
+#[test]
+fn simple_assign_no_spaces() {
+    let source = "x<-10";
+
+    let tokens = tokenize(source).unwrap();
+    assert_eq!(tokens, vec![Token::Id("x".to_string()), Token::ASSIGN, Token::Num(10.0)])
+}
