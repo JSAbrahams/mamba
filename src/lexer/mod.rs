@@ -1,7 +1,9 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-enum Token {
+#[derive(PartialEq)]
+#[derive(Debug)]
+pub enum Token {
     Id(String),
     String(String),
     Num(f64),
@@ -39,7 +41,7 @@ enum Token {
     THEN,
     DO,
     CONTINUELOOP,
-    EXITLOOP
+    EXITLOOP,
 }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
@@ -48,10 +50,22 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut it = input.chars().peekable();
     while let Some(&c) = it.peek() {
         match c {
-            '(' => tokens.push(Token::LPAREN),
-            ')' => tokens.push(Token::RPAREN),
-            '\n' => tokens.push(Token::NEWLINE),
-            '\t' => tokens.push(Token::INDENT),
+            '(' => {
+                tokens.push(Token::LPAREN);
+                it.next();
+            }
+            ')' => {
+                tokens.push(Token::RPAREN);
+                it.next();
+            }
+            '\n' => {
+                tokens.push(Token::NEWLINE);
+                it.next();
+            }
+            '\t' => {
+                tokens.push(Token::INDENT);
+                it.next();
+            }
 
             '<' | '>' | '+' | '-' | '*' => match get_operator(&mut it) {
                 Ok(op) => tokens.push(op),
@@ -73,8 +87,6 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             ' ' => (),
             c => return Err(format!("Unrecognized character whilst tokenizing: {}.", c)),
         }
-
-        it.next();
     }
 
     return Ok(tokens);
@@ -113,26 +125,19 @@ fn get_operator(it: &mut Peekable<Chars>) -> Result<Token, String> {
 fn get_number(it: &mut Peekable<Chars>) -> Result<Token, String> {
     let mut num = String::new();
     let mut comma = false;
-    let mut end = false;
 
-    while !end {
-        let next = it.next();
-        match next {
-            Some(c) =>
-                match c {
-                    '.' => {
-                        if comma { end = true; }
-                        comma = true;
-                        match it.next() {
-                            Some(n) => num.push(n),
-                            None => end = true
-                        }
-                    }
-                    '0'...'9' => num.push(c),
-                    ' ' => end = true,
-                    _ => ()
+    loop {
+        match it.next() {
+            Some(c) => match c {
+                '.' if (comma) => break,
+                '.' => {
+                    comma = true;
+                    num.push(c);
                 }
-            None => end = true
+                '0'...'9' => num.push(c),
+                _ => break
+            }
+            None => break
         }
     }
 
@@ -147,16 +152,16 @@ fn get_number(it: &mut Peekable<Chars>) -> Result<Token, String> {
 fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
     it.next(); // skip " character
     let mut result = String::new();
-    let mut end = false;
 
-    while !end {
-        let next = it.next();
-        match next {
-            Some(c) =>
-                match c {
-                    '"' => end = true,
-                    _ => result.push(c)
+    loop {
+        match it.next() {
+            Some(c) => match c {
+                '"' => {
+                    it.next();
+                    break;
                 }
+                _ => result.push(c)
+            }
             None => return Err("Unexpected end of string.".to_string())
         }
     }
@@ -165,25 +170,22 @@ fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
 }
 
 fn get_id_or_op(it: &mut Peekable<Chars>) -> Result<Token, String> {
-    let mut end = false;
     let mut result = String::new();
 
-    while !end {
-        let next = it.next();
-        match next {
-            Some(c) =>
-                match c {
-                    'a'...'z' | 'A'...'Z' | '0'...'9' => result.push(c),
-                    ' ' => end = true,
-                    _ => end = true
-                }
-            None => end = true
+    loop {
+        match it.next() {
+            Some(c) => match c {
+                'a'...'z' | 'A'...'Z' | '0'...'9' => result.push(c),
+                _ => break
+            }
+            None => break
         }
     }
 
     return Ok(match result.as_ref() {
         "and" => Token::AND,
         "or" => Token::OR,
+        "not" => Token::NOT,
         "is" => Token::IS,
         "isnot" => Token::ISNOT,
         "equals" => Token::EQUALS,
@@ -203,3 +205,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>) -> Result<Token, String> {
         _ => Token::Id(result)
     });
 }
+
+#[cfg(test)]
+mod lexer_tests;
