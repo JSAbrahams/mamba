@@ -2,9 +2,9 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 enum Token {
-    Id(char),
-    Num(f64),
+    Id(String),
     String(String),
+    Num(f64),
 
     ASSIGN,
 
@@ -42,7 +42,7 @@ enum Token {
     EXITLOOP
 }
 
-fn token(input: &str) -> Result<Vec<Token>, String> {
+pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens = Vec::new();
 
     let mut it = input.chars().peekable();
@@ -200,6 +200,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>) -> Result<Token, String> {
         "continueloop" => Token::CONTINUELOOP,
         "exitloop" => Token::EXITLOOP,
 
-        _ => Token::String(result)
+        _ => Token::Id(result)
     });
 }
