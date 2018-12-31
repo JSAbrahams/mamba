@@ -5,8 +5,9 @@ use std::str::Chars;
 #[derive(Debug)]
 pub enum Token {
     Id(String),
-    String(String),
+    Str(String),
     Num(f64),
+    Bool(bool),
 
     ASSIGN,
 
@@ -141,7 +142,7 @@ fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
         }
     }
 
-    return Ok(Token::String(result));
+    return Ok(Token::Str(result));
 }
 
 fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
@@ -176,6 +177,9 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
         "do" => Token::DO,
         "continueloop" => Token::CONTINUELOOP,
         "exitloop" => Token::EXITLOOP,
+
+        "true" => Token::Bool(true),
+        "false" => Token::Bool(false),
 
         _ => Token::Id(result)
     });

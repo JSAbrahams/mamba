@@ -13,7 +13,7 @@ fn simple_string() {
     let source = "\"test string\"";
     let token = tokenize(source).unwrap();
 
-    assert_eq!(vec![Token::String("test string".to_string())], token)
+    assert_eq!(vec![Token::Str("test string".to_string())], token)
 }
 
 #[test]
@@ -66,5 +66,5 @@ fn assign_with_operators() {
         Token::LPAREN, Token::Id("y".to_string()), Token::SUB, Token::Id("c".to_string()),
         Token::RPAREN, Token::SUB,
         Token::LPAREN, Token::Num(3.0), Token::MOD, Token::Num(20.0), Token::MUL, Token::Num(100.0),
-        Token::RPAREN, Token::DIV, Token::String("hey".to_string())], tokens)
+        Token::RPAREN, Token::DIV, Token::Str("hey".to_string())], tokens)
 }

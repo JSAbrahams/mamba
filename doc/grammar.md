@@ -58,14 +58,14 @@ The grammar of the language in extended Backus-Naur form (EBNF).
     if-expression               ::= "if" expression "then" 
                                     ( newline indent do-block-expression | expression ) [ newline ] "else" 
                                     ( newline indent do-block-expression | expression )
-    when-expression             ::= "when" expression newline { indent when-case } newline indent "else" 
-                                    ( newline indent do-block-expression | expression )
+    when-expression             ::= "when" expression newline { indent when-case } [ newline indent "else" 
+                                    ( newline indent do-block-expression | expression ) ]
     when-case                   ::= "equals" expression "then" ( newline indent do-block-expression | expression )
                                     
-    control-flow-statement      ::= ( expression | statement) "if" expression { "else" 
-                                    ( newline indent do-block-expression | expression | statement ) }
-                                | "if" expression "then" ( newline indent do-block | expression | statement ) { "else"
-                                  ( newline indent do-block-expression | expression | statement ) }
+    control-flow-statement      ::= ( expression | statement) "if" expression [ "else" 
+                                    ( newline indent do-block-expression | expression | statement ) ]
+                                | "if" expression "then" ( newline indent do-block | expression | statement ) [ "else"
+                                  ( newline indent do-block-expression | expression | statement ) ]
                                 | ( expression | statement) "unless" expression
                                 | "unless" expression "then" ( newline indent do-block | expression | statement )
                                 | "when" expression newline { indent when-case } newline { "else" 
