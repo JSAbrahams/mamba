@@ -46,55 +46,43 @@ pub enum Token {
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens = Vec::new();
-
     let mut it = input.chars().peekable();
-    while let Some(&c) = it.peek() {
-        match c {
-            '(' => {
-                tokens.push(Token::LPAREN);
-                it.next();
-            }
-            ')' => {
-                tokens.push(Token::RPAREN);
-                it.next();
-            }
-            '\n' => {
-                tokens.push(Token::NEWLINE);
-                it.next();
-            }
-            '\t' => {
-                tokens.push(Token::INDENT);
-                it.next();
-            }
 
-            '<' | '>' | '+' | '-' | '*' => match get_operator(&mut it) {
+    while let Some(c) = it.next() {
+        match c {
+            '(' => tokens.push(Token::LPAREN),
+            ')' => tokens.push(Token::RPAREN),
+            '\n' => tokens.push(Token::NEWLINE),
+            '\t' => tokens.push(Token::INDENT),
+
+            '<' | '>' | '+' | '-' | '*' | '/' | '^' => match get_operator(c, &mut it) {
                 Ok(op) => tokens.push(op),
                 Err(err) => return Err(err)
             },
-            '0'...'9' => match get_number(&mut it) {
-                Ok(op) => tokens.push(op),
+            '0'...'9' => match get_number(c, &mut it) {
+                Ok(num) => tokens.push(num),
                 Err(err) => return Err(err)
             },
             '"' => match get_string(&mut it) {
-                Ok(op) => tokens.push(op),
+                Ok(str) => tokens.push(str),
                 Err(err) => return Err(err)
             },
-            'a'...'z' | 'A'...'Z' => match get_id_or_op(&mut it) {
-                Ok(op) => tokens.push(op),
+            'a'...'z' | 'A'...'Z' => match get_id_or_op(c, &mut it) {
+                Ok(id_or_op) => tokens.push(id_or_op),
                 Err(err) => return Err(err)
             },
 
             ' ' => (),
-            c => return Err(format!("Unrecognized character whilst tokenizing: {}.", c)),
+            c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
         }
     }
 
     return Ok(tokens);
 }
 
-fn get_operator(it: &mut Peekable<Chars>) -> Result<Token, String> {
-    return match it.next() {
-        Some('<') => match it.peek() {
+fn get_operator(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
+    return match current {
+        '<' => match it.peek() {
             Some('=') => {
                 it.next();
                 Ok(Token::LEQ)
@@ -105,74 +93,67 @@ fn get_operator(it: &mut Peekable<Chars>) -> Result<Token, String> {
             }
             _ => Ok(Token::LE)
         }
-        Some('>') => match it.peek() {
+        '>' => match it.next() {
             Some('=') => {
                 it.next();
                 Ok(Token::GEQ)
             }
             _ => Ok(Token::GE)
         }
-        Some('+') => Ok(Token::ADD),
-        Some('-') => Ok(Token::SUB),
-        Some('/') => Ok(Token::DIV),
-        Some('*') => Ok(Token::MUL),
-        Some('^') => Ok(Token::POW),
-        Some(op) => Err(format!("Unexpected operator whilst tokenizing: {}.", op)),
-        None => Err("No character found whilst trying to tokenize operator.".to_string())
+        '+' => Ok(Token::ADD),
+        '-' => Ok(Token::SUB),
+        '/' => Ok(Token::DIV),
+        '*' => Ok(Token::MUL),
+        '^' => Ok(Token::POW),
+        op => Err(format!("Unexpected operator whilst tokenizing: '{}'.", op))
     };
 }
 
-fn get_number(it: &mut Peekable<Chars>) -> Result<Token, String> {
-    let mut num = String::new();
+fn get_number(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
+    let mut num = String::from(current.to_string());
 
-    loop {
-        match it.next() {
-            Some(c) => match c {
-                '0'...'9' | '.' => num.push(c),
-                _ => break
+    while let Some(&c) = it.peek() {
+        match c {
+            '0'...'9' | '.' => {
+                it.next();
+                num.push(c)
             }
-            None => break
+            _ => break
         }
     }
 
     let result = num.parse::<f64>();
     if result.is_err() {
-        return Err(format!("Error whilst tokenizing number: {}.", result.unwrap_err()));
+        return Err(format!("Error whilst tokenizing number: '{}'.", result.unwrap_err()));
     } else {
         return Ok(Token::Num(result.unwrap()));
     }
 }
 
 fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
-    it.next(); // skip " character
     let mut result = String::new();
 
-    loop {
-        match it.next() {
-            Some(c) => match c {
-                '"' => break,
-                _ => result.push(c)
-            }
-            None => return Err("Unexpected end of string.".to_string())
+    while let Some(&c) = it.peek() {
+        it.next();
+        match c {
+            '"' => break,
+            _ => result.push(c)
         }
     }
 
     return Ok(Token::String(result));
 }
 
-fn get_id_or_op(it: &mut Peekable<Chars>) -> Result<Token, String> {
-    let mut result = String::new();
+fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
+    let mut result = String::from(current.to_string());
 
-    loop {
-        match it.peek() {
-            Some(c) => match c {
-                'a'...'z' | 'A'...'Z' | '0'...'9' => {
-                    result.push(*c);
-                    it.next();
-                },
-                _ => break
+    while let Some(&c) = it.peek() {
+        match c {
+            'a'...'z' | 'A'...'Z' | '0'...'9' => {
+                it.next();
+                result.push(c)
             }
-            None => break
+            _ => break
         }
     }
 
