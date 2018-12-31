@@ -150,10 +150,7 @@ fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
     loop {
         match it.next() {
             Some(c) => match c {
-                '"' => {
-                    it.next();
-                    break;
-                }
+                '"' => break,
                 _ => result.push(c)
             }
             None => return Err("Unexpected end of string.".to_string())
@@ -167,9 +164,12 @@ fn get_id_or_op(it: &mut Peekable<Chars>) -> Result<Token, String> {
     let mut result = String::new();
 
     loop {
-        match it.next() {
+        match it.peek() {
             Some(c) => match c {
-                'a'...'z' | 'A'...'Z' | '0'...'9' => result.push(c),
+                'a'...'z' | 'A'...'Z' | '0'...'9' => {
+                    result.push(*c);
+                    it.next();
+                },
                 _ => break
             }
             None => break
