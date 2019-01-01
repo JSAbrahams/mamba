@@ -5,7 +5,7 @@ fn assign_operator() {
     let source = "<-";
     let token = tokenize(source).unwrap();
 
-    assert_eq!(vec![Token::ASSIGN], token)
+    assert_eq!(vec![Token::Assign], token)
 }
 
 #[test]
@@ -43,7 +43,7 @@ fn assign_number() {
     let source = "x <- 10";
 
     let tokens = tokenize(source).unwrap();
-    assert_eq!(vec![Token::Id("x".to_string()), Token::ASSIGN, Token::Num(10.0)], tokens)
+    assert_eq!(vec![Token::Id("x".to_string()), Token::Assign, Token::Num(10.0)], tokens)
 }
 
 #[test]
@@ -51,7 +51,7 @@ fn assign_no_spaces() {
     let source = "x<-10";
 
     let tokens = tokenize(source).unwrap();
-    assert_eq!(vec![Token::Id("x".to_string()), Token::ASSIGN, Token::Num(10.0)], tokens)
+    assert_eq!(vec![Token::Id("x".to_string()), Token::Assign, Token::Num(10.0)], tokens)
 }
 
 #[test]
@@ -60,11 +60,11 @@ fn assign_with_operators() {
 
     let tokens = tokenize(source).unwrap();
     assert_eq!(vec![
-        Token::Id("a".to_string()), Token::ASSIGN,
-        Token::LPAREN, Token::Num(10.0), Token::MUL, Token::Id("b".to_string()), Token::RPAREN,
-        Token::ADD,
-        Token::LPAREN, Token::Id("y".to_string()), Token::SUB, Token::Id("c".to_string()),
-        Token::RPAREN, Token::SUB,
-        Token::LPAREN, Token::Num(3.0), Token::MOD, Token::Num(20.0), Token::MUL, Token::Num(100.0),
-        Token::RPAREN, Token::DIV, Token::Str("hey".to_string())], tokens)
+        Token::Id("a".to_string()), Token::Assign,
+        Token::LPar, Token::Num(10.0), Token::Mul, Token::Id("b".to_string()), Token::RPar,
+        Token::Add,
+        Token::LPar, Token::Id("y".to_string()), Token::Sub, Token::Id("c".to_string()),
+        Token::RPar, Token::Sub,
+        Token::LPar, Token::Num(3.0), Token::Mod, Token::Num(20.0), Token::Mul, Token::Num(100.0),
+        Token::RPar, Token::Div, Token::Str("hey".to_string())], tokens)
 }

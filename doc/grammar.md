@@ -20,7 +20,7 @@ The grammar of the language in extended Backus-Naur form (EBNF).
     declaration                 ::= pure-declaration 
                                 | mutable-declration 
                                 | reassignable-declaration
-    pure-declaration            ::= [ id ] id "<-" expression
+    pure-declaration            ::= id "<-" expression
     mutable-declaration         ::= "mutable" pure-declaration
     reassignable-declaration    ::= "reassignable" ( mutable-declaration | pure-declaration )
     
@@ -74,8 +74,8 @@ The grammar of the language in extended Backus-Naur form (EBNF).
                                 | "for" expression "in" expression "do" 
                                   ( newline indent do-block | expression | statement )
                                 | "loop" (expression | newline indent do-block )
-                                | "continueloop"
-                                | "exitloop"
+                                | "continue"
+                                | "break"
 
     indent                      ::= \t | \s\s\s\s
     newline                     ::= \n | \r\n

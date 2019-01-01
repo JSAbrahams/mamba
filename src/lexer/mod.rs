@@ -9,40 +9,42 @@ pub enum Token {
     Num(f64),
     Bool(bool),
 
-    ASSIGN,
+    Assign,
 
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    POW,
-    MOD,
-    GE,
-    GEQ,
-    LE,
-    LEQ,
-    EQUALS,
-    IS,
-    ISNOT,
-    NOTEQUALS,
-    AND,
-    OR,
-    NOT,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Mod,
+    Ge,
+    Geq,
+    Le,
+    Leq,
+    Eq,
+    Is,
+    IsN,
+    NEq,
+    And,
+    Or,
+    Not,
 
-    LPAREN,
-    RPAREN,
-    NEWLINE,
-    INDENT,
+    LPar,
+    RPar,
+    NL,
+    Ind,
 
-    LOOP,
-    WHILE,
-    IF,
-    UNLESS,
-    WHEN,
-    THEN,
-    DO,
-    CONTINUELOOP,
-    EXITLOOP,
+    Loop,
+    While,
+    If,
+    Unless,
+    When,
+    Then,
+    Do,
+    Continue,
+    Break,
+
+    Print
 }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
@@ -51,10 +53,10 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
 
     while let Some(c) = it.next() {
         match c {
-            '(' => tokens.push(Token::LPAREN),
-            ')' => tokens.push(Token::RPAREN),
-            '\n' => tokens.push(Token::NEWLINE),
-            '\t' => tokens.push(Token::INDENT),
+            '(' => tokens.push(Token::LPar),
+            ')' => tokens.push(Token::RPar),
+            '\n' => tokens.push(Token::NL),
+            '\t' => tokens.push(Token::Ind),
 
             '<' | '>' | '+' | '-' | '*' | '/' | '^' => match get_operator(c, &mut it) {
                 Ok(op) => tokens.push(op),
@@ -86,26 +88,26 @@ fn get_operator(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
         '<' => match it.peek() {
             Some('=') => {
                 it.next();
-                Ok(Token::LEQ)
+                Ok(Token::Leq)
             }
             Some('-') => {
                 it.next();
-                Ok(Token::ASSIGN)
+                Ok(Token::Assign)
             }
-            _ => Ok(Token::LE)
+            _ => Ok(Token::Le)
         }
         '>' => match it.next() {
             Some('=') => {
                 it.next();
-                Ok(Token::GEQ)
+                Ok(Token::Geq)
             }
-            _ => Ok(Token::GE)
+            _ => Ok(Token::Ge)
         }
-        '+' => Ok(Token::ADD),
-        '-' => Ok(Token::SUB),
-        '/' => Ok(Token::DIV),
-        '*' => Ok(Token::MUL),
-        '^' => Ok(Token::POW),
+        '+' => Ok(Token::Add),
+        '-' => Ok(Token::Sub),
+        '/' => Ok(Token::Div),
+        '*' => Ok(Token::Mul),
+        '^' => Ok(Token::Pow),
         op => Err(format!("Unexpected operator whilst tokenizing: '{}'.", op))
     };
 }
@@ -159,27 +161,29 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
     }
 
     return Ok(match result.as_ref() {
-        "and" => Token::AND,
-        "or" => Token::OR,
-        "not" => Token::NOT,
-        "is" => Token::IS,
-        "isnot" => Token::ISNOT,
-        "equals" => Token::EQUALS,
-        "notequals" => Token::NOTEQUALS,
-        "mod" => Token::MOD,
+        "and" => Token::And,
+        "or" => Token::Or,
+        "not" => Token::Not,
+        "is" => Token::Is,
+        "isnot" => Token::IsN,
+        "equals" => Token::Eq,
+        "notequals" => Token::NEq,
+        "mod" => Token::Mod,
 
-        "loop" => Token::LOOP,
-        "while" => Token::WHILE,
-        "if" => Token::IF,
-        "then" => Token::THEN,
-        "unless" => Token::UNLESS,
-        "when" => Token::WHEN,
-        "do" => Token::DO,
-        "continueloop" => Token::CONTINUELOOP,
-        "exitloop" => Token::EXITLOOP,
+        "loop" => Token::Loop,
+        "while" => Token::While,
+        "if" => Token::If,
+        "then" => Token::Then,
+        "unless" => Token::Unless,
+        "when" => Token::When,
+        "do" => Token::Do,
+        "continue" => Token::Continue,
+        "break" => Token::Break,
 
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),
+
+        "print" => Token::Print,
 
         _ => Token::Id(result)
     });
