@@ -5,6 +5,7 @@ use std::str::Chars;
 #[derive(Debug)]
 pub enum Token {
     Id(String),
+    Mut,
     Str(String),
     Num(f64),
     Bool(bool),
@@ -44,6 +45,7 @@ pub enum Token {
     Do,
     Continue,
     Break,
+    Ret,
 
     Print,
 }
@@ -162,6 +164,8 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
     }
 
     return Ok(match result.as_ref() {
+        "mutable" => Token::Mut,
+
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,
@@ -181,6 +185,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
         "do" => Token::Do,
         "continue" => Token::Continue,
         "break" => Token::Break,
+        "return" => Token::Ret,
 
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),

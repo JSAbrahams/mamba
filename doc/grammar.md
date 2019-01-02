@@ -1,36 +1,29 @@
 # Grammar
 The grammar of the language in extended Backus-Naur form (EBNF).
 
-    program                     ::= { ( expression | statement ) }
+    program                     ::= do-block
     expression                  ::= "(" expression ")"
                                 | "return" expression
-                                | identifier
                                 | arithmetic-expression
                                 | control-flow-expression
-    statement                   ::= control-flow-statement | "print" expression
-    do-block                    ::= do-block-expression | do-block-statement
-    do-block-statement          ::= ( { ( expresssion | statement ) newline } | newline )
-    do-block-expression         ::= { ( expresssion | statement ) newline } expression newline
+    statement                   ::= control-flow-statement | "print" expression | identifier
+    do-block                    ::= ( { ( expresssion | statement ) newline } | newline )
     
     id                          ::= { character }
-    identifier                  ::= id | declaration | arithmetic-expression | function-call
-    declaration                 ::= pure-declaration | mutable-declration | reassignable-declaration
-    pure-declaration            ::= id "<-" expression
-    mutable-declaration         ::= "mutable" pure-declaration
-    reassignable-declaration    ::= "reassignable" ( mutable-declaration | pure-declaration )
+    
+    identifier                  ::= assignment | mutable-assignment
+    assignment                  ::= "let" id "<-" expression
+    mutable-assignment          ::= "mutable" assignment
+    
+    arithmetic-expression       ::= term | unary-operator term | term additive-operator term
+    term                        ::= factor | factor multiclative-operator factor
+    factor                      ::= constant | id
     
     constant                    ::= real-constant | integer-constant | boolean-constant | string-constant
     real-constant               ::= digit"."digit
     integer-constant            ::= digit
     boolean-constant            ::= "True" | "False"
     string-constant             ::= { character }
-    
-    arithmetic-expression       ::= term 
-                                | unary-operator term 
-                                | term additive-operator term
-    term                        ::= factor 
-                                | factor multiclative-operator factor
-    factor                      ::= constant | expression
     
     binary-operator             ::= additive-operator 
                                 | multiplicative-operator 
