@@ -40,11 +40,12 @@ pub enum Token {
     Unless,
     When,
     Then,
+    Else,
     Do,
     Continue,
     Break,
 
-    Print
+    Print,
 }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
@@ -174,6 +175,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
         "while" => Token::While,
         "if" => Token::If,
         "then" => Token::Then,
+        "else" => Token::Else,
         "unless" => Token::Unless,
         "when" => Token::When,
         "do" => Token::Do,

@@ -13,21 +13,13 @@ The grammar of the language in extended Backus-Naur form (EBNF).
     do-block-expression         ::= { ( expresssion | statement ) newline } expression newline
     
     id                          ::= { character }
-    identifier                  ::= id
-                                | declaration
-                                | arithmetic-expression
-                                | function-call
-    declaration                 ::= pure-declaration 
-                                | mutable-declration 
-                                | reassignable-declaration
+    identifier                  ::= id | declaration | arithmetic-expression | function-call
+    declaration                 ::= pure-declaration | mutable-declration | reassignable-declaration
     pure-declaration            ::= id "<-" expression
     mutable-declaration         ::= "mutable" pure-declaration
     reassignable-declaration    ::= "reassignable" ( mutable-declaration | pure-declaration )
     
-    constant                    ::= real-constant 
-                                | integer-constant 
-                                | boolean-constant 
-                                | string-constant
+    constant                    ::= real-constant | integer-constant | boolean-constant | string-constant
     real-constant               ::= digit"."digit
     integer-constant            ::= digit
     boolean-constant            ::= "True" | "False"
@@ -47,12 +39,12 @@ The grammar of the language in extended Backus-Naur form (EBNF).
                                 | relational-operator
                                 | binary-logic-operator
     unary-operator              ::= "not" | additive-operator
-    additive-operator           ::= "+" | "-" | 
+    additive-operator           ::= "+" | "-"
     multiplicative-operator     ::= "*" | "/" | "^" | "mod" 
     equality-operator           ::= "equals" | "is"
     negational-equality-operator::= "notequals" | "isnot"
     relational-operator         ::= "<=" | ">=" | "<" | ">"
-    binary-logic-operator       ::= "and" | "or" |
+    binary-logic-operator       ::= "and" | "or"
                                     
     control-flow-expression     ::= if-expression | when-expression
     if-expression               ::= "if" expression "then" 
@@ -62,8 +54,8 @@ The grammar of the language in extended Backus-Naur form (EBNF).
                                     ( newline indent do-block-expression | expression ) ]
     when-case                   ::= "equals" expression "then" ( newline indent do-block-expression | expression )
                                     
-    control-flow-statement      ::= ( expression | statement) "if" expression [ "else" 
-                                    ( newline indent do-block-expression | expression | statement ) ]
+    control-flow-statement      ::= ( expression | statement) "if" expression 
+                                    [ "else" ( newline indent do-block-expression | expression | statement ) ]
                                 | "if" expression "then" ( newline indent do-block | expression | statement ) [ "else"
                                   ( newline indent do-block-expression | expression | statement ) ]
                                 | ( expression | statement) "unless" expression

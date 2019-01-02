@@ -68,3 +68,22 @@ fn unary_negative_expression() {
     assert_eq!(vec_from!(ASTNode::Sub(Box::from(ASTNode::Num(0.0)), Box::from(ASTNode::Num(3.14)))),
                parsed.unwrap())
 }
+
+#[test]
+fn if_statement() {
+    let tokens = vec![Token::If, Token::Bool(true), Token::Then, Token::Num(10.0)];
+    let parsed = parse(tokens);
+
+    assert_eq!(vec_from!(ASTNode::If(Box::from(ASTNode::Bool(true)),
+    Box::from(ASTNode::Num(10.0)))), parsed.unwrap())
+}
+
+#[test]
+fn if_statement_with_else() {
+    let tokens = vec![Token::If, Token::Bool(true), Token::Then, Token::Num(10.0),
+                      Token::Else, Token::Num(20.0)];
+    let parsed = parse(tokens);
+
+    assert_eq!(vec_from!(ASTNode::If(Box::from(ASTNode::Bool(true)),
+    Box::from(ASTNode::Num(10.0))), Box::from(ASTNode::Num(20.0))), parsed.unwrap())
+}

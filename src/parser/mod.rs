@@ -30,6 +30,7 @@ pub enum ASTNode {
     Or(Box<ASTNode>, Box<ASTNode>),
 
     If(Box<ASTNode>, Box<ASTNode>),
+    IfElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     When(Box<ASTNode>, Box<Vec<ASTNode>>),
 
     Do(Vec<Box<ASTNode>>),
@@ -46,42 +47,43 @@ pub enum ASTNode {
 macro_rules! nodes_push { ( $ nodes:expr, $ node: expr  ) => { $nodes.push(Box::from($node)) } }
 
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
-    match parse_iterator(&mut input.iter().peekable()) {
-        Ok(ast_nodes) => return Ok(ASTNode::Do(ast_nodes)),
-        Err(e) => return Err(e)
-    }
+    return parse_do(&mut input.iter().peekable(), 0).0;
 }
 
-fn parse_iterator(input: &mut Peekable<Iter<Token>>) -> Result<Vec<Box<ASTNode>>, String> {
+fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     let mut nodes = Vec::new();
+    let mut last_newline = false;
+    let mut new_indent= indent;
 
-    while let Some(t) = input.next() {
-        match parse_recursive(&t, input) {
-            Ok(ast_node) => nodes_push!(nodes, ast_node),
-            Err(err) => return Err(err)
+    while let Some(t) = it.peek() {
+        let start_ident = indent;
+        match parse_recursive(it, indent) {
+            (Ok(ast_node), this_indent) => {
+                nodes_push!(nodes, ast_node);
+
+                let this_newline =
+                    it.peek().is_some() && **it.peek().unwrap() == Token::NL;
+
+                if start_ident > this_indent || this_newline && last_newline {
+                    break; // indentation decreased, or double newline, marking end of do block
+                } else if this_indent > start_ident {
+                    return (Err("Indentation increased in do block.".to_string()), indent);
+                }
+
+                last_newline = this_newline;
+                new_indent = this_indent
+            }
+            err => return err
         }
     }
 
-    return Ok(nodes);
+    return (Ok(ASTNode::Do(nodes)), new_indent);
 }
 
-fn parse_recursive(token: &Token, input: &mut Peekable<Iter<Token>>)
-                   -> Result<ASTNode, String> {
-    match token {
-        Token::Num(num) => match input.peek() {
-            Some(Token::Add) => return Ok(
-                ASTNode::Add(Box::from(ASTNode::Num(*num)),
-                             Box::from(parse_recursive(&Token::Add, input).unwrap()))),
-            _ => return Ok(ASTNode::Num(*num))
-        }
-
-        Token::Add | Token::Sub | Token::Mul | Token::Div | Token::Mod | Token::Pow
-        | Token::Le | Token::Leq | Token::Geq | Token::Ge | Token::Is | Token::IsN
-        | Token::Eq | Token::NEq | Token::And | Token::Or =>
-            return parse_recursive(input.next().unwrap(), input),
-
-        _ => return Err("Not implemented".to_string())
-    }
+fn parse_recursive(it: &mut Peekable<Iter<Token>>, indent: i32)
+                   -> (Result<ASTNode, String>, i32) {
+    it.next();
+    return (Ok(ASTNode::Print(Box::new(ASTNode::Str("hello world".to_string())))), indent);
 }
 
 #[cfg(test)]
