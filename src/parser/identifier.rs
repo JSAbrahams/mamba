@@ -28,7 +28,9 @@ fn parse_assignment(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTN
                     }
 
                     match parse_expression(it, new_indent) {
-                        (Ok(expr), nnew_indent) => (Ok(ASTNode::Assign(Box::new(id), Box::new(expr))), nnew_indent),
+                        (Ok(expr), nnew_indent) =>
+                            (Ok(ASTNode::Assign(Box::new(id), Box::new(expr))),
+                             nnew_indent),
                         err => err
                     }
                 }

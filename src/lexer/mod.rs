@@ -38,6 +38,8 @@ pub enum Token {
 
     Loop,
     While,
+    For,
+    In,
     If,
     Unless,
     When,
@@ -179,6 +181,8 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
 
         "loop" => Token::Loop,
         "while" => Token::While,
+        "for" => Token::For,
+        "in" => Token::In,
         "if" => Token::If,
         "then" => Token::Then,
         "else" => Token::Else,

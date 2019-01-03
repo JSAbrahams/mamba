@@ -15,14 +15,18 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, St
                         Some(Token::Add) => {
                             it.next();
                             match parse_expression(it, new_indent) {
-                                (Ok(expr), nnew_indent) => (Ok(ASTNode::Add(Box::new(term), Box::new(expr))), nnew_indent),
+                                (Ok(expr), nnew_indent) =>
+                                    (Ok(ASTNode::Add(Box::new(term), Box::new(expr))),
+                                     nnew_indent),
                                 err => err
                             }
                         }
                         Some(Token::Sub) => {
                             it.next();
                             match parse_expression(it, new_indent) {
-                                (Ok(expr), nnew_indent) => (Ok(ASTNode::Sub(Box::new(term), Box::new(expr))), nnew_indent),
+                                (Ok(expr), nnew_indent) =>
+                                    (Ok(ASTNode::Sub(Box::new(term), Box::new(expr))),
+                                     nnew_indent),
                                 err => err
                             }
                         }
@@ -67,28 +71,36 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, S
                     Some(Token::Mul) => {
                         it.next();
                         match parse_expression(it, new_indent) {
-                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Mul(Box::new(factor), Box::new(expr))), nnew_indent),
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Mul(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
                             err => err
                         }
                     }
                     Some(Token::Div) => {
                         it.next();
                         match parse_expression(it, new_indent) {
-                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Div(Box::new(factor), Box::new(expr))), nnew_indent),
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Div(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
                             err => err
                         }
                     }
                     Some(Token::Mod) => {
                         it.next();
                         match parse_expression(it, new_indent) {
-                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Mod(Box::new(factor), Box::new(expr))), nnew_indent),
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Mod(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
                             err => err
                         }
                     }
                     Some(Token::Pow) => {
                         it.next();
                         match parse_expression(it, new_indent) {
-                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Pow(Box::new(factor), Box::new(expr))), nnew_indent),
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Pow(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
                             err => err
                         }
                     }

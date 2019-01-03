@@ -7,6 +7,8 @@ mod control_flow;
 mod identifier;
 mod arithmetic;
 
+// TODO create system to measure indents at correct locations
+
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
@@ -39,12 +41,13 @@ pub enum ASTNode {
 
     If(Box<ASTNode>, Box<ASTNode>),
     IfElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    When(Box<ASTNode>, Box<Vec<ASTNode>>),
+    When(Box<ASTNode>, Vec<ASTNode>),
 
     Do(Vec<Box<ASTNode>>),
 
+    For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     While(Box<ASTNode>, Box<ASTNode>),
-    Loop(Vec<ASTNode>),
+    Loop(Box<ASTNode>),
     Break,
     Continue,
     Return(Box<ASTNode>),
@@ -109,6 +112,11 @@ fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
     }
 
     return (Ok(ASTNode::Do(nodes)), new_indent);
+}
+
+fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
+                          -> (Result<ASTNode, String>, i32) {
+    (Err("not implemented".to_string()), indent)
 }
 
 // statement                   ::= "(" statement ")" | identifier
