@@ -237,7 +237,37 @@ fn parse_factor(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode,
 // when-case                   ::=
 // "equals" expression "then" ( newline indent do-block-expression | expression )
 fn parse_ctrl_flow(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
-    panic!("Not implemented")
+    return match it.peek() {
+        Some(Token::If) => parse_if(it, indent),
+        Some(_) => panic!("Expected control flow statement, but other token."),
+        None => panic!("Expected control flow statement, but end of file.")
+    };
+}
+
+fn parse_if(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+    assert_eq!(it.next(), Some(&Token::If));
+    match parse_expression(it, indent) {
+        (Ok(cond), new_indent) => {
+            if it.next() != Some(&Token::Then) {
+                return (Err("'Then' keyword expected".to_string()), new_indent);
+            }
+
+            match parse_expression(it, new_indent) {
+                (Ok(then), nnew_indent) => match it.peek() {
+                    Some(Token::Else) => {
+                        it.next();
+                        match parse_expression(it, nnew_indent) {
+                            (Ok(otherwise), nnnew_indent) => (Ok(ASTNode::IfElse(Box::new(cond), Box::new(then), Box::new(otherwise))), nnnew_indent),
+                            err => err
+                        }
+                    }
+                    _ => (Ok(ASTNode::If(Box::new(cond), Box::new(then))), nnew_indent)
+                }
+                err => err
+            }
+        }
+        err => err
+    }
 }
 
 #[cfg(test)]

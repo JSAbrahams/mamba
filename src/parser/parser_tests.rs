@@ -83,6 +83,6 @@ fn if_statement_with_else() {
                       Token::Else, Token::Num(20.0)];
     let parsed = parse(tokens);
 
-    assert_eq!(vec_from!(ASTNode::If(Box::from(ASTNode::Bool(true)),
-    Box::from(ASTNode::Num(10.0))), Box::from(ASTNode::Num(20.0))), parsed.unwrap())
+    assert_eq!(vec_from!(ASTNode::IfElse(Box::from(ASTNode::Bool(true)),
+    Box::from(ASTNode::Num(10.0)), Box::from(ASTNode::Num(20.0)))), parsed.unwrap())
 }
