@@ -18,6 +18,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     (* e-notation can either be real or integer. Must be checked by type checker upon use *)
     constant              ::= number | boolean | string
+    number                ::= real | integer | e-notation
     real                  ::= digit "." digit
     integer               ::= digit
     e-notation            ::= digit [ "." digit ] "e" [ "-" ] digit
