@@ -20,7 +20,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     constant              ::= number | boolean | string
     real                  ::= digit "." digit
     integer               ::= digit
-    e-notation            ::= digit "e" [ "-" ] digit
+    e-notation            ::= digit [ "." digit ] "e" [ "-" ] digit
     boolean               ::= "True" | "False"
     string                ::= "\"" { character } "\""
     
