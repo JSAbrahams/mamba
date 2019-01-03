@@ -64,24 +64,25 @@ fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
 
     while let Some(t) = it.peek() {
         match t {
-            Token::Let | Token::Mut => match parse_statement(it, indent) {
-                (Ok(ast_node), this_indent) => {
-                    nodes_push!(nodes, ast_node);
+            Token::Let | Token::Mut | Token::Loop | Token::While | Token::Continue | Token::Break =>
+                match parse_statement(it, indent) {
+                    (Ok(ast_node), this_indent) => {
+                        nodes_push!(nodes, ast_node);
 
-                    let this_newline =
-                        it.peek().is_some() && **it.peek().unwrap() == Token::NL;
+                        let this_newline =
+                            it.peek().is_some() && **it.peek().unwrap() == Token::NL;
 
-                    if new_indent > this_indent || this_newline && last_newline {
-                        break; // indentation decreased, or double newline, marking end of do block
-                    } else if this_indent > new_indent {
-                        return (Err("Indentation increased in do block.".to_string()), indent);
+                        if new_indent > this_indent || this_newline && last_newline {
+                            break; // indentation decreased, or double newline, marking end of do block
+                        } else if this_indent > new_indent {
+                            return (Err("Indentation increased in do block.".to_string()), indent);
+                        }
+
+                        last_newline = this_newline;
+                        new_indent = this_indent
                     }
-
-                    last_newline = this_newline;
-                    new_indent = this_indent
+                    err => return err
                 }
-                err => return err
-            }
             _ => match parse_expression(it, indent) {
                 (Ok(ast_node), this_indent) => {
                     nodes_push!(nodes, ast_node);
@@ -318,17 +319,17 @@ fn parse_factor(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode,
 // control-flow-expression     ::= if-expression | when-expression
 fn parse_ctrl_flow(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::If) => parse_if(it, indent),
-        Some(Token::When) => parse_when(it, indent),
+        Some(Token::If) => parse_if_expr(it, indent),
+        Some(Token::When) => parse_when_expr(it, indent),
         Some(_) => panic!("Expected control flow statement, but other token."),
         None => panic!("Expected control flow statement, but end of file.")
     };
 }
 
 // if-expression               ::= "if" expression "then"
-// ( newline indent do-block-expression | expression ) [ [ newline ] "else"
-// ( newline indent do-block-expression | expression ) ]
-fn parse_if(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+// ( newline indent do-block-expression | expression ) [ newline ] "else"
+// ( newline indent do-block-expression | expression )
+fn parse_if_expr(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::If));
     match parse_expression(it, indent) {
         (Ok(cond), new_indent) => {
@@ -345,7 +346,7 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
                             err => err
                         }
                     }
-                    _ => (Ok(ASTNode::If(Box::new(cond), Box::new(then))), nnew_indent)
+                    _ => return (Err("If expression must have else".to_string()), nnew_indent)
                 }
                 err => err
             }
@@ -359,7 +360,7 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
 // ( newline indent do-block-expression | expression ) ]
 // when-case                   ::=
 // "equals" expression "then" ( newline indent do-block-expression | expression )
-fn parse_when(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+fn parse_when_expr(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return (Err("Not implemented".to_string()), indent);
 }
 
