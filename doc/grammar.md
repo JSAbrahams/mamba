@@ -2,6 +2,7 @@
 The grammar of the language in extended Backus-Naur form (EBNF).
 
     program                     ::= do-block
+    statement                   ::= identifier
     expression                  ::= "(" expression ")"
                                 | "return" expression
                                 | arithmetic-expression
@@ -41,8 +42,8 @@ The grammar of the language in extended Backus-Naur form (EBNF).
                                     
     control-flow-expression     ::= if-expression | when-expression
     if-expression               ::= "if" expression "then" 
-                                    ( newline indent do-block-expression | expression ) [ newline ] "else" 
-                                    ( newline indent do-block-expression | expression )
+                                    ( newline indent do-block-expression | expression ) [ [ newline ] "else" 
+                                    ( newline indent do-block-expression | expression ) ]
     when-expression             ::= "when" expression newline { indent when-case } [ newline indent "else" 
                                     ( newline indent do-block-expression | expression ) ]
     when-case                   ::= "equals" expression "then" ( newline indent do-block-expression | expression )

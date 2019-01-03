@@ -11,6 +11,7 @@ pub enum Token {
     Bool(bool),
 
     Assign,
+    Let,
 
     Add,
     Sub,
@@ -164,6 +165,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
     }
 
     return Ok(match result.as_ref() {
+        "let" => Token::Let,
         "mutable" => Token::Mut,
 
         "and" => Token::And,

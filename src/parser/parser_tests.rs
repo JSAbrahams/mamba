@@ -86,3 +86,24 @@ fn if_statement_with_else() {
     assert_eq!(vec_from!(ASTNode::IfElse(Box::from(ASTNode::Bool(true)),
     Box::from(ASTNode::Num(10.0)), Box::from(ASTNode::Num(20.0)))), parsed.unwrap())
 }
+
+#[test]
+fn simple_assignment() {
+    let tokens = vec![Token::Let, Token::Id("a".to_string()), Token::Assign,
+                      Token::Num(3.14)];
+    let parsed = parse(tokens);
+
+    assert_eq!(vec_from!(ASTNode::Assign(Box::new(ASTNode::Id("a".to_string())),
+     Box::new(ASTNode::Num(3.14)))), parsed.unwrap())
+}
+
+#[test]
+fn simple_mutable_assignment() {
+    let tokens = vec![Token::Mut, Token::Let, Token::Id("a".to_string()),
+                      Token::Assign, Token::Num(3.14)];
+    let parsed = parse(tokens);
+
+    assert_eq!(vec_from!(
+    ASTNode::Mut(Box::new(ASTNode::Assign(Box::new(ASTNode::Id("a".to_string())),
+    Box::new(ASTNode::Num(3.14)))))), parsed.unwrap())
+}
