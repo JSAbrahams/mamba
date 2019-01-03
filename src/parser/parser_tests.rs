@@ -57,7 +57,7 @@ fn unary_expression() {
     let tokens = vec![Token::Add, Token::Num(3.14)];
     let parsed = parse(tokens);
 
-    assert_eq!(vec_from!(ASTNode::Num(3.14)), parsed.unwrap())
+    assert_eq!(vec_from!(ASTNode::AddU(Box::new(ASTNode::Num(3.14)))), parsed.unwrap())
 }
 
 #[test]
@@ -65,8 +65,7 @@ fn unary_negative_expression() {
     let tokens = vec![Token::Sub, Token::Num(3.14)];
     let parsed = parse(tokens);
 
-    assert_eq!(vec_from!(ASTNode::Sub(Box::from(ASTNode::Num(0.0)), Box::from(ASTNode::Num(3.14)))),
-               parsed.unwrap())
+    assert_eq!(vec_from!(ASTNode::SubU(Box::new(ASTNode::Num(3.14)))), parsed.unwrap())
 }
 
 #[test]

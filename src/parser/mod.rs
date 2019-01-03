@@ -14,7 +14,9 @@ pub enum ASTNode {
     Bool(bool),
 
     Add(Box<ASTNode>, Box<ASTNode>),
+    AddU(Box<ASTNode>),
     Sub(Box<ASTNode>, Box<ASTNode>),
+    SubU(Box<ASTNode>),
     Mul(Box<ASTNode>, Box<ASTNode>),
     Div(Box<ASTNode>, Box<ASTNode>),
     Mod(Box<ASTNode>, Box<ASTNode>),
@@ -84,21 +86,17 @@ fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
     return (Ok(ASTNode::Do(nodes)), new_indent);
 }
 
-// expression                  ::=
-// "(" expression ")"
-// | "return" expression
-// | arithmetic-expression
-// | control-flow-expression
+// expression ::= "(" expression ")" | "return" expression | ari-expression | cntrl-flow-expression
 fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::LPar) => parse_bracket(it, indent),
         Some(Token::Ret) => parse_return(it, indent),
-        Some(Token::Num(_)) | Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Not) |
-        Some(Token::Add) | Some(Token::Sub) | Some(Token::Id(_)) => parse_arithmetic(it, indent),
+        Some(Token::Num(_)) | Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Bool(_)) |
+        Some(Token::Not) | Some(Token::Add) | Some(Token::Sub) => parse_arithmetic(it, indent),
         Some(Token::If) | Some(Token::When) | Some(Token::While) | Some(Token::Loop) =>
             parse_ctrl_flow(it, indent),
 
-        _ => (Err("Token not recognized".to_string()), indent),
+        Some(_) => panic!("token not recognized"),
         None => (Err("Unexpected end of file.".to_string()), indent)
     };
 }
@@ -121,13 +119,113 @@ fn parse_return(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode,
     };
 }
 
-// arithmetic-expression       ::= term | unary-operator term | term additive-operator term
-// term                        ::= factor | factor multiclative-operator factor
-// factor                      ::= constant | id
+// arithmetic-expression    ::= term | unary-operator expression | term additive-operator expression
 fn parse_arithmetic(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
-    panic!("Not implemented")
+    return match it.peek() {
+        Some(Token::Id(_)) | Some(Token::Num(_)) | Some(Token::Str(_)) | Some(Token::Bool(_)) => {
+            match parse_term(it, indent) {
+                (Ok(term), new_indent) => {
+                    match it.peek() {
+                        Some(Token::Add) => {
+                            it.next();
+                            match parse_expression(it, new_indent) {
+                                (Ok(expr), nnew_indent) => (Ok(ASTNode::Add(Box::new(term), Box::new(expr))), nnew_indent),
+                                err => err
+                            }
+                        }
+                        Some(Token::Sub) => {
+                            it.next();
+                            match parse_expression(it, new_indent) {
+                                (Ok(expr), nnew_indent) => (Ok(ASTNode::Sub(Box::new(term), Box::new(expr))), nnew_indent),
+                                err => err
+                            }
+                        }
+                        _ => (Ok(term), new_indent)
+                    }
+                }
+                err => err
+            }
+        }
+        Some(Token::Not) => {
+            it.next();
+            match parse_expression(it, indent) {
+                (Ok(expr), new_indent) => (Ok(ASTNode::Not(Box::new(expr))), new_indent),
+                err => err
+            }
+        }
+        Some(Token::Add) => {
+            it.next();
+            match parse_expression(it, indent) {
+                (Ok(expr), new_indent) => (Ok(ASTNode::AddU(Box::new(expr))), new_indent),
+                err => err
+            }
+        }
+        Some(Token::Sub) => {
+            it.next();
+            match parse_expression(it, indent) {
+                (Ok(expr), new_indent) => (Ok(ASTNode::SubU(Box::new(expr))), new_indent),
+                err => err
+            }
+        }
+        Some(_) => panic!("Expected arithmetic expression, but other token."),
+        None => panic!("Expected arithmetic expression, but end of file.")
+    };
 }
 
+// term                     ::= factor | factor multiclative-operator expression
+fn parse_term(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+    return match it.peek() {
+        Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Num(_)) | Some(Token::Bool(_)) =>
+            match parse_factor(it, indent) {
+                (Ok(factor), new_indent) => match it.peek() {
+                    Some(Token::Mul) => {
+                        it.next();
+                        match parse_expression(it, new_indent) {
+                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Mul(Box::new(factor), Box::new(expr))), nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Div) => {
+                        it.next();
+                        match parse_expression(it, new_indent) {
+                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Div(Box::new(factor), Box::new(expr))), nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Mod) => {
+                        it.next();
+                        match parse_expression(it, new_indent) {
+                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Mod(Box::new(factor), Box::new(expr))), nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Pow) => {
+                        it.next();
+                        match parse_expression(it, new_indent) {
+                            (Ok(expr), nnew_indent) => (Ok(ASTNode::Pow(Box::new(factor), Box::new(expr))), nnew_indent),
+                            err => err
+                        }
+                    }
+                    _ => (Ok(factor), new_indent)
+                }
+                err => err
+            },
+        Some(_) => panic!("Expected term, but other."),
+        None => panic!("Expected term, but end of file.")
+    };
+}
+
+// factor                   ::= constant | id
+fn parse_factor(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+    match it.next() {
+        Some(Token::Id(id)) => (Ok(ASTNode::Id(id.to_string())), indent),
+        Some(Token::Str(s)) => (Ok(ASTNode::Str(s.to_string())), indent),
+        Some(Token::Num(num)) => (Ok(ASTNode::Num(*num)), indent),
+        Some(Token::Bool(b)) => (Ok(ASTNode::Bool(*b)), indent),
+        Some(t) => panic!("Expected factor, but other."),
+        None => panic!("Expected factor, but end of file.")
+    }
+}
 
 // control-flow-expression     ::= if-expression | when-expression
 // if-expression               ::= "if" expression "then"

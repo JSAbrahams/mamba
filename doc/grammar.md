@@ -15,8 +15,8 @@ The grammar of the language in extended Backus-Naur form (EBNF).
     assignment                  ::= "let" id "<-" expression
     mutable-assignment          ::= "mutable" assignment
     
-    arithmetic-expression       ::= term | unary-operator term | term additive-operator term
-    term                        ::= factor | factor multiclative-operator factor
+    arithmetic-expression       ::= term | unary-operator expression | term additive-operator expression
+    term                        ::= factor | factor multiclative-operator expression
     factor                      ::= constant | id
     
     constant                    ::= real-constant | integer-constant | boolean-constant | string-constant
