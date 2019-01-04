@@ -5,7 +5,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// arithmetic-expression    ::= term | unary-operator expression | term additive-operator expression
+// arithmetic-expression ::= term | unary-operator expression | term additive-operator expression
 pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Id(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) |

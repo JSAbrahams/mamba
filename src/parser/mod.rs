@@ -3,11 +3,16 @@ use std::iter::Peekable;
 use std::slice::Iter;
 use super::lexer::Token;
 
-mod control_flow;
-mod identifier;
-mod arithmetic;
+#[macro_use]
+macro_rules! nodes_push { ( $ nodes:expr, $ node: expr  ) => { $nodes.push(Box::from($node)) } }
 
 // TODO create system to measure indents at correct locations
+
+mod arithmetic;
+mod control_flow;
+mod expression;
+mod identifier;
+mod statement;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -58,16 +63,43 @@ pub enum ASTNode {
     Print(Box<ASTNode>),
 }
 
-#[macro_use]
-macro_rules! nodes_push { ( $ nodes:expr, $ node: expr  ) => { $nodes.push(Box::from($node)) } }
-
-// program                     ::= do-block
+// program ::= do-block
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
     return parse_do(&mut input.iter().peekable(), 0).0;
 }
 
-// do-block                    ::= ( { ( expression | statement ) newline } | newline )
-fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+
+//expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
+//            | control-flow
+pub fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32)
+                        -> (Result<ASTNode, String>, i32) {
+    return match it.peek() {
+        Some(Token::LPar) => expression::parse_bracket(it, indent),
+        Some(Token::Ret) => expression::parse_return(it, indent),
+        Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
+        Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
+        Some(Token::Sub) => arithmetic::parse(it, indent),
+        Some(Token::If) | Some(Token::When) | Some(Token::While) | Some(Token::Loop) =>
+            control_flow::parse(it, indent),
+
+        Some(_) => panic!("Parser given token it does not recognize."),
+        None => (Err("Unexpected end of file.".to_string()), indent)
+    };
+}
+
+// statement ::= "print" expression | identifier
+fn parse_statement(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+    return match it.peek() {
+        Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, indent),
+        Some(Token::Print) => statement::parse_print(it, indent),
+
+        Some(_) => panic!("Parser given token it does not recognize."),
+        None => (Err("Unexpected end of file.".to_string()), indent)
+    };
+}
+
+// do-block ::= ( { ( expression | statement ) newline } | newline )
+pub fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     let mut nodes = Vec::new();
     let mut last_newline = false;
     let mut new_indent = indent;
@@ -117,54 +149,9 @@ fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
     return (Ok(ASTNode::Do(nodes)), new_indent);
 }
 
-fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
-                          -> (Result<ASTNode, String>, i32) {
+pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
+                              -> (Result<ASTNode, String>, i32) {
     (Err("not implemented".to_string()), indent)
-}
-
-// statement                   ::= "(" statement ")" | identifier
-fn parse_statement(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
-    return match it.peek() {
-        Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, indent),
-
-        Some(_) => panic!("token not recognized"),
-        None => (Err("Unexpected end of file.".to_string()), indent)
-    };
-}
-
-// expression ::= "(" expression ")" | "return" expression | ari-expression | cntrl-flow-expression
-fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
-    return match it.peek() {
-        Some(Token::LPar) => parse_bracket_expression(it, indent),
-        Some(Token::Ret) => parse_return(it, indent),
-        Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
-        Some(Token::Str(_)) | Some(Token::Bool(_)) |
-        Some(Token::Not) | Some(Token::Add) | Some(Token::Sub) => arithmetic::parse(it, indent),
-        Some(Token::If) | Some(Token::When) | Some(Token::While) | Some(Token::Loop) =>
-            control_flow::parse(it, indent),
-
-        Some(_) => panic!("token not recognized"),
-        None => (Err("Unexpected end of file.".to_string()), indent)
-    };
-}
-
-fn parse_bracket_expression(it: &mut Peekable<Iter<Token>>, indent: i32)
-                            -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::LPar));
-    let (expr, new_indent) = parse_expression_or_do(it, indent);
-    return match it.next() {
-        Some(Token::RPar) => (expr, new_indent),
-        Some(_) => (Err("Expecting closing bracket.".to_string()), new_indent),
-        None => (Err("Expected closing bracket, but end of file.".to_string()), new_indent)
-    };
-}
-
-fn parse_return(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::Ret));
-    return match parse_expression(it, indent) {
-        (Ok(expr), new_indent) => (Ok(ASTNode::Return(Box::new(expr))), new_indent),
-        err => err
-    };
 }
 
 #[cfg(test)]

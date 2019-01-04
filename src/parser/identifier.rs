@@ -5,7 +5,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// identifier                  ::= assignment | mutable-assignment
+// identifier ::= assignment | mutable-assignment
 pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) => parse_assignment(it, indent),
@@ -16,7 +16,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, St
     };
 }
 
-// assignment                  ::= "let" id "<-" expression
+// assignment ::= "let" id "<-" expression
 fn parse_assignment(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) => {
@@ -51,7 +51,7 @@ fn parse_id(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
     };
 }
 
-// mutable-assignment          ::= "mutable" assignment
+// mutable-assignment ::= "mutable" assignment
 fn parse_mut_assign(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::Mut));
     match parse_assignment(it, indent) {
