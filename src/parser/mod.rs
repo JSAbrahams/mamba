@@ -61,6 +61,7 @@ pub enum ASTNode {
     Return(Box<ASTNode>),
 
     Print(Box<ASTNode>),
+    DoNothing,
 }
 
 // program ::= do-block
@@ -92,6 +93,7 @@ fn parse_statement(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNo
     return match it.peek() {
         Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, indent),
         Some(Token::Print) => statement::parse_print(it, indent),
+        Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), indent),
 
         Some(_) => panic!("Parser given token it does not recognize."),
         None => (Err("Unexpected end of file.".to_string()), indent)

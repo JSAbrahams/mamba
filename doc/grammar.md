@@ -2,7 +2,7 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     program              ::= do-block
-    statement            ::= "print" expression | identifier
+    statement            ::= "print" expression | identifier | "donothing"
     expression           ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic | control-flow
     expression-or-do     ::= ( expression | newline indent do-block )   
     do-block             ::= { ( expresssion | statement ) newline }
