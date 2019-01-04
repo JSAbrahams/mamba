@@ -124,7 +124,7 @@ fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
     match current {
         '0'...'9' => num.push(current),
         '.' => comma = true,
-        'e' => e_found = true,
+        'e' | 'E' => e_found = true,
         _ => panic!("get number received a token it shouldn't have.")
     }
 
@@ -133,8 +133,8 @@ fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
             '0'...'9' if !e_found => next_and!(it, num.push(c)),
             '0'...'9' if e_found => next_and!(it, exp.push(c)),
 
-            'e' if e_found => break,
-            'e' => next_and!(it, e_found = true),
+            'e' | 'E' if e_found => break,
+            'e' | 'E' => next_and!(it, e_found = true),
 
             '.' if comma || e_found => break,
             '.' => {
