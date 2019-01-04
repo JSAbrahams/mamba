@@ -3,9 +3,6 @@ use std::iter::Peekable;
 use std::slice::Iter;
 use super::lexer::Token;
 
-#[macro_use]
-macro_rules! nodes_push { ( $ nodes:expr, $ node: expr  ) => { $nodes.push(Box::from($node)) } }
-
 mod arithmetic;
 mod control_flow;
 mod expression;
@@ -49,7 +46,7 @@ pub enum ASTNode {
     IfElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     When(Box<ASTNode>, Vec<ASTNode>),
 
-    Do(Vec<Box<ASTNode>>),
+    Do(Vec<ASTNode>),
 
     For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     While(Box<ASTNode>, Box<ASTNode>),
@@ -100,52 +97,51 @@ fn parse_statement(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNo
 // do-block ::= ( { ( expression | statement ) newline } | newline )
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     let mut nodes = Vec::new();
-    let mut last_newline = false;
-    let mut new_indent = indent;
+    let mut last_is_newline = false;
 
-    while let Some(t) = it.peek() {
-        match t {
-            Token::Let | Token::Mut | Token::Loop | Token::While | Token::Continue | Token::Break =>
-                match parse_statement(it, indent) {
-                    (Ok(ast_node), this_indent) => {
-                        nodes_push!(nodes, ast_node);
+    while let Some(&t) = it.peek() {
+        if let Err(err) = count_indent(it, indent) { return (Err(err), indent); }
 
-                        let this_newline =
-                            it.peek().is_some() && **it.peek().unwrap() == Token::NL;
+        let (res, new_indent) = match t {
+            &Token::Print | &Token::Mut | &Token::Let | &Token::DoNothing =>
+                parse_statement(it, indent),
+            _ => parse_expression(it, indent)
+        };
 
-                        if new_indent > this_indent || this_newline && last_newline {
-                            break; // indentation decreased, or double newline, marking end of do block
-                        } else if this_indent > new_indent {
-                            return (Err("Indentation increased in do block.".to_string()), indent);
-                        }
+        match res {
+            Ok(ast_node) => {
+                nodes.push(ast_node);
 
-                        last_newline = this_newline;
-                        new_indent = this_indent
-                    }
-                    err => return err
+                let this_is_newline = it.peek().is_some() && **it.peek().unwrap() == Token::NL;
+                let this_indent = if this_is_newline {
+                    indent
+                } else { indent };
+
+                let indentation_decreased = this_indent < indent;
+                let double_newline = this_is_newline && last_is_newline;
+
+                if indentation_decreased || double_newline {
+                    break;
+                } else if this_indent > indent {
+                    return (Err("Indentation increased in do block.".to_string()), indent);
                 }
-            _ => match parse_expression(it, indent) {
-                (Ok(ast_node), this_indent) => {
-                    nodes_push!(nodes, ast_node);
 
-                    let this_newline =
-                        it.peek().is_some() && **it.peek().unwrap() == Token::NL;
-
-                    if new_indent > this_indent || this_newline && last_newline {
-                        break; // indentation decreased, or double newline, marking end of do block
-                    } else if this_indent > new_indent {
-                        return (Err("Indentation increased in do block.".to_string()), indent);
-                    }
-
-                    last_newline = this_newline;
-                    new_indent = this_indent
-                }
-                err => return err
+                last_is_newline = this_is_newline;
             }
+            err => return (err, new_indent)
         }
     }
 
     return (Ok(ASTNode::Do(nodes)), indent - 1);
+}
+
+fn count_indent(it: &mut Peekable<Iter<Token>>, indent: i32) -> Result<(), String> {
+    for i in 0..indent {
+        if it.next() != Some(&Token::Ind) {
+            return Err(format!("Expected indentation level of {}, but was {}.", indent, i));
+        }
+    }
+    Ok(())
 }
 
 // expression-or-do ::= ( expression | newline indent do-block )
@@ -158,7 +154,7 @@ pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
         }
         Some(_) => parse_expression(it, indent),
         None => (Ok(ASTNode::DoNothing), indent)
-    }
+    };
 }
 
 #[cfg(test)]

@@ -5,7 +5,7 @@ macro_rules! vec_from {
         {
             let mut ast_nodes = Vec::new();
             $(
-                ast_nodes.push(Box::from($x));
+                ast_nodes.push($x);
             )*
             ASTNode::Do(ast_nodes)
         }
