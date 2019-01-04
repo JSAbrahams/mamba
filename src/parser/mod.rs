@@ -42,7 +42,9 @@ pub enum ASTNode {
     Geq(Box<ASTNode>, Box<ASTNode>),
 
     Is(Box<ASTNode>, Box<ASTNode>),
+    IsN(Box<ASTNode>, Box<ASTNode>),
     Eq(Box<ASTNode>, Box<ASTNode>),
+    Neq(Box<ASTNode>, Box<ASTNode>),
     Not(Box<ASTNode>),
     And(Box<ASTNode>, Box<ASTNode>),
     Or(Box<ASTNode>, Box<ASTNode>),

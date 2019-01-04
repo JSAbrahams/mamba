@@ -17,7 +17,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     term                 ::= factor | factor multiclative-operator expression
     factor               ::= constant | id
     
-    
     (* e-notation can either be real or integer. Must be checked by type checker upon use *)
     constant             ::= number | boolean | string
     number               ::= real | integer | e-notation
