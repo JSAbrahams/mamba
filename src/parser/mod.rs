@@ -15,7 +15,10 @@ pub enum ASTNode {
     Id(String),
     Assign(Box<ASTNode>, Box<ASTNode>),
     Mut(Box<ASTNode>),
-    Num(f64),
+
+    Real(String),
+    Int(String),
+    ENum(String, String),
     Str(String),
     Bool(bool),
 
@@ -134,7 +137,8 @@ fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTN
     return match it.peek() {
         Some(Token::LPar) => parse_bracket_expression(it, indent),
         Some(Token::Ret) => parse_return(it, indent),
-        Some(Token::Num(_)) | Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Bool(_)) |
+        Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
+        Some(Token::Str(_)) | Some(Token::Bool(_)) |
         Some(Token::Not) | Some(Token::Add) | Some(Token::Sub) => arithmetic::parse(it, indent),
         Some(Token::If) | Some(Token::When) | Some(Token::While) | Some(Token::Loop) =>
             control_flow::parse(it, indent),
@@ -147,7 +151,7 @@ fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTN
 fn parse_bracket_expression(it: &mut Peekable<Iter<Token>>, indent: i32)
                             -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::LPar));
-    let (expr, new_indent) = parse_expression(it, indent);
+    let (expr, new_indent) = parse_expression_or_do(it, indent);
     return match it.next() {
         Some(Token::RPar) => (expr, new_indent),
         Some(_) => (Err("Expecting closing bracket.".to_string()), new_indent),

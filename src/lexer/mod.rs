@@ -6,12 +6,14 @@ use std::str::Chars;
 pub enum Token {
     Id(String),
     Mut,
-    Str(String),
-    Num(f64),
-    Bool(bool),
-
     Assign,
     Let,
+
+    Real(String),
+    Int(String),
+    ENum(String, String),
+    Str(String),
+    Bool(bool),
 
     Add,
     Sub,
@@ -19,10 +21,12 @@ pub enum Token {
     Div,
     Pow,
     Mod,
+
     Ge,
     Geq,
     Le,
     Leq,
+
     Eq,
     Is,
     IsN,
@@ -53,6 +57,9 @@ pub enum Token {
     Print,
 }
 
+#[macro_use]
+macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
+
 pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     let mut tokens = Vec::new();
     let mut it = input.chars().peekable();
@@ -64,22 +71,11 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             '\n' => tokens.push(Token::NL),
             '\t' => tokens.push(Token::Ind),
 
-            '<' | '>' | '+' | '-' | '*' | '/' | '^' => match get_operator(c, &mut it) {
-                Ok(op) => tokens.push(op),
-                Err(err) => return Err(err)
-            },
-            '0'...'9' => match get_number(c, &mut it) {
-                Ok(num) => tokens.push(num),
-                Err(err) => return Err(err)
-            },
-            '"' => match get_string(&mut it) {
-                Ok(str) => tokens.push(str),
-                Err(err) => return Err(err)
-            },
-            'a'...'z' | 'A'...'Z' => match get_id_or_op(c, &mut it) {
-                Ok(id_or_op) => tokens.push(id_or_op),
-                Err(err) => return Err(err)
-            },
+            '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
+                tokens.push(get_operator(c, &mut it)),
+            '0'...'9' | '.' | 'e' => tokens.push(get_number(c, &mut it)),
+            '"' => tokens.push(get_string(&mut it)),
+            'a'...'z' | 'A'...'Z' => tokens.push(get_id_or_op(c, &mut it)),
 
             ' ' => (),
             c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
@@ -89,57 +85,77 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     return Ok(tokens);
 }
 
-fn get_operator(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
+fn get_operator(current: char, it: &mut Peekable<Chars>) -> Token {
     return match current {
         '<' => match it.peek() {
             Some('=') => {
                 it.next();
-                Ok(Token::Leq)
+                Token::Leq
             }
             Some('-') => {
                 it.next();
-                Ok(Token::Assign)
+                Token::Assign
             }
-            _ => Ok(Token::Le)
+            _ => Token::Le
         }
         '>' => match it.next() {
             Some('=') => {
                 it.next();
-                Ok(Token::Geq)
+                Token::Geq
             }
-            _ => Ok(Token::Ge)
+            _ => Token::Ge
         }
-        '+' => Ok(Token::Add),
-        '-' => Ok(Token::Sub),
-        '/' => Ok(Token::Div),
-        '*' => Ok(Token::Mul),
-        '^' => Ok(Token::Pow),
-        op => Err(format!("Unexpected operator whilst tokenizing: '{}'.", op))
+        '+' => Token::Add,
+        '-' => Token::Sub,
+        '/' => Token::Div,
+        '*' => Token::Mul,
+        '^' => Token::Pow,
+        _ => panic!("get operator received a token it shouldn't have.")
     };
 }
 
-fn get_number(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
-    let mut num = String::from(current.to_string());
+fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
+    let mut num = String::new();
+    let mut exp = String::new();
+    let mut e_found = false;
+    let mut comma = false;
+
+    match current {
+        '0'...'9' => num.push(current),
+        '.' => comma = true,
+        'e' => e_found = true,
+        _ => panic!("get number received a token it shouldn't have.")
+    }
 
     while let Some(&c) = it.peek() {
         match c {
-            '0'...'9' | '.' => {
-                it.next();
-                num.push(c)
+            '0'...'9' if !e_found => next_and!(it, num.push(c)),
+            '0'...'9' if e_found => next_and!(it, exp.push(c)),
+
+            'e' if e_found => break,
+            'e' => next_and!(it, e_found = true),
+
+            '.' if comma || e_found => break,
+            '.' => {
+                num.push(c);
+                next_and!(it,comma = true)
             }
+
             _ => break
         }
     }
 
-    let result = num.parse::<f64>();
-    if result.is_err() {
-        return Err(format!("Error whilst tokenizing number: '{}'.", result.unwrap_err()));
+    return if e_found {
+        if num.is_empty() { num.push('0') }
+        Token::ENum(num, exp)
+    } else if comma {
+        Token::Real(num)
     } else {
-        return Ok(Token::Num(result.unwrap()));
-    }
+        Token::Int(num)
+    };
 }
 
-fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
+fn get_string(it: &mut Peekable<Chars>) -> Token {
     let mut result = String::new();
 
     while let Some(&c) = it.peek() {
@@ -150,10 +166,10 @@ fn get_string(it: &mut Peekable<Chars>) -> Result<Token, String> {
         }
     }
 
-    return Ok(Token::Str(result));
+    return Token::Str(result);
 }
 
-fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String> {
+fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
     let mut result = String::from(current.to_string());
 
     while let Some(&c) = it.peek() {
@@ -166,7 +182,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
         }
     }
 
-    return Ok(match result.as_ref() {
+    return match result.as_ref() {
         "let" => Token::Let,
         "mutable" => Token::Mut,
 
@@ -199,7 +215,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Result<Token, String
         "print" => Token::Print,
 
         _ => Token::Id(result)
-    });
+    };
 }
 
 #[cfg(test)]

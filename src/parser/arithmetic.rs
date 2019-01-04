@@ -8,7 +8,8 @@ use std::slice::Iter;
 // arithmetic-expression    ::= term | unary-operator expression | term additive-operator expression
 pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::Id(_)) | Some(Token::Num(_)) | Some(Token::Str(_)) | Some(Token::Bool(_)) => {
+        Some(Token::Id(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) |
+        Some(Token::Str(_)) | Some(Token::Bool(_)) => {
             match parse_term(it, indent) {
                 (Ok(term), new_indent) => {
                     match it.peek() {
@@ -65,7 +66,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, St
 // term                     ::= factor | factor multiclative-operator expression
 fn parse_term(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Num(_)) | Some(Token::Bool(_)) =>
+        Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) |
+        Some(Token::ENum(_, _)) | Some(Token::Bool(_)) =>
             match parse_factor(it, indent) {
                 (Ok(factor), new_indent) => match it.peek() {
                     Some(Token::Mul) => {
@@ -117,9 +119,13 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, S
 fn parse_factor(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     match it.next() {
         Some(Token::Id(id)) => (Ok(ASTNode::Id(id.to_string())), indent),
-        Some(Token::Str(s)) => (Ok(ASTNode::Str(s.to_string())), indent),
-        Some(Token::Num(num)) => (Ok(ASTNode::Num(*num)), indent),
-        Some(Token::Bool(b)) => (Ok(ASTNode::Bool(*b)), indent),
+        Some(Token::Str(string)) => (Ok(ASTNode::Str(string.to_string())), indent),
+        Some(Token::Real(real)) => (Ok(ASTNode::Real(real.to_string())), indent),
+        Some(Token::Int(int)) => (Ok(ASTNode::Int(int.to_string())), indent),
+        Some(Token::ENum(num, exp)) =>
+            (Ok(ASTNode::ENum(num.to_string(), exp.to_string())), indent),
+        Some(Token::Bool(boolean)) => (Ok(ASTNode::Bool(*boolean)), indent),
+
         Some(_) => panic!("Expected factor, but other."),
         None => panic!("Expected factor, but end of file.")
     }

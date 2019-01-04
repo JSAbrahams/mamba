@@ -13,11 +13,19 @@ macro_rules! vec_from {
 }
 
 #[test]
-fn number() {
-    let tokens = vec![Token::Num(10.0)];
+fn int() {
+    let tokens = vec![Token::Int(10.to_string())];
     let parsed = parse(tokens);
 
-    assert_eq!(vec_from!(ASTNode::Num(10.0)), parsed.unwrap());
+    assert_eq!(vec_from!(ASTNode::Int(10.to_string())), parsed.unwrap());
+}
+
+#[test]
+fn real() {
+    let tokens = vec![Token::Real(10.4.to_string())];
+    let parsed = parse(tokens);
+
+    assert_eq!(vec_from!(ASTNode::Real(10.4.to_string())), parsed.unwrap());
 }
 
 #[test]
@@ -30,80 +38,79 @@ fn string() {
 
 #[test]
 fn addition() {
-    let tokens = vec![Token::Num(3.5), Token::Add, Token::Num(7.0)];
+    let tokens = vec![Token::Real(3.5.to_string()), Token::Add, Token::Int(7.to_string())];
     let parsed = parse(tokens);
 
     assert_eq!(
-        vec_from!(ASTNode::Add(Box::from(ASTNode::Num(3.5)), Box::from(ASTNode::Num(7.0)))),
-        parsed.unwrap()
-    )
+        vec_from!(ASTNode::Add(Box::from(ASTNode::Real(3.5.to_string())),
+        Box::from(ASTNode::Int(7.to_string())))), parsed.unwrap())
 }
 
 #[test]
 fn order_of_operation() {
-    let tokens = vec![Token::Num(3.0), Token::Add, Token::Num(10.0),
-                      Token::Mul, Token::Num(20.0)];
+    let tokens = vec![Token::Int(3.to_string()), Token::Add, Token::Int(10.to_string()),
+                      Token::Mul, Token::Real(20.2.to_string())];
     let parsed = parse(tokens);
 
     assert_eq!(
-        vec_from!(ASTNode::Add(Box::from(ASTNode::Num(3.0)), Box::from(ASTNode::Mul(
-        Box::from(ASTNode::Num(10.0)), Box::from(ASTNode::Num(20.0)))))),
-        parsed.unwrap()
-    )
+        vec_from!(ASTNode::Add(Box::from(ASTNode::Int(3.to_string())), Box::from(ASTNode::Mul(
+        Box::from(ASTNode::Int(10.to_string())), Box::from(ASTNode::Real(20.2.to_string())))))),
+        parsed.unwrap())
 }
 
 #[test]
 fn unary_expression() {
-    let tokens = vec![Token::Add, Token::Num(3.14)];
+    let tokens = vec![Token::Add, Token::Real(3.14.to_string())];
     let parsed = parse(tokens);
 
-    assert_eq!(vec_from!(ASTNode::AddU(Box::new(ASTNode::Num(3.14)))), parsed.unwrap())
+    assert_eq!(vec_from!(ASTNode::AddU(Box::new(ASTNode::Real(3.14.to_string())))), parsed.unwrap())
 }
 
 #[test]
 fn unary_negative_expression() {
-    let tokens = vec![Token::Sub, Token::Num(3.14)];
+    let tokens = vec![Token::Sub, Token::Real(3.14.to_string())];
     let parsed = parse(tokens);
 
-    assert_eq!(vec_from!(ASTNode::SubU(Box::new(ASTNode::Num(3.14)))), parsed.unwrap())
+    assert_eq!(vec_from!(ASTNode::SubU(Box::new(ASTNode::Real(3.14.to_string())))), parsed.unwrap())
 }
 
 #[test]
 fn if_statement() {
-    let tokens = vec![Token::If, Token::Bool(true), Token::Then, Token::Num(10.0)];
+    let tokens = vec![Token::If, Token::Bool(true), Token::Then,
+                      Token::Int(10.to_string())];
     let parsed = parse(tokens);
 
     assert_eq!(vec_from!(ASTNode::If(Box::from(ASTNode::Bool(true)),
-    Box::from(ASTNode::Num(10.0)))), parsed.unwrap())
+    Box::from(ASTNode::Int(10.to_string())))), parsed.unwrap())
 }
 
 #[test]
 fn if_statement_with_else() {
-    let tokens = vec![Token::If, Token::Bool(true), Token::Then, Token::Num(10.0),
-                      Token::Else, Token::Num(20.0)];
+    let tokens = vec![Token::If, Token::Bool(true), Token::Then, Token::Int(10.to_string()),
+                      Token::Else, Token::Int(20.to_string())];
     let parsed = parse(tokens);
 
     assert_eq!(vec_from!(ASTNode::IfElse(Box::from(ASTNode::Bool(true)),
-    Box::from(ASTNode::Num(10.0)), Box::from(ASTNode::Num(20.0)))), parsed.unwrap())
+    Box::from(ASTNode::Int(10.to_string())), Box::from(ASTNode::Int(20.to_string())))), parsed.unwrap())
 }
 
 #[test]
 fn simple_assignment() {
     let tokens = vec![Token::Let, Token::Id("a".to_string()), Token::Assign,
-                      Token::Num(3.14)];
+                      Token::Real(3.14.to_string())];
     let parsed = parse(tokens);
 
     assert_eq!(vec_from!(ASTNode::Assign(Box::new(ASTNode::Id("a".to_string())),
-     Box::new(ASTNode::Num(3.14)))), parsed.unwrap())
+     Box::new(ASTNode::Real(3.14.to_string())))), parsed.unwrap())
 }
 
 #[test]
 fn simple_mutable_assignment() {
     let tokens = vec![Token::Mut, Token::Let, Token::Id("a".to_string()),
-                      Token::Assign, Token::Num(3.14)];
+                      Token::Assign, Token::Real(3.14.to_string())];
     let parsed = parse(tokens);
 
     assert_eq!(vec_from!(
     ASTNode::Mut(Box::new(ASTNode::Assign(Box::new(ASTNode::Id("a".to_string())),
-    Box::new(ASTNode::Num(3.14)))))), parsed.unwrap())
+    Box::new(ASTNode::Real(3.14.to_string())))))), parsed.unwrap())
 }
