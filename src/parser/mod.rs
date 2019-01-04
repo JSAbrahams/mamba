@@ -145,13 +145,20 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode,
         }
     }
 
-    return (Ok(ASTNode::Do(nodes)), new_indent);
+    return (Ok(ASTNode::Do(nodes)), indent - 1);
 }
 
 // expression-or-do ::= ( expression | newline indent do-block )
 pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
                               -> (Result<ASTNode, String>, i32) {
-    (Err("not implemented".to_string()), indent)
+    return match it.peek() {
+        Some(Token::NL) => {
+            it.next();
+            parse_do(it, indent + 1)
+        }
+        Some(_) => parse_expression(it, indent),
+        None => (Ok(ASTNode::DoNothing), indent)
+    }
 }
 
 #[cfg(test)]
