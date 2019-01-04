@@ -6,8 +6,6 @@ use super::lexer::Token;
 #[macro_use]
 macro_rules! nodes_push { ( $ nodes:expr, $ node: expr  ) => { $nodes.push(Box::from($node)) } }
 
-// TODO create system to measure indents at correct locations
-
 mod arithmetic;
 mod control_flow;
 mod expression;
@@ -69,8 +67,7 @@ pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
     return parse_do(&mut input.iter().peekable(), 0).0;
 }
 
-
-//expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
+// expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
 //            | control-flow
 pub fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32)
                         -> (Result<ASTNode, String>, i32) {
@@ -88,7 +85,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32)
     };
 }
 
-// statement ::= "print" expression | identifier
+// statement ::= "print" expression | identifier | "donothing"
 fn parse_statement(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, indent),
@@ -151,6 +148,7 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode,
     return (Ok(ASTNode::Do(nodes)), new_indent);
 }
 
+// expression-or-do ::= ( expression | newline indent do-block )
 pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
                               -> (Result<ASTNode, String>, i32) {
     (Err("not implemented".to_string()), indent)

@@ -5,13 +5,11 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
+//statement ::= "print" expression | ...
 pub fn parse_print(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::Print));
-    let (expr, new_indent) = parse_expression(it, indent);
-    return match it.next() {
-        Some(Token::RPar) => (expr, new_indent),
-
-        Some(_) => (Err("Expecting closing bracket.".to_string()), new_indent),
-        None => (Err("Expected closing bracket, but end of file.".to_string()), new_indent)
-    };
+    match parse_expression(it, indent) {
+        (Ok(expr), new_indent) => (Ok(ASTNode::Print(Box::new(expr))), new_indent),
+        err => err
+    }
 }

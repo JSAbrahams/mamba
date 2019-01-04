@@ -63,7 +63,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, St
     };
 }
 
-// term                     ::= factor | factor multiclative-operator expression
+// term ::= factor | factor multiclative-operator expression
 fn parse_term(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) |
@@ -115,7 +115,7 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, S
     };
 }
 
-// factor                   ::= constant | id
+// factor ::= constant | id
 fn parse_factor(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     match it.next() {
         Some(Token::Id(id)) => (Ok(ASTNode::Id(id.to_string())), indent),

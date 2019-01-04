@@ -42,6 +42,7 @@ fn parse_assignment(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTN
     };
 }
 
+// id ::= { character }
 fn parse_id(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.next() {
         Some(Token::Id(id)) => (Ok(ASTNode::Id(id.to_string())), indent),

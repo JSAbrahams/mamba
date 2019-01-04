@@ -6,7 +6,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// control-flow            ::= if | when | loop | while | for | "break" | "continue"
+// control-flow ::= if | when | loop | while | for | "break" | "continue"
 pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::If) => parse_if(it, indent),
@@ -28,8 +28,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, St
 }
 
 
-// if                      ::= ( "if" | "unless" ) expression "then" expression-or-do
-// [ [ newline ] "else" expression-or-do ]
+// if ::= ( "if" | "unless" ) expression "then" expression-or-do [ [ newline ]
+//        "else" expression-or-do ]
 fn parse_if(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::If));
     match parse_expression(it, indent) {
@@ -59,7 +59,7 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, Str
 }
 
 
-//when                    ::= "when" expression "is" newline indent { when-case }
+// when ::= "when" expression "is" newline indent { when-case }
 fn parse_when(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::When));
     match parse_expression(it, indent) {
@@ -92,7 +92,7 @@ fn parse_when(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, S
     }
 }
 
-//when-case               ::= expression "then" expression-or-do
+// when-case ::= expression "then" expression-or-do
 fn parse_when_case(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     match parse_expression(it, indent) {
         (Ok(expr), new_indent) => {
@@ -111,7 +111,7 @@ fn parse_when_case(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNo
     }
 }
 
-//loop                    ::= "loop" expression-or-do
+// loop ::= "loop" expression-or-do
 fn parse_loop(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::Loop));
     return match parse_expression_or_do(it, indent) {
@@ -120,7 +120,7 @@ fn parse_loop(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, S
     };
 }
 
-//while                   ::= "while" expression "do" expression-or-do
+// while ::= "while" expression "do" expression-or-do
 fn parse_while(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::While));
     return match parse_expression(it, indent) {
@@ -140,7 +140,7 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, 
     };
 }
 
-//for                     ::= "for" expression "in" expression "do" expression-or-do
+// for ::= "for" expression "in" expression "do" expression-or-do
 fn parse_for(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::For));
     return match parse_expression(it, indent) {
