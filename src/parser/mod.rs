@@ -19,6 +19,8 @@ pub enum ASTNode {
     Assign(Box<ASTNode>, Box<ASTNode>),
     Mut(Box<ASTNode>),
 
+    Do(Vec<ASTNode>),
+
     Real(String),
     Int(String),
     ENum(String, String),
@@ -48,16 +50,13 @@ pub enum ASTNode {
     If(Box<ASTNode>, Box<ASTNode>),
     IfElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     When(Box<ASTNode>, Vec<ASTNode>),
-
-    Do(Vec<ASTNode>),
-
     For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     While(Box<ASTNode>, Box<ASTNode>),
     Loop(Box<ASTNode>),
     Break,
     Continue,
-    Return(Box<ASTNode>),
 
+    Return(Box<ASTNode>),
     Print(Box<ASTNode>),
     DoNothing,
 }
@@ -68,21 +67,35 @@ pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
 }
 
 // expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
-//            | control-flow
+//            | control-flow | expression "<-" expression
 pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
                         -> (Result<ASTNode, String>, i32) {
-    return match it.peek() {
+    match match it.peek() {
         Some(Token::LPar) => expression::parse_bracket(it, ind),
         Some(Token::Ret) => expression::parse_return(it, ind),
         Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
         Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
         Some(Token::Sub) => arithmetic::parse(it, ind),
-        Some(Token::If) | Some(Token::When) | Some(Token::While) | Some(Token::Loop) =>
-            control_flow::parse(it, ind),
+        Some(Token::If) | Some(Token::When) | Some(Token::For) | Some(Token::While) |
+        Some(Token::Loop) => control_flow::parse(it, ind),
 
-        Some(_) => panic!("Parser given token it does not recognize."),
+        Some(t) => panic!(format!("Parser given token it does not recognize: {:?}", t)),
         None => (Err("Unexpected end of file.".to_string()), ind)
-    };
+    } {
+        (Ok(l_expr), new_ind) => match it.peek() {
+            Some(Token::Assign) => {
+                it.next();
+                match parse_expression(it, new_ind) {
+                    (Ok(r_expr), nnew_ind) =>
+                        (Ok(ASTNode::Assign(Box::new(l_expr), Box::new(r_expr))),
+                         nnew_ind),
+                    err => err
+                }
+            }
+            Some(_) | None => (Ok(l_expr), new_ind)
+        }
+        err => err
+    }
 }
 
 // statement ::= "print" expression | identifier | "donothing"
@@ -99,14 +112,19 @@ fn parse_statement(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
 
 // do-block ::= ( { ( expression | statement ) newline } | newline )
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+    if let Err(err) = check_ind(it, ind) { return (Err(err), ind); }
     let mut nodes = Vec::new();
-    let mut is_last_nl = false;
+    let mut is_prev_empty_line = false;
 
     while let Some(&t) = it.peek() {
-        if let Err(err) = check_ind(it, ind) { return (Err(err), ind); }
-
-        let (res, this_ind) = match *t {
+        let (res, this_ind) = match t {
             Token::Print | Token::Mut | Token::Let | Token::DoNothing => parse_statement(it, ind),
+            Token::NL => {
+                if is_prev_empty_line { return (Err("Double newline found.".to_string()), ind); }
+                is_prev_empty_line = true;
+                it.next();
+                continue;
+            }
             _ => parse_expression(it, ind)
         };
 
@@ -114,24 +132,23 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
             Ok(ast_node) => {
                 nodes.push(ast_node);
 
-                if it.peek() != None && Some(&Token::NL) != it.next() {
-                    return (Err("Expression or statement not followed by a newline.".to_string()),
-                            ind);
-                }
-
-                let is_next_nl = it.peek().is_some() && it.peek().unwrap() == &&Token::NL;
-
-                if this_ind < ind && !is_last_nl {
+                if this_ind < ind && !is_prev_empty_line {
                     return (Err("Indentation decreased without newline.".to_string()), ind);
                 } else if this_ind > ind {
                     return (Err("Indentation unexpectedly increased.".to_string()), ind);
-                } else if is_next_nl && is_last_nl {
-                    return (Err("A double newline may not be used.".to_string()), ind);
-                } else if this_ind < ind && is_last_nl {
+                } else if this_ind < ind && is_prev_empty_line {
                     break;
                 }
 
-                is_last_nl = is_next_nl;
+                is_prev_empty_line = false;
+                if it.peek() != None && Some(&Token::NL) != it.next() {
+                    return (Err(format!("Expression or statement not followed by a newline.\
+                     found: {:?}.", it.peek())), ind);
+                }
+                if let Err(err) = check_ind(it, ind) {
+                    /* if end of file doesn't matter */
+                    if it.peek().is_some() { return (Err(err), ind); }
+                }
             }
             err => return (err, this_ind)
         }
@@ -163,4 +180,5 @@ pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, ind: i32)
 }
 
 #[cfg(test)]
-mod parser_tests;
+mod parser_test;
+mod parser_lexer_test;

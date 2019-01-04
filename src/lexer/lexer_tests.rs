@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn assign_operator() {
     let source = "<-";
-    let token = tokenize(source).unwrap();
+    let token = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::Assign], token)
 }
@@ -11,7 +11,7 @@ fn assign_operator() {
 #[test]
 fn simple_string() {
     let source = "\"test string\"";
-    let token = tokenize(source).unwrap();
+    let token = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::Str("test string".to_string())], token)
 }
@@ -19,7 +19,7 @@ fn simple_string() {
 #[test]
 fn natural_number() {
     let source = "123";
-    let token = tokenize(source).unwrap();
+    let token = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::Int(123.to_string())], token)
 }
@@ -27,7 +27,7 @@ fn natural_number() {
 #[test]
 fn float_number() {
     let source = "14.39";
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::Real(14.39.to_string())], tokens)
 }
@@ -35,7 +35,7 @@ fn float_number() {
 #[test]
 fn e_number() {
     let source = "14e30";
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::ENum(14.to_string(), 30.to_string())], tokens)
 }
@@ -43,7 +43,7 @@ fn e_number() {
 #[test]
 fn e_number_float() {
     let source = "14.39e30";
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::ENum(14.39.to_string(), 30.to_string())], tokens)
 }
@@ -51,7 +51,7 @@ fn e_number_float() {
 #[test]
 fn e_number_without_num() {
     let source = "e10";
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::ENum(0.to_string(), 10.to_string())], tokens)
 }
@@ -59,7 +59,7 @@ fn e_number_without_num() {
 #[test]
 fn float_and_e_number() {
     let source = "14.39.e30";
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::Real(14.39.to_string()), Token::ENum(0.to_string(),
                                                                 30.to_string())], tokens)
@@ -68,7 +68,7 @@ fn float_and_e_number() {
 #[test]
 fn float_and_e_number_and_float() {
     let source = "14.39.e30.0";
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::Real(14.39.to_string()),
                     Token::ENum(0.to_string(), 30.to_string()),
@@ -79,7 +79,7 @@ fn float_and_e_number_and_float() {
 fn assign_number() {
     let source = "x <- 10";
 
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
     assert_eq!(vec![Token::Id("x".to_string()), Token::Assign, Token::Int(10.to_string())], tokens)
 }
 
@@ -87,7 +87,7 @@ fn assign_number() {
 fn assign_no_spaces() {
     let source = "x<-10";
 
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
     assert_eq!(vec![Token::Id("x".to_string()), Token::Assign, Token::Int(10.to_string())], tokens)
 }
 
@@ -95,7 +95,7 @@ fn assign_no_spaces() {
 fn assign_with_operators() {
     let source = "a <- (10.5 * b) +(y - c ) - (3 mod 20* 100) /\"hey\"";
 
-    let tokens = tokenize(source).unwrap();
+    let tokens = tokenize(source.to_string()).unwrap();
     assert_eq!(vec![
         Token::Id("a".to_string()), Token::Assign,
         Token::LPar, Token::Real(10.5.to_string()), Token::Mul, Token::Id("b".to_string()), Token::RPar,

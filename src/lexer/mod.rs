@@ -30,7 +30,7 @@ pub enum Token {
     Eq,
     Is,
     IsN,
-    NEq,
+    Neq,
     And,
     Or,
     Not,
@@ -61,15 +61,22 @@ pub enum Token {
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 
-pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
+pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
     let mut tokens = Vec::new();
     let mut it = input.chars().peekable();
+    let mut consecutive_spaces = 0;
 
     while let Some(c) = it.next() {
         match c {
             '(' => tokens.push(Token::LPar),
             ')' => tokens.push(Token::RPar),
             '\n' => tokens.push(Token::NL),
+            '\r' => match it.next() {
+                Some('\n') => tokens.push(Token::NL),
+                Some(other) =>
+                    return Err(format!("Expected newline after carriage return. Was {}", other)),
+                None => return Err("File ended with carriage return".to_string())
+            }
             '\t' => tokens.push(Token::Ind),
 
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
@@ -78,9 +85,18 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             '"' => tokens.push(get_string(&mut it)),
             'a'...'z' | 'A'...'Z' => tokens.push(get_id_or_op(c, &mut it)),
 
-            ' ' => (),
+            ' ' => {
+                consecutive_spaces += 1;
+                if consecutive_spaces == 4 {
+                    consecutive_spaces = 0;
+                    tokens.push(Token::Ind);
+                }
+                continue;
+            }
             c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
         }
+
+        consecutive_spaces = 0;
     }
 
     return Ok(tokens);
@@ -193,7 +209,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
         "is" => Token::Is,
         "isnot" => Token::IsN,
         "equals" => Token::Eq,
-        "notequals" => Token::NEq,
+        "notequals" => Token::Neq,
         "mod" => Token::Mod,
 
         "loop" => Token::Loop,

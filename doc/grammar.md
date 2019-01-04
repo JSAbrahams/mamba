@@ -3,7 +3,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     program              ::= do-block
     statement            ::= "print" expression | identifier | "donothing"
-    expression           ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic | control-flow
+    expression           ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic 
+                          | control-flow | expression "<-" expression
     expression-or-do     ::= ( expression | newline indent do-block )   
     do-block             ::= { ( expresssion | statement ) newline }
     
@@ -12,9 +13,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     assignment           ::= "let" id "<-" expression
     mutable-assignment   ::= "mutable" assignment
     
-    arithmetic           ::= term | unary-operator expression | term additive-operator expression
+    arithmetic           ::= term | unary expression | term additive expression
     term                 ::= factor | factor multiclative-operator expression
     factor               ::= constant | id
+    
     
     (* e-notation can either be real or integer. Must be checked by type checker upon use *)
     constant             ::= number | boolean | string
@@ -25,11 +27,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     boolean              ::= "True" | "False"
     string               ::= "\"" { character } "\""
     
-    binary-operator      ::= additive | multiplicative | equality | relational | binary-logic
-    unary                ::= "not" | additive-operator
-    
+    unary                ::= "not" | additive
     additive             ::= "+" | "-"
-    multiplicative       ::= "*" | "/" | "^" | "mod" 
+    multiplicative       ::= "*" | "/" | "^" | "mod"  | equality | relational | binary-logic
     equality             ::= "equals" | "is" | "notequals" | "isnot"
     relational           ::= "<=" | ">=" | "<" | ">"
     binary-logic         ::= "and" | "or"

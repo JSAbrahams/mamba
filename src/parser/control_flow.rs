@@ -12,6 +12,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     return match it.peek() {
         Some(Token::If) => parse_if(it, ind),
         Some(Token::When) => parse_when(it, ind),
+        Some(Token::While) => parse_while(it, ind),
         Some(Token::Loop) => parse_loop(it, ind),
         Some(Token::For) => parse_for(it, ind),
         Some(Token::Break) => next_and!(it, (Ok(ASTNode::Break), ind)),
@@ -76,37 +77,45 @@ fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
 fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
                     -> (Result<Vec<ASTNode>, String>, i32) {
     let mut when_cases = Vec::new();
-    let mut is_last_nl = false;
+    let mut is_prev_empty_line = false;
 
     loop {
+        if Some(&&Token::NL) == it.peek() {
+            if is_prev_empty_line { return (Err("Double newline found.".to_string()), ind); }
+            it.next();
+            is_prev_empty_line = true;
+            continue;
+        }
+
         if let Err(err) = check_ind(it, ind) { return (Err(err), ind); }
 
         let (res, this_ind) = parse_when_case(it, ind);
-
         if it.next() != Some(&Token::NL) {
             return (Err("Expected newline after 'when' case expression".to_string()), ind);
         }
 
-        let is_next_nl = it.peek().is_some() && it.peek().unwrap() == &&Token::NL;
-
-        if this_ind < ind && !is_last_nl {
-            return (Err("Indentation decreased without newline in 'when' expression.".to_string()),
-                    ind);
+        if this_ind < ind && !is_prev_empty_line {
+            return (Err("Indentation decreased in 'when' expression.".to_string()), ind);
         } else if this_ind > ind {
-            return (Err("Indentation unexpectedly increased in 'when' expression.".to_string()),
-                    ind);
-        } else if is_next_nl && is_last_nl {
-            return (Err("A double newline may not be used in 'when' expression.".to_string()), ind);
-        } else if this_ind < ind && is_last_nl {
+            return (Err("Indentation increased in 'when' expression.".to_string()), ind);
+        } else if this_ind < ind && is_prev_empty_line {
             break;
+        }
+
+        is_prev_empty_line = false;
+        if it.peek() != None && Some(&Token::NL) != it.next() {
+            return (Err(format!("Expression or statement not followed by a newline in 'while'.\
+                     found: {:?}.", it.peek())), ind);
+        }
+        if let Err(err) = check_ind(it, ind) {
+            /* if end of file doesn't matter */
+            if it.peek().is_some() { return (Err(err), ind); }
         }
 
         match res {
             Ok(when_case) => when_cases.push(when_case),
             Err(err) => return (Err(err), this_ind)
         }
-
-        is_last_nl = is_next_nl;
     }
 
     (Ok(when_cases), ind)

@@ -58,6 +58,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
                 err => err
             }
         }
+
         Some(_) => panic!("Expected arithmetic expression, but other token."),
         None => panic!("Expected arithmetic expression, but end of file.")
     };
@@ -88,15 +89,6 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
                             err => err
                         }
                     }
-                    Some(Token::Mod) => {
-                        it.next();
-                        match parse_expression(it, new_ind) {
-                            (Ok(expr), nnew_indent) =>
-                                (Ok(ASTNode::Mod(Box::new(factor), Box::new(expr))),
-                                 nnew_indent),
-                            err => err
-                        }
-                    }
                     Some(Token::Pow) => {
                         it.next();
                         match parse_expression(it, new_ind) {
@@ -106,14 +98,115 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
                             err => err
                         }
                     }
+                    Some(Token::Mod) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Mod(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Eq) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Eq(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Is) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Is(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::IsN) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Not(Box::new(ASTNode::Is(Box::new(factor), Box::new(expr))))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Neq) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Not(Box::new(ASTNode::Eq(Box::new(factor), Box::new(expr))))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Ge) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Ge(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Geq) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Geq(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Le) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Le(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Leq) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Leq(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::And) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::And(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
+                    Some(Token::Or) => {
+                        it.next();
+                        match parse_expression(it, new_ind) {
+                            (Ok(expr), nnew_indent) =>
+                                (Ok(ASTNode::Or(Box::new(factor), Box::new(expr))),
+                                 nnew_indent),
+                            err => err
+                        }
+                    }
                     _ => (Ok(factor), new_ind)
                 }
                 err => err
             },
+
         Some(_) => panic!("Expected term, but other."),
         None => panic!("Expected term, but end of file.")
     };
 }
+
 
 // factor ::= constant | id
 fn parse_factor(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
