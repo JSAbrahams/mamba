@@ -8,30 +8,29 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 // expression ::= "(" ( expression-or-do | newline do ) ")" | ...
-pub fn parse_bracket(it: &mut Peekable<Iter<Token>>, indent: i32)
-                     -> (Result<ASTNode, String>, i32) {
+pub fn parse_bracket(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::LPar));
 
-    let (expr_or_do, new_indent) = if it.peek() == Some(&&Token::NL) {
-        it.next();
-        parse_do(it, indent)
+    let (expr_or_do, new_ind) = if it.peek() == Some(&&Token::NL) {
+        next_and!(it, parse_do(it, ind))
     } else {
-        parse_expression_or_do(it, indent)
+        parse_expression_or_do(it, ind)
     };
 
     return match it.next() {
-        Some(Token::RPar) => (expr_or_do, new_indent),
+        Some(Token::RPar) => (expr_or_do, new_ind),
 
-        Some(_) => (Err("Expecting closing bracket.".to_string()), new_indent),
-        None => (Err("Expected closing bracket, but end of file.".to_string()), new_indent)
+        Some(_) => (Err("Expecting closing bracket.".to_string()), new_ind),
+        None => (Err("Expected closing bracket, but end of file.".to_string()), new_ind)
     };
 }
 
 // expression ::= ... | "return" expression | ...
-pub fn parse_return(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+pub fn parse_return(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::Ret));
-    return match parse_expression(it, indent) {
-        (Ok(expr), new_indent) => (Ok(ASTNode::Return(Box::new(expr))), new_indent),
+
+    return match parse_expression(it, ind) {
+        (Ok(expr), new_ind) => (Ok(ASTNode::Return(Box::new(expr))), new_ind),
         err => err
     };
 }

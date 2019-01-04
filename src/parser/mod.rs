@@ -3,6 +3,9 @@ use std::iter::Peekable;
 use std::slice::Iter;
 use super::lexer::Token;
 
+#[macro_use]
+macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
+
 mod arithmetic;
 mod control_flow;
 mod expression;
@@ -66,94 +69,96 @@ pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
 
 // expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
 //            | control-flow
-pub fn parse_expression(it: &mut Peekable<Iter<Token>>, indent: i32)
+pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
                         -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::LPar) => expression::parse_bracket(it, indent),
-        Some(Token::Ret) => expression::parse_return(it, indent),
+        Some(Token::LPar) => expression::parse_bracket(it, ind),
+        Some(Token::Ret) => expression::parse_return(it, ind),
         Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
         Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
-        Some(Token::Sub) => arithmetic::parse(it, indent),
+        Some(Token::Sub) => arithmetic::parse(it, ind),
         Some(Token::If) | Some(Token::When) | Some(Token::While) | Some(Token::Loop) =>
-            control_flow::parse(it, indent),
+            control_flow::parse(it, ind),
 
         Some(_) => panic!("Parser given token it does not recognize."),
-        None => (Err("Unexpected end of file.".to_string()), indent)
+        None => (Err("Unexpected end of file.".to_string()), ind)
     };
 }
 
 // statement ::= "print" expression | identifier | "donothing"
-fn parse_statement(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+fn parse_statement(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, indent),
-        Some(Token::Print) => statement::parse_print(it, indent),
-        Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), indent),
+        Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, ind),
+        Some(Token::Print) => statement::parse_print(it, ind),
+        Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), ind),
 
         Some(_) => panic!("Parser given token it does not recognize."),
-        None => (Err("Unexpected end of file.".to_string()), indent)
+        None => (Err("Unexpected end of file.".to_string()), ind)
     };
 }
 
 // do-block ::= ( { ( expression | statement ) newline } | newline )
-pub fn parse_do(it: &mut Peekable<Iter<Token>>, indent: i32) -> (Result<ASTNode, String>, i32) {
+pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     let mut nodes = Vec::new();
-    let mut last_is_newline = false;
+    let mut is_last_nl = false;
 
     while let Some(&t) = it.peek() {
-        if let Err(err) = count_indent(it, indent) { return (Err(err), indent); }
+        if let Err(err) = check_ind(it, ind) { return (Err(err), ind); }
 
-        let (res, new_indent) = match t {
-            &Token::Print | &Token::Mut | &Token::Let | &Token::DoNothing =>
-                parse_statement(it, indent),
-            _ => parse_expression(it, indent)
+        let (res, this_ind) = match *t {
+            Token::Print | Token::Mut | Token::Let | Token::DoNothing => parse_statement(it, ind),
+            _ => parse_expression(it, ind)
         };
 
         match res {
             Ok(ast_node) => {
                 nodes.push(ast_node);
 
-                let this_is_newline = it.peek().is_some() && **it.peek().unwrap() == Token::NL;
-                let this_indent = if this_is_newline {
-                    indent
-                } else { indent };
-
-                let indentation_decreased = this_indent < indent;
-                let double_newline = this_is_newline && last_is_newline;
-
-                if indentation_decreased || double_newline {
-                    break;
-                } else if this_indent > indent {
-                    return (Err("Indentation increased in do block.".to_string()), indent);
+                if it.peek() != None && Some(&Token::NL) != it.next() {
+                    return (Err("Expression or statement not followed by a newline.".to_string()),
+                            ind);
                 }
 
-                last_is_newline = this_is_newline;
+                let is_next_nl = it.peek().is_some() && it.peek().unwrap() == &&Token::NL;
+
+                if this_ind < ind && !is_last_nl {
+                    return (Err("Indentation decreased without newline.".to_string()), ind);
+                } else if this_ind > ind {
+                    return (Err("Indentation unexpectedly increased.".to_string()), ind);
+                } else if is_next_nl && is_last_nl {
+                    return (Err("A double newline may not be used.".to_string()), ind);
+                } else if this_ind < ind && is_last_nl {
+                    break;
+                }
+
+                is_last_nl = is_next_nl;
             }
-            err => return (err, new_indent)
+            err => return (err, this_ind)
         }
     }
 
-    return (Ok(ASTNode::Do(nodes)), indent - 1);
+    return (Ok(ASTNode::Do(nodes)), ind - 1);
 }
 
-fn count_indent(it: &mut Peekable<Iter<Token>>, indent: i32) -> Result<(), String> {
-    for i in 0..indent {
+pub fn check_ind(it: &mut Peekable<Iter<Token>>, ind: i32) -> Result<(), String> {
+    for i in 0..ind {
         if it.next() != Some(&Token::Ind) {
-            return Err(format!("Expected indentation level of {}, but was {}.", indent, i));
+            return Err(format!("Expected indentation level of {}, but was {}.", ind, i));
         }
     }
     Ok(())
 }
 
 // expression-or-do ::= ( expression | newline indent do-block )
-pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, indent: i32)
+pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, ind: i32)
                               -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::NL) => {
             it.next();
-            parse_do(it, indent + 1)
+            parse_do(it, ind + 1)
         }
-        Some(_) => parse_expression(it, indent),
-        None => (Ok(ASTNode::DoNothing), indent)
+        Some(_) => parse_expression(it, ind),
+        None => (Ok(ASTNode::DoNothing), ind)
     };
 }
 
