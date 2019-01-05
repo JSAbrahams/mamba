@@ -50,7 +50,7 @@ fn e_number_float() {
 
 #[test]
 fn e_number_without_num() {
-    let source = "e10";
+    let source = ".e10";
     let tokens = tokenize(source.to_string()).unwrap();
 
     assert_eq!(vec![Token::ENum(0.to_string(), 10.to_string())], tokens)

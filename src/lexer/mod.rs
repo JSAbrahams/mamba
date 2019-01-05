@@ -81,7 +81,7 @@ pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
 
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(get_operator(c, &mut it)),
-            '0'...'9' | '.' | 'e' => tokens.push(get_number(c, &mut it)),
+            '0'...'9' | '.' => tokens.push(get_number(c, &mut it)),
             '"' => tokens.push(get_string(&mut it)),
             'a'...'z' | 'A'...'Z' => tokens.push(get_id_or_op(c, &mut it)),
 
@@ -140,7 +140,6 @@ fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
     match current {
         '0'...'9' => num.push(current),
         '.' => comma = true,
-        'e' | 'E' => e_found = true,
         _ => panic!("get number received a token it shouldn't have.")
     }
 
