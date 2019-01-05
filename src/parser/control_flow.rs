@@ -24,8 +24,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
 }
 
 
-// if ::= ( "if" | "unless" ) expression "then" expression-or-do [ [ newline ]
-//        "else" expression-or-do ]
+// if ::= ( "if" | "unless" ) expression "then" expression-or-do
+//        [ [ newline ] "else" expression-or-do ]
 fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::If));
     match parse_expression(it, ind) {
@@ -33,14 +33,33 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
             if it.next() != Some(&Token::Then) {
                 return (Err("'Then' keyword expected".to_string()), new_ind);
             }
-            match parse_expression(it, new_ind) {
+
+            match parse_expression_or_do(it, new_ind) {
                 (Ok(then), nnew_ind) => match it.peek() {
+                    Some(Token::NL) => {
+                        it.next();
+                        match it.peek() {
+                            Some(Token::Else) => {
+                                it.next();
+                                match parse_expression_or_do(it, nnew_ind) {
+                                    (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::IfElse(
+                                        Box::new(cond),
+                                        Box::new(then),
+                                        Box::new(otherwise))), nnnew_ind),
+                                    err => err
+                                }
+                            }
+                            _ => (Ok(ASTNode::If(Box::new(cond), Box::new(then))),
+                                  nnew_ind)
+                        }
+                    }
                     Some(Token::Else) => {
                         it.next();
-                        match parse_expression(it, nnew_ind) {
-                            (Ok(otherwise), nnnew_ind) =>
-                                (Ok(ASTNode::IfElse(Box::new(cond), Box::new(then),
-                                                    Box::new(otherwise))), nnnew_ind),
+                        match parse_expression_or_do(it, nnew_ind) {
+                            (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::IfElse(
+                                Box::new(cond),
+                                Box::new(then),
+                                Box::new(otherwise))), nnnew_ind),
                             err => err
                         }
                     }
@@ -54,7 +73,8 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
 }
 
 // when ::= "when" expression "is" newline indent { when-case }
-fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (
+    Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::When));
     match parse_expression(it, ind) {
         (Ok(expr), new_ind) => {

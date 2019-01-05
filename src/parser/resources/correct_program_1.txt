@@ -1,8 +1,8 @@
-let a <- 10
+let a <-10
 let b <- 4.6
 let c <- 4.2E2
 
 let d <- 0
 while e < f do
     let g <- h * i
-    j <- k mod 2 + 300
+    j <- k mod 2 + "300"

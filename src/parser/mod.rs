@@ -51,6 +51,8 @@ pub enum ASTNode {
 
     If(Box<ASTNode>, Box<ASTNode>),
     IfElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    Unless(Box<ASTNode>, Box<ASTNode>),
+    UnlessElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     When(Box<ASTNode>, Vec<ASTNode>),
     For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     While(Box<ASTNode>, Box<ASTNode>),
@@ -71,7 +73,7 @@ pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
 // expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
 //            | control-flow | expression "<-" expression
 pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
-                        -> (Result<ASTNode, String>, i32) {
+    -> (Result<ASTNode, String>, i32) {
     match match it.peek() {
         Some(Token::LPar) => expression::parse_bracket(it, ind),
         Some(Token::Ret) => expression::parse_return(it, ind),
@@ -81,7 +83,8 @@ pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
         Some(Token::If) | Some(Token::When) | Some(Token::For) | Some(Token::While) |
         Some(Token::Loop) => control_flow::parse(it, ind),
 
-        Some(t) => panic!(format!("Parser given token it does not recognize: {:?}", t)),
+        Some(t) => (Err(format!("Unexpected token while parsing expression: {:?}", t).to_string()),
+                    ind),
         None => (Err("Unexpected end of file.".to_string()), ind)
     } {
         (Ok(l_expr), new_ind) => match it.peek() {
@@ -107,7 +110,8 @@ fn parse_statement(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
         Some(Token::Print) => statement::parse_print(it, ind),
         Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), ind),
 
-        Some(_) => panic!("Parser given token it does not recognize."),
+        Some(t) => (Err(format!("Unexpected token while parsing statement: {:?}", t).to_string()),
+                    ind),
         None => (Err("Unexpected end of file.".to_string()), ind)
     };
 }
@@ -122,7 +126,7 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
         let (res, this_ind) = match t {
             Token::Print | Token::Mut | Token::Let | Token::DoNothing => parse_statement(it, ind),
             Token::NL => {
-                if is_prev_empty_line { return (Err("Double newline found.".to_string()), ind); }
+                if is_prev_empty_line { return (Err("Double empty line found.".to_string()), ind); }
                 is_prev_empty_line = true;
                 it.next();
                 continue;
@@ -134,18 +138,16 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
             Ok(ast_node) => {
                 nodes.push(ast_node);
 
-                if this_ind < ind && !is_prev_empty_line {
-                    return (Err("Indentation decreased without newline.".to_string()), ind);
+                if this_ind < ind {
+                    break;
                 } else if this_ind > ind {
                     return (Err("Indentation unexpectedly increased.".to_string()), ind);
-                } else if this_ind < ind && is_prev_empty_line {
-                    break;
                 }
 
                 is_prev_empty_line = false;
                 if it.peek() != None && Some(&Token::NL) != it.next() {
-                    return (Err(format!("Expression or statement not followed by a newline.\
-                     found: {:?}.", it.peek())), ind);
+                    return (Err(format!("Expression or statement not followed by a newline: {:?}.",
+                                        it.peek())), ind);
                 }
                 if let Err(err) = check_ind(it, ind) {
                     /* if end of file doesn't matter */

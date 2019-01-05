@@ -21,7 +21,13 @@ fn open_file(file: &str) -> String {
 }
 
 #[test]
-fn int() {
+fn correct_1() {
     let source = open_file("correct_program_1.txt");
-    assert_eq!(true, parse( tokenize(source).unwrap()).is_ok());
+    parse( tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn correct_2() {
+    let source = open_file("correct_program_2.txt");
+    parse( tokenize(source).unwrap()).unwrap();
 }

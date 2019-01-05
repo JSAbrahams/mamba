@@ -1,0 +1,39 @@
+let b <- 40
+
+if c then d <- 4 else False
+
+if e then d
+else f
+
+if g then
+    h
+
+else i
+
+if j then
+    k
+else
+    l
+
+when True is
+    m then n
+    o then
+        p
+        q
+
+loop print r
+
+loop
+    print s
+    print t
+
+while True do print u > v
+
+while True do
+    print "asdf"
+
+for ii in w do print x
+
+for ij in w do
+    print y
+    print z
