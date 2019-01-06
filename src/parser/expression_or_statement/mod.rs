@@ -2,6 +2,7 @@ use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression::parse as parse_expression;
 use crate::parser::program::parse_do;
+use crate::parser::program::parse_function_call;
 use crate::parser::statement::parse as parse_statement;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -57,7 +58,7 @@ pub fn parse_maybe_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
     } {
         (Ok(pre), new_ind) => match it.peek() {
             Some(Token::Assign) => postfix_op!(it, new_ind, ASTNode::Assign, pre),
-            Some(Token::Point) => panic!("Function calls not implemented."),
+            Some(Token::Point) => parse_function_call(pre, it, ind),
             Some(_) | None => (Ok(pre), new_ind)
         }
         err => err

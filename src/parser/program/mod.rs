@@ -8,6 +8,16 @@ use std::slice::Iter;
 
 mod function;
 
+// function-call  ::= maybe-expr "." id tuple
+pub fn parse_function_call(id: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
+                           -> (Result<ASTNode, String>, i32) {
+    match function::parse_call(it, ind) {
+        (Ok((func, args)), new_ind) =>
+            (Ok(ASTNode::FunCall(Box::new(id), Box::new(func), args)), new_ind),
+        (Err(err), _) => return (Err(err), ind)
+    }
+}
+
 // do-block ::= ( { expr-or-stmt newline } | newline )
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     let this_ind = util::ind_count(it);
