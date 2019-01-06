@@ -1,8 +1,8 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression::parse as parse_expression;
-use crate::parser::util::ind_count;
 use crate::parser::parse_expression_or_statement_or_do;
+use crate::parser::util::ind_count;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -105,20 +105,24 @@ fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
 
 fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
                     -> (Result<Vec<ASTNode>, String>, i32) {
+    let act_ind = ind_count(it);
+    if ind != act_ind {
+        return (Err(format!("Expected indentation level {}, was {}.", ind, act_ind)), act_ind);
+    }
+
     let mut when_cases = Vec::new();
     let mut is_prev_empty_line = false;
 
     loop {
-        if Some(&&Token::NL) == it.peek() {
-            if is_prev_empty_line { return (Err("Double newline found.".to_string()), ind); }
-            it.next();
-            is_prev_empty_line = true;
-            continue;
-        }
-
-        let act_ind = ind_count(it);
-        if ind != act_ind {
-            return (Err(format!("Expected indentation level {}, was {}.", ind, act_ind)), act_ind);
+        match it.peek() {
+            /* double empty line marks end of when */
+            Some(Token::NL) if is_prev_empty_line => break,
+            Some(Token::NL) => {
+                is_prev_empty_line = true;
+                it.next();
+                continue;
+            }
+            _ => ()
         }
 
         let (res, this_ind) = parse_when_case(it, ind);
@@ -126,28 +130,11 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
             return (Err("Expected newline after 'when' case expression".to_string()), ind);
         }
 
-        if this_ind < ind && !is_prev_empty_line {
-            return (Err("Indentation decreased in 'when' expression.".to_string()), ind);
-        } else if this_ind > ind {
-            return (Err("Indentation increased in 'when' expression.".to_string()), ind);
-        } else if this_ind < ind && is_prev_empty_line {
-            break;
-        }
-
-        is_prev_empty_line = false;
-        if it.peek() != None && Some(&Token::NL) != it.next() {
-            return (Err(format!("Expression or statement not followed by a newline in 'while'.\
-                     found: {:?}.", it.peek())), ind);
-        }
-
         let next_ind = ind_count(it);
-        /* Indentation decrease marks end of while cases */
-        if next_ind < ind { break; };
-
-        if next_ind >= ind && it.peek().is_some() {
+        if next_ind < ind { break; }; /* Indentation decrease marks end of do when */
+        if next_ind > ind && it.peek().is_some() {
             /* indentation increased unexpectedly */
-            return (Err(
-                format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
+            return (Err(format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
                     ind);
         }
 
