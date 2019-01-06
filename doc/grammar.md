@@ -2,11 +2,14 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     program           ::= do-block
-    do-block          ::= { ( statement | expression ) newline }
+    do-block          ::= { statement-or-expr newline }
     expression-or-do  ::= ( expression | newline indent do-block )
     
-    statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt | expression "<-" expression
+    (* assignment is a statement *)
+    statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
+    statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt
     expression        ::= "(" expression-or-do ")" | "return" expression | arithmetic | control-flow-expr
+    postfix-if        ::= ( statement-or-expr ) ( "if" | "unless" ) expression-or-do
     
     id                ::= { character }
     assignment        ::= normal-assignment | mut-assignment
@@ -35,13 +38,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr ::= if | when
-    if                ::= ( "if" | "unless" ) expression "then" expression-or-do 
-                          [ [ newline ] "else" expression-or-do ]
+    if                ::= ( "if" | "unless" ) expression "then" expression-or-do [ [ newline ] "else" expression-or-do ]
     when              ::= "when" expression "is" newline { indent when-case }
     when-case         ::= expression "then" expression-or-do
     
-    control-flow-expr ::= loop | while | for | "break" | "continue"
-    postfix-if        ::= ( statement | expression ) ( "if" | "unless" ) expression
+    control-flow-stmt ::= loop | while | for | "break" | "continue"
     loop              ::= "loop" expression-or-do
     while             ::= "while" expression "do" expression-or-do
     for               ::= "for" expression "in" expression "do" expression-or-do

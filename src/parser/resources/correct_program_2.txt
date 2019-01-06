@@ -1,6 +1,9 @@
 let b <- 40
 
-if c then d <- 4 else False
+print "hello" if cond1
+print "hi" unless cond2
+
+if c then d <- 4 else cond3
 
 if e then d
 else f
@@ -15,7 +18,7 @@ if j then
 else
     l
 
-when True is
+when cond4 is
     m then n
     o then
         p
@@ -27,13 +30,13 @@ loop
     print s
     print t
 
-while True do print u > v
+while cond5 do print u > v
 
-while True do
+while cond6 do
     print "asdf"
 
-for ii in w do print x
+for it1 in set1 do print x
 
-for ij in w do
+for it2 in set2 do
     print y
     print z

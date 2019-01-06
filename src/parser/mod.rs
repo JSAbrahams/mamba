@@ -7,7 +7,8 @@ use super::lexer::Token;
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 
 mod arithmetic;
-mod control_flow;
+mod control_flow_expr;
+mod control_flow_stmt;
 mod expression;
 mod identifier;
 mod statement;
@@ -70,29 +71,39 @@ pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
     return parse_do(&mut input.iter().peekable(), 0).0;
 }
 
-// expression ::= "(" ( expression-or-do | newline do ) ")" | "return" expression | arithmetic
-//            | control-flow | expression "<-" expression
-pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
-    -> (Result<ASTNode, String>, i32) {
-    match match it.peek() {
-        Some(Token::LPar) => expression::parse_bracket(it, ind),
-        Some(Token::Ret) => expression::parse_return(it, ind),
-        Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
-        Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
-        Some(Token::Sub) => arithmetic::parse(it, ind),
-        Some(Token::If) | Some(Token::When) | Some(Token::For) | Some(Token::While) |
-        Some(Token::Loop) => control_flow::parse(it, ind),
-
-        Some(t) => (Err(format!("Unexpected token while parsing expression: {:?}", t).to_string()),
-                    ind),
-        None => (Err("Unexpected end of file.".to_string()), ind)
+// statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
+// postfix-if        ::= ( statement-or-expr ) ( "if" | "unless" ) expression-or-do
+fn parse_statement_or_expr(it: &mut Peekable<Iter<Token>>, ind: i32)
+                           -> (Result<ASTNode, String>, i32) {
+    return match match it.peek() {
+        Some(Token::Let) | Some(Token::Mut) | Some(Token::Print) | Some(Token::DoNothing) |
+        Some(Token::For) | Some(Token::While) | Some(Token::Loop) => parse_statement(it, ind),
+        _ => parse_expression(it, ind)
     } {
         (Ok(l_expr), new_ind) => match it.peek() {
             Some(Token::Assign) => {
                 it.next();
-                match parse_expression(it, new_ind) {
+                match parse_expression_or_do(it, new_ind) {
                     (Ok(r_expr), nnew_ind) =>
                         (Ok(ASTNode::Assign(Box::new(l_expr), Box::new(r_expr))),
+                         nnew_ind),
+                    err => err
+                }
+            }
+            Some(Token::If) => {
+                it.next();
+                match parse_expression_or_do(it, new_ind) {
+                    (Ok(r_expr), nnew_ind) =>
+                        (Ok(ASTNode::If(Box::new(l_expr), Box::new(r_expr))),
+                         nnew_ind),
+                    err => err
+                }
+            }
+            Some(Token::Unless) => {
+                it.next();
+                match parse_expression_or_do(it, new_ind) {
+                    (Ok(r_expr), nnew_ind) =>
+                        (Ok(ASTNode::Unless(Box::new(l_expr), Box::new(r_expr))),
                          nnew_ind),
                     err => err
                 }
@@ -100,17 +111,37 @@ pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
             Some(_) | None => (Ok(l_expr), new_ind)
         }
         err => err
-    }
+    };
 }
 
-// statement ::= "print" expression | identifier | "donothing"
+
+// statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt
 fn parse_statement(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) | Some(Token::Mut) => identifier::parse(it, ind),
         Some(Token::Print) => statement::parse_print(it, ind),
         Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), ind),
+        Some(Token::For) | Some(Token::While) | Some(Token::Loop) =>
+            control_flow_stmt::parse(it, ind),
 
         Some(t) => (Err(format!("Unexpected token while parsing statement: {:?}", t).to_string()),
+                    ind),
+        None => (Err("Unexpected end of file.".to_string()), ind)
+    };
+}
+
+// expression ::= "(" expression-or-do ")" | "return" expression | arithmetic | control-flow-expr
+pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
+                        -> (Result<ASTNode, String>, i32) {
+    return match it.peek() {
+        Some(Token::LPar) => expression::parse_bracket(it, ind),
+        Some(Token::Ret) => expression::parse_return(it, ind),
+        Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
+        Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
+        Some(Token::Sub) => arithmetic::parse(it, ind),
+        Some(Token::If) | Some(Token::When) => control_flow_expr::parse(it, ind),
+
+        Some(t) => (Err(format!("Unexpected token while parsing expression: {:?}", t).to_string()),
                     ind),
         None => (Err("Unexpected end of file.".to_string()), ind)
     };
@@ -123,15 +154,13 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
     let mut is_prev_empty_line = false;
 
     while let Some(&t) = it.peek() {
-        let (res, this_ind) = match t {
-            Token::Print | Token::Mut | Token::Let | Token::DoNothing => parse_statement(it, ind),
-            Token::NL => {
-                if is_prev_empty_line { return (Err("Double empty line found.".to_string()), ind); }
-                is_prev_empty_line = true;
-                it.next();
-                continue;
-            }
-            _ => parse_expression(it, ind)
+        let (res, this_ind) = if t == &Token::NL {
+            if is_prev_empty_line { return (Err("Double empty line found.".to_string()), ind); }
+            is_prev_empty_line = true;
+            it.next();
+            continue;
+        } else {
+            parse_statement_or_expr(it, ind)
         };
 
         match res {
