@@ -5,6 +5,13 @@ use super::lexer::Token;
 
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
+macro_rules! postfix_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
+    $it.next();
+    match parse_expression_or_do($it, $ind) {
+        (Ok(post), nnew_ind) => (Ok($op(Box::new($pre), Box::new(post))), nnew_ind),
+        err => err
+    }
+}}}
 
 mod arithmetic;
 mod control_flow_expr;
@@ -80,35 +87,11 @@ fn parse_statement_or_expr(it: &mut Peekable<Iter<Token>>, ind: i32)
         Some(Token::For) | Some(Token::While) | Some(Token::Loop) => parse_statement(it, ind),
         _ => parse_expression(it, ind)
     } {
-        (Ok(l_expr), new_ind) => match it.peek() {
-            Some(Token::Assign) => {
-                it.next();
-                match parse_expression_or_do(it, new_ind) {
-                    (Ok(r_expr), nnew_ind) =>
-                        (Ok(ASTNode::Assign(Box::new(l_expr), Box::new(r_expr))),
-                         nnew_ind),
-                    err => err
-                }
-            }
-            Some(Token::If) => {
-                it.next();
-                match parse_expression_or_do(it, new_ind) {
-                    (Ok(r_expr), nnew_ind) =>
-                        (Ok(ASTNode::If(Box::new(l_expr), Box::new(r_expr))),
-                         nnew_ind),
-                    err => err
-                }
-            }
-            Some(Token::Unless) => {
-                it.next();
-                match parse_expression_or_do(it, new_ind) {
-                    (Ok(r_expr), nnew_ind) =>
-                        (Ok(ASTNode::Unless(Box::new(l_expr), Box::new(r_expr))),
-                         nnew_ind),
-                    err => err
-                }
-            }
-            Some(_) | None => (Ok(l_expr), new_ind)
+        (Ok(pre), new_ind) => match it.peek() {
+            Some(Token::Assign) => postfix_op!(it, new_ind, ASTNode::Assign, pre),
+            Some(Token::If) => postfix_op!(it, new_ind, ASTNode::If, pre),
+            Some(Token::Unless) => postfix_op!(it, new_ind, ASTNode::Unless, pre),
+            Some(_) | None => (Ok(pre), new_ind)
         }
         err => err
     };
@@ -154,15 +137,17 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
     let mut is_prev_empty_line = false;
 
     while let Some(&t) = it.peek() {
-        let (res, this_ind) = if t == &Token::NL {
-            if is_prev_empty_line { return (Err("Double empty line found.".to_string()), ind); }
-            is_prev_empty_line = true;
-            it.next();
-            continue;
-        } else {
-            parse_statement_or_expr(it, ind)
-        };
+        match *t {
+            Token::NL if is_prev_empty_line => break,
+            Token::NL => {
+                is_prev_empty_line = true;
+                it.next();
+                continue;
+            }
+            _ => ()
+        }
 
+        let (res, this_ind) = parse_statement_or_expr(it, ind);
         match res {
             Ok(ast_node) => {
                 nodes.push(ast_node);
