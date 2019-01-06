@@ -14,7 +14,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
 
     while let Some(&t) = it.peek() {
         match t {
-            Token::Fun => match parse_function_definition(it, 0) {
+            Token::Fun => match function::parse_function_definition(it, 0) {
                 (Ok(definition), _) => functions.push(definition),
                 (err, _) => return err
             }
@@ -27,16 +27,6 @@ pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
 
 
     return Ok(ASTNode::Program(functions, do_blocks));
-}
-
-fn parse_function_definition(it: &mut Peekable<Iter<Token>>, ind: i32)
-                             -> (Result<ASTNode, String>, i32) {
-    let this_ind = util::ind_count(it);
-    if this_ind > ind {
-        return (Err(format!("Expected indentation of {}, was {}.", ind, this_ind)), this_ind);
-    }
-
-    panic!("Not implemented")
 }
 
 // function-call ::= maybe-expr "." id tuple
