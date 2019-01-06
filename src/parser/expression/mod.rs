@@ -11,14 +11,14 @@ mod control_flow;
 
 // expression ::= "(" expression-or-do ")" | "return" expression | arithmetic | control-flow-expr
 pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32)
-                        -> (Result<ASTNode, String>, i32) {
+             -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::LPar) => parse_bracket(it, ind),
         Some(Token::Ret) => parse_return(it, ind),
         Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
         Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
         Some(Token::Sub) => arithmetic::parse(it, ind),
-        Some(Token::If) | Some(Token::When) => control_flow::parse(it, ind),
+        Some(Token::If) | Some(Token::Unless) | Some(Token::When) => control_flow::parse(it, ind),
 
         Some(t) => (Err(format!("Unexpected token while parsing expression: {:?}", t).to_string()),
                     ind),
