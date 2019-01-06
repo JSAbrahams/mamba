@@ -1,7 +1,7 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::check_ind;
-use crate::parser::parse_expression;
+use crate::parser::util::check_ind;
+use crate::parser::expression::parse as parse_expression;
 use crate::parser::parse_expression_or_do;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -160,8 +160,7 @@ fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
 
             match parse_expression_or_do(it, ind) {
                 (Ok(expr_or_do), nnew_ind) =>
-                    (Ok(ASTNode::If(Box::new(expr), Box::new(expr_or_do))),
-                     nnew_ind),
+                    (Ok(ASTNode::If(Box::new(expr), Box::new(expr_or_do))), nnew_ind),
                 err => err
             }
         }

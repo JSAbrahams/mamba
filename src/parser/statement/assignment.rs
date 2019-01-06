@@ -1,14 +1,14 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::parse_expression;
+use crate::parser::expression::parse as parse_expression;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// identifier ::= assignment | mutable-assignment
+// assignment ::= normal-assignment | mutable-assignment
 pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::Let) => parse_assignment(it, ind),
+        Some(Token::Let) => parse_nor_assign(it, ind),
         Some(Token::Mut) => parse_mut_assign(it, ind),
 
         Some(_) => panic!("token not recognized"),
@@ -16,8 +16,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     };
 }
 
-// assignment ::= "let" id "<-" expression
-fn parse_assignment(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+// normal-assignment ::= "let" id "<-" expression
+fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) => {
             it.next();
@@ -56,7 +56,7 @@ fn parse_id(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
 fn parse_mut_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::Mut));
 
-    match parse_assignment(it, ind) {
+    match parse_nor_assign(it, ind) {
         (Ok(assign), new_indent) => (Ok(ASTNode::Mut(Box::new(assign))), new_indent),
         err => err
     }

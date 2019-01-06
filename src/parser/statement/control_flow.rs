@@ -1,6 +1,6 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::parse_expression;
+use crate::parser::expression::parse as parse_expression;
 use crate::parser::parse_expression_or_do;
 use std::iter::Iterator;
 use std::iter::Peekable;

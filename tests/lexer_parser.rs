@@ -1,13 +1,14 @@
-use crate::lexer::tokenize;
+use my_lang::lexer::tokenize;
+use my_lang::parser::parse;
+
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
-use super::*;
 
-fn open_file(file: &str) -> String {
+fn resource_string_content(file: &str) -> String {
     let mut content = String::new();
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    source_path.push("src\\parser\\resources\\".to_owned() + file);
+    source_path.push("tests\\resources\\".to_owned() + file);
 
     match source_path.to_str() {
         Some(path) => match File::open(path) {
@@ -22,12 +23,12 @@ fn open_file(file: &str) -> String {
 
 #[test]
 fn correct_1() {
-    let source = open_file("correct_program_1.txt");
-    parse( tokenize(source).unwrap()).unwrap();
+    let source = resource_string_content("correct_program_1.txt");
+    parse(tokenize(source).unwrap()).unwrap();
 }
 
 #[test]
 fn correct_2() {
-    let source = open_file("correct_program_2.txt");
-    parse( tokenize(source).unwrap()).unwrap();
+    let source = resource_string_content("correct_program_2.txt");
+    parse(tokenize(source).unwrap()).unwrap();
 }

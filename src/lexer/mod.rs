@@ -236,4 +236,4 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
 }
 
 #[cfg(test)]
-mod lexer_tests;
+mod test;
