@@ -1,0 +1,26 @@
+let b <- 40
+
+print "hello" if cond1
+print "hi" unless cond2
+
+if c then d <- 4 else asdf
+unless d then e <- 5 else fdsa
+
+if f then g else h
+if i then j else k
+
+if l then
+    m
+
+unless n then
+    o
+
+if p then
+    q
+else
+    r
+
+unless s then
+    t
+else
+    u

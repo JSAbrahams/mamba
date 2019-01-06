@@ -1,8 +1,8 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::util::check_ind;
 use crate::parser::expression::parse as parse_expression;
-use crate::parser::parse_expression_or_do;
+use crate::parser::util::ind_count;
+use crate::parser::parse_expression_or_statement_or_do;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -19,7 +19,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     };
 }
 
-// if ::= ( [...] | "unless" ) expression "then" expression-or-do [ "else" expression-or-do ]
+// if ::= ( [...] | "unless" ) expression "then" expr-or-stmt-or-do [ "else" expr-or-stmt-or-do ]
 fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::Unless));
 
@@ -29,11 +29,11 @@ fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
                 return (Err("'Then' keyword expected".to_string()), new_ind);
             }
 
-            match parse_expression_or_do(it, new_ind) {
+            match parse_expression_or_statement_or_do(it, new_ind) {
                 (Ok(then), nnew_ind) => match it.peek() {
                     Some(Token::Else) => {
                         it.next();
-                        match parse_expression_or_do(it, nnew_ind) {
+                        match parse_expression_or_statement_or_do(it, nnew_ind) {
                             (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::UnlessElse(
                                 Box::new(cond),
                                 Box::new(then),
@@ -50,7 +50,7 @@ fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
     };
 }
 
-// if ::= ( "if" | [...] ) expression "then" expression-or-do [ "else" expression-or-do ]
+// if ::= ( "if" | [...] ) expression "then" expr-or-stmt-or-do [ "else" expr-or-stmt-or-do ]
 fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::If));
 
@@ -60,11 +60,11 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
                 return (Err("'Then' keyword expected".to_string()), new_ind);
             }
 
-            match parse_expression_or_do(it, new_ind) {
+            match parse_expression_or_statement_or_do(it, new_ind) {
                 (Ok(then), nnew_ind) => match it.peek() {
                     Some(Token::Else) => {
                         it.next();
-                        match parse_expression_or_do(it, nnew_ind) {
+                        match parse_expression_or_statement_or_do(it, nnew_ind) {
                             (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::IfElse(
                                 Box::new(cond),
                                 Box::new(then),
@@ -116,7 +116,10 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
             continue;
         }
 
-        if let Err(err) = check_ind(it, ind) { return (Err(err), ind); }
+        let act_ind = ind_count(it);
+        if ind != act_ind {
+            return (Err(format!("Expected indentation level {}, was {}.", ind, act_ind)), act_ind);
+        }
 
         let (res, this_ind) = parse_when_case(it, ind);
         if it.next() != Some(&Token::NL) {
@@ -136,9 +139,16 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
             return (Err(format!("Expression or statement not followed by a newline in 'while'.\
                      found: {:?}.", it.peek())), ind);
         }
-        if let Err(err) = check_ind(it, ind) {
-            /* if end of file doesn't matter */
-            if it.peek().is_some() { return (Err(err), ind); }
+
+        let next_ind = ind_count(it);
+        /* Indentation decrease marks end of while cases */
+        if next_ind < ind { break; };
+
+        if next_ind >= ind && it.peek().is_some() {
+            /* indentation increased unexpectedly */
+            return (Err(
+                format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
+                    ind);
         }
 
         match res {
@@ -150,7 +160,7 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
     (Ok(when_cases), ind)
 }
 
-// when-case ::= expression "then" expression-or-do
+// when-case ::= expression "then" expr-or-stmt-or-do
 fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     match parse_expression(it, ind) {
         (Ok(expr), new_ind) => {
@@ -158,7 +168,7 @@ fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
                 return (Err("Expected 'then' after when case expression".to_string()), new_ind);
             }
 
-            match parse_expression_or_do(it, ind) {
+            match parse_expression_or_statement_or_do(it, ind) {
                 (Ok(expr_or_do), nnew_ind) =>
                     (Ok(ASTNode::If(Box::new(expr), Box::new(expr_or_do))), nnew_ind),
                 err => err

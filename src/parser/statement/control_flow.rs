@@ -1,7 +1,7 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression::parse as parse_expression;
-use crate::parser::parse_expression_or_do;
+use crate::parser::parse_expression_or_statement_or_do;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -20,17 +20,17 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     };
 }
 
-// loop ::= "loop" expression-or-do
+// loop ::= "loop" expr-or-stmt-or-do
 fn parse_loop(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::Loop));
 
-    return match parse_expression_or_do(it, ind) {
+    return match parse_expression_or_statement_or_do(it, ind) {
         (Ok(expr_or_do), new_ind) => (Ok(ASTNode::Loop(Box::new(expr_or_do))), new_ind),
         err => err
     };
 }
 
-// while ::= "while" expression "do" expression-or-do
+// while ::= "while" expression "do" expr-or-stmt-or-do
 fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::While));
 
@@ -40,7 +40,7 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
                 return (Err("Expected 'do' after while conditional.".to_string()), new_ind);
             }
 
-            match parse_expression_or_do(it, new_ind) {
+            match parse_expression_or_statement_or_do(it, new_ind) {
                 (Ok(expr_or_do), nnew_ind) =>
                     (Ok(ASTNode::While(Box::new(cond), Box::new(expr_or_do))),
                      nnew_ind),
@@ -51,7 +51,7 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
     };
 }
 
-// for ::= "for" expression "in" expression "do" expression-or-do
+// for ::= "for" expression "in" expression "do" expr-or-stmt-or-do
 fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::For));
 
@@ -67,7 +67,7 @@ fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
                         return (Err("Expected 'do' after for collection".to_string()), new_ind);
                     }
 
-                    match parse_expression_or_do(it, nnew_ind) {
+                    match parse_expression_or_statement_or_do(it, nnew_ind) {
                         (Ok(expr_or_do), nnnew_ind) =>
                             (Ok(ASTNode::For(Box::new(expr), Box::new(col),
                                              Box::new(expr_or_do))), nnnew_ind),

@@ -1,7 +1,8 @@
+use crate::lexer::Token;
+use crate::parser::util::ind_count;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
-use super::lexer::Token;
 
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
@@ -77,7 +78,11 @@ pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
 
 // do-block ::= ( { ( expression | statement ) newline } | newline )
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    if let Err(err) = util::check_ind(it, ind) { return (Err(err), ind); }
+    let this_ind = ind_count(it);
+    if this_ind > ind {
+        return (Err(format!("Expected indentation of {}, was {}.", ind, this_ind)), this_ind);
+    }
+
     let mut nodes = Vec::new();
     let mut is_prev_empty_line = false;
 
@@ -97,20 +102,21 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
             Ok(ast_node) => {
                 nodes.push(ast_node);
 
-                if this_ind < ind {
-                    break;
-                } else if this_ind > ind {
-                    return (Err("Indentation unexpectedly increased.".to_string()), ind);
-                }
-
                 is_prev_empty_line = false;
                 if it.peek() != None && Some(&Token::NL) != it.next() {
                     return (Err(format!("Expression or statement not followed by a newline: {:?}.",
                                         it.peek())), ind);
                 }
-                if let Err(err) = util::check_ind(it, ind) {
-                    /* if end of file doesn't matter */
-                    if it.peek().is_some() { return (Err(err), ind); }
+
+                let next_ind = util::ind_count(it);
+                /* Indentation decrease marks end of do block */
+                if next_ind < ind { break; };
+
+                if next_ind > ind && it.peek().is_some() {
+                    /* indentation increased unexpectedly */
+                    return (Err(
+                        format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
+                            ind);
                 }
             }
             err => return (err, this_ind)
@@ -124,13 +130,19 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
 pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, ind: i32)
                               -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::NL) => {
-            it.next();
-            parse_do(it, ind + 1)
-        }
+        Some(Token::NL) => next_and!(it, parse_do(it, ind + 1)),
         Some(_) => expression::parse(it, ind),
         None => (Ok(ASTNode::DoNothing), ind)
     };
+}
+
+// expr-or-stmt-or-do::= expression-or-do | statement
+pub fn parse_expression_or_statement_or_do(it: &mut Peekable<Iter<Token>>, ind: i32)
+                                           -> (Result<ASTNode, String>, i32) {
+    return match it.peek() {
+        Some(Token::NL) => next_and!(it, parse_do(it, ind + 1)),
+        Some(_) | None => parse_statement_or_expr(it, ind)
+    }
 }
 
 // statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if

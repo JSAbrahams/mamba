@@ -1,13 +1,11 @@
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
-use super::super::lexer::Token;
+use crate::lexer::Token;
 
-pub fn check_ind(it: &mut Peekable<Iter<Token>>, ind: i32) -> Result<(), String> {
-    for i in 0..ind {
-        if it.next() != Some(&Token::Ind) {
-            return Err(format!("Expected indentation level of {}, but was {}.", ind, i));
-        }
-    }
-    Ok(())
+pub fn ind_count(it: &mut Peekable<Iter<Token>>) -> i32 {
+    let mut ind_count = 0;
+    while Some(&&Token::Ind) == it.peek() { next_and!(it, ind_count += 1) }
+
+    return ind_count;
 }

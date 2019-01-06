@@ -22,13 +22,13 @@ fn resource_string_content(file: &str) -> String {
 }
 
 #[test]
-fn correct_1() {
-    let source = resource_string_content("correct_program_1.txt");
+fn parse_assigns_and_while() {
+    let source = resource_string_content("assign_and_while.txt");
     parse(tokenize(source).unwrap()).unwrap();
 }
 
 #[test]
-fn correct_2() {
-    let source = resource_string_content("correct_program_2.txt");
+fn parse_if_statements() {
+    let source = resource_string_content("if_statements.txt");
     parse(tokenize(source).unwrap()).unwrap();
 }

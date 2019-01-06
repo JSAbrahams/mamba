@@ -8,7 +8,7 @@ use std::slice::Iter;
 mod assignment;
 mod control_flow;
 
-// statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt
+// statement ::= "print" expression | assignment | "donothing" | control-flow-stmt
 pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) | Some(Token::Mut) => assignment::parse(it, ind),

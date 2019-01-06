@@ -2,8 +2,10 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     program           ::= do-block
+    (* a do block is an expression iff last is expression, else statement *)
     do-block          ::= { statement-or-expr newline } [ newline ]
-    expression-or-do  ::= ( expression | newline indent do-block ) 
+    expression-or-do  ::= expression | newline indent do-block
+    expr-or-stmt-or-do::= statement-or-expr | newline indent do-block
     
     (* assignment is a statement *)
     statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
@@ -38,14 +40,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr ::= if | when
-    if                ::= ( "if" | "unless" ) expression "then" expression-or-do [ "else" expression-or-do ]
+    if                ::= ( "if" | "unless" ) expression "then" expr-or-stmt-or-do [ "else" expr-or-stmt-or-do ]
     when              ::= "when" expression "is" newline { indent when-case }
-    when-case         ::= expression "then" expression-or-do
+    when-case         ::= expression "then" expr-or-stmt-or-do
     
     control-flow-stmt ::= loop | while | for | "break" | "continue"
-    loop              ::= "loop" expression-or-do
-    while             ::= "while" expression "do" expression-or-do
-    for               ::= "for" expression "in" expression "do" expression-or-do
+    loop              ::= "loop" expr-or-stmt-or-do
+    while             ::= "while" expression "do" expr-or-stmt-or-do
+    for               ::= "for" expression "in" expression "do" expr-or-stmt-or-do
     
     indent            ::= \t | \s\s\s\s
     newline           ::= \n | \r\n
