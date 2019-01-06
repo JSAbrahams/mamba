@@ -3,11 +3,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     program           ::= do-block
     (* a do block is an expression iff last is expression, else statement *)
-    do-block          ::= { statement-or-expr newline } [ newline ]
-    expression-or-do  ::= expression | newline indent do-block
-    expr-or-stmt-or-do::= statement-or-expr | newline indent do-block
+    do-block          ::= { { indent } statement-or-expr newline } [ newline ]
+    expression-or-do  ::= expression | newline do-block
+    expr-or-stmt-or-do::= statement-or-expr | newline do-block
     
-    (* assignment is a statement *)
     statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
     statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt
     expression        ::= "(" expression-or-do ")" | "return" expression | arithmetic | control-flow-expr
@@ -41,7 +40,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr ::= if | when
     if                ::= ( "if" | "unless" ) expression "then" expr-or-stmt-or-do [ "else" expr-or-stmt-or-do ]
-    when              ::= "when" expression "is" newline { indent when-case }
+    when              ::= "when" expression "is" newline { { indent } when-case }
     when-case         ::= expression "then" expr-or-stmt-or-do
     
     control-flow-stmt ::= loop | while | for | "break" | "continue"
@@ -51,3 +50,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     indent            ::= \t | \s\s\s\s
     newline           ::= \n | \r\n
+
+The language uses indentation to denote do-blocks. The indentation amount can't be described in the grammar directly, 
+but it does adhere to the following rules:
+
+* Every new expression or statement in a do block must be preceded by n + 1 `indent`'s, where n is the amount of 
+  `indent`'s before the do block
+* The same holds for every new `when-case` in a `when`
