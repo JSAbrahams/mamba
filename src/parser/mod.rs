@@ -12,6 +12,10 @@ mod util;
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
+    FunDef(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    FunDefNoRetType(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    FunCall(Box<ASTNode>, Box<ASTNode>, Vec<ASTNode>),
+
     Id(String),
     Assign(Box<ASTNode>, Box<ASTNode>),
     Mut(Box<ASTNode>),

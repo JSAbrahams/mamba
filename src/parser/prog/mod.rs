@@ -6,6 +6,8 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
+mod function;
+
 // do-block ::= ( { expr-or-stmt newline } | newline )
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     let this_ind = util::ind_count(it);
