@@ -1,6 +1,6 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::expression_or_statement::parse;
+use crate::parser::expression_or_statement::parse as parse_expr_or_stmt;
 use crate::parser::util;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -8,7 +8,38 @@ use std::slice::Iter;
 
 mod function;
 
-// function-call  ::= maybe-expr "." id tuple
+pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
+    let mut functions = Vec::new();
+    let mut do_blocks = Vec::new();
+
+    while let Some(&t) = it.peek() {
+        match t {
+            Token::Fun => match parse_function_definition(it, 0) {
+                (Ok(definition), _) => functions.push(definition),
+                (err, _) => return err
+            }
+            _ => match parse_do(it, 0) {
+                (Ok(do_block), _) => do_blocks.push(do_block),
+                (err, _) => return err
+            }
+        }
+    }
+
+
+    return Ok(ASTNode::Program(functions, do_blocks));
+}
+
+fn parse_function_definition(it: &mut Peekable<Iter<Token>>, ind: i32)
+                             -> (Result<ASTNode, String>, i32) {
+    let this_ind = util::ind_count(it);
+    if this_ind > ind {
+        return (Err(format!("Expected indentation of {}, was {}.", ind, this_ind)), this_ind);
+    }
+
+    panic!("Not implemented")
+}
+
+// function-call ::= maybe-expr "." id tuple
 pub fn parse_function_call(id: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
                            -> (Result<ASTNode, String>, i32) {
     match function::parse_call(it, ind) {
@@ -39,7 +70,7 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
             _ => ()
         }
 
-        let (res, this_ind) = parse(it, ind);
+        let (res, this_ind) = parse_expr_or_stmt(it, ind);
         match res {
             Ok(ast_node) => {
                 nodes.push(ast_node);

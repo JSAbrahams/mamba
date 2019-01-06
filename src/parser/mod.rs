@@ -12,6 +12,7 @@ mod util;
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
+    Program(Vec<ASTNode>, Vec<ASTNode>),
     FunDef(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunDefNoRetType(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunCall(Box<ASTNode>, Box<ASTNode>, Vec<ASTNode>),
@@ -69,7 +70,7 @@ pub enum ASTNode {
 
 // program ::= do-block
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
-    return program::parse_do(&mut input.iter().peekable(), 0).0;
+    return program::parse(&mut input.iter().peekable())
 }
 
 #[cfg(test)]
