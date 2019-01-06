@@ -9,14 +9,9 @@ use std::slice::Iter;
 
 // expression ::= "(" ( expression-or-do | newline do ) ")" | ...
 pub fn parse_bracket(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::LPar));
+    debug_assert_eq!(it.next(), Some(&Token::LPar));
 
-    let (expr_or_do, new_ind) = if it.peek() == Some(&&Token::NL) {
-        next_and!(it, parse_do(it, ind))
-    } else {
-        parse_expression_or_do(it, ind)
-    };
-
+    let (expr_or_do, new_ind) = parse_expression_or_do(it, ind);
     return match it.next() {
         Some(Token::RPar) => (expr_or_do, new_ind),
 
@@ -27,7 +22,7 @@ pub fn parse_bracket(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNod
 
 // expression ::= ... | "return" expression | ...
 pub fn parse_return(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::Ret));
+    debug_assert_eq!(it.next(), Some(&Token::Ret));
 
     return match parse_expression(it, ind) {
         (Ok(expr), new_ind) => (Ok(ASTNode::Return(Box::new(expr))), new_ind),

@@ -22,7 +22,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
 
 // loop ::= "loop" expression-or-do
 fn parse_loop(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::Loop));
+    debug_assert_eq!(it.next(), Some(&Token::Loop));
+
     return match parse_expression_or_do(it, ind) {
         (Ok(expr_or_do), new_ind) => (Ok(ASTNode::Loop(Box::new(expr_or_do))), new_ind),
         err => err
@@ -31,7 +32,8 @@ fn parse_loop(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
 
 // while ::= "while" expression "do" expression-or-do
 fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::While));
+    debug_assert_eq!(it.next(), Some(&Token::While));
+
     return match parse_expression(it, ind) {
         (Ok(cond), new_ind) => {
             if it.next() != Some(&Token::Do) {
@@ -51,7 +53,8 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
 
 // for ::= "for" expression "in" expression "do" expression-or-do
 fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::For));
+    debug_assert_eq!(it.next(), Some(&Token::For));
+
     return match parse_expression(it, ind) {
         (Ok(expr), new_ind) => {
             if it.next() != Some(&Token::In) {

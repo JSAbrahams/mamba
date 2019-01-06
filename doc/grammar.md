@@ -2,8 +2,8 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     program           ::= do-block
-    do-block          ::= { statement-or-expr newline }
-    expression-or-do  ::= ( expression | newline indent do-block )
+    do-block          ::= { statement-or-expr newline } [ newline ]
+    expression-or-do  ::= ( expression | newline indent do-block ) 
     
     (* assignment is a statement *)
     statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
@@ -38,7 +38,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr ::= if | when
-    if                ::= ( "if" | "unless" ) expression "then" expression-or-do [ [ newline ] "else" expression-or-do ]
+    if                ::= ( "if" | "unless" ) expression "then" expression-or-do [ "else" expression-or-do ]
     when              ::= "when" expression "is" newline { indent when-case }
     when-case         ::= expression "then" expression-or-do
     

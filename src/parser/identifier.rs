@@ -54,7 +54,7 @@ fn parse_id(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
 
 // mutable-assignment ::= "mutable" assignment
 fn parse_mut_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::Mut));
+    debug_assert_eq!(it.next(), Some(&Token::Mut));
 
     match parse_assignment(it, ind) {
         (Ok(assign), new_indent) => (Ok(ASTNode::Mut(Box::new(assign))), new_indent),

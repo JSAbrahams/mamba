@@ -3,7 +3,7 @@ let b <- 40
 print "hello" if cond1
 print "hi" unless cond2
 
-if c then d <- 4 else cond3
+if c then d <- 4 else donothing
 
 if e then d
 else f
