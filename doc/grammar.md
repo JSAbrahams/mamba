@@ -1,18 +1,26 @@
 # Grammar
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    program           ::= do-block
+    function-call     ::= id "." id tuple
+    function-def      ::= "fun" id "(" { function-arg } ")" [ "->" ( id | function-tuple ) ] "is" expr-or-stmt-or-do
+    function-arg      ::= ( id | function-tuple ) id 
+    function-tuple    ::= "(" ( id | function-tuple ) { "," ( id | function-tuple ) } ")"
+    
+    program           ::= { ( function-def | do-block ) }
+    
     (* a do block is an expression iff last is expression, else statement *)
     do-block          ::= { { indent } statement-or-expr newline } [ newline ]
     expression-or-do  ::= expression | newline do-block
     expr-or-stmt-or-do::= statement-or-expr | newline do-block
+    tuple             ::= "(" expression { "," expression } ")"
     
-    statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
+    statement-or-expr ::= statement | expression | expression "<-" expression-or-do | postfix-if | function-call
     statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt
-    expression        ::= "(" expression-or-do ")" | "return" expression | arithmetic | control-flow-expr
+    expression        ::= "(" expression-or-do ")" | tuple | "return" expression | arithmetic | control-flow-expr
     postfix-if        ::= ( statement-or-expr ) ( "if" | "unless" ) expression-or-do
     
     id                ::= { character }
+    
     assignment        ::= normal-assignment | mut-assignment
     normal-assignment ::= "let" id "<-" expression
     mut-assignment    ::= "mutable" assignment
