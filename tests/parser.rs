@@ -1,6 +1,5 @@
 use my_lang::lexer::tokenize;
 use my_lang::parser::parse;
-
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -31,4 +30,10 @@ fn parse_assigns_and_while() {
 fn parse_if_statements() {
     let source = resource_string_content("if_statements.txt");
     parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn parse_tuples() {
+    let source = resource_string_content("tuples.txt");
+    println!("{:?}", parse(tokenize(source).unwrap()).unwrap());
 }

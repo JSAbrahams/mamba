@@ -1,32 +1,33 @@
 # Grammar
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
+    (* a function definition contains no expressions in the signature *)
     function-call     ::= id "." id tuple
-    function-def      ::= "fun" id "(" { function-arg } ")" [ "->" ( id | function-tuple ) ] "is" expr-or-stmt-or-do
+    function-def      ::= "fun" id "(" { function-arg } ")" [ "->" ( id | function-tuple ) ] "is" expr-or-stmt
     function-arg      ::= ( id | function-tuple ) id 
     function-tuple    ::= "(" ( id | function-tuple ) { "," ( id | function-tuple ) } ")"
     
     program           ::= { ( function-def | do-block ) }
     
     (* a do block is an expression iff last is expression, else statement *)
-    do-block          ::= { { indent } statement-or-expr newline } [ newline ]
-    expression-or-do  ::= expression | newline do-block
-    expr-or-stmt-or-do::= statement-or-expr | newline do-block
-    tuple             ::= "(" expression { "," expression } ")"
+    do-block          ::= { { indent } expr-or-stmt newline } [ newline ]
     
-    statement-or-expr ::= statement | expression | expression "<-" expression-or-do | postfix-if | function-call
-    statement         ::= "print" expression | assignment | "donothing" | control-flow-stmt
-    expression        ::= "(" expression-or-do ")" | tuple | "return" expression | arithmetic | control-flow-expr
-    postfix-if        ::= ( statement-or-expr ) ( "if" | "unless" ) expression-or-do
+    (* can be either a statement or expression, must be checked by type checker *)
+    maybe-expr        ::= expression | "(" ( maybe-expr [ "," maybe-expr] ")" | control-flow-expr  
+                       | maybe-expr "<-" maybe-expr | function-call | newline do-block
+    expr-or-stmt      ::= statement | maybe-expr ( [ "<-" maybe_expr ] | ( "if" | "unless" ) maybe_expr )
+                       
+    statement         ::= "print" maybe-expr | assignment | "donothing" | control-flow-stmt
+    expression        ::= "return" maybe-expr | arithmetic
     
     id                ::= { character }
     
     assignment        ::= normal-assignment | mut-assignment
-    normal-assignment ::= "let" id "<-" expression
+    normal-assignment ::= "let" id "<-" maybe-expr
     mut-assignment    ::= "mutable" assignment
     
-    arithmetic        ::= term | unary expression | term additive expression
-    term              ::= factor | factor multiclative-operator expression
+    arithmetic        ::= term | unary maybe-expr | term additive maybe-expr
+    term              ::= factor | factor multiclative-operator maybe-expr
     factor            ::= constant | id
     
     (* e-notation can either be real or integer. Must be checked by type checker upon use *)
@@ -47,14 +48,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr ::= if | when
-    if                ::= ( "if" | "unless" ) expression "then" expr-or-stmt-or-do [ "else" expr-or-stmt-or-do ]
-    when              ::= "when" expression "is" newline { { indent } when-case }
-    when-case         ::= expression "then" expr-or-stmt-or-do
+    if                ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
+    when              ::= "when" maybe-expr "is" newline { { indent } when-case }
+    when-case         ::= maybe-expr "then" expr-or-stmt
     
     control-flow-stmt ::= loop | while | for | "break" | "continue"
-    loop              ::= "loop" expr-or-stmt-or-do
-    while             ::= "while" expression "do" expr-or-stmt-or-do
-    for               ::= "for" expression "in" expression "do" expr-or-stmt-or-do
+    loop              ::= "loop" expr-or-stmt
+    while             ::= "while" maybe-expr "do" expr-or-stmt
+    for               ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
     
     indent            ::= \t | \s\s\s\s
     newline           ::= \n | \r\n
@@ -65,3 +66,7 @@ but it does adhere to the following rules:
 * Every new expression or statement in a do block must be preceded by n + 1 `indent`'s, where n is the amount of 
   `indent`'s before the do block
 * The same holds for every new `when-case` in a `when`
+
+A `maybe-expr` is used in a situation where an expression is required,  but we cannot know in advance whether it will be
+an expression or statement without type checking the program.
+`expr-or-stmt` may be used when it doesn't matter whether it is an expression or statement.

@@ -50,29 +50,10 @@ fn e_number_float() {
 
 #[test]
 fn e_number_without_num() {
-    let source = ".e10";
+    let source = "0.e10";
     let tokens = tokenize(source.to_string()).unwrap();
 
-    assert_eq!(vec![Token::ENum(0.to_string(), 10.to_string())], tokens)
-}
-
-#[test]
-fn float_and_e_number() {
-    let source = "14.39.e30";
-    let tokens = tokenize(source.to_string()).unwrap();
-
-    assert_eq!(vec![Token::Real(14.39.to_string()), Token::ENum(0.to_string(),
-                                                                30.to_string())], tokens)
-}
-
-#[test]
-fn float_and_e_number_and_float() {
-    let source = "14.39.e30.0";
-    let tokens = tokenize(source.to_string()).unwrap();
-
-    assert_eq!(vec![Token::Real(14.39.to_string()),
-                    Token::ENum(0.to_string(), 30.to_string()),
-                    Token::Real(0.to_string())], tokens)
+    assert_eq!(vec![Token::ENum("0.".to_string(), 10.to_string())], tokens)
 }
 
 #[test]

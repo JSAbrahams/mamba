@@ -1,13 +1,13 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::expression::parse as parse_expression;
+use crate::parser::expression_or_statement::parse_maybe_expression as parse_maybe_expression;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 macro_rules! un_operator { ($it:expr, $ind:expr, $op:path) => {{
     $it.next();
-    match parse_expression($it, $ind) {
+    match parse_maybe_expression($it, $ind) {
         (Ok(expr), new_ind) => (Ok($op(Box::new(expr))), new_ind),
         err => err
     }
@@ -15,13 +15,13 @@ macro_rules! un_operator { ($it:expr, $ind:expr, $op:path) => {{
 
 macro_rules! bin_operator { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
     $it.next();
-    match parse_expression($it, $ind) {
+    match parse_maybe_expression($it, $ind) {
         (Ok(expr), new_ind) => (Ok($op(Box::new($factor), Box::new(expr))), new_ind),
         err => err
     }
 }}}
 
-// arithmetic-expression ::= term | unary-operator expression | term additive-operator expression
+// arithmetic-expression ::= term | unary-operator maybe-expr | term additive-operator maybe-expr
 pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Id(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) |
@@ -42,7 +42,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     };
 }
 
-// term ::= factor | factor multiclative-operator expression
+// term ::= factor | factor multiclative-operator maybe-expr
 fn parse_term(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) |
