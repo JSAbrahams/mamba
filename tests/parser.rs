@@ -35,6 +35,7 @@ fn parse_if_statements() {
 #[test]
 fn parse_tuples() {
     let source = resource_string_content("tuples.txt");
+    parse(tokenize(source).unwrap()).unwrap();
 }
 
 #[test]
