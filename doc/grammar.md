@@ -53,8 +53,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr::= if | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    when             ::= "when" maybe-expr "is" newline { { indent } when-case }
-    when-case        ::= maybe-expr "then" expr-or-stmt
+    when             ::= "when" maybe-expr newline { { indent } when-case }
+    when-case        ::= maybe-expr "do" expr-or-stmt
     
     control-flow-stmt::= loop | while | for | "break" | "continue"
     loop             ::= "loop" expr-or-stmt

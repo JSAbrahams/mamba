@@ -1,7 +1,7 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::expression_or_statement::parse_maybe_expression as parse_maybe_expression;
 use crate::parser::expression_or_statement::parse as parse_expr_or_stmt;
+use crate::parser::expression_or_statement::parse_maybe_expression as parse_maybe_expression;
 use crate::parser::util::ind_count;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -86,14 +86,9 @@ fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
     debug_assert_eq!(it.next(), Some(&Token::When));
 
     match parse_maybe_expression(it, ind) {
-        (Ok(expr), new_ind) => {
-            if it.next() != Some(&Token::Is) {
-                return (Err("Expected 'is' after 'when' expression".to_string()), new_ind);
-            } else if it.next() != Some(&Token::NL) {
-                return (Err("Expected newline after 'is' in 'when' expression".to_string()),
-                        new_ind);
-            }
-
+        (Ok(expr), new_ind) => if it.next() != Some(&Token::NL) {
+            (Err("Expected newline after 'is' in 'when' expression".to_string()), new_ind)
+        } else {
             match parse_when_cases(it, ind + 1) {
                 (Ok(cases), _) => (Ok(ASTNode::When(Box::new(expr), cases)), ind),
                 (Err(err), new_ind) => (Err(err), new_ind)
@@ -147,11 +142,11 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
     (Ok(when_cases), ind)
 }
 
-// when-case ::= maybe-expr "then" expr-or-stmt
+// when-case ::= maybe-expr "do" expr-or-stmt
 fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     match parse_maybe_expression(it, ind) {
         (Ok(expr), new_ind) => {
-            if it.next() != Some(&Token::Then) {
+            if it.next() != Some(&Token::Do) {
                 return (Err("Expected 'then' after when case expression".to_string()), new_ind);
             }
 
