@@ -8,6 +8,7 @@ pub enum Token {
     To,
     Point,
     Comma,
+    DoublePoint,
 
     Id(String),
     Mut,
@@ -74,6 +75,7 @@ pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
     while let Some(c) = it.next() {
         match c {
             '.' => tokens.push(Token::Point),
+            ':' => tokens.push(Token::DoublePoint),
             ',' => tokens.push(Token::Comma),
             '(' => tokens.push(Token::LPar),
             ')' => tokens.push(Token::RPar),
@@ -202,7 +204,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
 
     while let Some(&c) = it.peek() {
         match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' => {
+            'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => {
                 it.next();
                 result.push(c)
             }

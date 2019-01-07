@@ -2,10 +2,12 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     (* a function definition contains no expressions in the signature *)
-    function-call     ::= id "." id tuple
-    function-def      ::= "fun" id "(" { function-arg } ")" [ "->" ( id | function-tuple ) ] "is" expr-or-stmt
-    function-arg      ::= ( id | function-tuple ) id 
-    function-tuple    ::= "(" ( id | function-tuple ) { "," ( id | function-tuple ) } ")"
+    function-call     ::= maybe-expr "." id tuple
+    function-def      ::= "fun" id "(" [ { function-arg "," } function-arg ] ")" 
+                          [ "->" ( id | static-tuple | function-arg ) ] "is" expr-or-stmt
+    function-arg      ::= id ":" ( id | static-tuple | function-arg ) 
+    function-sig      ::= static-tuple "->" ( id | static-tuple )
+    static-tuple      ::= "(" ( id | static-tuple | function-sig ) { "," ( id | static-tuple | function-sig ) } ")"
     
     program           ::= { ( function-def | do-block ) }
     
@@ -20,7 +22,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     statement         ::= "print" maybe-expr | assignment | "donothing" | control-flow-stmt
     expression        ::= "return" maybe-expr | arithmetic
     
-    id                ::= { character }
+    id                ::= { character | number | "_" }
     
     assignment        ::= normal-assignment | mut-assignment
     normal-assignment ::= "let" id "<-" maybe-expr
