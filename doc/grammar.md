@@ -2,6 +2,8 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     (* a function definition contains no expressions in the signature *)
+    module-import    ::= "from" id ( "use" id | "useall" )
+    
     function-call    ::= maybe-expr "." id tuple
     function-call-dir::= id tuple
     function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ] "->" expr-or-stmt
@@ -9,7 +11,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-type    ::= id | static-tuple | static-tuple "->" function-type
     static-tuple     ::= "(" [ function-type { "," function-type } ] ")"
     
-    program          ::= { newline } { function-def newline { newline } } [ do-block ] )
+    program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
     
     (* a do block is an expression iff last is expression, else statement *)
     do-block         ::= { { indent } expr-or-stmt newline } [ newline ]

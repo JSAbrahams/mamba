@@ -8,7 +8,7 @@ macro_rules! vec_from {
                 ast_nodes.push($x);
             )*
 
-            ASTNode::Program(Vec::new(), Box::new(ASTNode::Do(ast_nodes)))
+            ASTNode::Program(Vec::new(), Vec::new(), Box::new(ASTNode::Do(ast_nodes)))
         }
     };
 }

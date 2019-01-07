@@ -9,9 +9,32 @@ use std::slice::Iter;
 
 mod function;
 
-// program ::= { newline } { function-def newline { newline } } [ do-block ] )
+// program ::= { module-import newline } { newline } { function-def newline { newline } }
+//             [ do-block ]
 pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
+    let mut modules = Vec::new();
     let mut functions = Vec::new();
+
+    while let Some(&t) = it.peek() {
+        match t {
+            Token::From => match parse_module_import(it, 0) {
+                (Ok(module), _) => modules.push(module),
+                (err, _) => return err
+            }
+            _ => break
+        };
+
+        if it.next() != Some(&Token::NL) {
+            return Err("module import not followed by a newline.".to_string());
+        }
+    }
+
+    while let Some(&t) = it.peek() {
+        match t {
+            Token::NL => it.next(),
+            _ => break
+        };
+    }
 
     while let Some(&t) = it.peek() {
         match t {
@@ -43,9 +66,36 @@ pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
 
 
     return match parse_do(it, 0) {
-        (Ok(do_block), _) => Ok(ASTNode::Program(functions, Box::new(do_block))),
+        (Ok(do_block), _) =>
+            Ok(ASTNode::Program(modules, functions, Box::new(do_block))),
         (err, _) => err
     };
+}
+
+// module-import ::= "from" id ( "use" id | "useall" )
+fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+    assert_eq!(it.next(), Some(&Token::From));
+
+    match it.next() {
+        Some(Token::Id(m)) => match it.next() {
+            Some(Token::UseAll) =>
+                (Ok(ASTNode::ModuleAll(Box::new(ASTNode::Id(m.to_string())))), ind),
+            Some(Token::Use) => match it.next() {
+                Some(Token::Id(p)) =>
+                    (Ok(ASTNode::Module(Box::new(ASTNode::Id(m.to_string())),
+                                        Box::new(ASTNode::Id(p.to_string())))), ind),
+
+                Some(t) => (Err(format!("Expected module property name, but got {:?}.", t)), ind),
+                None => (Err("Expected module property name, but end of file.".to_string()), ind)
+            }
+
+            Some(t) => (Err(format!("Expected use modifier, but got {:?}.", t)), ind),
+            None => (Err("Expected use modifier, but end of file.".to_string()), ind)
+        }
+
+        Some(t) => (Err(format!("Expected module name, but got {:?}.", t)), ind),
+        None => (Err("Expected module name, but end of file.".to_string()), ind)
+    }
 }
 
 // function-call-dir ::= id tuple
