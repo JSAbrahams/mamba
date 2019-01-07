@@ -1,6 +1,7 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression_or_statement::parse as parse_expr_or_stmt;
+use crate::parser::expression_or_statement::parse_tuple;
 use crate::parser::util;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -8,9 +9,16 @@ use std::slice::Iter;
 
 mod function;
 
+// program ::= { newline } { function-def newline { newline } } [ do-block ] )
 pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
     let mut functions = Vec::new();
-    let mut do_blocks = Vec::new();
+
+    while let Some(&t) = it.peek() {
+        match t {
+           Token::NL => it.next(),
+            _ => break
+        };
+    }
 
     while let Some(&t) = it.peek() {
         match t {
@@ -18,24 +26,47 @@ pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
                 (Ok(definition), _) => functions.push(definition),
                 (err, _) => return err
             }
-            _ => match parse_do(it, 0) {
-                (Ok(do_block), _) => do_blocks.push(do_block),
-                (err, _) => return err
-            }
+            _ => break
+        };
+
+        if it.next() != Some(&Token::NL) {
+            return Err("Function definition not followed by a newline.".to_string());
+        }
+
+        while let Some(&t) = it.peek() {
+            match t {
+                Token::NL => it.next(),
+                _ => break
+            };
         }
     }
 
 
-    return Ok(ASTNode::Program(functions, do_blocks));
+    return match parse_do(it, 0) {
+        (Ok(do_block), _) => Ok(ASTNode::Program(functions, Box::new(do_block))),
+        (err, _) => err
+    };
 }
 
 // function-call ::= maybe-expr "." id tuple
-pub fn parse_function_call(id: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
+pub fn parse_function_call(maybe_expr: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
                            -> (Result<ASTNode, String>, i32) {
-    match function::parse_call(it, ind) {
-        (Ok((func, args)), new_ind) =>
-            (Ok(ASTNode::FunCall(Box::new(id), Box::new(func), args)), new_ind),
-        (Err(err), _) => return (Err(err), ind)
+    debug_assert_eq!(it.next(), Some(&Token::Point));
+
+    match it.next() {
+        Some(Token::Id(id)) => {
+            match parse_tuple(it, ind) {
+                (Ok(tuple), new_ind) => (Ok(ASTNode::FunCall(
+                    Box::new(maybe_expr),
+                    Box::new(ASTNode::Id(id.to_string())),
+                    Box::new(tuple),
+                )), new_ind),
+                err => err
+            }
+        }
+
+        Some(t) => (Err(format!("Expected point, but got {:?}.", t)), ind),
+        None => (Err("Expected function 'is', but end of file.".to_string()), ind)
     }
 }
 

@@ -1,1 +1,0 @@
-fun func_a() is print b

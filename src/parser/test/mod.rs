@@ -8,9 +8,7 @@ macro_rules! vec_from {
                 ast_nodes.push($x);
             )*
 
-            let mut do_blocks = Vec::new();
-            do_blocks.push(ASTNode::Do(ast_nodes));
-            ASTNode::Program(Vec::new(), do_blocks)
+            ASTNode::Program(Vec::new(), Box::new(ASTNode::Do(ast_nodes)))
         }
     };
 }

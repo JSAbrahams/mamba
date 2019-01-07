@@ -21,7 +21,7 @@ macro_rules! postfix_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
 // maybe-expr ::= expression | "(" ( maybe-expr [ "," maybe-expr] ")" | control-flow-expr
 //             | maybe-expr "<-" maybe-expr | function-call | newline do-block
 pub fn parse_maybe_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
-                          -> (Result<ASTNode, String>, i32) {
+                              -> (Result<ASTNode, String>, i32) {
     return match match it.peek() {
         Some(Token::If) | Some(Token::Unless) | Some(Token::When) => control_flow::parse(it, ind),
         Some(Token::NL) => next_and!(it, parse_do(it, ind + 1)),
@@ -63,6 +63,34 @@ pub fn parse_maybe_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
         }
         err => err
     };
+}
+
+// tuple ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
+pub fn parse_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+    debug_assert_eq!(it.next(), Some(&Token::LPar));
+
+    let mut elements = Vec::new();
+    if it.peek() != Some(&&Token::RPar) {
+        match parse_maybe_expression(it, ind) {
+            (Ok(maybe_expr), _) => elements.push(maybe_expr),
+            (Err(err), new_ind) => return (Err(err), new_ind)
+        }
+    }
+
+    loop {
+        match it.next() {
+            Some(Token::Comma) => match parse_maybe_expression(it, ind) {
+                (Ok(fun_type), _) => elements.push(fun_type),
+                (Err(err), new_ind) => return (Err(err), new_ind)
+            }
+            Some(Token::RPar) => break,
+
+            Some(t) => return (Err(format!("Expected expression, but got {:?}.", t)), ind),
+            None => return (Err("Expected expression, but end of file.".to_string()), ind)
+        };
+    }
+
+    return (Ok(ASTNode::StaticTuple(elements)), ind);
 }
 
 // expr-or-stmt ::= statement | maybe-expr ( [ "<-" maybe_expr ] | ( "if" | "unless" ) maybe_expr )

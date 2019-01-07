@@ -27,8 +27,26 @@ fn parse_assigns_and_while() {
 }
 
 #[test]
-fn parse_if_statements() {
-    let source = resource_string_content("if_statements.txt");
+fn parse_empty_file() {
+    let source = resource_string_content("empty_file.txt");
+    parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn parse_for_statements() {
+    let source = resource_string_content("for_statements.txt");
+    parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn parse_if() {
+    let source = resource_string_content("if.txt");
+    parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn parse_loop_statements() {
+    let source = resource_string_content("loop_statements.txt");
     parse(tokenize(source).unwrap()).unwrap();
 }
 
@@ -39,7 +57,19 @@ fn parse_tuples() {
 }
 
 #[test]
+fn parse_when_statements() {
+    let source = resource_string_content("when_statements.txt");
+    parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn parse_while_statements() {
+    let source = resource_string_content("while_statements.txt");
+    parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
 fn parse_function() {
-    let source = resource_string_content("function.txt");
+    let source = resource_string_content("function_definitions.txt");
     parse(tokenize(source).unwrap()).unwrap();
 }
