@@ -4,6 +4,12 @@ use std::str::Chars;
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum Token {
+    Fun,
+    To,
+    Point,
+    Comma,
+    DoublePoint,
+
     Id(String),
     Mut,
     Assign,
@@ -68,6 +74,9 @@ pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
 
     while let Some(c) = it.next() {
         match c {
+            '.' => tokens.push(Token::Point),
+            ':' => tokens.push(Token::DoublePoint),
+            ',' => tokens.push(Token::Comma),
             '(' => tokens.push(Token::LPar),
             ')' => tokens.push(Token::RPar),
             '\n' => tokens.push(Token::NL),
@@ -81,7 +90,7 @@ pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
 
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(get_operator(c, &mut it)),
-            '0'...'9' | '.' => tokens.push(get_number(c, &mut it)),
+            '0'...'9' => tokens.push(get_number(c, &mut it)),
             '"' => tokens.push(get_string(&mut it)),
             'a'...'z' | 'A'...'Z' => tokens.push(get_id_or_op(c, &mut it)),
 
@@ -115,7 +124,7 @@ fn get_operator(current: char, it: &mut Peekable<Chars>) -> Token {
             }
             _ => Token::Le
         }
-        '>' => match it.next() {
+        '>' => match it.peek() {
             Some('=') => {
                 it.next();
                 Token::Geq
@@ -123,7 +132,13 @@ fn get_operator(current: char, it: &mut Peekable<Chars>) -> Token {
             _ => Token::Ge
         }
         '+' => Token::Add,
-        '-' => Token::Sub,
+        '-' => match it.peek() {
+            Some('>') => {
+                it.next();
+                Token::To
+            }
+            _ => Token::Sub
+        }
         '/' => Token::Div,
         '*' => Token::Mul,
         '^' => Token::Pow,
@@ -139,7 +154,6 @@ fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
 
     match current {
         '0'...'9' => num.push(current),
-        '.' => comma = true,
         _ => panic!("get number received a token it shouldn't have.")
     }
 
@@ -190,7 +204,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
 
     while let Some(&c) = it.peek() {
         match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' => {
+            'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => {
                 it.next();
                 result.push(c)
             }
@@ -199,6 +213,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
     }
 
     return match result.as_ref() {
+        "fun" => Token::Fun,
         "let" => Token::Let,
         "mutable" => Token::Mut,
 

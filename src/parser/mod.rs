@@ -1,19 +1,10 @@
 use crate::lexer::Token;
-use crate::parser::util::ind_count;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::slice::Iter;
 
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
-macro_rules! postfix_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
-    $it.next();
-    match parse_expression_or_do($it, $ind) {
-        (Ok(post), nnew_ind) => (Ok($op(Box::new($pre), Box::new(post))), nnew_ind),
-        err => err
-    }
-}}}
 
+mod expression_or_statement;
+mod program;
 mod expression;
 mod statement;
 mod util;
@@ -21,6 +12,15 @@ mod util;
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
+    Program(Vec<ASTNode>, Box<ASTNode>),
+    FunDef(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    FunDefNoRetType(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
+    FunCall(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    DirectFunCall(Box<ASTNode>, Box<ASTNode>),
+    FunArg(Box<ASTNode>, Box<ASTNode>),
+    FunType(Box<ASTNode>, Box<ASTNode>),
+    StaticTuple(Vec<ASTNode>),
+
     Id(String),
     Assign(Box<ASTNode>, Box<ASTNode>),
     Mut(Box<ASTNode>),
@@ -32,6 +32,7 @@ pub enum ASTNode {
     ENum(String, String),
     Str(String),
     Bool(bool),
+    Tuple(Vec<ASTNode>),
 
     Add(Box<ASTNode>, Box<ASTNode>),
     AddU(Box<ASTNode>),
@@ -73,95 +74,7 @@ pub enum ASTNode {
 
 // program ::= do-block
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
-    return parse_do(&mut input.iter().peekable(), 0).0;
-}
-
-// do-block ::= ( { ( expression | statement ) newline } | newline )
-pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    let this_ind = ind_count(it);
-    if this_ind > ind {
-        return (Err(format!("Expected indentation of {}, was {}.", ind, this_ind)), this_ind);
-    }
-
-    let mut nodes = Vec::new();
-    let mut is_prev_empty_line = false;
-
-    while let Some(&t) = it.peek() {
-        match *t {
-            Token::NL if is_prev_empty_line => break,
-            Token::NL => {
-                is_prev_empty_line = true;
-                it.next();
-                continue;
-            }
-            _ => ()
-        }
-
-        let (res, this_ind) = parse_statement_or_expr(it, ind);
-        match res {
-            Ok(ast_node) => {
-                nodes.push(ast_node);
-
-                is_prev_empty_line = false;
-                if it.peek() != None && Some(&Token::NL) != it.next() {
-                    return (Err(format!("Expression or statement not followed by a newline: {:?}.",
-                                        it.peek())), ind);
-                }
-
-                let next_ind = util::ind_count(it);
-                /* Indentation decrease marks end of do block */
-                if next_ind < ind { break; };
-
-                if next_ind > ind && it.peek().is_some() {
-                    /* indentation increased unexpectedly */
-                    return (Err(
-                        format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
-                            ind);
-                }
-            }
-            err => return (err, this_ind)
-        }
-    }
-
-    return (Ok(ASTNode::Do(nodes)), ind - 1);
-}
-
-// expression-or-do ::= ( expression | newline indent do-block )
-pub fn parse_expression_or_do(it: &mut Peekable<Iter<Token>>, ind: i32)
-                              -> (Result<ASTNode, String>, i32) {
-    return match it.peek() {
-        Some(Token::NL) => next_and!(it, parse_do(it, ind + 1)),
-        Some(_) => expression::parse(it, ind),
-        None => (Ok(ASTNode::DoNothing), ind)
-    };
-}
-
-// expr-or-stmt-or-do::= expression-or-do | statement
-pub fn parse_expression_or_statement_or_do(it: &mut Peekable<Iter<Token>>, ind: i32)
-                                           -> (Result<ASTNode, String>, i32) {
-    return match it.peek() {
-        Some(Token::NL) => next_and!(it, parse_do(it, ind + 1)),
-        Some(_) | None => parse_statement_or_expr(it, ind)
-    }
-}
-
-// statement-or-expr ::= ( statement | expression ) | expression "<-" expression-or-do | postfix-if
-// postfix-if        ::= ( statement-or-expr ) ( "if" | "unless" ) expression-or-do
-fn parse_statement_or_expr(it: &mut Peekable<Iter<Token>>, ind: i32)
-                           -> (Result<ASTNode, String>, i32) {
-    return match match it.peek() {
-        Some(Token::Let) | Some(Token::Mut) | Some(Token::Print) | Some(Token::DoNothing) |
-        Some(Token::For) | Some(Token::While) | Some(Token::Loop) => statement::parse(it, ind),
-        _ => expression::parse(it, ind)
-    } {
-        (Ok(pre), new_ind) => match it.peek() {
-            Some(Token::Assign) => postfix_op!(it, new_ind, ASTNode::Assign, pre),
-            Some(Token::If) => postfix_op!(it, new_ind, ASTNode::If, pre),
-            Some(Token::Unless) => postfix_op!(it, new_ind, ASTNode::Unless, pre),
-            Some(_) | None => (Ok(pre), new_ind)
-        }
-        err => err
-    };
+    return program::parse(&mut input.iter().peekable())
 }
 
 #[cfg(test)]

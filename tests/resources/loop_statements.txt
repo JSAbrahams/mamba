@@ -1,0 +1,5 @@
+loop
+    print a
+    print b
+
+loop print c

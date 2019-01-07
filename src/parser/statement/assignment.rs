@@ -1,6 +1,6 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::expression::parse as parse_expression;
+use crate::parser::expression_or_statement::parse_maybe_expression as parse_maybe_expression;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -16,7 +16,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     };
 }
 
-// normal-assignment ::= "let" id "<-" expression
+// normal-assignment ::= "let" id "<-" maybe-expr
 fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) => {
@@ -26,7 +26,7 @@ fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode
                     if it.next() != Some(&Token::Assign) {
                         return (Err("Expected Assign token".to_string()), ind);
                     }
-                    match parse_expression(it, new_ind) {
+                    match parse_maybe_expression(it, new_ind) {
                         (Ok(expr), nnew_ind) =>
                             (Ok(ASTNode::Assign(Box::new(id), Box::new(expr))),
                              nnew_ind),
