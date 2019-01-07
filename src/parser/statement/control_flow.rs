@@ -25,7 +25,7 @@ fn parse_loop(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
     debug_assert_eq!(it.next(), Some(&Token::Loop));
 
     return match parse_expr_or_stmt(it, ind) {
-        (Ok(expr_or_do), new_ind) => (Ok(ASTNode::Loop(Box::new(expr_or_do))), new_ind),
+        (Ok(expr_or_do), new_ind) => (Ok(ASTNode::Loop(wrap!(expr_or_do))), new_ind),
         err => err
     };
 }
@@ -42,8 +42,7 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
 
             match parse_expr_or_stmt(it, new_ind) {
                 (Ok(expr_or_do), nnew_ind) =>
-                    (Ok(ASTNode::While(Box::new(cond), Box::new(expr_or_do))),
-                     nnew_ind),
+                    (Ok(ASTNode::While(wrap!(cond), wrap!(expr_or_do))), nnew_ind),
                 err => err
             }
         }
@@ -69,8 +68,8 @@ fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
 
                     match parse_expr_or_stmt(it, nnew_ind) {
                         (Ok(expr_or_do), nnnew_ind) =>
-                            (Ok(ASTNode::For(Box::new(expr), Box::new(col),
-                                             Box::new(expr_or_do))), nnnew_ind),
+                            (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))),
+                             nnnew_ind),
                         err => err
                     }
                 }

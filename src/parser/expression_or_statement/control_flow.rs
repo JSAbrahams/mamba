@@ -35,13 +35,13 @@ fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
                         it.next();
                         match parse_expr_or_stmt(it, nnew_ind) {
                             (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::UnlessElse(
-                                Box::new(cond),
-                                Box::new(then),
-                                Box::new(otherwise))), nnnew_ind),
+                                wrap!(cond),
+                                wrap!(then),
+                                wrap!(otherwise))), nnnew_ind),
                             err => err
                         }
                     }
-                    _ => (Ok(ASTNode::Unless(Box::new(cond), Box::new(then))), nnew_ind)
+                    _ => (Ok(ASTNode::Unless(wrap!(cond), wrap!(then))), nnew_ind)
                 }
                 err => err
             }
@@ -66,13 +66,13 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
                         it.next();
                         match parse_expr_or_stmt(it, nnew_ind) {
                             (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::IfElse(
-                                Box::new(cond),
-                                Box::new(then),
-                                Box::new(otherwise))), nnnew_ind),
+                                wrap!(cond),
+                                wrap!(then),
+                                wrap!(otherwise))), nnnew_ind),
                             err => err
                         }
                     }
-                    _ => (Ok(ASTNode::If(Box::new(cond), Box::new(then))), nnew_ind)
+                    _ => (Ok(ASTNode::If(wrap!(cond), wrap!(then))), nnew_ind)
                 }
                 err => err
             }
@@ -90,7 +90,7 @@ fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
             (Err("Expected newline after 'is' in 'when' expression".to_string()), new_ind)
         } else {
             match parse_when_cases(it, ind + 1) {
-                (Ok(cases), _) => (Ok(ASTNode::When(Box::new(expr), cases)), ind),
+                (Ok(cases), _) => (Ok(ASTNode::When(wrap!(expr), cases)), ind),
                 (Err(err), new_ind) => (Err(err), new_ind)
             }
         }
@@ -139,7 +139,7 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
         }
     }
 
-    (Ok(when_cases), ind)
+    return (Ok(when_cases), ind);
 }
 
 // when-case ::= maybe-expr "do" expr-or-stmt
@@ -150,9 +150,9 @@ fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
                 return (Err("Expected 'then' after when case expression".to_string()), new_ind);
             }
 
-            match parse_expr_or_stmt(it, ind) {
+            match parse_expr_or_stmt(it, new_ind) {
                 (Ok(expr_or_do), nnew_ind) =>
-                    (Ok(ASTNode::If(Box::new(expr), Box::new(expr_or_do))), nnew_ind),
+                    (Ok(ASTNode::If(wrap!(expr), wrap!(expr_or_do))), nnew_ind),
                 err => err
             }
         }

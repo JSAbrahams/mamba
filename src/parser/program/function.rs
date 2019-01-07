@@ -16,19 +16,18 @@ pub fn parse_function_definition(it: &mut Peekable<Iter<Token>>, ind: i32)
             (Ok(args), new_ind) => match it.next() {
                 Some(Token::To) => match parse(it, new_ind) {
                     (Ok(body), nnew_ind) =>
-                        (Ok(ASTNode::FunDefNoRetType(Box::new(ASTNode::Id(id.to_string())),
-                                                     args, Box::new(body))), nnew_ind),
+                        (Ok(ASTNode::FunDefNoRetType(wrap!(ASTNode::Id(id.to_string())),
+                                                     args, wrap!(body))), nnew_ind),
                     err => err
                 }
                 Some(Token::DoublePoint) => match parse_function_type(it, ind) {
                     (Ok(ret_type), nnew_ind) => match it.next() {
                         Some(Token::To) => match parse(it, nnew_ind) {
-                            (Ok(body), nnnew_ind) =>
-                                (Ok(ASTNode::FunDef(
-                                    Box::new(ASTNode::Id(id.to_string())),
-                                    args,
-                                    Box::new(ret_type),
-                                    Box::new(body))), nnnew_ind),
+                            (Ok(body), nnnew_ind) => (Ok(ASTNode::FunDef(
+                                wrap!(ASTNode::Id(id.to_string())),
+                                args,
+                                wrap!(ret_type),
+                                wrap!(body))), nnnew_ind),
                             err => err
                         }
 
@@ -89,8 +88,7 @@ fn parse_function_arg(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
     match parse_function_type(it, ind) {
         (Ok(arg), new_ind) => match it.next() {
             Some(Token::DoublePoint) => match parse_function_type(it, new_ind) {
-                (Ok(ty), nnew_ind) => (Ok(ASTNode::FunArg(Box::new(arg), Box::new(ty))),
-                                       nnew_ind),
+                (Ok(ty), nnew_ind) => (Ok(ASTNode::FunArg(wrap!(arg), wrap!(ty))), nnew_ind),
                 err => err
             }
 
@@ -114,7 +112,7 @@ fn parse_function_type(it: &mut Peekable<Iter<Token>>, ind: i32)
                     it.next();
                     match parse_function_type(it, new_ind) {
                         (Ok(fun_ty), nnew_ind) =>
-                            (Ok(ASTNode::FunType(Box::new(tup), Box::new(fun_ty))), nnew_ind),
+                            (Ok(ASTNode::FunType(wrap!(tup), wrap!(fun_ty))), nnew_ind),
                         err => err
                     }
                 }

@@ -1,9 +1,9 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression::parse as parse_expression;
-use crate::parser::program::parse_function_call_direct;
 use crate::parser::program::parse_do;
 use crate::parser::program::parse_function_call;
+use crate::parser::program::parse_function_call_direct;
 use crate::parser::statement::parse as parse_statement;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -100,6 +100,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
     return match match it.peek() {
         Some(Token::Let) | Some(Token::Mut) | Some(Token::Print) | Some(Token::DoNothing) |
         Some(Token::For) | Some(Token::While) | Some(Token::Loop) => parse_statement(it, ind),
+        Some(Token::From) => return (Err("Unexpected import".to_string()), ind),
+        Some(Token::Fun) => return (Err("Unexpected function".to_string()), ind),
         _ => parse_maybe_expression(it, ind)
     } {
         (Ok(pre), new_ind) => match it.peek() {

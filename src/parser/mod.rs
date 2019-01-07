@@ -2,6 +2,7 @@ use crate::lexer::Token;
 
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
+macro_rules! wrap { ($node:expr) => {{ Box::new($node) }} }
 
 mod expression_or_statement;
 mod program;
@@ -80,6 +81,3 @@ pub enum ASTNode {
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
     return program::parse(&mut input.iter().peekable())
 }
-
-#[cfg(test)]
-mod test;

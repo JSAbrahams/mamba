@@ -28,7 +28,7 @@ fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode
                     }
                     match parse_maybe_expression(it, new_ind) {
                         (Ok(expr), nnew_ind) =>
-                            (Ok(ASTNode::Assign(Box::new(id), Box::new(expr))),
+                            (Ok(ASTNode::Assign(wrap!(id), wrap!(expr))),
                              nnew_ind),
                         err => err
                     }
@@ -57,7 +57,7 @@ fn parse_mut_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode
     debug_assert_eq!(it.next(), Some(&Token::Mut));
 
     match parse_nor_assign(it, ind) {
-        (Ok(assign), new_indent) => (Ok(ASTNode::Mut(Box::new(assign))), new_indent),
+        (Ok(assign), new_indent) => (Ok(ASTNode::Mut(wrap!(assign))), new_indent),
         err => err
     }
 }

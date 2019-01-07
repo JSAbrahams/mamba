@@ -12,49 +12,28 @@ mod function;
 // program ::= { module-import newline } { newline } { function-def newline { newline } }
 //             [ do-block ]
 pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
-    let mut modules = Vec::new();
-    let mut functions = Vec::new();
+    match (parse_multiple(&Token::From, &parse_module_import, it),
+           parse_multiple(&Token::Fun, &function::parse_function_definition, it),
+           parse_do(it, 0)) {
+        (Err(err), _, _) | (_, Err(err), _) | (_, _, (Err(err), _)) => Err(err),
+        (Ok(modules), Ok(functions), (Ok(do_block), _)) =>
+            Ok(ASTNode::Program(modules, functions, wrap!(do_block)))
+    }
+}
 
+fn parse_multiple(token: &Token,
+                  fun: &Fn(&mut Peekable<Iter<Token>>, i32) -> (Result<ASTNode, String>, i32),
+                  it: &mut Peekable<Iter<Token>>) -> Result<Vec<ASTNode>, String> {
+    let mut elements = Vec::new();
     while let Some(&t) = it.peek() {
-        match t {
-            Token::From => match parse_module_import(it, 0) {
-                (Ok(module), _) => modules.push(module),
-                (err, _) => return err
-            }
-            _ => break
-        };
+        if token != t { break; }
 
-        if it.next() != Some(&Token::NL) {
-            return Err("module import not followed by a newline.".to_string());
+        match fun(it, 0) {
+            (Ok(element), _) => elements.push(element),
+            (Err(err), _) => return Err(err)
         }
-    }
 
-    while let Some(&t) = it.peek() {
-        match t {
-            Token::NL => it.next(),
-            _ => break
-        };
-    }
-
-    while let Some(&t) = it.peek() {
-        match t {
-            Token::NL => it.next(),
-            _ => break
-        };
-    }
-
-    while let Some(&t) = it.peek() {
-        match t {
-            Token::Fun => match function::parse_function_definition(it, 0) {
-                (Ok(definition), _) => functions.push(definition),
-                (err, _) => return err
-            }
-            _ => break
-        };
-
-        if it.next() != Some(&Token::NL) {
-            return Err("Function definition not followed by a newline.".to_string());
-        }
+        if it.next() != Some(&Token::NL) { return Err("Newline expected.".to_string()); }
 
         while let Some(&t) = it.peek() {
             match t {
@@ -64,11 +43,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
         }
     }
 
-
-    return match parse_do(it, 0) {
-        (Ok(do_block), _) => Ok(ASTNode::Program(modules, functions, Box::new(do_block))),
-        (err, _) => err
-    };
+    return Ok(elements);
 }
 
 // module-import ::= "from" id ( "use" id | "useall" )
@@ -78,11 +53,11 @@ fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTN
     match it.next() {
         Some(Token::Id(m)) => match it.next() {
             Some(Token::UseAll) =>
-                (Ok(ASTNode::ModuleAll(Box::new(ASTNode::Id(m.to_string())))), ind),
+                (Ok(ASTNode::ModuleAll(wrap!(ASTNode::Id(m.to_string())))), ind),
             Some(Token::Use) => match it.next() {
                 Some(Token::Id(p)) =>
-                    (Ok(ASTNode::Module(Box::new(ASTNode::Id(m.to_string())),
-                                        Box::new(ASTNode::Id(p.to_string())))), ind),
+                    (Ok(ASTNode::Module(wrap!(ASTNode::Id(m.to_string())),
+                                        wrap!(ASTNode::Id(p.to_string())))), ind),
 
                 Some(t) => (Err(format!("Expected module property name, but got {:?}.", t)), ind),
                 None => (Err("Expected module property name, but end of file.".to_string()), ind)
@@ -103,10 +78,8 @@ pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Toke
     match function {
         ASTNode::Id(id) => match it.peek() {
             Some(Token::LPar) => match parse_tuple(it, ind) {
-                (Ok(tuple), new_ind) => (Ok(ASTNode::DirectFunCall(
-                    Box::new(ASTNode::Id(id)),
-                    Box::new(tuple),
-                )), new_ind),
+                (Ok(tuple), new_ind) => (Ok(ASTNode::DirectFunCall(wrap!(ASTNode::Id(id)), wrap!(tuple))),
+                                         new_ind),
                 err => err
             }
 
@@ -126,9 +99,7 @@ pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<Token>>, ind:
             Some(Token::Id(id)) => match it.peek() {
                 Some(Token::LPar) => match parse_tuple(it, ind) {
                     (Ok(tuple), new_ind) => (Ok(ASTNode::FunCall(
-                        Box::new(caller),
-                        Box::new(ASTNode::Id(id.to_string())),
-                        Box::new(tuple),
+                        wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple),
                     )), new_ind),
                     err => err
                 }
@@ -157,39 +128,27 @@ pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
     let mut is_prev_empty_line = false;
 
     while let Some(&t) = it.peek() {
-        match *t {
-            Token::NL if is_prev_empty_line => break,
-            Token::NL => {
-                is_prev_empty_line = true;
-                it.next();
-                continue;
-            }
-            _ => ()
-        }
+        if *t == Token::NL && is_prev_empty_line { break; }
+        if *t == Token::NL { next_and!(it, { is_prev_empty_line = true; continue; }) }
 
-        let (res, this_ind) = parse_expr_or_stmt(it, ind);
-        match res {
-            Ok(ast_node) => {
+        match parse_expr_or_stmt(it, ind) {
+            (Ok(ast_node), new_ind) => {
+                is_prev_empty_line = false;
                 nodes.push(ast_node);
 
-                is_prev_empty_line = false;
                 if it.peek() != None && Some(&Token::NL) != it.next() {
-                    return (Err(format!("Expression or statement not followed by a newline: {:?}.",
-                                        it.peek())), ind);
+                    return (Err("Line was not followed by a newline".to_string()), new_ind);
                 }
 
                 let next_ind = util::ind_count(it);
                 /* Indentation decrease marks end of do block */
-                if next_ind < ind { break; };
+                if next_ind < new_ind { break; };
 
-                if next_ind > ind && it.peek().is_some() {
-                    /* indentation increased unexpectedly */
-                    return (Err(
-                        format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
-                            ind);
+                if next_ind > new_ind && it.peek().is_some() {
+                    return (Err(format!("Indentation unexpectedly increased.")), new_ind);
                 }
             }
-            err => return (err, this_ind)
+            err => return err
         }
     }
 

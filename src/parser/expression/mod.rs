@@ -1,13 +1,13 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::expression::parse as parse_expression;
+use crate::parser::expression_or_statement::parse_maybe_expression;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 mod arithmetic;
 
-// expression ::= "return" expression | arithmetic
+// expression ::= "return" maybe-expression | arithmetic
 pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Ret) => parse_return(it, ind),
@@ -24,8 +24,8 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
 fn parse_return(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::Ret));
 
-    return match parse_expression(it, ind) {
-        (Ok(expr), new_ind) => (Ok(ASTNode::Return(Box::new(expr))), new_ind),
+    return match parse_maybe_expression(it, ind) {
+        (Ok(expr), new_ind) => (Ok(ASTNode::Return(wrap!(expr))), new_ind),
         err => err
     };
 }

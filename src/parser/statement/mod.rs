@@ -15,7 +15,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
         Some(Token::Print) => {
             it.next();
             match parse_maybe_expression(it, ind) {
-                (Ok(expr), new_indent) => (Ok(ASTNode::Print(Box::new(expr))), new_indent),
+                (Ok(expr), new_indent) => (Ok(ASTNode::Print(wrap!(expr))), new_indent),
                 err => err
             }
         },
