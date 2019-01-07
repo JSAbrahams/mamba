@@ -18,29 +18,24 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
 
 // normal-assignment ::= "let" id "<-" maybe-expr
 fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    return if let Some(Token::Let) = it.next() {
-        match parse_id(it, ind) {
-            (Ok(id), new_ind) => if let Some(&Token::Assign) = it.next() {
-                match parse_maybe_expression(it, new_ind) {
-                    (Ok(expr), nnew_ind) => (Ok(ASTNode::Assign(wrap!(id), wrap!(expr))),
-                                             nnew_ind),
-                    err => err
-                }
-            } else {
-                (Err("Expected Assign token".to_string()), ind)
+    match (it.next(), parse_id(it, ind), it.next()) {
+        (Some(Token::Let), (Ok(id), new_ind), Some(Token::Assign)) => {
+            match parse_maybe_expression(it, new_ind) {
+                (Ok(expr), nnew_ind) => (Ok(ASTNode::Assign(wrap!(id), wrap!(expr))), nnew_ind),
+                err => err
             }
-            err => err
         }
-    } else {
-        (Err("Expected normal assignment.".to_string()), ind)
-    };
+        (_, (Ok(_), _), Some(Token::Assign)) => (Err("Expected 'let'.".to_string()), ind),
+        (Some(Token::Let), (Ok(_), _), _) => (Err("expected 'assign'.".to_string()), ind),
+        (_, err, _) => err,
+    }
 }
 
 // id ::= { character }
 fn parse_id(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.next() {
         Some(Token::Id(id)) => (Ok(ASTNode::Id(id.to_string())), ind),
-        Some(_) | None => panic!("Expected id.")
+        Some(_) | None => (Err("expected an id.".to_string()), ind)
     };
 }
 

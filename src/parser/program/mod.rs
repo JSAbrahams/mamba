@@ -70,17 +70,15 @@ fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTN
 // function-call-dir ::= id tuple
 pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
                                   -> (Result<ASTNode, String>, i32) {
-    match function {
-        ASTNode::Id(id) => if let Some(Token::LPar) = it.peek() {
-            match parse_tuple(it, ind) {
-                (Ok(tuple), new_ind) =>
-                    (Ok(ASTNode::DirectFunCall(wrap!(ASTNode::Id(id)), wrap!(tuple))), new_ind),
-                err => err
-            }
-        } else {
-            (Err("Expected opening bracket.".to_string()), ind)
+    match (function, it.peek()) {
+        (ASTNode::Id(ref id), Some(Token::LPar)) => match parse_tuple(it, ind) {
+            (Ok(tuple), new_ind) =>
+                (Ok(ASTNode::DirectFunCall(wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))),
+                 new_ind),
+            err => err
         }
-        _ => (Err("Expected function name.".to_string()), ind)
+        (_, Some(Token::LPar)) => (Err("Expected function name.".to_string()), ind),
+        (_, _) => (Err("Expected opening bracket.".to_string()), ind),
     }
 }
 
@@ -89,20 +87,16 @@ pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<Token>>, ind:
                            -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::Point));
 
-    return if let Some(Token::Id(id)) = it.next() {
-        if let Some(Token::LPar) = it.peek() {
+    match (it.next(), it.peek()) {
+        (Some(Token::Id(id)), Some(Token::LPar)) =>
             match parse_tuple(it, ind) {
                 (Ok(tuple), new_ind) => (Ok(ASTNode::FunCall(
-                    wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))),
-                                         new_ind),
+                    wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), new_ind),
                 err => err
             }
-        } else {
-            (Err("Expected opening parenthesis.".to_string()), ind)
-        }
-    } else {
-        (Err("Expected function name.".to_string()), ind)
-    };
+        (_, Some(Token::LPar)) => (Err("Expected function name.".to_string()), ind),
+        (_, _) => (Err("Expected opening bracket.".to_string()), ind),
+    }
 }
 
 // do-block ::= ( { expr-or-stmt newline } | newline )

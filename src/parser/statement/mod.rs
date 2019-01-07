@@ -12,12 +12,9 @@ mod control_flow;
 pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Let) | Some(Token::Mut) => assignment::parse(it, ind),
-        Some(Token::Print) => {
-            it.next();
-            match parse_maybe_expression(it, ind) {
-                (Ok(expr), new_indent) => (Ok(ASTNode::Print(wrap!(expr))), new_indent),
-                err => err
-            }
+        Some(Token::Print) => match (it.next(), parse_maybe_expression(it, ind)) {
+            (_, (Ok(expr), new_indent)) => (Ok(ASTNode::Print(wrap!(expr))), new_indent),
+            (_, err) => err
         }
         Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), ind),
         Some(Token::For) | Some(Token::While) | Some(Token::Loop) => control_flow::parse(it, ind),

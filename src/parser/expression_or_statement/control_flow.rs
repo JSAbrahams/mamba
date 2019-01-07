@@ -54,18 +54,17 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
             return (Err("'Then' keyword expected".to_string()), new_ind);
         } else {
             match parse_expr_or_stmt(it, new_ind) {
-                (Ok(then), nnew_ind) => match it.peek() {
-                    Some(Token::Else) => {
-                        it.next();
-                        match parse_expr_or_stmt(it, nnew_ind) {
-                            (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::IfElse(
-                                wrap!(cond),
-                                wrap!(then),
-                                wrap!(otherwise))), nnnew_ind),
-                            err => err
-                        }
+                (Ok(then), nnew_ind) => if Some(&&Token::Else) != it.peek() {
+                    (Ok(ASTNode::If(wrap!(cond), wrap!(then))), nnew_ind)
+                } else {
+                    it.next();
+                    match parse_expr_or_stmt(it, nnew_ind) {
+                        (Ok(otherwise), nnnew_ind) => (Ok(ASTNode::IfElse(
+                            wrap!(cond),
+                            wrap!(then),
+                            wrap!(otherwise))), nnnew_ind),
+                        err => err
                     }
-                    _ => (Ok(ASTNode::If(wrap!(cond), wrap!(then))), nnew_ind)
                 }
                 err => err
             }
@@ -137,8 +136,7 @@ fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
             return (Err("Expected 'then' after when case expression".to_string()), new_ind);
         } else {
             match parse_expr_or_stmt(it, new_ind) {
-                (Ok(expr_or_do), nnew_ind) =>
-                    (Ok(ASTNode::If(wrap!(expr), wrap!(expr_or_do))), nnew_ind),
+                (Ok(expr_or_do), nnew_ind) => (Ok(ASTNode::If(wrap!(expr), wrap!(expr_or_do))), nnew_ind),
                 err => err
             }
         }

@@ -78,7 +78,6 @@ fn parse_factor(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
         Some(Token::Int(int)) => Ok(ASTNode::Int(int.to_string())),
         Some(Token::ENum(num, exp)) => Ok(ASTNode::ENum(num.to_string(), exp.to_string())),
         Some(Token::Bool(boolean)) => Ok(ASTNode::Bool(*boolean)),
-
         Some(_) | None => panic!("Expected factor.")
     }, ind);
 }
