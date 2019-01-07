@@ -66,8 +66,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
 
 
     return match parse_do(it, 0) {
-        (Ok(do_block), _) =>
-            Ok(ASTNode::Program(modules, functions, Box::new(do_block))),
+        (Ok(do_block), _) => Ok(ASTNode::Program(modules, functions, Box::new(do_block))),
         (err, _) => err
     };
 }

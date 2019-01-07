@@ -118,29 +118,17 @@ pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
 fn get_operator(current: char, it: &mut Peekable<Chars>) -> Token {
     return match current {
         '<' => match it.peek() {
-            Some('=') => {
-                it.next();
-                Token::Leq
-            }
-            Some('-') => {
-                it.next();
-                Token::Assign
-            }
+            Some('=') => next_and!(it, Token::Leq),
+            Some('-') => next_and!(it, Token::Assign),
             _ => Token::Le
         }
         '>' => match it.peek() {
-            Some('=') => {
-                it.next();
-                Token::Geq
-            }
+            Some('=') => next_and!(it, Token::Geq),
             _ => Token::Ge
         }
         '+' => Token::Add,
         '-' => match it.peek() {
-            Some('>') => {
-                it.next();
-                Token::To
-            }
+            Some('>') => next_and!(it, Token::To),
             _ => Token::Sub
         }
         '/' => Token::Div,
@@ -170,30 +158,22 @@ fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
             'e' | 'E' => next_and!(it, e_found = true),
 
             '.' if comma || e_found => break,
-            '.' => {
-                num.push(c);
-                next_and!(it,comma = true)
-            }
+            '.' => next_and!(it, { num.push(c); comma = true; }),
 
             _ => break
         }
     }
 
-    return if e_found {
-        if num.is_empty() { num.push('0') }
-        Token::ENum(num, exp)
-    } else if comma {
-        Token::Real(num)
-    } else {
-        Token::Int(num)
+    return match (e_found, comma) {
+        (true, _) => Token::ENum(num, exp),
+        (false, true) => Token::Real(num),
+        (false, false) => Token::Int(num)
     };
 }
 
 fn get_string(it: &mut Peekable<Chars>) -> Token {
     let mut result = String::new();
-
-    while let Some(&c) = it.peek() {
-        it.next();
+    while let Some(c) = it.next() {
         match c {
             '"' => break,
             _ => result.push(c)
@@ -205,13 +185,9 @@ fn get_string(it: &mut Peekable<Chars>) -> Token {
 
 fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
     let mut result = String::from(current.to_string());
-
     while let Some(&c) = it.peek() {
         match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => {
-                it.next();
-                result.push(c)
-            }
+            'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => next_and!(it, result.push(c)),
             _ => break
         }
     }
