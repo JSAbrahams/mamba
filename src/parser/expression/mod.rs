@@ -14,10 +14,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
         Some(Token::Real(_)) | Some(Token::Int(_)) | Some(Token::ENum(_, _)) | Some(Token::Id(_)) |
         Some(Token::Str(_)) | Some(Token::Bool(_)) | Some(Token::Not) | Some(Token::Add) |
         Some(Token::Sub) => arithmetic::parse(it, ind),
-
-        Some(t) => (Err(format!("Unexpected token while parsing expression: {:?}", t).to_string()),
-                    ind),
-        None => (Err("Unexpected end of file.".to_string()), ind)
+        Some(_) | None => (Err("Expected expression.".to_string()), ind)
     };
 }
 

@@ -11,8 +11,8 @@ pub fn parse_function_definition(it: &mut Peekable<Iter<Token>>, ind: i32)
                                  -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::Fun));
 
-    return match it.next() {
-        Some(Token::Id(id)) => match parse_args(it, ind) {
+    return if let Some(Token::Id(id)) = it.next() {
+        match parse_args(it, ind) {
             (Ok(args), new_ind) => match it.next() {
                 Some(Token::To) => match parse(it, new_ind) {
                     (Ok(body), nnew_ind) =>
@@ -30,57 +30,48 @@ pub fn parse_function_definition(it: &mut Peekable<Iter<Token>>, ind: i32)
                                 wrap!(body))), nnnew_ind),
                             err => err
                         }
-
-                        Some(t) => (Err(format!("Expected function 'is', but got {:?}.", t)), ind),
-                        None => (Err("Expected function 'is', but end of file.".to_string()), ind)
+                        Some(_) | None => (Err("Expected function 'is'.".to_string()), ind)
                     },
                     err => err
                 }
-
-                Some(t) => (Err(format!("Expected either 'is' or function return type\
-                    , but got {:?}.", t)), ind),
-                None => (Err("Expected either 'is' or function return type\
-                , but end of file.".to_string()), ind)
+                Some(_) | None => (Err("Expected either 'is' or function return type.".to_string()),
+                                   ind)
             }
             (Err(err), new_ind) => (Err(err), new_ind)
         }
-
-        Some(t) => (Err(format!("Expected function name, but got {:?}.", t)), ind),
-        None => (Err("Expected function name, but end of file.".to_string()), ind)
+    } else {
+        (Err("Expected function name".to_string()), ind)
     };
 }
 
 // function-args ::= function-type ":" function-type [ "," function-args ]
 fn parse_args(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<Vec<ASTNode>, String>, i32) {
-    match it.next() {
-        Some(Token::LPar) => {
-            let mut args = Vec::new();
-            if it.peek() != Some(&&Token::RPar) {
-                match parse_function_arg(it, ind) {
-                    (Ok(arg), _) => args.push(arg),
-                    (Err(err), new_ind) => return (Err(err), new_ind)
-                }
+    return if let Some(Token::LPar) = it.next() {
+        let mut args = Vec::new();
+        if it.peek() != Some(&&Token::RPar) {
+            match parse_function_arg(it, ind) {
+                (Ok(arg), _) => args.push(arg),
+                (Err(err), new_ind) => return (Err(err), new_ind)
             }
-
-            loop {
-                match it.next() {
-                    Some(Token::Comma) => match parse_function_arg(it, ind) {
-                        (Ok(fun_type), _) => args.push(fun_type),
-                        (Err(err), new_ind) => return (Err(err), new_ind)
-                    }
-                    Some(Token::RPar) => break,
-
-                    Some(t) => return (Err(format!("Expected closing bracket after function arguments, but got {:?}.", t)), ind),
-                    None => return (Err("Expected closing bracket after function arguments, but end of file.".to_string()), ind)
-                };
-            }
-
-            (Ok(args), ind)
         }
 
-        Some(t) => (Err(format!("Expected opening bracket for arguments, but got {:?}.", t)), ind),
-        None => (Err("Expected opening bracket for arguments, but end of file.".to_string()), ind)
-    }
+        loop {
+            match it.next() {
+                Some(Token::Comma) => match parse_function_arg(it, ind) {
+                    (Ok(fun_type), _) => args.push(fun_type),
+                    (Err(err), new_ind) => return (Err(err), new_ind)
+                }
+                Some(Token::RPar) => break,
+
+                Some(_) | None => return (Err(
+                    "Expected closing bracket after function arguments".to_string()), ind)
+            };
+        }
+
+        (Ok(args), ind)
+    } else {
+        (Err("Expected opening bracket for arguments".to_string()), ind)
+    };
 }
 
 // function-arg ::= function-type ":" function-type
@@ -91,11 +82,7 @@ fn parse_function_arg(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
                 (Ok(ty), nnew_ind) => (Ok(ASTNode::FunArg(wrap!(arg), wrap!(ty))), nnew_ind),
                 err => err
             }
-
-            Some(t) =>
-                (Err(format!("Expected double point after argument id, but got {:?}.", t)), ind),
-            None =>
-                (Err("Expected double point after argument id, but end of file.".to_string()), ind)
+            Some(_) | None => (Err("Expected double point after argument id.".to_string()), ind)
         },
         err => err
     }
@@ -107,22 +94,17 @@ fn parse_function_type(it: &mut Peekable<Iter<Token>>, ind: i32)
     return match it.peek() {
         Some(Token::Id(id)) => next_and!(it, (Ok(ASTNode::Id(id.to_string())), ind)),
         Some(Token::LPar) => match parse_static_tuple(it, ind) {
-            (Ok(tup), new_ind) => match it.peek() {
-                Some(Token::To) => {
-                    it.next();
-                    match parse_function_type(it, new_ind) {
-                        (Ok(fun_ty), nnew_ind) =>
-                            (Ok(ASTNode::FunType(wrap!(tup), wrap!(fun_ty))), nnew_ind),
-                        err => err
-                    }
+            (Ok(tup), new_ind) => if let Some(Token::To) = it.peek() {
+                it.next();
+                match parse_function_type(it, new_ind) {
+                    (Ok(fun_ty), nnew_ind) =>
+                        (Ok(ASTNode::FunType(wrap!(tup), wrap!(fun_ty))), nnew_ind),
+                    err => err
                 }
-                _ => (Ok(tup), new_ind)
-            }
+            } else { (Ok(tup), new_ind) }
             err => err
         }
-
-        Some(t) => (Err(format!("Expected function type, but got {:?}.", t)), ind),
-        None => (Err("Expected function type, but end of file.".to_string()), ind)
+        Some(_) | None => (Err("Expected function type.".to_string()), ind)
     };
 }
 
@@ -145,9 +127,7 @@ fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
                 err => return err
             }
             Some(Token::RPar) => break,
-
-            Some(t) => return (Err(format!("Expected function type, but got {:?}.", t)), ind),
-            None => return (Err("Expected function type, but end of file.".to_string()), ind)
+            Some(_) | None => return (Err("Expected function type.".to_string()), ind)
         };
     }
 

@@ -18,12 +18,9 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
                 (Ok(expr), new_indent) => (Ok(ASTNode::Print(wrap!(expr))), new_indent),
                 err => err
             }
-        },
+        }
         Some(Token::DoNothing) => (Ok(ASTNode::DoNothing), ind),
         Some(Token::For) | Some(Token::While) | Some(Token::Loop) => control_flow::parse(it, ind),
-
-        Some(t) => (Err(format!("Unexpected token while parsing statement: {:?}", t).to_string()),
-                    ind),
-        None => (Err("Unexpected end of file.".to_string()), ind)
+        Some(_) | None => (Err("Expected statement.".to_string()), ind)
     };
 }

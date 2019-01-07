@@ -10,6 +10,6 @@ fun fun_e(m: n, o: (p, q), r: (s) -> t) -> print u
 
 fun fun_v(w: x, y:(z, aa), ab: (ac) -> (ad)): ae -> print u
 
-me.fun_a()
+fun_a()
 me.fun_b(arg1)
 func(something)

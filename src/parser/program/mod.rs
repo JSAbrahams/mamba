@@ -50,25 +50,20 @@ fn parse_multiple(token: &Token,
 fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::From));
 
-    match it.next() {
-        Some(Token::Id(m)) => match it.next() {
-            Some(Token::UseAll) =>
-                (Ok(ASTNode::ModuleAll(wrap!(ASTNode::Id(m.to_string())))), ind),
-            Some(Token::Use) => match it.next() {
-                Some(Token::Id(p)) =>
-                    (Ok(ASTNode::Module(wrap!(ASTNode::Id(m.to_string())),
-                                        wrap!(ASTNode::Id(p.to_string())))), ind),
-
-                Some(t) => (Err(format!("Expected module property name, but got {:?}.", t)), ind),
-                None => (Err("Expected module property name, but end of file.".to_string()), ind)
+    if let Some(&Token::Id(ref m)) = it.next() {
+        match it.next() {
+            Some(Token::UseAll) => (Ok(ASTNode::ModuleAll(wrap!(ASTNode::Id(m.to_string())))), ind),
+            Some(Token::Use) => if let Some(&Token::Id(ref p)) = it.next() {
+                (Ok(ASTNode::Module(wrap!(ASTNode::Id(m.to_string())),
+                                    wrap!(ASTNode::Id(p.to_string())))), ind)
+            } else {
+                (Err("Expected module property name, but end of file.".to_string()), ind)
             }
 
-            Some(t) => (Err(format!("Expected use modifier, but got {:?}.", t)), ind),
-            None => (Err("Expected use modifier, but end of file.".to_string()), ind)
+            Some(_) | None => (Err("Expected use modifier.".to_string()), ind)
         }
-
-        Some(t) => (Err(format!("Expected module name, but got {:?}.", t)), ind),
-        None => (Err("Expected module name, but end of file.".to_string()), ind)
+    } else {
+        (Err("Expected identifier.".to_string()), ind)
     }
 }
 
@@ -76,45 +71,38 @@ fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTN
 pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
                                   -> (Result<ASTNode, String>, i32) {
     match function {
-        ASTNode::Id(id) => match it.peek() {
-            Some(Token::LPar) => match parse_tuple(it, ind) {
-                (Ok(tuple), new_ind) => (Ok(ASTNode::DirectFunCall(wrap!(ASTNode::Id(id)), wrap!(tuple))),
-                                         new_ind),
+        ASTNode::Id(id) => if let Some(Token::LPar) = it.peek() {
+            match parse_tuple(it, ind) {
+                (Ok(tuple), new_ind) =>
+                    (Ok(ASTNode::DirectFunCall(wrap!(ASTNode::Id(id)), wrap!(tuple))), new_ind),
                 err => err
             }
-
-            Some(t) => (Err(format!("Expected opening bracket, but got {:?}.", t)), ind),
-            None => (Err("Expected opening bracket, but end of file.".to_string()), ind)
+        } else {
+            (Err("Expected opening bracket.".to_string()), ind)
         }
-
-        t => (Err(format!("Expected function name, but got {:?}.", t)), ind)
+        _ => (Err("Expected function name.".to_string()), ind)
     }
 }
 
 // function-call ::= maybe-expr "." id tuple
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
                            -> (Result<ASTNode, String>, i32) {
-    match it.next() {
-        Some(Token::Point) => match it.next() {
-            Some(Token::Id(id)) => match it.peek() {
-                Some(Token::LPar) => match parse_tuple(it, ind) {
-                    (Ok(tuple), new_ind) => (Ok(ASTNode::FunCall(
-                        wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple),
-                    )), new_ind),
-                    err => err
-                }
+    debug_assert_eq!(it.next(), Some(&Token::Point));
 
-                Some(t) => (Err(format!("Expected opening bracket, but got {:?}.", t)), ind),
-                None => (Err("Expected opening bracket, but end of file.".to_string()), ind)
+    return if let Some(Token::Id(id)) = it.next() {
+        if let Some(Token::LPar) = it.peek() {
+            match parse_tuple(it, ind) {
+                (Ok(tuple), new_ind) => (Ok(ASTNode::FunCall(
+                    wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))),
+                                         new_ind),
+                err => err
             }
-
-            Some(t) => (Err(format!("Expected function name, but got {:?}.", t)), ind),
-            None => (Err("Expected function name, but end of file.".to_string()), ind)
+        } else {
+            (Err("Expected opening parenthesis.".to_string()), ind)
         }
-
-        Some(t) => (Err(format!("Expected point, but got {:?}.", t)), ind),
-        None => (Err("Expected function 'is', but end of file.".to_string()), ind)
-    }
+    } else {
+        (Err("Expected function name.".to_string()), ind)
+    };
 }
 
 // do-block ::= ( { expr-or-stmt newline } | newline )

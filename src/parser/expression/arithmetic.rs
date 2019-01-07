@@ -6,16 +6,14 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 macro_rules! un_operator { ($it:expr, $ind:expr, $op:path) => {{
-    $it.next();
-    match parse_maybe_expression($it, $ind) {
+    $it.next(); match parse_maybe_expression($it, $ind) {
         (Ok(expr), new_ind) => (Ok($op(Box::new(expr))), new_ind),
         err => err
     }
 }}}
 
 macro_rules! bin_operator { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
-    $it.next();
-    match parse_maybe_expression($it, $ind) {
+    $it.next(); match parse_maybe_expression($it, $ind) {
         (Ok(expr), new_ind) => (Ok($op(Box::new($factor), Box::new(expr))), new_ind),
         err => err
     }
@@ -37,8 +35,7 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
         Some(Token::Add) => un_operator!(it, ind, ASTNode::AddU),
         Some(Token::Sub) => un_operator!(it, ind, ASTNode::SubU),
 
-        Some(_) => panic!("Expected arithmetic expression, but other token."),
-        None => panic!("Expected arithmetic expression, but end of file.")
+        Some(_) | None => panic!("Expected arithmetic expression.")
     };
 }
 
@@ -68,8 +65,7 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
                 err => err
             },
 
-        Some(_) => panic!("Expected term, but other."),
-        None => panic!("Expected term, but end of file.")
+        Some(_) | None => panic!("Expected term.")
     };
 }
 
@@ -83,7 +79,6 @@ fn parse_factor(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
         Some(Token::ENum(num, exp)) => Ok(ASTNode::ENum(num.to_string(), exp.to_string())),
         Some(Token::Bool(boolean)) => Ok(ASTNode::Bool(*boolean)),
 
-        Some(_) => panic!("Expected factor, but other."),
-        None => panic!("Expected factor, but end of file.")
+        Some(_) | None => panic!("Expected factor.")
     }, ind);
 }

@@ -12,49 +12,20 @@ use std::slice::Iter;
 mod control_flow;
 
 macro_rules! postfix_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
-    $it.next();
-    match parse_maybe_expression($it, $ind) {
+    $it.next(); match parse_maybe_expression($it, $ind) {
         (Ok(post), nnew_ind) => (Ok($op(Box::new($pre), Box::new(post))), nnew_ind),
         err => err
     }
 }}}
 
-// maybe-expr ::= expression | "(" ( maybe-expr [ "," maybe-expr] ")" | control-flow-expr
-//             | function-call | maybe-expr "<-" maybe-expr | function-call | newline do-block
+// maybe-expr ::= expression | tuple | control-flow-expr  | function-call
+//             | maybe-expr "<-" maybe-expr | function-call | newline do-block
 pub fn parse_maybe_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
                               -> (Result<ASTNode, String>, i32) {
     return match match it.peek() {
         Some(Token::If) | Some(Token::Unless) | Some(Token::When) => control_flow::parse(it, ind),
         Some(Token::NL) => next_and!(it, parse_do(it, ind + 1)),
-        Some(Token::LPar) => {
-            it.next();
-            match parse(it, ind) {
-                (Ok(expr_or_stmt), new_ind) => match it.next() {
-                    Some(&Token::RPar) => (Ok(expr_or_stmt), new_ind),
-                    Some(&Token::Comma) => {
-                        let mut elements = Vec::new();
-                        elements.push(expr_or_stmt);
-
-                        while Some(&&Token::Comma) != it.peek()
-                            && Some(&&Token::RPar) != it.peek() {
-                            match parse(it, ind) {
-                                (Ok(element), _) => elements.push(element),
-                                err => return err
-                            }
-                        }
-
-                        if it.next() != Some(&Token::RPar) {
-                            (Err("Expected closing bracket after tuple.".to_string()), new_ind)
-                        } else {
-                            (Ok(ASTNode::Tuple(elements)), new_ind)
-                        }
-                    }
-                    _ => (Err("Expected either closing bracket after expression or statement, or \
-                    comma between tuple elements.".to_string()), new_ind)
-                }
-                err => err
-            }
-        }
+        Some(Token::LPar) => parse_tuple(it, ind),
         _ => parse_expression(it, ind)
     } {
         (Ok(pre), new_ind) => match it.peek() {
@@ -86,9 +57,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
                 (Err(err), new_ind) => return (Err(err), new_ind)
             }
             Some(Token::RPar) => break,
-
-            Some(t) => return (Err(format!("Expected expression, but got {:?}.", t)), ind),
-            None => return (Err("Expected expression, but end of file.".to_string()), ind)
+            Some(_) | None => return (Err("Expected expression.".to_string()), ind)
         };
     }
 

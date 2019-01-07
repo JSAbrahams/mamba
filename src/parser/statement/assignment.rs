@@ -18,27 +18,21 @@ pub fn parse(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
 
 // normal-assignment ::= "let" id "<-" maybe-expr
 fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    return match it.peek() {
-        Some(Token::Let) => {
-            it.next();
-            match parse_id(it, ind) {
-                (Ok(id), new_ind) => {
-                    if it.next() != Some(&Token::Assign) {
-                        return (Err("Expected Assign token".to_string()), ind);
-                    }
-                    match parse_maybe_expression(it, new_ind) {
-                        (Ok(expr), nnew_ind) =>
-                            (Ok(ASTNode::Assign(wrap!(id), wrap!(expr))),
-                             nnew_ind),
-                        err => err
-                    }
+    return if let Some(Token::Let) = it.next() {
+        match parse_id(it, ind) {
+            (Ok(id), new_ind) => if let Some(&Token::Assign) = it.next() {
+                match parse_maybe_expression(it, new_ind) {
+                    (Ok(expr), nnew_ind) => (Ok(ASTNode::Assign(wrap!(id), wrap!(expr))),
+                                             nnew_ind),
+                    err => err
                 }
-                err => err
+            } else {
+                (Err("Expected Assign token".to_string()), ind)
             }
+            err => err
         }
-
-        Some(_) => panic!("token not recognized"),
-        None => (Err("Unexpected end of file.".to_string()), ind)
+    } else {
+        (Err("Expected normal assignment.".to_string()), ind)
     };
 }
 
@@ -46,9 +40,7 @@ fn parse_nor_assign(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode
 fn parse_id(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.next() {
         Some(Token::Id(id)) => (Ok(ASTNode::Id(id.to_string())), ind),
-
-        Some(_) => panic!("Expected id, but other token."),
-        None => panic!("Expected id, but end of file.")
+        Some(_) | None => panic!("Expected id.")
     };
 }
 
