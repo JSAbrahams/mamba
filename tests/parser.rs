@@ -69,7 +69,13 @@ fn parse_while_statements() {
 }
 
 #[test]
-fn parse_function() {
+fn parse_function_definitions() {
     let source = resource_string_content("function_definitions.txt");
+    parse(tokenize(source).unwrap()).unwrap();
+}
+
+#[test]
+fn parse_function_calling() {
+    let source = resource_string_content("function_calling.txt");
     parse(tokenize(source).unwrap()).unwrap();
 }

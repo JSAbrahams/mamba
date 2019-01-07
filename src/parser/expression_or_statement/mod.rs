@@ -1,6 +1,7 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression::parse as parse_expression;
+use crate::parser::program::parse_function_call_direct;
 use crate::parser::program::parse_do;
 use crate::parser::program::parse_function_call;
 use crate::parser::statement::parse as parse_statement;
@@ -19,7 +20,7 @@ macro_rules! postfix_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
 }}}
 
 // maybe-expr ::= expression | "(" ( maybe-expr [ "," maybe-expr] ")" | control-flow-expr
-//             | maybe-expr "<-" maybe-expr | function-call | newline do-block
+//             | function-call | maybe-expr "<-" maybe-expr | function-call | newline do-block
 pub fn parse_maybe_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
                               -> (Result<ASTNode, String>, i32) {
     return match match it.peek() {
@@ -58,6 +59,7 @@ pub fn parse_maybe_expression(it: &mut Peekable<Iter<Token>>, ind: i32)
     } {
         (Ok(pre), new_ind) => match it.peek() {
             Some(Token::Assign) => postfix_op!(it, new_ind, ASTNode::Assign, pre),
+            Some(Token::LPar) => parse_function_call_direct(pre, it, ind),
             Some(Token::Point) => parse_function_call(pre, it, ind),
             Some(_) | None => (Ok(pre), new_ind)
         }

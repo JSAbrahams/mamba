@@ -3,8 +3,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     (* a function definition contains no expressions in the signature *)
     function-call    ::= maybe-expr "." id tuple
+    function-call-dir::= id tuple
     function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ] "->" expr-or-stmt
-    function-args    ::= id ":" function-type [ "," function-args ]
+    function-args    ::= function-type ":" function-type [ "," function-args ]
     function-type    ::= id | static-tuple | static-tuple "->" function-type
     static-tuple     ::= "(" [ function-type { "," function-type } ] ")"
     
@@ -14,7 +15,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     do-block         ::= { { indent } expr-or-stmt newline } [ newline ]
     
     (* can be either a statement or expression, must be checked by type checker *)
-    maybe-expr       ::= expression | tuple | control-flow-expr | reassignment | function-call | newline do-block
+    maybe-expr       ::= expression | tuple | control-flow-expr | reassignment | function-call | function-call-dir 
+                      | newline do-block
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
     reassignment     ::= maybe-expr "<-" maybe-expr
     expr-or-stmt     ::= statement | maybe-expr [ ( "if" | "unless" ) maybe_expr ]

@@ -1,7 +1,6 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression_or_statement::parse;
-use crate::parser::expression_or_statement::parse_tuple;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -52,7 +51,7 @@ pub fn parse_function_definition(it: &mut Peekable<Iter<Token>>, ind: i32)
     };
 }
 
-// "(" [ { function-arg "," } function-arg ] ")"
+// function-args ::= function-type ":" function-type [ "," function-args ]
 fn parse_args(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<Vec<ASTNode>, String>, i32) {
     match it.next() {
         Some(Token::LPar) => {
@@ -85,40 +84,22 @@ fn parse_args(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<Vec<ASTNode>,
     }
 }
 
-// function-arg ::= ( id | tuple ) ":" function-type
+// function-arg ::= function-type ":" function-type
 fn parse_function_arg(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    match it.peek() {
-        Some(Token::Id(arg)) => {
-            it.next();
-            match it.next() {
-                Some(Token::DoublePoint) => match parse_function_type(it, ind) {
-                    (Ok(ty), new_ind) =>
-                        (Ok(ASTNode::FunArg(Box::new(ASTNode::Id(arg.to_string())),
-                                            Box::new(ty))),
-                         new_ind),
-                    err => err
-                }
-
-                Some(t) => (Err(format!("Expected double point, but got {:?}.", t)), ind),
-                None => (Err("Expected double point, but end of file.".to_string()), ind)
+    match parse_function_type(it, ind) {
+        (Ok(arg), new_ind) => match it.next() {
+            Some(Token::DoublePoint) => match parse_function_type(it, new_ind) {
+                (Ok(ty), nnew_ind) => (Ok(ASTNode::FunArg(Box::new(arg), Box::new(ty))),
+                                       nnew_ind),
+                err => err
             }
-        }
-        Some(Token::LPar) => match parse_tuple(it, ind) {
-            (Ok(tup), new_ind) => match it.next() {
-                Some(Token::DoublePoint) => match parse_function_type(it, new_ind) {
-                    (Ok(ty), nnew_ind) =>
-                        (Ok(ASTNode::FunArg(Box::new(tup), Box::new(ty))), nnew_ind),
-                    err => err
-                }
 
-                Some(t) => (Err(format!("Expected double point, but got {:?}.", t)), ind),
-                None => (Err("Expected double point, but end of file.".to_string()), ind)
-            }
-            err => err
-        }
-
-        Some(t) => (Err(format!("Expected argument identifier, but got {:?}.", t)), ind),
-        None => (Err("Expected argument identifier, but end of file.".to_string()), ind)
+            Some(t) =>
+                (Err(format!("Expected double point after argument id, but got {:?}.", t)), ind),
+            None =>
+                (Err("Expected double point after argument id, but end of file.".to_string()), ind)
+        },
+        err => err
     }
 }
 

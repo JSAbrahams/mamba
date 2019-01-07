@@ -16,6 +16,7 @@ pub enum ASTNode {
     FunDef(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunDefNoRetType(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
     FunCall(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    DirectFunCall(Box<ASTNode>, Box<ASTNode>),
     FunArg(Box<ASTNode>, Box<ASTNode>),
     FunType(Box<ASTNode>, Box<ASTNode>),
     StaticTuple(Vec<ASTNode>),
