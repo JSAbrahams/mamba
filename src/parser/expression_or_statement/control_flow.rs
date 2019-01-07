@@ -102,15 +102,10 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
     let mut is_prev_empty_line = false;
 
     loop {
-        match it.peek() {
-            /* double empty line marks end of when */
-            Some(Token::NL) if is_prev_empty_line => break,
-            Some(Token::NL) => {
-                is_prev_empty_line = true;
-                it.next();
-                continue;
-            }
-            _ => ()
+        if let Some(&Token::NL) = it.peek() {
+            if is_prev_empty_line { break; }  /* double empty line marks end of when */
+            is_prev_empty_line = true;
+            next_and!(it, continue);
         }
 
         let (res, this_ind) = parse_when_case(it, ind);
