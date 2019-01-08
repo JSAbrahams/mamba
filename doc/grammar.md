@@ -34,7 +34,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | assignment 
                       | "donothing" 
                       | control-flow-stmt
-    maybe-expr       ::= "return" maybe-expr 
+    maybe-expr       ::= "return" [ maybe-expr ] 
                       | operation 
                       | tuple 
                       | control-flow-expr 
