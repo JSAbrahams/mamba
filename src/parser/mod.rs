@@ -14,7 +14,7 @@ mod util;
 #[derive(Debug)]
 pub enum ASTNode {
     ImportModUse(Box<ASTNode>, Box<ASTNode>),
-    ImportModeUseAs(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    ImportModUseAs(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     ImportModUseAll(Box<ASTNode>),
 
     FunDef(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>, Box<ASTNode>),

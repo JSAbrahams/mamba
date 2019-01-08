@@ -55,15 +55,12 @@ fn parse_multiple(token: &Token,
 
     while let Some(&t) = it.peek() {
         if token != t { break; }
-
         match fun(it, 0) {
             (Ok(element), _) => elements.push(element),
             (Err(err), _) => return Err(err)
         }
 
-        if it.peek().is_some() && it.next() != Some(&Token::NL) {
-            return Err("Expected newline.".to_string());
-        }
+        if it.peek().is_some() && it.next() != Some(&Token::NL) { break; }
         skip_newlines(it);
     }
 
@@ -99,8 +96,8 @@ fn parse_module_use(id: String, it: &mut Peekable<Iter<Token>>, ind: i32)
         (Some(Token::Id(prop)), Some(&Token::As)) => {
             it.next();
             if let Some(&Token::Id(ref other)) = it.next() {
-                (Ok(ASTNode::ImportModeUseAs(wrap!(ASTNode::Id(id)), wrap!(ASTNode::Id(prop.to_string())),
-                                             wrap!(ASTNode::Id(other.to_string())))), ind)
+                (Ok(ASTNode::ImportModUseAs(wrap!(ASTNode::Id(id)), wrap!(ASTNode::Id(prop.to_string())),
+                                            wrap!(ASTNode::Id(other.to_string())))), ind)
             } else {
                 (Err("Expected identifier.".to_string()), ind)
             }
@@ -154,39 +151,29 @@ fn parse_program_do(it: &mut Peekable<Iter<Token>>) -> Option<Result<ASTNode, St
     }
 }
 
-// do-block ::= ( { expr-or-stmt newline } | newline )
+// do-block ::= { { indent } expr-or-stmt newline } [ newline ]
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    let this_ind = util::ind_count(it);
-    if this_ind > ind {
-        return (Err(format!("Expected indentation of {}, was {}.", ind, this_ind)), this_ind);
-    }
-
     let mut nodes = Vec::new();
-    let mut is_prev_empty_line = false;
 
-    while let Some(&t) = it.peek() {
-        if *t == Token::NL && is_prev_empty_line { break; }
-        if *t == Token::NL { next_and!(it, { is_prev_empty_line = true; continue; }) }
+    while let Some(_) = it.peek() {
+        let next_ind = util::ind_count(it);
+        if next_ind < ind { break; }; /* Indentation decrease marks end of do block */
+        if next_ind > ind && it.peek().is_some() {
+            return (Err(format!("Expected indentation of {}.", ind)), next_ind);
+        }
 
         match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), new_ind) => {
-                is_prev_empty_line = false;
-                nodes.push(ast_node);
-
-                if it.peek() != None && Some(&Token::NL) != it.next() {
-                    return (Err("Expected newline.".to_string()), new_ind);
-                }
-
-                let next_ind = util::ind_count(it);
-                /* Indentation decrease marks end of do block */
-                if next_ind < new_ind { break; };
-
-                if next_ind > new_ind && it.peek().is_some() {
-                    return (Err(format!("Expected indentation of {}.", next_ind)), new_ind);
-                }
-            }
+            (Ok(ast_node), _) => nodes.push(ast_node),
             err => return err
         }
+
+        if Some(&&Token::NL) == it.peek() {
+            it.next();
+            if Some(&&Token::NL) == it.peek() {
+                it.next();
+                break;
+            }
+        } else { break; }
     }
 
     return (Ok(ASTNode::Do(nodes)), ind - 1);

@@ -32,7 +32,7 @@ fn parse_assigns_and_while() {
 #[test]
 fn parse_class() {
     let source = valid_resource("class.txt");
-    println!("{:?}",parse(tokenize(source).unwrap()).unwrap());
+    parse(tokenize(source).unwrap()).unwrap();
 }
 
 #[test]

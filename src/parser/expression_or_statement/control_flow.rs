@@ -73,7 +73,7 @@ fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String
     };
 }
 
-// when ::= "when" maybe-expr "is" newline { { indent } when-case }
+// when ::= "when" maybe-expr "is" newline { { indent } when-case newline [newline] }
 fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::When));
 
@@ -92,38 +92,29 @@ fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
 
 fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
                     -> (Result<Vec<ASTNode>, String>, i32) {
-    let act_ind = ind_count(it);
-    if ind != act_ind {
-        return (Err(format!("Expected indentation level {}, was {}.", ind, act_ind)), act_ind);
-    }
-
     let mut when_cases = Vec::new();
-    let mut is_prev_empty_line = false;
 
-    loop {
-        if let Some(&Token::NL) = it.peek() {
-            if is_prev_empty_line { break; }  /* double empty line marks end of when */
-            is_prev_empty_line = true;
-            next_and!(it, continue);
-        }
-
-        let (res, this_ind) = parse_when_case(it, ind);
-        if it.next() != Some(&Token::NL) {
-            return (Err("Expected newline after 'when' case expression".to_string()), ind);
-        }
-
+    while let Some(_) = it.peek() {
         let next_ind = ind_count(it);
-        if next_ind < ind { break; }; /* Indentation decrease marks end of do when */
+        if next_ind < ind { break; }; /* Indentation decrease marks end of do block */
         if next_ind > ind && it.peek().is_some() {
-            /* indentation increased unexpectedly */
-            return (Err(format!("Indentation increased in do block from {} to {}.", ind, next_ind)),
-                    ind);
+            return (Err(format!("Expected indentation of {}.", ind)), next_ind);
         }
 
-        match res {
-            Ok(when_case) => when_cases.push(when_case),
-            Err(err) => return (Err(err), this_ind)
+        match parse_when_case(it, ind) {
+            (Ok(case), _) => if Some(&&Token::NL) != it.peek() { break; } else {
+                when_cases.push(case);
+            }
+            (Err(err), new_ind) => return (Err(err), new_ind)
         }
+
+        if Some(&&Token::NL) == it.peek() {
+            it.next();
+            if Some(&&Token::NL) == it.peek() {
+                it.next();
+                break;
+            }
+        } else { break; }
     }
 
     return (Ok(when_cases), ind);
@@ -136,7 +127,8 @@ fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
             return (Err("Expected 'then' after when case expression".to_string()), new_ind);
         } else {
             match parse_expr_or_stmt(it, new_ind) {
-                (Ok(expr_or_do), nnew_ind) => (Ok(ASTNode::If(wrap!(expr), wrap!(expr_or_do))), nnew_ind),
+                (Ok(expr_or_do), nnew_ind) =>
+                    (Ok(ASTNode::If(wrap!(expr), wrap!(expr_or_do))), nnew_ind),
                 err => err
             }
         }

@@ -9,6 +9,12 @@ unless d then e <- 5 else fdsa
 if f then g else h
 if i then j else k
 
+if cond
+    body
+else
+    other
+    print "a"
+
 if l then
     m
 
