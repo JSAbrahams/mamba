@@ -84,15 +84,14 @@ an expression or statement without type checking the program.
 A module denotes a single source file, and can be one of the following:
 * A `program`: A script, which is to be executed.
                * May contain functions, which are only visible to the script itself.
-* A `type`   : An interface which may denote the type of a certain class of object. 
-               * It contains a collection of definitions and functions, which all may be viewed as properties of the 
-                 type (and are therefore all public). 
-               * Only immutable assignments are possible, not mutable assignments.
-               * All `util` and `class` that implement `type` must assign to definitions which have not been assigned 
-                 to.
+* A `type`   : An interface which may denote the type of a certain class of object
+    * Contains a collection of definitions and functions, which all may be viewed as properties of the type. As such,
+      these are all publicly visible.
+    * Only immutable assignments are possible, not mutable assignments.
+    * All `util` and `class` that implement `type` must assign to definitions which have not been assigned to.
 * A `util`   : A collection of functions and immutable assignments.
 * A `class`  : A collection of functions that act upon encapsulated data. 
-               * It contains a collection of assignments and functions. All assignments and functions are public. 
-               * A function or assignment may be prepended with `util` to make it private.
+    * Contains a collection of assignments and functions. All assignments and functions are public. 
+    * A function or assignment may be prepended with `util` to make it private.
                
 Note that there is no inheritance. 
