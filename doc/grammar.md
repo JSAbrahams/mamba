@@ -70,7 +70,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     real             ::= digit "." digit
     integer          ::= digit
     e-notation       ::= ( integer | real ) ( "e" | "E" ) [ "-" ] integer
-    boolean          ::= "True" | "False"
+    boolean          ::= "true" | "false"
     string           ::= "\"" { character } "\""
                                      
     control-flow-expr::= if | when
