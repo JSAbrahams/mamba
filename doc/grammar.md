@@ -4,12 +4,13 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
     
     module           ::= class | program | type | util
-    type             ::= { module-import newline } { newline } "type" id newline 
-                         { ( function-def | definition | immutable-asssignment ) newline { newline } }
-    util             ::= { module-import newline } { newline } "util" id newline [ "isa" id [ { "," id } ] ]
-                         { ( immutable-assignment ) newline { newline } } { ( function-def-bod ) newline { newline } }
-    class            ::= { module-import newline } { newline } "class" id newline [ "isa" id [ { "," id } ] ]
-                         { ( [ "util" ]  function-def | assignment ) newline { newline } }
+    type             ::= { module-import newline } { newline } "type" id [ newline 
+                         { ( function-def | definition | immutable-asssignment ) newline { newline } } ]
+    util             ::= { module-import newline } { newline } "util" id [ newline [ "isa" id [ { "," id } ] ]
+                         { ( immutable-assignment | function-def-bod ) newline { newline } } ]
+    class            ::= { module-import newline } { newline } "class" id [ newline [ "isa" id [ { "," id } ] ]
+                         { [ ( "util" ( function-def | immutable-assign ) | "private" ( function-def | assignment ) ) 
+                         newline { newline } } ]
     program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
     
     function-call    ::= maybe-expr "." id tuple
@@ -83,15 +84,15 @@ an expression or statement without type checking the program.
 
 A module denotes a single source file, and can be one of the following:
 * A `program`: A script, which is to be executed.
-               * May contain functions, which are only visible to the script itself.
-* A `type`   : An interface which may denote the type of a certain class of object
-    * Contains a collection of definitions and functions, which all may be viewed as properties of the type. As such,
-      these are all publicly visible.
-    * Only immutable assignments are possible, not mutable assignments.
-    * All `util` and `class` that implement `type` must assign to definitions which have not been assigned to.
+    * May contain functions, which are only visible to the script itself.
+* A `type`   : An interface which may denote the type of a certain class of object.
+    * Contains a collection of definitions, immutable assignements, and functions. All may be viewed as properties of the 
+      type. As such, these are all publicly visible.
+    * All `util` and `class` that implement `type` must assign to the definitions.
 * A `util`   : A collection of functions and immutable assignments.
 * A `class`  : A collection of functions that act upon encapsulated data. 
     * Contains a collection of assignments and functions. All assignments and functions are public. 
-    * A function or assignment may be prepended with `util` to make it private.
+    * A function or immutable-assignment may be prepended with `util` to make it static.
+    * A function or assignment may be prepended with `private` to make it only visible within this module.
                
 Note that there is no inheritance. 
