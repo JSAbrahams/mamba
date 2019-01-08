@@ -47,7 +47,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
     
     reassignment     ::= maybe-expr "<-" maybe-expr
-    assignments      ::= mutable-assign | immutable-assign
+    assignment       ::= mutable-assign | immutable-assign
     mutable-assign   ::= [ "mutable" ] immutable-assignment
     immutable-assign ::= variable-def "<-" maybe-expr
     definition       ::= "let" id
