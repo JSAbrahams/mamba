@@ -49,7 +49,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     number           ::= real | integer | e-notation
     real             ::= digit "." digit
     integer          ::= digit
-    e-notation       ::= digit [ "." digit ] ( "e" | "E" ) [ "-" ] digit
+    e-notation       ::= ( integer | real ) ( "e" | "E" ) [ "-" ] integer
     boolean          ::= "True" | "False"
     string           ::= "\"" { character } "\""
     
