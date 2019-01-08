@@ -30,7 +30,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     expr-or-stmt     ::= statement | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
                        
     statement        ::= "print" maybe-expr | assignment | "donothing" | control-flow-stmt
-    expression       ::= "return" maybe-expr | arithmetic
+    expression       ::= "return" maybe-expr | operation
     
     id               ::= { ( character | number | "_" ) }
     
@@ -38,8 +38,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     mutable-assign   ::= [ "mutable" ] immutable-assignment
     immutable-assign ::= variable-def "<-" maybe-expr
     definition       ::= "let" id
-    
-    arithmetic       ::= term | unary maybe-expr | term additive maybe-expr
+
+    operation        ::= arithmetic | unary arithmetic 
+                      | arithmetic ( equality | relational | binary logic ) maybe-expr
+    arithmetic       ::= term | term additive maybe-expr
     term             ::= factor | factor multiclative-operator maybe-expr
     factor           ::= constant | id
     
@@ -53,7 +55,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
-    multiplicative   ::= "*" | "/" | "^" | "mod"  | equality | relational | binary-logic
+    multiplicative   ::= "*" | "/" | "^" | "mod"
     equality         ::= "equals" | "is" | "notequals" | "isnot"
     relational       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
