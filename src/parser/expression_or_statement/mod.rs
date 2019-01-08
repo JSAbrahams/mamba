@@ -1,9 +1,9 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expression::parse as parse_expression;
-use crate::parser::program::parse_do;
-use crate::parser::program::parse_function_call;
-use crate::parser::program::parse_function_call_direct;
+use crate::parser::module::parse_do;
+use crate::parser::module::parse_function_call;
+use crate::parser::module::parse_function_call_direct;
 use crate::parser::statement::parse as parse_statement;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -61,7 +61,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
         };
     }
 
-    return (Ok(ASTNode::StaticTuple(elements)), ind);
+    return (Ok(ASTNode::FunTuple(elements)), ind);
 }
 
 // expr-or-stmt ::= statement | maybe-expr ( [ "<-" maybe_expr ] | ( "if" | "unless" ) maybe_expr )

@@ -2,15 +2,17 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     (* a function definition contains no expressions in the signature *)
-    module-import    ::= "from" id ( "use" id | "useall" )
+    module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
     
     function-call    ::= maybe-expr "." id tuple
     function-call-dir::= id tuple
     function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ] "->" expr-or-stmt
     function-args    ::= function-type ":" function-type [ "," function-args ]
-    function-type    ::= id | static-tuple | static-tuple "->" function-type
-    static-tuple     ::= "(" [ function-type { "," function-type } ] ")"
+    function-type    ::= id | static-tuple | function-tuple "->" function-type
+    function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
     
+    module           ::= class | program
+    class            ::= { module-import newline } { newline } "class" id newline { function-def newline { newline } }
     program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
     
     (* a do block is an expression iff last is expression, else statement *)
@@ -56,7 +58,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     control-flow-expr::= if | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
     when             ::= "when" maybe-expr newline { { indent } when-case }
-    when-case        ::= maybe-expr "do" expr-or-stmt
+    when-case        ::= maybe-expr "then" expr-or-stmt
     
     control-flow-stmt::= loop | while | for | "break" | "continue"
     loop             ::= "loop" expr-or-stmt

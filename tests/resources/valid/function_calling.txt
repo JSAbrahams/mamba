@@ -1,6 +1,8 @@
 fun fun_a() -> print c
 
-fun fun_b(b: c) -> print c
+fun fun_b(b: c) ->
+    print c
+    print d
 
 fun fun_c(d: (e, f)) -> print g
 

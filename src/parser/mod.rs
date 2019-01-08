@@ -5,7 +5,7 @@ macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 macro_rules! wrap { ($node:expr) => {{ Box::new($node) }} }
 
 mod expression_or_statement;
-mod program;
+mod module;
 mod expression;
 mod statement;
 mod util;
@@ -13,18 +13,20 @@ mod util;
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
-    Module(Box<ASTNode>, Box<ASTNode>),
-    ModuleAll(Box<ASTNode>),
+    ImportModUse(Box<ASTNode>, Box<ASTNode>),
+    ImportModeUseAs(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
+    ImportModUseAll(Box<ASTNode>),
 
     FunDef(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunDefNoRetType(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
     FunCall(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    DirectFunCall(Box<ASTNode>, Box<ASTNode>),
+    FunCallDirect(Box<ASTNode>, Box<ASTNode>),
     FunArg(Box<ASTNode>, Box<ASTNode>),
     FunType(Box<ASTNode>, Box<ASTNode>),
-    StaticTuple(Vec<ASTNode>),
+    FunTuple(Vec<ASTNode>),
 
-    Program(Vec<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
+    ModProgram(Vec<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
+    ModClass(Vec<ASTNode>, Box<ASTNode>, Vec<ASTNode>),
 
     Id(String),
     Assign(Box<ASTNode>, Box<ASTNode>),
@@ -77,7 +79,7 @@ pub enum ASTNode {
     DoNothing,
 }
 
-// program ::= do-block
+// module ::= class | program
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
-    return program::parse(&mut input.iter().peekable())
+    return module::parse(&mut input.iter().peekable());
 }

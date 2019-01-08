@@ -129,10 +129,10 @@ fn parse_when_cases(it: &mut Peekable<Iter<Token>>, ind: i32)
     return (Ok(when_cases), ind);
 }
 
-// when-case ::= maybe-expr "do" expr-or-stmt
+// when-case ::= maybe-expr "then" expr-or-stmt
 fn parse_when_case(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     match parse_maybe_expression(it, ind) {
-        (Ok(expr), new_ind) => if it.next() != Some(&Token::Do) {
+        (Ok(expr), new_ind) => if it.next() != Some(&Token::Then) {
             return (Err("Expected 'then' after when case expression".to_string()), new_ind);
         } else {
             match parse_expr_or_stmt(it, new_ind) {

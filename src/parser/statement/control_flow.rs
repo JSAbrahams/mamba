@@ -50,7 +50,6 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
 fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     debug_assert_eq!(it.next(), Some(&Token::For));
 
-
     return match parse_maybe_expression(it, ind) {
         (Ok(expr), new_ind) => if let Some(&Token::In) = it.next() {
             match parse_maybe_expression(it, new_ind) {

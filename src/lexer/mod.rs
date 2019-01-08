@@ -4,6 +4,8 @@ use std::str::Chars;
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum Token {
+    Class,
+    As,
     From,
     Use,
     UseAll,
@@ -193,11 +195,14 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
     }
 
     return match result.as_ref() {
+        "as" => Token::As,
         "from" => Token::From,
         "use" => Token::Use,
         "useall" => Token::UseAll,
 
+        "class" => Token::Class,
         "fun" => Token::Fun,
+
         "let" => Token::Let,
         "mutable" => Token::Mut,
 

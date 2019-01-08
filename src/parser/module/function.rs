@@ -131,5 +131,5 @@ fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
         };
     }
 
-    return (Ok(ASTNode::StaticTuple(fun_types)), ind);
+    return (Ok(ASTNode::FunTuple(fun_types)), ind);
 }
