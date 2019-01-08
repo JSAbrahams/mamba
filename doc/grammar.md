@@ -4,14 +4,19 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
     
     module           ::= class | program | type | util
-    type             ::= { module-import newline } { newline } "type" id [ newline 
-                         { ( function-def | definition | immutable-asssignment ) newline { newline } } ]
-    util             ::= { module-import newline } { newline } "util" id [ newline [ "isa" id [ { "," id } ] ]
-                         { ( immutable-assignment | function-def-bod ) newline { newline } } ]
-    class            ::= { module-import newline } { newline } "class" id [ newline [ "isa" id [ { "," id } ] ]
-                         { [ ( "util" ( function-def | immutable-assign ) | "private" ( function-def | assignment ) ) 
-                         newline { newline } } ]
-    program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
+    type             ::= { module-import newline } { newline } 
+                         "type" id [ newline { newline }
+                         { ( function-def | definition | immutable-asssign ) newline { newline } } ]
+    util             ::= { module-import newline } { newline } 
+                         "util" id [ newline [ "isa" id [ { "," id } ] ] [ newline { newline } 
+                         { ( immutable-assign | function-def-bod ) newline { newline } } ]
+    class            ::= { module-import newline } { newline } 
+                         "class" id [ "isa" id [ { "," id } ] ] [ newline { newline } 
+                         { [ ( "util" ( function-def-bod | immutable-assign ) | 
+                               "private" ( function-def-bod | assignment ) ) newline { newline } } ]
+    program          ::= { module-import newline } { newline } 
+                         { function-def newline { newline } } 
+                         [ do-block ]
     
     function-call    ::= maybe-expr "." id tuple
     function-call-dir::= id tuple
@@ -23,27 +28,42 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
     
-    maybe-expr       ::= expression | tuple | control-flow-expr | reassignment | function-call | function-call-dir 
+    expr-or-stmt     ::= statement 
+                      | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
+    statement        ::= "print" maybe-expr 
+                      | assignment 
+                      | "donothing" 
+                      | control-flow-stmt
+    maybe-expr       ::= "return" maybe-expr 
+                      | operation 
+                      | tuple 
+                      | control-flow-expr 
+                      | reassignment 
+                      | function-call 
+                      | function-call-dir 
                       | newline do-block
-    tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
-    reassignment     ::= maybe-expr "<-" maybe-expr
-    expr-or-stmt     ::= statement | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
-                       
-    statement        ::= "print" maybe-expr | assignment | "donothing" | control-flow-stmt
-    expression       ::= "return" maybe-expr | operation
     
     id               ::= { ( character | number | "_" ) }
+    tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
     
+    reassignment     ::= maybe-expr "<-" maybe-expr
     assignments      ::= mutable-assign | immutable-assign
     mutable-assign   ::= [ "mutable" ] immutable-assignment
     immutable-assign ::= variable-def "<-" maybe-expr
     definition       ::= "let" id
 
-    operation        ::= arithmetic | unary arithmetic 
-                      | arithmetic ( equality | relational | binary logic ) maybe-expr
+    operation        ::= arithmetic | unary arithmetic | arithmetic relational maybe-expr
     arithmetic       ::= term | term additive maybe-expr
     term             ::= factor | factor multiclative-operator maybe-expr
     factor           ::= constant | id
+    
+    unary            ::= "not" | additive
+    additive         ::= "+" | "-"
+    multiplicative   ::= "*" | "/" | "^" | "mod"
+    relational       ::= equality | comparison | binary-logic
+    equality         ::= "equals" | "is" | "notequals" | "isnot"
+    comparison       ::= "<=" | ">=" | "<" | ">"
+    binary-logic     ::= "and" | "or"
     
     constant         ::= number | boolean | string
     number           ::= real | integer | e-notation
@@ -52,13 +72,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     e-notation       ::= ( integer | real ) ( "e" | "E" ) [ "-" ] integer
     boolean          ::= "True" | "False"
     string           ::= "\"" { character } "\""
-    
-    unary            ::= "not" | additive
-    additive         ::= "+" | "-"
-    multiplicative   ::= "*" | "/" | "^" | "mod"
-    equality         ::= "equals" | "is" | "notequals" | "isnot"
-    relational       ::= "<=" | ">=" | "<" | ">"
-    binary-logic     ::= "and" | "or"
                                      
     control-flow-expr::= if | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
@@ -66,7 +79,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     when-case        ::= maybe-expr "then" expr-or-stmt
     
     control-flow-stmt::= loop | while | for | "break" | "continue"
-    loop             ::= "loop" expr-or-stmt
     while            ::= "while" maybe-expr "do" expr-or-stmt
     for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
     
