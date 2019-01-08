@@ -151,29 +151,33 @@ fn parse_program_do(it: &mut Peekable<Iter<Token>>) -> Option<Result<ASTNode, St
     }
 }
 
-// do-block ::= { { indent } expr-or-stmt newline } [ newline ]
+// do-block ::= { { indent } expr-or-stmt newline [ newline ] [ newline ] }
 pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     let mut nodes = Vec::new();
 
     while let Some(_) = it.peek() {
         let next_ind = util::ind_count(it);
-        if next_ind < ind { break; }; /* Indentation decrease marks end of do block */
         if next_ind > ind && it.peek().is_some() {
             return (Err(format!("Expected indentation of {}.", ind)), next_ind);
         }
 
         match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), _) => nodes.push(ast_node),
+            (Ok(ast_node), _) => if it.peek() != None && it.next() != Some(&Token::NL) {
+                return (Err("Expected newline.".to_string()), ind);
+            } else {
+                nodes.push(ast_node)
+            }
             err => return err
         }
 
+        /* empty line */
         if Some(&&Token::NL) == it.peek() {
             it.next();
             if Some(&&Token::NL) == it.peek() {
                 it.next();
-                break;
+                if Some(&&Token::NL) == it.peek() { break; }
             }
-        } else { break; }
+        }
     }
 
     return (Ok(ASTNode::Do(nodes)), ind - 1);

@@ -2,4 +2,11 @@ for a in b do print c
 
 for d in e do
     print f
+
     print g
+
+    print h
+
+for aa in bb do
+    print to
+    print from

@@ -6,11 +6,16 @@ print "hi" unless cond2
 if c then d <- 4 else asdf
 unless d then e <- 5 else fdsa
 
-if f then g else h
-if i then j else k
-
-if cond
+if cond then
     body
+else
+    other
+    print "a"
+
+if cond then
+    body_part_1
+
+    body_part_2
 else
     other
     print "a"

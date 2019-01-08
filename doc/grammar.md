@@ -16,7 +16,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
     
     (* a do block is an expression iff last is expression, else statement *)
-    do-block         ::= { { indent } expr-or-stmt newline } [ newline ]
+    do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
     
     (* can be either a statement or expression, must be checked by type checker *)
     maybe-expr       ::= expression | tuple | control-flow-expr | reassignment | function-call | function-call-dir 
