@@ -1,24 +1,27 @@
 # Grammar
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    (* a function definition contains no expressions in the signature *)
     module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
+    
+    module           ::= class | program | type | util
+    type             ::= { module-import newline } { newline } "type" id newline 
+                         { ( function-def | definition | immutable-asssignment ) newline { newline } }
+    util             ::= { module-import newline } { newline } "util" id newline [ "isa" id [ { "," id } ] ]
+                         { ( immutable-assignment ) newline { newline } } { ( function-def-bod ) newline { newline } }
+    class            ::= { module-import newline } { newline } "class" id newline [ "isa" id [ { "," id } ] ]
+                         { ( [ "util" ]  function-def | assignment ) newline { newline } }
+    program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
     
     function-call    ::= maybe-expr "." id tuple
     function-call-dir::= id tuple
-    function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ] "->" expr-or-stmt
+    function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
+    function-def-bod ::= function-def "->" expr-or-stmt
     function-args    ::= function-type ":" function-type [ "," function-args ]
     function-type    ::= id | static-tuple | function-tuple "->" function-type
     function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
     
-    module           ::= class | program
-    class            ::= { module-import newline } { newline } "class" id newline { function-def newline { newline } }
-    program          ::= { module-import newline } { newline } { function-def newline { newline } } [ do-block ]
-    
-    (* a do block is an expression iff last is expression, else statement *)
     do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
     
-    (* can be either a statement or expression, must be checked by type checker *)
     maybe-expr       ::= expression | tuple | control-flow-expr | reassignment | function-call | function-call-dir 
                       | newline do-block
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
@@ -30,15 +33,15 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     id               ::= { ( character | number | "_" ) }
     
-    assignment       ::= normal-assignment | mut-assignment
-    normal-assignment::= "let" id "<-" maybe-expr
-    mut-assignment   ::= "mutable" assignment
+    assignments      ::= mutable-assign | immutable-assign
+    mutable-assign   ::= [ "mutable" ] immutable-assignment
+    immutable-assign ::= variable-def "<-" maybe-expr
+    definition       ::= "let" id
     
     arithmetic       ::= term | unary maybe-expr | term additive maybe-expr
     term             ::= factor | factor multiclative-operator maybe-expr
     factor           ::= constant | id
     
-    (* e-notation can either be real or integer. Must be checked by type checker upon use *)
     constant         ::= number | boolean | string
     number           ::= real | integer | e-notation
     real             ::= digit "." digit
@@ -54,7 +57,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     relational       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
                                      
-    (* control flow expression may still be statement, should be checked by type checker *)
     control-flow-expr::= if | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
     when             ::= "when" maybe-expr newline { { indent } when-case }
@@ -78,3 +80,19 @@ but it does adhere to the following rules:
 A `maybe-expr` is used in a situation where an expression is required,  but we cannot know in advance whether it will be
 an expression or statement without type checking the program.
 `expr-or-stmt` may be used when it does not matter whether it is an expression or statement.
+
+A module denotes a single source file, and can be one of the following:
+* A `program`: A script, which is to be executed.
+               * May contain functions, which are only visible to the script itself.
+* A `type`   : An interface which may denote the type of a certain class of object. 
+               * It contains a collection of definitions and functions, which all may be viewed as properties of the 
+                 type (and are therefore all public). 
+               * Only immutable assignments are possible, not mutable assignments.
+               * All `util` and `class` that implement `type` must assign to definitions which have not been assigned 
+                 to.
+* A `util`   : A collection of functions and immutable assignments.
+* A `class`  : A collection of functions that act upon encapsulated data. 
+               * It contains a collection of assignments and functions. All assignments and functions are public. 
+               * A function or assignment may be prepended with `util` to make it private.
+               
+Note that there is no inheritance. 
