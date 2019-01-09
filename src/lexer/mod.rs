@@ -55,6 +55,7 @@ pub enum Token {
     Loop,
     While,
     For,
+    Where,
     In,
     If,
     Unless,
@@ -67,7 +68,6 @@ pub enum Token {
     Ret,
 
     Print,
-    DoNothing,
 }
 
 #[macro_use]
@@ -218,6 +218,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
         "loop" => Token::Loop,
         "while" => Token::While,
         "for" => Token::For,
+        "where" => Token::Where,
         "in" => Token::In,
         "if" => Token::If,
         "then" => Token::Then,
@@ -233,7 +234,6 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
         "false" => Token::Bool(false),
 
         "print" => Token::Print,
-        "donothing" => Token::DoNothing,
 
         _ => Token::Id(result)
     };

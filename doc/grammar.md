@@ -3,7 +3,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
     
-    module           ::= class | program | type | util
+    module           ::= type | util | class | script
     type             ::= { module-import newline } { newline } 
                          "type" id [ newline { newline }
                          { ( function-def | definition | immutable-asssign ) newline { newline } } ]
@@ -12,9 +12,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { ( immutable-assign | function-def-bod ) newline { newline } } ]
     class            ::= { module-import newline } { newline } 
                          "class" id [ "isa" id [ { "," id } ] ] [ newline { newline } 
-                         { [ ( "util" ( function-def-bod | immutable-assign ) | 
-                               "private" ( function-def-bod | assignment ) ) newline { newline } } ]
-    program          ::= { module-import newline } { newline } 
+                         { ( "util" ( function-def-bod | immutable-assign ) | 
+                             "private" ( function-def-bod | assignment ) ) newline { newline } } ]
+    script           ::= { module-import newline } { newline } 
                          { function-def newline { newline } } 
                          [ do-block ]
     
@@ -30,9 +30,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     expr-or-stmt     ::= statement 
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
+                      
     statement        ::= "print" maybe-expr 
                       | assignment 
-                      | "donothing" 
                       | control-flow-stmt
     maybe-expr       ::= "return" [ maybe-expr ] 
                       | operation 
@@ -52,8 +52,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     immutable-assign ::= variable-def "<-" maybe-expr
     definition       ::= "let" id
 
-    operation        ::= arithmetic | unary arithmetic | arithmetic relational maybe-expr
-    arithmetic       ::= term | term additive maybe-expr
+    operation        ::= arithmetic | arithmetic relational maybe-expr
+    arithmetic       ::= term | unary arithmetic | term additive maybe-expr
     term             ::= factor | factor multiclative-operator maybe-expr
     factor           ::= constant | id
     
@@ -75,7 +75,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     control-flow-expr::= if | when | from
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    from             ::= "from" maybe-expr [ newline ] "where" maybe-expression [ "map" function-type ]
+    from             ::= "from" maybe-expr [ newline ] "where" maybe-expression
     when             ::= "when" maybe-expr newline { { indent } when-case }
     when-case        ::= maybe-expr "then" expr-or-stmt
     

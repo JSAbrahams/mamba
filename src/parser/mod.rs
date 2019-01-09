@@ -4,9 +4,15 @@ use crate::lexer::Token;
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 macro_rules! wrap { ($node:expr) => {{ Box::new($node) }} }
 
-mod expression_or_statement;
+mod assignment;
+mod control_flow_stmt;
+mod control_flow_expr;
+mod do_block;
+mod expr_or_stmt;
+mod function;
+mod maybe_expr;
 mod module;
-mod expression;
+mod operation;
 mod statement;
 mod util;
 
@@ -75,11 +81,11 @@ pub enum ASTNode {
     Continue,
 
     Return(Box<ASTNode>),
+    ReturnEmpty,
     Print(Box<ASTNode>),
-    DoNothing,
 }
 
 // module ::= class | program
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
-    return module::parse(&mut input.iter().peekable());
+    return module::parse_module(&mut input.iter().peekable());
 }

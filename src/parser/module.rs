@@ -1,24 +1,15 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
-use crate::parser::expression_or_statement::parse as parse_expr_or_stmt;
-use crate::parser::expression_or_statement::parse_tuple;
-use crate::parser::util;
+use crate::parser::do_block::parse_do_block;
+use crate::parser::function::parse_function_definition_body;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-mod function;
-
-
-// module  ::= class | program
-// class   ::= { module-import newline } { newline } "class" id newline
-//             { function-def newline { newline } }
-// program ::= { module-import newline } { newline } { function-def newline { newline } }
-//             [ do-block ]
-pub fn parse(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
+pub fn parse_module(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
     match (parse_multiple(&Token::From, &parse_module_import, it),
            parse_class_name(it),
-           parse_multiple(&Token::Fun, &function::parse_function_definition, it),
+           parse_multiple(&Token::Fun, &parse_function_definition_body, it),
            parse_program_do(it)) {
         (Ok(_), Some(Ok(_)), Ok(_), Some(Ok(_))) => Err("Class cannot have a body.".to_string()),
         (Ok(imports), Some(Ok(class)), Ok(functions), None) =>
@@ -76,7 +67,6 @@ fn skip_newlines(it: &mut Peekable<Iter<Token>>) {
     }
 }
 
-// module-import ::= "from" id ( "use" id [ "as" id ] | "useall" )
 fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     assert_eq!(it.next(), Some(&Token::From));
 
@@ -109,76 +99,12 @@ fn parse_module_use(id: String, it: &mut Peekable<Iter<Token>>, ind: i32)
     };
 }
 
-// function-call-dir ::= id tuple
-pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
-                                  -> (Result<ASTNode, String>, i32) {
-    match (function, it.peek()) {
-        (ASTNode::Id(ref id), Some(Token::LPar)) => match parse_tuple(it, ind) {
-            (Ok(tuple), new_ind) =>
-                (Ok(ASTNode::FunCallDirect(wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))),
-                 new_ind),
-            err => err
-        }
-        (_, Some(Token::LPar)) => (Err("Expected identifier.".to_string()), ind),
-        (_, _) => (Err("Expected opening bracket.".to_string()), ind),
-    }
-}
-
-// function-call ::= maybe-expr "." id tuple
-pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
-                           -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::Point));
-
-    match (it.next(), it.peek()) {
-        (Some(Token::Id(id)), Some(Token::LPar)) =>
-            match parse_tuple(it, ind) {
-                (Ok(tuple), new_ind) => (Ok(ASTNode::FunCall(
-                    wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), new_ind),
-                err => err
-            }
-        (_, Some(Token::LPar)) => (Err("Expected identifier.".to_string()), ind),
-        (_, _) => (Err("Expected opening bracket.".to_string()), ind),
-    }
-}
-
 fn parse_program_do(it: &mut Peekable<Iter<Token>>) -> Option<Result<ASTNode, String>> {
-    match parse_do(it, 0).0 {
+    match parse_do_block(it, 0).0 {
         Ok(ASTNode::Do(expr_or_stmts)) => if expr_or_stmts.len() > 0 {
             Some(Ok(ASTNode::Do(expr_or_stmts)))
         } else { None }
         Ok(_) => None,
         err => Some(err)
     }
-}
-
-// do-block ::= { { indent } expr-or-stmt newline [ newline ] [ newline ] }
-pub fn parse_do(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    let mut nodes = Vec::new();
-
-    while let Some(_) = it.peek() {
-        let next_ind = util::ind_count(it);
-        if next_ind > ind && it.peek().is_some() {
-            return (Err(format!("Expected indentation of {}.", ind)), next_ind);
-        }
-
-        match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), _) => if it.peek() != None && it.next() != Some(&Token::NL) {
-                return (Err("Expected newline.".to_string()), ind);
-            } else {
-                nodes.push(ast_node)
-            }
-            err => return err
-        }
-
-        /* empty line */
-        if Some(&&Token::NL) == it.peek() {
-            it.next();
-            if Some(&&Token::NL) == it.peek() {
-                it.next();
-                if Some(&&Token::NL) == it.peek() { break; }
-            }
-        }
-    }
-
-    return (Ok(ASTNode::Do(nodes)), ind - 1);
 }
