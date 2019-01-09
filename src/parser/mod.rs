@@ -25,6 +25,7 @@ pub enum ASTNode {
 
     FunDef(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunDefNoRetType(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
+    FunAnon(Box<ASTNode>, Box<ASTNode>),
     FunCall(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunCallDirect(Box<ASTNode>, Box<ASTNode>),
     FunArg(Box<ASTNode>, Box<ASTNode>),

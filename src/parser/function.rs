@@ -1,6 +1,7 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
+use crate::parser::maybe_expr::parse_expression;
 use crate::parser::maybe_expr::parse_tuple;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -125,7 +126,7 @@ fn parse_function_arg(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
 fn parse_function_type(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::Id(id)) => next_and!(it, (Ok(ASTNode::Id(id.to_string())), ind)),
-        Some(Token::LPar) => match parse_static_tuple(it, ind) {
+        Some(Token::LPar) => match parse_function_tuple(it, ind) {
             (Ok(tup), ind) => if let Some(Token::To) = it.peek() {
                 it.next();
                 match parse_function_type(it, ind) {
@@ -139,7 +140,7 @@ fn parse_function_type(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTN
     };
 }
 
-fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+fn parse_function_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     if it.next() != Some(&Token::LPar) {
         return (Err("Expected opening parenthesis".to_string()), ind);
     }
@@ -169,5 +170,15 @@ fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
 
 pub fn parse_function_anonymous(it: &mut Peekable<Iter<Token>>, ind: i32)
                                 -> (Result<ASTNode, String>, i32) {
-    panic!("Not implemented")
+    match parse_function_tuple(it, ind) {
+        (Ok(tuple), ind) => if it.next() == Some(&Token::To) {
+            match parse_expression(it, ind) {
+                (Ok(body), ind) => (Ok(ASTNode::FunAnon(wrap!(tuple), wrap!(body))), ind),
+                err => err
+            }
+        } else {
+            (Err("Expected '->' keyword.".to_string()), ind)
+        }
+        err => err
+    }
 }

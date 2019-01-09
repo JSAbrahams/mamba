@@ -75,14 +75,10 @@ fn parse_from(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
                             ASTNode::FromMap(wrap!(coll), wrap!(cond), wrap!(mapping))), ind),
                         (_, err) => err
                     }
-                } else {
-                    (Ok(ASTNode::From(wrap!(coll), wrap!(cond))), ind)
-                }
+                } else { (Ok(ASTNode::From(wrap!(coll), wrap!(cond))), ind) }
                 err => err
             }
-        } else {
-            (Err("Expected 'where' keyword.".to_string()), ind)
-        }
+        } else { (Err("Expected 'where' keyword.".to_string()), ind) }
         err => err
     };
 }

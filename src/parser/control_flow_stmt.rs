@@ -10,7 +10,8 @@ use std::slice::Iter;
 // while            ::= "while" maybe-expr "do" expr-or-stmt
 // for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
 
-pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<Token>>, ind: i32)
+                             -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
         Some(Token::While) => parse_while(it, ind),
         Some(Token::For) => parse_for(it, ind),
@@ -48,14 +49,10 @@ fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
                             (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))), ind),
                         err => err
                     }
-                } else {
-                    return (Err("Expected 'do' after for collection".to_string()), ind);
-                }
+                } else { return (Err("Expected 'do' after for collection".to_string()), ind); }
                 err => err
             }
-        } else {
-            (Err("Expected 'in' after for expression".to_string()), ind)
-        }
+        } else { (Err("Expected 'in' after for expression".to_string()), ind) }
         err => err
     };
 }

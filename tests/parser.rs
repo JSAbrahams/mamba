@@ -54,12 +54,6 @@ fn parse_if() {
 }
 
 #[test]
-fn parse_loop_statements() {
-    let source = valid_resource("loop_statements.txt");
-    parse(tokenize(source).unwrap()).unwrap();
-}
-
-#[test]
 fn parse_tuples() {
     let source = valid_resource("tuples.txt");
     parse(tokenize(source).unwrap()).unwrap();
