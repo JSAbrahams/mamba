@@ -1,7 +1,8 @@
-use crate::lexer::Token;
+use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::maybe_expr::parse_expression;
+use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -10,24 +11,24 @@ use std::slice::Iter;
 // while            ::= "while" maybe-expr "do" expr-or-stmt
 // for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
 
-pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<Token>>, ind: i32)
-                             -> (Result<ASTNode, String>, i32) {
+pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                             -> (ParseResult<ASTNode>, i32) {
     return match it.peek() {
-        Some(Token::While) => parse_while(it, ind),
-        Some(Token::For) => parse_for(it, ind),
-        Some(Token::Break) => next_and!(it, (Ok(ASTNode::Break), ind)),
-        Some(Token::Continue) => next_and!(it, (Ok(ASTNode::Continue), ind)),
+        Some(TokenPos::While) => parse_while(it, ind),
+        Some(TokenPos::For) => parse_for(it, ind),
+        Some(TokenPos::Break) => next_and!(it, (Ok(ASTNode::Break), ind)),
+        Some(TokenPos::Continue) => next_and!(it, (Ok(ASTNode::Continue), ind)),
         Some(_) | None => (Err("Expected control flow statement.".to_string()), ind)
     };
 }
 
-fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    if it.next() != Some(&Token::While) {
+fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+    if it.next() != Some(&TokenPos::While) {
         return (Err("Expected 'while' keyword".to_string()), ind);
     }
 
     return match parse_expression(it, ind) {
-        (Ok(cond), ind) => if let Some(&Token::Do) = it.next() {
+        (Ok(cond), ind) => if let Some(&TokenPos::Do) = it.next() {
             match parse_expr_or_stmt(it, ind) {
                 (Ok(expr_or_do), ind) => (Ok(ASTNode::While(wrap!(cond), wrap!(expr_or_do))), ind),
                 err => err
@@ -37,13 +38,13 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
     };
 }
 
-fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    if it.next() != Some(&Token::For) { return (Err("Expected 'for' keyword".to_string()), ind); }
+fn parse_for(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+    if it.next() != Some(&TokenPos::For) { return (Err("Expected 'for' keyword".to_string()), ind); }
 
     return match parse_expression(it, ind) {
-        (Ok(expr), ind) => if let Some(&Token::In) = it.next() {
+        (Ok(expr), ind) => if let Some(&TokenPos::In) = it.next() {
             match parse_expression(it, ind) {
-                (Ok(col), ind) => if let Some(&Token::Do) = it.next() {
+                (Ok(col), ind) => if let Some(&TokenPos::Do) = it.next() {
                     match parse_expr_or_stmt(it, ind) {
                         (Ok(expr_or_do), ind) =>
                             (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))), ind),

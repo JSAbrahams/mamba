@@ -1,6 +1,9 @@
 use crate::lexer::Token;
+use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::maybe_expr::parse_expression;
+use crate::parser::parse_result::ParseError;
+use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -11,9 +14,13 @@ use std::slice::Iter;
 // immutable-assign ::= definition "<-" maybe-expr
 // definition       ::= "let" id
 
-pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
-                          -> (Result<ASTNode, String>, i32) {
-    if it.next() != Some(&Token::Assign) { return (Err("Expected '<-' keyword".to_string()), ind); }
+pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                          -> (ParseResult<ASTNode>, i32) {
+    match it.next() {
+        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Assign =>
+            return (Err(ParseError::TokenError(*tp, Token::From)), ind),
+        None => return (Err(ParseError::EOFError(Token::From)), ind)
+    }
 
     match parse_expression(it, ind) {
         (Ok(expr), ind) => (Ok(ASTNode::Assign(wrap!(pre), wrap!(expr))), ind),
@@ -21,19 +28,22 @@ pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32
     }
 }
 
-pub fn parse_assignment(it: &mut Peekable<Iter<Token>>, ind: i32)
-                        -> (Result<ASTNode, String>, i32) {
+pub fn parse_assignment(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                        -> (ParseResult<ASTNode>, i32) {
     return match it.peek() {
-        Some(Token::Let) => pare_immutable_assign(it, ind),
-        Some(Token::Mut) => parse_mutable_assign(it, ind),
-        Some(_) | None => (Err("Expected assignment.".to_string()), ind)
+        Some(TokenPos { ref line, ref pos, token: Token::Let }) => pare_immutable_assign(it, ind),
+        Some(TokenPos { ref line, ref pos, token: Token::Mut }) => parse_mutable_assign(it, ind),
+        Some(tp) => (Err(ParseError::TokenError(**tp, Token::Let)), ind),
+        None => (Err(ParseError::EOFError(Token::Let)), ind)
     };
 }
 
-fn parse_mutable_assign(it: &mut Peekable<Iter<Token>>, ind: i32)
-                        -> (Result<ASTNode, String>, i32) {
-    if it.next() != Some(&Token::Mut) {
-        return (Err("Expected 'mutable' keyword".to_string()), ind);
+fn parse_mutable_assign(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                        -> (ParseResult<ASTNode>, i32) {
+    match it.next() {
+        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Mut =>
+            return (Err(ParseError::TokenError(*tp, Token::Mut)), ind),
+        None => return (Err(ParseError::EOFError(Token::Mut)), ind)
     }
 
     match pare_immutable_assign(it, ind) {
@@ -42,26 +52,36 @@ fn parse_mutable_assign(it: &mut Peekable<Iter<Token>>, ind: i32)
     }
 }
 
-fn pare_immutable_assign(it: &mut Peekable<Iter<Token>>, ind: i32)
-                         -> (Result<ASTNode, String>, i32) {
+fn pare_immutable_assign(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                         -> (ParseResult<ASTNode>, i32) {
     match parse_definition(it, ind) {
-        (Ok(letid), ind) => if Some(&Token::Assign) == it.next() {
+        (Ok(letid), ind) => {
+            match it.next() {
+                Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Assign =>
+                    return (Err(ParseError::TokenError(*tp, Token::Assign)), ind),
+                None => return (Err(ParseError::EOFError(Token::Assign)), ind)
+            }
+
             match parse_expression(it, ind) {
                 (Ok(expr), ind) => (Ok(ASTNode::Assign(wrap!(letid), wrap!(expr))), ind),
                 err => err
             }
-        } else {
-            (Err("Expected assign operator".to_string()), ind)
         }
         err => err
     }
 }
 
-fn parse_definition(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    if it.next() != Some(&Token::Let) { return (Err("Expected 'let' keyword".to_string()), ind); }
+fn parse_definition(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+    match it.next() {
+        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Let =>
+            return (Err(ParseError::TokenError(*tp, Token::Let)), ind),
+        None => return (Err(ParseError::EOFError(Token::Let)), ind)
+    }
 
     match it.next() {
-        Some(Token::Id(id)) => (Ok(ASTNode::Let(wrap!(ASTNode::Id(id.to_string())))), ind),
-        Some(_) | None => (Err("Expected definition.".to_string()), ind)
+        Some(TokenPos { ref line, ref pos, token: Token::Id(id) }) =>
+            (Ok(ASTNode::Let(wrap!(ASTNode::Id(id.to_string())))), ind),
+        Some(tp) => (Err(ParseError::TokenError(*tp, Token::Let)), ind),
+        None => (Err(ParseError::EOFError(Token::Let)), ind)
     }
 }

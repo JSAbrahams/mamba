@@ -1,8 +1,10 @@
 use crate::lexer::Token;
+use crate::lexer::TokenPos;
 use crate::parser::assignment::parse_assignment;
 use crate::parser::ASTNode;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::maybe_expr::parse_expression;
+use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -12,14 +14,14 @@ use std::slice::Iter;
 // | assignment
 // | control-flow-stmt
 
-pub fn parse_statement(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     return match it.peek() {
-        Some(Token::Print) => match (it.next(), parse_expression(it, ind)) {
+        Some(TokenPos { line: _, pos: _, token: Token::Print }) => match (it.next(), parse_expression(it, ind)) {
             (_, (Ok(expr), ind)) => (Ok(ASTNode::Print(wrap!(expr))), ind),
             (_, err) => err
         }
-        Some(Token::Let) | Some(Token::Mut) => parse_assignment(it, ind),
-        Some(Token::For) | Some(Token::While) | Some(Token::Loop) => parse_cntrl_flow_stmt(it, ind),
+        Some(TokenPos::Let) | Some(TokenPos::Mut) => parse_assignment(it, ind),
+        Some(TokenPos::For) | Some(TokenPos::While) | Some(TokenPos::Loop) => parse_cntrl_flow_stmt(it, ind),
 
         Some(_) | None => (Err("Expected statement.".to_string()), ind)
     };

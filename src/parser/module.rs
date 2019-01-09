@@ -1,15 +1,16 @@
-use crate::lexer::Token;
+use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::do_block::parse_do_block;
 use crate::parser::function::parse_function_definition_body;
+use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_module(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
-    match (parse_multiple(&Token::From, &parse_module_import, it),
+pub fn parse_module(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    match (parse_multiple(&TokenPos::From, &parse_module_import, it),
            parse_class_name(it),
-           parse_multiple(&Token::Fun, &parse_function_definition_body, it),
+           parse_multiple(&TokenPos::Fun, &parse_function_definition_body, it),
            parse_program_do(it)) {
         (Ok(_), Some(Ok(_)), Ok(_), Some(Ok(_))) => Err("Class cannot have a body.".to_string()),
         (Ok(imports), Some(Ok(class)), Ok(functions), None) =>
@@ -25,12 +26,12 @@ pub fn parse_module(it: &mut Peekable<Iter<Token>>) -> Result<ASTNode, String> {
     }
 }
 
-fn parse_class_name(it: &mut Peekable<Iter<Token>>) -> Option<Result<String, String>> {
-    if let Some(&&Token::Class) = it.peek() {
+fn parse_class_name(it: &mut Peekable<Iter<TokenPos>>) -> Option<Result<String, String>> {
+    if let Some(&&TokenPos::Class) = it.peek() {
         it.next();
         match (it.next(), it.next()) {
-            (Some(Token::Id(name)), Some(Token::NL)) => Some(Ok(name.to_string())),
-            (_, Some(Token::NL)) => Some(Err("Expected newline.".to_string())),
+            (Some(TokenPos::Id(name)), Some(TokenPos::NL)) => Some(Ok(name.to_string())),
+            (_, Some(TokenPos::NL)) => Some(Err("Expected newline.".to_string())),
             (_, _) => Some(Err("Expected identifier".to_string()))
         }
     } else {
@@ -38,68 +39,68 @@ fn parse_class_name(it: &mut Peekable<Iter<Token>>) -> Option<Result<String, Str
     }
 }
 
-fn parse_multiple(token: &Token,
-                  fun: &Fn(&mut Peekable<Iter<Token>>, i32) -> (Result<ASTNode, String>, i32),
-                  it: &mut Peekable<Iter<Token>>) -> Result<Vec<ASTNode>, String> {
+fn parse_multiple(TokenPos: &TokenPos,
+                  fun: &Fn(&mut Peekable<Iter<TokenPos>>, i32) -> (ParseResult<ASTNode>, i32),
+                  it: &mut Peekable<Iter<TokenPos>>) -> Result<Vec<ASTNode>, String> {
     skip_newlines(it);
     let mut elements = Vec::new();
 
     while let Some(&t) = it.peek() {
-        if token != t { break; }
+        if TokenPos != t { break; }
         match fun(it, 0) {
             (Ok(element), _) => elements.push(element),
             (Err(err), _) => return Err(err)
         }
 
-        if it.peek().is_some() && it.next() != Some(&Token::NL) { break; }
+        if it.peek().is_some() && it.next() != Some(&TokenPos::NL) { break; }
         skip_newlines(it);
     }
 
     return Ok(elements);
 }
 
-fn skip_newlines(it: &mut Peekable<Iter<Token>>) {
+fn skip_newlines(it: &mut Peekable<Iter<TokenPos>>) {
     while let Some(&t) = it.peek() {
         match t {
-            Token::NL => it.next(),
+            TokenPos::NL => it.next(),
             _ => break
         };
     }
 }
 
-fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    if it.next() != Some(&Token::From) { return (Err("Expected 'from' keyword".to_string()), ind); }
+fn parse_module_import(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+    if it.next() != Some(&TokenPos::From) { return (Err("Expected 'from' keyword".to_string()), ind); }
 
     return match (it.next(), it.next()) {
-        (Some(&Token::Id(ref m)), Some(&Token::UseAll)) =>
+        (Some(&TokenPos::Id(ref m)), Some(&TokenPos::UseAll)) =>
             (Ok(ASTNode::ImportModUseAll(wrap!(ASTNode::Id(m.to_string())))), ind),
-        (Some(&Token::Id(ref m)), Some(&Token::Use)) => parse_module_use(m.to_string(), it, ind),
-        (_, Some(&Token::UseAll)) | (_, Some(&Token::Use)) =>
+        (Some(&TokenPos::Id(ref m)), Some(&TokenPos::Use)) => parse_module_use(m.to_string(), it, ind),
+        (_, Some(&TokenPos::UseAll)) | (_, Some(&TokenPos::Use)) =>
             (Err("Expected identifier.".to_string()), ind),
         (_, _) => (Err("Expected `use` or 'useall'.".to_string()), ind)
     };
 }
 
-fn parse_module_use(id: String, it: &mut Peekable<Iter<Token>>, ind: i32)
-                    -> (Result<ASTNode, String>, i32) {
+fn parse_module_use(id: String, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                    -> (ParseResult<ASTNode>, i32) {
     return match (it.next(), it.peek()) {
-        (Some(Token::Id(prop)), Some(&Token::As)) => {
+        (Some(TokenPos::Id(prop)), Some(&TokenPos::As)) => {
             it.next();
-            if let Some(&Token::Id(ref other)) = it.next() {
+            if let Some(&TokenPos::Id(ref other)) = it.next() {
                 (Ok(ASTNode::ImportModUseAs(wrap!(ASTNode::Id(id)), wrap!(ASTNode::Id(prop.to_string())),
                                             wrap!(ASTNode::Id(other.to_string())))), ind)
             } else {
                 (Err("Expected identifier.".to_string()), ind)
             }
         }
-        (Some(Token::Id(prop)), _) =>
+        (Some(TokenPos::Id(prop)), _) =>
             (Ok(ASTNode::ImportModUse(wrap!(ASTNode::Id(id)), wrap!(ASTNode::Id(prop.to_string())))),
              ind),
         (_, _) => (Err("Expected identifier.".to_string()), ind)
     };
 }
 
-fn parse_program_do(it: &mut Peekable<Iter<Token>>) -> Option<Result<ASTNode, String>> {
+fn parse_program_do(it: &mut Peekable<Iter<TokenPos>>) -> Option<ParseResult<ASTNode>> {
     match parse_do_block(it, 0).0 {
         Ok(ASTNode::Do(expr_or_stmts)) => if expr_or_stmts.len() > 0 {
             Some(Ok(ASTNode::Do(expr_or_stmts)))

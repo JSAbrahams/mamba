@@ -1,8 +1,11 @@
-use crate::lexer::Token;
+use crate::lexer::TokenPos;
+use crate::parser::parse_result::ParseResult;
 
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 macro_rules! wrap { ($node:expr) => {{ Box::new($node) }} }
+
+mod parse_result;
 
 mod assignment;
 mod control_flow_stmt;
@@ -91,6 +94,6 @@ pub enum ASTNode {
 
 // module ::= type | util | class | script
 
-pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
+pub fn parse(input: Vec<TokenPos>) -> ParseResult<ASTNode> {
     return module::parse_module(&mut input.iter().peekable());
 }
