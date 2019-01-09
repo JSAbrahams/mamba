@@ -1,6 +1,8 @@
+use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
+use crate::parser::parse_result::ParseError;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::util;
 use std::iter::Iterator;
@@ -19,18 +21,22 @@ pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResu
         }
 
         match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), ind) => if it.peek() != None && it.next() != Some(&TokenPos::NL) {
-                return (Err("Expected newline.".to_string()), ind);
-            } else { nodes.push(ast_node) }
+            (Ok(ast_node), ind) => {
+                match it.next() {
+                    Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Then =>
+                        return (Err(ParseError::TokenError(*tp, Token::Then)), ind)
+                }
+                nodes.push(ast_node)
+            }
             err => return err
         }
 
         /* empty line */
-        if Some(&&TokenPos::NL) == it.peek() {
+        if Some(&&TokenPos { line, pos, token: Token::NL }) == it.peek() {
             it.next();
-            if Some(&&TokenPos::NL) == it.peek() {
+            if Some(&&TokenPos { line, pos, token: Token::NL }) == it.peek() {
                 it.next();
-                if Some(&&TokenPos::NL) == it.peek() { break; }
+                if Some(&&TokenPos { line, pos, token: Token::NL }) == it.peek() { break; }
             }
         }
     }

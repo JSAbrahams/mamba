@@ -1,6 +1,8 @@
+use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::maybe_expr::parse_expression;
+use crate::parser::parse_result::ParseError;
 use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
@@ -11,14 +13,14 @@ use std::slice::Iter;
 // term       ::= factor | factor multiclative-operator maybe-expr
 // factor     ::= constant | id
 
-macro_rules! un_operator { ($it:expr, $ind:expr, $op:path) => {{
+macro_rules! u_op { ($it:expr, $ind:expr, $op:path) => {{
     $it.next(); match parse_expression($it, $ind) {
         (Ok(expr), ind) => (Ok($op(Box::new(expr))), ind),
         err => err
     }
 }}}
 
-macro_rules! bin_operator { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
+macro_rules! b_op { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
     $it.next(); match parse_expression($it, $ind) {
         (Ok(expr), ind) => (Ok($op(Box::new($factor), Box::new(expr))), ind),
         err => err
@@ -27,22 +29,30 @@ macro_rules! bin_operator { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
 
 pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     return match match it.peek() {
-        Some(TokenPos::Id(_)) | Some(TokenPos::Real(_)) | Some(TokenPos::Int(_)) | Some(TokenPos::ENum(_, _)) |
-        Some(TokenPos::Str(_)) | Some(TokenPos::Bool(_)) | Some(TokenPos::Not) | Some(TokenPos::Add) |
-        Some(TokenPos::Sub) => parse_arithmetic(it, ind),
-        Some(_) | None => (Err("Operation expected".to_string()), ind)
+        Some(TokenPos { line, pos, token: Token::Id(_) }) |
+        Some(TokenPos { line, pos, token: Token::Real(_) }) |
+        Some(TokenPos { line, pos, token: Token::Int(_) }) |
+        Some(TokenPos { line, pos, token: Token::ENum(_, _) }) |
+        Some(TokenPos { line, pos, token: Token::Str(_) }) |
+        Some(TokenPos { line, pos, token: Token::Bool(_) }) |
+        Some(TokenPos { line, pos, token: Token::Not }) |
+        Some(TokenPos { line, pos, token: Token::Add }) |
+        Some(TokenPos { line, pos, token: Token::Sub }) => parse_arithmetic(it, ind),
+
+        Some(tp) => (Err(ParseError::TokenError(**tp, Token::Add)), ind),
+        None => (Err(ParseError::EOFError(Token::Add)), ind)
     } {
         (Ok(factor), ind) => match it.peek() {
-            Some(TokenPos::Eq) => bin_operator!(factor, it, ind, ASTNode::Eq),
-            Some(TokenPos::Is) => bin_operator!(factor, it, ind, ASTNode::Is),
-            Some(TokenPos::IsN) => bin_operator!(factor, it, ind, ASTNode::IsN),
-            Some(TokenPos::Neq) => bin_operator!(factor, it, ind, ASTNode::Neq),
-            Some(TokenPos::Ge) => bin_operator!(factor, it, ind, ASTNode::Ge),
-            Some(TokenPos::Geq) => bin_operator!(factor, it, ind, ASTNode::Geq),
-            Some(TokenPos::Le) => bin_operator!(factor, it, ind, ASTNode::Le),
-            Some(TokenPos::Leq) => bin_operator!(factor, it, ind, ASTNode::Leq),
-            Some(TokenPos::And) => bin_operator!(factor, it, ind, ASTNode::And),
-            Some(TokenPos::Or) => bin_operator!(factor, it, ind, ASTNode::Or),
+            Some(TokenPos { line, pos, token: Token::Eq }) => b_op!(factor, it, ind, ASTNode::Eq),
+            Some(TokenPos { line, pos, token: Token::Is }) => b_op!(factor, it, ind, ASTNode::Is),
+            Some(TokenPos { line, pos, token: Token::IsN }) => b_op!(factor, it, ind, ASTNode::IsN),
+            Some(TokenPos { line, pos, token: Token::Neq }) => b_op!(factor, it, ind, ASTNode::Neq),
+            Some(TokenPos { line, pos, token: Token::Ge }) => b_op!(factor, it, ind, ASTNode::Ge),
+            Some(TokenPos { line, pos, token: Token::Geq }) => b_op!(factor, it, ind, ASTNode::Geq),
+            Some(TokenPos { line, pos, token: Token::Le }) => b_op!(factor, it, ind, ASTNode::Le),
+            Some(TokenPos { line, pos, token: Token::Leq }) => b_op!(factor, it, ind, ASTNode::Leq),
+            Some(TokenPos { line, pos, token: Token::And }) => b_op!(factor, it, ind, ASTNode::And),
+            Some(TokenPos { line, pos, token: Token::Or }) => b_op!(factor, it, ind, ASTNode::Or),
             _ => (Ok(factor), ind)
         }
         err => err
@@ -51,16 +61,23 @@ pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
 
 fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     return match match it.peek() {
-        Some(TokenPos::Id(_)) | Some(TokenPos::Real(_)) | Some(TokenPos::Int(_)) | Some(TokenPos::ENum(_, _)) |
-        Some(TokenPos::Str(_)) | Some(TokenPos::Bool(_)) => parse_term(it, ind),
-        Some(TokenPos::Not) => un_operator!(it, ind, ASTNode::Not),
-        Some(TokenPos::Add) => un_operator!(it, ind, ASTNode::AddU),
-        Some(TokenPos::Sub) => un_operator!(it, ind, ASTNode::SubU),
-        Some(_) | None => (Err("Expected arithmetic expression.".to_string()), ind)
+        Some(TokenPos { line, pos, token: Token::Id(_) }) |
+        Some(TokenPos { line, pos, token: Token::Real(_) }) |
+        Some(TokenPos { line, pos, token: Token::Int(_) }) |
+        Some(TokenPos { line, pos, token: Token::ENum(_, _) }) |
+        Some(TokenPos { line, pos, token: Token::Str(_) }) |
+        Some(TokenPos { line, pos, token: Token::Bool(_) }) => parse_term(it, ind),
+
+        Some(TokenPos { line, pos, token: Token::Not }) => u_op!(it, ind, ASTNode::Not),
+        Some(TokenPos { line, pos, token: Token::Add }) => u_op!(it, ind, ASTNode::AddU),
+        Some(TokenPos { line, pos, token: Token::Sub }) => u_op!(it, ind, ASTNode::SubU),
+
+        Some(tp) => (Err(ParseError::TokenError(**tp, Token::Add)), ind),
+        None => (Err(ParseError::EOFError(Token::Add)), ind)
     } {
         (Ok(term), ind) => match it.peek() {
-            Some(TokenPos::Add) => bin_operator!(term, it, ind, ASTNode::Add),
-            Some(TokenPos::Sub) => bin_operator!(term, it, ind, ASTNode::Sub),
+            Some(TokenPos { line, pos, token: Token::Add }) => b_op!(term, it, ind, ASTNode::Add),
+            Some(TokenPos { line, pos, token: Token::Sub }) => b_op!(term, it, ind, ASTNode::Sub),
             _ => (Ok(term), ind)
         }
         err => err
@@ -69,15 +86,21 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult
 
 fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     return match match it.peek() {
-        Some(TokenPos::Id(_)) | Some(TokenPos::Str(_)) | Some(TokenPos::Real(_)) | Some(TokenPos::Int(_)) |
-        Some(TokenPos::ENum(_, _)) | Some(TokenPos::Bool(_)) => parse_factor(it, ind),
-        Some(_) | None => (Err("Expected term.".to_string()), ind)
+        Some(TokenPos { line, pos, token: Token::Id(_) }) |
+        Some(TokenPos { line, pos, token: Token::Str(_) }) |
+        Some(TokenPos { line, pos, token: Token::Real(_) }) |
+        Some(TokenPos { line, pos, token: Token::Int(_) }) |
+        Some(TokenPos { line, pos, token: Token::ENum(_, _) }) |
+        Some(TokenPos { line, pos, token: Token::Bool(_) }) => parse_factor(it, ind),
+
+        Some(tp) => (Err(ParseError::TokenError(**tp, Token::Add)), ind),
+        None => (Err(ParseError::EOFError(Token::Add)), ind)
     } {
         (Ok(factor), ind) => match it.peek() {
-            Some(TokenPos::Mul) => bin_operator!(factor, it, ind, ASTNode::Mul),
-            Some(TokenPos::Div) => bin_operator!(factor, it, ind, ASTNode::Div),
-            Some(TokenPos::Pow) => bin_operator!(factor, it, ind, ASTNode::Pow),
-            Some(TokenPos::Mod) => bin_operator!(factor, it, ind, ASTNode::Mod),
+            Some(TokenPos { line, pos, token: Token::Mul }) => b_op!(factor, it, ind, ASTNode::Mul),
+            Some(TokenPos { line, pos, token: Token::Div }) => b_op!(factor, it, ind, ASTNode::Div),
+            Some(TokenPos { line, pos, token: Token::Pow }) => b_op!(factor, it, ind, ASTNode::Pow),
+            Some(TokenPos { line, pos, token: Token::Mod }) => b_op!(factor, it, ind, ASTNode::Mod),
             _ => (Ok(factor), ind)
         }
         err => err
@@ -86,12 +109,18 @@ fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNo
 
 fn parse_factor(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     return (match it.next() {
-        Some(TokenPos::Id(id)) => Ok(ASTNode::Id(id.to_string())),
-        Some(TokenPos::Str(string)) => Ok(ASTNode::Str(string.to_string())),
-        Some(TokenPos::Real(real)) => Ok(ASTNode::Real(real.to_string())),
-        Some(TokenPos::Int(int)) => Ok(ASTNode::Int(int.to_string())),
-        Some(TokenPos::ENum(num, exp)) => Ok(ASTNode::ENum(num.to_string(), exp.to_string())),
-        Some(TokenPos::Bool(boolean)) => Ok(ASTNode::Bool(*boolean)),
-        Some(_) | None => Err("Expected factor.".to_string())
+        Some(TokenPos { line, pos, token: Token::Id(id) }) => Ok(ASTNode::Id(id.to_string())),
+        Some(TokenPos { line, pos, token: Token::Str(string) }) =>
+            Ok(ASTNode::Str(string.to_string())),
+        Some(TokenPos { line, pos, token: Token::Real(real) }) =>
+            Ok(ASTNode::Real(real.to_string())),
+        Some(TokenPos { line, pos, token: Token::Int(int) }) => Ok(ASTNode::Int(int.to_string())),
+        Some(TokenPos { line, pos, token: Token::ENum(num, exp) }) =>
+            Ok(ASTNode::ENum(num.to_string(), exp.to_string())),
+        Some(TokenPos { line, pos, token: Token::Bool(boolean) }) => Ok(ASTNode::Bool(*boolean)),
+
+        // TODO create error with string argument for situations like this
+        Some(tp) => Err(ParseError::TokenError(*tp, Token::Add)),
+        None => Err(ParseError::EOFError(Token::Add))
     }, ind);
 }

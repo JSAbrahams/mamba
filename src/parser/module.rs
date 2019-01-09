@@ -1,16 +1,18 @@
+use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::do_block::parse_do_block;
 use crate::parser::function::parse_function_definition_body;
+use crate::parser::parse_result::ParseError;
 use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 pub fn parse_module(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
-    match (parse_multiple(&TokenPos::From, &parse_module_import, it),
+    match (parse_multiple(&Token::From, &parse_module_import, it),
            parse_class_name(it),
-           parse_multiple(&TokenPos::Fun, &parse_function_definition_body, it),
+           parse_multiple(&Token::Fun, &parse_function_definition_body, it),
            parse_program_do(it)) {
         (Ok(_), Some(Ok(_)), Ok(_), Some(Ok(_))) => Err("Class cannot have a body.".to_string()),
         (Ok(imports), Some(Ok(class)), Ok(functions), None) =>
@@ -39,14 +41,17 @@ fn parse_class_name(it: &mut Peekable<Iter<TokenPos>>) -> Option<Result<String, 
     }
 }
 
-fn parse_multiple(TokenPos: &TokenPos,
+fn parse_multiple(expected: &Token,
                   fun: &Fn(&mut Peekable<Iter<TokenPos>>, i32) -> (ParseResult<ASTNode>, i32),
-                  it: &mut Peekable<Iter<TokenPos>>) -> Result<Vec<ASTNode>, String> {
+                  it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     skip_newlines(it);
     let mut elements = Vec::new();
 
     while let Some(&t) = it.peek() {
-        if TokenPos != t { break; }
+        match *t {
+            Some(TokenPos { ref line, ref pos, token }) if token != expected => break
+        }
+
         match fun(it, 0) {
             (Ok(element), _) => elements.push(element),
             (Err(err), _) => return Err(err)
@@ -69,7 +74,11 @@ fn skip_newlines(it: &mut Peekable<Iter<TokenPos>>) {
 }
 
 fn parse_module_import(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    if it.next() != Some(&TokenPos::From) { return (Err("Expected 'from' keyword".to_string()), ind); }
+    match it.next() {
+        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::From =>
+            return (Err(ParseError::TokenError(*tp, Token::From)), ind),
+        None => return (Err(ParseError::EOFError(Token::From)), ind)
+    }
 
     return match (it.next(), it.next()) {
         (Some(&TokenPos::Id(ref m)), Some(&TokenPos::UseAll)) =>

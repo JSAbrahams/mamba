@@ -17,7 +17,7 @@ use std::slice::Iter;
 pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> (ParseResult<ASTNode>, i32) {
     match it.next() {
-        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Assign =>
+        Some(tp @ TokenPos { line, pos, token }) if *token != Token::Assign =>
             return (Err(ParseError::TokenError(*tp, Token::From)), ind),
         None => return (Err(ParseError::EOFError(Token::From)), ind)
     }
@@ -31,8 +31,8 @@ pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: 
 pub fn parse_assignment(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                         -> (ParseResult<ASTNode>, i32) {
     return match it.peek() {
-        Some(TokenPos { ref line, ref pos, token: Token::Let }) => pare_immutable_assign(it, ind),
-        Some(TokenPos { ref line, ref pos, token: Token::Mut }) => parse_mutable_assign(it, ind),
+        Some(TokenPos { line, pos, token: Token::Let }) => pare_immutable_assign(it, ind),
+        Some(TokenPos { line, pos, token: Token::Mut }) => parse_mutable_assign(it, ind),
         Some(tp) => (Err(ParseError::TokenError(**tp, Token::Let)), ind),
         None => (Err(ParseError::EOFError(Token::Let)), ind)
     };
@@ -41,7 +41,7 @@ pub fn parse_assignment(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 fn parse_mutable_assign(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                         -> (ParseResult<ASTNode>, i32) {
     match it.next() {
-        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Mut =>
+        Some(tp @ TokenPos { line, pos, token }) if *token != Token::Mut =>
             return (Err(ParseError::TokenError(*tp, Token::Mut)), ind),
         None => return (Err(ParseError::EOFError(Token::Mut)), ind)
     }
@@ -57,7 +57,7 @@ fn pare_immutable_assign(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
     match parse_definition(it, ind) {
         (Ok(letid), ind) => {
             match it.next() {
-                Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Assign =>
+                Some(tp @ TokenPos { line, pos, token }) if *token != Token::Assign =>
                     return (Err(ParseError::TokenError(*tp, Token::Assign)), ind),
                 None => return (Err(ParseError::EOFError(Token::Assign)), ind)
             }
@@ -73,13 +73,13 @@ fn pare_immutable_assign(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 
 fn parse_definition(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     match it.next() {
-        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Let =>
+        Some(tp @ TokenPos { line, pos, token }) if *token != Token::Let =>
             return (Err(ParseError::TokenError(*tp, Token::Let)), ind),
         None => return (Err(ParseError::EOFError(Token::Let)), ind)
     }
 
     match it.next() {
-        Some(TokenPos { ref line, ref pos, token: Token::Id(id) }) =>
+        Some(TokenPos { line, pos, token: Token::Id(id) }) =>
             (Ok(ASTNode::Let(wrap!(ASTNode::Id(id.to_string())))), ind),
         Some(tp) => (Err(ParseError::TokenError(*tp, Token::Let)), ind),
         None => (Err(ParseError::EOFError(Token::Let)), ind)
