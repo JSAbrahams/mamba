@@ -73,8 +73,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     boolean          ::= "true" | "false"
     string           ::= "\"" { character } "\""
                                      
-    control-flow-expr::= if | when
+    control-flow-expr::= if | when | from
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
+    from             ::= "from" maybe-expr [ newline ] "where" maybe-expression [ "map" function-type ]
     when             ::= "when" maybe-expr newline { { indent } when-case }
     when-case        ::= maybe-expr "then" expr-or-stmt
     
