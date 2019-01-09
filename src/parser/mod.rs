@@ -85,7 +85,8 @@ pub enum ASTNode {
     Print(Box<ASTNode>),
 }
 
-// module ::= class | program
+// module ::= type | util | class | script
+
 pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
     return module::parse_module(&mut input.iter().peekable());
 }

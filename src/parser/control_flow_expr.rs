@@ -21,7 +21,7 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<Token>>, ind: i32)
         Some(Token::When) => parse_when(it, ind),
         Some(Token::From) => panic!("Not implemented"),
 
-        Some(_) | None => panic!("Expected control flow expression.")
+        Some(_) | None => (Err("Expected control flow expression.".to_string()), ind)
     };
 }
 

@@ -17,7 +17,7 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Resul
         Some(Token::For) => parse_for(it, ind),
         Some(Token::Break) => next_and!(it, (Ok(ASTNode::Break), ind)),
         Some(Token::Continue) => next_and!(it, (Ok(ASTNode::Continue), ind)),
-        Some(_) | None => panic!("Expected control flow statement.")
+        Some(_) | None => (Err("Expected control flow statement.".to_string()), ind)
     };
 }
 

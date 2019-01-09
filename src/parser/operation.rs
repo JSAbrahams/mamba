@@ -55,7 +55,7 @@ fn parse_arithmetic(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode
         Some(Token::Not) => un_operator!(it, ind, ASTNode::Not),
         Some(Token::Add) => un_operator!(it, ind, ASTNode::AddU),
         Some(Token::Sub) => un_operator!(it, ind, ASTNode::SubU),
-        Some(_) | None => panic!("Expected arithmetic expression.")
+        Some(_) | None => (Err("Expected arithmetic expression.".to_string()))
     } {
         (Ok(term), ind) => match it.peek() {
             Some(Token::Add) => bin_operator!(term, it, ind, ASTNode::Add),
@@ -70,7 +70,7 @@ fn parse_term(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Stri
     return match match it.peek() {
         Some(Token::Id(_)) | Some(Token::Str(_)) | Some(Token::Real(_)) | Some(Token::Int(_)) |
         Some(Token::ENum(_, _)) | Some(Token::Bool(_)) => parse_factor(it, ind),
-        Some(_) | None => panic!("Expected term.")
+        Some(_) | None => (Err("Expected term.".to_string()), ind)
     } {
         (Ok(factor), ind) => match it.peek() {
             Some(Token::Mul) => bin_operator!(factor, it, ind, ASTNode::Mul),
@@ -91,6 +91,6 @@ fn parse_factor(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
         Some(Token::Int(int)) => Ok(ASTNode::Int(int.to_string())),
         Some(Token::ENum(num, exp)) => Ok(ASTNode::ENum(num.to_string(), exp.to_string())),
         Some(Token::Bool(boolean)) => Ok(ASTNode::Bool(*boolean)),
-        Some(_) | None => panic!("Expected factor.")
+        Some(_) | None => (Err("Expected factor.".to_string()), ind)
     }, ind);
 }

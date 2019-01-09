@@ -35,8 +35,7 @@ pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Toke
     match (function, it.peek()) {
         (ASTNode::Id(ref id), Some(Token::LPar)) => match parse_tuple(it, ind) {
             (Ok(tuple), ind) =>
-                (Ok(ASTNode::FunCallDirect(wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))),
-                 ind),
+                (Ok(ASTNode::FunCallDirect(wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), ind),
             err => err
         }
         (_, Some(Token::LPar)) => (Err("Expected identifier.".to_string()), ind),
@@ -52,9 +51,8 @@ pub fn parse_function_definition_body(it: &mut Peekable<Iter<Token>>, ind: i32)
         match parse_args(it, ind) {
             (Ok(args), ind) => match it.next() {
                 Some(Token::To) => match parse_expr_or_stmt(it, ind) {
-                    (Ok(body), ind) =>
-                        (Ok(ASTNode::FunDefNoRetType(wrap!(ASTNode::Id(id.to_string())),
-                                                     args, wrap!(body))), ind),
+                    (Ok(body), ind) => (Ok(ASTNode::FunDefNoRetType(
+                        wrap!(ASTNode::Id(id.to_string())), args, wrap!(body))), ind),
                     err => err
                 }
                 Some(Token::DoublePoint) => match parse_function_type(it, ind) {
@@ -153,11 +151,12 @@ fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
 
     loop {
         match it.next() {
+            Some(Token::RPar) => break,
+
             Some(Token::Comma) => match parse_function_type(it, ind) {
                 (Ok(fun_type), _) => fun_types.push(fun_type),
                 err => return err
             }
-            Some(Token::RPar) => break,
             Some(_) | None => return (Err("Expected function type.".to_string()), ind)
         };
     }

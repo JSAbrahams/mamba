@@ -25,6 +25,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-args    ::= function-type ":" function-type [ "," function-args ]
     function-type    ::= id | static-tuple | function-tuple "->" function-type
     function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
+    function-anon    ::= function-tuple "->' maybe-expr
     
     do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
     
@@ -75,7 +76,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     control-flow-expr::= if | when | from
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    from             ::= "from" maybe-expr [ newline ] "where" maybe-expression
+    from             ::= "from" maybe-expr [ newline ] "where" maybe-expression [ "map" function-anon ]
     when             ::= "when" maybe-expr newline { { indent } when-case }
     when-case        ::= maybe-expr "then" expr-or-stmt
     
