@@ -56,6 +56,7 @@ pub enum Token {
     While,
     For,
     Where,
+    Map,
     In,
     If,
     Unless,
@@ -215,10 +216,11 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
         "notequals" => Token::Neq,
         "mod" => Token::Mod,
 
-        "loop" => Token::Loop,
         "while" => Token::While,
         "for" => Token::For,
         "where" => Token::Where,
+        "map" => Token::Map,
+
         "in" => Token::In,
         "if" => Token::If,
         "then" => Token::Then,

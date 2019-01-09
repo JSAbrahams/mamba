@@ -37,6 +37,7 @@ pub enum ASTNode {
     Id(String),
     Assign(Box<ASTNode>, Box<ASTNode>),
     Mut(Box<ASTNode>),
+    Let(Box<ASTNode>),
 
     Do(Vec<ASTNode>),
 
@@ -74,6 +75,8 @@ pub enum ASTNode {
     Unless(Box<ASTNode>, Box<ASTNode>),
     UnlessElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     When(Box<ASTNode>, Vec<ASTNode>),
+    From(Box<ASTNode>, Box<ASTNode>),
+    FromMap(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     While(Box<ASTNode>, Box<ASTNode>),
     Loop(Box<ASTNode>),

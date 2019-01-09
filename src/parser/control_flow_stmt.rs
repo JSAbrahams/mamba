@@ -12,7 +12,6 @@ use std::slice::Iter;
 
 pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::Loop) => parse_loop(it, ind),
         Some(Token::While) => parse_while(it, ind),
         Some(Token::For) => parse_for(it, ind),
         Some(Token::Break) => next_and!(it, (Ok(ASTNode::Break), ind)),
@@ -21,17 +20,10 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Resul
     };
 }
 
-fn parse_loop(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::Loop));
-
-    return match parse_expr_or_stmt(it, ind) {
-        (Ok(expr_or_do), ind) => (Ok(ASTNode::Loop(wrap!(expr_or_do))), ind),
-        err => err
-    };
-}
-
 fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::While));
+    if it.next() != Some(&Token::While) {
+        return (Err("Expected 'while' keyword".to_string()), ind);
+    }
 
     return match parse_expression(it, ind) {
         (Ok(cond), ind) => if let Some(&Token::Do) = it.next() {
@@ -39,15 +31,13 @@ fn parse_while(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Str
                 (Ok(expr_or_do), ind) => (Ok(ASTNode::While(wrap!(cond), wrap!(expr_or_do))), ind),
                 err => err
             }
-        } else {
-            (Err("Expected 'do' after while conditional.".to_string()), ind)
-        }
+        } else { (Err("Expected 'do' after while conditional.".to_string()), ind) }
         err => err
     };
 }
 
 fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::For));
+    if it.next() != Some(&Token::For) { return (Err("Expected 'for' keyword".to_string()), ind); }
 
     return match parse_expression(it, ind) {
         (Ok(expr), ind) => if let Some(&Token::In) = it.next() {
@@ -55,8 +45,7 @@ fn parse_for(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, Strin
                 (Ok(col), ind) => if let Some(&Token::Do) = it.next() {
                     match parse_expr_or_stmt(it, ind) {
                         (Ok(expr_or_do), ind) =>
-                            (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))),
-                             ind),
+                            (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))), ind),
                         err => err
                     }
                 } else {

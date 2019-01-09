@@ -13,10 +13,11 @@ use std::slice::Iter;
 // function-args    ::= function-type ":" function-type [ "," function-args ]
 // function-type    ::= id | static-tuple | function-tuple "->" function-type
 // function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
+// function-anon    ::= function-tuple "->' maybe-expr
 
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<Token>>, ind: i32)
                            -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::Point));
+    if it.next() != Some(&Token::Point) { return (Err("Expected '.' keyword".to_string()), ind); }
 
     match (it.next(), it.peek()) {
         (Some(Token::Id(id)), Some(Token::LPar)) =>
@@ -45,7 +46,7 @@ pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Toke
 
 pub fn parse_function_definition_body(it: &mut Peekable<Iter<Token>>, ind: i32)
                                       -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::Fun));
+    if it.next() != Some(&Token::Fun) { return (Err("Expected 'fun' keyword".to_string()), ind); }
 
     return if let Some(Token::Id(id)) = it.next() {
         match parse_args(it, ind) {
@@ -139,7 +140,9 @@ fn parse_function_type(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTN
 }
 
 fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::LPar));
+    if it.next() != Some(&Token::LPar) {
+        return (Err("Expected opening parenthesis".to_string()), ind);
+    }
 
     let mut fun_types = Vec::new();
     if it.peek() != Some(&&Token::RPar) {
@@ -162,4 +165,9 @@ fn parse_static_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
     }
 
     return (Ok(ASTNode::FunTuple(fun_types)), ind);
+}
+
+pub fn parse_function_anonymous(it: &mut Peekable<Iter<Token>>, ind: i32)
+                                -> (Result<ASTNode, String>, i32) {
+    panic!("Not implemented")
 }

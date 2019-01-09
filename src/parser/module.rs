@@ -68,7 +68,7 @@ fn skip_newlines(it: &mut Peekable<Iter<Token>>) {
 }
 
 fn parse_module_import(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    assert_eq!(it.next(), Some(&Token::From));
+    if it.next() != Some(&Token::From) { return (Err("Expected 'from' keyword".to_string()), ind); }
 
     return match (it.next(), it.next()) {
         (Some(&Token::Id(ref m)), Some(&Token::UseAll)) =>

@@ -20,9 +20,7 @@ pub fn parse_do_block(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNo
         match parse_expr_or_stmt(it, ind) {
             (Ok(ast_node), ind) => if it.peek() != None && it.next() != Some(&Token::NL) {
                 return (Err("Expected newline.".to_string()), ind);
-            } else {
-                nodes.push(ast_node)
-            }
+            } else { nodes.push(ast_node) }
             err => return err
         }
 

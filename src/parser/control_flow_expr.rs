@@ -1,32 +1,37 @@
 use crate::lexer::Token;
 use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
+use crate::parser::function::parse_function_anonymous;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::util;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// control-flow-expr::= if | when | from
+// control-flow-expr::= if | from | when
 // if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
 // from             ::= "from" maybe-expr [ newline ] "where" maybe-expression
+//                      [ "map" function-anon ]
 // when             ::= "when" maybe-expr newline { { indent } when-case }
 // when-case        ::= maybe-expr "then" expr-or-stmt
 
 pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<Token>>, ind: i32)
                              -> (Result<ASTNode, String>, i32) {
     return match it.peek() {
-        Some(Token::If) => parse_if(it, ind),
-        Some(Token::Unless) => parse_unless(it, ind),
+        Some(Token::If) | Some(Token::Unless) => parse_if(it, ind),
+        Some(Token::From) => parse_from(it, ind),
         Some(Token::When) => parse_when(it, ind),
-        Some(Token::From) => panic!("Not implemented"),
 
         Some(_) | None => (Err("Expected control flow expression.".to_string()), ind)
     };
 }
 
-fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::Unless));
+fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+    let if_expr = match it.next() {
+        Some(Token::If) => true,
+        Some(Token::Unless) => false,
+        _ => return (Err("Expected 'if' or 'unless' keyword.".to_string()), ind)
+    };
 
     return match parse_expression(it, ind) {
         (Ok(cond), ind) => if it.next() != Some(&Token::Then) {
@@ -34,12 +39,20 @@ fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
         } else {
             match parse_expr_or_stmt(it, ind) {
                 (Ok(then), ind) => if Some(&&Token::Else) != it.peek() {
-                    (Ok(ASTNode::Unless(wrap!(cond), wrap!(then))), ind)
+                    if if_expr {
+                        (Ok(ASTNode::If(wrap!(cond), wrap!(then))), ind)
+                    } else {
+                        (Ok(ASTNode::Unless(wrap!(cond), wrap!(then))), ind)
+                    }
                 } else {
                     it.next();
                     match parse_expr_or_stmt(it, ind) {
-                        (Ok(otherwise), ind) => (Ok(ASTNode::UnlessElse(
-                            wrap!(cond), wrap!(then), wrap!(otherwise))), ind),
+                        (Ok(otherwise), ind) => if if_expr {
+                            (Ok(ASTNode::IfElse(wrap!(cond), wrap!(then), wrap!(otherwise))), ind)
+                        } else {
+                            (Ok(ASTNode::UnlessElse(wrap!(cond), wrap!(then), wrap!(otherwise))),
+                             ind)
+                        }
                         err => err
                     }
                 }
@@ -50,33 +63,32 @@ fn parse_unless(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, St
     };
 }
 
-fn parse_if(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::If));
+fn parse_from(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
+    if it.next() != Some(&Token::From) { return (Err("Expected 'from' keyword".to_string()), ind); }
 
     return match parse_expression(it, ind) {
-        (Ok(cond), ind) => if it.next() != Some(&Token::Then) {
-            return (Err("'Then' keyword expected".to_string()), ind);
-        } else {
-            match parse_expr_or_stmt(it, ind) {
-                (Ok(then), ind) => if Some(&&Token::Else) != it.peek() {
-                    (Ok(ASTNode::If(wrap!(cond), wrap!(then))), ind)
-                } else {
-                    it.next();
-                    match parse_expr_or_stmt(it, ind) {
-                        (Ok(otherwise), ind) => (Ok(ASTNode::IfElse(
-                            wrap!(cond), wrap!(then), wrap!(otherwise))), ind),
-                        err => err
+        (Ok(coll), ind) => if it.next() == Some(&Token::Where) {
+            match parse_expression(it, ind) {
+                (Ok(cond), ind) => if it.peek() == Some(&&Token::Map) {
+                    match (it.next(), parse_function_anonymous(it, ind)) {
+                        (_, (Ok(mapping), ind)) => (Ok(
+                            ASTNode::FromMap(wrap!(coll), wrap!(cond), wrap!(mapping))), ind),
+                        (_, err) => err
                     }
+                } else {
+                    (Ok(ASTNode::From(wrap!(coll), wrap!(cond))), ind)
                 }
                 err => err
             }
+        } else {
+            (Err("Expected 'where' keyword.".to_string()), ind)
         }
         err => err
     };
 }
 
 fn parse_when(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::When));
+    if it.next() != Some(&Token::When) { return (Err("Expected 'when' keyword".to_string()), ind); }
 
     match parse_expression(it, ind) {
         (Ok(expr), ind) => if it.next() != Some(&Token::NL) {

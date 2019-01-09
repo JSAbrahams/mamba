@@ -1,4 +1,5 @@
 use crate::lexer::Token;
+use crate::parser::assignment::parse_reassignment;
 use crate::parser::ASTNode;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::do_block::parse_do_block;
@@ -8,13 +9,6 @@ use crate::parser::operation::parse_operation;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
-
-macro_rules! postfix_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
-    $it.next(); match parse_expression($it, $ind) {
-        (Ok(post), ind) => (Ok($op(Box::new($pre), Box::new(post))), ind),
-        err => err
-    }
-}}}
 
 // maybe-expr ::=
 // | "return" [ maybe-expr ]
@@ -39,7 +33,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<AST
         Some(_) | None => (Err("Expected expression.".to_string()), ind)
     } {
         (Ok(pre), ind) => match it.peek() {
-            Some(Token::Assign) => postfix_op!(it, ind, ASTNode::Assign, pre),
+            Some(Token::Assign) => parse_reassignment(pre, it, ind),
             Some(Token::LPar) => parse_function_call_direct(pre, it, ind),
             Some(Token::Point) => parse_function_call(pre, it, ind),
             Some(_) | None => (Ok(pre), ind)
@@ -50,7 +44,9 @@ pub fn parse_expression(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<AST
 
 // tuple ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
 pub fn parse_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::LPar));
+    if it.next() != Some(&Token::LPar) {
+        return (Err("Expected opening parenthesis.".to_string()), ind);
+    }
 
     let mut elements = Vec::new();
     if it.peek() != Some(&&Token::RPar) {
@@ -76,9 +72,11 @@ pub fn parse_tuple(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode,
 
 // "return" maybe-expression
 fn parse_return(it: &mut Peekable<Iter<Token>>, ind: i32) -> (Result<ASTNode, String>, i32) {
-    debug_assert_eq!(it.next(), Some(&Token::Ret));
-    if it.peek() == Some(&&Token::NL) { return (Ok(ASTNode::ReturnEmpty), ind); }
+    if it.next() != Some(&Token::Ret) {
+        return (Err("Expected 'return' keyword".to_string()), ind);
+    }
 
+    if it.peek() == Some(&&Token::NL) { return (Ok(ASTNode::ReturnEmpty), ind); }
     return match parse_expression(it, ind) {
         (Ok(expr), ind) => (Ok(ASTNode::Return(wrap!(expr))), ind),
         err => err
