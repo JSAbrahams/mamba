@@ -35,13 +35,15 @@ pub enum ASTNode {
     FunType(Box<ASTNode>, Box<ASTNode>),
     FunTuple(Vec<ASTNode>),
 
-    ModProgram(Vec<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
+    ModScript(Vec<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
     ModClass(Vec<ASTNode>, Box<ASTNode>, Vec<ASTNode>),
 
     Id(String),
     Assign(Box<ASTNode>, Box<ASTNode>),
+    Defer(Box<ASTNode>, Vec<ASTNode>),
     Mut(Box<ASTNode>),
     Let(Box<ASTNode>),
+    LetType(Box<ASTNode>, Box<ASTNode>),
 
     Do(Vec<ASTNode>),
 
@@ -92,7 +94,7 @@ pub enum ASTNode {
     Print(Box<ASTNode>),
 }
 
-// module ::= type | util | class | script
+// module ::= interface | util | class | script
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult<ASTNode> {
     return module::parse_module(&mut input.iter().peekable());

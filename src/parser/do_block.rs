@@ -2,7 +2,7 @@ use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
-use crate::parser::parse_result::ParseError;
+use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::util;
 use std::iter::Iterator;
@@ -15,16 +15,16 @@ pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResu
     let mut nodes = Vec::new();
 
     while let Some(_) = it.peek() {
-        let next_ind = util::ind_count(it);
-        if next_ind > ind && it.peek().is_some() {
-            return (Err(format!("Expected indentation of {}.", ind)), next_ind);
+        let actual = util::ind_count(it);
+        if actual > ind && it.peek().is_some() {
+            return (Err(IndErr { expected: ind, actual }), ind);
         }
 
         match parse_expr_or_stmt(it, ind) {
             (Ok(ast_node), ind) => {
                 match it.next() {
-                    Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Then =>
-                        return (Err(ParseError::TokenError(*tp, Token::Then)), ind)
+                    Some(actual @ TokenPos { ref line, ref pos, token }) if *token != Token::Then =>
+                        return (Err(TokenErr { expected: Token::Then, actual }), ind)
                 }
                 nodes.push(ast_node)
             }
@@ -32,11 +32,15 @@ pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResu
         }
 
         /* empty line */
-        if Some(&&TokenPos { line, pos, token: Token::NL }) == it.peek() {
+        if let Some(&&tp) = it.peek() {
+            if tp.token != Token::NL { break; }
             it.next();
-            if Some(&&TokenPos { line, pos, token: Token::NL }) == it.peek() {
+            if let Some(&&tp) = it.peek() {
+                if tp.token != Token::NL { break; }
                 it.next();
-                if Some(&&TokenPos { line, pos, token: Token::NL }) == it.peek() { break; }
+                if let Some(&&tp) = it.peek() {
+                    if tp.token == Token::NL { break; }
+                }
             }
         }
     }

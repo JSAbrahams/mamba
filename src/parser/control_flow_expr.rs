@@ -4,7 +4,7 @@ use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::function::parse_function_anonymous;
 use crate::parser::maybe_expr::parse_expression;
-use crate::parser::parse_result::ParseError;
+use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::util;
 use std::iter::Iterator;
@@ -13,8 +13,7 @@ use std::slice::Iter;
 
 // control-flow-expr::= if | from | when
 // if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-// from             ::= "from" maybe-expr [ newline ] "where" maybe-expression
-//                      [ "map" function-anon ]
+// from             ::= "from" maybe-expr [ newline ] "where" function-anon  [ "map" function-anon ]
 // when             ::= "when" maybe-expr newline { { indent } when-case }
 // when-case        ::= maybe-expr "then" expr-or-stmt
 
@@ -26,49 +25,51 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         Some(TokenPos { line, pos, token: Token::From }) => parse_from(it, ind),
         Some(TokenPos { line, pos, token: Token::When }) => parse_when(it, ind),
 
-        Some(tp) => (Err(ParseError::TokenError(**tp, Token::If)), ind),
-        None => (Err(ParseError::EOFError(Token::If)), ind)
+        Some(&&actual) => (Err(TokenErr { expected: Token::If, actual }), ind),
+        None => (Err(EOFErr { expected: Token::If }), ind)
     };
 }
 
 fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     let if_expr = match it.next() {
-        Some(TokenPos { line, pos, token: TokenPos::If }) => true,
-        Some(TokenPos { line, pos, token: TokenPos::Unless }) => false,
-        Some(tp @ TokenPos { ref line, ref pos, token })
+        Some(TokenPos { line, pos, token: Token::If }) => true,
+        Some(TokenPos { line, pos, token: Token::Unless }) => false,
 
+        Some(&actual @ TokenPos { ref line, ref pos, token })
         if (*token != Token::If || *token != Token::Unless) =>
-            return (Err(ParseError::TokenError(*tp, Token::If)), ind),
-        None => return (Err(ParseError::EOFError(Token::If)), ind)
+            return (Err(TokenErr { expected: Token::If, actual }), ind),
+        None => return (Err(EOFErr { expected: Token::If }), ind)
     };
 
     return match parse_expression(it, ind) {
         (Ok(cond), ind) => {
             match it.next() {
-                Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Then =>
-                    return (Err(ParseError::TokenError(*tp, Token::Then)), ind),
-                None => return (Err(ParseError::EOFError(Token::Then)), ind)
+                Some(&actual) if actual.token != Token::Then =>
+                    return (Err(TokenErr { expected: Token::Then, actual }), ind),
+                None => return (Err(EOFErr { expected: Token::Then }), ind)
             }
 
             match parse_expr_or_stmt(it, ind) {
-                (Ok(then), ind) => if Some(&&TokenPos::Else) != it.peek() {
-                    if if_expr {
-                        (Ok(ASTNode::If(wrap!(cond), wrap!(then))), ind)
-                    } else {
-                        (Ok(ASTNode::Unless(wrap!(cond), wrap!(then))), ind)
-                    }
-                } else {
-                    it.next();
-                    match parse_expr_or_stmt(it, ind) {
-                        (Ok(otherwise), ind) => if if_expr {
-                            (Ok(ASTNode::IfElse(wrap!(cond), wrap!(then), wrap!(otherwise))), ind)
-                        } else {
-                            (Ok(ASTNode::UnlessElse(wrap!(cond), wrap!(then), wrap!(otherwise))),
-                             ind)
+                (Ok(then), ind) =>
+                    if let Some(&&TokenPos { line, pos, token: Token::Else }) = it.peek() {
+                        it.next();
+                        match parse_expr_or_stmt(it, ind) {
+                            (Ok(otherwise), ind) => if if_expr {
+                                (Ok(ASTNode::IfElse(wrap!(cond), wrap!(then), wrap!(otherwise))),
+                                 ind)
+                            } else {
+                                (Ok(ASTNode::UnlessElse(wrap!(cond), wrap!(then), wrap!(otherwise))),
+                                 ind)
+                            }
+                            err => err
                         }
-                        err => err
+                    } else {
+                        if if_expr {
+                            (Ok(ASTNode::If(wrap!(cond), wrap!(then))), ind)
+                        } else {
+                            (Ok(ASTNode::Unless(wrap!(cond), wrap!(then))), ind)
+                        }
                     }
-                }
                 err => err
             }
         }
@@ -78,52 +79,53 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode
 
 fn parse_from(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     match it.next() {
-        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::From =>
-            return (Err(ParseError::TokenError(*tp, Token::From)), ind),
-        None => return (Err(ParseError::EOFError(Token::From)), ind)
+        Some(&actual) if actual.token != Token::From =>
+            return (Err(TokenErr { expected: Token::From, actual }), ind),
+        None => return (Err(EOFErr { expected: Token::From }), ind)
     }
 
     return match parse_expression(it, ind) {
         (Ok(coll), ind) => {
             match it.next() {
-                Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::When =>
-                    return (Err(ParseError::TokenError(*tp, Token::When)), ind),
-                None => return (Err(ParseError::EOFError(Token::When)), ind)
+                Some(&actual) if actual.token != Token::When =>
+                    return (Err(TokenErr { expected: Token::When, actual }), ind),
+                None => return (Err(EOFErr { expected: Token::When }), ind)
             }
 
-            match parse_expression(it, ind) {
-                (Ok(cond), ind) => if it.peek() == Some(&&TokenPos::Map) {
-                    match (it.next(), parse_function_anonymous(it, ind)) {
-                        (_, (Ok(mapping), ind)) => (Ok(
-                            ASTNode::FromMap(wrap!(coll), wrap!(cond), wrap!(mapping))), ind),
-                        (_, err) => err
-                    }
-                } else { (Ok(ASTNode::From(wrap!(coll), wrap!(cond))), ind) }
+            match parse_function_anonymous(it, ind) {
+                (Ok(cond), ind) => match it.peek() {
+                    Some(TokenPos { line, pos, token: Token::Map }) =>
+                        match (it.next(), parse_function_anonymous(it, ind)) {
+                            (_, (Ok(mapping), ind)) => (Ok(
+                                ASTNode::FromMap(wrap!(coll), wrap!(cond), wrap!(mapping))), ind),
+                            (_, err) => err
+                        }
+                    _ => (Ok(ASTNode::From(wrap!(coll), wrap!(cond))), ind)
+                }
                 err => err
             }
         }
-        err => err
     };
 }
 
 fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     match it.next() {
-        Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::When =>
-            return (Err(ParseError::TokenError(*tp, Token::When)), ind),
-        None => return (Err(ParseError::EOFError(Token::When)), ind)
+        Some(actual) if actual.token != Token::When =>
+            return (Err(TokenErr { expected: Token::When, actual }), ind),
+        None => return (Err(EOFErr { expected: Token::When }), ind)
     }
 
     match parse_expression(it, ind) {
         (Ok(expr), ind) => {
             match it.next() {
-                Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::NL =>
-                    return (Err(ParseError::TokenError(*tp, Token::NL)), ind),
-                None => return (Err(ParseError::EOFError(Token::NL)), ind)
+                Some(actual) if actual.token != Token::NL =>
+                    return (Err(TokenErr { expected: Token::NL, actual }), ind),
+                None => return (Err(EOFErr { expected: Token::NL }), ind)
             }
 
             match parse_when_cases(it, ind + 1) {
                 (Ok(cases), ind) => (Ok(ASTNode::When(wrap!(expr), cases)), ind),
-                (Err(err), ind) => (Err(err), ind)
+                (err, ind) => (err, ind)
             }
         }
         err => err
@@ -131,14 +133,14 @@ fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNo
 }
 
 fn parse_when_cases(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                    -> (Result<Vec<ASTNode>, String>, i32) {
+                    -> (ParseResult<Vec<ASTNode>>, i32) {
     let mut when_cases = Vec::new();
 
     while let Some(_) = it.peek() {
         let next_ind = util::ind_count(it);
         if next_ind < ind { break; }; /* Indentation decrease marks end of do block */
         if next_ind > ind && it.peek().is_some() {
-            return (Err(format!("Expected indentation of {}.", ind)), next_ind);
+            return (Err(IndErr { expected: ind, actual: next_ind }), next_ind);
         }
 
         match parse_when_case(it, ind) {
@@ -146,13 +148,18 @@ fn parse_when_cases(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
             (Ok(case), _) => when_cases.push(case),
         }
 
-        if Some(&&TokenPos::NL) == it.peek() {
+        /* empty line */
+        if let Some(&&tp) = it.peek() {
+            if tp.token != Token::NL { break; }
             it.next();
-            if Some(&&TokenPos::NL) == it.peek() {
+            if let Some(&&tp) = it.peek() {
+                if tp.token != Token::NL { break; }
                 it.next();
-                break;
+                if let Some(&&tp) = it.peek() {
+                    if tp.token == Token::NL { break; }
+                }
             }
-        } else { break; }
+        }
     }
 
     return (Ok(when_cases), ind);
@@ -162,9 +169,9 @@ fn parse_when_case(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<
     match parse_expression(it, ind) {
         (Ok(expr), ind) => {
             match it.next() {
-                Some(tp @ TokenPos { ref line, ref pos, token }) if *token != Token::Then =>
-                    return (Err(ParseError::TokenError(*tp, Token::Then)), ind),
-                None => return (Err(ParseError::EOFError(Token::Then)), ind)
+                Some(actual) if actual.token != Token::Then =>
+                    return (Err(TokenErr { expected: Token::Then, actual }), ind),
+                None => return (Err(EOFErr { expected: Token::Then }), ind)
             }
 
             match parse_expr_or_stmt(it, ind) {

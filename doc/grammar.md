@@ -2,18 +2,19 @@
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
+    util-import      ::= "from" "util" 
     
-    module           ::= type | util | class | script
-    type             ::= { module-import newline } { newline } 
-                         "type" id [ newline { newline }
-                         { ( function-def | definition | immutable-asssign ) newline { newline } } ]
-    util             ::= { module-import newline } { newline } 
-                         "util" id [ newline [ "isa" id [ { "," id } ] ] [ newline { newline } 
-                         { ( immutable-assign | function-def-bod ) newline { newline } } ]
-    class            ::= { module-import newline } { newline } 
-                         "class" id [ "isa" id [ { "," id } ] ] [ newline { newline } 
-                         { ( "util" ( function-def-bod | immutable-assign ) | 
-                             "private" ( function-def-bod | assignment ) ) newline { newline } } ]
+    module           ::= interface | util | class | script
+    interface        ::= { module-import newline } newline { newline } 
+                         "type" newline newline { newline } 
+                         { ( function-def | function-def-body | definition | immutable-asssign ) newline { newline } } ]
+    util             ::= { module-import newline } newline { newline } 
+                         "util" id [ "isa" id { "," id } ] newline { newline } 
+                         { ( immutable-declaration | function-def-bod ) newline { newline } }
+    class            ::= { module-import newline } newline { newline } 
+                         "class" id [ "isa" id { "," id } ] newline { newline } 
+                         { defer-declaration newline } { newline } 
+                         { [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
     script           ::= { module-import newline } { newline } 
                          { function-def newline { newline } } 
                          [ do-block ]
@@ -25,7 +26,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-args    ::= function-type ":" function-type [ "," function-args ]
     function-type    ::= id | static-tuple | function-tuple "->" function-type
     function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
-    function-anon    ::= function-tuple "->' maybe-expr
+    function-anon    ::= ( id | function-tuple ) "->' maybe-expr
     
     do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
     
@@ -33,7 +34,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
                       
     statement        ::= "print" maybe-expr 
-                      | assignment 
+                      | declaration 
                       | control-flow-stmt
     maybe-expr       ::= "return" [ maybe-expr ] 
                       | operation 
@@ -48,10 +49,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
     
     reassignment     ::= maybe-expr "<-" maybe-expr
-    assignment       ::= mutable-assign | immutable-assign
-    mutable-assign   ::= [ "mutable" ] immutable-assignment
-    immutable-assign ::= definition "<-" maybe-expr
-    definition       ::= "let" id
+    defer-declaration::= declaration [ "forward" id { "," id } ]
+    declaration      ::= mutable-declaration | immutable-declaration
+    mutable-decl     ::= [ "mutable" ] immutable-declaration
+    immutable-decl   ::= definition "<-" maybe-expr
+    definition       ::= "let" id [ ":" id ]
 
     operation        ::= arithmetic | arithmetic relational maybe-expr
     arithmetic       ::= term | unary arithmetic | term additive maybe-expr
@@ -76,7 +78,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     control-flow-expr::= if | from | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    from             ::= "from" maybe-expr [ newline ] "where" maybe-expression [ "map" function-anon ]
+    from             ::= "from" maybe-expr [ newline ] "where" function-anon [ "map" function-anon ]
     when             ::= "when" maybe-expr newline { { indent } when-case }
     when-case        ::= maybe-expr "then" expr-or-stmt
     
@@ -101,14 +103,21 @@ an expression or statement without type checking the program.
 A module denotes a single source file, and can be one of the following:
 * A `program`: A script, which is to be executed.
     * May contain functions, which are only visible to the script itself.
-* A `type`   : An interface which may denote the type of a certain class of object.
-    * Contains a collection of definitions, immutable assignements, and functions. All may be viewed as properties of the 
-      type. As such, these are all publicly visible.
-    * All `util` and `class` that implement `type` must assign to the definitions.
+* A `interface` : An interface which may denote the type of a certain class of object.
+    * Contains a collection of definitions, immutable assignments, and functions. All may be viewed as properties of the 
+      interface. As such, these are all publicly visible.
+    * All `util` and `class` that implement `interface` must assign to the definitions.
+    * It may contain functions with a body which are the default implementation. This may not be overwritten. As such, 
+      these should only be used to implement behaviour that is always the same for the type, as `class`es that actually
+      implement the `interface` will not be able to overwrite it.
 * A `util`   : A collection of functions and immutable assignments.
 * A `class`  : A collection of functions that act upon encapsulated data. 
-    * Contains a collection of assignments and functions. All assignments and functions are public. 
-    * A function or immutable-assignment may be prepended with `util` to make it static.
+    * Contains a collection of assignments and functions. All assignments and functions are public.
     * A function or assignment may be prepended with `private` to make it only visible within this module.
+    * A class may not inherit from another class as in other OOP languages. Composition is enforced. 
+      To avoid having to implement functions in the derived classes if they are only being forwarded, the `forward` 
+      keyword may be used. This allows us to pick what behaviour is deferred to the containing object and what behaviour
+      is implemented. 
+      Inheritance is therefore still indirectly possible, but discouraged, and made more explicit. One can look at the 
+      class file and will know exactly what properties it has without having to read any classes it may inherit from.
                
-Note that there is no inheritance. 

@@ -2,9 +2,9 @@ use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::maybe_expr::parse_expression;
+use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::parse_statement;
-use crate::parser::parse_result::ParseError;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -36,8 +36,8 @@ pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
             Some(TokenPos { line, pos, token: Token::Unless }) =>
                 pos_op!(it, ind, ASTNode::Unless, pre),
 
-            Some(tp) => (Err(ParseError::TokenError(**tp, Token::Let)), ind),
-            None => (Err(ParseError::EOFError(Token::If)), ind)
+            Some(actual) => (Err(TokenErr { expected: Token::Let, actual }), ind),
+            None => (Err(EOFErr { expected: Token::If }), ind)
         }
         err => err
     };

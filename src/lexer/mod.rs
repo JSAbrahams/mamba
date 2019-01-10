@@ -16,6 +16,7 @@ pub enum Token {
     From,
     Use,
     UseAll,
+    Forward,
 
     Fun,
     To,
@@ -85,6 +86,8 @@ impl fmt::Display for Token {
             Token::From => "from",
             Token::Use => "use",
             Token::UseAll => "useall",
+            Token::From => "from",
+            Token::Forward => "forward",
 
             Token::Fun => "fun",
             Token::To => "->",
@@ -287,6 +290,8 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
         "use" => Token::Use,
         "useall" => Token::UseAll,
         "class" => Token::Class,
+        "forward" => Token::Forward,
+
         "fun" => Token::Fun,
         "let" => Token::Let,
         "mutable" => Token::Mut,

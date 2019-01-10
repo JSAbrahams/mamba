@@ -3,37 +3,42 @@ use crate::lexer::TokenPos;
 use std::error;
 use std::fmt;
 
-pub type ParseResult<T> = std::result::Result<T, ParseError>;
+pub type ParseResult<T> = std::result::Result<T, ParseErr>;
 
 #[derive(Debug)]
-pub enum ParseError {
-    TokenError(TokenPos, Token),
-    EOFError(Token),
+pub enum ParseErr {
+    TokenErr { expected: Token, actual: TokenPos },
+    EOFErr { expected: Token },
+    IndErr { expected: i32, actual: i32 },
 }
 
-impl fmt::Display for ParseError {
+impl fmt::Display for ParseErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ParseError::EOFError(token) =>
-                write!(f, "Expected <{}>, but end of file", token),
-            ParseError::TokenError(actual, token) =>
-                write!(f, "Expected {} at line {} position {}, but was {}.",
-                       token,
-                       actual.line, actual.pos, actual.token)
+            ParseErr::EOFErr { expected } =>
+                write!(f, "Expected <{}>, but end of file", expected),
+            ParseErr::TokenErr { expected, actual } =>
+                write!(f, "Expected {} at line {} position {}, but was: {}.",
+                       expected,
+                       actual.line, actual.pos, actual.token),
+            ParseErr::IndErr { expected, actual } =>
+                write!(f, "Expected indentation of {}, but was: {}.", expected, actual)
         }
     }
 }
 
-impl error::Error for ParseError {
+impl error::Error for ParseErr {
     fn description(&self) -> &str {
-        match *self {
-            ParseError::EOFError(token) =>
-                format!("Expected <{}>, but end of file", token).as_ref(),
-            ParseError::TokenError(actual, token) =>
-                format!("Expected {} at line {} position {}, but was {}.",
-                        token,
-                        actual.line, actual.pos, actual.token).as_ref()
-        }
+        (match *self {
+            ParseErr::EOFErr { expected } =>
+                format!("Expected <{}>, but end of file", expected),
+            ParseErr::TokenErr { expected, actual } =>
+                format!("Expected {} at line {} position {}, but was: {}.",
+                        expected,
+                        actual.line, actual.pos, actual.token),
+            ParseErr::IndErr { expected, actual } =>
+                format!("Expected indentation of {}, but was: {}.", expected, actual)
+        }).as_ref()
     }
 
     fn source(&self) -> Option<&(error::Error + 'static)> { None }
