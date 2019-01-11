@@ -23,19 +23,18 @@ macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
 pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> (ParseResult<ASTNode>, i32) {
     return match match it.peek() {
-        Some(TokenPos { line, pos, token: Token::Let }) |
-        Some(TokenPos { line, pos, token: Token::Mut }) |
-        Some(TokenPos { line, pos, token: Token::Print }) |
-        Some(TokenPos { line, pos, token: Token::For }) |
-        Some(TokenPos { line, pos, token: Token::While }) => parse_statement(it, ind),
+        Some(TokenPos { line: _, pos: _, token: Token::Let }) |
+        Some(TokenPos { line: _, pos: _, token: Token::Mut }) |
+        Some(TokenPos { line: _, pos: _, token: Token::Print }) |
+        Some(TokenPos { line: _, pos: _, token: Token::For }) |
+        Some(TokenPos { line: _, pos: _, token: Token::While }) => parse_statement(it, ind),
         _ => parse_expression(it, ind)
     } {
         (Ok(pre), ind) => match it.peek() {
-            Some(TokenPos { line, pos, token: Token::If }) => pos_op!(it, ind, ASTNode::If, pre),
-            Some(TokenPos { line, pos, token: Token::Unless }) =>
+            Some(TokenPos { line: _, pos: _, token: Token::If }) => pos_op!(it, ind, ASTNode::If, pre),
+            Some(TokenPos { line: _, pos: _, token: Token::Unless }) =>
                 pos_op!(it, ind, ASTNode::Unless, pre),
-
-            Some(&&actual) => (Err(TokenErr { expected: Token::Let, actual }), ind),
+            Some(&next) => (Err(TokenErr { expected: Token::Let, actual: next.clone() }), ind),
             None => (Err(EOFErr { expected: Token::If }), ind)
         }
         err => err

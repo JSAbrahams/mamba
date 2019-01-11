@@ -7,6 +7,7 @@ pub type ParseResult<T> = std::result::Result<T, ParseErr>;
 
 #[derive(Debug)]
 pub enum ParseErr {
+    UtilBodyErr,
     TokenErr { expected: Token, actual: TokenPos },
     EOFErr { expected: Token },
     IndErr { expected: i32, actual: i32 },
@@ -14,11 +15,12 @@ pub enum ParseErr {
 
 impl fmt::Display for ParseErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ParseErr::EOFErr { expected } =>
-                write!(f, "Expected <{}>, but end of file", expected),
+        match self {
+            ParseErr::UtilBodyErr => write!(f, "Util module cannot have a body."),
+            ParseErr::EOFErr { expected } => write!(f, "Expected <{}>, but end of file reached.",
+                                                    expected),
             ParseErr::TokenErr { expected, actual } =>
-                write!(f, "Expected {} at line {} position {}, but was: {}.",
+                write!(f, "Expected {} at line {}, position {}, but was: {}.",
                        expected,
                        actual.line, actual.pos, actual.token),
             ParseErr::IndErr { expected, actual } =>
@@ -29,16 +31,12 @@ impl fmt::Display for ParseErr {
 
 impl error::Error for ParseErr {
     fn description(&self) -> &str {
-        (match *self {
-            ParseErr::EOFErr { expected } =>
-                format!("Expected <{}>, but end of file", expected),
-            ParseErr::TokenErr { expected, actual } =>
-                format!("Expected {} at line {} position {}, but was: {}.",
-                        expected,
-                        actual.line, actual.pos, actual.token),
-            ParseErr::IndErr { expected, actual } =>
-                format!("Expected indentation of {}, but was: {}.", expected, actual)
-        }).as_ref()
+        match self {
+            ParseErr::UtilBodyErr => "Util module cannot have a body.",
+            ParseErr::EOFErr { expected: _ } => "Expected token but end of file.",
+            ParseErr::TokenErr { expected: _, actual: _ } => "Unexpected token encountered.",
+            ParseErr::IndErr { expected: _, actual: _ } => "Unexpected indentation."
+        }
     }
 
     fn source(&self) -> Option<&(error::Error + 'static)> { None }

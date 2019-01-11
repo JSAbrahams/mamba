@@ -16,27 +16,23 @@ use std::slice::Iter;
 pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> (ParseResult<ASTNode>, i32) {
     return match it.peek() {
-        Some(TokenPos { line, pos, token: Token::While }) => parse_while(it, ind),
-        Some(TokenPos { line, pos, token: Token::For }) => parse_for(it, ind),
-        Some(TokenPos { line, pos, token: Token::Break }) =>
+        Some(TokenPos { line: _, pos: _, token: Token::While }) => parse_while(it, ind),
+        Some(TokenPos { line: _, pos: _, token: Token::For }) => parse_for(it, ind),
+        Some(TokenPos { line: _, pos: _, token: Token::Break }) =>
             next_and!(it, (Ok(ASTNode::Break), ind)),
-        Some(TokenPos { line, pos, token: Token::Continue }) =>
+        Some(TokenPos { line: _, pos: _, token: Token::Continue }) =>
             next_and!(it, (Ok(ASTNode::Continue), ind)),
 
-        Some(&&actual @ TokenPos { ref line, ref pos, token })
-        if (token != Token::While || token != Token::For) =>
-            return (Err(TokenErr { expected: Token::While, actual }), ind),
+        Some(&next) => return (Err(TokenErr { expected: Token::While, actual: next.clone() }), ind),
         None => return (Err(EOFErr { expected: Token::While }), ind)
     };
 }
 
 fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     check_next_is!(it, ind, Token::While);
-
     return match parse_expression(it, ind) {
         (Ok(cond), ind) => {
             check_next_is!(it, ind, Token::Do);
-
             match parse_expr_or_stmt(it, ind) {
                 (Ok(expr_or_do), ind) => (Ok(ASTNode::While(wrap!(cond), wrap!(expr_or_do))), ind),
                 err => err

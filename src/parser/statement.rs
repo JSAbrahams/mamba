@@ -23,13 +23,13 @@ pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
                 (_, err) => err
             }
 
-        Some(TokenPos { line, pos, token: Token::Let }) |
-        Some(TokenPos { line, pos, token: Token::Mut }) => parse_declaration(it, ind),
+        Some(TokenPos { line: _, pos: _, token: Token::Let }) |
+        Some(TokenPos { line: _, pos: _, token: Token::Mut }) => parse_declaration(it, ind),
 
-        Some(TokenPos { line, pos, token: Token::For }) |
-        Some(TokenPos { line, pos, token: Token::While }) => parse_cntrl_flow_stmt(it, ind),
+        Some(TokenPos { line: _, pos: _, token: Token::For }) |
+        Some(TokenPos { line: _, pos: _, token: Token::While }) => parse_cntrl_flow_stmt(it, ind),
 
-        Some(&&actual) => (Err(TokenErr { expected: Token::Print, actual }), ind),
+        Some(&next) => (Err(TokenErr { expected: Token::Print, actual: next.clone() }), ind),
         None => (Err(EOFErr { expected: Token::Print }), ind)
     };
 }
