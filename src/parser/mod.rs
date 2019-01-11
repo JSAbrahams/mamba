@@ -4,6 +4,15 @@ use crate::parser::parse_result::ParseResult;
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 macro_rules! wrap { ($node:expr) => {{ Box::new($node) }} }
+macro_rules! check_next_is {
+    ($it: expr, $ind:expr, $token:path) => {
+    if let Some(&actual) = $it.next() {
+        if actual.token != $token {
+            return (Err(TokenErr { expected: $token, actual }), $ind);
+        }
+    } else { return (Err(EOFErr { expected: $token }), $ind); }
+    }
+}
 
 mod parse_result;
 

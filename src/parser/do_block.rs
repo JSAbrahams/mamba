@@ -21,13 +21,7 @@ pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResu
         }
 
         match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), ind) => {
-                match it.next() {
-                    Some(actual @ TokenPos { ref line, ref pos, token }) if *token != Token::Then =>
-                        return (Err(TokenErr { expected: Token::Then, actual }), ind)
-                }
-                nodes.push(ast_node)
-            }
+            (Ok(ast_node), ind) => nodes.push(ast_node),
             err => return err
         }
 

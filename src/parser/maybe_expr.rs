@@ -57,11 +57,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRe
 
 // tuple ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
 pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(actual @ TokenPos { ref line, ref pos, token }) if *token != Token::LPar =>
-            return (Err(TokenErr { expected: Token::LPar, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::LPar }), ind)
-    }
+    check_next_is!(it, ind, Token::LPar);
 
     let mut elements = Vec::new();
     if let Some(&&TokenPos { line, pos, token: TokenPos::RPar }) = it.peek() {
@@ -87,11 +83,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<
 
 // "return" maybe-expression
 fn parse_return(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(actual @ TokenPos { ref line, ref pos, token }) if *token != Token::Ret =>
-            return (Err(TokenErr { expected: Token::Ret, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::Ret }), ind)
-    }
+    check_next_is!(it, ind, Token::Ret);
 
     if let Some(&&TokenPos { line, pos, token: Token::NL }) = it.peek() {
         return (Ok(ASTNode::ReturnEmpty), ind);

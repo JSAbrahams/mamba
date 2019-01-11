@@ -39,8 +39,8 @@ pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
         Some(TokenPos { line, pos, token: Token::Add }) |
         Some(TokenPos { line, pos, token: Token::Sub }) => parse_arithmetic(it, ind),
 
-        Some(actual) => (TokenErr { expected: Token::Add, actual }, ind),
-        None => (EOFErr { expected: Token::Add }, ind)
+        Some(&&actual) => (Err(TokenErr { expected: Token::Add, actual }), ind),
+        None => (Err(EOFErr { expected: Token::Add }), ind)
     } {
         (Ok(factor), ind) => match it.peek() {
             Some(TokenPos { line, pos, token: Token::Eq }) => b_op!(factor, it, ind, ASTNode::Eq),
@@ -72,8 +72,8 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult
         Some(TokenPos { line, pos, token: Token::Add }) => u_op!(it, ind, ASTNode::AddU),
         Some(TokenPos { line, pos, token: Token::Sub }) => u_op!(it, ind, ASTNode::SubU),
 
-        Some(actual) => (TokenErr { expected: Token::Add, actual }, ind),
-        None => (EOFErr { expected: Token::Add }, ind)
+        Some(&&actual) => (Err(TokenErr { expected: Token::Add, actual }), ind),
+        None => (Err(EOFErr { expected: Token::Add }), ind)
     } {
         (Ok(term), ind) => match it.peek() {
             Some(TokenPos { line, pos, token: Token::Add }) => b_op!(term, it, ind, ASTNode::Add),
@@ -93,8 +93,8 @@ fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNo
         Some(TokenPos { line, pos, token: Token::ENum(_, _) }) |
         Some(TokenPos { line, pos, token: Token::Bool(_) }) => parse_factor(it, ind),
 
-        Some(actual) => (TokenErr { expected: Token::Add, actual }, ind),
-        None => (EOFErr { expected: Token::Add }, ind)
+        Some(&&actual) => (Err(TokenErr { expected: Token::Add, actual }), ind),
+        None => (Err(EOFErr { expected: Token::Add }), ind)
     } {
         (Ok(factor), ind) => match it.peek() {
             Some(TokenPos { line, pos, token: Token::Mul }) => b_op!(factor, it, ind, ASTNode::Mul),
@@ -119,7 +119,7 @@ fn parse_factor(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<AST
             Ok(ASTNode::ENum(num.to_string(), exp.to_string())),
         Some(TokenPos { line, pos, token: Token::Bool(boolean) }) => Ok(ASTNode::Bool(*boolean)),
 
-        Some(actual) => Err(TokenErr { expected: Token::Add, actual }),
+        Some(&actual) => Err(TokenErr { expected: Token::Add, actual }),
         None => Err(EOFErr { expected: Token::Add })
     }, ind);
 }

@@ -20,11 +20,7 @@ use std::slice::Iter;
 
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                            -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(actual @ TokenPos { line, pos, token }) if *token != Token::Point =>
-            return (Err(TokenErr { expected: Token::Point, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::Point }), ind)
-    }
+    check_next_is!(it, ind, Token::Point);
 
     match it.next() {
         Some(TokenPos { line, pos, token: Token::Id(id) }) => match it.peek() {
@@ -33,7 +29,7 @@ pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, i
                     wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), ind),
                 err => err
             }
-            Some(actual) => (Err(TokenErr { expected: Token::LPar, actual }), ind),
+            Some(&actual) => (Err(TokenErr { expected: Token::LPar, actual }), ind),
             None => (Err(EOFErr { expected: Token::LPar }), ind)
         }
         Some(actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
@@ -50,18 +46,14 @@ pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Toke
                     (Ok(ASTNode::FunCallDirect(wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), ind),
                 err => err
             }
-        (_, Some(actual)) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
+        (_, Some(&&actual)) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
         (_, _) => (Err(EOFErr { expected: Token::Id(String::new()) }), ind),
     }
 }
 
 pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                       -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(actual) if *actual.token != Token::Fun =>
-            return (Err(TokenErr { expected: Token::Fun, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::Fun }), ind)
-    }
+    check_next_is!(it, ind, Token::Fun);
 
     return match it.next() {
         Some(TokenPos { line, pos, token: Token::Id(id) }) => match parse_args(it, ind) {
@@ -84,28 +76,25 @@ pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i3
                                         wrap!(body))), ind),
                                     err => err
                                 }
-                            Some(actual) => (Err(TokenErr { expected: Token::To, actual }), ind),
+                            Some(&actual) => (Err(TokenErr { expected: Token::To, actual }), ind),
                             None => (Err(EOFErr { expected: Token::To }), ind)
                         },
                         err => err
                     }
-                Some(actual) => (Err(TokenErr { expected: Token::DoublePoint, actual }), ind),
+                Some(&actual) => (Err(TokenErr { expected: Token::DoublePoint, actual }), ind),
                 None => (Err(EOFErr { expected: Token::DoublePoint }), ind)
             }
             (Err(err), ind) => (Err(err), ind)
         }
 
-        Some(actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
+        Some(&actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
         None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
     };
 }
 
 fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<Vec<ASTNode>>, i32) {
-    match it.next() {
-        Some(actual @ TokenPos { ref line, ref pos, token }) if *token != Token::LPar =>
-            return (Err(TokenErr { expected: Token::LPar, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::LPar }), ind)
-    }
+    check_next_is!(it, ind, Token::LPar);
+
     let mut args = Vec::new();
     if it.peek() != Some(&&TokenPos::RPar) {
         match parse_function_arg(it, ind) {
@@ -172,11 +161,7 @@ fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
 }
 
 fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(actual @ TokenPos { line, pos, token }) if *token != Token::LPar =>
-            return (Err(TokenErr { expected: Token::LPar, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::LPar }), ind)
-    }
+    check_next_is!(it, ind, Token::LPar);
 
     let mut fun_types = Vec::new();
     match it.next() {

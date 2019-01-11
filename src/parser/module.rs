@@ -78,8 +78,10 @@ fn parse_multiple(expected: &Token,
             (Err(err), _) => return Err(err)
         }
 
-        if it.peek().is_some() && it.next() != Some(&TokenPos::NL) { break; }
-        skip_newlines(it);
+        match it.next() {
+            Some(&TokenPos { line, pos, token: Token::NL }) => skip_newlines(it),
+            _ => break
+        }
     }
 
     return Ok(elements);
@@ -88,27 +90,26 @@ fn parse_multiple(expected: &Token,
 fn skip_newlines(it: &mut Peekable<Iter<TokenPos>>) {
     while let Some(&t) = it.peek() {
         match t {
-            TokenPos::NL => it.next(),
+            TokenPos { line, pos, token: Token::NL } => it.next(),
             _ => break
         };
     }
 }
 
 fn parse_module_import(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(actual @ TokenPos { ref line, ref pos, token }) if *token != Token::From =>
-            return (Err(TokenErr { expected: Token::From, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::From }), ind)
-    }
+    check_next_is!(it, ind, Token::From);
 
     return match (it.next(), it.next()) {
-        (Some(&TokenPos::Id(ref m)), Some(&TokenPos::UseAll)) =>
+        (Some(TokenPos { line: _, pos: _, token: Token::Id(m) }),
+            Some(TokenPos { line: _, pos: _, token: Token::UseAll })) =>
             (Ok(ASTNode::ImportModUseAll(wrap!(ASTNode::Id(m.to_string())))), ind),
-        (Some(&TokenPos::Id(ref m)), Some(&TokenPos::Use)) => parse_module_use(m.to_string(), it, ind),
+        (Some(TokenPos { line: _, pos: _, token: Token::Id(m) }),
+            Some(TokenPos { line: _, pos: _, token: Token::Use })) =>
+            parse_module_use(m.to_string(), it, ind),
 
-        (Some(actual), Some(&TokenPos { line, pos, token: Token::Id(_) })) =>
+        (Some(&actual), Some(&TokenPos { line, pos, token: Token::Id(_) })) =>
             (Err(TokenErr { expected: Token::Use, actual }), ind),
-        (Some(actual), _) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
+        (Some(&actual), _) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
         None => return (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
     };
 }
@@ -122,29 +123,31 @@ fn parse_module_use(id: String, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                 Some(TokenPos { line, pos, token: Token::Id(useid) }) => match it.peek() {
                     Some(&TokenPos { line, pos, token: Token::As }) => match it.next() {
                         Some(TokenPos { line, pos, token: Token::Id(other) }) =>
-                            (Ok(ASTNode::ImportModUseAs(wrap!(ASTNode::Id(module)),
+                            (Ok(ASTNode::ImportModUseAs(wrap!(ASTNode::Id(module.to_string())),
                                                         wrap!(ASTNode::Id(useid.to_string())),
                                                         wrap!(ASTNode::Id(other.to_string())))), ind),
-                        Some(actual) => (TokenErr { expected: Token::Id(String::new()), actual },
-                                         ind),
+                        Some(&actual) => (Err(TokenErr {
+                            expected: Token::Id(String::new()),
+                            actual,
+                        }), ind),
                         None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
                     }
                     _ => (Ok(ASTNode::ImportModUse(wrap!(ASTNode::Id(id)),
                                                    wrap!(ASTNode::Id(useid.to_string())))), ind)
                 }
 
-                Some(actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
+                Some(&actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }),
+                                  ind),
                 None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
             }
 
             Some(&TokenPos { line, pos, token: Token::UseAll }) =>
                 (Ok(ASTNode::ImportModUseAll(wrap!(ASTNode::Id(id)))), ind),
-
-            Some(actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
+            Some(&&actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
             None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
         }
 
-        Some(actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
+        Some(&actual) => (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
         None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
     };
 }

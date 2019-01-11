@@ -17,11 +17,7 @@ use std::slice::Iter;
 
 pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(&actual) if actual.token != Token::Assign =>
-            return (Err(TokenErr { expected: Token::Assign, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::From }), ind)
-    }
+    check_next_is!(it, ind, Token::Assign);
 
     return match parse_expression(it, ind) {
         (Ok(expr), ind) => (Ok(ASTNode::Assign(wrap!(pre), wrap!(expr))), ind),
@@ -65,11 +61,7 @@ pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 
 fn parse_mutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(&actual) if actual.token != Token::Mut =>
-            return (Err(TokenErr { expected: Token::Mut, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::Mut }), ind)
-    }
+    check_next_is!(it, ind, Token::Mut);
 
     match pare_immutable_declaration(it, ind) {
         (Ok(assign), ind) => (Ok(ASTNode::Mut(wrap!(assign))), ind),
@@ -81,11 +73,7 @@ fn pare_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                               -> (ParseResult<ASTNode>, i32) {
     match parse_definition(it, ind) {
         (Ok(letid), ind) => {
-            match it.next() {
-                Some(&actual) if actual.token != Token::Assign =>
-                    return (Err(TokenErr { expected: Token::Assign, actual }), ind),
-                None => return (Err(EOFErr { expected: Token::Assign }), ind)
-            }
+            check_next_is!(it, ind, Token::Assign);
 
             match parse_expression(it, ind) {
                 (Ok(expr), ind) => (Ok(ASTNode::Assign(wrap!(letid), wrap!(expr))), ind),
@@ -97,12 +85,7 @@ fn pare_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 }
 
 fn parse_definition(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(&actual) if actual.token != Token::Let =>
-            return (Err(TokenErr { expected: Token::Let, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::Let }), ind)
-    }
-
+    check_next_is!(it, ind, Token::Let);
 
     match it.next() {
         Some(TokenPos { line, pos, token: Token::Id(id) }) => match it.peek() {
@@ -112,7 +95,7 @@ fn parse_definition(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult
                         (Ok(ASTNode::Let(wrap!(ASTNode::Id(id.to_string())))), ind),
                     (_, Some(&actual)) =>
                         (Err(TokenErr { expected: Token::Id(String::new()), actual }), ind),
-                    (_, None) => (EOFErr { expected: Token::Id(String::new()) }, ind)
+                    (_, None) => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
                 }
             _ => (Ok(ASTNode::Let(wrap!(ASTNode::Id(id.to_string())))), ind)
         }

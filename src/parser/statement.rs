@@ -17,10 +17,11 @@ use std::slice::Iter;
 
 pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Print }) => match (it.next(), parse_expression(it, ind)) {
-            (_, (Ok(expr), ind)) => (Ok(ASTNode::Print(wrap!(expr))), ind),
-            (_, err) => err
-        }
+        Some(TokenPos { line: _, pos: _, token: Token::Print }) =>
+            match (it.next(), parse_expression(it, ind)) {
+                (_, (Ok(expr), ind)) => (Ok(ASTNode::Print(wrap!(expr))), ind),
+                (_, err) => err
+            }
 
         Some(TokenPos { line, pos, token: Token::Let }) |
         Some(TokenPos { line, pos, token: Token::Mut }) => parse_declaration(it, ind),
@@ -28,7 +29,7 @@ pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
         Some(TokenPos { line, pos, token: Token::For }) |
         Some(TokenPos { line, pos, token: Token::While }) => parse_cntrl_flow_stmt(it, ind),
 
-        Some(actual) => (Err(TokenErr { expected: Token::Print, actual }), ind),
+        Some(&&actual) => (Err(TokenErr { expected: Token::Print, actual }), ind),
         None => (Err(EOFErr { expected: Token::Print }), ind)
     };
 }

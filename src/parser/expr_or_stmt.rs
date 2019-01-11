@@ -27,8 +27,7 @@ pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         Some(TokenPos { line, pos, token: Token::Mut }) |
         Some(TokenPos { line, pos, token: Token::Print }) |
         Some(TokenPos { line, pos, token: Token::For }) |
-        Some(TokenPos { line, pos, token: Token::While }) |
-        Some(TokenPos { line, pos, token: Token::Loop }) => parse_statement(it, ind),
+        Some(TokenPos { line, pos, token: Token::While }) => parse_statement(it, ind),
         _ => parse_expression(it, ind)
     } {
         (Ok(pre), ind) => match it.peek() {
@@ -36,7 +35,7 @@ pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
             Some(TokenPos { line, pos, token: Token::Unless }) =>
                 pos_op!(it, ind, ASTNode::Unless, pre),
 
-            Some(actual) => (Err(TokenErr { expected: Token::Let, actual }), ind),
+            Some(&&actual) => (Err(TokenErr { expected: Token::Let, actual }), ind),
             None => (Err(EOFErr { expected: Token::If }), ind)
         }
         err => err

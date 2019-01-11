@@ -31,19 +31,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 }
 
 fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(&actual @ TokenPos { ref line, ref pos, token }) if *token != Token::While =>
-            return (Err(TokenErr { expected: Token::While, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::While }), ind)
-    }
+    check_next_is!(it, ind, Token::While);
 
     return match parse_expression(it, ind) {
         (Ok(cond), ind) => {
-            match it.next() {
-                Some(&actual @ TokenPos { ref line, ref pos, token }) if token != Token::Do =>
-                    return (Err(TokenErr { expected: Token::Do, actual }), ind),
-                None => return (Err(EOFErr { expected: Token::Do }), ind)
-            }
+            check_next_is!(it, ind, Token::Do);
 
             match parse_expr_or_stmt(it, ind) {
                 (Ok(expr_or_do), ind) => (Ok(ASTNode::While(wrap!(cond), wrap!(expr_or_do))), ind),
@@ -55,29 +47,14 @@ fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTN
 }
 
 fn parse_for(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match it.next() {
-        Some(&actual @ TokenPos { ref line, ref pos, token }) if *token != Token::For =>
-            return (Err(TokenErr { expected: Token::For, actual }), ind),
-        None => return (Err(EOFErr { expected: Token::For }), ind)
-    }
+    check_next_is!(it, ind, Token::For);
 
     return match parse_expression(it, ind) {
         (Ok(expr), ind) => {
-            match it.next() {
-                Some(&actual @ TokenPos { ref line, ref pos, token }) if *token != Token::In =>
-                    return (Err(TokenErr { expected: Token::In, actual }), ind),
-                None => return (Err(EOFErr { expected: Token::In }), ind)
-            }
-
+            check_next_is!(it, ind, Token::In);
             match parse_expression(it, ind) {
                 (Ok(col), ind) => {
-                    match it.next() {
-                        Some(&actual @ TokenPos { ref line, ref pos, token })
-                        if *token != Token::Do =>
-                            return (Err(TokenErr { expected: Token::Do, actual }), ind),
-                        None => return (Err(EOFErr { expected: Token::Do }), ind)
-                    }
-
+                    check_next_is!(it, ind, Token::Do);
                     match parse_expr_or_stmt(it, ind) {
                         (Ok(expr_or_do), ind) =>
                             (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))), ind),
