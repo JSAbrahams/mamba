@@ -28,60 +28,87 @@ fn parse_assigns_and_while() {
     let source = valid_resource("assign_and_while.txt");
     match parse(tokenize(source).unwrap()) {
         Ok(_) => (),
-        Err(err) => println!("{}", err)
+        Err(err) => panic!("{}", err)
     }
 }
 
 #[test]
 fn parse_class() {
     let source = valid_resource("class.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_empty_file() {
     let source = valid_resource("empty_file.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_for_statements() {
     let source = valid_resource("for_statements.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_if() {
     let source = valid_resource("if.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_tuples() {
     let source = valid_resource("tuples.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_when_statements() {
     let source = valid_resource("when_statements.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_while_statements() {
     let source = valid_resource("while_statements.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_function_definitions() {
     let source = valid_resource("function_definitions.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }
 
 #[test]
 fn parse_function_calling() {
     let source = valid_resource("function_calling.txt");
-    parse(tokenize(source).unwrap()).unwrap();
+    match parse(tokenize(source).unwrap()) {
+        Ok(_) => (),
+        Err(err) => panic!("{}", err)
+    }
 }

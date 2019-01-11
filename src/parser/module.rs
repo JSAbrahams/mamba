@@ -111,7 +111,8 @@ fn parse_module_use(id: String, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                         Some(TokenPos { line: _, pos: _, token: Token::Id(other) }) =>
                             (Ok(ASTNode::ImportModUseAs(wrap!(ASTNode::Id(module.to_string())),
                                                         wrap!(ASTNode::Id(useid.to_string())),
-                                                        wrap!(ASTNode::Id(other.to_string())))), ind),
+                                                        wrap!(ASTNode::Id(other.to_string())))),
+                             ind),
                         Some(next) => (Err(
                             TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
                                        ind),

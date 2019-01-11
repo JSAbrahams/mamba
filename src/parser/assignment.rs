@@ -37,7 +37,8 @@ pub fn parse_defer_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                             (_, (Ok(property), _)) => properties.push(property),
                             (_, (err, ind)) => return (err, ind)
                         }
-                    next => return (Err(TokenErr { expected: Token::Comma, actual: next.clone() }), ind)
+                    next =>
+                        return (Err(TokenErr { expected: Token::Comma, actual: next.clone() }), ind)
                 };
             }
 

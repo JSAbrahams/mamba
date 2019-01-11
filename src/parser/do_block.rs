@@ -21,7 +21,10 @@ pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResu
         }
 
         match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), _) => nodes.push(ast_node),
+            (Ok(ast_node), _) => {
+                nodes.push(ast_node);
+                it.next();
+            }
             err => return err
         }
 

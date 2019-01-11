@@ -49,7 +49,8 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode
                                 (Ok(ASTNode::IfElse(wrap!(cond), wrap!(then), wrap!(otherwise))),
                                  ind)
                             } else {
-                                (Ok(ASTNode::UnlessElse(wrap!(cond), wrap!(then), wrap!(otherwise))),
+                                (Ok(ASTNode::UnlessElse(
+                                    wrap!(cond), wrap!(then), wrap!(otherwise))),
                                  ind)
                             }
                             err => err
@@ -77,8 +78,9 @@ fn parse_from(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNo
                 (Ok(cond), ind) => match it.peek() {
                     Some(TokenPos { line: _, pos: _, token: Token::Map }) =>
                         match (it.next(), parse_function_anonymous(it, ind)) {
-                            (_, (Ok(mapping), ind)) => (Ok(
-                                ASTNode::FromMap(wrap!(coll), wrap!(cond), wrap!(mapping))), ind),
+                            (_, (Ok(mapping), ind)) =>
+                                (Ok(ASTNode::FromMap(wrap!(coll), wrap!(cond), wrap!(mapping))),
+                                 ind),
                             (_, err) => err
                         }
                     _ => (Ok(ASTNode::From(wrap!(coll), wrap!(cond))), ind)

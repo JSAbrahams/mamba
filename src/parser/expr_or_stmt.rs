@@ -31,7 +31,8 @@ pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         _ => parse_expression(it, ind)
     } {
         (Ok(pre), ind) => match it.peek() {
-            Some(TokenPos { line: _, pos: _, token: Token::If }) => pos_op!(it, ind, ASTNode::If, pre),
+            Some(TokenPos { line: _, pos: _, token: Token::If }) =>
+                pos_op!(it, ind, ASTNode::If, pre),
             Some(TokenPos { line: _, pos: _, token: Token::Unless }) =>
                 pos_op!(it, ind, ASTNode::Unless, pre),
             Some(&next) => (Err(TokenErr { expected: Token::Let, actual: next.clone() }), ind),

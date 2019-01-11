@@ -109,10 +109,11 @@ fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<Vec<A
     loop {
         match it.next() {
             Some(TokenPos { line: _, pos: _, token: Token::RPar }) => break,
-            Some(TokenPos { line: _, pos: _, token: Token::Comma }) => match parse_function_arg(it, ind) {
-                (Ok(fun_type), _) => args.push(fun_type),
-                (Err(err), ind) => return (Err(err), ind)
-            }
+            Some(TokenPos { line: _, pos: _, token: Token::Comma }) =>
+                match parse_function_arg(it, ind) {
+                    (Ok(fun_type), _) => args.push(fun_type),
+                    (Err(err), ind) => return (Err(err), ind)
+                }
             Some(next) =>
                 return (Err(TokenErr { expected: Token::RPar, actual: next.clone() }), ind),
             None => return (Err(EOFErr { expected: Token::RPar }), ind)
@@ -143,22 +144,25 @@ fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) =>
             next_and!(it, (Ok(ASTNode::Id(id.to_string())), ind)),
-        Some(TokenPos { line: _, pos: _, token: Token::LPar }) => match parse_function_tuple(it, ind) {
-            (Ok(tup), ind) => {
-                check_next_is!(it, ind, Token::To);
-                match parse_function_type(it, ind) {
-                    (Ok(fun_ty), ind) => (Ok(ASTNode::FunType(wrap!(tup), wrap!(fun_ty))), ind),
-                    err => err
+        Some(TokenPos { line: _, pos: _, token: Token::LPar }) =>
+            match parse_function_tuple(it, ind) {
+                (Ok(tup), ind) => {
+                    check_next_is!(it, ind, Token::To);
+                    match parse_function_type(it, ind) {
+                        (Ok(fun_ty), ind) => (Ok(ASTNode::FunType(wrap!(tup), wrap!(fun_ty))),
+                                              ind),
+                        err => err
+                    }
                 }
+                err => err
             }
-            err => err
-        }
         Some(&next) => (Err(TokenErr { expected: Token::LPar, actual: next.clone() }), ind),
         None => (Err(EOFErr { expected: Token::LPar }), ind)
     };
 }
 
-fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
+                        -> (ParseResult<ASTNode>, i32) {
     check_next_is!(it, ind, Token::LPar);
 
     let mut fun_types: Vec<ASTNode> = Vec::new();
