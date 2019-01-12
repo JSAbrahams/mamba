@@ -19,7 +19,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { function-def newline { newline } } 
                          [ do-block ]
     
-    function-call    ::= maybe-expr "." id tuple
+    function-call    ::= [ "self" ] maybe-expr "." id tuple
     function-call-dir::= id tuple
     function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
     function-def-bod ::= function-def "->" expr-or-stmt
@@ -39,13 +39,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     maybe-expr       ::= "return" [ maybe-expr ] 
                       | operation 
                       | tuple 
+                      | function-anon
                       | control-flow-expr 
                       | reassignment 
                       | function-call 
                       | function-call-dir 
                       | newline do-block
     
-    id               ::= { ( character | number | "_" ) }
+    id               ::= [ "self" ] { ( character | number | "_" ) }
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
     
     reassignment     ::= maybe-expr "<-" maybe-expr

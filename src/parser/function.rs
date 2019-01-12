@@ -25,7 +25,7 @@ pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, i
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::LPar }) => match parse_tuple(it, ind) {
                 (Ok(tuple), ind) => (Ok(ASTNode::FunCall(
-                    wrap!(caller), wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), ind),
+                    get_or_err!(caller), get_or_err!(ASTNode::Id(id.to_string())), get_or_err!(tuple))), ind),
                 err => err
             }
             Some(&next) => (Err(TokenErr { expected: Token::LPar, actual: next.clone() }), ind),
@@ -43,7 +43,7 @@ pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<Toke
         (ASTNode::Id(ref id), Some(TokenPos { line: _, pos: _, token: Token::LPar })) =>
             match parse_tuple(it, ind) {
                 (Ok(tuple), ind) =>
-                    (Ok(ASTNode::FunCallDirect(wrap!(ASTNode::Id(id.to_string())), wrap!(tuple))), ind),
+                    (Ok(ASTNode::FunCallDirect(get_or_err!(ASTNode::Id(id.to_string())), get_or_err!(tuple))), ind),
                 err => err
             }
         (_, Some(&next)) =>
@@ -61,7 +61,7 @@ pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i3
                 Some(TokenPos { line: _, pos: _, token: Token::To }) =>
                     match parse_expr_or_stmt(it, ind) {
                         (Ok(body), ind) => (Ok(ASTNode::FunDefNoRetType(
-                            wrap!(ASTNode::Id(id.to_string())), args, wrap!(body))), ind),
+                            get_or_err!(ASTNode::Id(id.to_string())), args, get_or_err!(body))), ind),
                         err => err
                     }
                 Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) =>
@@ -70,10 +70,10 @@ pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i3
                             Some(TokenPos { line: _, pos: _, token: Token::To }) =>
                                 match parse_expr_or_stmt(it, ind) {
                                     (Ok(body), ind) => (Ok(ASTNode::FunDef(
-                                        wrap!(ASTNode::Id(id.to_string())),
+                                        get_or_err!(ASTNode::Id(id.to_string())),
                                         args,
-                                        wrap!(ret_type),
-                                        wrap!(body))), ind),
+                                        get_or_err!(ret_type),
+                                        get_or_err!(body))), ind),
                                     err => err
                                 }
                             Some(next) =>
@@ -128,7 +128,7 @@ fn parse_function_arg(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResu
         (Ok(arg), ind) => match it.next() {
             Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) =>
                 match parse_function_type(it, ind) {
-                    (Ok(ty), ind) => (Ok(ASTNode::FunArg(wrap!(arg), wrap!(ty))), ind),
+                    (Ok(ty), ind) => (Ok(ASTNode::FunArg(get_or_err!(arg), get_or_err!(ty))), ind),
                     err => err
                 }
 
@@ -149,7 +149,7 @@ fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
                 (Ok(tup), ind) => {
                     check_next_is!(it, ind, Token::To);
                     match parse_function_type(it, ind) {
-                        (Ok(fun_ty), ind) => (Ok(ASTNode::FunType(wrap!(tup), wrap!(fun_ty))),
+                        (Ok(fun_ty), ind) => (Ok(ASTNode::FunType(get_or_err!(tup), get_or_err!(fun_ty))),
                                               ind),
                         err => err
                     }
@@ -198,7 +198,7 @@ pub fn parse_function_anonymous(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         (Ok(tuple), ind) => {
             check_next_is!(it, ind, Token::To);
             match parse_expr_or_stmt(it, ind) {
-                (Ok(body), ind) => (Ok(ASTNode::FunAnon(wrap!(tuple), wrap!(body))), ind),
+                (Ok(body), ind) => (Ok(ASTNode::FunAnon(get_or_err!(tuple), get_or_err!(body))), ind),
                 err => err
             }
         }

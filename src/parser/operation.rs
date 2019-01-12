@@ -28,10 +28,9 @@ macro_rules! b_op { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
 }}}
 
 pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    return match match it.peek() {
-        Some(_) => parse_arithmetic(it, ind),
-        None => return (Err(EOFErr { expected: Token::Add }), ind)
-    } {
+    let (arithmetic, ind) = get_or_err!(parse_arithmetic(it, ind), "operation");
+
+    return match arithmetic {
         (Ok(factor), ind) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::Eq }) =>
                 b_op!(factor, it, ind, ASTNode::Eq),
@@ -68,8 +67,7 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult
         Some(TokenPos { line: _, pos: _, token: Token::Sub }) =>
             u_op!(it, ind, ASTNode::SubU),
 
-        Some(_) => parse_term(it, ind),
-        None => (Err(EOFErr { expected: Token::Add }), ind)
+        _ => parse_term(it, ind)
     } {
         (Ok(term), ind) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::Add }) =>
@@ -83,22 +81,18 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult
 }
 
 fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    return match match it.peek() {
-        Some(_) => parse_factor(it, ind),
-        None => (Err(EOFErr { expected: Token::Add }), ind)
-    } {
-        (Ok(factor), ind) => match it.peek() {
-            Some(TokenPos { line: _, pos: _, token: Token::Mul }) =>
-                b_op!(factor, it, ind, ASTNode::Mul),
-            Some(TokenPos { line: _, pos: _, token: Token::Div }) =>
-                b_op!(factor, it, ind, ASTNode::Div),
-            Some(TokenPos { line: _, pos: _, token: Token::Pow }) =>
-                b_op!(factor, it, ind, ASTNode::Pow),
-            Some(TokenPos { line: _, pos: _, token: Token::Mod }) =>
-                b_op!(factor, it, ind, ASTNode::Mod),
-            _ => (Ok(factor), ind)
-        }
-        err => err
+    let (factor, ind) = get_or_err!(parse_factor(it, ind), "term");
+
+    return match factor {
+        Some(TokenPos { line: _, pos: _, token: Token::Mul }) =>
+            b_op!(factor, it, ind, ASTNode::Mul),
+        Some(TokenPos { line: _, pos: _, token: Token::Div }) =>
+            b_op!(factor, it, ind, ASTNode::Div),
+        Some(TokenPos { line: _, pos: _, token: Token::Pow }) =>
+            b_op!(factor, it, ind, ASTNode::Pow),
+        Some(TokenPos { line: _, pos: _, token: Token::Mod }) =>
+            b_op!(factor, it, ind, ASTNode::Mod),
+        _ => (Ok(factor), ind)
     };
 }
 

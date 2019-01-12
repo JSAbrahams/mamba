@@ -3,12 +3,16 @@ use crate::parser::parse_result::ParseResult;
 
 #[macro_use]
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
-macro_rules! wrap { ($node:expr) => {{ Box::new($node) }} }
+macro_rules! get_or_err { ($res:expr, $msg:expr) => {
+    match $res {
+        (Ok(node), ind) => (Box::new(node), ind),
+        (Err(err), _) => return Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err) })
+    }
+}}
 macro_rules! check_next_is { ($it: expr, $ind:expr, $tok:path) => {
     if let Some(next) = $it.next() {
-        if next.token != $tok { return (Err(TokenErr { expected: $tok, actual: next.clone() }),
-                                        $ind); }
-    } else { return (Err(EOFErr { expected: $tok }), $ind); }
+        if next.token != $tok { return Err(TokenErr { expected: $tok, actual: next.clone() }); }
+    } else { return Err(EOFErr { expected: $tok }); }
 }}
 
 mod parse_result;
@@ -46,6 +50,7 @@ pub enum ASTNode {
     ModUtil(Box<ASTNode>, Vec<ASTNode>, Vec<ASTNode>),
 
     Id(String),
+    Self_(Box<ASTNode>),
     Assign(Box<ASTNode>, Box<ASTNode>),
     Defer(Box<ASTNode>, Vec<ASTNode>),
     Mut(Box<ASTNode>),

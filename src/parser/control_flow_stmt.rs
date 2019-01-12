@@ -34,7 +34,7 @@ fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTN
         (Ok(cond), ind) => {
             check_next_is!(it, ind, Token::Do);
             match parse_expr_or_stmt(it, ind) {
-                (Ok(expr_or_do), ind) => (Ok(ASTNode::While(wrap!(cond), wrap!(expr_or_do))), ind),
+                (Ok(expr_or_do), ind) => (Ok(ASTNode::While(get_or_err!(cond), get_or_err!(expr_or_do))), ind),
                 err => err
             }
         }
@@ -53,7 +53,7 @@ fn parse_for(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNod
                     check_next_is!(it, ind, Token::Do);
                     match parse_expr_or_stmt(it, ind) {
                         (Ok(expr_or_do), ind) =>
-                            (Ok(ASTNode::For(wrap!(expr), wrap!(col), wrap!(expr_or_do))), ind),
+                            (Ok(ASTNode::For(get_or_err!(expr), get_or_err!(col), get_or_err!(expr_or_do))), ind),
                         err => err
                     }
                 }

@@ -17,6 +17,7 @@ pub enum Token {
     Use,
     UseAll,
     Forward,
+    Self_,
 
     Fun,
     To,
@@ -80,19 +81,20 @@ pub enum Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let string = match *self {
+        let string_representation = match *self {
             Token::Class => "'class'",
             Token::As => "'as'",
             Token::From => "'from'",
             Token::Use => "'use'",
             Token::UseAll => "'useall'",
             Token::Forward => "'forward'",
+            Token::Self_ => "'self'",
 
             Token::Fun => "'fun'",
-            Token::To => "->",
-            Token::Point => ".",
-            Token::Comma => ",",
-            Token::DoublePoint => "_",
+            Token::To => "'->'",
+            Token::Point => "'.'",
+            Token::Comma => "','",
+            Token::DoublePoint => "':'",
 
             Token::Id(_) => "<identifier>",
             Token::Mut => "'mutable'",
@@ -108,7 +110,7 @@ impl fmt::Display for Token {
             Token::Add => "'+'",
             Token::Sub => "'-'",
             Token::Mul => "'*'",
-            Token::Div => "'\\'",
+            Token::Div => "'/'",
             Token::Pow => "'^'",
             Token::Mod => "'mod'",
 
@@ -148,7 +150,7 @@ impl fmt::Display for Token {
             Token::Print => "'print'",
         };
 
-        write!(f, "{}", string)
+        write!(f, "{}", string_representation)
     }
 }
 
@@ -186,9 +188,11 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             '\t' => tokens.push(TokenPos { line, pos, token: Token::Ind }),
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(TokenPos { line, pos, token: get_operator(c, &mut it, &mut pos) }),
-            '0'...'9' => tokens.push(TokenPos { line, pos, token: get_number(c, &mut it, &mut pos) }),
+            '0'...'9' =>
+                tokens.push(TokenPos { line, pos, token: get_number(c, &mut it, &mut pos) }),
             '"' => tokens.push(TokenPos { line, pos, token: get_string(&mut it, &mut pos) }),
-            'a'...'z' | 'A'...'Z' => tokens.push(TokenPos { line, pos, token: get_id_or_op(c, &mut it, &mut pos) }),
+            'a'...'z' | 'A'...'Z' =>
+                tokens.push(TokenPos { line, pos, token: get_id_or_op(c, &mut it, &mut pos) }),
             ' ' => {
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
@@ -227,7 +231,7 @@ fn get_operator(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
         '/' => Token::Div,
         '*' => Token::Mul,
         '^' => Token::Pow,
-        _ => panic!("get operator received a token it shouldn't have.")
+        _ => panic!("get operator received a character it shouldn't have.")
     };
 }
 
@@ -240,7 +244,7 @@ fn get_number(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     *pos += 1;
     match current {
         '0'...'9' => num.push(current),
-        _ => panic!("get number received a token it shouldn't have.")
+        _ => panic!("get number received a character it shouldn't have.")
     }
 
     while let Some(&c) = it.peek() {
@@ -290,6 +294,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
         "useall" => Token::UseAll,
         "class" => Token::Class,
         "forward" => Token::Forward,
+        "self" => Token::Self_,
 
         "fun" => Token::Fun,
         "let" => Token::Let,
