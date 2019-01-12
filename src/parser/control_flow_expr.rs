@@ -25,8 +25,11 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         Some(TokenPos { line: _, pos: _, token: Token::Unless }) => parse_if(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::From }) => parse_from(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::When }) => parse_when(it, ind),
-        Some(&next) => Err(TokenErr { expected: Token::If, actual: next.clone() }),
-        None => Err(EOFErr { expected: Token::If })
+        Some(&next) => Err(CustomErr {
+            expected: "control flow expression".to_string(),
+            actual: next.clone(),
+        }),
+        None => Err(CustomEOFErr { expected: "control flow expression".to_string() })
     };
 }
 
@@ -38,7 +41,7 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
         None => return Err(EOFErr { expected: Token::If })
     };
 
-    let (cond, ind) = get_or_err!(it,parse_expression(it, ind), "if condition");
+    let (cond, ind) = get_or_err!(it, parse_expression(it, ind), "if condition");
     check_next_is!(it, ind, Token::Then);
     let (then_branch, ind) = get_or_err!(it, parse_expr_or_stmt(it, ind), "if then branch");
     if let Some(&&TokenPos { line: _, pos: _, token: Token::Else }) = it.peek() {

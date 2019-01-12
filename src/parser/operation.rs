@@ -96,19 +96,19 @@ fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNod
 fn parse_factor(it: &mut Peekable<Iter<TokenPos>>, _ind: i32) -> ParseResult<ASTNode> {
     return match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) =>
-            Ok((ASTNode::Id(id.to_string()),0)),
+            Ok((ASTNode::Id(id.to_string()), 0)),
         Some(TokenPos { line: _, pos: _, token: Token::Str(string) }) =>
-            Ok((ASTNode::Str(string.to_string()),0)),
+            Ok((ASTNode::Str(string.to_string()), 0)),
         Some(TokenPos { line: _, pos: _, token: Token::Real(real) }) =>
-            Ok((ASTNode::Real(real.to_string()),0)),
+            Ok((ASTNode::Real(real.to_string()), 0)),
         Some(TokenPos { line: _, pos: _, token: Token::Int(int) }) =>
-            Ok((ASTNode::Int(int.to_string()),0)),
+            Ok((ASTNode::Int(int.to_string()), 0)),
         Some(TokenPos { line: _, pos: _, token: Token::ENum(num, exp) }) =>
-            Ok((ASTNode::ENum(num.to_string(), exp.to_string()),0)),
+            Ok((ASTNode::ENum(num.to_string(), exp.to_string()), 0)),
         Some(TokenPos { line: _, pos: _, token: Token::Bool(boolean) }) =>
             Ok((ASTNode::Bool(*boolean), 0)),
 
-        Some(next) => Err(TokenErr { expected: Token::Add, actual: next.clone() }),
-        None => Err(EOFErr { expected: Token::Add })
-    }
+        Some(next) => Err(CustomErr { expected: "factor".to_string(), actual: next.clone() }),
+        None => Err(CustomEOFErr { expected: "factor".to_string() })
+    };
 }

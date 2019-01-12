@@ -28,8 +28,9 @@ pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         Some(TokenPos { line: _, pos: _, token: Token::Let }) =>
             parse_immutable_declaration(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::Mut }) => parse_mutable_declaration(it, ind),
-        Some(&next) => Err(TokenErr { expected: Token::Let, actual: next.clone() }),
-        None => Err(EOFErr { expected: Token::Let })
+
+        Some(&next) => Err(CustomErr { expected: "declaration".to_string(), actual: next.clone() }),
+        None => Err(CustomEOFErr { expected: "declaration".to_string() })
     } {
         Ok((declaration, ind)) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::Forward }) => {

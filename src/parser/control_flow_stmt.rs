@@ -23,8 +23,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
         Some(TokenPos { line: _, pos: _, token: Token::Continue }) =>
             next_and!(it, Ok((ASTNode::Continue, ind))),
 
-        Some(&next) => return Err(TokenErr { expected: Token::While, actual: next.clone() }),
-        None => return Err(EOFErr { expected: Token::While })
+        Some(&next) => return Err(CustomErr {
+            expected: "control flow statement".to_string(),
+            actual: next.clone(),
+        }),
+        None => return Err(CustomEOFErr { expected: "control flow statement".to_string() })
     };
 }
 

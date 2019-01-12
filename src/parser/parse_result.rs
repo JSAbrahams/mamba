@@ -10,8 +10,10 @@ pub type ParseResult<T> = std::result::Result<(T, i32), ParseErr>;
 pub enum ParseErr {
     UtilBodyErr,
     ParseErr { parsing: String, cause: Box<ParseErr>, position: Option<TokenPos> },
+    CustomErr { expected: String, actual: TokenPos },
     TokenErr { expected: Token, actual: TokenPos },
     EOFErr { expected: Token },
+    CustomEOFErr { expected: String },
     IndErr { expected: i32, actual: i32 },
 }
 
@@ -20,22 +22,27 @@ impl fmt::Display for ParseErr {
         match self {
             ParseErr::ParseErr { ref parsing, ref cause, ref position } =>
                 match cause.fmt(f) {
-                Ok(_) => match position {
-                    Some(pos) => write!(f, "\nIn: {}, at line {}, position {},",
-                                        parsing, pos.line, pos.pos),
-                    None => write!(f, "\nIn: {}", parsing)
+                    Ok(_) => match position {
+                        Some(pos) => write!(f, "\nIn <{}> at [{}, {}],", parsing, pos.line, pos.pos),
+                        None => write!(f, "\nIn <{}>", parsing)
+                    }
+                    err => err
                 }
-                err => err
-            }
-            ParseErr::UtilBodyErr => write!(f, "Util module cannot have a body."),
+            ParseErr::UtilBodyErr => write!(f, "\nUtil module cannot have a body."),
             ParseErr::EOFErr { expected } =>
-                write!(f, "Expected <{}>, but end of file reached.", expected),
-            ParseErr::TokenErr { expected, actual } =>
-                write!(f, "Expected {} at line {}, position {}, but was: {}.",
+                write!(f, "\nExpected <{}>, but end of file reached.", expected),
+            ParseErr::CustomErr { expected, actual } =>
+                write!(f, "\nExpected <{}> at [{}, {}] but was: {}.",
                        expected,
                        actual.line, actual.pos, actual.token),
+            ParseErr::TokenErr { expected, actual } =>
+                write!(f, "\nExpected {} at [{}, {}] but was: {}.",
+                       expected,
+                       actual.line, actual.pos, actual.token),
+            ParseErr::CustomEOFErr { expected } =>
+                write!(f, "\nExpected <{}>, but end of file reached.", expected),
             ParseErr::IndErr { expected, actual } =>
-                write!(f, "Expected indentation of {}, but was: {}.", expected, actual)
+                write!(f, "\nExpected indentation of {}, but was: {}.", expected, actual)
         }
     }
 }
@@ -47,6 +54,8 @@ impl error::Error for ParseErr {
             ParseErr::UtilBodyErr => "Util module cannot have a body.",
             ParseErr::EOFErr { expected: _ } => "Expected token but end of file.",
             ParseErr::TokenErr { expected: _, actual: _ } => "Unexpected token encountered.",
+            ParseErr::CustomErr { expected: _, actual: _ } => "Expected condition to be met.",
+            ParseErr::CustomEOFErr { expected: _ } => "Expected condition to be met.",
             ParseErr::IndErr { expected: _, actual: _ } => "Unexpected indentation."
         }
     }

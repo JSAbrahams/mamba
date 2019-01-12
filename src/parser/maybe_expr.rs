@@ -49,8 +49,8 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
         Some(TokenPos { line: _, pos: _, token: Token::Add }) |
         Some(TokenPos { line: _, pos: _, token: Token::Sub }) => parse_operation(it, ind),
 
-        Some(&next) => Err(TokenErr { expected: Token::If, actual: next.clone() }),
-        None => Err(EOFErr { expected: Token::If })
+        Some(&next) => Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
+        None => Err(CustomEOFErr { expected: "expression".to_string() })
     } {
         Ok((pre, ind)) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::Assign }) =>
