@@ -19,189 +19,155 @@ use std::slice::Iter;
 // function-anon    ::= ( id | function-tuple ) "->' maybe-expr
 
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                           -> (ParseResult<ASTNode>, i32) {
+                           -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Point);
+
     match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => match it.peek() {
-            Some(TokenPos { line: _, pos: _, token: Token::LPar }) => match parse_tuple(it, ind) {
-                (Ok(tuple), ind) => (Ok(ASTNode::FunCall(
-                    get_or_err!(caller), get_or_err!(ASTNode::Id(id.to_string())), get_or_err!(tuple))), ind),
-                err => err
+            Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
+                let (tuple, ind) = get_or_err!(parse_tuple(it, ind), "function call");
+                Ok((ASTNode::FunCall(Box::new(caller), Box::new(ASTNode::Id(id.to_string())), tuple), ind))
             }
-            Some(&next) => (Err(TokenErr { expected: Token::LPar, actual: next.clone() }), ind),
-            None => (Err(EOFErr { expected: Token::LPar }), ind)
+            Some(&next) => Err(TokenErr { expected: Token::LPar, actual: next.clone() }),
+            None => Err(EOFErr { expected: Token::LPar })
         }
-        Some(next) =>
-            (Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }), ind),
-        None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
+        Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
+        None => Err(EOFErr { expected: Token::Id(String::new()) })
     }
 }
 
-pub fn parse_function_call_direct(function: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                                  -> (ParseResult<ASTNode>, i32) {
-    match (function, it.peek()) {
-        (ASTNode::Id(ref id), Some(TokenPos { line: _, pos: _, token: Token::LPar })) =>
-            match parse_tuple(it, ind) {
-                (Ok(tuple), ind) =>
-                    (Ok(ASTNode::FunCallDirect(get_or_err!(ASTNode::Id(id.to_string())), get_or_err!(tuple))), ind),
-                err => err
-            }
+pub fn parse_function_call_direct(name: ASTNode, it: &mut Peekable<Iter<TokenPos>>,
+                                  ind: i32) -> ParseResult<ASTNode> {
+    match (name, it.peek()) {
+        (ASTNode::Id(ref id), Some(TokenPos { line: _, pos: _, token: Token::LPar })) => {
+            let (tuple, ind) = get_or_err!(parse_tuple(it, ind), "direction function call");
+            Ok((ASTNode::FunCallDirect(Box::new(ASTNode::Id(id.to_string())), tuple), ind))
+        }
         (_, Some(&next)) =>
-            (Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }), ind),
-        (_, _) => (Err(EOFErr { expected: Token::Id(String::new()) }), ind),
+            Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
+        (_, _) => Err(EOFErr { expected: Token::Id(String::new()) })
     }
 }
 
 pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                                      -> (ParseResult<ASTNode>, i32) {
+                                      -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Fun);
-    return match it.next() {
-        Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => match parse_args(it, ind) {
-            (Ok(args), ind) => match it.next() {
-                Some(TokenPos { line: _, pos: _, token: Token::To }) =>
-                    match parse_expr_or_stmt(it, ind) {
-                        (Ok(body), ind) => (Ok(ASTNode::FunDefNoRetType(
-                            get_or_err!(ASTNode::Id(id.to_string())), args, get_or_err!(body))), ind),
-                        err => err
-                    }
-                Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) =>
-                    match parse_function_type(it, ind) {
-                        (Ok(ret_type), ind) => match it.next() {
-                            Some(TokenPos { line: _, pos: _, token: Token::To }) =>
-                                match parse_expr_or_stmt(it, ind) {
-                                    (Ok(body), ind) => (Ok(ASTNode::FunDef(
-                                        get_or_err!(ASTNode::Id(id.to_string())),
-                                        args,
-                                        get_or_err!(ret_type),
-                                        get_or_err!(body))), ind),
-                                    err => err
-                                }
-                            Some(next) =>
-                                (Err(TokenErr { expected: Token::To, actual: next.clone() }), ind),
-                            None => (Err(EOFErr { expected: Token::To }), ind)
-                        },
-                        err => err
-                    }
-                Some(next) =>
-                    (Err(TokenErr { expected: Token::DoublePoint, actual: next.clone() }), ind),
-                None => (Err(EOFErr { expected: Token::DoublePoint }), ind)
-            }
-            (Err(err), ind) => (Err(err), ind)
-        }
 
-        Some(next) =>
-            (Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }), ind),
-        None => (Err(EOFErr { expected: Token::Id(String::new()) }), ind)
+    return match it.next() {
+        Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => {
+            let (args, ind) = get_or_err_direct!(parse_args(it, ind),
+                                                 "function definition with body");
+            match it.next() {
+                Some(TokenPos { line: _, pos: _, token: Token::To }) => {
+                    let (body, ind) = get_or_err!(parse_expr_or_stmt(it, ind),
+                    "function definition with body");
+                    Ok((ASTNode::FunDefNoRetType(
+                        Box::new(ASTNode::Id(id.to_string())), args, body), ind))
+                }
+                Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) => {
+                    let (ret_type, ind) = get_or_err!(parse_function_type(it, ind),
+                     "function definition with body");
+                    match it.next() {
+                        Some(TokenPos { line: _, pos: _, token: Token::To }) => {
+                            let (body, ind) = get_or_err!(parse_expr_or_stmt(it, ind),
+                            "function definition with body");
+                            Ok((ASTNode::FunDef(
+                                Box::new(ASTNode::Id(id.to_string())), args, ret_type, body), ind))
+                        }
+                        Some(next) => Err(TokenErr { expected: Token::To, actual: next.clone() }),
+                        None => Err(EOFErr { expected: Token::To })
+                    }
+                }
+                Some(next) => Err(TokenErr { expected: Token::DoublePoint, actual: next.clone() }),
+                None => Err(EOFErr { expected: Token::DoublePoint })
+            }
+        }
+        Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
+        None => Err(EOFErr { expected: Token::Id(String::new()) })
     };
 }
 
-fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<Vec<ASTNode>>, i32) {
+fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<Vec<ASTNode>> {
     check_next_is!(it, ind, Token::LPar);
 
     let mut args = Vec::new();
-    if let Some(&&TokenPos { line: _, pos: _, token: Token::RPar }) = it.peek() {
-        match parse_function_arg(it, ind) {
-            (Ok(arg), _) => args.push(arg),
-            (Err(err), ind) => return (Err(err), ind)
-        }
-    }
-
     loop {
         match it.next() {
             Some(TokenPos { line: _, pos: _, token: Token::RPar }) => break,
-            Some(TokenPos { line: _, pos: _, token: Token::Comma }) =>
-                match parse_function_arg(it, ind) {
-                    (Ok(fun_type), _) => args.push(fun_type),
-                    (Err(err), ind) => return (Err(err), ind)
-                }
-            Some(next) =>
-                return (Err(TokenErr { expected: Token::RPar, actual: next.clone() }), ind),
-            None => return (Err(EOFErr { expected: Token::RPar }), ind)
+            Some(TokenPos { line: _, pos: _, token: Token::Comma }) => {
+                let (fun_type, ind) = get_or_err_direct!(parse_function_arg(it, ind),
+                                                         "function type");
+                args.push(fun_type);
+            }
+            Some(next) => return Err(TokenErr { expected: Token::RPar, actual: next.clone() }),
+            None => return Err(EOFErr { expected: Token::RPar })
         };
     }
 
-    (Ok(args), ind)
+    return Ok((args, ind));
 }
 
-fn parse_function_arg(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
-    match parse_function_type(it, ind) {
-        (Ok(arg), ind) => match it.next() {
-            Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) =>
-                match parse_function_type(it, ind) {
-                    (Ok(ty), ind) => (Ok(ASTNode::FunArg(get_or_err!(arg), get_or_err!(ty))), ind),
-                    err => err
-                }
-
-            Some(next) =>
-                (Err(TokenErr { expected: Token::DoublePoint, actual: next.clone() }), ind),
-            None => (Err(EOFErr { expected: Token::DoublePoint }), ind)
-        },
-        err => err
+fn parse_function_arg(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    let (fun_arg, ind) = get_or_err!(parse_function_type(it, ind), "function argument");
+    match it.next() {
+        Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) => {
+            let (arg_ty, ind) = get_or_err!(parse_function_type(it, ind), "function argument type");
+            Ok((ASTNode::FunArg(fun_arg, arg_ty), ind))
+        }
+        Some(next) => Err(TokenErr { expected: Token::DoublePoint, actual: next.clone() }),
+        None => Err(EOFErr { expected: Token::DoublePoint })
     }
 }
 
-fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) =>
-            next_and!(it, (Ok(ASTNode::Id(id.to_string())), ind)),
-        Some(TokenPos { line: _, pos: _, token: Token::LPar }) =>
-            match parse_function_tuple(it, ind) {
-                (Ok(tup), ind) => {
-                    check_next_is!(it, ind, Token::To);
-                    match parse_function_type(it, ind) {
-                        (Ok(fun_ty), ind) => (Ok(ASTNode::FunType(get_or_err!(tup), get_or_err!(fun_ty))),
-                                              ind),
-                        err => err
-                    }
-                }
-                err => err
-            }
-        Some(&next) => (Err(TokenErr { expected: Token::LPar, actual: next.clone() }), ind),
-        None => (Err(EOFErr { expected: Token::LPar }), ind)
+            next_and!(it, Ok((ASTNode::Id(id.to_string()), ind))),
+        Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
+            let (tup, ind) = get_or_err!(parse_function_tuple(it, ind), "function tuple");
+            check_next_is!(it, ind, Token::To);
+            let (fun_ty, ind) = get_or_err!(parse_function_type(it, ind), "function type");
+            Ok((ASTNode::FunType(tup, fun_ty), ind))
+        }
+        Some(&next) => Err(TokenErr { expected: Token::LPar, actual: next.clone() }),
+        None => Err(EOFErr { expected: Token::LPar })
     };
 }
 
-fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                        -> (ParseResult<ASTNode>, i32) {
+fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::LPar);
 
     let mut fun_types: Vec<ASTNode> = Vec::new();
     match it.next() {
-        Some(next) if next.token != Token::RPar => match parse_function_type(it, ind) {
-            (Ok(fun_type), _) => fun_types.push(fun_type),
-            err => return err
+        Some(next) if next.token != Token::RPar => {
+            let (fun_type, ind) = get_or_err_direct!(parse_function_type(it, ind),
+            "function tuple");
+            fun_types.push(fun_type)
         }
-        Some(next) => return (Err(TokenErr { expected: Token::RPar, actual: next.clone() }), ind),
-        None => return (Err(EOFErr { expected: Token::RPar }), ind)
+        Some(next) => return Err(TokenErr { expected: Token::RPar, actual: next.clone() }),
+        None => return Err(EOFErr { expected: Token::RPar })
     }
 
     loop {
         match it.next() {
             Some(TokenPos { line: _, pos: _, token: Token::RPar }) => break,
-            Some(TokenPos { line: _, pos: _, token: Token::Comma }) =>
-                match parse_function_type(it, ind) {
-                    (Ok(fun_type), _) => fun_types.push(fun_type),
-                    err => return err
-                }
-            Some(next) =>
-                return (Err(TokenErr { expected: Token::LPar, actual: next.clone() }), ind),
-            None => return (Err(EOFErr { expected: Token::LPar }), ind)
+            Some(TokenPos { line: _, pos: _, token: Token::Comma }) => {
+                let (fun_type, ind) = get_or_err_direct!(parse_function_type(it, ind),
+                "tuple element");
+                fun_types.push(fun_type);
+            }
+            Some(next) => return Err(TokenErr { expected: Token::LPar, actual: next.clone() }),
+            None => return Err(EOFErr { expected: Token::LPar })
         };
     }
 
-    return (Ok(ASTNode::FunTuple(fun_types)), ind);
+    return Ok((ASTNode::FunTuple(fun_types), ind));
 }
 
 pub fn parse_function_anonymous(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                                -> (ParseResult<ASTNode>, i32) {
-    match parse_function_tuple(it, ind) {
-        (Ok(tuple), ind) => {
-            check_next_is!(it, ind, Token::To);
-            match parse_expr_or_stmt(it, ind) {
-                (Ok(body), ind) => (Ok(ASTNode::FunAnon(get_or_err!(tuple), get_or_err!(body))), ind),
-                err => err
-            }
-        }
-        err => err
-    }
+                                -> ParseResult<ASTNode> {
+    let (tuple, ind) = get_or_err!(parse_function_tuple(it, ind), "anonymous function");
+    check_next_is!(it, ind, Token::To);
+    let (body, ind) = get_or_err!(parse_expr_or_stmt(it, ind), "anonymous function body");
+    return Ok((ASTNode::FunAnon(tuple, body), ind));
 }

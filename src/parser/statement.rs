@@ -15,12 +15,12 @@ use std::slice::Iter;
 // | assignment
 // | control-flow-stmt
 
-pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Print }) => {
             it.next();
             let (expr, ind) = get_or_err!(parse_expression(it, ind), "statement");
-            (Ok(ASTNode::Print(expr)), ind)
+            Ok((ASTNode::Print(expr), ind))
         }
 
         Some(TokenPos { line: _, pos: _, token: Token::Let }) |
@@ -29,7 +29,7 @@ pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRes
         Some(TokenPos { line: _, pos: _, token: Token::For }) |
         Some(TokenPos { line: _, pos: _, token: Token::While }) => parse_cntrl_flow_stmt(it, ind),
 
-        Some(&next) => (Err(TokenErr { expected: Token::Print, actual: next.clone() }), ind),
-        None => (Err(EOFErr { expected: Token::Print }), ind)
+        Some(&next) => Err(TokenErr { expected: Token::Print, actual: next.clone() }),
+        None => Err(EOFErr { expected: Token::Print })
     };
 }

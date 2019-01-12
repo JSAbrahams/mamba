@@ -25,7 +25,7 @@ use std::slice::Iter;
 // | function-call-dir
 // | newline do-block
 
-pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     let mut tuple = false;
 
     return match match it.peek() {
@@ -49,10 +49,10 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRe
         Some(TokenPos { line: _, pos: _, token: Token::Add }) |
         Some(TokenPos { line: _, pos: _, token: Token::Sub }) => parse_operation(it, ind),
 
-        Some(&next) => (Err(TokenErr { expected: Token::If, actual: next.clone() }), ind),
-        None => (Err(EOFErr { expected: Token::If }), ind)
+        Some(&next) => Err(TokenErr { expected: Token::If, actual: next.clone() }),
+        None => Err(EOFErr { expected: Token::If })
     } {
-        (Ok(pre), ind) => match it.peek() {
+        Ok((pre, ind)) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::Assign }) =>
                 parse_reassignment(pre, it, ind),
             Some(TokenPos { line: _, pos: _, token: Token::LPar }) =>
@@ -61,25 +61,24 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseRe
                 parse_function_call(pre, it, ind),
             Some(TokenPos { line: _, pos: _, token: Token::To }) if tuple => {
                 it.next();
-                match parse_function_anonymous(it, ind) {
-                    (Ok(fun), ind) => (Ok(ASTNode::Assign(get_or_err!(pre), get_or_err!(fun))), ind),
-                    err => err
-                }
+                let (fun, ind) = get_or_err!(parse_function_anonymous(it, ind),
+                                             "anonymous function");
+                Ok((ASTNode::Assign(Box::new(pre), fun), ind))
             }
 
-            Some(_) | None => (Ok(pre), ind)
+            Some(_) | None => Ok((pre, ind))
         }
         err => err
     };
 }
 
 // tuple ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
-pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::LPar);
 
     let mut elements = Vec::new();
     if let Some(TokenPos { line: _, pos: _, token: Token::RPar }) = it.peek() {
-        let (expr, ind) = get_or_err!(parse_expression(it,ind), "tuple");
+        let (expr, ind) = get_or_err_direct!(parse_expression(it,ind), "tuple");
         elements.push(expr);
     }
 
@@ -87,23 +86,23 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<
         match t {
             TokenPos { line: _, pos: _, token: Token::RPar } => break,
             TokenPos { line: _, pos: _, token: Token::Comma } => {
-                let (expr, ind) = get_or_err!(parse_expression(it, ind), "tuple");
+                let (expr, ind) = get_or_err_direct!(parse_expression(it, ind), "tuple");
                 elements.push(expr)
             }
-            next => return (Err(TokenErr { expected: Token::Comma, actual: next.clone() }), ind),
+            next => return Err(TokenErr { expected: Token::Comma, actual: next.clone() })
         };
     }
 
-    return (Ok(ASTNode::FunTuple(elements)), ind);
+    return Ok((ASTNode::FunTuple(elements), ind));
 }
 
 // "return" maybe-expression
-fn parse_return(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+fn parse_return(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Ret);
     if let Some(&&TokenPos { line: _, pos: _, token: Token::NL }) = it.peek() {
-        return (Ok(ASTNode::ReturnEmpty), ind);
+        return Ok((ASTNode::ReturnEmpty, ind));
     }
 
     let (expr, ind) = get_or_err!(parse_expression(it, ind), "return");
-    return (Ok(ASTNode::Return(expr)), ind);
+    return Ok((ASTNode::Return(expr), ind));
 }

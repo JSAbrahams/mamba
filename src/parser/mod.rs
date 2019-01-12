@@ -5,8 +5,14 @@ use crate::parser::parse_result::ParseResult;
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 macro_rules! get_or_err { ($res:expr, $msg:expr) => {
     match $res {
-        (Ok(node), ind) => (Box::new(node), ind),
-        (Err(err), _) => return Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err) })
+        Ok((node, ind)) => (Box::new(node), ind),
+        Err(err) => return Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err) })
+    }
+}}
+macro_rules! get_or_err_direct { ($res:expr, $msg:expr) => {
+    match $res {
+        Ok((node, ind)) => (node, ind),
+        Err(err) => return Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err) })
     }
 }}
 macro_rules! check_next_is { ($it: expr, $ind:expr, $tok:path) => {

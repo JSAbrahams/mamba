@@ -10,22 +10,18 @@ use std::slice::Iter;
 
 // do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
 
-pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> (ParseResult<ASTNode>, i32) {
+pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     let mut nodes = Vec::new();
 
     while let Some(_) = it.peek() {
         let actual = util::ind_count(it);
-        if actual > ind && it.peek().is_some() {
-            return (Err(IndErr { expected: ind, actual }), ind);
-        }
+        if actual > ind && it.peek().is_some() { return Err(IndErr { expected: ind, actual }); }
 
-        match parse_expr_or_stmt(it, ind) {
-            (Ok(ast_node), _) => nodes.push(ast_node),
-            err => return err
-        }
+        let (ast_node, ind) = get_or_err_direct!(parse_expr_or_stmt(it, ind), "do block");
+        nodes.push(ast_node);
 
         if detect_double_newline(it) { break; }
     }
 
-    return (Ok(ASTNode::Do(nodes)), ind - 1);
+    return Ok((ASTNode::Do(nodes), ind - 1));
 }
