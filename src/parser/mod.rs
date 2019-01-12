@@ -2,19 +2,47 @@ use crate::lexer::TokenPos;
 use crate::parser::parse_result::ParseResult;
 
 #[macro_use]
+/// Call next on the iterator and execute the statement.
+/// This ignores the value of the next value of the iterator.
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
-macro_rules! get_or_err { ($res:expr, $msg:expr) => {
+
+/// Evaluates the result.
+/// 
+/// If it is an Ok tuple, return Boxed [`ASTNode`] and indent in tuple.
+/// If it is error, return [`ParseErr`] with the [`Err`] wrapped.
+macro_rules! get_or_err { ($it:expr, $res:expr, $msg:expr) => {
     match $res {
         Ok((node, ind)) => (Box::new(node), ind),
-        Err(err) => return Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err) })
+        Err(err) => return match $it.peek() {
+            Some(&tp) => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err),
+                                         position: Some(tp.clone()) }),
+            None =>
+                Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err), position: None })
+        }
     }
 }}
-macro_rules! get_or_err_direct { ($res:expr, $msg:expr) => {
+
+/// Evaluates the expression and check result.
+///
+/// If it is an [`Ok`] tuple, return [`ASTNode`] and indent tuple.
+/// If it is error, return [`ParseErr`] with [`Err`] wrapped.
+macro_rules! get_or_err_direct { ($it:expr, $res:expr, $msg:expr) => {
     match $res {
         Ok((node, ind)) => (node, ind),
-        Err(err) => return Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err) })
+        Err(err) => return match $it.peek() {
+            Some(&tp) =>
+                Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err),
+                               position: Some(tp.clone()) }),
+            None =>
+                Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err), position: None })
+        }
     }
 }}
+
+/// Check that the next is of expected token type.
+///
+/// If it is not of the expected token type, returns [`TokenErr`].
+/// If there is no token ([`iterator::next()`] returns [`None`]), returns [`EOFErr`].
 macro_rules! check_next_is { ($it: expr, $ind:expr, $tok:path) => {
     if let Some(next) = $it.next() {
         if next.token != $tok { return Err(TokenErr { expected: $tok, actual: next.clone() }); }
@@ -23,9 +51,9 @@ macro_rules! check_next_is { ($it: expr, $ind:expr, $tok:path) => {
 
 mod parse_result;
 
-mod assignment;
 mod control_flow_stmt;
 mod control_flow_expr;
+mod declaration;
 mod do_block;
 mod expr_or_stmt;
 mod function;

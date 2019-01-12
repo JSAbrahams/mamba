@@ -8,5 +8,5 @@ for d in e do
     print h
 
 for aa in bb do
-    print to
-    print from
+    print cc
+    print dd

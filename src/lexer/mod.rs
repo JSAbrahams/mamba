@@ -167,19 +167,36 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
 
     while let Some(c) = it.next() {
         match c {
-            '.' => tokens.push(TokenPos { line, pos, token: Token::Point }),
-            ':' => tokens.push(TokenPos { line, pos, token: Token::DoublePoint }),
-            ',' => tokens.push(TokenPos { line, pos, token: Token::Comma }),
-            '(' => tokens.push(TokenPos { line, pos, token: Token::LPar }),
-            ')' => tokens.push(TokenPos { line, pos, token: Token::RPar }),
-            '\n' => {
+            '.' => {
+                tokens.push(TokenPos { line, pos, token: Token::Point });
                 line += 1;
-                tokens.push(TokenPos { line, pos, token: Token::NL })
+            }
+            ':' => {
+                tokens.push(TokenPos { line, pos, token: Token::DoublePoint });
+                line += 1;
+            }
+            ',' => {
+                tokens.push(TokenPos { line, pos, token: Token::Comma });
+                line += 1;
+            }
+            '(' => {
+                tokens.push(TokenPos { line, pos, token: Token::LPar });
+                line += 1;
+            }
+            ')' => {
+                tokens.push(TokenPos { line, pos, token: Token::RPar });
+                line += 1;
+            }
+            '\n' => {
+                tokens.push(TokenPos { line, pos, token: Token::NL });
+                line += 1;
+                pos = 0;
             }
             '\r' => match it.next() {
                 Some('\n') => {
+                    tokens.push(TokenPos { line, pos, token: Token::NL });
                     line += 1;
-                    tokens.push(TokenPos { line, pos, token: Token::NL })
+                    pos = 0;
                 }
                 Some(other) => return Err(format!("Expected newline after carriage return. Was {}",
                                                   other)),
@@ -199,6 +216,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                     consecutive_spaces = 0;
                     tokens.push(TokenPos { line, pos, token: Token::Ind });
                 }
+                pos += 1;
                 continue;
             }
             c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),

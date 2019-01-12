@@ -28,7 +28,7 @@ macro_rules! b_op { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
 }}}
 
 pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (arithmetic, ind) = get_or_err_direct!(parse_arithmetic(it, ind), "operation");
+    let (arithmetic, ind) = get_or_err_direct!(it, parse_arithmetic(it, ind), "operation");
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Eq }) =>
@@ -78,7 +78,7 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<
 }
 
 fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (factor, ind) = get_or_err_direct!(parse_factor(it, ind), "term");
+    let (factor, ind) = get_or_err_direct!(it, parse_factor(it, ind), "term");
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Mul }) =>
@@ -93,7 +93,7 @@ fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNod
     };
 }
 
-fn parse_factor(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+fn parse_factor(it: &mut Peekable<Iter<TokenPos>>, _ind: i32) -> ParseResult<ASTNode> {
     return match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) =>
             Ok((ASTNode::Id(id.to_string()),0)),

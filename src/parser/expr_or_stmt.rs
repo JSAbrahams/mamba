@@ -15,12 +15,12 @@ use std::slice::Iter;
 
 macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
     $it.next();
-    let (post, ind) = get_or_err!(parse_expression($it, $ind), "post operator");
+    let (post, ind) = get_or_err!($it, parse_expression($it, $ind), "post operator");
     Ok(($op(Box::new($pre), post), ind))
 }}}
 
 pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (pre, ind) = get_or_err_direct!(match it.peek() {
+    let (pre, ind) = get_or_err_direct!(it, match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Let }) |
         Some(TokenPos { line: _, pos: _, token: Token::Mut }) |
         Some(TokenPos { line: _, pos: _, token: Token::Print }) |

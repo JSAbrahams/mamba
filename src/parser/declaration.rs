@@ -8,64 +8,64 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// reassignment     ::= maybe-expr "<-" maybe-expr
-// defer-declaration::= declaration [ "forward" id { "," id } ]
-// assignment       ::= mutable-assign | immutable-assign
-// mutable-assign   ::= [ "mutable" ] immutable-assignment
-// immutable-assign ::= definition "<-" maybe-expr
-// definition       ::= "let" id [ ":" id ]
+// reassignment         ::= maybe-expr "<-" maybe-expr
+// defer-declaration    ::= declaration [ "forward" id { "," id } ]
+// declaration          ::= mutable-assign | immutable-assign
+// mutable-declaration  ::= [ "mutable" ] immutable-assignment
+// immutable-declaration::= definition "<-" maybe-expr
+// definition           ::= "let" id [ ":" id ]
 
 pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Assign);
-    let (expr, ind) = get_or_err!(parse_expression(it, ind), "reassignment");
+    let (expr, ind) = get_or_err!(it,parse_expression(it, ind), "reassignment");
     return Ok((ASTNode::Assign(Box::new(pre), expr), ind));
-}
-
-pub fn parse_defer_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
-                               -> ParseResult<ASTNode> {
-    let (declaration, ind) = get_or_err!(parse_declaration(it, ind), "defer declaration");
-
-    let mut properties: Vec<ASTNode> = Vec::new();
-    while let Some(t) = it.peek() {
-        match *t {
-            TokenPos { line: _, pos: _, token: Token::NL } => break,
-            TokenPos { line: _, pos: _, token: Token::Comma } => {
-                it.next();
-                let (property, ind) = get_or_err_direct!(parse_expression(it, ind),
-                 "defer declaration");
-                properties.push(property);
-            }
-            next => return Err(TokenErr { expected: Token::Comma, actual: next.clone() })
-        };
-    }
-
-    return Ok((ASTNode::Defer(declaration, properties), ind));
 }
 
 pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                          -> ParseResult<ASTNode> {
-    return match it.peek() {
+    return match match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Let }) =>
             parse_immutable_declaration(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::Mut }) => parse_mutable_declaration(it, ind),
         Some(&next) => Err(TokenErr { expected: Token::Let, actual: next.clone() }),
         None => Err(EOFErr { expected: Token::Let })
+    } {
+        Ok((declaration, ind)) => match it.peek() {
+            Some(TokenPos { line: _, pos: _, token: Token::Forward }) => {
+                let mut properties: Vec<ASTNode> = Vec::new();
+                while let Some(t) = it.peek() {
+                    match *t {
+                        TokenPos { line: _, pos: _, token: Token::NL } => break,
+                        TokenPos { line: _, pos: _, token: Token::Comma } => {
+                            it.next();
+                            let (property, _) = get_or_err_direct!(it, parse_expression(it, ind),
+                                                                   "defer declaration");
+                            properties.push(property);
+                        }
+                        next => return Err(TokenErr { expected: Token::Comma, actual: next.clone() })
+                    };
+                }
+                Ok((ASTNode::Defer(Box::new(declaration), properties), ind))
+            }
+            _ => Ok((declaration, ind))
+        },
+        err => err
     };
 }
 
 fn parse_mutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Mut);
-    let (dec, ind) = get_or_err!(parse_immutable_declaration(it, ind), "immutable declaration");
+    let (dec, ind) = get_or_err!(it,parse_immutable_declaration(it, ind), "immutable declaration");
     return Ok((ASTNode::Mut(dec), ind));
 }
 
 fn parse_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                -> ParseResult<ASTNode> {
-    let (let_id, ind) = get_or_err!(parse_definition(it, ind), "definition");
+    let (let_id, ind) = get_or_err!(it,parse_definition(it, ind), "definition");
     check_next_is!(it, ind, Token::Assign);
-    let (expr, ind) = get_or_err!(parse_expression(it, ind), "definition");
+    let (expr, ind) = get_or_err!(it,parse_expression(it, ind), "definition");
     return Ok((ASTNode::Assign(let_id, expr), ind));
 }
 

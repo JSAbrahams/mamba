@@ -58,7 +58,7 @@ fn parse_multiple(expected: &Token,
     while let Some(&t) = it.peek() {
         if t.token != *expected { break; }
 
-        let (element, ind) = get_or_err_direct!(fun(it, 0),"");
+        let (element, _) = get_or_err_direct!(it, fun(it, 0),"module");
         elements.push(element);
 
         match it.next() {

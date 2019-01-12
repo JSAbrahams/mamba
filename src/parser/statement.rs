@@ -1,6 +1,6 @@
 use crate::lexer::Token;
 use crate::lexer::TokenPos;
-use crate::parser::assignment::parse_declaration;
+use crate::parser::declaration::parse_declaration;
 use crate::parser::ASTNode;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::maybe_expr::parse_expression;
@@ -19,7 +19,7 @@ pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Print }) => {
             it.next();
-            let (expr, ind) = get_or_err!(parse_expression(it, ind), "statement");
+            let (expr, ind) = get_or_err!(it, parse_expression(it, ind), "statement");
             Ok((ASTNode::Print(expr), ind))
         }
 

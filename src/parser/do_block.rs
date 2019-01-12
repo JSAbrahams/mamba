@@ -17,7 +17,7 @@ pub fn parse_do_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResul
         let actual = util::ind_count(it);
         if actual > ind && it.peek().is_some() { return Err(IndErr { expected: ind, actual }); }
 
-        let (ast_node, ind) = get_or_err_direct!(parse_expr_or_stmt(it, ind), "do block");
+        let (ast_node, _) = get_or_err_direct!(it, parse_expr_or_stmt(it, ind), "do block");
         nodes.push(ast_node);
 
         if detect_double_newline(it) { break; }

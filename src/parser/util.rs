@@ -22,6 +22,7 @@ pub fn detect_double_newline(it: &mut Peekable<Iter<TokenPos>>) -> bool {
             it.next();
             /* double empty line */
             if let Some(&&TokenPos { line: _, pos: _, token: Token::NL }) = it.peek() {
+                it.next();
                 return true;
             }
         }
