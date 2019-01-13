@@ -28,7 +28,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
     function-anon    ::= ( id | function-tuple ) "->' maybe-expr
     
-    do-block         ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
+    block            ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
     
     expr-or-stmt     ::= statement 
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]

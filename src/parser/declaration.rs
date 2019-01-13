@@ -18,7 +18,7 @@ use std::slice::Iter;
 pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Assign);
-    let (expr, ind) = get_or_err!(it,parse_expression(it, ind), "reassignment");
+    let (expr, ind) = get_or_err!(it, ind, parse_expression, "reassignment");
     return Ok((ASTNode::Assign(Box::new(pre), expr), ind));
 }
 
@@ -40,7 +40,7 @@ pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                         TokenPos { line: _, pos: _, token: Token::NL } => break,
                         TokenPos { line: _, pos: _, token: Token::Comma } => {
                             it.next();
-                            let (property, _) = get_or_err_direct!(it, parse_expression(it, ind),
+                            let (property, _) = get_or_err_direct!(it, ind, parse_expression,
                                                                    "defer declaration");
                             properties.push(property);
                         }
@@ -58,15 +58,15 @@ pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 fn parse_mutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
     check_next_is!(it, ind, Token::Mut);
-    let (dec, ind) = get_or_err!(it,parse_immutable_declaration(it, ind), "immutable declaration");
+    let (dec, ind) = get_or_err!(it, ind, parse_immutable_declaration, "immutable declaration");
     return Ok((ASTNode::Mut(dec), ind));
 }
 
 fn parse_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                -> ParseResult<ASTNode> {
-    let (let_id, ind) = get_or_err!(it,parse_definition(it, ind), "definition");
+    let (let_id, ind) = get_or_err!(it, ind, parse_definition, "definition");
     check_next_is!(it, ind, Token::Assign);
-    let (expr, ind) = get_or_err!(it,parse_expression(it, ind), "definition");
+    let (expr, ind) = get_or_err!(it, ind, parse_expression, "definition");
     return Ok((ASTNode::Assign(let_id, expr), ind));
 }
 

@@ -3,7 +3,7 @@ use crate::lexer::TokenPos;
 use crate::parser::declaration::parse_reassignment;
 use crate::parser::ASTNode;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
-use crate::parser::do_block::parse_do_block;
+use crate::parser::block::parse_do_block;
 use crate::parser::function::parse_function_anonymous;
 use crate::parser::function::parse_function_call;
 use crate::parser::function::parse_function_call_direct;
@@ -61,7 +61,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
                 parse_function_call(pre, it, ind),
             Some(TokenPos { line: _, pos: _, token: Token::To }) if tuple => {
                 it.next();
-                let (fun, ind) = get_or_err!(it,parse_function_anonymous(it, ind),
+                let (fun, ind) = get_or_err!(it, ind, parse_function_anonymous,
                                              "anonymous function");
                 Ok((ASTNode::Assign(Box::new(pre), fun), ind))
             }
@@ -78,7 +78,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<A
 
     let mut elements = Vec::new();
     if let Some(TokenPos { line: _, pos: _, token: Token::RPar }) = it.peek() {
-        let (expr, _) = get_or_err_direct!(it, parse_expression(it,ind), "tuple");
+        let (expr, _) = get_or_err_direct!(it, ind, parse_expression, "tuple");
         elements.push(expr);
     }
 
@@ -86,7 +86,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<A
         match t {
             TokenPos { line: _, pos: _, token: Token::RPar } => break,
             TokenPos { line: _, pos: _, token: Token::Comma } => {
-                let (expr, _) = get_or_err_direct!(it, parse_expression(it, ind), "tuple");
+                let (expr, _) = get_or_err_direct!(it, ind, parse_expression, "tuple");
                 elements.push(expr)
             }
             next => return Err(TokenErr { expected: Token::Comma, actual: next.clone() })
@@ -103,6 +103,6 @@ fn parse_return(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTN
         return Ok((ASTNode::ReturnEmpty, ind));
     }
 
-    let (expr, ind) = get_or_err!(it,parse_expression(it, ind), "return");
+    let (expr, ind) = get_or_err!(it, ind, parse_expression, "return");
     return Ok((ASTNode::Return(expr), ind));
 }

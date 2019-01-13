@@ -19,7 +19,7 @@ pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Print }) => {
             it.next();
-            let (expr, ind) = get_or_err!(it, parse_expression(it, ind), "statement");
+            let (expr, ind) = get_or_err!(it, ind, parse_expression, "statement");
             Ok((ASTNode::Print(expr), ind))
         }
 

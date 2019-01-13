@@ -1,7 +1,7 @@
 use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
-use crate::parser::do_block::parse_do_block;
+use crate::parser::block::parse_do_block;
 use crate::parser::function::parse_function_definition_body;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -58,7 +58,7 @@ fn parse_multiple(expected: &Token,
     while let Some(&t) = it.peek() {
         if t.token != *expected { break; }
 
-        let (element, _) = get_or_err_direct!(it, fun(it, 0),"module");
+        let (element, _) = get_or_err_direct!(it, 0, fun,"module");
         elements.push(element);
 
         match it.next() {

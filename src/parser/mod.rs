@@ -10,34 +10,33 @@ macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 /// 
 /// If it is an Ok tuple, return Boxed [`ASTNode`] and indent in tuple.
 /// If it is error, return [`ParseErr`] with the [`Err`] wrapped.
-macro_rules! get_or_err { ($it:expr, $res:expr, $msg:expr) => {
-    match $res {
+macro_rules! get_or_err { ($it:expr, $ind:expr, $fun:path, $msg:expr) => {{
+    let current = $it.peek().cloned();
+    match $fun($it, $ind) {
         Ok((node, ind)) => (Box::new(node), ind),
-        Err(err) => return match $it.peek() {
-            Some(&tp) => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err),
-                                         position: Some(tp.clone()) }),
+        Err(err) => return match current {
+            Some(tp) => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err),
+                                       position: Some(tp.clone()) }),
             None =>
                 Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err), position: None })
         }
     }
-}}
+}}}
 
 /// Evaluates the expression and check result.
 ///
 /// If it is an [`Ok`] tuple, return [`ASTNode`] and indent tuple.
 /// If it is error, return [`ParseErr`] with [`Err`] wrapped.
-macro_rules! get_or_err_direct { ($it:expr, $res:expr, $msg:expr) => {
-    match $res {
+macro_rules! get_or_err_direct { ($it:expr, $ind:expr, $fun:path, $msg:expr) => {{
+    let current = $it.peek().cloned();
+    match $fun($it, $ind) {
         Ok((node, ind)) => (node, ind),
-        Err(err) => return match $it.peek() {
-            Some(&tp) =>
-                Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err),
-                               position: Some(tp.clone()) }),
-            None =>
-                Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err), position: None })
+        Err(e) => return match current {
+            Some(tp) => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(e),
+                                       position: Some(tp.clone()) }),
+            None => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(e), position: None })
         }
-    }
-}}
+}}}}
 
 /// Check that the next is of expected token type.
 ///
@@ -54,7 +53,7 @@ mod parse_result;
 mod control_flow_stmt;
 mod control_flow_expr;
 mod declaration;
-mod do_block;
+mod block;
 mod expr_or_stmt;
 mod function;
 mod maybe_expr;
