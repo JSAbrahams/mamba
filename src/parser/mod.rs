@@ -92,7 +92,7 @@ pub enum ASTNode {
     LetType(Box<ASTNode>, Box<ASTNode>),
     SetBuilder(Box<ASTNode>, Vec<ASTNode>),
 
-    Do(Vec<ASTNode>),
+    Block(Vec<ASTNode>),
 
     Real(String),
     Int(String),
@@ -128,11 +128,8 @@ pub enum ASTNode {
     Unless(Box<ASTNode>, Box<ASTNode>),
     UnlessElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     When(Box<ASTNode>, Vec<ASTNode>),
-    From(Box<ASTNode>, Box<ASTNode>),
-    FromMap(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     While(Box<ASTNode>, Box<ASTNode>),
-    Loop(Box<ASTNode>),
     Break,
     Continue,
 

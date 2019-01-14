@@ -17,7 +17,7 @@ pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<A
         nodes.push(ast_node);
     }
 
-    return Ok((ASTNode::Do(nodes), ind - 1));
+    return Ok((ASTNode::Block(nodes), ind - 1));
 }
 
 fn in_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> bool {

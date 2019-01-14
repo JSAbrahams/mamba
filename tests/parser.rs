@@ -27,7 +27,7 @@ fn valid_resource(file: &str) -> String { resource_string_content("valid\\".to_o
 fn parse_assigns_and_while() {
     let source = valid_resource("assign_and_while.txt");
     match parse(tokenize(source).unwrap()) {
-        Ok(parsed) => println!("{:?}", parsed),
+        Ok(parsed) => (),
         Err(err) => panic!("{}", err)
     }
 }
