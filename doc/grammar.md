@@ -24,10 +24,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-def     ::= "fun" id "(" [ function-arg { "," function-arg } ] ")" [ ":" type ]
     function-def-bod ::= function-def "->" expr-or-stmt
     function-arg     ::= id ":" type
-    function-anon    ::= type "->" maybe-expr
     
-    type             ::= id | type-tuple | type "->" type
-    type-tuple       ::= "(" [ type { "," type } ] ")"
+    function-anon    ::= args-anon "->" maybe-expr
+    args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
+    
+    type             ::= id | type "->" type | "(" [ type { "," type } ] ")"
     
     block            ::= { { indent } expr-or-stmt newline { newline } }
     
