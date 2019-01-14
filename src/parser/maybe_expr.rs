@@ -14,18 +14,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-//maybe-expr       ::=
-// |"return" [ maybe-expr ]
-// | operation
-// | tuple
-// | function-anon
-// | control-flow-expr
-// | reassignment
-// | function-call
-// | function-call-dir
-// | newline do-block
-// | set-builder
-
 pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     let mut tuple = false;
 

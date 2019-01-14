@@ -8,11 +8,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// operation  ::= arithmetic | arithmetic relational maybe-expr
-// arithmetic ::= term | unary arithmetic | term additive maybe-expr
-// term       ::= factor | factor multiclative-operator maybe-expr
-// factor     ::= constant | id
-
 macro_rules! u_op { ($it:expr, $ind:expr, $op:path) => {{
     $it.next(); match parse_expression($it, $ind) {
         Ok((expr, ind)) => Ok(($op(Box::new(expr)), ind)),

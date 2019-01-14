@@ -8,8 +8,6 @@ use crate::parser::util::ind_count;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// block            ::= { { indent } expr-or-stmt newline { newline } }
-
 pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     let mut nodes = Vec::new();
     while in_block(it, ind) {

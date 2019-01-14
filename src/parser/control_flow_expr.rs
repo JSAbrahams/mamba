@@ -9,11 +9,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// control-flow-expr::= if | from | when
-// if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-// when             ::= "when" maybe-expr newline { { indent } when-case }
-// when-case        ::= maybe-expr "then" expr-or-stmt
-
 pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
     return match it.peek() {

@@ -39,5 +39,7 @@ pub fn desugar_expression(node: ASTNode) -> Core {
         ASTNode::ENum(num, exp) => Core::ENum(vec![0], vec![0]),
         ASTNode::Str(string) => Core::Str(string),
         ASTNode::Bool(boolean) => Core::Bool(boolean),
+
+        _ => panic!("")
     }
 }

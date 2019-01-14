@@ -9,10 +9,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// control-flow-stmt::= loop | while | for | "break" | "continue"
-// while            ::= "while" maybe-expr "do" expr-or-stmt
-// for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
-
 pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
     return match it.peek() {

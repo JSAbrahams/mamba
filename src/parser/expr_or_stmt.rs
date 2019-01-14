@@ -9,10 +9,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// expr-or-stmt ::=
-// | statement
-// | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
-
 macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
     $it.next();
     let (post, ind) = get_or_err!($it, $ind, parse_expression, "post operator");

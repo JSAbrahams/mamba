@@ -21,21 +21,22 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     function-call    ::= [ "self" ] maybe-expr "." id tuple
     function-call-dir::= maybe-expr tuple
-    function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
+    function-def     ::= "fun" id "(" [ function-arg { "," function-arg } ] ")" [ ":" type ]
     function-def-bod ::= function-def "->" expr-or-stmt
-    function-args    ::= id ":" function-type [ "," function-args ]
-    function-type    ::= id | function-tuple | function-tuple "->" function-type
-    function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
-    function-anon    ::= ( id | function-tuple ) "->' maybe-expr
+    function-arg     ::= id ":" type
+    function-anon    ::= type "->" maybe-expr
+    
+    type             ::= id | type-tuple | type "->" type
+    type-tuple       ::= "(" [ type { "," type } ] ")"
     
     block            ::= { { indent } expr-or-stmt newline { newline } }
     
     expr-or-stmt     ::= statement 
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
-                      
     statement        ::= "print" maybe-expr 
                       | declaration 
                       | control-flow-stmt
+                      | "type" id "<-" type
     maybe-expr       ::= "return" [ maybe-expr ] 
                       | operation 
                       | tuple 
@@ -56,7 +57,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     declaration      ::= mutable-declaration | immutable-declaration
     mutable-decl     ::= [ "mutable" ] immutable-declaration
     immutable-decl   ::= definition "<-" maybe-expr
-    definition       ::= "let" id [ ":" id ]
+    definition       ::= "let" id [ ":" type ]
 
     operation        ::= arithmetic | arithmetic relational maybe-expr
     arithmetic       ::= term | unary arithmetic | term additive maybe-expr

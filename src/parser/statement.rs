@@ -10,11 +10,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// statement ::=
-// | "print" maybe-expr
-// | assignment
-// | control-flow-stmt
-
 pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Print }) => {

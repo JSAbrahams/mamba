@@ -8,13 +8,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// reassignment         ::= maybe-expr "<-" maybe-expr
-// defer-declaration    ::= declaration [ "forward" id { "," id } ]
-// declaration          ::= mutable-assign | immutable-assign
-// mutable-declaration  ::= [ "mutable" ] immutable-assignment
-// immutable-declaration::= definition "<-" maybe-expr
-// definition           ::= "let" id [ ":" id ]
-
 pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> ParseResult<ASTNode> {
     check_next_is!(it, Token::Assign);

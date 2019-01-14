@@ -3,7 +3,6 @@ use crate::lexer::TokenPos;
 use std::error;
 use std::fmt;
 
-
 pub type ParseResult<T> = std::result::Result<(T, i32), ParseErr>;
 
 #[derive(Debug)]

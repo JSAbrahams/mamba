@@ -9,15 +9,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// function-call    ::= [ "self" ] maybe-expr "." id tuple
-// function-call-dir::= maybe-expr tuple
-// function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
-// function-def-bod ::= function-def "->" expr-or-stmt
-// function-args    ::= id ":" function-type [ "," function-args ]
-// function-type    ::= id | static-tuple | function-tuple "->" function-type
-// function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
-// function-anon    ::= ( id | function-tuple ) "->' maybe-expr
-
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                            -> ParseResult<ASTNode> {
     check_next_is!(it, Token::Point);

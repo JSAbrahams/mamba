@@ -11,6 +11,7 @@ pub struct TokenPos {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
+    Type,
     Class,
     As,
     From,
@@ -86,6 +87,7 @@ pub enum Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string_representation = match self.clone() {
+            Token::Type => "'type'".to_string(),
             Token::Class => "'class'".to_string(),
             Token::As => "'as'".to_string(),
             Token::From => "'from'".to_string(),
@@ -326,6 +328,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
     }
 
     return match result.as_ref() {
+        "type" => Token::Type,
         "as" => Token::As,
         "from" => Token::From,
         "use" => Token::Use,
