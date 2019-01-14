@@ -4,7 +4,6 @@ use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::util;
 use crate::parser::util::ind_count;
 use std::iter::Peekable;
 use std::slice::Iter;

@@ -1,11 +1,7 @@
-use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::block::parse_block;
-use crate::parser::function::parse_function_definition_body;
-use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
