@@ -13,7 +13,7 @@ use std::slice::Iter;
 // function-call-dir::= maybe-expr tuple
 // function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
 // function-def-bod ::= function-def "->" expr-or-stmt
-// function-args    ::= function-type ":" function-type [ "," function-args ]
+// function-args    ::= id ":" function-type [ "," function-args ]
 // function-type    ::= id | static-tuple | function-tuple "->" function-type
 // function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
 // function-anon    ::= ( id | function-tuple ) "->' maybe-expr

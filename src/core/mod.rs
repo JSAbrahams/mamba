@@ -3,11 +3,8 @@ pub enum Core {
     ImportModUseAs(Box<Core>, Box<Core>, Box<Core>),
 
     FunDef(Box<Core>, Vec<Core>, Box<Core>, Box<Core>),
-    FunDefNoRetType(Box<Core>, Vec<Core>, Box<Core>),
-    FunAnon(Box<Core>, Box<Core>),
-    FunCall(Box<Core>, Box<Core>, Box<Core>),
-    FunCallDirect(Box<Core>, Box<Core>),
-    FunArg(Box<Core>, Box<Core>),
+    FunCall(Box<Core>, String, Box<Core>),
+    FunArg(String, Box<Core>),
     FunType(Box<Core>, Box<Core>),
     FunTuple(Vec<Core>),
 
@@ -16,17 +13,16 @@ pub enum Core {
     Class(Box<Core>, Vec<Core>, Vec<Core>),
     Util(Box<Core>, Vec<Core>, Vec<Core>),
 
-    Id(Box<Core>, String),
+    Id(String),
+    Let(String, Box<Core>),
     Assign(Box<Core>, Box<Core>),
-    Defer(Box<Core>, Vec<Core>),
-    LetType(Box<Core>, Box<Core>, Box<Core>),
     SetBuilder(Box<Core>, Vec<Core>),
 
     Block(Vec<Core>),
 
-    Real(String),
-    Int(String),
-    ENum(String, String),
+    Real(Vec<f64>),
+    Int(Vec<i64>),
+    ENum(Vec<i64>, Vec<i64>),
     Str(String),
     Bool(bool),
     Tuple(Vec<Core>),
