@@ -90,6 +90,7 @@ pub enum ASTNode {
     Mut(Box<ASTNode>),
     Let(Box<ASTNode>),
     LetType(Box<ASTNode>, Box<ASTNode>),
+    SetBuilder(Box<ASTNode>, Vec<ASTNode>),
 
     Do(Vec<ASTNode>),
 

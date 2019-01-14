@@ -58,6 +58,10 @@ pub enum Token {
 
     LPar,
     RPar,
+    LBrack,
+    RBrack,
+    Ver,
+
     NL,
     Ind,
 
@@ -129,6 +133,10 @@ impl fmt::Display for Token {
 
             Token::LPar => "'('".to_string(),
             Token::RPar => "')'".to_string(),
+            Token::LBrack => "'['".to_string(),
+            Token::RBrack => "']'".to_string(),
+            Token::Ver => "'|'".to_string(),
+
             Token::NL => "<newline>".to_string(),
             Token::Ind => "<indent>".to_string(),
 
@@ -169,23 +177,35 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         match c {
             '.' => {
                 tokens.push(TokenPos { line, pos, token: Token::Point });
-                line += 1;
+                pos += 1;
             }
             ':' => {
                 tokens.push(TokenPos { line, pos, token: Token::DoublePoint });
-                line += 1;
+                pos += 1;
             }
             ',' => {
                 tokens.push(TokenPos { line, pos, token: Token::Comma });
-                line += 1;
+                pos += 1;
             }
             '(' => {
                 tokens.push(TokenPos { line, pos, token: Token::LPar });
-                line += 1;
+                pos += 1;
             }
             ')' => {
                 tokens.push(TokenPos { line, pos, token: Token::RPar });
-                line += 1;
+                pos += 1;
+            }
+            '[' => {
+                tokens.push(TokenPos { line, pos, token: Token::LBrack });
+                pos += 1;
+            }
+            ']' => {
+                tokens.push(TokenPos { line, pos, token: Token::RBrack });
+                pos += 1;
+            }
+            '|' => {
+                tokens.push(TokenPos { line, pos, token: Token::Ver });
+                pos += 1;
             }
             '\n' => {
                 tokens.push(TokenPos { line, pos, token: Token::NL });

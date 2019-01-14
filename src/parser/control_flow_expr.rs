@@ -2,7 +2,6 @@ use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
-use crate::parser::function::parse_function_anonymous;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -12,7 +11,6 @@ use std::slice::Iter;
 
 // control-flow-expr::= if | from | when
 // if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-// from             ::= "from" maybe-expr [ newline ] "where" function-anon  [ "map" function-anon ]
 // when             ::= "when" maybe-expr newline { { indent } when-case }
 // when-case        ::= maybe-expr "then" expr-or-stmt
 
@@ -21,7 +19,6 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::If }) |
         Some(TokenPos { line: _, pos: _, token: Token::Unless }) => parse_if(it, ind),
-        Some(TokenPos { line: _, pos: _, token: Token::From }) => parse_from(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::When }) => parse_when(it, ind),
         Some(&next) => Err(CustomErr {
             expected: "control flow expression".to_string(),
@@ -53,23 +50,6 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
             Ok((ASTNode::If(cond, then_branch), ind))
         } else { Ok((ASTNode::Unless(cond, then_branch), ind)) }
     }
-}
-
-fn parse_from(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, Token::From);
-
-    let (collection, ind) = get_or_err!(it, ind, parse_expression, "from collection");
-    check_next_is!(it, Token::When);
-    let (condition, ind) = get_or_err!(it, ind, parse_function_anonymous, "from condition");
-
-    return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Map }) => {
-            it.next();
-            let (mapping, ind) = get_or_err!(it, ind, parse_function_anonymous, "from mapping");
-            Ok((ASTNode::FromMap(collection, condition, mapping), ind))
-        }
-        _ => Ok((ASTNode::From(collection, condition), ind))
-    };
 }
 
 fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {

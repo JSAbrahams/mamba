@@ -12,7 +12,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          "util" id [ "isa" id { "," id } ] newline { newline } 
                          { ( immutable-declaration | function-def-bod ) newline { newline } }
     class            ::= { module-import newline } newline { newline } 
-                         "class" id [ "isa" id { "," id } ] newline { newline } 
+                         "class" [ "[" id { "," id } "]" ] id [ "isa" id { "," id } ] newline { newline } 
                          { defer-declaration newline } { newline } 
                          { [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
     script           ::= { module-import newline } { newline } 
@@ -20,7 +20,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          [ do-block ]
     
     function-call    ::= [ "self" ] maybe-expr "." id tuple
-    function-call-dir::= id tuple
+    function-call-dir::= maybe-expr tuple
     function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
     function-def-bod ::= function-def "->" expr-or-stmt
     function-args    ::= function-type ":" function-type [ "," function-args ]
@@ -45,9 +45,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | function-call 
                       | function-call-dir 
                       | newline block
+                      | set-builder
     
     id               ::= [ "self" ] { ( character | number | "_" ) }
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
+    set-builder      ::= "[" maybe-expr "| maybe-expr { "," maybe-expr } "]"
     
     reassignment     ::= maybe-expr "<-" maybe-expr
     defer-declaration::= declaration [ "forward" id { "," id } ]
@@ -79,7 +81,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     control-flow-expr::= if | from | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    from             ::= "from" maybe-expr [ newline ] "where" function-anon [ "map" function-anon ]
     when             ::= "when" maybe-expr newline { { indent } when-case }
     when-case        ::= maybe-expr "then" expr-or-stmt
     

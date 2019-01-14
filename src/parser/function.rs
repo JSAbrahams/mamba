@@ -9,8 +9,8 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-// function-call    ::= maybe-expr "." id tuple
-// function-call-dir::= id tuple
+// function-call    ::= [ "self" ] maybe-expr "." id tuple
+// function-call-dir::= maybe-expr tuple
 // function-def     ::= "fun" id "(" function-args ")" [ ":" function-type ]
 // function-def-bod ::= function-def "->" expr-or-stmt
 // function-args    ::= function-type ":" function-type [ "," function-args ]
