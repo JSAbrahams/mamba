@@ -3,7 +3,7 @@ use crate::lexer::TokenPos;
 use crate::parser::declaration::parse_reassignment;
 use crate::parser::ASTNode;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
-use crate::parser::block::parse_do_block;
+use crate::parser::block::parse_block;
 use crate::parser::function::parse_function_anonymous;
 use crate::parser::function::parse_function_call;
 use crate::parser::function::parse_function_call_direct;
@@ -32,8 +32,8 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
         Some(TokenPos { line: _, pos: _, token: Token::If }) |
         Some(TokenPos { line: _, pos: _, token: Token::Unless }) |
         Some(TokenPos { line: _, pos: _, token: Token::When }) => parse_cntrl_flow_expr(it, ind),
-        Some(TokenPos { line: _, pos: _, token: Token::NL }) =>
-            next_and!(it, parse_do_block(it, ind + 1)),
+        Some(TokenPos { line: _, pos: _, token: Token::NL }) => {
+            next_and!(it, parse_block(it, ind + 1))},
         Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
             tuple = true;
             parse_tuple(it, ind)
@@ -74,7 +74,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
 
 // tuple ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
 pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::LPar);
+    check_next_is!(it, Token::LPar);
 
     let mut elements = Vec::new();
     if let Some(TokenPos { line: _, pos: _, token: Token::RPar }) = it.peek() {
@@ -98,7 +98,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<A
 
 // "return" maybe-expression
 fn parse_return(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::Ret);
+    check_next_is!(it, Token::Ret);
     if let Some(&&TokenPos { line: _, pos: _, token: Token::NL }) = it.peek() {
         return Ok((ASTNode::ReturnEmpty, ind));
     }

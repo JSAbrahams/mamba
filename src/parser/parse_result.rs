@@ -23,7 +23,7 @@ impl fmt::Display for ParseErr {
             ParseErr::ParseErr { ref parsing, ref cause, ref position } =>
                 match cause.fmt(f) {
                     Ok(_) => match position {
-                        Some(pos) => write!(f, "\nIn <{}> at [{}, {}],", parsing, pos.line, pos.pos),
+                        Some(pos) => write!(f, "\nIn <{}> at {}:{}", parsing, pos.line, pos.pos),
                         None => write!(f, "\nIn <{}>", parsing)
                     }
                     err => err
@@ -32,11 +32,11 @@ impl fmt::Display for ParseErr {
             ParseErr::EOFErr { expected } =>
                 write!(f, "\nExpected <{}>, but end of file reached.", expected),
             ParseErr::CustomErr { expected, actual } =>
-                write!(f, "\nExpected <{}> at [{}, {}] but was: {}.",
+                write!(f, "\nExpected <{}> at {}:{} (line:col) but was: {}.",
                        expected,
                        actual.line, actual.pos, actual.token),
             ParseErr::TokenErr { expected, actual } =>
-                write!(f, "\nExpected {} at [{}, {}] but was: {}.",
+                write!(f, "\nExpected {} at {}:{} (line:col) but was: {}.",
                        expected,
                        actual.line, actual.pos, actual.token),
             ParseErr::CustomEOFErr { expected } =>

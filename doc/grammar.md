@@ -28,7 +28,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-tuple   ::= "(" [ function-type { "," function-type } ] ")"
     function-anon    ::= ( id | function-tuple ) "->' maybe-expr
     
-    block            ::= { { indent } expr-or-stmt newline [ { indent } newline ] }
+    block            ::= { { indent } expr-or-stmt newline { newline } }
     
     expr-or-stmt     ::= statement 
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
@@ -44,7 +44,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | reassignment 
                       | function-call 
                       | function-call-dir 
-                      | newline do-block
+                      | newline block
     
     id               ::= [ "self" ] { ( character | number | "_" ) }
     tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
@@ -90,11 +90,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     indent           ::= \t | \s\s\s\s
     newline          ::= \n | \r\n
 
-The language uses indentation to denote do-blocks. The indentation amount can't be described in the grammar directly, 
+The language uses indentation to denote blocks. The indentation amount can't be described in the grammar directly, 
 but it does adhere to the following rules:
 
-* Every new expression or statement in a do block must be preceded by n + 1 `indent`'s, where n is the amount of 
-  `indent`'s before the do block
+* Every new expression or statement in a block must be preceded by n + 1 `indent`'s, where n is the amount of 
+  `indent`'s before the block
 * The same holds for every new `when-case` in a `when`
 
 A `maybe-expr` is used in a situation where an expression is required,  but we cannot know in advance whether it will be

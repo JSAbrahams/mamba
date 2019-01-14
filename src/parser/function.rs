@@ -20,7 +20,7 @@ use std::slice::Iter;
 
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                            -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::Point);
+    check_next_is!(it, Token::Point);
 
     match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => match it.peek() {
@@ -51,7 +51,7 @@ pub fn parse_function_call_direct(name: ASTNode, it: &mut Peekable<Iter<TokenPos
 
 pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                       -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::Fun);
+    check_next_is!(it, Token::Fun);
 
     return match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => {
@@ -88,7 +88,7 @@ pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i3
 }
 
 fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<Vec<ASTNode>> {
-    check_next_is!(it, ind, Token::LPar);
+    check_next_is!(it, Token::LPar);
 
     let mut args = Vec::new();
     loop {
@@ -125,7 +125,7 @@ fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
             next_and!(it, Ok((ASTNode::Id(id.to_string()), ind))),
         Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
             let (tup, ind) = get_or_err!(it, ind, parse_function_tuple, "function tuple");
-            check_next_is!(it, ind, Token::To);
+            check_next_is!(it, Token::To);
             let (fun_ty, ind) = get_or_err!(it, ind, parse_function_type, "function type");
             Ok((ASTNode::FunType(tup, fun_ty), ind))
         }
@@ -135,7 +135,7 @@ fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
 }
 
 fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::LPar);
+    check_next_is!(it, Token::LPar);
 
     let mut fun_types: Vec<ASTNode> = Vec::new();
     match it.next() {
@@ -166,7 +166,7 @@ fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
 pub fn parse_function_anonymous(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                 -> ParseResult<ASTNode> {
     let (tuple, ind) = get_or_err!(it, ind, parse_function_tuple, "anonymous function");
-    check_next_is!(it, ind, Token::To);
+    check_next_is!(it, Token::To);
     let (body, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "anonymous function body");
     return Ok((ASTNode::FunAnon(tuple, body), ind));
 }

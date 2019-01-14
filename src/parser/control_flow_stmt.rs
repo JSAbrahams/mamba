@@ -32,21 +32,21 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 }
 
 fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::While);
+    check_next_is!(it, Token::While);
 
     let (cond, ind) = get_or_err!(it, ind, parse_expression, "while condition");
-    check_next_is!(it, ind, Token::Do);
+    check_next_is!(it, Token::Do);
     let (expr_or_do, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "while body");
     return Ok((ASTNode::While(cond, expr_or_do), ind));
 }
 
 fn parse_for(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::For);
+    check_next_is!(it, Token::For);
 
     let (expr, ind) = get_or_err!(it, ind, parse_expression, "for expression");
-    check_next_is!(it, ind, Token::In);
+    check_next_is!(it, Token::In);
     let (collection, ind) = get_or_err!(it, ind,  parse_expression, "for collection");
-    check_next_is!(it, ind, Token::Do);
+    check_next_is!(it, Token::Do);
     let (for_bod, ind) = get_or_err!(it, ind,  parse_expr_or_stmt, "for body");
     return Ok((ASTNode::For(expr, collection, for_bod), ind));
 }

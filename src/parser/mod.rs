@@ -42,7 +42,7 @@ macro_rules! get_or_err_direct { ($it:expr, $ind:expr, $fun:path, $msg:expr) => 
 ///
 /// If it is not of the expected token type, returns [`TokenErr`].
 /// If there is no token ([`iterator::next()`] returns [`None`]), returns [`EOFErr`].
-macro_rules! check_next_is { ($it: expr, $ind:expr, $tok:path) => {
+macro_rules! check_next_is { ($it: expr, $tok:path) => {
     if let Some(next) = $it.next() {
         if next.token != $tok { return Err(TokenErr { expected: $tok, actual: next.clone() }); }
     } else { return Err(EOFErr { expected: $tok }); }
@@ -78,9 +78,10 @@ pub enum ASTNode {
     FunType(Box<ASTNode>, Box<ASTNode>),
     FunTuple(Vec<ASTNode>),
 
-    ModScript(Vec<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
-    ModClass(Box<ASTNode>, Vec<ASTNode>, Vec<ASTNode>),
-    ModUtil(Box<ASTNode>, Vec<ASTNode>, Vec<ASTNode>),
+    Module(Box<ASTNode>),
+    Script(Vec<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
+    Class(Box<ASTNode>, Vec<ASTNode>, Vec<ASTNode>),
+    Util(Box<ASTNode>, Vec<ASTNode>, Vec<ASTNode>),
 
     Id(String),
     Self_(Box<ASTNode>),

@@ -16,7 +16,7 @@ use std::slice::Iter;
 macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
     $it.next();
     let (post, ind) = get_or_err!($it, $ind, parse_expression, "post operator");
-    Ok(($op(Box::new($pre), post), ind))
+    Ok(($op(post, Box::new($pre)), ind))
 }}}
 
 pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {

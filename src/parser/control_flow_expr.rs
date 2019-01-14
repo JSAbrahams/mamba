@@ -6,8 +6,6 @@ use crate::parser::function::parse_function_anonymous;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::util;
-use crate::parser::util::detect_double_newline;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -42,8 +40,8 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
     };
 
     let (cond, ind) = get_or_err!(it, ind, parse_expression, "if condition");
-    check_next_is!(it, ind, Token::Then);
-    let (then_branch, ind) = get_or_err!(it, ind,  parse_expr_or_stmt, "if then branch");
+    check_next_is!(it, Token::Then);
+    let (then_branch, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "if then branch");
     if let Some(&&TokenPos { line: _, pos: _, token: Token::Else }) = it.peek() {
         it.next();
         let (else_branch, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "if else branch");
@@ -58,10 +56,10 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
 }
 
 fn parse_from(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::From);
+    check_next_is!(it, Token::From);
 
     let (collection, ind) = get_or_err!(it, ind, parse_expression, "from collection");
-    check_next_is!(it, ind, Token::When);
+    check_next_is!(it, Token::When);
     let (condition, ind) = get_or_err!(it, ind, parse_function_anonymous, "from condition");
 
     return match it.peek() {
@@ -75,10 +73,10 @@ fn parse_from(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNod
 }
 
 fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    check_next_is!(it, ind, Token::When);
+    check_next_is!(it, Token::When);
 
     let (expr, ind) = get_or_err!(it, ind, parse_expression, "when expression");
-    check_next_is!(it, ind, Token::NL);
+    check_next_is!(it, Token::NL);
 
     match parse_when_cases(it, ind + 1) {
         Ok((cases, ind)) => Ok((ASTNode::When(expr, cases), ind)),
@@ -87,27 +85,12 @@ fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNod
 }
 
 fn parse_when_cases(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<Vec<ASTNode>> {
-    let mut when_cases: Vec<ASTNode> = Vec::new();
-
-    while let Some(_) = it.peek() {
-        let next_ind = util::ind_count(it);
-        if next_ind < ind { break; }; /* Indentation decrease marks end of do block */
-        if next_ind > ind && it.peek().is_some() {
-            return Err(IndErr { expected: ind, actual: next_ind });
-        }
-
-        let (when_case, _) = get_or_err_direct!(it, ind, parse_when_case, "when case");
-        when_cases.push(when_case);
-
-        if detect_double_newline(it) { break; }
-    }
-
-    return Ok((when_cases, ind));
+    panic!("Not implemented");
 }
 
 fn parse_when_case(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
     let (when, ind) = get_or_err!(it, ind, parse_expression, "when case");
-    check_next_is!(it, ind, Token::Then);
+    check_next_is!(it, Token::Then);
     let (then, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "then");
 
     return Ok((ASTNode::If(when, then), ind));

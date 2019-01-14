@@ -13,6 +13,10 @@ else
     print "a"
 
 if cond then
+    body
+else other
+
+if cond then
     body_part_1
 
     body_part_2
