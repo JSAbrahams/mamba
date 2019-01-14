@@ -16,10 +16,24 @@ pub fn desugar_expression(node: ASTNode) -> Core {
         ASTNode::Neq(left, right) => Core::Not(Box::new(Core::Eq(des!(left), des!(right)))),
         ASTNode::IsN(left, right) => Core::Not(Box::new(Core::Is(des!(left), des!(right)))),
 
-        ASTNode::Ge(left, right) => Core::Ge(des!(left), des!(right)),
         ASTNode::Le(left, right) => Core::Le(des!(left), des!(right)),
-        ASTNode::Geq(left, right) => Core::Geq(des!(left), des!(right)),
+        ASTNode::Le(lleft, box ASTNode::Ge(rleft, rright)) =>
+            Core::And(Box::new(Core::Le(des!(lleft), des!(rleft))),
+                      Box::new(Core::Ge(des!(rleft), des!(rright)))),
+        ASTNode::Le(lleft, box ASTNode::Geq(rleft, rright)) =>
+            Core::And(Box::new(Core::Le(des!(lleft), des!(rleft))),
+                      Box::new(Core::Geq(des!(rleft), des!(rright)))),
+
         ASTNode::Leq(left, right) => Core::Leq(des!(left), des!(right)),
+        ASTNode::Leq(lleft, box ASTNode::Ge(rleft, rright)) =>
+            Core::And(Box::new(Core::Leq(des!(lleft), des!(rleft))),
+                      Box::new(Core::Ge(des!(rleft), des!(rright)))),
+        ASTNode::Leq(lleft, box ASTNode::Geq(rleft, rright)) =>
+            Core::And(Box::new(Core::Leq(des!(lleft), des!(rleft))),
+                      Box::new(Core::Geq(des!(rleft), des!(rright)))),
+
+        ASTNode::Ge(left, right) => Core::Ge(des!(left), des!(right)),
+        ASTNode::Geq(left, right) => Core::Geq(des!(left), des!(right)),
 
         ASTNode::And(left, right) => Core::And(des!(left), des!(right)),
         ASTNode::Or(left, right) => Core::Or(des!(left), des!(right)),

@@ -23,17 +23,29 @@ macro_rules! b_op { ($factor:expr, $it:expr, $ind:expr, $op:path) => {{
 }}}
 
 pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (arithmetic, ind) = get_or_err_direct!(it, ind, parse_arithmetic, "operation");
+    let (operation, ind) = get_or_err_direct!(it, ind, parse_comparison, "operation");
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Eq }) =>
-            b_op!(arithmetic, it, ind, ASTNode::Eq),
+            b_op!(operation, it, ind, ASTNode::Eq),
         Some(TokenPos { line: _, pos: _, token: Token::Is }) =>
-            b_op!(arithmetic, it, ind, ASTNode::Is),
+            b_op!(operation, it, ind, ASTNode::Is),
         Some(TokenPos { line: _, pos: _, token: Token::IsN }) =>
-            b_op!(arithmetic, it, ind, ASTNode::IsN),
+            b_op!(operation, it, ind, ASTNode::IsN),
         Some(TokenPos { line: _, pos: _, token: Token::Neq }) =>
-            b_op!(arithmetic, it, ind, ASTNode::Neq),
+            b_op!(operation, it, ind, ASTNode::Neq),
+        Some(TokenPos { line: _, pos: _, token: Token::And }) =>
+            b_op!(operation, it, ind, ASTNode::And),
+        Some(TokenPos { line: _, pos: _, token: Token::Or }) =>
+            b_op!(operation, it, ind, ASTNode::Or),
+        _ => Ok((operation, ind))
+    };
+}
+
+fn parse_comparison(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    let (arithmetic, ind) = get_or_err_direct!(it, ind, parse_arithmetic, "comparison");
+
+    return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Ge }) =>
             b_op!(arithmetic, it, ind, ASTNode::Ge),
         Some(TokenPos { line: _, pos: _, token: Token::Geq }) =>
@@ -42,10 +54,6 @@ pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
             b_op!(arithmetic, it, ind, ASTNode::Le),
         Some(TokenPos { line: _, pos: _, token: Token::Leq }) =>
             b_op!(arithmetic, it, ind, ASTNode::Leq),
-        Some(TokenPos { line: _, pos: _, token: Token::And }) =>
-            b_op!(arithmetic, it, ind, ASTNode::And),
-        Some(TokenPos { line: _, pos: _, token: Token::Or }) =>
-            b_op!(arithmetic, it, ind, ASTNode::Or),
         _ => Ok((arithmetic, ind))
     };
 }

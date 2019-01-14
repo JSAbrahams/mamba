@@ -60,7 +60,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     immutable-decl   ::= definition "<-" maybe-expr
     definition       ::= "let" id [ ":" type ]
 
-    operation        ::= arithmetic | arithmetic relational maybe-expr
+    operation        ::= relation | relation ( equality | binary-logic ) maybe-expr
+    relation         ::= arithmetic | arithmetic comparison maybe-expr
     arithmetic       ::= term | unary arithmetic | term additive maybe-expr
     term             ::= factor | factor multiclative-operator maybe-expr
     factor           ::= constant | id
@@ -68,7 +69,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/" | "^" | "mod"
-    relational       ::= equality | comparison | binary-logic
     equality         ::= "equals" | "is" | "notequals" | "isnot"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"

@@ -75,7 +75,7 @@ pub enum ASTNode {
     FunCall(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
     FunCallDirect(Box<ASTNode>, Box<ASTNode>),
     FunArg(Box<ASTNode>, Box<ASTNode>),
-    FunType(Box<ASTNode>),
+    FunType(Box<ASTNode>, Box<ASTNode>),
     FunTuple(Vec<ASTNode>),
 
     Module(Box<ASTNode>),
