@@ -10,11 +10,13 @@ use crate::parser::function::parse_function_call_direct;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use std::env;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "expression");
     let mut tuple = false;
 
     return match match it.peek() {
@@ -66,6 +68,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
 
 // set-builder ::= "[" maybe-expr "| maybe-expr { "," maybe-expr } "]"
 fn parse_set_builder(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "set builder");
     check_next_is!(it, Token::LBrack);
 
     let (set, ind) = get_or_err!(it, ind, parse_expression, "set builder");
@@ -99,6 +102,7 @@ fn parse_set_builder(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult
 
 // tuple ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
 pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "tuple");
     check_next_is!(it, Token::LPar);
 
     let mut elements = Vec::new();
@@ -129,7 +133,9 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<A
 
 // "return" maybe-expression
 fn parse_return(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "return");
     check_next_is!(it, Token::Ret);
+
     if let Some(&&TokenPos { line: _, pos: _, token: Token::NL }) = it.peek() {
         return Ok((ASTNode::ReturnEmpty, ind));
     }

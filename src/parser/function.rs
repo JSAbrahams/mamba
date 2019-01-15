@@ -5,12 +5,14 @@ use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::maybe_expr::parse_tuple;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use std::env;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                            -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "function call");
     check_next_is!(it, Token::Point);
 
     match it.next() {
@@ -29,6 +31,8 @@ pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>, i
 
 pub fn parse_function_call_direct(name: ASTNode, it: &mut Peekable<Iter<TokenPos>>,
                                   ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "function call direct");
+
     match (name, it.peek()) {
         (ASTNode::Id(ref id), Some(TokenPos { line: _, pos: _, token: Token::LPar })) => {
             let (tuple, ind) = get_or_err!(it, ind, parse_tuple, "direction function call");
@@ -42,6 +46,7 @@ pub fn parse_function_call_direct(name: ASTNode, it: &mut Peekable<Iter<TokenPos
 
 pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                       -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "function definition");
     check_next_is!(it, Token::Fun);
 
     return match it.next() {
@@ -79,6 +84,7 @@ pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>, ind: i3
 }
 
 fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<Vec<ASTNode>> {
+    print_parse!(it, ind, "function arguments");
     check_next_is!(it, Token::LPar);
 
     let mut args = Vec::new();
@@ -99,7 +105,9 @@ fn parse_args(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<Vec<AS
 }
 
 fn parse_function_arg(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "function argument");
     let (fun_arg, ind) = get_or_err!(it, ind, parse_function_type, "function argument");
+
     match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) => {
             let (arg_ty, ind) = get_or_err!(it, ind, parse_function_type, "function argument type");
@@ -111,6 +119,8 @@ fn parse_function_arg(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResul
 }
 
 fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "function type");
+
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) =>
             next_and!(it, Ok((ASTNode::Id(id.to_string()), ind))),
@@ -126,6 +136,7 @@ fn parse_function_type(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
 }
 
 fn parse_function_tuple(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "function tuple");
     check_next_is!(it, Token::LPar);
 
     let mut fun_types: Vec<ASTNode> = Vec::new();

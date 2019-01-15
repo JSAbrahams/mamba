@@ -8,9 +8,12 @@ use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
 
 pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "control flow statement");
+
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::While }) => parse_while(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::For }) => parse_for(it, ind),
@@ -28,21 +31,23 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 }
 
 fn parse_while(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "while");
     check_next_is!(it, Token::While);
 
-    let (cond, ind) = get_or_err!(it, ind, parse_expression, "while condition");
+    let (cond, _) = get_or_err!(it, ind, parse_expression, "while condition");
     check_next_is!(it, Token::Do);
-    let (expr_or_do, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "while body");
+    let (expr_or_do, _) = get_or_err!(it, ind, parse_expr_or_stmt, "while body");
     return Ok((ASTNode::While(cond, expr_or_do), ind));
 }
 
 fn parse_for(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "for");
     check_next_is!(it, Token::For);
 
-    let (expr, ind) = get_or_err!(it, ind, parse_expression, "for expression");
+    let (expr, _) = get_or_err!(it, ind, parse_expression, "for expression");
     check_next_is!(it, Token::In);
-    let (collection, ind) = get_or_err!(it, ind,  parse_expression, "for collection");
+    let (collection, _) = get_or_err!(it, ind,  parse_expression, "for collection");
     check_next_is!(it, Token::Do);
-    let (for_bod, ind) = get_or_err!(it, ind,  parse_expr_or_stmt, "for body");
+    let (for_bod, _) = get_or_err!(it, ind,  parse_expr_or_stmt, "for body");
     return Ok((ASTNode::For(expr, collection, for_bod), ind));
 }

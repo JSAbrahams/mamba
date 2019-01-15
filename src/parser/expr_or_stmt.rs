@@ -8,6 +8,7 @@ use crate::parser::statement::parse_statement;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
 
 macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
     $it.next();
@@ -16,6 +17,8 @@ macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
 }}}
 
 pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "expression or statement");
+
     let fun = match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Let }) |
         Some(TokenPos { line: _, pos: _, token: Token::Mut }) |

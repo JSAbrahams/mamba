@@ -9,8 +9,11 @@ use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
 
 pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "statement");
+
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Print }) => {
             it.next();

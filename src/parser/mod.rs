@@ -6,6 +6,18 @@ use crate::parser::parse_result::ParseResult;
 /// This ignores the value of the next value of the iterator.
 macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 
+macro_rules! print_parse { ($it:expr, $ind:expr, $msg:expr) => {{
+    if env::var("PRINT_PARSE").is_ok() {
+        let mut ind_string = String::new();
+        for _ in 0..$ind { ind_string.push('-') };
+
+        match $it.peek() {
+            Some(tp) => println!("{}{:?} ({})", ind_string, tp, $msg),
+            None => println!("{}({})", ind_string, $msg)
+        }
+    }
+}}}
+
 /// Evaluates the result.
 /// 
 /// If it is an Ok tuple, return Boxed [`ASTNode`] and indent in tuple.

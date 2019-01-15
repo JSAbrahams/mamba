@@ -3,6 +3,7 @@ use crate::lexer::TokenPos;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
 
 pub fn count_and_skip_ind(it: &mut Peekable<Iter<TokenPos>>) -> i32 {
     let mut ind_count = 0;

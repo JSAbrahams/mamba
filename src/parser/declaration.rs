@@ -7,16 +7,21 @@ use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
 
 pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                           -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "reassignment");
     check_next_is!(it, Token::Assign);
+
     let (expr, ind) = get_or_err!(it, ind, parse_expression, "reassignment");
     return Ok((ASTNode::Assign(Box::new(pre), expr), ind));
 }
 
 pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                          -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "declaration");
+
     return match match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Let }) =>
             parse_immutable_declaration(it, ind),
@@ -50,13 +55,17 @@ pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 
 fn parse_mutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "mutable declaration");
     check_next_is!(it, Token::Mut);
+
     let (dec, ind) = get_or_err!(it, ind, parse_immutable_declaration, "immutable declaration");
     return Ok((ASTNode::Mut(dec), ind));
 }
 
 fn parse_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                                -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "immutable declaration");
+
     let (let_id, ind) = get_or_err!(it, ind, parse_definition, "definition");
     check_next_is!(it, Token::Assign);
     let (expr, ind) = get_or_err!(it, ind, parse_expression, "definition");
@@ -64,7 +73,9 @@ fn parse_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 }
 
 fn parse_definition(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "definition");
     check_next_is!(it, Token::Let);
+
     match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) => match it.peek() {
             Some(TokenPos { line: _, pos: _, token: Token::DoublePoint }) =>

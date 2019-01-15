@@ -235,12 +235,12 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             'a'...'z' | 'A'...'Z' =>
                 tokens.push(TokenPos { line, pos, token: get_id_or_op(c, &mut it, &mut pos) }),
             ' ' => {
+                pos += 1;
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
                     consecutive_spaces = 0;
                     tokens.push(TokenPos { line, pos, token: Token::Ind });
                 }
-                pos += 1;
                 continue;
             }
             c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
@@ -282,11 +282,11 @@ fn get_number(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     let mut e_found = false;
     let mut comma = false;
 
-    *pos += 1;
     match current {
         '0'...'9' => num.push(current),
         _ => panic!("get number received a character it shouldn't have.")
     }
+    *pos += 1;
 
     while let Some(&c) = it.peek() {
         match c {
@@ -321,6 +321,8 @@ fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
 fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     let mut result = String::from(current.to_string());
+    *pos += 1;
+
     while let Some(&c) = it.peek() {
         match c {
             'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => next_and!(it, pos, result.push(c)),

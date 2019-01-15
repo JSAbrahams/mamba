@@ -8,9 +8,13 @@ use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
+use crate::parser::util::count_and_skip_ind;
 
 pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "control flow expression");
+
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::If }) |
         Some(TokenPos { line: _, pos: _, token: Token::Unless }) => parse_if(it, ind),
@@ -24,6 +28,8 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
 }
 
 fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "if");
+
     let if_expr = match it.next() {
         Some(TokenPos { line: _, pos: _, token: Token::If }) => true,
         Some(TokenPos { line: _, pos: _, token: Token::Unless }) => false,
@@ -31,12 +37,16 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
         None => return Err(EOFErr { expected: Token::If })
     };
 
-    let (cond, ind) = get_or_err!(it, ind, parse_expression, "if condition");
+    let (cond, _) = get_or_err!(it, ind, parse_expression, "if condition");
     check_next_is!(it, Token::Then);
-    let (then_branch, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "if then branch");
+    print_parse!(it, ind, "if: then");
+    let (then_branch, _) = get_or_err!(it, ind, parse_expr_or_stmt, "if then branch");
+
+    count_and_skip_ind(it);
     if let Some(&&TokenPos { line: _, pos: _, token: Token::Else }) = it.peek() {
+        print_parse!(it, ind, "if: else");
         it.next();
-        let (else_branch, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "if else branch");
+        let (else_branch, _) = get_or_err!(it, ind, parse_expr_or_stmt, "if else branch");
         if if_expr {
             Ok((ASTNode::IfElse(cond, then_branch, else_branch), ind))
         } else { Ok((ASTNode::UnlessElse(cond, then_branch, else_branch), ind)) }
@@ -48,9 +58,11 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
 }
 
 fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "when");
+
     check_next_is!(it, Token::When);
 
-    let (expr, ind) = get_or_err!(it, ind, parse_expression, "when expression");
+    let (expr, _) = get_or_err!(it, ind, parse_expression, "when expression");
     check_next_is!(it, Token::NL);
 
     match parse_when_cases(it, ind + 1) {
@@ -60,13 +72,16 @@ fn parse_when(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNod
 }
 
 fn parse_when_cases(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<Vec<ASTNode>> {
+    print_parse!(it, ind, "when cases");
     panic!("Not implemented");
 }
 
 fn parse_when_case(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (when, ind) = get_or_err!(it, ind, parse_expression, "when case");
+    print_parse!(it, ind, "when case");
+
+    let (when, _) = get_or_err!(it, ind, parse_expression, "when case");
     check_next_is!(it, Token::Then);
-    let (then, ind) = get_or_err!(it, ind, parse_expr_or_stmt, "then");
+    let (then, _) = get_or_err!(it, ind, parse_expr_or_stmt, "then");
 
     return Ok((ASTNode::If(when, then), ind));
 }

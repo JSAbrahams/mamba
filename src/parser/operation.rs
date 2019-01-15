@@ -7,6 +7,7 @@ use crate::parser::parse_result::ParseResult;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::env;
 
 macro_rules! u_op { ($it:expr, $ind:expr, $fun:path, $op:path) => {{
     $it.next(); match $fun($it, $ind) {
@@ -23,6 +24,7 @@ macro_rules! b_op { ($left:expr, $it:expr, $ind:expr, $fun:path, $op:path) => {{
 }}}
 
 pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+    print_parse!(it, ind, "operation");
     let (relation, ind) = get_or_err_direct!(it, ind, parse_relation, "operation");
 
     return match it.peek() {
