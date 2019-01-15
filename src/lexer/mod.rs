@@ -65,7 +65,8 @@ pub enum Token {
     Ver,
 
     NL,
-    Ind,
+    Indent,
+    Dedent,
 
     While,
     For,
@@ -108,11 +109,11 @@ impl fmt::Display for Token {
             Token::Assign => "'<-'".to_string(),
             Token::Let => "'let'".to_string(),
 
-            Token::Real(real) =>  format!("<real>: '{}'", real),
-            Token::Int(int) =>  format!("<int>: '{}'", int),
-            Token::ENum(int, exp) =>  format!("<e-number>: '{}e{}'", int, exp),
+            Token::Real(real) => format!("<real>: '{}'", real),
+            Token::Int(int) => format!("<int>: '{}'", int),
+            Token::ENum(int, exp) => format!("<e-number>: '{}e{}'", int, exp),
             Token::Str(string) => format!("<string>: '{}'", string),
-            Token::Bool(boolean) =>  format!("<bool>: '{}'", boolean),
+            Token::Bool(boolean) => format!("<bool>: '{}'", boolean),
 
             Token::Add => "'+'".to_string(),
             Token::Sub => "'-'".to_string(),
@@ -142,7 +143,8 @@ impl fmt::Display for Token {
             Token::Ver => "'|'".to_string(),
 
             Token::NL => "<newline>".to_string(),
-            Token::Ind => "<indent>".to_string(),
+            Token::Indent => "<indent>".to_string(),
+            Token::Dedent => "<dedent>".to_string(),
 
             Token::While => "'while'".to_string(),
             Token::For => "'for'".to_string(),
@@ -172,6 +174,9 @@ macro_rules! next_and { ($it:expr, $pos:expr, $stmt:stmt) => {{ $it.next(); *$po
 pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut tokens = Vec::new();
     let mut it = input.chars().peekable();
+
+    let mut indent = 0;
+
     let mut consecutive_spaces = 0;
 
     let mut line = 1;
@@ -226,7 +231,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                                                   other)),
                 None => return Err("File ended with carriage return".to_string())
             }
-            '\t' => tokens.push(TokenPos { line, pos, token: Token::Ind }),
+            '\t' => indent += 1,
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(TokenPos { line, pos, token: get_operator(c, &mut it, &mut pos) }),
             '0'...'9' =>
@@ -239,7 +244,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
                     consecutive_spaces = 0;
-                    tokens.push(TokenPos { line, pos, token: Token::Ind });
+                    indent += 1;
                 }
                 continue;
             }

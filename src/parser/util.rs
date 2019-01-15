@@ -7,7 +7,7 @@ use std::env;
 
 pub fn count_and_skip_ind(it: &mut Peekable<Iter<TokenPos>>) -> i32 {
     let mut ind_count = 0;
-    while let Some(TokenPos { line: _, pos: _, token: Token::Ind }) = it.peek() {
+    while let Some(TokenPos { line: _, pos: _, token: Token::Indent }) = it.peek() {
         next_and!(it, ind_count += 1)
     }
 
