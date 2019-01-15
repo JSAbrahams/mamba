@@ -27,17 +27,17 @@ pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Eq }) =>
-            b_op!(relation, it, ind, parse_relation, ASTNode::Eq),
+            b_op!(relation, it, ind, parse_operation, ASTNode::Eq),
         Some(TokenPos { line: _, pos: _, token: Token::Is }) =>
-            b_op!(relation, it, ind, parse_relation, ASTNode::Is),
+            b_op!(relation, it, ind, parse_operation, ASTNode::Is),
         Some(TokenPos { line: _, pos: _, token: Token::IsN }) =>
-            b_op!(relation, it, ind, parse_relation, ASTNode::IsN),
+            b_op!(relation, it, ind, parse_operation, ASTNode::IsN),
         Some(TokenPos { line: _, pos: _, token: Token::Neq }) =>
-            b_op!(relation, it, ind, parse_relation, ASTNode::Neq),
+            b_op!(relation, it, ind, parse_operation, ASTNode::Neq),
         Some(TokenPos { line: _, pos: _, token: Token::And }) =>
-            b_op!(relation, it, ind, parse_relation, ASTNode::And),
+            b_op!(relation, it, ind, parse_operation, ASTNode::And),
         Some(TokenPos { line: _, pos: _, token: Token::Or }) =>
-            b_op!(relation, it, ind, parse_relation, ASTNode::Or),
+            b_op!(relation, it, ind, parse_operation, ASTNode::Or),
         _ => Ok((relation, ind))
     };
 }
@@ -47,13 +47,13 @@ fn parse_relation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<AS
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Ge }) =>
-            b_op!(arithmetic, it, ind, parse_arithmetic, ASTNode::Ge),
+            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Ge),
         Some(TokenPos { line: _, pos: _, token: Token::Geq }) =>
-            b_op!(arithmetic, it, ind, parse_arithmetic, ASTNode::Geq),
+            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Geq),
         Some(TokenPos { line: _, pos: _, token: Token::Le }) =>
-            b_op!(arithmetic, it, ind, parse_arithmetic, ASTNode::Le),
+            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Le),
         Some(TokenPos { line: _, pos: _, token: Token::Leq }) =>
-            b_op!(arithmetic, it, ind, parse_arithmetic, ASTNode::Leq),
+            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Leq),
         _ => Ok((arithmetic, ind))
     };
 }
@@ -63,9 +63,9 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<
 
     match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Add }) =>
-            b_op!(term, it, ind, parse_term, ASTNode::Add),
+            b_op!(term, it, ind, parse_arithmetic, ASTNode::Add),
         Some(TokenPos { line: _, pos: _, token: Token::Sub }) =>
-            b_op!(term, it, ind, parse_term, ASTNode::Sub),
+            b_op!(term, it, ind, parse_arithmetic, ASTNode::Sub),
         _ => Ok((term, ind))
     }
 }
@@ -75,9 +75,9 @@ fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNod
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Mul }) =>
-            b_op!(factor, it, ind, parse_inner_term, ASTNode::Mul),
+            b_op!(factor, it, ind, parse_term, ASTNode::Mul),
         Some(TokenPos { line: _, pos: _, token: Token::Div }) =>
-            b_op!(factor, it, ind, parse_inner_term, ASTNode::Div),
+            b_op!(factor, it, ind, parse_term, ASTNode::Div),
         _ => Ok((factor, ind))
     };
 }
@@ -87,9 +87,9 @@ fn parse_inner_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Pow }) =>
-            b_op!(factor, it, ind, parse_factor, ASTNode::Pow),
+            b_op!(factor, it, ind, parse_inner_term, ASTNode::Pow),
         Some(TokenPos { line: _, pos: _, token: Token::Mod }) =>
-            b_op!(factor, it, ind, parse_factor, ASTNode::Mod),
+            b_op!(factor, it, ind, parse_inner_term, ASTNode::Mod),
         _ => Ok((factor, ind))
     };
 }

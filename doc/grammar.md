@@ -62,10 +62,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     definition       ::= "let" id [ ":" type ]
 
     operation        ::= relation | relation ( equality | binary-logic ) relation
-    relation         ::= arithmetic | arithmetic | arithmetic comparison arithmetic
-    arithmetic       ::= term | term additive term
-    term             ::= inner-term | factor multiclative-operator inner-term
-    inner-term       ::= factor | inner-term power inner-term
+    relation         ::= arithmetic [ comparison relation ]
+    arithmetic       ::= term [ additive arithmetic ]
+    term             ::= inner-term [ multiclative term ]
+    inner-term       ::= factor [ power inner-term ]
     factor           ::= [ additive | "sqrt" ] ( constant | id | maybe-expr )
     
     unary            ::= "not" | additive
