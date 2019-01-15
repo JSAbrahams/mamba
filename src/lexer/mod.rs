@@ -13,6 +13,8 @@ pub struct TokenPos {
 pub enum Token {
     Type,
     Class,
+    IsA,
+
     As,
     From,
     Use,
@@ -91,6 +93,8 @@ impl fmt::Display for Token {
         let string_representation = match self.clone() {
             Token::Type => "'type'".to_string(),
             Token::Class => "'class'".to_string(),
+            Token::IsA => "'isa'".to_string(),
+
             Token::As => "'as'".to_string(),
             Token::From => "'from'".to_string(),
             Token::Use => "'use'".to_string(),
@@ -175,7 +179,8 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut tokens = Vec::new();
     let mut it = input.chars().peekable();
 
-    let mut indent = 0;
+    let mut actual_indents = 0;
+    let mut expected_indents = 0;
 
     let mut consecutive_spaces = 0;
 
@@ -219,19 +224,22 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             '\n' => {
                 tokens.push(TokenPos { line, pos, token: Token::NL });
                 line += 1;
+                expected_indents = actual_indents;
+                actual_indents = 0;
                 pos = 1;
             }
             '\r' => match it.next() {
                 Some('\n') => {
                     tokens.push(TokenPos { line, pos, token: Token::NL });
                     line += 1;
+                    actual_indents = 0;
                     pos = 1;
                 }
                 Some(other) => return Err(format!("Expected newline after carriage return. Was {}",
                                                   other)),
                 None => return Err("File ended with carriage return".to_string())
             }
-            '\t' => indent += 1,
+            '\t' => actual_indents += 1,
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(TokenPos { line, pos, token: get_operator(c, &mut it, &mut pos) }),
             '0'...'9' =>
@@ -244,7 +252,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
                     consecutive_spaces = 0;
-                    indent += 1;
+                    actual_indents += 0;
                 }
                 continue;
             }
@@ -338,6 +346,8 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
     return match result.as_ref() {
         "type" => Token::Type,
         "as" => Token::As,
+        "isa" => Token::IsA,
+
         "from" => Token::From,
         "use" => Token::Use,
         "useall" => Token::UseAll,

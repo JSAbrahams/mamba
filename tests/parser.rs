@@ -4,6 +4,14 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 
+#[macro_use]
+macro_rules! assert_ok { ( $ expr: expr) => {{
+    match $ expr {
+        Ok(r) => println!("{:?}",r),
+        Err(err) => panic ! ("{}", err)
+    }
+}}}
+
 fn resource_string_content(file: String) -> String {
     let mut content = String::new();
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -26,89 +34,59 @@ fn valid_resource(file: &str) -> String { resource_string_content("valid\\".to_o
 #[test]
 fn parse_assigns_and_while() {
     let source = valid_resource("assign_and_while.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_class() {
     let source = valid_resource("class.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_empty_file() {
     let source = valid_resource("empty_file.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_for_statements() {
     let source = valid_resource("for_statements.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_if() {
     let source = valid_resource("if.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(prog) => println!("{:?}", prog),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_tuples() {
     let source = valid_resource("tuples.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_when_statements() {
     let source = valid_resource("when_statements.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_while_statements() {
     let source = valid_resource("while_statements.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_function_definitions() {
     let source = valid_resource("function_definitions.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()));
 }
 
 #[test]
 fn parse_function_calling() {
     let source = valid_resource("function_calling.txt");
-    match parse(tokenize(source).unwrap()) {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
+    assert_ok!(parse(tokenize(source).unwrap()))
 }

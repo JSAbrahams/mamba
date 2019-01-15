@@ -15,6 +15,7 @@ pub fn desugar_expression(node: ASTNode) -> Core {
         ASTNode::Is(left, right) => Core::Is(des!(left), des!(right)),
         ASTNode::Neq(left, right) => Core::Not(Box::new(Core::Eq(des!(left), des!(right)))),
         ASTNode::IsN(left, right) => Core::Not(Box::new(Core::Is(des!(left), des!(right)))),
+        ASTNode::IsA(left, right) => Core::IsA(des!(left), des!(right)),
 
         ASTNode::Le(left, right) => Core::Le(des!(left), des!(right)),
         ASTNode::Le(lleft, box ASTNode::Ge(rleft, rright)) =>

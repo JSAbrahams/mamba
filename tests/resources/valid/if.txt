@@ -12,13 +12,13 @@ else
     other
     print "a"
 
-if cond then
-    body
-else other
+    if aaa then
+        bbb
+    else
+        ccc
 
-if cond then
+if asd then
     body_part_1
-
     body_part_2
 else
     other

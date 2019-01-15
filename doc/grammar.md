@@ -31,7 +31,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     type             ::= id | type "->" type | "(" [ type { "," type } ] ")"
     
-    block            ::= { { indent } expr-or-stmt newline { newline } }
+    block            ::=  indent { expr-or-stmt newline } dedent
     
     expr-or-stmt     ::= statement 
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
@@ -51,8 +51,12 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | set-builder
     
     id               ::= [ "self" ] { ( character | number | "_" ) }
-    tuple            ::= "(" [ ( maybe-expr { "," maybe-expr } ] ")"
-    set-builder      ::= "[" maybe-expr "| maybe-expr { "," maybe-expr } "]"
+    
+    tuple            ::= "(" zero-or-more-expr ")"
+    set              ::= "{" zero-or-more-expr "}"
+    set-builder      ::= "{" maybe-expr "| maybe-expr { "," maybe-expr } "}"
+    list             ::= "[" zero-or-more-expr "]"
+    zero-or-more-expr::= [ ( maybe-expr { "," maybe-expr } ]
     
     reassignment     ::= maybe-expr "<-" maybe-expr
     defer-declaration::= declaration [ "forward" id { "," id } ]
@@ -72,7 +76,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/" | 
     power            ::= "^" | "mod"
-    equality         ::= "equals" | "is" | "notequals" | "isnot"
+    equality         ::= "equals" | "is" | "notequals" | "isnot" | "isa"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
     
@@ -86,14 +90,13 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     control-flow-expr::= if | from | when
     if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    when             ::= "when" maybe-expr newline { { indent } when-case }
+    when             ::= "when" maybe-expr newline indent { when-case newline } dedent
     when-case        ::= maybe-expr "then" expr-or-stmt
     
     control-flow-stmt::= loop | while | for | "break" | "continue"
     while            ::= "while" maybe-expr "do" expr-or-stmt
     for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
     
-    indent           ::= \t | \s\s\s\s
     newline          ::= \n | \r\n
 
 The language uses indentation to denote blocks. The indentation amount can't be described in the grammar directly, 

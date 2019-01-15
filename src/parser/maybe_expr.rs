@@ -25,6 +25,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
         Some(TokenPos { line: _, pos: _, token: Token::When }) => parse_cntrl_flow_expr(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::NL }) => {
             it.next();
+            check_next_is!(it, Token::Indent);
             parse_block(it, ind + 1)
         }
         Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {

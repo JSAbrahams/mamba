@@ -72,7 +72,6 @@ mod maybe_expr;
 mod module;
 mod operation;
 mod statement;
-mod util;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -132,6 +131,7 @@ pub enum ASTNode {
     IsN(Box<ASTNode>, Box<ASTNode>),
     Eq(Box<ASTNode>, Box<ASTNode>),
     Neq(Box<ASTNode>, Box<ASTNode>),
+    IsA(Box<ASTNode>, Box<ASTNode>),
     Not(Box<ASTNode>),
     And(Box<ASTNode>, Box<ASTNode>),
     Or(Box<ASTNode>, Box<ASTNode>),

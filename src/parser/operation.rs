@@ -40,6 +40,8 @@ pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResu
             b_op!(relation, it, ind, parse_operation, ASTNode::And),
         Some(TokenPos { line: _, pos: _, token: Token::Or }) =>
             b_op!(relation, it, ind, parse_operation, ASTNode::Or),
+        Some(TokenPos { line: _, pos: _, token: Token::IsA }) =>
+            b_op!(relation, it, ind, parse_operation, ASTNode::IsA),
         _ => Ok((relation, ind))
     };
 }

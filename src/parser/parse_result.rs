@@ -1,6 +1,5 @@
 use crate::lexer::Token;
 use crate::lexer::TokenPos;
-use std::env;
 use std::error;
 use std::fmt;
 

@@ -9,7 +9,6 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 use std::env;
-use crate::parser::util::count_and_skip_ind;
 
 pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>, ind: i32)
                              -> ParseResult<ASTNode> {
@@ -41,8 +40,6 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode>
     check_next_is!(it, Token::Then);
     print_parse!(it, ind, "if: then");
     let (then_branch, _) = get_or_err!(it, ind, parse_expr_or_stmt, "if then branch");
-
-    count_and_skip_ind(it);
     if let Some(&&TokenPos { line: _, pos: _, token: Token::Else }) = it.peek() {
         print_parse!(it, ind, "if: else");
         it.next();

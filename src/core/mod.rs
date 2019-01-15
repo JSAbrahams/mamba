@@ -47,6 +47,7 @@ pub enum Core {
     Not(Box<Core>),
     And(Box<Core>, Box<Core>),
     Or(Box<Core>, Box<Core>),
+    IsA(Box<Core>, Box<Core>),
 
     IfElse(Box<Core>, Box<Core>, Box<Core>),
     When(Box<Core>, Vec<Core>),
