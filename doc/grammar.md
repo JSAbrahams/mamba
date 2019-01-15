@@ -19,8 +19,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { function-def newline { newline } } 
                          [ do-block ]
     
-    function-call    ::= [ "self" ] maybe-expr "." id tuple
-    function-call-dir::= maybe-expr tuple
+    method-call      ::= [ "self" | id "." ] id tuple
+    function-call    ::= ( [ "self" | id "::" ] id | function-anon ) tuple
+    
     function-def     ::= "fun" id "(" [ function-arg { "," function-arg } ] ")" [ ":" type ]
     function-def-bod ::= function-def "->" expr-or-stmt
     function-arg     ::= id ":" type
@@ -60,15 +61,17 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     immutable-decl   ::= definition "<-" maybe-expr
     definition       ::= "let" id [ ":" type ]
 
-    operation        ::= relation | relation ( equality | binary-logic ) maybe-expr
-    relation         ::= arithmetic | arithmetic comparison maybe-expr
-    arithmetic       ::= term | unary arithmetic | term additive maybe-expr
-    term             ::= factor | factor multiclative-operator maybe-expr
-    factor           ::= constant | id
+    operation        ::= relation | relation ( equality | binary-logic ) relation
+    relation         ::= arithmetic | arithmetic | arithmetic comparison arithmetic
+    arithmetic       ::= term | term additive term
+    term             ::= inner-term | factor multiclative-operator inner-term
+    inner-term       ::= factor | inner-term power inner-term
+    factor           ::= [ additive | "sqrt" ] ( constant | id | maybe-expr )
     
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
-    multiplicative   ::= "*" | "/" | "^" | "mod"
+    multiplicative   ::= "*" | "/" | 
+    power            ::= "^" | "mod"
     equality         ::= "equals" | "is" | "notequals" | "isnot"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"

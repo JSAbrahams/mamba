@@ -43,6 +43,7 @@ pub enum Token {
     Div,
     Pow,
     Mod,
+    Sqrt,
 
     Ge,
     Geq,
@@ -119,6 +120,7 @@ impl fmt::Display for Token {
             Token::Div => "'/'".to_string(),
             Token::Pow => "'^'".to_string(),
             Token::Mod => "'mod'".to_string(),
+            Token::Sqrt => "'sqrt'".to_string(),
 
             Token::Ge => "'>'".to_string(),
             Token::Geq => "'>='".to_string(),
@@ -348,10 +350,10 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
         "equals" => Token::Eq,
         "notequals" => Token::Neq,
         "mod" => Token::Mod,
+        "sqrt" => Token::Sqrt,
         "while" => Token::While,
         "for" => Token::For,
         "where" => Token::Where,
-        "map" => Token::Map,
 
         "in" => Token::In,
         "if" => Token::If,

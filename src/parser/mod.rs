@@ -109,6 +109,7 @@ pub enum ASTNode {
     Div(Box<ASTNode>, Box<ASTNode>),
     Mod(Box<ASTNode>, Box<ASTNode>),
     Pow(Box<ASTNode>, Box<ASTNode>),
+    Sqrt(Box<ASTNode>),
 
     Le(Box<ASTNode>, Box<ASTNode>),
     Ge(Box<ASTNode>, Box<ASTNode>),
