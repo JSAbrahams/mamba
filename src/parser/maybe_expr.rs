@@ -1,8 +1,8 @@
 use crate::lexer::Token;
 use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
-use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::block::parse_block;
+use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::declaration::parse_reassignment;
 use crate::parser::function::parse_function_anonymous;
 use crate::parser::function::parse_function_call;
@@ -22,7 +22,9 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseRes
         Some(TokenPos { line: _, pos: _, token: Token::Unless }) |
         Some(TokenPos { line: _, pos: _, token: Token::When }) => parse_cntrl_flow_expr(it, ind),
         Some(TokenPos { line: _, pos: _, token: Token::NL }) => {
-            next_and!(it, parse_block(it, ind + 1))},
+            it.next();
+            parse_block(it, ind + 1)
+        }
         Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
             tuple = true;
             parse_tuple(it, ind)

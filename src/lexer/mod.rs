@@ -214,13 +214,13 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             '\n' => {
                 tokens.push(TokenPos { line, pos, token: Token::NL });
                 line += 1;
-                pos = 0;
+                pos = 1;
             }
             '\r' => match it.next() {
                 Some('\n') => {
                     tokens.push(TokenPos { line, pos, token: Token::NL });
                     line += 1;
-                    pos = 0;
+                    pos = 1;
                 }
                 Some(other) => return Err(format!("Expected newline after carriage return. Was {}",
                                                   other)),
@@ -246,7 +246,6 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
         }
 
-        pos += 1;
         consecutive_spaces = 0;
     }
 
