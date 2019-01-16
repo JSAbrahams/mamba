@@ -1,9 +1,7 @@
 # Grammar
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    import           ::= class-import | util-import
-    class-import     ::= "use" "class" string
-    util-import      ::= "use" "util" string [ "as" id ] [ ( "use" { id { "," id } | "useall" ) ]
+    import           ::= "use" string [ "as" id ] [ ( "use" { id { "," id } | "useall" ) ]
     
     module           ::= interface | util | class | script
     interface        ::= { import newline } newline { newline } 
@@ -13,6 +11,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          "util" [ "isa" id { "," id } ] newline { newline } 
                          { ( immutable-declaration | function-def-bod ) newline { newline } }
     class            ::= { import newline } newline { newline } 
+                         [ util ]
                          "class" [ "[" id { "," id } "]" ] id [ "isa" id { "," id } ] newline { newline } 
                          { defer-declaration newline } { newline } 
                          { ( constructor-def | [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }

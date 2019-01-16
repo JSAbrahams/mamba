@@ -18,7 +18,6 @@ pub enum Token {
     Constructor,
 
     As,
-    From,
     Use,
     UseAll,
     Forward,
@@ -101,7 +100,6 @@ impl fmt::Display for Token {
             Token::Constructor => "'constructor'".to_string(),
 
             Token::As => "'as'".to_string(),
-            Token::From => "'from'".to_string(),
             Token::Use => "'use'".to_string(),
             Token::UseAll => "'useall'".to_string(),
             Token::Forward => "'forward'".to_string(),
@@ -363,7 +361,6 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
         "isa" => Token::IsA,
         "constructor" => Token::Constructor,
 
-        "from" => Token::From,
         "use" => Token::Use,
         "useall" => Token::UseAll,
         "class" => Token::Class,
