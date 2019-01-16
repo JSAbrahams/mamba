@@ -13,20 +13,23 @@ pub struct TokenPos {
 pub enum Token {
     Type,
     Class,
+    Util,
     IsA,
+    Constructor,
 
     As,
     From,
     Use,
     UseAll,
     Forward,
-    Self_,
+    _Self,
 
     Fun,
     To,
     Point,
     Comma,
     DoublePoint,
+    DDoublePoint,
 
     Id(String),
     Mut,
@@ -91,22 +94,25 @@ pub enum Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string_representation = match self.clone() {
+            Token::Util => "'util'".to_string(),
             Token::Type => "'type'".to_string(),
             Token::Class => "'class'".to_string(),
             Token::IsA => "'isa'".to_string(),
+            Token::Constructor => "'constructor'".to_string(),
 
             Token::As => "'as'".to_string(),
             Token::From => "'from'".to_string(),
             Token::Use => "'use'".to_string(),
             Token::UseAll => "'useall'".to_string(),
             Token::Forward => "'forward'".to_string(),
-            Token::Self_ => "'self'".to_string(),
+            Token::_Self => "'self'".to_string(),
 
             Token::Fun => "'fun'".to_string(),
             Token::To => "'->'".to_string(),
             Token::Point => "'.'".to_string(),
             Token::Comma => "'.to_string(),'".to_string(),
             Token::DoublePoint => "':'".to_string(),
+            Token::DDoublePoint => "'::'".to_string(),
 
             Token::Id(id) => format!("<identifier>: {}", id),
             Token::Mut => "'mutable'".to_string(),
@@ -193,9 +199,16 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 tokens.push(TokenPos { line, pos, token: Token::Point });
                 pos += 1;
             }
-            ':' => {
-                tokens.push(TokenPos { line, pos, token: Token::DoublePoint });
-                pos += 1;
+            ':' => match it.peek() {
+                Some(':') => {
+                    it.next();
+                    tokens.push(TokenPos{line, pos, token: Token::DDoublePoint});
+                    pos += 2;
+                },
+                _ => {
+                    tokens.push(TokenPos { line, pos, token: Token::DoublePoint });
+                    pos += 1;
+                }
             }
             ',' => {
                 tokens.push(TokenPos { line, pos, token: Token::Comma });
@@ -344,16 +357,18 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
     }
 
     return match result.as_ref() {
+        "util" => Token::Util,
         "type" => Token::Type,
         "as" => Token::As,
         "isa" => Token::IsA,
+        "constructor" => Token::Constructor,
 
         "from" => Token::From,
         "use" => Token::Use,
         "useall" => Token::UseAll,
         "class" => Token::Class,
         "forward" => Token::Forward,
-        "self" => Token::Self_,
+        "self" => Token::_Self,
 
         "fun" => Token::Fun,
         "let" => Token::Let,

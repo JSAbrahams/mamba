@@ -3,7 +3,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     import           ::= class-import | util-import
     class-import     ::= "use" "class" string
-    util-import      ::= "use" "util" string [ "as" id ] [ "use" id ]
+    util-import      ::= "use" "util" string [ "as" id ] [ ( "use" { id { "," id } | "useall" ) ]
     
     module           ::= interface | util | class | script
     interface        ::= { import newline } newline { newline } 
@@ -59,7 +59,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}"
-    set-builder      ::= "{" maybe-expr "| maybe-expr { "," maybe-expr } "}"
+    set-builder      ::= "{" maybe-expr | maybe-expr { "," maybe-expr } "}"
     list             ::= "[" zero-or-more-expr "]"
     zero-or-more-expr::= [ ( maybe-expr { "," maybe-expr } ]
     
