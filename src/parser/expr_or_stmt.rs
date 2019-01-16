@@ -5,19 +5,13 @@ use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::parse_statement;
+use std::env;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
-use std::env;
 
-macro_rules! pos_op { ($it:expr, $ind:expr, $op:path, $pre:expr) => {{
-    $it.next();
-    let (post, ind) = get_or_err!($it, $ind, parse_expression, "post operator");
-    Ok(($op(post, Box::new($pre)), ind))
-}}}
-
-pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    print_parse!(it, ind, "expression or statement");
+pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    print_parse!(it, "expression or statement");
 
     let fun = match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Let }) |
@@ -28,11 +22,18 @@ pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseR
         _ => parse_expression
     };
 
-    let (pre, ind) = get_or_err_direct!(it, ind, fun, "expression or statement");
+    let pre = get_or_err!(it, fun, "expression or statement");
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::If }) => pos_op!(it, ind, ASTNode::If, pre),
-        Some(TokenPos { line: _, pos: _, token: Token::Unless }) =>
-            pos_op!(it, ind, ASTNode::Unless, pre),
-        _ => Ok((pre, ind))
+        Some(TokenPos { line: _, pos: _, token: Token::If }) => {
+            it.next();
+            let cond = get_or_err!(it, parse_expression, "post if");
+            Ok(ASTNode::If { cond, then: pre })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Unless }) => {
+            it.next();
+            let cond = get_or_err!(it, parse_expression, "post unless");
+            Ok(ASTNode::Unless { cond, then: pre })
+        }
+        _ => Ok(*pre)
     };
 }

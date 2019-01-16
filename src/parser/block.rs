@@ -8,16 +8,16 @@ use std::env;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    print_parse!(it, ind, "do block");
+pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    print_parse!(it, "do block");
 
-    let mut nodes = Vec::new();
+    let mut stmts = Vec::new();
     loop {
         if it.peek().is_none() || it.peek().unwrap().token == Token::Dedent { break; }
-        let (ast_node, _) = get_or_err_direct!(it, ind, parse_expr_or_stmt, "block");
-        nodes.push(ast_node);
+        let ast_node = get_or_err_direct!(it, parse_expr_or_stmt, "block");
+        stmts.push(ast_node);
     }
 
     if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
-    return Ok((ASTNode::Block(nodes), ind - 1));
+    return Ok(ASTNode::Block { stmts });
 }

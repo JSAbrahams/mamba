@@ -4,128 +4,178 @@ use crate::parser::ASTNode;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use std::env;
 use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
-use std::env;
 
-macro_rules! u_op { ($it:expr, $ind:expr, $fun:path, $op:path) => {{
-    $it.next(); match $fun($it, $ind) {
-        Ok((expr, ind)) => Ok(($op(Box::new(expr)), ind)),
-        err => err
-    }
-}}}
-
-macro_rules! b_op { ($left:expr, $it:expr, $ind:expr, $fun:path, $op:path) => {{
-    $it.next(); match $fun($it, $ind) {
-        Ok((expr, ind)) => Ok(($op(Box::new($left), Box::new(expr)), ind)),
-        err => err
-    }
-}}}
-
-pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    print_parse!(it, ind, "operation");
-    let (relation, ind) = get_or_err_direct!(it, ind, parse_relation, "operation");
+pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    print_parse!(it, "operation");
+    let relation = get_or_err!(it, parse_relation, "operation");
 
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Eq }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::Eq),
-        Some(TokenPos { line: _, pos: _, token: Token::Is }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::Is),
-        Some(TokenPos { line: _, pos: _, token: Token::IsN }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::IsN),
-        Some(TokenPos { line: _, pos: _, token: Token::Neq }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::Neq),
-        Some(TokenPos { line: _, pos: _, token: Token::And }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::And),
-        Some(TokenPos { line: _, pos: _, token: Token::Or }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::Or),
-        Some(TokenPos { line: _, pos: _, token: Token::IsA }) =>
-            b_op!(relation, it, ind, parse_operation, ASTNode::IsA),
-        _ => Ok((relation, ind))
+        Some(TokenPos { line: _, pos: _, token: Token::Eq }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "equals");
+            Ok(ASTNode::Eq { left: relation, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Is }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "is");
+            Ok(ASTNode::Is { left: relation, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::IsN }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "isnot");
+            Ok(ASTNode::IsN { left: relation, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Neq }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "notequals");
+            Ok(ASTNode::Neq { left: relation, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::And }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "and");
+            Ok(ASTNode::And { left: relation, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Or }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "or");
+            Ok(ASTNode::Or { left: relation, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::IsA }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "isa");
+            Ok(ASTNode::IsA { left: relation, right })
+        }
+        _ => Ok(*relation)
     };
 }
 
-fn parse_relation(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (arithmetic, ind) = get_or_err_direct!(it, ind, parse_arithmetic, "comparison");
+fn parse_relation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    let arithmetic = get_or_err!(it, parse_arithmetic, "comparison");
 
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Ge }) =>
-            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Ge),
-        Some(TokenPos { line: _, pos: _, token: Token::Geq }) =>
-            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Geq),
-        Some(TokenPos { line: _, pos: _, token: Token::Le }) =>
-            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Le),
-        Some(TokenPos { line: _, pos: _, token: Token::Leq }) =>
-            b_op!(arithmetic, it, ind, parse_relation, ASTNode::Leq),
-        _ => Ok((arithmetic, ind))
+        Some(TokenPos { line: _, pos: _, token: Token::Ge }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, ">");
+            Ok(ASTNode::Ge { left: arithmetic, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Geq }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, ">=");
+            Ok(ASTNode::Geq { left: arithmetic, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Le }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "<");
+            Ok(ASTNode::Le { left: arithmetic, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Leq }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "<=");
+            Ok(ASTNode::Leq { left: arithmetic, right })
+        }
+        _ => Ok(*arithmetic)
     };
 }
 
-fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (term, ind) = get_or_err_direct!(it, ind, parse_term, "arithmetic");
+fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    let term = get_or_err!(it, parse_term, "arithmetic");
 
     match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Add }) =>
-            b_op!(term, it, ind, parse_arithmetic, ASTNode::Add),
-        Some(TokenPos { line: _, pos: _, token: Token::Sub }) =>
-            b_op!(term, it, ind, parse_arithmetic, ASTNode::Sub),
-        _ => Ok((term, ind))
+        Some(TokenPos { line: _, pos: _, token: Token::Add }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "+");
+            Ok(ASTNode::Add { left: term, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Sub }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "-");
+            Ok(ASTNode::Sub { left: term, right })
+        }
+        _ => Ok(*term)
     }
 }
 
-fn parse_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (factor, ind) = get_or_err_direct!(it, ind, parse_inner_term, "term");
+fn parse_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    let inner_term = get_or_err!(it, parse_inner_term, "term");
 
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Mul }) =>
-            b_op!(factor, it, ind, parse_term, ASTNode::Mul),
-        Some(TokenPos { line: _, pos: _, token: Token::Div }) =>
-            b_op!(factor, it, ind, parse_term, ASTNode::Div),
-        _ => Ok((factor, ind))
+        Some(TokenPos { line: _, pos: _, token: Token::Mul }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "*");
+            Ok(ASTNode::Mul { left: inner_term, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Div }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "/");
+            Ok(ASTNode::Div { left: inner_term, right })
+        }
+        _ => Ok(*inner_term)
     };
 }
 
-fn parse_inner_term(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
-    let (factor, ind) = get_or_err_direct!(it, ind, parse_factor, "inner term");
+fn parse_inner_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+    let factor = get_or_err!(it, parse_factor, "inner term");
 
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Pow }) =>
-            b_op!(factor, it, ind, parse_inner_term, ASTNode::Pow),
-        Some(TokenPos { line: _, pos: _, token: Token::Mod }) =>
-            b_op!(factor, it, ind, parse_inner_term, ASTNode::Mod),
-        _ => Ok((factor, ind))
+        Some(TokenPos { line: _, pos: _, token: Token::Pow }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "^");
+            Ok(ASTNode::Pow { left: factor, right })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Mod }) => {
+            it.next();
+            let right = get_or_err!(it, parse_operation, "mod");
+            Ok(ASTNode::Mod { left: factor, right })
+        }
+        _ => Ok(*factor)
     };
 }
 
-fn parse_factor(it: &mut Peekable<Iter<TokenPos>>, ind: i32) -> ParseResult<ASTNode> {
+fn parse_factor(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     return match it.peek() {
-        Some(TokenPos { line: _, pos: _, token: Token::Not }) =>
-            u_op!(it, ind, parse_factor, ASTNode::Not),
-        Some(TokenPos { line: _, pos: _, token: Token::Add }) =>
-            u_op!(it, ind, parse_factor, ASTNode::AddU),
-        Some(TokenPos { line: _, pos: _, token: Token::Sub }) =>
-            u_op!(it, ind, parse_factor, ASTNode::SubU),
-        Some(TokenPos { line: _, pos: _, token: Token::Sqrt }) =>
-            u_op!(it, ind, parse_factor, ASTNode::Sqrt),
+        Some(TokenPos { line: _, pos: _, token: Token::Not }) => {
+            it.next();
+            let expr = get_or_err!(it, parse_operation, "not");
+            Ok(ASTNode::Not { expr })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Add }) => {
+            it.next();
+            let expr = get_or_err!(it, parse_operation, "+");
+            Ok(ASTNode::AddU { expr })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Sub }) => {
+            it.next();
+            let expr = get_or_err!(it, parse_operation, "-");
+            Ok(ASTNode::SubU { expr })
+        }
+        Some(TokenPos { line: _, pos: _, token: Token::Sqrt }) => {
+            it.next();
+            let expr = get_or_err!(it, parse_operation, "sqrt");
+            Ok(ASTNode::Sqrt { expr })
+        }
 
         _ => {
             return match it.next() {
                 Some(TokenPos { line: _, pos: _, token: Token::Id(id) }) =>
-                    Ok((ASTNode::Id(id.to_string()), 0)),
+                    Ok(ASTNode::Id { id: id.to_string() }),
                 Some(TokenPos { line: _, pos: _, token: Token::Str(string) }) =>
-                    Ok((ASTNode::Str(string.to_string()), 0)),
+                    Ok(ASTNode::Str { string: string.to_string() }),
                 Some(TokenPos { line: _, pos: _, token: Token::Real(real) }) =>
-                    Ok((ASTNode::Real(real.to_string()), 0)),
+                    Ok(ASTNode::Real { real: real.to_string() }),
                 Some(TokenPos { line: _, pos: _, token: Token::Int(int) }) =>
-                    Ok((ASTNode::Int(int.to_string()), 0)),
+                    Ok(ASTNode::Int { int: int.to_string() }),
                 Some(TokenPos { line: _, pos: _, token: Token::ENum(num, exp) }) =>
-                    Ok((ASTNode::ENum(num.to_string(), exp.to_string()), 0)),
-                Some(TokenPos { line: _, pos: _, token: Token::Bool(boolean) }) =>
-                    Ok((ASTNode::Bool(*boolean), 0)),
-                Some(_) => parse_expression(it, ind),
+                    Ok(ASTNode::ENum { int_digits: num.to_string(), frac_digits: exp.to_string() }),
+                Some(TokenPos { line: _, pos: _, token: Token::Bool(ref _bool) }) =>
+                    Ok(ASTNode::Bool { _bool: *_bool }),
+
+                Some(_) => parse_expression(it),
                 None => Err(CustomEOFErr { expected: "factor".to_string() })
-            }
+            };
         }
     };
 }
