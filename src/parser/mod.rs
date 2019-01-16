@@ -77,9 +77,9 @@ pub enum ASTNode {
     ImportModUseAs { _mod: Box<ASTNode>, _use: Box<ASTNode>, _as: Box<ASTNode> },
     ImportModUseAll { _mod: Box<ASTNode> },
 
-    Script { imprts: Vec<ASTNode>, decl: Box<ASTNode>, funcs: Vec<ASTNode>, body: Box<ASTNode> },
-    Class { imprts: Vec<ASTNode>, name: Box<ASTNode>, decls: Box<ASTNode>, funcs: Vec<ASTNode> },
-    Util { imprts: Vec<ASTNode>, name: Box<ASTNode>, decls: Box<ASTNode>, funcs: Vec<ASTNode> },
+    Script { imports: Vec<ASTNode>, decl: Box<ASTNode>, funcs: Vec<ASTNode>, body: Box<ASTNode> },
+    Class { imports: Vec<ASTNode>, name: Box<ASTNode>, decls: Box<ASTNode>, funcs: Vec<ASTNode> },
+    Util { imports: Vec<ASTNode>, name: Box<ASTNode>, decls: Box<ASTNode>, funcs: Vec<ASTNode> },
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
 

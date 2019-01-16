@@ -1,26 +1,30 @@
 # Grammar
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    module-import    ::= "from" id ( "use" id [ "as" id ] | "useall" )
-    util-import      ::= "from" "util" 
+    import           ::= class-import | util-import
+    class-import     ::= "use" "class" string
+    util-import      ::= "use" "util" string [ "as" id ] [ "use" id ]
     
     module           ::= interface | util | class | script
-    interface        ::= { module-import newline } newline { newline } 
+    interface        ::= { import newline } newline { newline } 
                          "type" newline newline { newline } 
                          { ( function-def | function-def-body | definition | immutable-asssign ) newline { newline } } ]
-    util             ::= { module-import newline } newline { newline } 
-                         "util" id [ "isa" id { "," id } ] newline { newline } 
+    util             ::= { import newline } newline { newline } 
+                         "util" [ "isa" id { "," id } ] newline { newline } 
                          { ( immutable-declaration | function-def-bod ) newline { newline } }
-    class            ::= { module-import newline } newline { newline } 
+    class            ::= { import newline } newline { newline } 
                          "class" [ "[" id { "," id } "]" ] id [ "isa" id { "," id } ] newline { newline } 
                          { defer-declaration newline } { newline } 
-                         { [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
-    script           ::= { module-import newline } { newline } 
+                         { ( constructor-def | [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
+    script           ::= { import newline } { newline } 
                          { function-def newline { newline } } 
                          [ do-block ]
     
     method-call      ::= [ "self" | id "." ] id tuple
     function-call    ::= ( [ "self" | id "::" ] id | function-anon ) tuple
+    
+    constructor-def  ::= "constructor" "(" [ constructor-arg { "," constructor-arg } ] ")" [ "->" expr-or-stmt ]
+    constructor-arg  ::= [ "self" ] function-arg
     
     function-def     ::= "fun" id "(" [ function-arg { "," function-arg } ] ")" [ ":" type ]
     function-def-bod ::= function-def "->" expr-or-stmt
@@ -40,6 +44,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | control-flow-stmt
                       | "type" id "<-" type
     maybe-expr       ::= "return" [ maybe-expr ] 
+                      | instance
                       | operation 
                       | tuple 
                       | function-anon
@@ -74,7 +79,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
-    multiplicative   ::= "*" | "/" | 
+    multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
     equality         ::= "equals" | "is" | "notequals" | "isnot" | "isa"
     comparison       ::= "<=" | ">=" | "<" | ">"
@@ -82,8 +87,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     constant         ::= number | boolean | string
     number           ::= real | integer | e-notation
-    real             ::= digit "." digit
-    integer          ::= digit
+    real             ::= digit "." { digit } | "." digit { digit }
+    integer          ::= { digit }
     e-notation       ::= ( integer | real ) ( "e" | "E" ) [ "-" ] integer
     boolean          ::= "true" | "false"
     string           ::= "\"" { character } "\""

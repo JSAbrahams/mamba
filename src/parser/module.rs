@@ -9,7 +9,7 @@ pub fn parse_module(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     match parse_block(it) {
         Ok(body) =>
             Ok(ASTNode::Script {
-                imprts: vec![ASTNode::Break],
+                imports: vec![ASTNode::Break],
                 decl: Box::new(ASTNode::Break),
                 funcs: vec![ASTNode::Break],
                 body: Box::new(body),
