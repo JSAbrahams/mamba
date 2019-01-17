@@ -58,7 +58,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | set-builder
                       | "_"
     
-    id               ::= [ "self" ] { ( character | number | "_" ) }
+    id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
     
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}"

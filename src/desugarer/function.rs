@@ -1,4 +1,4 @@
-use crate::core::Core;
+use crate::desugarer::Core;
 use crate::desugarer::desugar;
 use crate::parser::ASTNode;
 

@@ -1,4 +1,4 @@
-use crate::core::Core;
+use crate::desugarer::Core;
 use crate::parser::ASTNode;
 
 pub fn desugar_module(node: ASTNode) -> Core {
