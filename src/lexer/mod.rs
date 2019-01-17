@@ -193,16 +193,43 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut pos = 1;
 
     macro_rules! next_pos_and_tp { ($amount:expr, $tok:path) => {{
+        for _ in this_line_indent..current_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Indent });
+        }
+        for _ in current_indent..this_line_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Dedent });
+        }
+
+        current_indent = this_line_indent;
+
         it.next();
+
         tokens.push(TokenPos { line, pos, token: $tok });
         pos += $amount;
     }}}
 
     macro_rules! next_line_and_tp { () => {{
-        it.next();
         tokens.push(TokenPos { line, pos, token: Token::NL });
+
+        for _ in this_line_indent..current_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Indent });
+        }
+        for _ in current_indent..this_line_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Dedent });
+        }
+
+        current_indent = this_line_indent;
+
+        it.next();
         line += 1;
         pos = 1;
+        this_line_indent = 0;
+    }}}
+
+    macro_rules! increase_indent { () => {{
+        line += 1;
+        pos = 1;
+        this_line_indent += 1;
     }}}
 
     while let Some(&c) = it.peek() {
@@ -233,7 +260,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                     None => return Err("File ended with carriage return".to_string())
                 }
             }
-            '\t' => this_line_indent += 1,
+            '\t' => increase_indent!(),
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(TokenPos { line, pos, token: get_operator(&mut it, &mut pos) }),
             '0'...'9' =>
@@ -247,7 +274,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
                     consecutive_spaces = 0;
-                    this_line_indent += 1;
+                    increase_indent!();
                 }
                 it.next();
                 continue;
@@ -262,10 +289,13 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
 }
 
 fn ignore_comment(it: &mut Peekable<Chars>) {
-    while let Some(c) = it.next() {
+    while let Some(c) = it.peek() {
         match c {
             '\n' => break,
-            _ => continue
+            _ => {
+                it.next();
+                continue;
+            }
         }
     }
 }
