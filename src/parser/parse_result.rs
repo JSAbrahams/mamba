@@ -5,7 +5,7 @@ use crate::parser::ASTNodePos;
 use std::error;
 use std::fmt;
 
-pub type ParseResult<T = ASTNode> = std::result::Result<T, ParseErr>;
+pub type ParseResult<T = ASTNodePos> = std::result::Result<T, ParseErr>;
 
 #[derive(Debug)]
 pub enum ParseErr {

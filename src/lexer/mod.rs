@@ -200,9 +200,9 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             ':' => match it.peek() {
                 Some(':') => {
                     it.next();
-                    tokens.push(TokenPos{line, pos, token: Token::DDoublePoint});
+                    tokens.push(TokenPos { line, pos, token: Token::DDoublePoint });
                     pos += 2;
-                },
+                }
                 _ => {
                     tokens.push(TokenPos { line, pos, token: Token::DoublePoint });
                     pos += 1;
