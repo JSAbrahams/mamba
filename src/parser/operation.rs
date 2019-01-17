@@ -9,7 +9,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "operation");
     let relation = get_or_err!(it, parse_relation, "operation");
 
@@ -53,7 +53,7 @@ pub fn parse_operation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode
     };
 }
 
-fn parse_relation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_relation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     let arithmetic = get_or_err!(it, parse_arithmetic, "comparison");
 
     return match it.peek() {
@@ -81,7 +81,7 @@ fn parse_relation(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     };
 }
 
-fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     let term = get_or_err!(it, parse_term, "arithmetic");
 
     match it.peek() {
@@ -99,7 +99,7 @@ fn parse_arithmetic(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     }
 }
 
-fn parse_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     let inner_term = get_or_err!(it, parse_inner_term, "term");
 
     return match it.peek() {
@@ -117,7 +117,7 @@ fn parse_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     };
 }
 
-fn parse_inner_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_inner_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     let factor = get_or_err!(it, parse_factor, "inner term");
 
     return match it.peek() {
@@ -135,7 +135,7 @@ fn parse_inner_term(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     };
 }
 
-fn parse_factor(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_factor(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::Not }) => {
             it.next();

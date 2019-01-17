@@ -10,7 +10,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "expression or statement");
 
     let fun = match it.peek() {

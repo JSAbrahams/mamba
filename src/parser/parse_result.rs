@@ -1,9 +1,11 @@
 use crate::lexer::Token;
 use crate::lexer::TokenPos;
+use crate::parser::ASTNodePos;
 use std::error;
 use std::fmt;
+use crate::parser::ASTNode;
 
-pub type ParseResult<T> = std::result::Result<T, ParseErr>;
+pub type ParseResult<T = ASTNode> = std::result::Result<T, ParseErr>;
 
 #[derive(Debug)]
 pub enum ParseErr {

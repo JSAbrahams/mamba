@@ -8,9 +8,9 @@ use std::env;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "do block");
-
+    
     let mut stmts = Vec::new();
     loop {
         if it.peek().is_none() || it.peek().unwrap().token == Token::Dedent { break; }

@@ -11,7 +11,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "statement");
 
     return match it.peek() {

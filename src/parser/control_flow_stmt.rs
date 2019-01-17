@@ -10,7 +10,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "control flow statement");
 
     return match it.peek() {
@@ -29,7 +29,7 @@ pub fn parse_cntrl_flow_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<A
     };
 }
 
-fn parse_while(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_while(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "while");
     check_next_is!(it, Token::While);
 
@@ -39,7 +39,7 @@ fn parse_while(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     return Ok(ASTNode::While { cond, body });
 }
 
-fn parse_for(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_for(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "for");
     check_next_is!(it, Token::For);
 

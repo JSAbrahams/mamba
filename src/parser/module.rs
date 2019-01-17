@@ -5,7 +5,7 @@ use crate::parser::parse_result::ParseResult;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_module(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_module(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     match parse_block(it) {
         Ok(body) =>
             Ok(ASTNode::Script {

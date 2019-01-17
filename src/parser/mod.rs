@@ -70,6 +70,12 @@ mod module;
 mod operation;
 mod statement;
 
+pub struct ASTNodePos {
+    pub line: i32,
+    pub pos: i32,
+    pub node: ASTNode,
+}
+
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
@@ -143,6 +149,6 @@ pub enum ASTNode {
     Print { expr: Box<ASTNode> },
 }
 
-pub fn parse(input: Vec<TokenPos>) -> ParseResult<ASTNode> {
+pub fn parse(input: Vec<TokenPos>) -> ParseResult {
     return module::parse_module(&mut input.iter().peekable());
 }

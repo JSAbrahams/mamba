@@ -11,7 +11,7 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>)
-                           -> ParseResult<ASTNode> {
+                           -> ParseResult {
     print_parse!(it, "function call");
     check_next_is!(it, Token::Point);
 
@@ -19,19 +19,19 @@ pub fn parse_function_call(caller: ASTNode, it: &mut Peekable<Iter<TokenPos>>)
 }
 
 pub fn parse_function_call_direct(name: ASTNode, it: &mut Peekable<Iter<TokenPos>>)
-                                  -> ParseResult<ASTNode> {
+                                  -> ParseResult {
     print_parse!(it, "function call direct");
 
     panic!("not implemented")
 }
 
-pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_function_definition_body(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "function definition");
     check_next_is!(it, Token::Fun);
 
     panic!("not implemented")
 }
 
-pub fn parse_function_anonymous(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_function_anonymous(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     panic!("not implemented")
 }

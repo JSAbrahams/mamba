@@ -10,7 +10,7 @@ use std::iter::Iterator;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it,  "control flow expression");
 
     return match it.peek() {
@@ -25,7 +25,7 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<A
     };
 }
 
-fn parse_if(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_if(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "if");
 
     let if_expr = match it.next() {
@@ -53,7 +53,7 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     }
 }
 
-fn parse_when(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_when(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "when");
     check_next_is!(it, Token::When);
 
@@ -63,7 +63,7 @@ fn parse_when(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
     panic!("not implemented")
 }
 
-fn parse_when_case(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult<ASTNode> {
+fn parse_when_case(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     print_parse!(it, "when case");
 
     let cond = get_or_err!(it, parse_expression, "when case");
