@@ -1,5 +1,7 @@
 use crate::lexer::TokenPos;
 use crate::parser::parse_result::ParseResult;
+use std::iter::Peekable;
+use std::slice::Iter;
 
 #[macro_use]
 /// Call next on the iterator and execute the statement.
@@ -148,6 +150,8 @@ pub enum ASTNode {
     ReturnEmpty,
     Print { expr: Box<ASTNode> },
 }
+
+type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {
     return module::parse_module(&mut input.iter().peekable());

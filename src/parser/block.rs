@@ -4,13 +4,12 @@ use crate::parser::ASTNode;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::TPIterator;
 use std::env;
-use std::iter::Peekable;
-use std::slice::Iter;
 
-pub fn parse_block(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "do block");
-    
+
     let mut stmts = Vec::new();
     loop {
         if it.peek().is_none() || it.peek().unwrap().token == Token::Dedent { break; }

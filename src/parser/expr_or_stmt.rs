@@ -5,12 +5,10 @@ use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::parse_statement;
+use crate::parser::TPIterator;
 use std::env;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::slice::Iter;
 
-pub fn parse_expr_or_stmt(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "expression or statement");
 
     let fun = match it.peek() {

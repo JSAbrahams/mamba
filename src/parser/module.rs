@@ -1,11 +1,9 @@
-use crate::lexer::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::block::parse_block;
 use crate::parser::parse_result::ParseResult;
-use std::iter::Peekable;
-use std::slice::Iter;
+use crate::parser::TPIterator;
 
-pub fn parse_module(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_module(it: &mut TPIterator) -> ParseResult {
     match parse_block(it) {
         Ok(body) =>
             Ok(ASTNode::Script {

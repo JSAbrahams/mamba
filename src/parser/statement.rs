@@ -6,12 +6,10 @@ use crate::parser::declaration::parse_declaration;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::TPIterator;
 use std::env;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::slice::Iter;
 
-pub fn parse_statement(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "statement");
 
     return match it.peek() {

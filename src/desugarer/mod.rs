@@ -1,17 +1,17 @@
 use crate::parser::ASTNode;
 
-#[macro_use]
-/// Desugar and box.
-macro_rules! des { ($ast:expr ) => {{ Box::new(desugar(*$ast)) }} }
+//#[macro_use]
+///// Desugar and box.
+//macro_rules! des { ($ast:expr ) => {{ Box::new(desugar(*$ast)) }} }
+//
+//macro_rules! des_direct { ($ast:expr ) => {{ desugar(*$ast) }} }
+//
+//macro_rules! des_vec { ($ast:expr ) => {{ panic!("not implemented") }} }
 
-macro_rules! des_direct { ($ast:expr ) => {{ desugar(*$ast) }} }
-
-macro_rules! des_vec { ($ast:expr ) => {{ panic!("not implemented") }} }
-
-// mod expression;
-// mod function;
-// mod module;
-// mod statement;
+//mod expression;
+//mod function;
+//mod module;
+//mod statement;
 
 pub enum Core {
     Module { id: String, imports: Vec<String>, functions: Vec<Core>, body: Box<Core> },

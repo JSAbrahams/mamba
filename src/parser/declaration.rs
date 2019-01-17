@@ -4,12 +4,10 @@ use crate::parser::ASTNode;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::TPIterator;
 use std::env;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::slice::Iter;
 
-pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_reassignment(pre: ASTNode, it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "reassignment");
     check_next_is!(it, Token::Assign);
 
@@ -17,7 +15,7 @@ pub fn parse_reassignment(pre: ASTNode, it: &mut Peekable<Iter<TokenPos>>) -> Pa
     return Ok(ASTNode::Assign { left: Box::new(pre), right });
 }
 
-pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_declaration(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "declaration");
 
     return match match it.peek() {
@@ -50,7 +48,7 @@ pub fn parse_declaration(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     };
 }
 
-fn parse_mutable_declaration(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_mutable_declaration(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "mutable declaration");
     check_next_is!(it, Token::Mut);
 
@@ -58,7 +56,7 @@ fn parse_mutable_declaration(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     return Ok(ASTNode::Mut { decl });
 }
 
-fn parse_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_immutable_declaration(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "immutable declaration");
 
     let left = get_or_err!(it, parse_definition, "definition");
@@ -67,7 +65,7 @@ fn parse_immutable_declaration(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult
     return Ok(ASTNode::Assign { left, right });
 }
 
-fn parse_definition(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_definition(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "definition");
     check_next_is!(it, Token::Let);
 

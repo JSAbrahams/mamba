@@ -5,12 +5,10 @@ use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::TPIterator;
 use std::env;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::slice::Iter;
 
-pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
     print_parse!(it,  "control flow expression");
 
     return match it.peek() {
@@ -25,7 +23,7 @@ pub fn parse_cntrl_flow_expr(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     };
 }
 
-fn parse_if(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_if(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "if");
 
     let if_expr = match it.next() {
@@ -53,7 +51,7 @@ fn parse_if(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     }
 }
 
-fn parse_when(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_when(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "when");
     check_next_is!(it, Token::When);
 
@@ -63,7 +61,7 @@ fn parse_when(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     panic!("not implemented")
 }
 
-fn parse_when_case(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_when_case(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "when case");
 
     let cond = get_or_err!(it, parse_expression, "when case");

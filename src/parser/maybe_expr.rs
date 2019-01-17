@@ -10,12 +10,10 @@ use crate::parser::function::parse_function_call_direct;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::TPIterator;
 use std::env;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::slice::Iter;
 
-pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "expression");
     let mut tuple = false;
 
@@ -66,7 +64,7 @@ pub fn parse_expression(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     };
 }
 
-fn parse_set_builder(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_set_builder(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "set builder");
     check_next_is!(it, Token::LBrack);
 
@@ -99,7 +97,7 @@ fn parse_set_builder(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     return Ok(ASTNode::SetBuilder { set, conditions });
 }
 
-pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "tuple");
     check_next_is!(it, Token::LPar);
 
@@ -129,7 +127,7 @@ pub fn parse_tuple(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
     return Ok(ASTNode::Tuple { elements });
 }
 
-fn parse_return(it: &mut Peekable<Iter<TokenPos>>) -> ParseResult {
+fn parse_return(it: &mut TPIterator) -> ParseResult {
     print_parse!(it, "return");
     check_next_is!(it, Token::Ret);
 
