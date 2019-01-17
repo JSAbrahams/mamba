@@ -23,18 +23,18 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     method-call      ::= [ "self" | id "." ] id tuple
     function-call    ::= ( [ "self" | id "::" ] id | function-anon ) tuple
     
-    constructor-def  ::= "init" constructor-args [ "->" expr-or-stmt ]
+    constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
     constructor-arg  ::= [ "self" ] function-arg
     
     function-def     ::= "def" id "(" [ function-arg { "," function-arg } ] ")" [ ":" type ]
-    function-def-bod ::= function-def "->" expr-or-stmt
+    function-def-bod ::= function-def "<-" expr-or-stmt
     function-arg     ::= id ":" type
     
-    function-anon    ::= args-anon "->" maybe-expr
+    function-anon    ::= args-anon "<-" maybe-expr
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
     
-    type             ::= id | type "->" type | "(" [ type { "," type } ] ")"
+    type             ::= id | type "<-" type | "(" [ type { "," type } ] ")"
     type-def         ::= "type" id "<-" type
     
     block            ::= indent { expr-or-stmt newline } dedent

@@ -32,6 +32,9 @@ A class encapsulates data and contains definitions.
 A definition is either a value, or an immutable method.
 A definition may be private.
 
+A methods differs from a function in that it can modify the fields of 
+an instance of the class.
+
 An instance of a class may be created.
 A class may not inherit from another class, but may 
 have another class as a property, and forward its methods.
