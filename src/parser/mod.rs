@@ -66,9 +66,8 @@ fn start_pos(it: &mut TPIterator) -> (Option<i32>, Option<i32>) {
 /// token, by calling its [`fmt::Display`] method.
 fn end_pos(it: &mut TPIterator) -> (Option<i32>, Option<i32>) {
     match it.peek() {
-        Some(TokenPos { line, pos, token: token }) =>
-            (Some(*line),
-             Some(*pos + format!("{}", token).len() as i32)),
+        Some(TokenPos { line, pos, token }) => (Some(*line),
+                                                Some(*pos + format!("{}", token).len() as i32)),
         None => (None, None)
     }
 }

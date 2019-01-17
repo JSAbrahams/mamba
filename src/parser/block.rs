@@ -18,10 +18,10 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     loop {
         if it.peek().is_none() || it.peek().unwrap().token == Token::Dedent { break; }
         let ast_node: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
-        stmts.push(ast_node);
-
         en_line = ast_node.en_line;
         en_pos = ast_node.en_pos;
+        stmts.push(ast_node);
+
     }
 
     if it.peek().is_some() { check_next_is!(it, Token::Dedent); }

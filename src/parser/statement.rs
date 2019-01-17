@@ -17,7 +17,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     return match it.peek() {
         Some(TokenPos { token: Token::Print, .. }) => {
             it.next();
-            let expr: ASTNodePos = get_or_err!(it, parse_expression, "statement");
+            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "statement");
             Ok(ASTNodePos {
                 st_line,
                 st_pos,
@@ -27,11 +27,11 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             })
         }
 
-        Some(TokenPos { token: Token::Let, .. }) |
-        Some(TokenPos { token: Token::Mut, .. }) => parse_declaration(it),
+        Some(TokenPos { token: Token::Let, .. }) | Some(TokenPos { token: Token::Mut, .. }) =>
+            parse_declaration(it),
 
-        Some(TokenPos { token: Token::For, .. }) |
-        Some(TokenPos { token: Token::While, .. }) => parse_cntrl_flow_stmt(it),
+        Some(TokenPos { token: Token::For, .. }) | Some(TokenPos { token: Token::While, .. }) =>
+            parse_cntrl_flow_stmt(it),
 
         Some(&next) => Err(CustomErr { expected: "statement".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "statement".to_string() })

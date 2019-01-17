@@ -13,9 +13,10 @@ use std::env;
 
 pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
     return match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) |
-        Some(TokenPos { token: Token::Unless, .. }) => parse_if(it),
+        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::Unless, .. }) =>
+            parse_if(it),
         Some(TokenPos { token: Token::When, .. }) => parse_when(it),
+
         Some(&next) => Err(CustomErr {
             expected: "control flow expression".to_string(),
             actual: next.clone(),

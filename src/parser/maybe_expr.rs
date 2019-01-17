@@ -24,17 +24,21 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::If, .. }) |
         Some(TokenPos { token: Token::Unless, .. }) |
         Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
+
         Some(TokenPos { token: Token::NL, .. }) => {
             it.next();
             check_next_is!(it, Token::Indent);
             parse_block(it)
         }
+
         Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
             tuple = true;
             parse_tuple(it)
         }
+
         Some(TokenPos { token: Token::LBrack, .. }) => parse_set_builder(it),
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
+
         Some(TokenPos { token: Token::Real(_), .. }) |
         Some(TokenPos { token: Token::Int(_), .. }) |
         Some(TokenPos { token: Token::ENum(_, _), .. }) |
