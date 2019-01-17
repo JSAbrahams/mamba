@@ -15,7 +15,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     let function = match it.peek() {
-        Some(TokenPos { token: Token::Let, .. }) |
+        Some(TokenPos { token: Token::Def, .. }) |
         Some(TokenPos { token: Token::Mut, .. }) |
         Some(TokenPos { token: Token::Print, .. }) |
         Some(TokenPos { token: Token::For, .. }) |

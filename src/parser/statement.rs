@@ -27,7 +27,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             })
         }
 
-        Some(TokenPos { token: Token::Let, .. }) | Some(TokenPos { token: Token::Mut, .. }) =>
+        Some(TokenPos { token: Token::Def, .. }) | Some(TokenPos { token: Token::Mut, .. }) =>
             parse_declaration(it),
 
         Some(TokenPos { token: Token::For, .. }) | Some(TokenPos { token: Token::While, .. }) =>

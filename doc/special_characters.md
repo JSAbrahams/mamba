@@ -38,3 +38,8 @@ Character | Use
 `.`       |
 `,`       |
 `_`       |
+
+### Comments
+Character | Use
+----------|-----
+`#`       |

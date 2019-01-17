@@ -24,7 +24,6 @@ pub enum Token {
     _Self,
 
     Fun,
-    To,
     Point,
     Comma,
     DoublePoint,
@@ -33,7 +32,7 @@ pub enum Token {
     Id(String),
     Mut,
     Assign,
-    Let,
+    Def,
 
     Real(String),
     Int(String),
@@ -66,6 +65,8 @@ pub enum Token {
     RPar,
     LBrack,
     RBrack,
+    LCurl,
+    RCurl,
     Ver,
 
     NL,
@@ -106,7 +107,6 @@ impl fmt::Display for Token {
             Token::_Self => "'self'".to_string(),
 
             Token::Fun => "'fun'".to_string(),
-            Token::To => "'->'".to_string(),
             Token::Point => "'.'".to_string(),
             Token::Comma => "'.to_string(),'".to_string(),
             Token::DoublePoint => "':'".to_string(),
@@ -115,7 +115,7 @@ impl fmt::Display for Token {
             Token::Id(id) => format!("<identifier>: {}", id),
             Token::Mut => "'mutable'".to_string(),
             Token::Assign => "'<-'".to_string(),
-            Token::Let => "'let'".to_string(),
+            Token::Def => "'def'".to_string(),
 
             Token::Real(real) => format!("<real>: '{}'", real),
             Token::Int(int) => format!("<int>: '{}'", int),
@@ -148,6 +148,8 @@ impl fmt::Display for Token {
             Token::RPar => "')'".to_string(),
             Token::LBrack => "'['".to_string(),
             Token::RBrack => "']'".to_string(),
+            Token::LCurl => "'{'".to_string(),
+            Token::RCurl => "'}'".to_string(),
             Token::Ver => "'|'".to_string(),
 
             Token::NL => "<newline>".to_string(),
@@ -183,74 +185,53 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut tokens = Vec::new();
     let mut it = input.chars().peekable();
 
-    let mut actual_indents = 0;
-    let mut expected_indents = 0;
-
+    let mut current_indent = 0;
+    let mut this_line_indent = 0;
     let mut consecutive_spaces = 0;
 
     let mut line = 1;
     let mut pos = 1;
 
+    macro_rules! next_pos_and_tp { ($amount:expr, $tok:path) => {{
+        let tp = TokenPos { line, pos, token: $tok };
+        pos += $amount;
+        tp
+    }} }
+
     while let Some(c) = it.next() {
         match c {
-            '.' => {
-                tokens.push(TokenPos { line, pos, token: Token::Point });
-                pos += 1;
-            }
+            '.' => tokens.push(next_pos_and_tp!(1, Token::Point)),
             ':' => match it.peek() {
                 Some(':') => {
                     it.next();
-                    tokens.push(TokenPos { line, pos, token: Token::DDoublePoint });
-                    pos += 2;
+                    tokens.push(next_pos_and_tp!(2, Token::DDoublePoint))
                 }
-                _ => {
-                    tokens.push(TokenPos { line, pos, token: Token::DoublePoint });
-                    pos += 1;
-                }
+                _ => tokens.push(next_pos_and_tp!(1, Token::DoublePoint)),
             }
-            ',' => {
-                tokens.push(TokenPos { line, pos, token: Token::Comma });
-                pos += 1;
-            }
-            '(' => {
-                tokens.push(TokenPos { line, pos, token: Token::LPar });
-                pos += 1;
-            }
-            ')' => {
-                tokens.push(TokenPos { line, pos, token: Token::RPar });
-                pos += 1;
-            }
-            '[' => {
-                tokens.push(TokenPos { line, pos, token: Token::LBrack });
-                pos += 1;
-            }
-            ']' => {
-                tokens.push(TokenPos { line, pos, token: Token::RBrack });
-                pos += 1;
-            }
-            '|' => {
-                tokens.push(TokenPos { line, pos, token: Token::Ver });
-                pos += 1;
-            }
+            ',' => tokens.push(next_pos_and_tp!(1, Token::Comma)),
+            '(' => tokens.push(next_pos_and_tp!(1, Token::LPar)),
+            ')' => tokens.push(next_pos_and_tp!(1, Token::RPar)),
+            '[' => tokens.push(next_pos_and_tp!(1, Token::LBrack)),
+            ']' => tokens.push(next_pos_and_tp!(1, Token::RBrack)),
+            '{' => tokens.push(next_pos_and_tp!(1, Token::LCurl)),
+            '}' => tokens.push(next_pos_and_tp!(1, Token::RCurl)),
+            '|' => tokens.push(next_pos_and_tp!(1, Token::Ver)),
             '\n' => {
-                tokens.push(TokenPos { line, pos, token: Token::NL });
+                tokens.push(next_pos_and_tp!(1, Token::NL));
                 line += 1;
-                expected_indents = actual_indents;
-                actual_indents = 0;
                 pos = 1;
             }
             '\r' => match it.next() {
                 Some('\n') => {
-                    tokens.push(TokenPos { line, pos, token: Token::NL });
+                    tokens.push(next_pos_and_tp!(1, Token::NL));
                     line += 1;
-                    actual_indents = 0;
                     pos = 1;
                 }
-                Some(other) => return Err(format!("Expected newline after carriage return. Was {}",
-                                                  other)),
+                Some(other) =>
+                    return Err(format!("Expected newline after carriage return. Was {}", other)),
                 None => return Err("File ended with carriage return".to_string())
             }
-            '\t' => actual_indents += 1,
+            '\t' => this_line_indent += 1,
             '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
                 tokens.push(TokenPos { line, pos, token: get_operator(c, &mut it, &mut pos) }),
             '0'...'9' =>
@@ -258,12 +239,14 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             '"' => tokens.push(TokenPos { line, pos, token: get_string(&mut it, &mut pos) }),
             'a'...'z' | 'A'...'Z' =>
                 tokens.push(TokenPos { line, pos, token: get_id_or_op(c, &mut it, &mut pos) }),
+            '#' => ignore_comment(&mut it),
             ' ' => {
                 pos += 1;
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
                     consecutive_spaces = 0;
-                    actual_indents += 0;
+                    current_indent += 0;
+                    this_line_indent += 1;
                 }
                 continue;
             }
@@ -274,6 +257,18 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     }
 
     return Ok(tokens);
+}
+
+fn ignore_comment(it: &mut Peekable<Chars>) {
+    while let Some(c) = it.peek() {
+        match c {
+            '\n' => break,
+            _ => {
+                it.next();
+                continue;
+            }
+        }
+    }
 }
 
 fn get_operator(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
@@ -289,10 +284,7 @@ fn get_operator(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
             _ => Token::Ge
         }
         '+' => Token::Add,
-        '-' => match it.peek() {
-            Some('>') => next_and!(it, pos, Token::To),
-            _ => Token::Sub
-        }
+        '-' => Token::Sub,
         '/' => Token::Div,
         '*' => Token::Mul,
         '^' => Token::Pow,
@@ -368,7 +360,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>, pos: &mut i32) -> Token
         "self" => Token::_Self,
 
         "fun" => Token::Fun,
-        "let" => Token::Let,
+        "def" => Token::Def,
         "mutable" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,

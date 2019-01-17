@@ -105,6 +105,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
     
     newline          ::= \n | \r\n
+    comment          ::= "#" { character }
 
 The language uses indentation to denote blocks. The indentation amount can't be described in the grammar directly, 
 but it does adhere to the following rules:

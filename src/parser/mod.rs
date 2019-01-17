@@ -130,8 +130,8 @@ pub enum ASTNode {
     Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Defer { declaration: Box<ASTNodePos>, properties: Vec<ASTNodePos> },
     Mut { decl: Box<ASTNodePos> },
-    Let { id: Box<ASTNodePos> },
-    LetType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    Def { id: Box<ASTNodePos> },
+    DefType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
     SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Set { elements: Vec<ASTNodePos> },

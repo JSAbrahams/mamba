@@ -27,7 +27,7 @@ pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_declaration(it: &mut TPIterator) -> ParseResult {
     return match match it.peek() {
-        Some(TokenPos { token: Token::Let, .. }) => parse_immutable_declaration(it),
+        Some(TokenPos { token: Token::Def, .. }) => parse_immutable_declaration(it),
         Some(TokenPos { token: Token::Mut, .. }) => parse_mutable_declaration(it),
 
         Some(&next) => Err(CustomErr { expected: "declaration".to_string(), actual: next.clone() }),
@@ -103,7 +103,7 @@ fn parse_immutable_declaration(it: &mut TPIterator) -> ParseResult {
 fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    check_next_is!(it, Token::Let);
+    check_next_is!(it, Token::Def);
     match it.next() {
         Some(TokenPos { token: Token::Id(id), .. }) => {
             let ast_id: Box<ASTNodePos> = get_or_err!(it, parse_id, "definition id");
@@ -116,7 +116,7 @@ fn parse_definition(it: &mut TPIterator) -> ParseResult {
                             st_pos,
                             en_line: ast_type.en_line,
                             en_pos: ast_type.en_pos,
-                            node: ASTNode::LetType { id: ast_id, _type: ast_type },
+                            node: ASTNode::DefType { id: ast_id, _type: ast_type },
                         })
                     }
                     (_, Some(next)) => Err(TokenErr {
@@ -130,7 +130,7 @@ fn parse_definition(it: &mut TPIterator) -> ParseResult {
                     st_pos,
                     en_line: ast_id.en_line,
                     en_pos: ast_id.en_pos,
-                    node: ASTNode::Let { id: ast_id },
+                    node: ASTNode::Def { id: ast_id },
                 })
             }
         }

@@ -56,7 +56,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
             Some(TokenPos { token: Token::LPar, .. }) => parse_function_call_direct(pre, it),
             Some(TokenPos { token: Token::Point, .. }) => parse_function_call(pre, it),
-            Some(TokenPos { token: Token::To, .. }) if tuple => {
+            Some(TokenPos { token: Token::Assign, .. }) if tuple => {
                 it.next();
                 let right: Box<ASTNodePos> = get_or_err!(it, parse_function_anonymous,
                                                          "anonymous function");
