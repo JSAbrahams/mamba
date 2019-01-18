@@ -28,13 +28,13 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
     let st_pos;
     let if_expr = match it.next() {
         Some(TokenPos { line, pos, token: Token::If }) => {
-            st_line = Some(*line);
-            st_pos = Some(*pos);
+            st_line = *line;
+            st_pos = *pos;
             true
         }
         Some(TokenPos { line, pos, token: Token::Unless }) => {
-            st_line = Some(*line);
-            st_pos = Some(*pos);
+            st_line = *line;
+            st_pos = *pos;
             false
         }
         Some(next) => return Err(TokenErr { expected: Token::If, actual: next.clone() }),

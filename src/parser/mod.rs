@@ -1,4 +1,5 @@
 use crate::lexer::token::TokenPos;
+use crate::parser::parse_result::ParseErr::CustomEOFErr;
 use crate::parser::parse_result::ParseResult;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -50,22 +51,21 @@ macro_rules! check_next_is { ($it: expr, $tok:path) => {
 type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 
 /// Gets the starting line and position of the current token using [`TPIterator.peek()`].
-fn start_pos(it: &mut TPIterator) -> (Option<i32>, Option<i32>) {
+fn start_pos(it: &mut TPIterator) -> (i32, i32) {
     match it.peek() {
-        Some(TokenPos { line, pos, token: _ }) => (Some(*line), Some(*pos)),
-        None => (None, None)
+        Some(TokenPos { line, pos, token: _ }) => (*line, *pos),
+        None => (-1, -1)
     }
 }
 
 /// Gets the end line and position of the current token using [`TPIterator.peek()`].
 ///
-/// The end position is calculated by ofsetting the starting position by the offset of the current
+/// The end position is calculated by offsetting the starting position by the offset of the current
 /// token, by calling its [`fmt::Display`] method.
-fn end_pos(it: &mut TPIterator) -> (Option<i32>, Option<i32>) {
+fn end_pos(it: &mut TPIterator) -> (i32, i32) {
     match it.peek() {
-        Some(TokenPos { line, pos, token }) => (Some(*line),
-                                                Some(*pos + format!("{}", token).len() as i32)),
-        None => (None, None)
+        Some(TokenPos { line, pos, token }) => (*line, *pos + format!("{}", token).len() as i32),
+        None => (-1, -1)
     }
 }
 
@@ -88,11 +88,10 @@ mod _type;
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
 pub struct ASTNodePos {
-    pub st_line: Option<i32>,
-    pub st_pos: Option<i32>,
-    pub en_line: Option<i32>,
-    pub en_pos: Option<i32>,
-
+    pub st_line: i32,
+    pub st_pos: i32,
+    pub en_line: i32,
+    pub en_pos: i32,
     pub node: ASTNode,
 }
 
@@ -102,7 +101,6 @@ pub enum ASTNode {
     ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
     ImportModUseAs { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos>, _as: Box<ASTNodePos> },
     ImportModUseAll { _mod: Box<ASTNodePos> },
-
     Script {
         imports: Vec<ASTNodePos>,
         decl: Box<ASTNodePos>,
@@ -123,29 +121,27 @@ pub enum ASTNode {
     },
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
-
     EmptyDef { _mut: bool, id_and_type: Box<ASTNodePos> },
     Def { _mut: bool, id_and_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+    TypeId { id: String },
+    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    TypeTup { types: Vec<ASTNodePos> },
+    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
     Id { id: String },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
     Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
-
     _Self { expr: Box<ASTNodePos> },
     Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-
     SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Set { elements: Vec<ASTNodePos> },
     List { elements: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
-
     Block { stmts: Vec<ASTNodePos> },
-
     Real { real: String },
     Int { int: String },
     ENum { int_digits: String, frac_digits: String },
     Str { string: String },
     Bool { _bool: bool },
-
     Add { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     AddU { expr: Box<ASTNodePos> },
     Sub { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -155,12 +151,10 @@ pub enum ASTNode {
     Mod { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Pow { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Sqrt { expr: Box<ASTNodePos> },
-
     Le { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Ge { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Leq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Geq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-
     Is { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     IsN { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Eq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -169,7 +163,6 @@ pub enum ASTNode {
     Not { expr: Box<ASTNodePos> },
     And { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Or { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
     Unless { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
@@ -179,7 +172,6 @@ pub enum ASTNode {
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,
     Continue,
-
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
     Print { expr: Box<ASTNodePos> },

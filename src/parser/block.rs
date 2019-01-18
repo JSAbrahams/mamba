@@ -12,8 +12,8 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     let mut stmts = Vec::new();
-    let mut en_line = None;
-    let mut en_pos = None;
+    let mut en_line = st_line;
+    let mut en_pos = st_pos;
     loop {
         match it.peek() {
             None => break,

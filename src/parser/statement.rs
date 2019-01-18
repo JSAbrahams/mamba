@@ -1,5 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
+use crate::parser::_type::parse_type_def;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
@@ -29,6 +30,8 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Def, .. }) => parse_definition(it),
         Some(TokenPos { token: Token::For, .. }) | Some(TokenPos { token: Token::While, .. }) =>
             parse_cntrl_flow_stmt(it),
+
+        Some(TokenPos { token: Token::Type, .. }) => parse_type_def(it),
 
         Some(&next) => Err(CustomErr { expected: "statement".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "statement".to_string() })

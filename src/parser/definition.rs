@@ -61,16 +61,16 @@ fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
             it.next();
             let expr = get_or_err!(it, parse_expression, "mutable definition");
             Ok(ASTNodePos {
-                st_line: Option::from(def_tok.line),
-                st_pos: Option::from(def_tok.pos),
+                st_line: def_tok.line,
+                st_pos: def_tok.pos,
                 en_line: id_and_type.en_line,
                 en_pos: id_and_type.en_pos,
                 node: ASTNode::Def { _mut: true, id_and_type, expr },
             })
         }
         _ => Ok(ASTNodePos {
-            st_line: Option::from(def_tok.line),
-            st_pos: Option::from(def_tok.pos),
+            st_line: def_tok.line,
+            st_pos: def_tok.pos,
             en_line: id_and_type.en_line,
             en_pos: id_and_type.en_pos,
             node: ASTNode::EmptyDef { _mut: true, id_and_type },
@@ -86,16 +86,16 @@ fn immutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
             it.next();
             let expr = get_or_err!(it, parse_expression, "mutable definition");
             Ok(ASTNodePos {
-                st_line: Option::from(def_tok.line),
-                st_pos: Option::from(def_tok.pos),
+                st_line: def_tok.line,
+                st_pos: def_tok.pos,
                 en_line: id_and_type.en_line,
                 en_pos: id_and_type.en_pos,
                 node: ASTNode::Def { _mut: false, id_and_type, expr },
             })
         }
         _ => Ok(ASTNodePos {
-            st_line: Option::from(def_tok.line),
-            st_pos: Option::from(def_tok.pos),
+            st_line: def_tok.line,
+            st_pos: def_tok.pos,
             en_line: id_and_type.en_line,
             en_pos: id_and_type.en_pos,
             node: ASTNode::EmptyDef { _mut: false, id_and_type },
@@ -144,8 +144,8 @@ fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     check_next_is!(it, Token::Forward);
 
     let mut defs: Vec<ASTNodePos> = Vec::new();
-    let mut en_line = None;
-    let mut en_pos = None;
+    let mut en_line = st_line;
+    let mut en_pos = st_pos;
 
     while let Some(t) = it.peek() {
         match *t {
