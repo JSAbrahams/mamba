@@ -1,4 +1,5 @@
 use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -14,12 +15,20 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let mut en_line = None;
     let mut en_pos = None;
     loop {
-        if it.peek().is_none() || it.peek().unwrap().token == Token::Dedent { break; }
-        let ast_node: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
-        en_line = ast_node.en_line;
-        en_pos = ast_node.en_pos;
-        stmts.push(ast_node);
+        match it.peek() {
+            None | Some(TokenPos { token: Token::Dedent, .. }) => break,
+            Some(TokenPos { token: Token::NL, .. }) => {
+                it.next();
+                continue;
+            },
+            _ => {
+                let ast_node: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
+                en_line = ast_node.en_line;
+                en_pos = ast_node.en_pos;
 
+                stmts.push(ast_node);
+            }
+        }
     }
 
     if it.peek().is_some() { check_next_is!(it, Token::Dedent); }

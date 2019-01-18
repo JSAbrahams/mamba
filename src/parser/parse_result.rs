@@ -31,11 +31,11 @@ impl fmt::Display for ParseErr {
             ParseErr::EOFErr { expected } =>
                 write!(f, "\nExpected <{}>, but end of file.", expected),
             ParseErr::CustomErr { expected, actual } =>
-                write!(f, "\nExpected <{}> at {}:{} (line:col) but was {}.",
+                write!(f, "\nExpected <{}> at {}:{} (line:col), but was {}.",
                        expected,
                        actual.line, actual.pos, actual.token),
             ParseErr::TokenErr { expected, actual } =>
-                write!(f, "\nExpected {} at {}:{} (line:col) but was {}.",
+                write!(f, "\nExpected {} at {}:{} (line:col), but was {}.",
                        expected,
                        actual.line, actual.pos, actual.token),
             ParseErr::CustomEOFErr { expected } =>

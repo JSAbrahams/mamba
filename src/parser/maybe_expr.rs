@@ -4,7 +4,7 @@ use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::block::parse_block;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
-use crate::parser::declaration::parse_reassignment;
+use crate::parser::definition::parse_reassignment;
 use crate::parser::end_pos;
 use crate::parser::function::parse_function_anonymous;
 use crate::parser::function::parse_function_call;
@@ -24,6 +24,10 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Unless, .. }) |
         Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
 
+        Some(TokenPos { token: Token::Indent, .. }) => {
+            it.next();
+            parse_block(it)
+        }
         Some(TokenPos { token: Token::NL, .. }) => {
             it.next();
             check_next_is!(it, Token::Indent);

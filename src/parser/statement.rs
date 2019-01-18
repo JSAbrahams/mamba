@@ -3,7 +3,7 @@ use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
-use crate::parser::declaration::parse_declaration;
+use crate::parser::definition::parse_definition;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -26,9 +26,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             })
         }
 
-        Some(TokenPos { token: Token::Def, .. }) | Some(TokenPos { token: Token::Mut, .. }) =>
-            parse_declaration(it),
-
+        Some(TokenPos { token: Token::Def, .. }) => parse_definition(it),
         Some(TokenPos { token: Token::For, .. }) | Some(TokenPos { token: Token::While, .. }) =>
             parse_cntrl_flow_stmt(it),
 

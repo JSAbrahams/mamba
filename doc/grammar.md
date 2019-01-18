@@ -18,7 +18,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { ( constructor-def | [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
     script           ::= { import newline } { newline } 
                          { function-def newline { newline } } 
-                         [ do-block ]
+                         [ block ]
     
     method-call      ::= [ "self" | id "." ] id tuple
     function-call    ::= ( [ "self" | id "::" ] id | function-anon ) tuple
@@ -42,7 +42,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     expr-or-stmt     ::= statement 
                       | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
     statement        ::= "print" maybe-expr 
-                      | declaration 
+                      | definition 
                       | control-flow-stmt
                       | type-def
     maybe-expr       ::= "return" [ maybe-expr ] 
@@ -54,7 +54,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | reassignment 
                       | function-call 
                       | function-call-dir 
-                      | newline block
+                      | [ newline ] block
                       | set-builder
                       | "_"
     
@@ -67,10 +67,12 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     zero-or-more-expr::= [ ( maybe-expr { "," maybe-expr } ]
     
     reassignment     ::= maybe-expr "<-" maybe-expr
-    defer-def        ::= declaration [ "forward" id { "," id } ]
-    im-defer-def     ::= immutable-declaration [ "forward" id { "," id } ]
-    mutable-def      ::= "def" "mut" id [ ":" type ]
-    immutable-def    ::= "def" id [ ":" type ]
+    defer-def        ::= definition [ "forward" id { "," id } ]
+    im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
+    definition       ::= ( mutable-def | immutable-def )
+    mutable-def      ::= "def" "mut" id-and-type [ "<-" maybe-expr ]
+    immutable-def    ::= "def" id-and-type [ "<-" maybe-expr ]
+    id-and-type      ::= id [ ":" type ]
 
     operation        ::= relation | relation ( equality | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]

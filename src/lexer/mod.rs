@@ -57,7 +57,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         line += 1;
         pos = 1;
 
-        if (!last_is_newline) { current_indent = this_line_indent }
+        if !last_is_newline { current_indent = this_line_indent }
         this_line_indent = 0;
         last_is_newline = true;
     }}};

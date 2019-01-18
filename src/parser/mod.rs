@@ -1,11 +1,9 @@
 use crate::lexer::token::TokenPos;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::parse_result::ParseErr::*;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 #[macro_use]
-
 /// Evaluates the result.
 /// 
 /// If it is an Ok tuple, return Boxed [`ASTNodePos`].
@@ -45,6 +43,7 @@ macro_rules! get_or_err_direct { ($it:expr, $fun:path, $msg:expr) => {{
 macro_rules! check_next_is { ($it: expr, $tok:path) => {
     if let Some(next) = $it.next() {
         if next.token != $tok { return Err(TokenErr { expected: $tok, actual: next.clone() }); }
+        next.clone()
     } else { return Err(EOFErr { expected: $tok }); }
 }}
 
@@ -74,7 +73,7 @@ mod parse_result;
 
 mod control_flow_stmt;
 mod control_flow_expr;
-mod declaration;
+mod definition;
 mod block;
 mod expr_or_stmt;
 mod function;
@@ -82,6 +81,7 @@ mod maybe_expr;
 mod module;
 mod operation;
 mod statement;
+mod _type;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -124,12 +124,14 @@ pub enum ASTNode {
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
 
+    EmptyDef { _mut: bool, id_and_type: Box<ASTNodePos> },
+    Def { _mut: bool, id_and_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+    Id { id: String },
+    IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
+
     _Self { expr: Box<ASTNodePos> },
     Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    Defer { declaration: Box<ASTNodePos>, properties: Vec<ASTNodePos> },
-    Mut { decl: Box<ASTNodePos> },
-    Def { id: Box<ASTNodePos> },
-    DefType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
     SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Set { elements: Vec<ASTNodePos> },
@@ -138,7 +140,6 @@ pub enum ASTNode {
 
     Block { stmts: Vec<ASTNodePos> },
 
-    Id { id: String },
     Real { real: String },
     Int { int: String },
     ENum { int_digits: String, frac_digits: String },
