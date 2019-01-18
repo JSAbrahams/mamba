@@ -1,5 +1,5 @@
-use crate::lexer::Token;
-use crate::lexer::TokenPos;
+use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::block::parse_block;
@@ -14,7 +14,6 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
-use std::env;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
@@ -53,9 +52,6 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     } {
         Ok(pre) => match it.peek() {
-            Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
-            Some(TokenPos { token: Token::LPar, .. }) => parse_function_call_direct(pre, it),
-            Some(TokenPos { token: Token::Point, .. }) => parse_function_call(pre, it),
             Some(TokenPos { token: Token::Assign, .. }) if tuple => {
                 it.next();
                 let right: Box<ASTNodePos> = get_or_err!(it, parse_function_anonymous,
@@ -68,6 +64,9 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::Assign { left: Box::new(pre), right },
                 })
             }
+            Some(TokenPos { token: Token::LPar, .. }) => parse_function_call_direct(pre, it),
+            Some(TokenPos { token: Token::Point, .. }) => parse_function_call(pre, it),
+            Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
             Some(_) | None => Ok(pre)
         }
         err => err

@@ -1,12 +1,10 @@
-use crate::lexer::TokenPos;
+use crate::lexer::token::TokenPos;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::ParseErr::*;
 use std::iter::Peekable;
 use std::slice::Iter;
 
 #[macro_use]
-/// Call next on the iterator and execute the statement.
-/// This ignores the value of the next value of the iterator.
-macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
 
 /// Evaluates the result.
 /// 

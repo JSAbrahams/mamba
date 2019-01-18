@@ -1,15 +1,13 @@
-use crate::lexer::Token;
-use crate::lexer::TokenPos;
+use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
-use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::maybe_expr::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
-use std::env;
 
 pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
     return match it.peek() {
@@ -26,8 +24,8 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_if(it: &mut TPIterator) -> ParseResult {
-    let mut st_line = None;
-    let mut st_pos = None;
+    let st_line;
+    let st_pos;
     let if_expr = match it.next() {
         Some(TokenPos { line, pos, token: Token::If }) => {
             st_line = Some(*line);

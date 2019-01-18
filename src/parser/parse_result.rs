@@ -1,6 +1,5 @@
-use crate::lexer::Token;
-use crate::lexer::TokenPos;
-use crate::parser::ASTNode;
+use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use crate::parser::ASTNodePos;
 use std::error;
 use std::fmt;

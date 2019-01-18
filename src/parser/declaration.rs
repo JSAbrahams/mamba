@@ -1,5 +1,5 @@
-use crate::lexer::Token;
-use crate::lexer::TokenPos;
+use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::end_pos;
@@ -8,7 +8,6 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
-use std::env;
 
 pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
@@ -105,10 +104,10 @@ fn parse_definition(it: &mut TPIterator) -> ParseResult {
 
     check_next_is!(it, Token::Def);
     match it.next() {
-        Some(TokenPos { token: Token::Id(id), .. }) => {
+        Some(TokenPos { token: Token::Id(_), .. }) => {
             let ast_id: Box<ASTNodePos> = get_or_err!(it, parse_id, "definition id");
             match it.peek() {
-                Some(TokenPos { token: Token::DoublePoint, .. }) => match (it.next(), it.next()) {
+                Some(TokenPos { token: Token::DoublePoint, .. }) => match (it.next(), it.peek()) {
                     (_, Some(TokenPos { token: Token::Id(id), .. })) => {
                         let ast_type: Box<ASTNodePos> = get_or_err!(it, parse_id, "definition type");
                         Ok(ASTNodePos {
@@ -119,7 +118,7 @@ fn parse_definition(it: &mut TPIterator) -> ParseResult {
                             node: ASTNode::DefType { id: ast_id, _type: ast_type },
                         })
                     }
-                    (_, Some(next)) => Err(TokenErr {
+                    (_, Some(&next)) => Err(TokenErr {
                         expected: Token::Id(String::new()),
                         actual: next.clone(),
                     }),
