@@ -63,7 +63,6 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     }}};
 
     macro_rules! increase_indent { () => {{
-        line += 1;
         pos += 4;
         this_line_indent += 1;
     }}};
