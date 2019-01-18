@@ -12,16 +12,16 @@ use crate::parser::TPIterator;
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let function = match it.peek() {
+    let pre: Box<ASTNodePos> = match it.peek() {
         Some(TokenPos { token: Token::Def, .. }) |
         Some(TokenPos { token: Token::Mut, .. }) |
         Some(TokenPos { token: Token::Print, .. }) |
         Some(TokenPos { token: Token::For, .. }) |
-        Some(TokenPos { token: Token::While, .. }) => parse_statement,
-        _ => parse_expression
-    };
+        Some(TokenPos { token: Token::While, .. }) =>
+            get_or_err!(it, parse_statement, "expression or statement"),
 
-    let pre = get_or_err!(it, function, "expression or statement");
+        _ => get_or_err!(it, parse_expression, "expression or statement")
+    };
 
     return match it.peek() {
         Some(TokenPos { line: _, pos: _, token: Token::If }) => {

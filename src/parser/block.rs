@@ -16,11 +16,16 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let mut en_pos = None;
     loop {
         match it.peek() {
-            None | Some(TokenPos { token: Token::Dedent, .. }) => break,
+            None => break,
+            Some(TokenPos { token: Token::Dedent, .. }) => {
+                it.next();
+                break;
+            }
             Some(TokenPos { token: Token::NL, .. }) => {
                 it.next();
                 continue;
-            },
+            }
+
             _ => {
                 let ast_node: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
                 en_line = ast_node.en_line;
@@ -31,6 +36,5 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
         }
     }
 
-    if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
     return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { stmts } });
 }
