@@ -15,6 +15,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut current_indent = 0;
     let mut this_line_indent = 0;
     let mut consecutive_spaces = 0;
+    let mut last_is_newline = true;
 
     let mut line = 1;
     let mut pos = 1;
@@ -56,8 +57,9 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         line += 1;
         pos = 1;
 
-        current_indent = this_line_indent;
+        if (!last_is_newline) { current_indent = this_line_indent }
         this_line_indent = 0;
+        last_is_newline = true;
     }}};
 
     macro_rules! increase_indent { () => {{
