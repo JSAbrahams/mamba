@@ -106,7 +106,7 @@ impl fmt::Display for Token {
 
             Token::Fun => "'fun'".to_string(),
             Token::Point => "'.'".to_string(),
-            Token::Comma => "'.to_string(),'".to_string(),
+            Token::Comma => "','".to_string(),
             Token::DoublePoint => "':'".to_string(),
             Token::DDoublePoint => "'::'".to_string(),
 

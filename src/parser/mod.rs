@@ -101,6 +101,7 @@ pub enum ASTNode {
     ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
     ImportModUseAs { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos>, _as: Box<ASTNodePos> },
     ImportModUseAll { _mod: Box<ASTNodePos> },
+
     Script {
         imports: Vec<ASTNodePos>,
         decl: Box<ASTNodePos>,
@@ -119,29 +120,38 @@ pub enum ASTNode {
         decls: Box<ASTNodePos>,
         funcs: Vec<ASTNodePos>,
     },
+
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
-    EmptyDef { _mut: bool, id_and_type: Box<ASTNodePos> },
-    Def { _mut: bool, id_and_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+
+    EmptyDef { _mut: bool, id_maybe_type: Box<ASTNodePos> },
+    Def { _mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+
     TypeId { id: String },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
     Id { id: String },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+
     Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
     _Self { expr: Box<ASTNodePos> },
+
     Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+
     SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Set { elements: Vec<ASTNodePos> },
     List { elements: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
+
     Block { stmts: Vec<ASTNodePos> },
+
     Real { real: String },
     Int { int: String },
     ENum { int_digits: String, frac_digits: String },
     Str { string: String },
     Bool { _bool: bool },
+
     Add { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     AddU { expr: Box<ASTNodePos> },
     Sub { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -151,6 +161,7 @@ pub enum ASTNode {
     Mod { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Pow { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Sqrt { expr: Box<ASTNodePos> },
+
     Le { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Ge { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Leq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -163,6 +174,7 @@ pub enum ASTNode {
     Not { expr: Box<ASTNodePos> },
     And { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Or { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
     Unless { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
@@ -172,8 +184,10 @@ pub enum ASTNode {
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,
     Continue,
+
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
+    
     Print { expr: Box<ASTNodePos> },
 }
 

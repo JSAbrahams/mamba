@@ -20,22 +20,25 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { function-def newline { newline } } 
                          [ block ]
     
-    method-call      ::= [ "self" | id "." ] id tuple
-    function-call    ::= ( [ "self" | id "::" ] id | function-anon ) tuple
+    method-call      ::= [ "self" | id "." ] id ( tuple | id )
+    function-call    ::= [ id "::" ] id ( tuple | id )
     
     constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= [ "self" ] function-arg
+    constructor-arg  ::= [ "self" ] id-and-type
     
-    function-def     ::= "def" id "(" [ function-arg { "," function-arg } ] ")" [ ":" type ]
+    function-def     ::= "def" id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
     function-def-bod ::= function-def "<-" expr-or-stmt
-    function-arg     ::= id ":" type
     
     function-anon    ::= args-anon "<-" maybe-expr
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
     
+    id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id | type "<-" type | "(" [ type { "," type } ] ")"
     type-def         ::= "type" id "<-" type
+    type-tuple       ::= "(" [ id { "," id } ] ")" 
+    id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
+    id-and-type      ::= ( id | type-tuple )  ":" type
     
     block            ::= indent { expr-or-stmt newline } dedent
     
@@ -57,8 +60,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | [ newline ] block
                       | set-builder
                       | "_"
-    
-    id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
+                      | [ "self" ] id
     
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}"
@@ -70,9 +72,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     defer-def        ::= definition [ "forward" id { "," id } ]
     im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
     definition       ::= ( mutable-def | immutable-def )
-    mutable-def      ::= "def" "mut" id-and-type [ "<-" maybe-expr ]
-    immutable-def    ::= "def" id-and-type [ "<-" maybe-expr ]
-    id-and-type      ::= id [ ":" type ]
+    mutable-def      ::= "def" "mut" id-maybe-type [ "<-" maybe-expr ]
+    immutable-def    ::= "def" id-maybe-type [ "<-" maybe-expr ]
 
     operation        ::= relation | relation ( equality | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]

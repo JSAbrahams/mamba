@@ -1,5 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
+use crate::parser::_type::parse_id;
+use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
@@ -54,7 +56,7 @@ pub fn parse_immutable_def(it: &mut TPIterator) -> ParseResult {
 
 fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
     let _mut: TokenPos = check_next_is!(it, Token::Mut);
-    let id_and_type: Box<ASTNodePos> = get_or_err!(it, parse_id_and_type, "mutable definition");
+    let id_maybe_type: Box<ASTNodePos> = get_or_err!(it, parse_id_maybe_type, "mutable definition");
 
     match it.peek() {
         Some(TokenPos { token: Token::Assign, .. }) => {
@@ -63,23 +65,24 @@ fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
             Ok(ASTNodePos {
                 st_line: def_tok.line,
                 st_pos: def_tok.pos,
-                en_line: id_and_type.en_line,
-                en_pos: id_and_type.en_pos,
-                node: ASTNode::Def { _mut: true, id_and_type, expr },
+                en_line: id_maybe_type.en_line,
+                en_pos: id_maybe_type.en_pos,
+                node: ASTNode::Def { _mut: true, id_maybe_type, expr },
             })
         }
         _ => Ok(ASTNodePos {
             st_line: def_tok.line,
             st_pos: def_tok.pos,
-            en_line: id_and_type.en_line,
-            en_pos: id_and_type.en_pos,
-            node: ASTNode::EmptyDef { _mut: true, id_and_type },
+            en_line: id_maybe_type.en_line,
+            en_pos: id_maybe_type.en_pos,
+            node: ASTNode::EmptyDef { _mut: true, id_maybe_type },
         })
     }
 }
 
 fn immutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
-    let id_and_type: Box<ASTNodePos> = get_or_err!(it, parse_id_and_type, "immutable definition");
+    let id_maybe_type: Box<ASTNodePos> = get_or_err!(it, parse_id_maybe_type,
+                                                     "immutable definition");
 
     match it.peek() {
         Some(TokenPos { token: Token::Assign, .. }) => {
@@ -88,54 +91,18 @@ fn immutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
             Ok(ASTNodePos {
                 st_line: def_tok.line,
                 st_pos: def_tok.pos,
-                en_line: id_and_type.en_line,
-                en_pos: id_and_type.en_pos,
-                node: ASTNode::Def { _mut: false, id_and_type, expr },
+                en_line: id_maybe_type.en_line,
+                en_pos: id_maybe_type.en_pos,
+                node: ASTNode::Def { _mut: false, id_maybe_type, expr },
             })
         }
         _ => Ok(ASTNodePos {
             st_line: def_tok.line,
             st_pos: def_tok.pos,
-            en_line: id_and_type.en_line,
-            en_pos: id_and_type.en_pos,
-            node: ASTNode::EmptyDef { _mut: false, id_and_type },
+            en_line: id_maybe_type.en_line,
+            en_pos: id_maybe_type.en_pos,
+            node: ASTNode::EmptyDef { _mut: false, id_maybe_type },
         })
-    }
-}
-
-pub fn parse_id_and_type(it: &mut TPIterator) -> ParseResult {
-    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "id and type");
-
-    if let Some(TokenPos { token: Token::DoublePoint, .. }) = it.peek() {
-        it.next();
-        let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "id and type");
-        return Ok(ASTNodePos {
-            st_line: id.st_line,
-            st_pos: id.st_pos,
-            en_line: _type.en_line,
-            en_pos: _type.en_pos,
-            node: ASTNode::IdAndType { id, _type },
-        });
-    } else {
-        return Ok(*id);
-    }
-}
-
-pub fn parse_id(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    let (en_line, en_pos) = end_pos(it);
-
-    match it.next() {
-        Some(TokenPos { token: Token::Id(id), .. }) => Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line,
-            en_pos,
-            node: ASTNode::Id { id: id.to_string() },
-        }),
-
-        Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
-        None => Err(EOFErr { expected: Token::Id(String::new()) })
     }
 }
 

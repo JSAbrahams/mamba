@@ -1,2 +1,2 @@
-(a, b)
-(c, d) <- (2, true)
+def (a, b)
+def (c, d) <- (2, true)
