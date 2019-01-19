@@ -4,10 +4,10 @@
 
 A module is represented by a single file. A module may
 
-* Contain a `type`
-* A `util`
-* A `util` and a `class`
-* A `script`
+* Be a `type`
+* Be a `util`
+* Be a `util` and a `class`
+* Be a `script`
 
 ### Type
 

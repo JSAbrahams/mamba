@@ -25,12 +25,12 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= [ "self" ] id-and-type
+    constructor-arg  ::= [ "self" ] id-maybe-type
     
     function-def     ::= "def" id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
     function-def-bod ::= function-def "<-" expr-or-stmt
     
-    function-anon    ::= args-anon "<-" maybe-expr
+    function-anon    ::= args-anon "<-" expression
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
@@ -38,17 +38,16 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id { "," id } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
-    id-and-type      ::= ( id | type-tuple )  ":" type
     
     block            ::= indent { expr-or-stmt newline } dedent
     
     expr-or-stmt     ::= statement 
-                      | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
-    statement        ::= "print" maybe-expr 
+                      | expression [ "if" maybe_expr ]
+    statement        ::= "print" expression 
                       | definition 
                       | control-flow-stmt
                       | type-def
-    maybe-expr       ::= "return" [ maybe-expr ] 
+    expression       ::= "return" [ expression ] 
                       | instance
                       | operation 
                       | tuple 
@@ -66,32 +65,32 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
-    set-builder      ::= "{" maybe-expr | maybe-expr { "," maybe-expr } "}"
+    set-builder      ::= "{" expression | expression { "," expression } "}"
     list             ::= "[" zero-or-more-expr "]"
-    map              ::= "{" maybe-expr ":" maybe-expr { "," maybe-expr ":" maybe-expr } "}"
+    map              ::= "{" expression ":" expression { "," expression ":" expression } "}"
     
-    sizeof           ::= "|" maybe-expr "|"
-    zero-or-more-expr::= [ ( maybe-expr { "," maybe-expr } ]
+    sizeof           ::= "|" expression "|"
+    zero-or-more-expr::= [ ( expression { "," expression } ]
     
-    reassignment     ::= maybe-expr "<-" maybe-expr
+    reassignment     ::= expression "<-" expression
     defer-def        ::= definition [ "forward" id { "," id } ]
     im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
     definition       ::= ( mutable-def | immutable-def )
-    mutable-def      ::= "def" "mut" id-maybe-type [ "<-" maybe-expr ]
-    immutable-def    ::= "def" id-maybe-type [ "<-" maybe-expr ]
+    mutable-def      ::= "def" "mut" id-maybe-type [ "<-" expression ]
+    immutable-def    ::= "def" id-maybe-type [ "<-" expression ]
 
     operation        ::= relation | relation ( equality | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
-    factor           ::= [ additive | "sqrt" ] ( constant | id | maybe-expr )
+    factor           ::= [ additive | "sqrt" ] ( constant | id | expression )
     
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    equality         ::= "equals" | "is" | "notequals" | "isnot" | "isa"
+    equality         ::= "equals" | "is" | "notequals" | "isnt" | "isa"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
     
@@ -104,13 +103,13 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     string           ::= "\"" { character } "\""
                                      
     control-flow-expr::= if | from | when
-    if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    when             ::= "when" maybe-expr newline indent { when-case newline } dedent
-    when-case        ::= maybe-expr "then" expr-or-stmt
+    if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
+    when             ::= "when" expression newline indent { when-case newline } dedent
+    when-case        ::= expression "then" expr-or-stmt
     
     control-flow-stmt::= loop | while | for | "break" | "continue"
-    while            ::= "while" maybe-expr "do" expr-or-stmt
-    for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
+    while            ::= "while" expression "do" expr-or-stmt
+    for              ::= "for" expression "in" expression "do" expr-or-stmt
     
     newline          ::= \n | \r\n
     comment          ::= "#" { character }
@@ -122,7 +121,7 @@ but it does adhere to the following rules:
   `indent`'s before the block
 * The same holds for every new `when-case` in a `when`
 
-A `maybe-expr` is used in a situation where an expression is required,  but we cannot know in advance whether it will be
+A `expression` is used in a situation where an expression is required, but we cannot know in advance whether it will be
 an expression or statement without type checking the program.
 `expr-or-stmt` may be used when it does not matter whether it is an expression or statement.
                

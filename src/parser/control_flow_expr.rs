@@ -11,8 +11,7 @@ use crate::parser::TPIterator;
 
 pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
     return match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::Unless, .. }) =>
-            parse_if(it),
+        Some(TokenPos { token: Token::If, .. }) => parse_if(it),
         Some(TokenPos { token: Token::When, .. }) => parse_when(it),
 
         Some(&next) => Err(CustomErr {
@@ -24,23 +23,9 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_if(it: &mut TPIterator) -> ParseResult {
-    let st_line;
-    let st_pos;
-    let if_expr = match it.next() {
-        Some(TokenPos { line, pos, token: Token::If }) => {
-            st_line = *line;
-            st_pos = *pos;
-            true
-        }
-        Some(TokenPos { line, pos, token: Token::Unless }) => {
-            st_line = *line;
-            st_pos = *pos;
-            false
-        }
-        Some(next) => return Err(TokenErr { expected: Token::If, actual: next.clone() }),
-        None => return Err(EOFErr { expected: Token::If })
-    };
+    let (st_line, st_pos) = start_pos(it);
 
+    check_next_is!(it, Token::If);
     let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "if condition");
     check_next_is!(it, Token::Then);
     let then: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "if then branch");
@@ -53,11 +38,7 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
             st_pos,
             en_line: _else.en_line,
             en_pos: _else.en_pos,
-            node: if if_expr {
-                ASTNode::IfElse { cond, then, _else }
-            } else {
-                ASTNode::UnlessElse { cond, then, _else }
-            },
+            node: ASTNode::IfElse { cond, then, _else },
         })
     } else {
         Ok(ASTNodePos {
@@ -65,18 +46,14 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
             st_pos,
             en_line: then.en_line,
             en_pos: then.en_pos,
-            node: if if_expr {
-                ASTNode::If { cond, then }
-            } else {
-                ASTNode::Unless { cond, then }
-            },
+            node: ASTNode::If { cond, then },
         })
     }
 }
 
 fn parse_when(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::When);
     let (st_line, st_pos) = start_pos(it);
+    check_next_is!(it, Token::When);
 
     let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "when expression");
     check_next_is!(it, Token::NL);

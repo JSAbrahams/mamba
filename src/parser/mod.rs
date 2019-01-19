@@ -177,8 +177,6 @@ pub enum ASTNode {
 
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
-    Unless { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
-    UnlessElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
     When { cond: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     For { expr: Box<ASTNodePos>, collection: Box<ASTNodePos>, body: Box<ASTNodePos> },
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },

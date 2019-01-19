@@ -15,6 +15,12 @@ A list may be ordered.
 
 ### Tuple
 
-A tuple is created using `(` and `)`
+A tuple is created using `(` and `)`.
 
 A tuple a collection of named items.
+
+### Map
+
+A map is created using `{` and `}`, where each mapping is represented as such: `key -> value`.
+
+An unordered set of items.

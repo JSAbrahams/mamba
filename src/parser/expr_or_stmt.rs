@@ -35,17 +35,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
                 node: ASTNode::If { cond, then: pre },
             })
         }
-        Some(TokenPos { line: _, pos: _, token: Token::Unless }) => {
-            it.next();
-            let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "post unless");
-            Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: cond.en_line,
-                en_pos: cond.en_pos,
-                node: ASTNode::Unless { cond, then: pre },
-            })
-        }
+
         _ => Ok(*pre)
     };
 }

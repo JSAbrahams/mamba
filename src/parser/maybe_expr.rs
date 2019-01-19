@@ -20,9 +20,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let mut tuple = false;
 
     return match match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) |
-        Some(TokenPos { token: Token::Unless, .. }) |
-        Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
+        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) =>
+            parse_cntrl_flow_expr(it),
 
         Some(TokenPos { token: Token::Indent, .. }) => {
             it.next();

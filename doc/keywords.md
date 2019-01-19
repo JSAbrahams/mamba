@@ -6,68 +6,68 @@ Grouped by use cases.
 ### Imports
 Keyword | Use 
 --------|-----
-`use`   |     
-`useall`|     
-`as`    |     
+`use`   | Specify functions when importing util
+`useall`| Specify using all functions when importing util
+`as`    | Specify function name when importing util
 
 ### Modules
 Keyword | Use 
 --------|-----
-`type`  |
-`util`  |
-`class` |
-`isa`   |
+`type`  | When constructing an interface or type alias
+`util`  | Denote a util
+`class` | Denote a class
+`isa`   | Check whether an object is instance of a class
 
 ### Classes and Utils
 Keyword   | Use 
 ----------|-----
-`self`    |
-`init`    |
-`forward` |
+`self`    | Refer to definitions of this class
+`init`    | The constructor of the class
+`forward` | Forwarding methods of contained class
 
 ### Definitions and Functions
 Keyword | Use 
 --------|-----
-`def`   |
-`mut`   |
-`type`  |
+`def`   | Denote definition
+`mut`   | Denote that definition is mutable
 
 ### Boolean operators
 Keyword    | Use 
 -----------|-----
-`not`      |
-`and`      |
-`or`       |
-`is`       |
-`isnt`     |
-`equals`   |
-`notequals`|
+`not`      | Negation of a boolean value
+`and`      | And operator 
+`or`       | Or operator
+`is`       | Check whether an instance is another instance
+`isnt`     | Check whether an instance is not another instance
+`equals`   | Check whether an expression evaluates to another expression
+`notequals`| Check whether an expression does not evaluate to another expression
+`true`     | True value
+`false`    | False value
 
 ### Mathematical Operators
 Keyword | Use 
 --------|-----
-`mod`   |
-`sqrt`  |
+`mod`   | Modulus operator
+`sqrt`  | Square root operator
 
 ### Control flow Expressions
 Keyword | Use 
 --------|-----
-`if`    |
-`then`  |
-`else`  |
-`unless`|
-`when`  |
+`if`    | Denote start of if expression or statement
+`then`  | Denote start of then branch of if
+`else`  | Denote start of else branch of if
+`when`  | Denote start of a when expression or statement
 
 ### Control Flow Statements
 Keyword | Use 
 --------|-----
-`while` |
-`for`   |
-`in`    |
-`do`    |
+`while` | Denote start of while statement
+`for`   | Denote start of for statement
+`in`    | Specify which collection to iterate over in for statement
+`do`    | Specify what needs to be done in control flow statement
 
 ### Statements
 Keyword | Use 
 --------|-----
-`print` |
-`return`|
+`print` | print what an expression evaluates to
+`return`| return from a function or method

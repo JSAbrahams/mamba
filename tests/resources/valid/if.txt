@@ -1,10 +1,8 @@
 def b <- 40
 
 print "hello" if cond1
-print "hi" unless cond2
 
 if c then d <- 4 else asdf
-unless d then e <- 5 else fdsa
 
 # this if doesn't do much yet
 if cond then
@@ -28,15 +26,7 @@ else
 if l then
     m
 
-unless n then
-    o
-
 if p then
     q
 else
     r
-
-unless s then
-    t
-else
-    u
