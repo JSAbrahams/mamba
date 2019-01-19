@@ -1,81 +1,196 @@
-use crate::lexer::Token;
+use crate::lexer::token::TokenPos;
+use crate::parser::parse_result::ParseErr::CustomEOFErr;
+use crate::parser::parse_result::ParseResult;
+use std::iter::Peekable;
+use std::slice::Iter;
 
 #[macro_use]
-macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
+/// Evaluates the result.
+/// 
+/// If it is an Ok tuple, return Boxed [`ASTNodePos`].
+/// If it is error, return [`ParseErr`] with the [`Err`] wrapped.
+macro_rules! get_or_err { ($it:expr, $fun:path, $msg:expr) => {{
+    let current = $it.peek().cloned();
+    match $fun($it) {
+        Ok(node) => Box::new(node),
+        Err(err) => return match current {
+            Some(tp) => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err),
+                                       position: Some(tp.clone()) }),
+            None =>
+                Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(err), position: None })
+        }
+    }
+}}}
 
-mod expression_or_statement;
-mod program;
-mod expression;
+/// Evaluates the expression and check result.
+///
+/// If it is an [`Ok`] tuple, return [`ASTNodePos`]..
+/// If it is error, return [`ParseErr`] with [`Err`] wrapped.
+macro_rules! get_or_err_direct { ($it:expr, $fun:path, $msg:expr) => {{
+    let current = $it.peek().cloned();
+    match $fun($it) {
+        Ok(node) => node,
+        Err(e) => return match current {
+            Some(tp) => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(e),
+                                       position: Some(tp.clone()) }),
+            None => Err(ParseErr { parsing: $msg.to_string(), cause: Box::new(e), position: None })
+        }
+}}}}
+
+/// Check that the next is of expected token type.
+///
+/// If it is not of the expected token type, returns [`TokenErr`].
+/// If there is no token ([`iterator::next()`] returns [`None`]), returns [`EOFErr`].
+macro_rules! check_next_is { ($it: expr, $tok:path) => {
+    if let Some(next) = $it.next() {
+        if next.token != $tok { return Err(TokenErr { expected: $tok, actual: next.clone() }); }
+        next.clone()
+    } else { return Err(EOFErr { expected: $tok }); }
+}}
+
+type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
+
+/// Gets the starting line and position of the current token using [`TPIterator.peek()`].
+fn start_pos(it: &mut TPIterator) -> (i32, i32) {
+    match it.peek() {
+        Some(TokenPos { line, pos, token: _ }) => (*line, *pos),
+        None => (-1, -1)
+    }
+}
+
+/// Gets the end line and position of the current token using [`TPIterator.peek()`].
+///
+/// The end position is calculated by offsetting the starting position by the offset of the current
+/// token, by calling its [`fmt::Display`] method.
+fn end_pos(it: &mut TPIterator) -> (i32, i32) {
+    match it.peek() {
+        Some(TokenPos { line, pos, token }) => (*line, *pos + format!("{}", token).len() as i32),
+        None => (-1, -1)
+    }
+}
+
+mod parse_result;
+
+mod control_flow_stmt;
+mod control_flow_expr;
+mod definition;
+mod block;
+mod expr_or_stmt;
+mod function;
+mod maybe_expr;
+mod module;
+mod operation;
 mod statement;
-mod util;
+mod _type;
+
+#[derive(PartialEq)]
+#[derive(Debug)]
+/// Wrapper of ASTNode, and its start end end position in the source code.
+/// The start and end positions can be used to generate useful error messages.
+pub struct ASTNodePos {
+    pub st_line: i32,
+    pub st_pos: i32,
+    pub en_line: i32,
+    pub en_pos: i32,
+    pub node: ASTNode,
+}
 
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ASTNode {
-    Program(Vec<ASTNode>, Box<ASTNode>),
-    FunDef(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    FunDefNoRetType(Box<ASTNode>, Vec<ASTNode>, Box<ASTNode>),
-    FunCall(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    DirectFunCall(Box<ASTNode>, Box<ASTNode>),
-    FunArg(Box<ASTNode>, Box<ASTNode>),
-    FunType(Box<ASTNode>, Box<ASTNode>),
-    StaticTuple(Vec<ASTNode>),
+    ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
+    ImportModUseAs { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos>, _as: Box<ASTNodePos> },
+    ImportModUseAll { _mod: Box<ASTNodePos> },
 
-    Id(String),
-    Assign(Box<ASTNode>, Box<ASTNode>),
-    Mut(Box<ASTNode>),
+    Script {
+        imports: Vec<ASTNodePos>,
+        decl: Box<ASTNodePos>,
+        funcs: Vec<ASTNodePos>,
+        body: Box<ASTNodePos>,
+    },
+    Class {
+        imports: Vec<ASTNodePos>,
+        name: Box<ASTNodePos>,
+        decls: Box<ASTNodePos>,
+        funcs: Vec<ASTNodePos>,
+    },
+    Util {
+        imports: Vec<ASTNodePos>,
+        name: Box<ASTNodePos>,
+        decls: Box<ASTNodePos>,
+        funcs: Vec<ASTNodePos>,
+    },
 
-    Do(Vec<ASTNode>),
+    ModName { name: String },
+    ModNameIsA { name: String, isa: Vec<String> },
 
-    Real(String),
-    Int(String),
-    ENum(String, String),
-    Str(String),
-    Bool(bool),
-    Tuple(Vec<ASTNode>),
+    EmptyDef { _mut: bool, id_maybe_type: Box<ASTNodePos> },
+    Def { _mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
 
-    Add(Box<ASTNode>, Box<ASTNode>),
-    AddU(Box<ASTNode>),
-    Sub(Box<ASTNode>, Box<ASTNode>),
-    SubU(Box<ASTNode>),
-    Mul(Box<ASTNode>, Box<ASTNode>),
-    Div(Box<ASTNode>, Box<ASTNode>),
-    Mod(Box<ASTNode>, Box<ASTNode>),
-    Pow(Box<ASTNode>, Box<ASTNode>),
+    TypeId { id: String },
+    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    TypeTup { types: Vec<ASTNodePos> },
+    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    Id { id: String },
+    IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
-    Le(Box<ASTNode>, Box<ASTNode>),
-    Ge(Box<ASTNode>, Box<ASTNode>),
-    Leq(Box<ASTNode>, Box<ASTNode>),
-    Geq(Box<ASTNode>, Box<ASTNode>),
+    Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
+    _Self { expr: Box<ASTNodePos> },
 
-    Is(Box<ASTNode>, Box<ASTNode>),
-    IsN(Box<ASTNode>, Box<ASTNode>),
-    Eq(Box<ASTNode>, Box<ASTNode>),
-    Neq(Box<ASTNode>, Box<ASTNode>),
-    Not(Box<ASTNode>),
-    And(Box<ASTNode>, Box<ASTNode>),
-    Or(Box<ASTNode>, Box<ASTNode>),
+    Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
 
-    If(Box<ASTNode>, Box<ASTNode>),
-    IfElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    Unless(Box<ASTNode>, Box<ASTNode>),
-    UnlessElse(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    When(Box<ASTNode>, Vec<ASTNode>),
-    For(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>),
-    While(Box<ASTNode>, Box<ASTNode>),
-    Loop(Box<ASTNode>),
+    SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+    Set { elements: Vec<ASTNodePos> },
+    List { elements: Vec<ASTNodePos> },
+    Tuple { elements: Vec<ASTNodePos> },
+
+    Block { stmts: Vec<ASTNodePos> },
+
+    Real { real: String },
+    Int { int: String },
+    ENum { int_digits: String, frac_digits: String },
+    Str { string: String },
+    Bool { _bool: bool },
+
+    Add { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    AddU { expr: Box<ASTNodePos> },
+    Sub { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    SubU { expr: Box<ASTNodePos> },
+    Mul { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Div { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Mod { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Pow { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Sqrt { expr: Box<ASTNodePos> },
+
+    Le { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Ge { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Leq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Geq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Is { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    IsN { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Eq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Neq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    IsA { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Not { expr: Box<ASTNodePos> },
+    And { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Or { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+
+    If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
+    IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
+    Unless { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
+    UnlessElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
+    When { cond: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
+    For { expr: Box<ASTNodePos>, collection: Box<ASTNodePos>, body: Box<ASTNodePos> },
+    While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,
     Continue,
 
-    Return(Box<ASTNode>),
-    Print(Box<ASTNode>),
-    DoNothing,
+    Return { expr: Box<ASTNodePos> },
+    ReturnEmpty,
+    
+    Print { expr: Box<ASTNodePos> },
 }
 
-// program ::= do-block
-pub fn parse(input: Vec<Token>) -> Result<ASTNode, String> {
-    return program::parse(&mut input.iter().peekable())
+pub fn parse(input: Vec<TokenPos>) -> ParseResult {
+    return module::parse_module(&mut input.iter().peekable());
 }
-
-#[cfg(test)]
-mod test;

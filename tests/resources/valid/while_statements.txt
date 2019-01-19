@@ -2,4 +2,9 @@ while b do c
 
 while d do
     print e
+
     print f
+
+    print g
+
+print "hello"

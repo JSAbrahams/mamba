@@ -1,105 +1,114 @@
+use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use std::iter::Peekable;
 use std::str::Chars;
 
-#[derive(PartialEq)]
-#[derive(Debug)]
-pub enum Token {
-    Fun,
-    To,
-    Point,
-    Comma,
-    DoublePoint,
-
-    Id(String),
-    Mut,
-    Assign,
-    Let,
-
-    Real(String),
-    Int(String),
-    ENum(String, String),
-    Str(String),
-    Bool(bool),
-
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Mod,
-
-    Ge,
-    Geq,
-    Le,
-    Leq,
-
-    Eq,
-    Is,
-    IsN,
-    Neq,
-    And,
-    Or,
-    Not,
-
-    LPar,
-    RPar,
-    NL,
-    Ind,
-
-    Loop,
-    While,
-    For,
-    In,
-    If,
-    Unless,
-    When,
-    Then,
-    Else,
-    Do,
-    Continue,
-    Break,
-    Ret,
-
-    Print,
-    DoNothing,
-}
+pub mod token;
 
 #[macro_use]
-macro_rules! next_and { ($it:expr, $stmt:stmt) => {{ $it.next(); $stmt }} }
+macro_rules! next_and { ($it:expr, $pos:expr, $stmt:stmt) => {{ $it.next(); *$pos += 1; $stmt }} }
 
-pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
-    let mut tokens = Vec::new();
+pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
+    let mut tokens = Vec::new();
+
+    let mut current_indent = 0;
+    let mut this_line_indent = 0;
     let mut consecutive_spaces = 0;
+    let mut last_is_newline = true;
 
-    while let Some(c) = it.next() {
+    let mut line = 1;
+    let mut pos = 1;
+
+    macro_rules! next_pos_and_tp {
+    ($amount:expr, $tok:path) => {{
+        for _ in current_indent..this_line_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Indent });
+        }
+        for _ in this_line_indent..current_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Dedent });
+        }
+
+        it.next();
+        tokens.push(TokenPos { line, pos, token: $tok });
+        pos += $amount;
+
+        current_indent = this_line_indent;
+    }};
+    ($fun:path) => {{
+        for _ in current_indent..this_line_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Indent });
+        }
+        for _ in this_line_indent..current_indent {
+            tokens.push(TokenPos { line, pos, token: Token::Dedent });
+        }
+
+        tokens.push(TokenPos { line, pos, token: $fun(&mut it, &mut pos) });
+
+        current_indent = this_line_indent;
+    }}
+    };
+
+    macro_rules! next_line_and_tp { () => {{
+        tokens.push(TokenPos { line, pos, token: Token::NL });
+
+        it.next();
+        line += 1;
+        pos = 1;
+
+        if !last_is_newline { current_indent = this_line_indent }
+        this_line_indent = 0;
+        last_is_newline = true;
+    }}};
+
+    macro_rules! increase_indent { () => {{
+        pos += 4;
+        this_line_indent += 1;
+    }}};
+
+    while let Some(&c) = it.peek() {
         match c {
-            '.' => tokens.push(Token::Point),
-            ':' => tokens.push(Token::DoublePoint),
-            ',' => tokens.push(Token::Comma),
-            '(' => tokens.push(Token::LPar),
-            ')' => tokens.push(Token::RPar),
-            '\n' => tokens.push(Token::NL),
-            '\r' => match it.next() {
-                Some('\n') => tokens.push(Token::NL),
-                Some(other) =>
-                    return Err(format!("Expected newline after carriage return. Was {}", other)),
-                None => return Err("File ended with carriage return".to_string())
+            '.' => next_pos_and_tp!(1, Token::Point),
+            ':' => {
+                it.next();
+                match it.peek() {
+                    Some(':') => next_pos_and_tp!(2, Token::DDoublePoint),
+                    _ => next_pos_and_tp!(1, Token::DoublePoint),
+                }
             }
-            '\t' => tokens.push(Token::Ind),
-
-            '<' | '>' | '+' | '-' | '*' | '/' | '^' =>
-                tokens.push(get_operator(c, &mut it)),
-            '0'...'9' => tokens.push(get_number(c, &mut it)),
-            '"' => tokens.push(get_string(&mut it)),
-            'a'...'z' | 'A'...'Z' => tokens.push(get_id_or_op(c, &mut it)),
-
+            ',' => next_pos_and_tp!(1, Token::Comma),
+            '(' => next_pos_and_tp!(1, Token::LPar),
+            ')' => next_pos_and_tp!(1, Token::RPar),
+            '[' => next_pos_and_tp!(1, Token::LBrack),
+            ']' => next_pos_and_tp!(1, Token::RBrack),
+            '{' => next_pos_and_tp!(1, Token::LCurl),
+            '}' => next_pos_and_tp!(1, Token::RCurl),
+            '|' => next_pos_and_tp!(1, Token::Ver),
+            '\n' => next_line_and_tp!(),
+            '\r' => {
+                it.next();
+                match it.peek() {
+                    Some('\n') => next_line_and_tp!(),
+                    Some(other) =>
+                        return Err(format!("Expected newline after carriage return. Was {}", other)),
+                    None => return Err("File ended with carriage return".to_string())
+                }
+            }
+            '\t' => increase_indent!(),
+            '<' | '>' | '+' | '-' | '*' | '/' | '^' => next_pos_and_tp!(get_operator),
+            '0'...'9' => next_pos_and_tp!(get_number),
+            '"' => next_pos_and_tp!(get_string),
+            'a'...'z' | 'A'...'Z' => next_pos_and_tp!(get_id_or_op),
+            '#' => ignore_comment(&mut it),
             ' ' => {
+                pos += 1;
                 consecutive_spaces += 1;
                 if consecutive_spaces == 4 {
                     consecutive_spaces = 0;
-                    tokens.push(Token::Ind);
+                    increase_indent!();
+                    pos -= 4;
                 }
+                it.next();
                 continue;
             }
             c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
@@ -111,112 +120,111 @@ pub fn tokenize(input: String) -> Result<Vec<Token>, String> {
     return Ok(tokens);
 }
 
-fn get_operator(current: char, it: &mut Peekable<Chars>) -> Token {
-    return match current {
-        '<' => match it.peek() {
-            Some('=') => {
+fn ignore_comment(it: &mut Peekable<Chars>) {
+    while let Some(c) = it.peek() {
+        match c {
+            '\n' => break,
+            _ => {
                 it.next();
-                Token::Leq
+                continue;
             }
-            Some('-') => {
-                it.next();
-                Token::Assign
-            }
+        }
+    }
+}
+
+fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
+    *pos += 1;
+    return match it.next() {
+        Some('<') => match it.peek() {
+            Some('=') => next_and!(it, pos, Token::Leq),
+            Some('-') => next_and!(it, pos, Token::Assign),
             _ => Token::Le
         }
-        '>' => match it.peek() {
-            Some('=') => {
-                it.next();
-                Token::Geq
-            }
+        Some('>') => match it.peek() {
+            Some('=') => next_and!(it, pos, Token::Geq),
             _ => Token::Ge
         }
-        '+' => Token::Add,
-        '-' => match it.peek() {
-            Some('>') => {
-                it.next();
-                Token::To
-            }
-            _ => Token::Sub
-        }
-        '/' => Token::Div,
-        '*' => Token::Mul,
-        '^' => Token::Pow,
-        _ => panic!("get operator received a token it shouldn't have.")
+        Some('+') => Token::Add,
+        Some('-') => Token::Sub,
+        Some('/') => Token::Div,
+        Some('*') => Token::Mul,
+        Some('^') => Token::Pow,
+        _ => panic!("get operator received a character it shouldn't have.")
     };
 }
 
-fn get_number(current: char, it: &mut Peekable<Chars>) -> Token {
+fn get_number(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     let mut num = String::new();
     let mut exp = String::new();
     let mut e_found = false;
     let mut comma = false;
 
-    match current {
-        '0'...'9' => num.push(current),
-        _ => panic!("get number received a token it shouldn't have.")
+    match it.next() {
+        Some(digit @ '0'...'9') => num.push(digit),
+        _ => panic!("get number received a character it shouldn't have.")
     }
+    *pos += 1;
 
     while let Some(&c) = it.peek() {
         match c {
-            '0'...'9' if !e_found => next_and!(it, num.push(c)),
-            '0'...'9' if e_found => next_and!(it, exp.push(c)),
-
+            '0'...'9' if !e_found => next_and!(it, pos, num.push(c)),
+            '0'...'9' if e_found => next_and!(it, pos, exp.push(c)),
             'e' | 'E' if e_found => break,
-            'e' | 'E' => next_and!(it, e_found = true),
-
+            'e' | 'E' => next_and!(it, pos, e_found = true),
             '.' if comma || e_found => break,
-            '.' => {
-                num.push(c);
-                next_and!(it,comma = true)
-            }
-
+            '.' => next_and!(it, pos, { num.push(c); comma = true; }),
             _ => break
         }
     }
 
-    return if e_found {
-        if num.is_empty() { num.push('0') }
-        Token::ENum(num, exp)
-    } else if comma {
-        Token::Real(num)
-    } else {
-        Token::Int(num)
+    return match (e_found, comma) {
+        (true, _) => Token::ENum(num, exp),
+        (false, true) => Token::Real(num),
+        (false, false) => Token::Int(num)
     };
 }
 
-fn get_string(it: &mut Peekable<Chars>) -> Token {
+fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
+    it.next();
     let mut result = String::new();
 
     while let Some(&c) = it.peek() {
-        it.next();
         match c {
-            '"' => break,
-            _ => result.push(c)
+            '"' => next_and!(it, pos, break),
+            _ => next_and!(it, pos, result.push(c))
         }
     }
 
     return Token::Str(result);
 }
 
-fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
-    let mut result = String::from(current.to_string());
+fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
+    let mut result = String::new();
+    *pos += 1;
 
     while let Some(&c) = it.peek() {
         match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => {
-                it.next();
-                result.push(c)
-            }
+            'a'...'z' | 'A'...'Z' | '0'...'9' | '_' => next_and!(it, pos, result.push(c)),
             _ => break
         }
     }
 
     return match result.as_ref() {
-        "fun" => Token::Fun,
-        "let" => Token::Let,
-        "mutable" => Token::Mut,
+        "util" => Token::Util,
+        "type" => Token::Type,
+        "as" => Token::As,
+        "isa" => Token::IsA,
+        "constructor" => Token::Constructor,
 
+        "use" => Token::Use,
+        "useall" => Token::UseAll,
+        "class" => Token::Class,
+        "forward" => Token::Forward,
+        "self" => Token::_Self,
+
+        "fun" => Token::Fun,
+        "def" => Token::Def,
+        "mutable" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,
@@ -225,10 +233,11 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
         "equals" => Token::Eq,
         "notequals" => Token::Neq,
         "mod" => Token::Mod,
-
-        "loop" => Token::Loop,
+        "sqrt" => Token::Sqrt,
         "while" => Token::While,
         "for" => Token::For,
+        "where" => Token::Where,
+
         "in" => Token::In,
         "if" => Token::If,
         "then" => Token::Then,
@@ -242,13 +251,7 @@ fn get_id_or_op(current: char, it: &mut Peekable<Chars>) -> Token {
 
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),
-
         "print" => Token::Print,
-        "donothing" => Token::DoNothing,
-
         _ => Token::Id(result)
     };
 }
-
-#[cfg(test)]
-mod test;

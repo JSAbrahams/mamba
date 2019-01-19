@@ -1,0 +1,6 @@
+from a use b as c
+
+class my_class
+
+fun fun_1(d: (e,f) -> g): (h, i) -> j ->
+    print "hello world"

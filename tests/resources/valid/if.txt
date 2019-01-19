@@ -1,0 +1,42 @@
+def b <- 40
+
+print "hello" if cond1
+print "hi" unless cond2
+
+if c then d <- 4 else asdf
+unless d then e <- 5 else fdsa
+
+# this if doesn't do much yet
+if cond then
+    body
+else # this is the else
+    other
+    print "a"
+
+    if aaa then
+        bbb
+    else
+        ccc
+
+if asd then
+    body_part_1
+    body_part_2
+else
+    other
+    print "a"
+
+if l then
+    m
+
+unless n then
+    o
+
+if p then
+    q
+else
+    r
+
+unless s then
+    t
+else
+    u

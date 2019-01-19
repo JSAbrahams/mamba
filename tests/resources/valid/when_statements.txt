@@ -1,0 +1,3 @@
+when a
+    b then c
+    d then e
