@@ -28,7 +28,6 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         for _ in this_line_indent..current_indent {
             tokens.push(TokenPos { line, pos, token: Token::Dedent });
         }
-        tokens.push(TokenPos { line, pos, token: Token::NL });
 
         it.next();
         tokens.push(TokenPos { line, pos, token: $tok });
