@@ -30,27 +30,25 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let _type = match match it.peek() {
-        Some(TokenPos { token: Token::Id(_), .. }) => parse_id(it),
-        _ => parse_type_tuple(it)
-    } {
-        Ok(t) => t,
-        err => return err
-    };
-
     return match it.peek() {
-        Some(TokenPos { token: Token::Assign, .. }) => {
-            it.next();
-            let right: Box<ASTNodePos> = get_or_err!(it, parse_type, "type");
-            Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: right.en_line,
-                en_pos: right.en_pos,
-                node: ASTNode::TypeFun { left: Box::new(_type), right },
-            })
+        Some(TokenPos { token: Token::Id(_), .. }) => parse_id(it),
+        _ => {
+            let _type = get_or_err!(it, parse_type_tuple, "type");
+            match it.peek() {
+                Some(TokenPos { token: Token::Assign, .. }) => {
+                    it.next();
+                    let right: Box<ASTNodePos> = get_or_err!(it, parse_type, "type");
+                    Ok(ASTNodePos {
+                        st_line,
+                        st_pos,
+                        en_line: right.en_line,
+                        en_pos: right.en_pos,
+                        node: ASTNode::TypeFun { left: _type, right },
+                    })
+                }
+                _ => Ok(*_type)
+            }
         }
-        _ => Ok(_type)
     };
 }
 

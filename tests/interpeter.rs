@@ -8,6 +8,7 @@ use crate::util::valid_resource;
 mod util;
 
 #[test]
+#[ignore]
 fn interpret_assigns_and_while() {
     let source = valid_resource("assign_and_while.txt");
 

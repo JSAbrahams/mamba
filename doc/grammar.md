@@ -34,7 +34,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id | type "<-" type | "(" [ type { "," type } ] ")"
+    type             ::= id | type-tuple "<-" type | type-tuple
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id { "," id } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
@@ -58,14 +58,19 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | function-call 
                       | function-call-dir 
                       | [ newline ] block
-                      | set-builder
+                      | collection
                       | "_"
                       | [ "self" ] id
+                      | sizeof
     
+    collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
-    set              ::= "{" zero-or-more-expr "}"
+    set              ::= "{" zero-or-more-expr "}" | set-builder
     set-builder      ::= "{" maybe-expr | maybe-expr { "," maybe-expr } "}"
     list             ::= "[" zero-or-more-expr "]"
+    map              ::= "{" maybe-expr ":" maybe-expr { "," maybe-expr ":" maybe-expr } "}"
+    
+    sizeof           ::= "|" maybe-expr "|"
     zero-or-more-expr::= [ ( maybe-expr { "," maybe-expr } ]
     
     reassignment     ::= maybe-expr "<-" maybe-expr
