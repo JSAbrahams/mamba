@@ -14,6 +14,6 @@ A function (or method) `f` is assigned to as such:\
 The return type of the function may be omitted if it can be inferred.
 
 A function may also be anonymous:\
-`def f (x) <- x + 1`\
+`(x) <- x + 1`\
 In this case the types of the function  arguments may be omitted, provided 
 that these can be inferred elsewhere.
