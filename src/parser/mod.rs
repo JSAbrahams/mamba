@@ -1,3 +1,4 @@
+use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::parse_result::ParseErr::CustomEOFErr;
 use crate::parser::parse_result::ParseResult;
@@ -5,7 +6,6 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 #[macro_use]
-
 /// Evaluates the result.
 /// 
 /// If it is an Ok tuple, return Boxed [`ASTNodePos`].
@@ -55,7 +55,7 @@ type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 fn start_pos(it: &mut TPIterator) -> (i32, i32) {
     match it.peek() {
         Some(TokenPos { line, pos, token: _ }) => (*line, *pos),
-        None => (-1, -1)
+        None => (0, 0)
     }
 }
 
@@ -65,7 +65,20 @@ fn start_pos(it: &mut TPIterator) -> (i32, i32) {
 /// token, by calling its [`fmt::Display`] method.
 fn end_pos(it: &mut TPIterator) -> (i32, i32) {
     match it.peek() {
-        Some(TokenPos { line, pos, token }) => (*line, *pos + format!("{}", token).len() as i32),
+        Some(TokenPos { line, pos, token }) => {
+            let tok_width = match token {
+                Token::Id(id) => id.len(),
+                Token::Real(real) => real.len(),
+                Token::Int(int) => int.len(),
+                Token::Bool(true) => 4,
+                Token::Bool(false) => 5,
+                Token::Str(_str) => _str.len(),
+                Token::ENum(num, exp) => num.len() + 1 + exp.len(),
+                other => format!("{}", other).len() - 2
+            } as i32;
+
+            (*line, *pos + tok_width)
+        }
         None => (-1, -1)
     }
 }
@@ -186,7 +199,7 @@ pub enum ASTNode {
 
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
-    
+
     Print { expr: Box<ASTNodePos> },
 }
 

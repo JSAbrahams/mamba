@@ -14,10 +14,7 @@ macro_rules! inner_bin_op { ($it:expr, $st_line:expr, $st_pos: expr, $fun:path, 
     $it.next();
     let right: Box<ASTNodePos> = get_or_err!($it, $fun, $msg);
     Ok(ASTNodePos {
-        st_line: $st_line,
-        st_pos: $st_pos,
-        en_line: right.en_line,
-        en_pos: right.en_pos,
+        st_line: $st_line, st_pos: $st_pos, en_line: right.en_line, en_pos: right.en_pos,
         node: ASTNode::$ast { left: $left, right },
     })
 }}}
@@ -135,8 +132,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                 Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
                 Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
                 Some(TokenPos { token: Token::Bool(ref _bool), .. }) => literal!(*_bool, Bool),
-                Some(TokenPos { token: Token::Str(string), .. }) =>
-                    literal!(string.to_string(), Str),
+                Some(TokenPos { token: Token::Str(str), .. }) => literal!(str.to_string(), Str),
                 Some(TokenPos { token: Token::ENum(num, exp), .. }) =>
                     Ok(ASTNodePos {
                         st_line,
