@@ -5,6 +5,7 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 #[macro_use]
+
 /// Evaluates the result.
 /// 
 /// If it is an Ok tuple, return Boxed [`ASTNodePos`].
@@ -127,11 +128,11 @@ pub enum ASTNode {
     EmptyDef { _mut: bool, id_maybe_type: Box<ASTNodePos> },
     Def { _mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
 
+    Id { lit: String },
     TypeId { id: String },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
-    Id { id: String },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
     Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
@@ -146,11 +147,11 @@ pub enum ASTNode {
 
     Block { stmts: Vec<ASTNodePos> },
 
-    Real { real: String },
-    Int { int: String },
+    Real { lit: String },
+    Int { lit: String },
     ENum { int_digits: String, frac_digits: String },
-    Str { string: String },
-    Bool { _bool: bool },
+    Str { lit: String },
+    Bool { lit: bool },
 
     Add { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     AddU { expr: Box<ASTNodePos> },

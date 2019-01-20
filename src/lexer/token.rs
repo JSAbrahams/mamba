@@ -133,10 +133,10 @@ impl fmt::Display for Token {
             Token::Le => "'<'".to_string(),
             Token::Leq => "'<='".to_string(),
 
-            Token::Eq => "'equals'".to_string(),
+            Token::Eq => "'eq'".to_string(),
             Token::Is => "'is'".to_string(),
             Token::IsN => "'isnt'".to_string(),
-            Token::Neq => "'notequal'".to_string(),
+            Token::Neq => "'neq'".to_string(),
             Token::And => "'and'".to_string(),
             Token::Or => "'or'".to_string(),
             Token::Not => "'not'".to_string(),

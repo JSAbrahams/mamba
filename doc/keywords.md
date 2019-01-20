@@ -39,8 +39,8 @@ Keyword    | Use
 `or`       | Or operator
 `is`       | Check whether an instance is another instance
 `isnt`     | Check whether an instance is not another instance
-`equals`   | Check whether an expression evaluates to another expression
-`notequals`| Check whether an expression does not evaluate to another expression
+`eq`       | Check whether an expression evaluates to another expression
+`neq`      | Check whether an expression does not evaluate to another expression
 `true`     | True value
 `false`    | False value
 

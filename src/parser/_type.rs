@@ -18,7 +18,7 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
             st_pos,
             en_line,
             en_pos,
-            node: ASTNode::Id { id: id.to_string() },
+            node: ASTNode::Id { lit: id.to_string() },
         }),
 
         Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
