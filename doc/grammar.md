@@ -34,7 +34,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id | type-tuple "<-" type | type-tuple
+    type             ::= id | type-tuple [ "<-" type ]
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id { "," id } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
@@ -57,10 +57,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | function-call 
                       | function-call-dir 
                       | [ newline ] block
-                      | collection
-                      | "_"
                       | [ "self" ] id
+                      | collection
                       | sizeof
+                      | "_"
     
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
@@ -75,7 +75,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     reassignment     ::= expression "<-" expression
     defer-def        ::= definition [ "forward" id { "," id } ]
     im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
-    definition       ::= ( mutable-def | immutable-def )
+    definition       ::= mutable-def | immutable-def
     mutable-def      ::= "def" "mut" id-maybe-type [ "<-" expression ]
     immutable-def    ::= "def" id-maybe-type [ "<-" expression ]
 
@@ -96,18 +96,18 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     constant         ::= number | boolean | string
     number           ::= real | integer | e-notation
-    real             ::= digit "." { digit } | "." digit { digit }
+    real             ::= digit "." { digit }
     integer          ::= { digit }
     e-notation       ::= ( integer | real ) ( "e" | "E" ) [ "-" ] integer
     boolean          ::= "true" | "false"
-    string           ::= "\"" { character } "\""
+    string           ::= """ { character } """
                                      
     control-flow-expr::= if | from | when
     if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
     when             ::= "when" expression newline indent { when-case newline } dedent
     when-case        ::= expression "then" expr-or-stmt
     
-    control-flow-stmt::= loop | while | for | "break" | "continue"
+    control-flow-stmt::= while | for | "break" | "continue"
     while            ::= "while" expression "do" expr-or-stmt
     for              ::= "for" expression "in" expression "do" expr-or-stmt
     

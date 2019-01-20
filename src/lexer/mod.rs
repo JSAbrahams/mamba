@@ -187,11 +187,13 @@ fn get_number(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     it.next();
     let mut result = String::new();
+    let mut last_backslash = false;
 
     while let Some(&c) = it.peek() {
         match c {
-            '"' => next_and!(it, pos, break),
-            _ => next_and!(it, pos, result.push(c))
+            '"' => next_and!(it, pos, { if !last_backslash { break; }; last_backslash = false }),
+            '\\' => next_and!(it, pos, { result.push(c); last_backslash = true }),
+            _ => next_and!(it, pos, { result.push(c); last_backslash = false })
         }
     }
 

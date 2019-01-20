@@ -9,7 +9,7 @@ if cond then
     body
 else # this is the else
     other
-    print "a"
+    print "hello \"world\""
 
     if aaa then
         bbb
