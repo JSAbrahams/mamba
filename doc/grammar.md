@@ -29,6 +29,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     function-def     ::= "def" id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
     function-def-bod ::= function-def "<-" expr-or-stmt
+    operator-def     ::= "def" "'" overridable-op "'" [ "(" id-and-type ")" ] [ ":" type ] "<-" expression
     
     function-anon    ::= args-anon "<-" expression
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
@@ -38,6 +39,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id { "," id } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
+    id-and-type    ::= ( id | type-tuple ) ":" type
     
     block            ::= indent { expr-or-stmt newline } dedent
     
@@ -79,18 +81,20 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     mutable-def      ::= "def" "mut" id-maybe-type [ "ofmut" ] [ "<-" expression ]
     immutable-def    ::= "def" id-maybe-type ["ofmut"] [ "<-" expression ]
 
-    operation        ::= relation | relation ( equality | binary-logic ) relation
+    operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
     factor           ::= [ additive | "sqrt" ] ( constant | id | expression )
     
+    overrideable-op  ::= additive | "sqrt" | multiplicative | power | equality | comparison
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    equality         ::= "eq" | "is" | "neq" | "isnt" | "isa"
+    instance-eq      ::= "is" | "isnt" | "isa"
+    equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
     

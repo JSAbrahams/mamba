@@ -9,6 +9,8 @@ A module is represented by a single file. A module may
 * Be a `util` and a `class`
 * Be a `script`
 
+Note: `to_string` may be either a function or a constant
+
 ### Type
 
 Describes the properties a class should have that implements this type.
