@@ -10,13 +10,17 @@ constructs however have been shown to be somewhat troublesome:
   method call might result in an exception even if the source code does not reflect this. This means that the use of
   said method either has to either: 
     * Manually check that a method does indeed not throw an exception, which becomes exponentially more difficult when a
-      method calls other method, and so forth. 
+      method calls other methods, and so forth. 
     * Wrap all method calls in `try` `catch` blocks, which might often be unnecessarily and make the application 
       unnecessarily verbose.
     * Assume that the method will not throw an exception, which might be a source of bugs down the line and may result
       in runtime errors.
 
-As such, we aim to address the above concerns by using a more explicit system of error handling outlined below.
+As such, we aim to address the above concerns by using a more explicit system of error handling outlined below. In 
+general we:
+    
+* Handle errors where they occur
+* We explicitly state that an expression might throw an error
 
 File `my_err.mylang`:
 
@@ -33,12 +37,20 @@ When calling the function, it either has to be explicitly stated that it may rai
 Which must be added to the function signature if used within:
 
     # ommitting the raises in the signature of f would result in a type error!
-    def f(x: Real): Real raises[MyErr] <- g(9) raises[MyErr] + 1
+    def f(x: Real): Real raises[MyErr] <-
+        def a <- g(9) raises[MyErr] + 1.5
+        a * 4.6
+    
+    # you can also put raises at the end of a statement or expression in a block.
+    def h(x: Real): Real raises[MyErr] <-
+        def a <- g(9) + 1.5 raises[MyErr] # If this statement would throw multiple types of exceptions, we would list 
+                                          # them here
+        a * 2.3
     
 Or, we explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned value to
 determine what to do. A good first step is to log the error. In this case, we simply print it:
     
-    def l <- g(9) handle when
+    def l <- g(9) + 1.5 handle when
         err: MyErr -> println err
         
     # here, l has type l?, as we don not know if an error occurred or not
@@ -51,7 +63,7 @@ and get the following:
         l: Int   -> println "we know for sure that l is an Int" # l 
         err: MyErr -> print err
  
-We may also do the following:
+We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
 
     def l <- g(9) hanle when
         err: MyErr ->
