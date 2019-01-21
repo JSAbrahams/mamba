@@ -32,17 +32,17 @@ Keyword | Use
 `ofmut` | Denote that a collection contains mutable variables
 
 ### Boolean operators
-Keyword    | Use 
------------|-----
-`not`      | Negation of a boolean value
-`and`      | And operator 
-`or`       | Or operator
-`is`       | Check whether an instance is another instance
-`isnt`     | Check whether an instance is not another instance
-`eq`       | Check whether an expression evaluates to another expression
-`neq`      | Check whether an expression does not evaluate to another expression
-`true`     | True value
-`false`    | False value
+Keyword | Use 
+--------|-----
+`not`   | Negation of a boolean value
+`and`   | And operator 
+`or`    | Or operator
+`is`    | Check whether an instance is another instance
+`isnt`  | Check whether an instance is not another instance
+`eq`    | Check whether an expression evaluates to another expression
+`neq`   | Check whether an expression does not evaluate to another expression
+`true`  | True value
+`false` | False value
 
 ### Mathematical Operators
 Keyword | Use 

@@ -2,18 +2,21 @@
 
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    import           ::= "use" string [ "as" id ] [ ( "use" { id { "," id } | "useall" ) ]
+    import           ::= "from" string [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ] 
     
+    file             ::= { module }
     module           ::= interface | util | class | script
-    interface        ::= "type" id newline { newline }
+    interface        ::= "type" id [ "[" id { "," id } "]" ] newline { newline }
                          { ( function-def | immutable-def | immutable-asssign ) newline { newline } } ]
     util             ::= { import newline } newline { newline } 
-                         "util" [ "[" id { "," id } "]" ] id [ "isa" id { "," id } ] newline { newline }
+                         "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ] 
+                         newline { newline }
                          { im-defer-def newline } { newline }
                          { [ "private" ] ( immutable-declaration | function-def-bod ) newline { newline } }
     class            ::= { import newline } newline { newline }
                          [ util ]
-                         "class" [ constructor-args ] [ "isa" id { "," id } ] newline { newline } 
+                         "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ] 
+                         [ "isa" id { "," id } ] newline { newline } 
                          { defer-def newline } { newline }
                          { ( constructor-def | [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
     script           ::= { import newline } { newline } 

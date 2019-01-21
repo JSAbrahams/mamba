@@ -49,6 +49,7 @@ be either defined in the constructor or at the top of the body of the `class`.
 
 `to_string` and `to_hash` of a class may be either a function or a constant. If these are not implemented, the default
 implementation is used.
+The default behaviour of `to_hash` is to return the class name combined with the memory address.
 
 `eq` may be implemented. If not, the default implementation is used of recursively checking that the values are equal.
 For contained instances of the classes, this is only done for forwarded definitions. See "Operator Overloading" for more

@@ -9,6 +9,7 @@ pub struct TokenPos {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
+    From,
     Type,
     Class,
     Util,
@@ -93,6 +94,7 @@ pub enum Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string_representation = match self.clone() {
+            Token::From => "'from'".to_string(),
             Token::Util => "'util'".to_string(),
             Token::Type => "'type'".to_string(),
             Token::Class => "'class'".to_string(),

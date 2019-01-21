@@ -9,8 +9,8 @@ Character | Use
 `)`       | Denote end of tuple elements or function arguments
 `{`       | Denote start of set, set constructor, or map
 `}`       | Denote end of set, set constructor, or map
-`[`       | Denote start of list
-`]`       | Denote end of list
+`[`       | Denote start of list, or opening bracket of generics of a class
+`]`       | Denote end of list, or closing bracket of generics of a class
 
 ### Mathematical Operators
 Character | Use

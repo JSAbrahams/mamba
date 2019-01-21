@@ -20,9 +20,7 @@ numbers, to show how operator overloading may be used.
 
 File `complex.mylang`:
 
-     class Complex
-     
-     def constructor(def real: Int, def imaginary: Int)
+     class Complex(def real: Int, def imaginary: Int)
      
      # the default return type for operators is the class itself
      def + (other: Complex) <- Complex(self real + other real, self imaginary + other imaginary)
@@ -36,6 +34,8 @@ File `complex.mylang`:
      def to_string <- "[self real] + i[self imaginary]"
         
 File `main.mylang`:
+
+    from "complex" use Complex
 
     def a <- Complex(1, 2) # 1 + 2i
     def b <- Complex(2, 3) # 2 + 3i
