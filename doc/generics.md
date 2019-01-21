@@ -23,7 +23,7 @@ File `graph.mylang`:
     
     # A generic is usually a type. It may be a class, but this has limited use as we cannot inherit from a class
     class Graph[N isa Node]
-        def mut nodes: Set[N] <- {}
+        def private mut nodes: Set[N] <- {}
         
         def addNode(node: N) <- nodes add node
         

@@ -12,13 +12,13 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ] 
                          newline { newline }
                          { im-defer-def newline } { newline }
-                         { [ "private" ] ( immutable-declaration | function-def-bod ) newline { newline } }
+                         { ( immutable-declaration | function-def-bod ) newline { newline } }
     class            ::= { import newline } newline { newline }
                          [ util ]
                          "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ] 
                          [ "isa" id { "," id } ] newline { newline } 
                          { defer-def newline } { newline }
-                         { ( constructor-def | [ "private" ] ( function-def-bod | definition ) ) newline 
+                         { ( constructor-def | function-def-bod | definition ) ) newline 
                          { newline } }
     script           ::= { import newline } { newline } 
                          { function-def newline { newline } } 
@@ -31,7 +31,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
     constructor-arg  ::= [ "self" ] id-maybe-type
     
-    function-def     ::= "def" id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
+    function-def     ::= "def" [ "private" ] id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
     function-def-bod ::= function-def "<-" expr-or-stmt
     operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "<-" expression
     
@@ -84,7 +84,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     definition       ::= mutable-def | immutable-def
     mutable-def      ::= empty-def [ "<-" expression ]
     immutable-def    ::= empty-def [ "<-" expression ]
-    empty-def        ::= "def" [ "mut" ] [ "ofmut" ] [ id-and-type ]
+    empty-def        ::= "def" [ "private" ] [ "mut" ] id-maybe-type [ "ofmut" ] 
     empty-def-type   ::= "def" [ "mut" ] [ "ofmut" ] id-and-type
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation

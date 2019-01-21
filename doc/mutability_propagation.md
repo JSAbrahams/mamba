@@ -9,7 +9,7 @@ it will mark that method. That method may then only be used when the instance ha
 File `my_class.mylang`:
 
     class MyClass
-        def field <- 10
+        def private field <- 10
         
         # modifies a field of the class        
         def f () <- field <- 20
