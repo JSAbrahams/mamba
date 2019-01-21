@@ -33,17 +33,15 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     function-def     ::= "def" [ "private" ] id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
     function-def-bod ::= function-def "<-" expr-or-stmt
+    function-def-anon::= tuple [ ":" type ] "->" expression
     operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "<-" expression
     
-    function-anon    ::= args-anon "<-" expression
-    args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
-    
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id | type-tuple [ "<-" type ]
+    type             ::= id | type-tuple [ "->" type ]
     type-def         ::= "type" id "<-" type
-    type-tuple       ::= "(" [ id { "," id } ] ")" 
+    type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
-    id-and-type    ::= ( id | type-tuple ) ":" type
+    id-and-type      ::= ( id | type-tuple ) ":" type
     
     block            ::= indent { expr-or-stmt newline } dedent
     
@@ -57,7 +55,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | instance
                       | operation 
                       | tuple 
-                      | function-anon
+                      | function-def-anon
                       | control-flow-expr 
                       | reassignment 
                       | function-call 
@@ -73,7 +71,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     set              ::= "{" zero-or-more-expr "}" | set-builder
     set-builder      ::= "{" expression | expression { "," expression } "}"
     list             ::= "[" zero-or-more-expr "]"
-    map              ::= "{" expression ":" expression { "," expression ":" expression } "}"
+    map              ::= "{" expression "->" expression { "," expression "->" expression } "}"
     
     sizeof           ::= "|" expression "|"
     zero-or-more-expr::= [ ( expression { "," expression } ]

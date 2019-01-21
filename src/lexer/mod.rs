@@ -145,7 +145,10 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
             _ => Token::Ge
         }
         Some('+') => Token::Add,
-        Some('-') => Token::Sub,
+        Some('-') => match it.peek() {
+            Some('>') => next_and!(it, pos, Token::To),
+            _=> Token::Sub
+        }
         Some('/') => Token::Div,
         Some('*') => Token::Mul,
         Some('^') => Token::Pow,

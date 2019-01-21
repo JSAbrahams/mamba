@@ -68,6 +68,7 @@ pub enum Token {
     LCurl,
     RCurl,
     Ver,
+    To,
 
     NL,
     Indent,
@@ -153,6 +154,7 @@ impl fmt::Display for Token {
             Token::LCurl => "'{'".to_string(),
             Token::RCurl => "'}'".to_string(),
             Token::Ver => "'|'".to_string(),
+            Token::To => "'->'".to_string(),
 
             Token::NL => "<newline>".to_string(),
             Token::Indent => "<indent>".to_string(),

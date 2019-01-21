@@ -5,7 +5,7 @@ use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::definition::parse_definition;
-use crate::parser::maybe_expr::parse_expression;
+use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;

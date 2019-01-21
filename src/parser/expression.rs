@@ -3,6 +3,7 @@ use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::block::parse_block;
+use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::definition::parse_reassignment;
 use crate::parser::end_pos;
@@ -35,10 +36,12 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
         Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
             tuple = true;
-            parse_tuple(it)
+            parse_collection(it)
         }
 
-        Some(TokenPos { token: Token::LBrack, .. }) => parse_set_builder(it),
+        Some(TokenPos { token: Token::LPar, .. }) |
+        Some(TokenPos { token: Token::LBrack, .. }) |
+        Some(TokenPos { token: Token::LPar, .. }) => parse_collection(it),
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
 
         Some(TokenPos { token: Token::Real(_), .. }) |
@@ -55,7 +58,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     } {
         Ok(pre) => match it.peek() {
-            Some(TokenPos { token: Token::Assign, .. }) if tuple => {
+            Some(TokenPos { token: Token::To, .. }) if tuple => {
                 it.next();
                 let right: Box<ASTNodePos> = get_or_err!(it, parse_function_anonymous,
                                                          "anonymous function");
@@ -76,78 +79,6 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     };
 }
 
-fn parse_set_builder(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::LBrack);
-
-    let set = get_or_err!(it, parse_expression, "set builder");
-    check_next_is!(it, Token::Ver);
-
-    let mut conditions = Vec::new();
-    match it.peek() {
-        Some(TokenPos { token: Token::RBrack, .. }) => (),
-        _ => {
-            let condition = get_or_err_direct!(it, parse_expression, "tuple");
-            conditions.push(condition);
-        }
-    }
-
-    while let Some(t) = it.peek() {
-        match *t {
-            TokenPos { token: Token::RBrack, .. } => break,
-            TokenPos { token: Token::Comma, .. } => {
-                it.next();
-                let condition = get_or_err_direct!(it, parse_expression, "tuple");
-                conditions.push(condition);
-            }
-            tp =>
-                return Err(CustomErr { expected: "tuple element".to_string(), actual: tp.clone() })
-        };
-    }
-
-    check_next_is!(it, Token::RBrack);
-    let (en_line, en_pos) = end_pos(it);
-
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line,
-        en_pos,
-        node: ASTNode::SetBuilder { set, conditions },
-    });
-}
-
-pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::LPar);
-
-    let mut elements = Vec::new();
-    match it.peek() {
-        Some(TokenPos { token: Token::RPar, .. }) => (),
-        _ => {
-            let element = get_or_err_direct!(it, parse_expression, "tuple");
-            elements.push(element);
-        }
-    }
-
-    while let Some(t) = it.peek() {
-        match *t {
-            TokenPos { token: Token::RPar, .. } => break,
-            TokenPos { token: Token::Comma, .. } => {
-                it.next();
-                let element = get_or_err_direct!(it, parse_expression, "tuple");
-                elements.push(element);
-            }
-            tp =>
-                return Err(CustomErr { expected: "tuple element".to_string(), actual: tp.clone() })
-        };
-    }
-
-    check_next_is!(it, Token::RPar);
-    let (en_line, en_pos) = end_pos(it);
-
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Tuple { elements } });
-}
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);

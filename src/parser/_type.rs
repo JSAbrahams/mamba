@@ -35,7 +35,7 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
         _ => {
             let _type = get_or_err!(it, parse_type_tuple, "type");
             match it.peek() {
-                Some(TokenPos { token: Token::Assign, .. }) => {
+                Some(TokenPos { token: Token::To, .. }) => {
                     it.next();
                     let right: Box<ASTNodePos> = get_or_err!(it, parse_type, "type");
                     Ok(ASTNodePos {
