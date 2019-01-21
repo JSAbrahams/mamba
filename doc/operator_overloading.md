@@ -28,15 +28,22 @@ File `complex.mylang`:
      def constructor(def real: Int, def imaginary: Int)
      
      # the default return type for operators is the class itself
-     def `+` (other: Complex) <- Complex(self.real + other.real, self.imaginary + other.imaginary)
+     def + (other: Complex) <- Complex(self real + other real, self imaginary + other imaginary)
      
-     def to_string <- "[self.real] + i[self.imaginary]"
+     # we can also overload an unary opeator
+     def sqrt () <- 
+        real <- sqrt (self real ^ 2 + self imaginary ^ 2)
+        imaginary <- sqrt (2 * self real * self imaginary)
+        return Complex(real, imaginary)
+     
+     def to_string <- "[self real] + i[self imaginary]"
         
 File `main.mylang`:
 
     def a <- Complex(1, 2) # 1 + 2i
     def b <- Complex(2, 3) # 2 + 3i
     
+    # the `+` operator of the class has been overloaded
     def c <- a + b
     println c # prints 3 + 5i
     

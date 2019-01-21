@@ -29,7 +29,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     function-def     ::= "def" id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
     function-def-bod ::= function-def "<-" expr-or-stmt
-    operator-def     ::= "def" "'" overridable-op "'" [ "(" id-and-type ")" ] [ ":" type ] "<-" expression
+    operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "<-" expression
     
     function-anon    ::= args-anon "<-" expression
     args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
