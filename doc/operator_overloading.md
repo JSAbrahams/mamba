@@ -8,18 +8,15 @@ We can overload the following operators of the language:
 * `eq` and `neq`
 * `<`, `<=`, `>`, and `>=`
 
-We cannot overload the following operators, as these
-are used to compare instances directly and not their properties.
+We cannot overload the following operators, as these are used to compare instances directly and not their properties.
 * `is`
 * `isnt`
 * `isa`
 
-Overloading operators gives us the ability to more concisely work with
-more complex objects.
+Overloading operators gives us the ability to more concisely work with more complex objects.
 
-To demonstrate the concept of operator overloading we will use the (incomplete)
-`complex` class, which represent complex numbers, to show how operator overloading 
-may be used.
+To demonstrate the concept of operator overloading we will use the (incomplete) `complex` class, which represent complex 
+numbers, to show how operator overloading may be used.
 
 File `complex.mylang`:
 

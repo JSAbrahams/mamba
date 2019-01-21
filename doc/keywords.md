@@ -1,7 +1,6 @@
 # Keywords
 
 The following is a list of all the keywords in the language.
-Grouped by use cases.
 
 ### Imports
 Keyword | Use 

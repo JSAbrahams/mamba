@@ -88,7 +88,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     inner-term       ::= factor [ power inner-term ]
     factor           ::= [ additive | "sqrt" ] ( constant | id | expression )
     
-    overrideable-op  ::= additive | "sqrt" | multiplicative | power | equality | comparison
+    overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
     unary            ::= "not" | additive
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"

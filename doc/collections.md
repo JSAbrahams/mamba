@@ -6,8 +6,8 @@ The grammar has Four types of collections:
 * Tuples
 * Maps
 
-A collection may be mutable. This however does not mean that its items are mutable.
-To make the items mutable as well the `ofmut` keyword must be used.
+A collection may be mutable. This however does not mean that its items are mutable. To make the items mutable as well 
+the `ofmut` keyword must be used.
 
 ### Set
 A set is created using either `{` and `}`, or the set-builder.
