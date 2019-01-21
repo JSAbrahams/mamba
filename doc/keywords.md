@@ -30,6 +30,7 @@ Keyword | Use
 --------|-----
 `def`   | Denote definition
 `mut`   | Denote that definition is mutable
+`ofmut` | Denote that a collection contains mutable variables
 
 ### Boolean operators
 Keyword    | Use 
@@ -69,5 +70,6 @@ Keyword | Use
 ### Statements
 Keyword | Use 
 --------|-----
-`print` | print what an expression evaluates to
+`print` | print value of an expression
+`print` | print value of an expression with a newline at the end
 `return`| return from a function or method

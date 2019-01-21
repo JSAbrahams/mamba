@@ -43,7 +43,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     expr-or-stmt     ::= statement 
                       | expression [ "if" maybe_expr ]
-    statement        ::= "print" expression 
+    statement        ::= ( "print" | "println" ) expression 
                       | definition 
                       | control-flow-stmt
                       | type-def
@@ -76,8 +76,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     defer-def        ::= definition [ "forward" id { "," id } ]
     im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
     definition       ::= mutable-def | immutable-def
-    mutable-def      ::= "def" "mut" id-maybe-type [ "<-" expression ]
-    immutable-def    ::= "def" id-maybe-type [ "<-" expression ]
+    mutable-def      ::= "def" "mut" id-maybe-type [ "ofmut" ] [ "<-" expression ]
+    immutable-def    ::= "def" id-maybe-type ["ofmut"] [ "<-" expression ]
 
     operation        ::= relation | relation ( equality | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]

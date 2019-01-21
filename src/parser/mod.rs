@@ -138,8 +138,8 @@ pub enum ASTNode {
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
 
-    EmptyDef { _mut: bool, id_maybe_type: Box<ASTNodePos> },
-    Def { _mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+    EmptyDef { _mut: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos> },
+    Def { _mut: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
 
     Id { lit: String },
     TypeId { id: String },
@@ -201,6 +201,7 @@ pub enum ASTNode {
     ReturnEmpty,
 
     Print { expr: Box<ASTNodePos> },
+    PrintLn { expr: Box<ASTNodePos> },
 }
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {

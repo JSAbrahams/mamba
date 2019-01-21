@@ -57,6 +57,12 @@ pub fn parse_immutable_def(it: &mut TPIterator) -> ParseResult {
 fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
     let _mut: TokenPos = check_next_is!(it, Token::Mut);
     let id_maybe_type: Box<ASTNodePos> = get_or_err!(it, parse_id_maybe_type, "mutable definition");
+    let of_mut;
+
+    if let Some(TokenPos { token: Token::OfMut, .. }) = it.peek() {
+        it.next();
+        of_mut = true;
+    } else { of_mut = false; }
 
     match it.peek() {
         Some(TokenPos { token: Token::Assign, .. }) => {
@@ -67,7 +73,7 @@ fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
                 st_pos: def_tok.pos,
                 en_line: id_maybe_type.en_line,
                 en_pos: id_maybe_type.en_pos,
-                node: ASTNode::Def { _mut: true, id_maybe_type, expr },
+                node: ASTNode::Def { _mut: true, of_mut, id_maybe_type, expr },
             })
         }
         _ => Ok(ASTNodePos {
@@ -75,7 +81,7 @@ fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
             st_pos: def_tok.pos,
             en_line: id_maybe_type.en_line,
             en_pos: id_maybe_type.en_pos,
-            node: ASTNode::EmptyDef { _mut: true, id_maybe_type },
+            node: ASTNode::EmptyDef { _mut: true, of_mut, id_maybe_type },
         })
     }
 }
@@ -83,6 +89,12 @@ fn mutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
 fn immutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
     let id_maybe_type: Box<ASTNodePos> = get_or_err!(it, parse_id_maybe_type,
                                                      "immutable definition");
+    let of_mut;
+
+    if let Some(TokenPos { token: Token::OfMut, .. }) = it.peek() {
+        it.next();
+        of_mut = true;
+    } else { of_mut = false; }
 
     match it.peek() {
         Some(TokenPos { token: Token::Assign, .. }) => {
@@ -93,7 +105,7 @@ fn immutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
                 st_pos: def_tok.pos,
                 en_line: id_maybe_type.en_line,
                 en_pos: id_maybe_type.en_pos,
-                node: ASTNode::Def { _mut: false, id_maybe_type, expr },
+                node: ASTNode::Def { _mut: false, of_mut, id_maybe_type, expr },
             })
         }
         _ => Ok(ASTNodePos {
@@ -101,7 +113,7 @@ fn immutable_def(def_tok: TokenPos, it: &mut TPIterator) -> ParseResult {
             st_pos: def_tok.pos,
             en_line: id_maybe_type.en_line,
             en_pos: id_maybe_type.en_pos,
-            node: ASTNode::EmptyDef { _mut: false, id_maybe_type },
+            node: ASTNode::EmptyDef { _mut: false, of_mut, id_maybe_type },
         })
     }
 }

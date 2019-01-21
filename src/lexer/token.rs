@@ -29,6 +29,7 @@ pub enum Token {
 
     Id(String),
     Mut,
+    OfMut,
     Assign,
     Def,
 
@@ -86,6 +87,7 @@ pub enum Token {
     Ret,
 
     Print,
+    PrintLn,
 }
 
 impl fmt::Display for Token {
@@ -110,7 +112,8 @@ impl fmt::Display for Token {
             Token::DDoublePoint => "'::'".to_string(),
 
             Token::Id(id) => format!("<identifier>: {}", id),
-            Token::Mut => "'mutable'".to_string(),
+            Token::Mut => "'mut'".to_string(),
+            Token::OfMut => "'ofmut'".to_string(),
             Token::Assign => "'<-'".to_string(),
             Token::Def => "'def'".to_string(),
 
@@ -168,6 +171,7 @@ impl fmt::Display for Token {
             Token::Ret => "'return'".to_string(),
 
             Token::Print => "'print'".to_string(),
+            Token::PrintLn => "'println'".to_string()
         };
 
         write!(f, "{}", string_representation)

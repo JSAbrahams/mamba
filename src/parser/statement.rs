@@ -26,6 +26,17 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
                 node: ASTNode::Print { expr },
             })
         }
+        Some(TokenPos { token: Token::PrintLn, .. }) => {
+            it.next();
+            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "statement");
+            Ok(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line: expr.en_line,
+                en_pos: expr.en_pos,
+                node: ASTNode::PrintLn { expr },
+            })
+        }
 
         Some(TokenPos { token: Token::Def, .. }) => parse_definition(it),
         Some(TokenPos { token: Token::For, .. }) | Some(TokenPos { token: Token::While, .. }) =>

@@ -226,7 +226,8 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
         "fun" => Token::Fun,
         "def" => Token::Def,
-        "mutable" => Token::Mut,
+        "ofmut" => Token::OfMut,
+        "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,
@@ -253,6 +254,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),
         "print" => Token::Print,
+        "println" => Token::PrintLn,
         _ => Token::Id(result)
     };
 }
