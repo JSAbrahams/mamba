@@ -77,12 +77,12 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 }
             }
             ',' => next_pos_and_tp!(1, Token::Comma),
-            '(' => next_pos_and_tp!(1, Token::LPar),
-            ')' => next_pos_and_tp!(1, Token::RPar),
-            '[' => next_pos_and_tp!(1, Token::LBrack),
-            ']' => next_pos_and_tp!(1, Token::RBrack),
-            '{' => next_pos_and_tp!(1, Token::LCurl),
-            '}' => next_pos_and_tp!(1, Token::RCurl),
+            '(' => next_pos_and_tp!(1, Token::LRBrack),
+            ')' => next_pos_and_tp!(1, Token::RRBrack),
+            '[' => next_pos_and_tp!(1, Token::LSBrack),
+            ']' => next_pos_and_tp!(1, Token::RSBrack),
+            '{' => next_pos_and_tp!(1, Token::LCBrack),
+            '}' => next_pos_and_tp!(1, Token::RCBrack),
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
             '\r' => {

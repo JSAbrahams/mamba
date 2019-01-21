@@ -1,6 +1,5 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::parse_result::ParseErr::CustomEOFErr;
 use crate::parser::parse_result::ParseResult;
 use std::iter::Peekable;
 use std::slice::Iter;

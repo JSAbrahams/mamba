@@ -72,20 +72,20 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::LPar);
+    check_next_is!(it, Token::LRBrack);
 
     let mut types: Vec<ASTNodePos> = Vec::new();
     let mut en_line = st_line;
     let mut en_pos = st_pos;
 
-    if it.peek().is_some() && it.peek().unwrap().token != Token::RPar {
+    if it.peek().is_some() && it.peek().unwrap().token != Token::RRBrack {
         let id = get_or_err_direct!(it, parse_id, "type tuple");
         types.push(id);
     }
 
     while let Some(t) = it.peek() {
         match *t {
-            TokenPos { token: Token::RPar, .. } => break,
+            TokenPos { token: Token::RRBrack, .. } => break,
             TokenPos { token: Token::Comma, .. } => {
                 it.next();
 
@@ -98,7 +98,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
         };
     }
 
-    check_next_is!(it, Token::RPar);
+    check_next_is!(it, Token::RRBrack);
     return Ok(ASTNodePos {
         st_line,
         st_pos,
@@ -110,7 +110,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     let id: Box<ASTNodePos> = match it.peek() {
-        Some(TokenPos { token: Token::LPar, .. }) =>
+        Some(TokenPos { token: Token::LRBrack, .. }) =>
             get_or_err!(it, parse_type_tuple, "id maybe type"),
         _ => get_or_err!(it, parse_id, "id maybe type")
     };
@@ -130,7 +130,7 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_id_and_type(it: &mut TPIterator) -> ParseResult {
     let id: Box<ASTNodePos> = match it.peek() {
-        Some(TokenPos { token: Token::LPar, .. }) =>
+        Some(TokenPos { token: Token::LRBrack, .. }) =>
             get_or_err!(it, parse_type_tuple, "id and type"),
         _ => get_or_err!(it, parse_id, "id and type")
     };

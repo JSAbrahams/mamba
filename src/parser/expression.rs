@@ -34,14 +34,13 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             parse_block(it)
         }
 
-        Some(TokenPos { line: _, pos: _, token: Token::LPar }) => {
+        Some(TokenPos { line: _, pos: _, token: Token::LRBrack }) => {
             tuple = true;
             parse_collection(it)
         }
+        Some(TokenPos { token: Token::LSBrack, .. }) |
+        Some(TokenPos { token: Token::LCBrack, .. }) => parse_collection(it),
 
-        Some(TokenPos { token: Token::LPar, .. }) |
-        Some(TokenPos { token: Token::LBrack, .. }) |
-        Some(TokenPos { token: Token::LPar, .. }) => parse_collection(it),
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
 
         Some(TokenPos { token: Token::Real(_), .. }) |
@@ -70,7 +69,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::Assign { left: Box::new(pre), right },
                 })
             }
-            Some(TokenPos { token: Token::LPar, .. }) => parse_function_call_direct(pre, it),
+            Some(TokenPos { token: Token::LRBrack, .. }) => parse_function_call_direct(pre, it),
             Some(TokenPos { token: Token::Point, .. }) => parse_function_call(pre, it),
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
             Some(_) | None => Ok(pre)
