@@ -55,6 +55,8 @@ The default behaviour of `to_hash` is to return the class name combined with the
 For contained instances of the classes, this is only done for forwarded definitions. See "Operator Overloading" for more
 details on operator overloading.
 
+`| <expression> |` only works if the type of the expression is a `class` which defines `size`.
+
 ### Script
 
 A script is the runnable of an application, this is what is executed.

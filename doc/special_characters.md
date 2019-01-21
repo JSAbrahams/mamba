@@ -13,13 +13,14 @@ Character | Use
 `]`       | Denote end of list, or closing bracket of generics of a class
 
 ### Mathematical Operators
-Character | Use
-----------|-----
-`*`       | Multiply operator
-`^`       | Power operator
-`-`       | Minus operator
-`+`       | Plus operator
-`/`       | Division operator
+Character           | Use
+--------------------|-----
+`*`                 | Multiply operator
+`^`                 | Power operator
+`-`                 | Minus operator
+`+`                 | Plus operator
+`/`                 | Division operator
+<code>&#124;</code> | Inside the set builder notation, or as `sizeof` operator around expression
 
 ### Boolean Operators
 Character | Use
