@@ -114,7 +114,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     control-flow-expr::= if | from | when
     if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
     when             ::= "when" expression newline indent { when-case newline } dedent
-    when-case        ::= expression "then" expr-or-stmt
+    when-case        ::= expression "->" expr-or-stmt
     
     control-flow-stmt::= while | for | "break" | "continue"
     while            ::= "while" expression "do" expr-or-stmt

@@ -24,7 +24,9 @@ time. To cal a function on the resulting value, we may use the `?and` operator.
     def set ofmut <- { "hello" }
     def str_1 <- "hello"
     
-    my_function(set, str_1) ?and push "world"
+    my_function(set, str_1) ? push "world" # only invoke push if my_function does not return None 
+    my_function(set, str_1)? push "is"     # you can also place the ? directly after the function
+    my_function(set, str_1)?.push "easy"   # if you use the . symbol, it must be placed before that
     
 If we try to call a function or access a definition of the function directly we get a type error:
     
@@ -46,4 +48,3 @@ You can also return `None` in a function:
 
     def special_function(x: Int): Int? <- if x > 10 then x else None
     
-This operator may also be chained with errors as such: `?!`
