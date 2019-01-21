@@ -82,16 +82,30 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             '[' => next_pos_and_tp!(1, Token::LSBrack),
             ']' => next_pos_and_tp!(1, Token::RSBrack),
             '{' => next_pos_and_tp!(1, Token::LCBrack),
+
             '}' => next_pos_and_tp!(1, Token::RCBrack),
+            '?' => match it.peek() {
+                Some('o') => {
+                    it.next();
+                    match it.next() {
+                        Some('r') => next_pos_and_tp!(3, Token::QuestOr),
+                        Some(other) =>
+                            return Err(format!("Expected `?or`. Was '{}'.", other)),
+                        None => return Err("Expected `?or`.".to_string())
+                    }
+                }
+                _ => next_pos_and_tp!(1, Token::Quest)
+            }
+
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
             '\r' => {
                 it.next();
                 match it.peek() {
                     Some('\n') => next_line_and_tp!(),
-                    Some(other) =>
-                        return Err(format!("Expected newline after carriage return. Was {}", other)),
-                    None => return Err("File ended with carriage return".to_string())
+                    Some(other) => return Err(format!("Expected newline after carriage return. \
+                    Was '{}'.", other)),
+                    None => return Err("File ended with carriage return.".to_string())
                 }
             }
             '\t' => increase_indent!(),
@@ -111,7 +125,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 it.next();
                 continue;
             }
-            c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
+            c => return Err(format!("Unrecognized character: '{}'.", c)),
         }
 
         consecutive_spaces = 0;
@@ -147,7 +161,7 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         Some('+') => Token::Add,
         Some('-') => match it.peek() {
             Some('>') => next_and!(it, pos, Token::To),
-            _=> Token::Sub
+            _ => Token::Sub
         }
         Some('/') => Token::Div,
         Some('*') => Token::Mul,

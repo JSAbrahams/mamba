@@ -21,7 +21,7 @@ File `graph.mylang`:
    
     from "node" use Node
     
-    # A generic is usually a type. It may be a class, but this has limited use as we cannot inherit from a class
+    # a generic is usually a type. It may be a class, but this has limited use as we cannot inherit from a class
     class Graph[N: Node]
         def private mut nodes: Set[N] <- {}
         
@@ -38,5 +38,5 @@ File `main.mylang`:
     graph addNode MyNode()
     other_graph addNode OtherNode()
     
-    graph addNode OtherNode() # Type error! Expected MyNode but got OtherNode
+    graph addNode OtherNode() # type error! Expected MyNode but got OtherNode
     

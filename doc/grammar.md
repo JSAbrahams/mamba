@@ -24,7 +24,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { function-def newline { newline } } 
                          [ block ]
     
-    method-call      ::= [ "self" | id "." ] id ( tuple | id )
+    definition-call  ::= [ "self" | id "." ] [ "?" ] id ( tuple | id )
     function-call    ::= [ id "::" ] id ( tuple | id )
     
     constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
@@ -52,6 +52,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | control-flow-stmt
                       | type-def
     expression       ::= "return" [ expression ] 
+                      | expression "?or" expression
                       | instance
                       | operation 
                       | tuple 

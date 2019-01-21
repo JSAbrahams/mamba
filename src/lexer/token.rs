@@ -88,6 +88,9 @@ pub enum Token {
     Break,
     Ret,
 
+    Quest,
+    QuestOr,
+
     Print,
     PrintLn,
 }
@@ -173,6 +176,9 @@ impl fmt::Display for Token {
             Token::Continue => "'continue'".to_string(),
             Token::Break => "'break'".to_string(),
             Token::Ret => "'return'".to_string(),
+
+            Token::Quest => "'?'".to_string(),
+            Token::QuestOr => "'?or'".to_string(),
 
             Token::Print => "'print'".to_string(),
             Token::PrintLn => "'println'".to_string()
