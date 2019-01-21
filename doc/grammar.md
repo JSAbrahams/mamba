@@ -7,7 +7,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     file             ::= { module }
     module           ::= interface | util | class | script
     interface        ::= "type" id [ "[" id { "," id } "]" ] newline { newline }
-                         { ( function-def | immutable-def | immutable-asssign ) newline { newline } } ]
+                         { ( function-def | immutable-def | immutable-asssign | empty-def-type ) newline { newline } } ]
     util             ::= { import newline } newline { newline } 
                          "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ] 
                          newline { newline }
@@ -18,7 +18,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ] 
                          [ "isa" id { "," id } ] newline { newline } 
                          { defer-def newline } { newline }
-                         { ( constructor-def | [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
+                         { ( constructor-def | [ "private" ] ( function-def-bod | definition ) ) newline 
+                         { newline } }
     script           ::= { import newline } { newline } 
                          { function-def newline { newline } } 
                          [ block ]
@@ -81,8 +82,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     defer-def        ::= definition [ "forward" id { "," id } ]
     im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
     definition       ::= mutable-def | immutable-def
-    mutable-def      ::= "def" "mut" id-maybe-type [ "ofmut" ] [ "<-" expression ]
-    immutable-def    ::= "def" id-maybe-type ["ofmut"] [ "<-" expression ]
+    mutable-def      ::= empty-def [ "<-" expression ]
+    immutable-def    ::= empty-def [ "<-" expression ]
+    empty-def        ::= "def" [ "mut" ] [ "ofmut" ] [ id-and-type ]
+    empty-def-type   ::= "def" [ "mut" ] [ "ofmut" ] id-and-type
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
