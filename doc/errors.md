@@ -29,10 +29,14 @@ File `my_err.mylang`:
     
 Say we have the following function:
 
-    def g(x: Int): Int raises[MyErr] <- if x isnt 10 then x else MyErr("x was not 10")
+    def g(x: Int): Int raises[MyErr] <- if x is 10 then MyErr("x was 10") else x
     
     # We can also have a function that raises multiple types of errors
     def h(x: Int): Int raises[MyErr, OtherErr] <- if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    
+Small side note: using the default behaviour feature of the language, we can rewrite `g` as such:
+
+    def g 0 <-
     
 Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
 point, or we will get a type error:
@@ -75,6 +79,10 @@ and get the following:
     def l <- g(9) handle when
         l: Int     -> println "we know for sure that l is an Int" # l 
         err: MyErr -> print err
+ 
+In the above case, notice how we match on based on the type of the value the function `g` returned. Using this method, 
+we can also handle different types of errors in different ways if we wish. If an error type is not covered, either by
+matching using the `Err` type, or using a default branch, the compiler will raise a type error.
  
 We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
 

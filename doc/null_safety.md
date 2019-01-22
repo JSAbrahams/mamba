@@ -25,8 +25,8 @@ time. To cal a function on the resulting value, we may use the `?and` operator.
     def str_1 <- "hello"
     
     my_function(set, str_1) ? push "world" # only invoke push if my_function does not return None 
-    my_function(set, str_1)? push "is"     # you can also place the ? directly after the function
-    my_function(set, str_1)?.push "easy"   # if you use the . symbol, it must be placed before that
+    my_function(set, str_1)? push "is"     # you can also place the ? directly after the returned value
+    my_function(set, str_1)?.push "easy"   # if you use a dot, it must come after the ?, which is part of the value
     
 If we try to call a function or access a definition of the function directly we get a type error:
     

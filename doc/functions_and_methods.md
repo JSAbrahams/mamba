@@ -5,7 +5,7 @@ the term definition for both interchangeably. We would define a function or meth
 
     def f (x: Int): Int <- x + 1
     
-The arguments must all have an explicit type. The return type may be omitted if it is inferrable. Thus, we can also 
+The arguments must all have an explicit type. The return type may be omitted if it is inferable. Thus, we can also 
 define the function `f` as such:
 
     def f (x: Int) <- x + 1
@@ -25,25 +25,22 @@ with the `self` keyword. A method in a class would look as such:
         def my_field <- 5
         
         def my_method(x: Int, y: Int) <- self my_field <- x + y
+        def single_arg(x: Int) <- self my_field * x
+        def no_args() <- self my_field <- 20 * my_field
         
 And would be called as such:
 
     def my_class <- MyClass()
     my_class.my_method(30, 10)
 
-In a method call, the dot `.` may be omitted. To the following would also be valid:
+In a method call, the dot `.` may be omitted, if there is only a single argument. Better still, when a function or 
+method has a single argument (or no arguments), we may even omit the brackets when calling the function. So we get the 
+following:
 
-    my_class my_method(30, 10)
-    
-We may even omit the parenthesis that surround the method, provided that the method has no, or only takes one argument.
-Say we expand our class:
-
-    class MyClass
-        def my_field <- 5
-        
-        def my_method(x: Int, y: Int) <- self my_field <- x + y
-        def other_method(x: Int) <- self my_field <- x
-        def no_args() <- self my_field <- 20 * my_field
+    my_class.my_method(30, 10) # need dot here
+    my_class single_arg(30)      # don't need it here though
+    my_class single_arg 30       # I can even omit the brackets if there is only one argument
+    my_class no_args             # or no argument for that matter
         
 Notice that we still need brackets even if we take no arguments. This is to differentiate methods from values.
 Methods have side-effects, meaning that they can modify the state of the class, whereas values cannot inadvertently 
@@ -58,7 +55,6 @@ Now, we can do the following:
     my_class other_method 23   # no parenthesis here
     my_class no_args           # and here
 
-
 ### Default values
 
 We can have default values:
@@ -72,7 +68,7 @@ We can now call the method as such:
 
     def my_class <- MyClass()
     
-    my_class my_method(10, 2) # works fine
+    my_class.my_method(10, 2) # works fine
     my_class my_method(10)    # exactly the same arguments as the function call above!
     my_class my_method 10     # now we don't even need the parenthesis if we want
 
