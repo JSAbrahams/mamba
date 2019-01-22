@@ -74,9 +74,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
-    set-builder      ::= "{" expression | expression { "," expression } "}"
-    list             ::= "[" zero-or-more-expr "]"
-    map              ::= "{" expression "->" expression { "," expression "->" expression } "}"
+    set-builder      ::= "{" expression "|" expression { "," expression } "}"
+    list             ::= "[" zero-or-more-expr "]" | list-builder
+    list-builder     ::= "[" expression "|" expression { "," expression } "]"
+    map              ::= "{" expression "->" expression { "," expression "->" expression } "}" | map-builder
+    map-builder      ::= "{" expression "->" expression "|" expression { "," expression } "}"
     
     sizeof           ::= "|" expression "|"
     zero-or-more-expr::= [ ( expression { "," expression } ]

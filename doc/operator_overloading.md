@@ -27,9 +27,9 @@ File `complex.mylang`:
      
      # we can also overload an unary opeator
      def sqrt () <- 
-        real <- sqrt (self real ^ 2 + self imaginary ^ 2)
+        real      <- sqrt (self real ^ 2 + self imaginary ^ 2)
         imaginary <- sqrt (2 * self real * self imaginary)
-        return Complex(real, imaginary)
+        Complex(real, imaginary)
      
      def to_string <- "[self real] + i[self imaginary]"
         

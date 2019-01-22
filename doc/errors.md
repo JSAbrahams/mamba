@@ -29,7 +29,7 @@ File `my_err.mylang`:
     
 Say we have the following function:
 
-    def g(x: Int): Int raises[MyErr] <- if x > 10 then x else MyErr("x was smaller than 10")
+    def g(x: Int): Int raises[MyErr] <- if x isnt 10 then x else MyErr("x was not 10")
     
     # We can also have a function that raises multiple types of errors
     def h(x: Int): Int raises[MyErr, OtherErr] <- if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
@@ -78,7 +78,7 @@ and get the following:
  
 We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
 
-    def l <- g(9) hanle when
+    def l <- g(9) handle when
         err: MyErr ->
             print err
             return
@@ -91,9 +91,9 @@ We may also return if we detect an error. In that case, the code after would onl
     println "[l] has type Int"
     
 We can, instead of returning, also assign a default value to l. Though this should be done with care however. Assigning
-to a definition if if an error has occurred might bury the error, causing unexpected behaviour later during execution.
+to a definition if an error has occurred might bury the error, causing unexpected behaviour later during execution.
 
-    def l <- g(9) hanle when
+    def l <- g(9) handle when
         err: MyErr ->
             println err
             l <- 0 

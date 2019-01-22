@@ -58,6 +58,41 @@ Now, we can do the following:
     my_class other_method 23   # no parenthesis here
     my_class no_args           # and here
 
+
+### Default values
+
+We can have default values:
+
+    class MyClass
+        def my_field <- 5
+        
+        def my_method(x: Int, y: Int = 2) <- self my_field <- x + y
+
+We can now call the method as such:
+
+    def my_class <- MyClass()
+    
+    my_class my_method(10, 2) # works fine
+    my_class my_method(10)    # exactly the same arguments as the function call above!
+    my_class my_method 10     # now we don't even need the parenthesis if we want
+
+### Default behaviour
+
+We can assign default behaviour to a method or function. To demonstrate this, we will use a toy factorial example. You
+might first write it as such:
+
+    factorial(n: Int) <-
+        if n eq 0
+        then 1
+        else n * factorial (n - 1) 
+
+However, we could make this look much better with default behaviour. 
+
+    factorial 0        <- 1                     # if n is 0, then this function is called instead of the one below
+    factorial (n: Int) <- n * factorial (n - 1) # for all other values of n, this function is called
+
+As long as a version exists of a function or method with arguments this is allowed.
+
 ### Extensions
 
 Sometimes, you might want to add a definition to a class. For this we have extensions, which allow us to add publicly

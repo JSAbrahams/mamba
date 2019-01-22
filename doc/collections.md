@@ -41,7 +41,7 @@ A set is an unordered collection of unique items.
     #  Luxembourg
     
 ### List
-A list is created using `[` and `]`.
+A list is created using `[` and `]`, or a list-builder.
 
 A list can be accessed using an index: `list(1)`\
 A list may be ordered.
@@ -54,6 +54,6 @@ A tuple a collection of named items.
 
 ### Map
 
-A map is created using `{` and `}`, where each mapping is represented as such: `key -> value`.
+A map is created using `{` and `}`, where each mapping is represented as such: `key -> value`, or a map-builder.
 
 A map is a collection of unordered set of items.
