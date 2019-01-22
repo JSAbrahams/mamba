@@ -31,7 +31,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
     constructor-arg  ::= [ "self" ] id-maybe-type
     
-    function-def     ::= "def" [ "private" ] id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
+    function-def     ::= "def" [ "private" ] id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ] [ raises ] 
     function-def-bod ::= function-def "<-" expr-or-stmt
     function-def-anon::= tuple [ ":" type ] "->" expression
     operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "<-" expression
@@ -46,13 +46,15 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     block            ::= indent { expr-or-stmt newline } dedent
     
     expr-or-stmt     ::= statement 
-                      | expression [ "if" maybe_expr ]
+                      | expression [ "if" maybe_expr ] [ raises ]
     statement        ::= ( "print" | "println" ) expression 
+                      | statement raises
                       | definition 
                       | control-flow-stmt
                       | type-def
     expression       ::= "return" [ expression ] 
                       | expression "?or" expression
+                      | expresssion raises
                       | instance
                       | operation 
                       | tuple 
@@ -66,6 +68,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | collection
                       | sizeof
                       | "_"
+                      
+    raises           ::= "raises" "[" id { "," id } "]"
     
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"

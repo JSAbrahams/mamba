@@ -74,6 +74,8 @@ pub enum Token {
     Indent,
     Dedent,
 
+    Raises,
+
     While,
     For,
     Where,
@@ -162,6 +164,8 @@ impl fmt::Display for Token {
             Token::NL => "<newline>".to_string(),
             Token::Indent => "<indent>".to_string(),
             Token::Dedent => "<dedent>".to_string(),
+
+            Token::Raises => "'raises'".to_string(),
 
             Token::While => "'while'".to_string(),
             Token::For => "'for'".to_string(),

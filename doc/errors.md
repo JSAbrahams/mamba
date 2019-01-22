@@ -1,4 +1,4 @@
-# Errors
+# Errors and Error Handling
 
 In some cases it may be that we might want to raise an error, if a user for instance passed a value which results in 
 undefined behaviour (e.g. dividing by 0). Exception handling and `try` `catch` blocks are common in OOP languages. These
@@ -25,10 +25,20 @@ general we:
 File `my_err.mylang`:
 
     class MyErr(def msg: String) isa Err
+        def to_string <- msg
     
 Say we have the following function:
 
     def g(x: Int): Int raises[MyErr] <- if x > 10 then x else MyErr("x was smaller than 10")
+    
+    # We can also have a function that raises multiple types of errors
+    def h(x: Int): Int raises[MyErr, OtherErr] <- if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    
+Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
+point, or we will get a type error:
+
+    # type error! exception of type MyErr is can never be raised
+    def no_err(x: Int): Int raises[MyErr] <- x + 1
  
 When calling the function, it either has to be explicitly stated that it may raise an error, which is done like so:
 
@@ -45,6 +55,9 @@ Which must be added to the function signature if used within:
     def h(x: Real): Real raises[MyErr] <-
         def a <- g(9) + 1.5 raises[MyErr] # If this statement would throw multiple types of exceptions, we would list 
                                           # them here
+                                          
+        # if the above raised an error, this would never get executed, as we are immediately 'raised' out of the 
+        # function
         a * 2.3
     
 Or, we explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned value to
@@ -60,7 +73,7 @@ That's slightly better, but we still don't know whether `l` is an `Int` or `None
 and get the following:
 
     def l <- g(9) handle when
-        l: Int   -> println "we know for sure that l is an Int" # l 
+        l: Int     -> println "we know for sure that l is an Int" # l 
         err: MyErr -> print err
  
 We may also return if we detect an error. In that case, the code after would only be executed if no error occurred:
@@ -77,14 +90,15 @@ We may also return if we detect an error. In that case, the code after would onl
     # if an error was thrown this will not be executed at all
     println "[l] has type Int"
     
-We can, instead of returning, also assign a default value to l:
+We can, instead of returning, also assign a default value to l. Though this should be done with care however. Assigning
+to a definition if if an error has occurred might bury the error, causing unexpected behaviour later during execution.
 
     def l <- g(9) hanle when
-        err: Err ->
-            print err
-            l <- 0
+        err: MyErr ->
+            println err
+            l <- 0 
             
-     # now, even if an error is thrown, l is assigned an integer, so we know it it an Int
+     # now, even if an error is thrown, l is assigned an integer, so we know that l is an Int
      println "[l] has type Int"
     
 The above patterns ensure that error handling is always done explicitly and at the location where the error may occur.
