@@ -5,7 +5,13 @@ print a if true
 
 # this if doesn't do much yet
 if cond then
-    body
+    other
+    print "hello \"world\""
+
+    if aaa then
+        bbb
+    else
+        ccc
 else # this is the else
     other
     print "hello \"world\""
