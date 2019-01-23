@@ -24,7 +24,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { function-def newline { newline } } 
                          [ block ]
     
-    definition-call  ::= [ "self" | id "." ] [ "?" ] id ( tuple | id )
+    definition-call  ::= ( "self" | id  [ "." ] ) [ "?" ] id ( tuple | id )
     function-call    ::= [ id "::" ] id ( tuple | id )
     
     constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
@@ -32,9 +32,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     constructor-arg  ::= [ "self" ] id-maybe-type
     
     function-def     ::= "def" [ "private" ] id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ] [ raises ] 
-    function-def-bod ::= function-def "<-" expr-or-stmt
+    function-def-bod ::= function-def "->" expr-or-stmt
     function-def-anon::= tuple [ ":" type ] "->" expression
-    operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "<-" expression
+    operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "->" expression
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id | type-tuple [ "->" type ]
@@ -64,7 +64,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | function-call 
                       | function-call-dir 
                       | [ newline ] block
-                      | [ "self" ] id
+                      | [ "self" ] expression
                       | collection
                       | sizeof
                       | "_"
@@ -90,17 +90,17 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     mutable-def      ::= empty-def [ "<-" expression ]
     immutable-def    ::= empty-def [ "<-" expression ]
     empty-def        ::= "def" [ "private" ] [ "mut" ] id-maybe-type [ "ofmut" ] 
-    empty-def-type   ::= "def" [ "mut" ] [ "ofmut" ] id-and-type
+    empty-def-type   ::= "def" [ "mut" ] id-and-type [ "ofmut" ] 
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
-    factor           ::= [ additive | "sqrt" ] ( constant | id | expression )
+    factor           ::= [ unary ] ( constant | id | expression )
     
     overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
-    unary            ::= "not" | additive
+    unary            ::= "not" | "sqrt" | additive
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"

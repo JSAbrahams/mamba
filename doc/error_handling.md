@@ -1,4 +1,4 @@
-# Errors and Error Handling
+# Error Handling
 
 In some cases it may be that we might want to raise an error, if a user for instance passed a value which results in 
 undefined behaviour (e.g. dividing by 0). Exception handling and `try` `catch` blocks are common in OOP languages. These
@@ -29,20 +29,21 @@ File `my_err.mylang`:
     
 Say we have the following function:
 
-    def g(x: Int): Int raises[MyErr] <- if x is 10 then MyErr("x was 10") else x
+    def g(x: Int): Int raises[MyErr] -> if x is 10 then MyErr("x was 10") else x
     
     # We can also have a function that raises multiple types of errors
-    def h(x: Int): Int raises[MyErr, OtherErr] <- if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    def h(x: Int): Int raises[MyErr, OtherErr] -> if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
     
 Small side note: using the default behaviour feature of the language, we can rewrite `g` as such:
 
-    def g 0 <-
+    def g 0                           -> MyErr("x was 10")
+    def g(x: Int): Int raises [MyErr] -> x
     
 Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
 point, or we will get a type error:
 
     # type error! exception of type MyErr is can never be raised
-    def no_err(x: Int): Int raises[MyErr] <- x + 1
+    def no_err(x: Int): Int raises[MyErr] -> x + 1
  
 When calling the function, it either has to be explicitly stated that it may raise an error, which is done like so:
 
@@ -51,12 +52,12 @@ When calling the function, it either has to be explicitly stated that it may rai
 Which must be added to the function signature if used within:
 
     # ommitting the raises in the signature of f would result in a type error!
-    def f(x: Real): Real raises[MyErr] <-
+    def f(x: Real): Real raises[MyErr] ->
         def a <- g(9) raises[MyErr] + 1.5
         a * 4.6
     
     # you can also put raises at the end of a statement or expression in a block.
-    def h(x: Real): Real raises[MyErr] <-
+    def h(x: Real): Real raises[MyErr] ->
         def a <- g(9) + 1.5 raises[MyErr] # If this statement would throw multiple types of exceptions, we would list 
                                           # them here
                                           
@@ -69,6 +70,7 @@ determine what to do. A good first step is to log the error. In this case, we si
     
     def l <- g(9) + 1.5 handle when
         err: MyErr -> println err
+        ok         -> ok
         
     # here, l has type l?, as we don not know if an error occurred or not
     println "we don't know whether l is an Int or None"
@@ -89,10 +91,7 @@ We may also return if we detect an error. In that case, the code after would onl
     def l <- g(9) handle when
         err: MyErr ->
             print err
-            return
-            # or we return the error: `return err`
-            # or we rerturn None: `return None`. Useful if an underlying process might generate an error but we only
-            # wish to log it but don't care which.
+            return # or we may return the error: `return err`, or something else
             
     # if we execute this code we know for sure no error was thrown.
     # if an error was thrown this will not be executed at all
@@ -104,7 +103,7 @@ to a definition if an error has occurred might bury the error, causing unexpecte
     def l <- g(9) handle when
         err: MyErr ->
             println err
-            l <- 0 
+            0
             
      # now, even if an error is thrown, l is assigned an integer, so we know that l is an Int
      println "[l] has type Int"

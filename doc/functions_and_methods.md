@@ -3,12 +3,12 @@
 The definition of a function or method very closely resembles that of a variable. So similar is it in fact that we use
 the term definition for both interchangeably. We would define a function or method as follows:
 
-    def f (x: Int): Int <- x + 1
+    def f (x: Int): Int -> x + 1
     
 The arguments must all have an explicit type. The return type may be omitted if it is inferable. Thus, we can also 
 define the function `f` as such:
 
-    def f (x: Int) <- x + 1
+    def f (x: Int) -> x + 1
 
 The below outline the specifics for each.
 
@@ -24,9 +24,9 @@ with the `self` keyword. A method in a class would look as such:
     class MyClass
         def my_field <- 5
         
-        def my_method(x: Int, y: Int) <- self my_field <- x + y
-        def single_arg(x: Int) <- self my_field * x
-        def no_args() <- self my_field <- 20 * my_field
+        def my_method(x: Int, y: Int) -> self my_field <- x + y
+        def single_arg(x: Int) -> self my_field * x
+        def no_args() -> self my_field <- 20 * my_field
         
 And would be called as such:
 
@@ -62,7 +62,7 @@ We can have default values:
     class MyClass
         def my_field <- 5
         
-        def my_method(x: Int, y: Int = 2) <- self my_field <- x + y
+        def my_method(x: Int, y: Int = 2) -> self my_field <- x + y
 
 We can now call the method as such:
 
@@ -77,15 +77,15 @@ We can now call the method as such:
 We can assign default behaviour to a method or function. To demonstrate this, we will use a toy factorial example. You
 might first write it as such:
 
-    factorial(n: Int) <-
+    factorial(n: Int) ->
         if n eq 0
         then 1
         else n * factorial (n - 1) 
 
 However, we could make this look much better with default behaviour. 
 
-    factorial 0        <- 1                     # if n is 0, then this function is called instead of the one below
-    factorial (n: Int) <- n * factorial (n - 1) # for all other values of n, this function is called
+    factorial 0        -> 1                     # if n is 0, then this function is called instead of the one below
+    factorial (n: Int) -> n * factorial (n - 1) # for all other values of n, this function is called
 
 As long as a version exists of a function or method with arguments this is allowed.
 

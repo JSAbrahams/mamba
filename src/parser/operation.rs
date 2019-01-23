@@ -140,8 +140,8 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                         en_line,
                         en_pos,
                         node: ASTNode::ENum {
-                            int_digits: num.to_string(),
-                            frac_digits: exp.to_string(),
+                            num: num.to_string(),
+                            exp: exp.to_string(),
                         },
                     }),
 

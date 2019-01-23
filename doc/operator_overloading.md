@@ -23,10 +23,10 @@ File `complex.mylang`:
      class Complex(def real: Int, def imaginary: Int)
      
      # the default return type for operators is the class itself
-     def + (other: Complex) <- Complex(self real + other real, self imaginary + other imaginary)
+     def + (other: Complex) -> Complex(self real + other real, self imaginary + other imaginary)
      
      # we can also overload an unary opeator
-     def sqrt () <- 
+     def sqrt () -> 
         real      <- sqrt (self real ^ 2 + self imaginary ^ 2)
         imaginary <- sqrt (2 * self real * self imaginary)
         Complex(real, imaginary)

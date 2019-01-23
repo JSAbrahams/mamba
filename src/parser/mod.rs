@@ -98,7 +98,7 @@ mod statement;
 mod _type;
 
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Hash)]
 #[derive(Debug)]
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
@@ -110,7 +110,7 @@ pub struct ASTNodePos {
     pub node: ASTNode,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Hash)]
 #[derive(Debug)]
 pub enum ASTNode {
     ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
@@ -163,7 +163,7 @@ pub enum ASTNode {
 
     Real { lit: String },
     Int { lit: String },
-    ENum { int_digits: String, frac_digits: String },
+    ENum { num: String, exp: String },
     Str { lit: String },
     Bool { lit: bool },
 

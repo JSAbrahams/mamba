@@ -12,10 +12,10 @@ File `my_class.mylang`:
         def private field <- 10
         
         # modifies a field of the class        
-        def f () <- field <- 20
+        def f () -> field <- 20
         
         # does not modify a field of the class
-        def g () <- field * 10
+        def g () -> field * 10
 
 File `main.mylang`:
     

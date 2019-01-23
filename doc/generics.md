@@ -15,7 +15,8 @@ File `node.mylang`:
         def to_hash <- id
         
     class OtherNode isa Node:
-        def id <- 
+        def id <- floor(random() * 1000)
+        def to_hash <- id
 
 File `graph.mylang`:
    
@@ -25,7 +26,7 @@ File `graph.mylang`:
     class Graph[N: Node]
         def private mut nodes: Set[N] <- {}
         
-        def addNode(node: N) <- nodes add node
+        def addNode(node: N) -> nodes add node
         
 File `main.mylang`:
     
