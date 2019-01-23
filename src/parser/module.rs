@@ -1,11 +1,11 @@
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
-use crate::parser::block::parse_block;
+use crate::parser::block::parse_block_no_indent;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::TPIterator;
 
 pub fn parse_module(it: &mut TPIterator) -> ParseResult {
-    match parse_block(it) {
+    match parse_block_no_indent(it) {
         Ok(body) =>
             Ok(ASTNodePos {
                 st_line: 0,

@@ -45,15 +45,13 @@ pub enum Core {
 
     Le { left: Box<Core>, right: Box<Core> },
     Ge { left: Box<Core>, right: Box<Core> },
-    Leq { left: Box<Core>, right: Box<Core> },
-    Geq { left: Box<Core>, right: Box<Core> },
 
     Is { left: Box<Core>, right: Box<Core> },
     Eq { left: Box<Core>, right: Box<Core> },
     Not { expr: Box<Core> },
+    IsA { expr: Box<Core>, _type: Box<Core> },
     And { left: Box<Core>, right: Box<Core> },
     Or { left: Box<Core>, right: Box<Core> },
-    IsA { expr: Box<Core>, _type: Box<Core> },
 
     IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },
     When { expr: Box<Core>, cases: Vec<Core> },

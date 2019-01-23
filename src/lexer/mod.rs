@@ -16,6 +16,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut this_line_indent = 0;
     let mut consecutive_spaces = 0;
     let mut last_is_newline = true;
+    let mut consecutive_newlines = 0;
 
     let mut line = 1;
     let mut pos = 1;
@@ -28,12 +29,17 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         for _ in this_line_indent..current_indent {
             tokens.push(TokenPos { line, pos, token: Token::Dedent });
         }
+        for _ in 1..consecutive_newlines {
+            tokens.push(TokenPos { line, pos, token: Token::NL });
+        }
 
         it.next();
         tokens.push(TokenPos { line, pos, token: $tok });
         pos += $amount;
 
         current_indent = this_line_indent;
+        consecutive_newlines = 0;
+        last_is_newline = false;
     }};
     ($fun:path) => {{
         for _ in current_indent..this_line_indent {
@@ -42,21 +48,29 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         for _ in this_line_indent..current_indent {
             tokens.push(TokenPos { line, pos, token: Token::Dedent });
         }
+        for _ in 1..consecutive_newlines {
+            tokens.push(TokenPos { line, pos, token: Token::NL });
+        }
 
         tokens.push(TokenPos { line, pos, token: $fun(&mut it, &mut pos) });
 
         current_indent = this_line_indent;
+        consecutive_newlines = 0;
+        last_is_newline = false;
     }}
     };
 
     macro_rules! next_line_and_tp { () => {{
-        tokens.push(TokenPos { line, pos, token: Token::NL });
-
         it.next();
+        consecutive_newlines += 1;
         line += 1;
         pos = 1;
 
-        if !last_is_newline { current_indent = this_line_indent }
+        if !last_is_newline {
+            current_indent = this_line_indent;
+            tokens.push(TokenPos { line, pos, token: Token::NL });
+        }
+
         this_line_indent = 0;
         last_is_newline = true;
     }}};
@@ -208,7 +222,10 @@ fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
     while let Some(&c) = it.peek() {
         match c {
-            '"' => next_and!(it, pos, { if !last_backslash { break; }; last_backslash = false }),
+            '"' => next_and!(it, pos, {
+                if !last_backslash { break; } else { result.push(c) };
+                last_backslash = false
+            }),
             '\\' => next_and!(it, pos, { result.push(c); last_backslash = true }),
             _ => next_and!(it, pos, { result.push(c); last_backslash = false })
         }

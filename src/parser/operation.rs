@@ -127,7 +127,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                                 node: ASTNode::$ast { lit: $factor } })
             }}}
 
-            return match it.next() {
+            return match it.peek() {
                 Some(TokenPos { token: Token::Id(id), .. }) => literal!(id.to_string(), Id),
                 Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
                 Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),

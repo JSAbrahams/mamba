@@ -1,8 +1,7 @@
 def b <- 40
 
-print "hello" if cond1
-
 if c then d <- 4 else asdf
+print a if true
 
 # this if doesn't do much yet
 if cond then
@@ -15,18 +14,6 @@ else # this is the else
         bbb
     else
         ccc
-
-if asd then
-    body_part_1
-    body_part_2
-else
-    other
-    print "a"
-
-if l then
-    m
-
-if p then
-    q
-else
-    r
+# if we don't have this empty line here the above is still not newline terminated!
+if c then d <- 4 else asdf
+print a if true

@@ -2,7 +2,6 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
-use crate::parser::block::parse_block;
 use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::definition::parse_reassignment;
@@ -23,16 +22,6 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     return match match it.peek() {
         Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) =>
             parse_cntrl_flow_expr(it),
-
-        Some(TokenPos { token: Token::Indent, .. }) => {
-            it.next();
-            parse_block(it)
-        }
-        Some(TokenPos { token: Token::NL, .. }) => {
-            it.next();
-            check_next_is!(it, Token::Indent);
-            parse_block(it)
-        }
 
         Some(TokenPos { line: _, pos: _, token: Token::LRBrack }) => {
             tuple = true;

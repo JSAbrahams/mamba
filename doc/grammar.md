@@ -22,7 +22,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { newline } }
     script           ::= { import newline } { newline } 
                          { function-def newline { newline } } 
-                         [ block ]
+                         [ block-no-indent ]
     
     definition-call  ::= ( "self" | id  [ "." ] ) [ "?" ] id ( tuple | id )
     function-call    ::= [ id "::" ] id ( tuple | id )
@@ -43,29 +43,26 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
     id-and-type      ::= ( id | type-tuple ) ":" type
     
-    block            ::= indent { expr-or-stmt newline } dedent
+    block            ::= indent { expr-or-stmt { newline } } dedent
+    block-no-inent   ::= { expr-or-stmt { newline } }
     
-    expr-or-stmt     ::= statement 
+    expr-or-stmt     ::= statement [ "if" maybe_expr ] [ raises ]
                       | expression [ "if" maybe_expr ] [ raises ]
+                      | newline block
     statement        ::= ( "print" | "println" ) expression 
-                      | statement raises
                       | definition 
                       | control-flow-stmt
                       | type-def
-    expression       ::= "return" [ expression ] 
+    expression       ::= "return" [ expression ]
+                      | [ "self" ] expression
                       | expression "?or" expression
-                      | expresssion raises
-                      | instance
-                      | operation 
-                      | tuple 
+                      | collection 
                       | function-def-anon
                       | control-flow-expr 
-                      | reassignment 
+                      | reassignment
                       | function-call 
                       | function-call-dir 
-                      | [ newline ] block
-                      | [ "self" ] expression
-                      | collection
+                      | operation
                       | sizeof
                       | "_"
                       
@@ -119,7 +116,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                                      
     control-flow-expr::= if | from | when
     if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
-    when             ::= "when" expression newline indent { when-case newline } dedent
+    when             ::= "when" expression newline when-cases
+    when-cases       ::= indent { when-case newline } dedent
     when-case        ::= expression "->" expr-or-stmt
     
     control-flow-stmt::= while | for | "break" | "continue"
