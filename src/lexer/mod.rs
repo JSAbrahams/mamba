@@ -252,6 +252,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "as" => Token::As,
         "isa" => Token::IsA,
         "constructor" => Token::Constructor,
+        "private" => Token::Private,
 
         "use" => Token::Use,
         "useall" => Token::UseAll,
@@ -273,7 +274,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "mod" => Token::Mod,
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
-        "for" => Token::For,
+        "foreach" => Token::For,
         "where" => Token::Where,
 
         "in" => Token::In,
@@ -286,6 +287,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "break" => Token::Break,
         "return" => Token::Ret,
 
+        "handle" => Token::Handle,
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),
         "print" => Token::Print,

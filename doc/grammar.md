@@ -7,17 +7,17 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     file             ::= { module }
     module           ::= interface | util | class | script
     interface        ::= "type" id [ "[" id { "," id } "]" ] newline { newline }
-                         { ( function-def | immutable-def | immutable-asssign | empty-def-type ) newline { newline } } ]
+                         { ( function-def | definition ) newline { newline } } ]
     util             ::= { import newline } newline { newline } 
                          "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ] 
                          newline { newline }
-                         { im-defer-def newline } { newline }
+                         { top-level-def newline } { newline }
                          { ( immutable-declaration | function-def-bod ) newline { newline } }
     class            ::= { import newline } newline { newline }
                          [ util ]
                          "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ] 
                          [ "isa" id { "," id } ] newline { newline } 
-                         { defer-def newline } { newline }
+                         { top-level-def newline } { newline }
                          { ( constructor-def | function-def-bod | definition ) ) newline 
                          { newline } }
     script           ::= { import newline } { newline } 
@@ -46,8 +46,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     block            ::= indent { expr-or-stmt { newline } } dedent
     block-no-inent   ::= { expr-or-stmt { newline } }
     
-    expr-or-stmt     ::= statement [ "if" maybe_expr ] [ raises ]
-                      | expression [ "if" maybe_expr ] [ raises ]
+    expr-or-stmt     ::= statement [ "if" maybe_expr ] [ ( raises | handle ) ]
+                      | expression [ "if" maybe_expr ] [ ( raises | handle ) ]
                       | newline block
     statement        ::= ( "print" | "println" ) expression 
                       | definition 
@@ -67,6 +67,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | "_"
                       
     raises           ::= "raises" "[" id { "," id } "]"
+    handle           ::= "handle" "when" newline when-cases
     
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
@@ -76,25 +77,21 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     list-builder     ::= "[" expression "|" expression { "," expression } "]"
     map              ::= "{" expression "->" expression { "," expression "->" expression } "}" | map-builder
     map-builder      ::= "{" expression "->" expression "|" expression { "," expression } "}"
-    
-    sizeof           ::= "|" expression "|"
     zero-or-more-expr::= [ ( expression { "," expression } ]
     
     reassignment     ::= expression "<-" expression
-    defer-def        ::= definition [ "forward" id { "," id } ]
-    im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
-    definition       ::= mutable-def | immutable-def
-    mutable-def      ::= empty-def [ "<-" expression ]
-    immutable-def    ::= empty-def [ "<-" expression ]
-    empty-def        ::= "def" [ "private" ] [ "mut" ] id-maybe-type [ "ofmut" ] 
-    empty-def-type   ::= "def" [ "mut" ] id-and-type [ "ofmut" ] 
+    top-level-def    ::= definition [ forward ]
+    forward          ::= "forward" id { "," id }
+    definition       ::=  empty-def [ "<-" expression ]
+    empty-def        ::= "def" [ "private" ] [ "mut" ] id-maybe-type [ "ofmut" ]
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
-    factor           ::= [ unary ] ( constant | id | expression )
+    factor           ::= [ unary ] ( constant | id | expression | sizeof )
+    sizeof           ::= "|" expression "|"
     
     overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
     unary            ::= "not" | "sqrt" | additive
@@ -117,12 +114,12 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     control-flow-expr::= if | from | when
     if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
     when             ::= "when" expression newline when-cases
-    when-cases       ::= indent { when-case newline } dedent
+    when-cases       ::= indent { when-case { newline } } dedent
     when-case        ::= expression "->" expr-or-stmt
     
-    control-flow-stmt::= while | for | "break" | "continue"
+    control-flow-stmt::= while | foreach | "break" | "continue"
     while            ::= "while" expression "do" expr-or-stmt
-    for              ::= "for" expression "in" expression "do" expr-or-stmt
+    foreach          ::= "foreach" expression "in" expression "do" expr-or-stmt
     
     newline          ::= \n | \r\n
     comment          ::= "#" { character }

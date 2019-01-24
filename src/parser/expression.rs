@@ -55,7 +55,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     st_pos,
                     en_line: right.en_line,
                     en_pos: right.en_pos,
-                    node: ASTNode::Assign { left: Box::new(pre), right },
+                    node: ASTNode::ReAssign { left: Box::new(pre), right },
                 })
             }
             Some(TokenPos { token: Token::LRBrack, .. }) => parse_function_call_direct(pre, it),

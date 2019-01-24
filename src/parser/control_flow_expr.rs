@@ -57,8 +57,43 @@ fn parse_when(it: &mut TPIterator) -> ParseResult {
 
     let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "when expression");
     check_next_is!(it, Token::NL);
+    let cases: Box<ASTNodePos> = get_or_err!(it, parse_when_cases, "when cases");
 
-    panic!("not implemented")
+    return Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line: cases.en_line,
+        en_pos: cases.en_pos,
+        node: ASTNode::When { cond, cases },
+    });
+}
+
+pub fn parse_when_cases(it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
+    check_next_is!(it, Token::Indent);
+
+    let mut cases = Vec::new();
+    let mut en_line = st_line;
+    let mut en_pos = st_pos;
+
+    loop {
+        match it.peek() {
+            Some(TokenPos { token: Token::NL, .. }) => { it.next(); }
+            None | Some(TokenPos { token: Token::Dedent, .. }) => {
+                it.next();
+                break;
+            }
+            _ => {
+                let when_case: ASTNodePos = get_or_err_direct!(it, parse_when_case, "when case");
+                en_line = when_case.en_line;
+                en_pos = when_case.en_pos;
+
+                cases.push(when_case);
+            }
+        }
+    }
+
+    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::WhenCases { cases } });
 }
 
 fn parse_when_case(it: &mut TPIterator) -> ParseResult {

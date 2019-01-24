@@ -145,9 +145,18 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                         },
                     }),
 
+                Some(TokenPos { token: Token::Ver, .. }) => parse_size_of(it),
                 Some(_) => parse_expression(it),
                 None => Err(CustomEOFErr { expected: "factor".to_string() })
             };
         }
     };
+}
+
+pub fn parse_size_of(it: &mut TPIterator) -> ParseResult {
+    check_next_is!(it, Token::Ver);
+    let expression = get_or_err_direct!(it, parse_expression, "size of");
+    check_next_is!(it, Token::Ver);
+
+    return Ok(expression);
 }

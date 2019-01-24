@@ -44,3 +44,11 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         _ => Ok(*pre)
     };
 }
+
+pub fn parse_raises(it: &mut TPIterator) -> ParseResult {
+    unimplemented!()
+}
+
+pub fn parse_handle(it: &mut TPIterator) -> ParseResult {
+    unimplemented!()
+}

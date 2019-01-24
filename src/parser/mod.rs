@@ -73,7 +73,7 @@ fn end_pos(it: &mut TPIterator) -> (i32, i32) {
                 Token::Bool(false) => 5,
                 Token::Str(_str) => _str.len(),
                 Token::ENum(num, exp) => num.len() + 1 + exp.len(),
-                other => format!("{}", other).len() - 2
+                other => format!("{}", other).len()
             } as i32;
 
             (*line, *pos + tok_width)
@@ -139,8 +139,11 @@ pub enum ASTNode {
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
 
-    EmptyDef { _mut: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos> },
-    Def { _mut: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+    ReAssign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    TopLevelDef { definition: Box<ASTNodePos>, forward: Option<Box<ASTNodePos>> },
+    Forward { forwarded: Vec<ASTNodePos> },
+    Def { empty_def: Box<ASTNodePos>, expression: Option<Box<ASTNodePos>> },
+    EmptyDef { _mut: bool, private: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos> },
 
     Id { lit: String },
     TypeId { id: String },
@@ -149,17 +152,19 @@ pub enum ASTNode {
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
-    Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
     _Self { expr: Box<ASTNodePos> },
 
-    Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Set { elements: Box<ASTNodePos> },
+    SetBuilder { set: Box<ASTNodePos>, conditions: Box<ASTNodePos> },
+    List { elements: Box<ASTNodePos> },
+    ListBuilder { set: Box<ASTNodePos>, conditions: Box<ASTNodePos> },
+    Tuple { elements: Box<ASTNodePos> },
+    Map { elements: Box<ASTNodePos> },
+    KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
+    MapBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+    ZeroOrMoreExpr { expressions: Vec<ASTNodePos> },
 
-    SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
-    Set { elements: Vec<ASTNodePos> },
-    List { elements: Vec<ASTNodePos> },
-    Tuple { elements: Vec<ASTNodePos> },
-
-    Block { stmts: Vec<ASTNodePos> },
+    Block { statements: Vec<ASTNodePos> },
 
     Real { lit: String },
     Int { lit: String },
@@ -192,7 +197,8 @@ pub enum ASTNode {
 
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
-    When { cond: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
+    When { cond: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+    WhenCases { cases: Vec<ASTNodePos> },
     For { expr: Box<ASTNodePos>, collection: Box<ASTNodePos>, body: Box<ASTNodePos> },
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,

@@ -15,6 +15,7 @@ pub enum Token {
     Util,
     IsA,
     Constructor,
+    Private,
 
     As,
     Use,
@@ -92,6 +93,7 @@ pub enum Token {
 
     Quest,
     QuestOr,
+    Handle,
 
     Print,
     PrintLn,
@@ -106,6 +108,7 @@ impl fmt::Display for Token {
             Token::Class => "class".to_string(),
             Token::IsA => "isa".to_string(),
             Token::Constructor => "constructor".to_string(),
+            Token::Private => "private".to_string(),
 
             Token::As => "as".to_string(),
             Token::Use => "use".to_string(),
@@ -168,7 +171,7 @@ impl fmt::Display for Token {
             Token::Raises => "raises".to_string(),
 
             Token::While => "while".to_string(),
-            Token::For => "for".to_string(),
+            Token::For => "foreach".to_string(),
             Token::Where => "where".to_string(),
             Token::Map => "map".to_string(),
             Token::In => "in".to_string(),
@@ -183,6 +186,7 @@ impl fmt::Display for Token {
 
             Token::Quest => "?".to_string(),
             Token::QuestOr => "?or".to_string(),
+            Token::Handle => "handle".to_string(),
 
             Token::Print => "print".to_string(),
             Token::PrintLn => "println".to_string()

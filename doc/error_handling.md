@@ -22,22 +22,22 @@ general we:
 * Handle errors where they occur
 * We explicitly state that an expression might throw an error
 
-File `my_err.mylang`:
+Say we have the following error class:
 
     class MyErr(def msg: String) isa Err
         def to_string <- msg
     
-Say we have the following function:
+And the following functions elsewhere (not within the error class):
 
-    def g(x: Int): Int raises[MyErr] -> if x is 10 then MyErr("x was 10") else x
+    def g (x: Int): Int raises[MyErr] -> if x is 10 then MyErr("x was 10") else x
     
     # We can also have a function that raises multiple types of errors
-    def h(x: Int): Int raises[MyErr, OtherErr] -> if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    def h (x: Int): Int raises[MyErr, OtherErr] -> if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
     
 Small side note: using the default behaviour feature of the language, we can rewrite `g` as such:
 
-    def g 0                           -> MyErr("x was 10")
-    def g(x: Int): Int raises [MyErr] -> x
+    def g (x: Int): Int raises [MyErr] -> x
+    def g 0                            -> MyErr("x was 10")
     
 Note that if the signature of a function states that a certain type of exception is thrown, it must be thrown at some
 point, or we will get a type error:
@@ -52,12 +52,12 @@ When calling the function, it either has to be explicitly stated that it may rai
 Which must be added to the function signature if used within:
 
     # ommitting the raises in the signature of f would result in a type error!
-    def f(x: Real): Real raises[MyErr] ->
+    def f (x: Real): Real raises[MyErr] ->
         def a <- g(9) raises[MyErr] + 1.5
         a * 4.6
     
     # you can also put raises at the end of a statement or expression in a block.
-    def h(x: Real): Real raises[MyErr] ->
+    def h (x: Real): Real raises[MyErr] ->
         def a <- g(9) + 1.5 raises[MyErr] # If this statement would throw multiple types of exceptions, we would list 
                                           # them here
                                           
@@ -66,12 +66,22 @@ Which must be added to the function signature if used within:
         a * 2.3
     
 Or, we explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned value to
-determine what to do. A good first step is to log the error. In this case, we simply print it:
+determine what to do. A good first step is to log the error. In this case, we simply print it using `println`:
     
     def l <- g(9) + 1.5 handle when
         err: MyErr -> println err
-        ok         -> ok
         
+    # here, l has type l?, as we don not know if an error occurred or not
+    println "we don't know whether l is an Int or None"
+    
+The above would desugar to the following:
+
+    def l <- g(9) + 1.5 handle when
+        err: MyErr -> 
+            println err
+            None # we return none, since the error case originally ended with a statement, here a print line
+        ok         -> ok
+
     # here, l has type l?, as we don not know if an error occurred or not
     println "we don't know whether l is an Int or None"
     
@@ -79,7 +89,7 @@ That's slightly better, but we still don't know whether `l` is an `Int` or `None
 and get the following:
 
     def l <- g(9) handle when
-        l: Int     -> println "we know for sure that l is an Int" # l 
+        l: Int     -> println "we know for sure that l is an Int here"
         err: MyErr -> print err
  
 In the above case, notice how we match on based on the type of the value the function `g` returned. Using this method, 
@@ -95,9 +105,9 @@ We may also return if we detect an error. In that case, the code after would onl
             
     # if we execute this code we know for sure no error was thrown.
     # if an error was thrown this will not be executed at all
-    println "[l] has type Int"
+    println "[l] has type Int and not Int?"
     
-We can, instead of returning, also assign a default value to l. Though this should be done with care however. Assigning
+We can, instead of returning, also assign a default value to l. This should be done with care however. Assigning
 to a definition if an error has occurred might bury the error, causing unexpected behaviour later during execution.
 
     def l <- g(9) handle when

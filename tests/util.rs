@@ -6,7 +6,7 @@ use std::path::PathBuf;
 macro_rules! assert_ok { ( $ expr: expr) => {{
     match $ expr {
         Ok(_) => (),
-        Err(err) => panic ! ("{}", err)
+        Err(err) => panic!("{}", err)
     }
 }}}
 
