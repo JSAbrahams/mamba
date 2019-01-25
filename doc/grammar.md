@@ -37,7 +37,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "->" expression
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id [ "inrange" ( id | literal ) ".." ( id | literal ) ] | type-tuple [ "->" type ]
+    type             ::= id [ range ] | type-tuple [ "->" type ]
+    range            ::= "inrange" ( id | literal ) ( "to" | "toincl" ) ( id | literal )
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]

@@ -26,12 +26,25 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     }
 }
 
-
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     return match it.peek() {
-        Some(TokenPos { token: Token::Id(_), .. }) => parse_id(it),
+        Some(TokenPos { token: Token::Id(_), .. }) => {
+            let id = get_or_err!(it, parse_id, "type");
+            if let Some(TokenPos { token: Token::InRange, .. }) = it.peek() {
+                let range = get_or_err!(it, parse_range, "type");
+                return Ok(ASTNodePos {
+                    st_line,
+                    st_pos,
+                    en_line: range.en_line,
+                    en_pos: range.en_pos,
+                    node: ASTNode::TypeRanged { id, range },
+                });
+            } else {
+                Ok(*id)
+            }
+        }
         _ => {
             let _type = get_or_err!(it, parse_type_tuple, "type");
             match it.peek() {
@@ -50,6 +63,56 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
             }
         }
     };
+}
+
+pub fn parse_range(it: &mut TPIterator) -> ParseResult {
+    check_next_is!(it, Token::InRange);
+    let from = get_or_err!(it, parse_id_or_lit, "from range");
+
+    let inclusive;
+    match it.next() {
+        Some(TokenPos { token: Token::Range, .. }) => inclusive = true,
+        Some(TokenPos { token: Token::RangeIncl, .. }) => inclusive = false,
+        Some(tp) => return Err(TokenErr { expected: Token::Range, actual: tp.clone() }),
+        None => return Err(EOFErr { expected: Token::Range })
+    }
+
+    let to = get_or_err!(it, parse_id_or_lit, "to range");
+
+    return Ok(ASTNodePos {
+        st_line: from.st_line,
+        st_pos: from.st_pos,
+        en_line: to.en_line,
+        en_pos: to.en_pos,
+        node: if inclusive { ASTNode::RangeIncl { from, to } } else { ASTNode::Range { from, to } },
+    });
+}
+
+fn parse_id_or_lit(it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
+    let (en_line, en_pos) = end_pos(it);
+    macro_rules! literal { ($factor: expr, $ast: ident) => {{
+        it.next();
+        ASTNodePos { st_line, st_pos, en_line: en_line, en_pos: en_pos,
+                     node: ASTNode::$ast { lit: $factor } }
+    }}}
+
+    return Ok(match it.next() {
+        Some(TokenPos { token: Token::Id(id), .. }) => literal!(id.to_string(), Id),
+        Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
+        Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
+        Some(TokenPos { token: Token::Bool(ref _bool), .. }) => literal!(*_bool, Bool),
+        Some(TokenPos { token: Token::Str(str), .. }) => literal!(str.to_string(), Str),
+        Some(TokenPos { token: Token::ENum(num, exp), .. }) => ASTNodePos {
+            st_line,
+            st_pos,
+            en_line,
+            en_pos,
+            node: ASTNode::ENum { num: num.to_string(), exp: exp.to_string() },
+        },
+        Some(tp) => return Err(CustomErr { expected: "literal".to_string(), actual: tp.clone() }),
+        None => return Err(CustomEOFErr { expected: "literal".to_string() })
+    });
 }
 
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {

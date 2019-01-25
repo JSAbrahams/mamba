@@ -149,20 +149,22 @@ pub enum ASTNode {
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
 
     Id { lit: String },
-    TypeId { id: String },
+    TypeRanged { id: Box<ASTNodePos>, range: Box<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
+    RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
     _Self { expr: Box<ASTNodePos> },
 
-    Set { elements: Vec<ASTNodePos> },
+    Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     List { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
-    Map { elements: Vec<ASTNodePos> },
+    Map { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
     MapBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
 

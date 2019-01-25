@@ -28,12 +28,12 @@ code ideally should speak for itself without relying heavily on documentation.) 
 This solves our first issue. We now know what covered actually symbolises. But we still do not do any bounds checking.
 Kilometer can be negative, or greater than the total. To this end, we can add ranges to the type definition itself:
 
-    type Kilometer <- Int inrange 0..10 # excluding 10, so we have [0, 1, ..., 9]
+    type Kilometer <- Int inrange 0 to 10 # excluding 10, so we have [0, 1, ..., 9]
     
 Or
 
-    type Kilometer <- Int inrange 0..=9 # including 9. Semantically speaking same as above but might be more clear
-                                        # depending on the context.
+    type Kilometer <- Int inrange 0 toincl 9 # including 9. Semantically speaking same as above but might be more clear
+                                             # depending on the context.
     
 Here, `inrange` uses the `to_range` method of the type `Int`. This can also be defined for user defined types. More can
 be read about this in Control Flow Statement; For Loops. Of course, we may receive an error, so we must add an 

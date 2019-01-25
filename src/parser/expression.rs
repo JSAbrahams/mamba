@@ -76,8 +76,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                 Ok(ASTNodePos {
                     st_line,
                     st_pos,
-                    en_line: expr.en_line,
-                    en_pos: expr.en_pos,
+                    en_line: _default.en_line,
+                    en_pos: _default.en_pos,
                     node: ASTNode::QuestOr { _do: Box::new(pre), _default },
                 })
             }
