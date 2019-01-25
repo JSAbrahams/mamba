@@ -40,6 +40,8 @@ pub enum Token {
     ENum(String, String),
     Str(String),
     Bool(bool),
+    Range,
+    InRange,
 
     Add,
     Sub,
@@ -133,6 +135,8 @@ impl fmt::Display for Token {
             Token::ENum(int, exp) => format!("<e-number>: {}e{}", int, exp),
             Token::Str(string) => format!("<string>: \"{}\"", string),
             Token::Bool(boolean) => format!("<bool>: {}", boolean),
+            Token::Range => "..".to_string(),
+            Token::InRange => "inrange".to_string(),
 
             Token::Add => "+".to_string(),
             Token::Sub => "-".to_string(),

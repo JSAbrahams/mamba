@@ -1,8 +1,12 @@
 # Error Handling
 
-In some cases it may be that we might want to raise an error, if a user for instance passed a value which results in 
-undefined behaviour (e.g. dividing by 0). Exception handling and `try` `catch` blocks are common in OOP languages. These
-constructs however have been shown to be somewhat troublesome:
+Errors are a fact of life. It may be the result of incorrect data, user input, or a programming mistake. Error handling,
+ideally, should be done in an explicit manner. However, at the same time, error handling code should not become overly
+verbose as it might obfuscate the actual relevant parts of the codebase which perform the actual calculations. Thus, a
+balance must be reached.
+
+In some cases it may be that we might want to raise an error. Exception handling and `try` `catch` blocks are common in 
+modern languages. These constructs however have been shown to be somewhat troublesome:
 
 * When several lines of code are wrapped in a try catch block, we do not know which expression or statement is the one 
   which might throw an exception.
@@ -19,8 +23,10 @@ constructs however have been shown to be somewhat troublesome:
 As such, we aim to address the above concerns by using a more explicit system of error handling outlined below. In 
 general we:
     
-* Handle errors where they occur
-* We explicitly state that an expression might throw an error
+* Wish to handle errors where the occur in an explicit manner, or,
+* We explicitly state that an expression or statement (or function or method) might throw an error. This creates a 
+  visual stack trace within the codebase itself, so anyone who reads the code knows where an error might originate from
+  without even having to compile the and run the code.
 
 Say we have the following error class:
 
@@ -120,3 +126,4 @@ to a definition if an error has occurred might bury the error, causing unexpecte
     
 The above patterns ensure that error handling is always done explicitly and at the location where the error may occur.
 There is no concept of runtime error. All errors must be explicit, and the type checker ensure that they are handled.
+
