@@ -30,6 +30,17 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::LSBrack, .. }) |
         Some(TokenPos { token: Token::LCBrack, .. }) => parse_collection(it),
 
+        Some(TokenPos { token: Token::_Self, .. }) => {
+            it.next();
+            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "self");
+            Ok(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line: expr.en_line,
+                en_pos: expr.en_pos,
+                node: ASTNode::_Self { expr },
+            })
+        }
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
 
         Some(TokenPos { token: Token::Real(_), .. }) |
@@ -40,6 +51,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Bool(_), .. }) |
         Some(TokenPos { token: Token::Not, .. }) |
         Some(TokenPos { token: Token::Add, .. }) |
+        Some(TokenPos { token: Token::Ver, .. }) |
         Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
 
         Some(&next) => Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
@@ -56,6 +68,17 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     en_line: right.en_line,
                     en_pos: right.en_pos,
                     node: ASTNode::ReAssign { left: Box::new(pre), right },
+                })
+            }
+            Some(TokenPos { token: Token::QuestOr, .. }) => {
+                it.next();
+                let _default: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+                Ok(ASTNodePos {
+                    st_line,
+                    st_pos,
+                    en_line: expr.en_line,
+                    en_pos: expr.en_pos,
+                    node: ASTNode::QuestOr { _do: Box::new(pre), _default },
                 })
             }
             Some(TokenPos { token: Token::LRBrack, .. }) => parse_function_call_direct(pre, it),

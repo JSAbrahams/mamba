@@ -145,6 +145,9 @@ pub enum ASTNode {
     Def { empty_def: Box<ASTNodePos>, expression: Option<Box<ASTNodePos>> },
     EmptyDef { _mut: bool, private: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos> },
 
+    Raises { expr_or_stmt: Box<ASTNodePos>, errors: Vec<ASTNodePos> },
+    Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+
     Id { lit: String },
     TypeId { id: String },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -154,15 +157,14 @@ pub enum ASTNode {
 
     _Self { expr: Box<ASTNodePos> },
 
-    Set { elements: Box<ASTNodePos> },
-    SetBuilder { set: Box<ASTNodePos>, conditions: Box<ASTNodePos> },
-    List { elements: Box<ASTNodePos> },
-    ListBuilder { set: Box<ASTNodePos>, conditions: Box<ASTNodePos> },
-    Tuple { elements: Box<ASTNodePos> },
-    Map { elements: Box<ASTNodePos> },
+    Set { elements: Vec<ASTNodePos> },
+    SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+    List { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+    Tuple { elements: Vec<ASTNodePos> },
+    Map { elements: Vec<ASTNodePos> },
     KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
-    MapBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
-    ZeroOrMoreExpr { expressions: Vec<ASTNodePos> },
+    MapBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
 
     Block { statements: Vec<ASTNodePos> },
 
@@ -206,6 +208,8 @@ pub enum ASTNode {
 
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
+
+    QuestOr { _do: Box<ASTNodePos>, _default: Box<ASTNodePos> },
 
     Print { expr: Box<ASTNodePos> },
     PrintLn { expr: Box<ASTNodePos> },

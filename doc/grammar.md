@@ -2,26 +2,26 @@
 
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    import           ::= "from" string [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ] 
+    import           ::= "from" string [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
     
     file             ::= { module }
     module           ::= interface | util | class | script
-    interface        ::= "type" id [ "[" id { "," id } "]" ] newline { newline }
+    interface        ::= "type" id [ "[" id_maybe_type { "," id_maybe_type } "]" ] newline { newline }
                          { ( function-def | definition ) newline { newline } } ]
-    util             ::= { import newline } newline { newline } 
-                         "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ] 
+    util             ::= { import newline } newline { newline }
+                         "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ]
                          newline { newline }
                          { top-level-def newline } { newline }
                          { ( immutable-declaration | function-def-bod ) newline { newline } }
     class            ::= { import newline } newline { newline }
                          [ util ]
-                         "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ] 
-                         [ "isa" id { "," id } ] newline { newline } 
+                         "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ]
+                         [ "isa" id { "," id } ] newline { newline }
                          { top-level-def newline } { newline }
-                         { ( constructor-def | function-def-bod | definition ) ) newline 
+                         { ( constructor-def | function-def-bod | definition ) ) newline
                          { newline } }
-    script           ::= { import newline } { newline } 
-                         { function-def newline { newline } } 
+    script           ::= { import newline } { newline }
+                         { function-def newline { newline } }
                          [ block-no-indent ]
     
     definition-call  ::= ( "self" | id  [ "." ] ) [ "?" ] id ( tuple | id )
@@ -37,7 +37,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "->" expression
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id [ "inrange" ( id | constant ) ".." ( id | constant ) ] | type-tuple [ "->" type ]
+    type             ::= id [ "inrange" ( id | literal ) ".." ( id | literal ) ] | type-tuple [ "->" type ]
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
@@ -49,26 +49,23 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     expr-or-stmt     ::= statement [ "if" maybe_expr ] [ ( raises | handle ) ]
                       | expression [ "if" maybe_expr ] [ ( raises | handle ) ]
                       | newline block
+    raises           ::= "raises" "[" id { "," id } "]"
+    handle           ::= "handle" "when" newline when-cases
     statement        ::= ( "print" | "println" ) expression 
-                      | definition 
+                      | definition
                       | control-flow-stmt
                       | type-def
     expression       ::= "return" [ expression ]
                       | [ "self" ] expression
                       | expression "?or" expression
-                      | collection 
+                      | collection
+                      | function-call 
                       | function-def-anon
                       | control-flow-expr 
                       | reassignment
-                      | function-call 
-                      | function-call-dir 
                       | operation
-                      | sizeof
                       | "_"
                       
-    raises           ::= "raises" "[" id { "," id } "]"
-    handle           ::= "handle" "when" newline when-cases
-    
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
@@ -90,7 +87,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
-    factor           ::= [ unary ] ( constant | id | expression | sizeof )
+    factor           ::= [ unary ] ( literal | id | expression | sizeof )
     sizeof           ::= "|" expression "|"
     
     overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
@@ -103,7 +100,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
     
-    constant         ::= number | boolean | string
+    literal          ::= number | boolean | string
     number           ::= real | integer | e-notation
     real             ::= digit "." { digit }
     integer          ::= { digit }
