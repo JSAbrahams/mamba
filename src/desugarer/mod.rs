@@ -1,4 +1,6 @@
 use crate::parser::ASTNode;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[macro_use]
 /// Desugar and box.
@@ -30,9 +32,13 @@ pub enum Core {
     Int { integer_digits: i64 },
     BigInt { integer_digits: Vec<i64> },
     ENum { base: f64, exp: i64 },
-    Str(String),
-    Bool(bool),
-    Tuple(Vec<Core>),
+    Str { str: String },
+    Bool { _bool: bool },
+
+    Tuple { elements: Vec<Core> },
+    Set { elements: HashSet<Core> },
+    List { elements: Vec<Core> },
+    Map { elements: HashMap<Core, Core> },
 
     Add { left: Box<Core>, right: Box<Core> },
     AddU { expr: Box<Core> },

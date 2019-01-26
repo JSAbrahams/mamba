@@ -1,12 +1,10 @@
 use crate::lexer::token::Token;
 use crate::parser::ASTNodePos;
-use crate::parser::parse_result::ParseResult;
 use crate::parser::parse_result::ParseErr::*;
+use crate::parser::parse_result::ParseResult;
 use crate::parser::TPIterator;
 
 pub fn parse_function_call(caller: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::Point);
-
     panic!("not implemented")
 }
 
@@ -15,8 +13,6 @@ pub fn parse_function_call_direct(name: ASTNodePos, it: &mut TPIterator) -> Pars
 }
 
 pub fn parse_function_definition_body(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::Fun);
-
     panic!("not implemented")
 }
 

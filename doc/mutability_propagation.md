@@ -1,7 +1,7 @@
 # Mutability Propagation
 
-To prevent methods being called on instances that modify the instance if the instance has been declared as mutable, we 
-have mutability propagation.
+Mutability is one of the key features of the language. It ensures that if a variable is declared immutable, it is
+indeed immutable, including its fields if it contains any. 
 
 When type checking a method of a class, it the type checker detects that the function modifies a field of that class,
 it will mark that method. That method may then only be used when the instance has been declared as mutable.

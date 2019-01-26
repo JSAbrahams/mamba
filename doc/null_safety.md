@@ -32,7 +32,9 @@ If we try to call a function or access a definition of the function directly we 
     
     # type error! called `push` on an object which might be None
     my_function(set, str_1) push "world" 
-    
+   
+### Default values
+   
 In some situations, we want to have a default value. In such situations, we use the `?or` operator. Note that both sides
 of the operator must be of the same type.
 

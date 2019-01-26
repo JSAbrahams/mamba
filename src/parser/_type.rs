@@ -10,15 +10,20 @@ use crate::parser::TPIterator;
 
 pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    let (en_line, en_pos) = end_pos(it);
+    let _self;
+    if let Some(TokenPos { token: Token::_Self, .. }) = it.peek() {
+        it.next();
+        _self = true;
+    } else { _self = false; }
 
+    let (en_line, en_pos) = end_pos(it);
     match it.next() {
         Some(TokenPos { token: Token::Id(id), .. }) => Ok(ASTNodePos {
             st_line,
             st_pos,
             en_line,
             en_pos,
-            node: ASTNode::Id { lit: id.to_string() },
+            node: ASTNode::Id { _self, lit: id.to_string() },
         }),
 
         Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
@@ -98,7 +103,8 @@ fn parse_id_or_lit(it: &mut TPIterator) -> ParseResult {
     }}}
 
     return Ok(match it.next() {
-        Some(TokenPos { token: Token::Id(id), .. }) => literal!(id.to_string(), Id),
+        Some(TokenPos { token: Token::Id(id), .. }) =>
+            get_or_err_direct!(it, parse_id, "id or literal"),
         Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
         Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
         Some(TokenPos { token: Token::Bool(ref _bool), .. }) => literal!(*_bool, Bool),

@@ -28,6 +28,8 @@ general we:
   visual stack trace within the codebase itself, so anyone who reads the code knows where an error might originate from
   without even having to compile the and run the code.
 
+### Raises, and Result
+
 Say we have the following error class:
 
     class MyErr(def msg: String) isa Err
@@ -39,6 +41,22 @@ And the following functions elsewhere (not within the error class):
     
     # We can also have a function that raises multiple types of errors
     def h (x: Int): Int raises[MyErr, OtherErr] -> if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    
+We can also use the `Result` type to define a possible return type and error pair:
+
+    def g (x: Int): Result[Int, MyErr] -> if x is 10 then MyErr("x was 10") else x
+    
+    # We can also have a function that raises multiple types of errors
+    def h (x: Int): Result[Int, [MyErr, OtherErr]] -> if x > 10 then MyErr("bigger than 10") else OtherErr("or not")
+    
+The first way of writing is preferred, as this more clearly separates the return type and possible errors that may be 
+raised. However, using Result may be better in some other situations. For instance, it allows us to use the type alias 
+feature of the language, which can be convenient in certain situations, such as when we wish to enforce consistency. See
+"Types" for a more in-depth explanation. A trivial case would be:
+
+    type MyResult <- Result[Int, MyErr]
+    
+    def g (x: Int): MyResult -> if x is 10 then MyErr("x was 10") else x
     
 Small side note: using the default behaviour feature of the language, we can rewrite `g` as such:
 
@@ -71,8 +89,10 @@ Which must be added to the function signature if used within:
         # function
         a * 2.3
     
-Or, we explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned value to
-determine what to do. A good first step is to log the error. In this case, we simply print it using `println`:
+### Handle    
+    
+We can also explicitly handle it on site. We do this using the `handle when`, which matches the type of the returned
+value to determine what to do. A good first step is to log the error. In this case, we simply print it using `println`:
     
     def l <- g(9) + 1.5 handle when
         err: MyErr -> println err
@@ -124,6 +144,18 @@ to a definition if an error has occurred might bury the error, causing unexpecte
      # now, even if an error is thrown, l is assigned an integer, so we know that l is an Int
      println "[l] has type Int"
     
+### Retry
+
+Say we have a non-deterministic function `connect_to_server`, which tries to connect with an online server. It may be
+that if we don't succeed the first time we may want to try another time. Instead of wrapping everything in a while loop,
+we can use the `retry` keyword:
+
+    def tries <- 0
+    def l <- g(9) handle when
+            err: MyErr ->
+                println err
+                tries += 1
+                retry if tries <= 10
+    
 The above patterns ensure that error handling is always done explicitly and at the location where the error may occur.
 There is no concept of runtime error. All errors must be explicit, and the type checker ensure that they are handled.
-

@@ -1,5 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
+use crate::parser::_type::parse_id;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::end_pos;
@@ -128,7 +129,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             }}}
 
             return match it.peek() {
-                Some(TokenPos { token: Token::Id(id), .. }) => literal!(id.to_string(), Id),
+                Some(TokenPos { token: Token::Id(id), .. }) => parse_id(it),
                 Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
                 Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
                 Some(TokenPos { token: Token::Bool(ref _bool), .. }) => literal!(*_bool, Bool),

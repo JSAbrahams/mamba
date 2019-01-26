@@ -24,13 +24,15 @@ to more clearly express our ideas in the codebase without relying on documentati
 code ideally should speak for itself without relying heavily on documentation.) We can rewrite the function as so:
 
     def distance_remaning(covered: Kilometer): Kilometer -> self total - covered
-    
+
+### Range
+
 This solves our first issue. We now know what covered actually symbolises. But we still do not do any bounds checking.
 Kilometer can be negative, or greater than the total. To this end, we can add ranges to the type definition itself:
 
     type Kilometer <- Int inrange 0 to 10 # excluding 10, so we have [0, 1, ..., 9]
     
-Or
+Or:
 
     type Kilometer <- Int inrange 0 toincl 9 # including 9. Semantically speaking same as above but might be more clear
                                              # depending on the context.
@@ -41,7 +43,7 @@ be read about this in Control Flow Statement; For Loops. Of course, we may recei
 
     def distance_remaining(covered: Kilometer): Kilometer raises [OutOfBounds[Kilometer]] -> self total - covered
     
-Due to the range of `Kilometer`, under the hood, it is desugared to the following:
+Now, because type `Kilometer`, under the hood, the above is desugared to the following:
 
     def distance_remaining(covered: Kilometer): Kilomter raises [OutOfBounds[Kilometer]] ->
         if (covered < 0) raise OutOfBounds(covered, 0)

@@ -262,7 +262,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "forward" => Token::Forward,
         "self" => Token::_Self,
 
-        "fun" => Token::Fun,
         "def" => Token::Def,
         "ofmut" => Token::OfMut,
         "mut" => Token::Mut,
@@ -288,11 +287,15 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "continue" => Token::Continue,
         "break" => Token::Break,
         "return" => Token::Ret,
+
         "inrange" => Token::InRange,
         "to" => Token::Range,
         "toincl" => Token::RangeIncl,
 
+        "raises" => Token::Raises,
         "handle" => Token::Handle,
+        "retry" => Token::Retry,
+
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),
         "print" => Token::Print,

@@ -147,8 +147,11 @@ pub enum ASTNode {
 
     Raises { expr_or_stmt: Box<ASTNodePos>, errors: Vec<ASTNodePos> },
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+    Retry,
 
-    Id { lit: String },
+    Require { expr: Box<ASTNodePos> },
+    Ensure { expr: Box<ASTNodePos> },
+    Id { _self: bool, lit: String },
     TypeRanged { id: Box<ASTNodePos>, range: Box<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     TypeTup { types: Vec<ASTNodePos> },
@@ -156,8 +159,6 @@ pub enum ASTNode {
     Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
     RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
-
-    _Self { expr: Box<ASTNodePos> },
 
     Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },

@@ -24,7 +24,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                          { function-def newline { newline } }
                          [ block-no-indent ]
     
-    definition-call  ::= ( "self" | id  [ "." ] ) [ "?" ] id ( tuple | id )
+    definition-call  ::= id [ "." ] [ "?" ] id ( tuple | id )
     function-call    ::= [ id "::" ] id ( tuple | id )
     
     constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
@@ -36,7 +36,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-def-anon::= tuple [ ":" type ] "->" expression
     operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "->" expression
     
-    id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
+    id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id [ range ] | type-tuple [ "->" type ]
     range            ::= "inrange" ( id | literal ) ( "to" | "toincl" ) ( id | literal )
     type-def         ::= "type" id "<-" type
@@ -56,6 +56,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | definition
                       | control-flow-stmt
                       | type-def
+                      | "retry"
+                      | ( "ensure" | "require" ) expression
     expression       ::= "return" [ expression ]
                       | [ "self" ] expression
                       | expression "?or" expression
@@ -74,7 +76,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     list             ::= "[" zero-or-more-expr "]" | list-builder
     list-builder     ::= "[" expression "|" expression { "," expression } "]"
     map              ::= "{" expression "->" expression { "," expression "->" expression } "}" | map-builder
-    map-builder      ::= "{" expression "->" expression "|" expression { "," expression } "}"
+    map-builder      ::= "{" expression "->" expression "|" zero-or-more-expr "}"
     zero-or-more-expr::= [ ( expression { "," expression } ]
     
     reassignment     ::= expression "<-" expression

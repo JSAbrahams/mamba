@@ -4,8 +4,12 @@ Every definition must be preceded with the `def` keyword. This is not necessary 
 
 Functions and methods cannot be reassigned, mutable values can however. A value is an expression which may be evaluated.
 
+## Variables
+
 A variable `x` is assigned to as such:\
 `def x <- <expression>` or `def mut x <- <expression>`
+
+## Functions and Methods
 
 A function (or method) `f` is assigned to as such:\
 `def f (x : Int) -> x + 1` or `def f (x : Int): Int -> x + 1`\

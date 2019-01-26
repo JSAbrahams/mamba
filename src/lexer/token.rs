@@ -23,11 +23,12 @@ pub enum Token {
     Forward,
     _Self,
 
-    Fun,
     Point,
     Comma,
     DoublePoint,
     DDoublePoint,
+    Require,
+    Ensure,
 
     Id(String),
     Mut,
@@ -79,6 +80,7 @@ pub enum Token {
     Dedent,
 
     Raises,
+    Retry,
 
     While,
     For,
@@ -119,7 +121,8 @@ impl fmt::Display for Token {
             Token::Forward => "forward".to_string(),
             Token::_Self => "self".to_string(),
 
-            Token::Fun => "fun".to_string(),
+            Token::Require => "require".to_string(),
+            Token::Ensure => "ensure".to_string(),
             Token::Point => ".".to_string(),
             Token::Comma => ",".to_string(),
             Token::DoublePoint => ":".to_string(),
@@ -174,8 +177,6 @@ impl fmt::Display for Token {
             Token::Indent => "<indent>".to_string(),
             Token::Dedent => "<dedent>".to_string(),
 
-            Token::Raises => "raises".to_string(),
-
             Token::While => "while".to_string(),
             Token::For => "foreach".to_string(),
             Token::Where => "where".to_string(),
@@ -193,6 +194,8 @@ impl fmt::Display for Token {
             Token::Quest => "?".to_string(),
             Token::QuestOr => "?or".to_string(),
             Token::Handle => "handle".to_string(),
+            Token::Raises => "raises".to_string(),
+            Token::Retry => "retry".to_string(),
 
             Token::Print => "print".to_string(),
             Token::PrintLn => "println".to_string()

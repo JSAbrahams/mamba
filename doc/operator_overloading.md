@@ -18,7 +18,7 @@ Overloading operators gives us the ability to more concisely work with more comp
 To demonstrate the concept of operator overloading we will use the (incomplete) `complex` class, which represent complex 
 numbers, to show how operator overloading may be used.
 
-File `complex.mylang`:
+Say we define a class `Complex` as such:
 
      class Complex(def real: Int, def imaginary: Int)
      
@@ -26,14 +26,14 @@ File `complex.mylang`:
      def + (other: Complex) -> Complex(self real + other real, self imaginary + other imaginary)
      
      # we can also overload an unary opeator
-     def sqrt () -> 
+     def sqrt () ->
         real      <- sqrt (self real ^ 2 + self imaginary ^ 2)
         imaginary <- sqrt (2 * self real * self imaginary)
         Complex(real, imaginary)
      
      def to_string <- "[self real] + i[self imaginary]"
         
-File `main.mylang`:
+Now we can use the class `Complex` as follows:
 
     from "complex" use Complex
 

@@ -1,10 +1,10 @@
 # Control Flow Expressions
 
-# If .. Then ... Else
+### If .. Then ... Else
 
 If expressions are perhaps one of the most well known and universal programming constructs.
 
-# When
+### When
 
 A when can be used match based on the value of an expression.
 
