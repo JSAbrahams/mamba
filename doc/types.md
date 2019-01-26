@@ -77,9 +77,10 @@ We can also rewrite it for a more descriptive error message:
     type EvenNum isa Int where
         self mod 2 is 0 else Err("Expected an even number but was: [self]")
 
-This defines all `Int`, or Integers, that are even. That is, the condition listed above holds. 
+This defines all `Int`, or Integers, that are even. That is, the condition listed above holds. This is similar to creating
+a new class `EvenNum` which is a `Int`, and verifying that these properties hold.
 
-If we redefine the function as follows:
+We can now redefine the function as follows:
 
     # EvenNum has conditions, so we need to state that it may raise an error
     def g (x: EvenNum): Int raises[Err] -> 
@@ -92,25 +93,31 @@ any variable that is an `Int` to `EvenNum`. During casting, the defined conditio
 is thrown if a condition does not hold:
 
     # We can cast x to an EvenNum, which might give an error
-    def x <- 10 # here x is an Int
+    def x <- random_int() # here x is an Int
     def y <- x as EvenNum raises [Err]
     def first <- g(y)
     
-    # We can also cast inside the function argument if we want
-    def z <- 10 # here x1 is an Int
-    def second <- g(z as EvenNum) raises [Err]   
+    # We can also pass it immediately if we want, in which case it is casted to EvenNum
+    def z <- random_int()
+    def second <- g(z) raises [Err]
+    # which is the same as
+    def second_with_case <- g(z as EvenNum) raises [Err]
     
     # Or just say that the variable is an EvenNum upon instantiation
-    def y: EvenNum <- 10 raises [Err]
+    def y: EvenNum <- random_int() raises [Err]
     def third <- g(y)
     
     # We can also use the isa to check that the conditions holds without raising an error
-    def a <- 9
+    def a <- random_int()
     # notice how we don't have to cast a to an EvenNum if the condition holds.
     # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
     fourth <- if a isa EvenNum then g(a) else 0
     
-    # first, second, third and fourth all have type Int
+    # If it can be statically verified that the propties hold, it is not necessary to handle any type specific errors
+    def c <- 2
+    def fifth <- g(c)
+    
+    # first, second, third, fourth, and fifth all have type Int
 
 We can also use it as a sort of post-condition of the function. We ensure that the function returns an `EvenNum`:
 
@@ -133,8 +140,7 @@ We can even ensure that the function never returns an error:
         def y <- x + some_other_function(x)
         if y isa EvenNum then
             y # type sensitive flow ensure that this is an EvenNum
-        else 
-            x # we know that x is an EvenNum
+        else x
 
 So now:
 
