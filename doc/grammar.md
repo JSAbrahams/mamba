@@ -94,11 +94,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     sizeof           ::= "|" expression "|"
     
     overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
-    unary            ::= "not" | "sqrt" | "in" | additive 
+    unary            ::= "not" | "sqrt" | additive 
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    instance-eq      ::= "is" | "isnt" | "isa"
+    instance-eq      ::= "is" | "isnt" | "isa" | "in"
     equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"

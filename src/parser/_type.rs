@@ -71,7 +71,7 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_range(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::InRange);
+    check_next_is!(it, Token::In);
     let from = get_or_err!(it, parse_id_or_lit, "from range");
 
     let inclusive;
