@@ -62,7 +62,7 @@ Kotlin   |  | Ranges. Type aliases, relying in keywords to define common use cas
 Ada      |  | Custom data types (or type aliases) with ranges. Strict typing rules. Natural language over symbols, such using `and` stead of `&&`
 C++      |  |
 C        |  |
-Eiffel   |  | Design by contract features. These include the `require` and `ensure` keywords, and the `retry` keywords
+Eiffel   |  | Design by contract features, the `retry` keyword
 Haskell  |  | Pattern Matching features. Lack of mutability. Closeness of mapping with mathematical notation, for instance set constructor notation
 Rust     |  | Error handling mechanisms. Strict rules regarding mutability
 Ruby     |  | Syntax sugar, postfix `if` operator. Philosophy that flexibility is not inherently a bad thing

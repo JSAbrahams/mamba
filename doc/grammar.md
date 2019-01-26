@@ -57,7 +57,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | control-flow-stmt
                       | type-def
                       | "retry"
-                      | ( "ensure" | "require" ) expression
     expression       ::= "return" [ expression ]
                       | [ "self" ] expression
                       | expression "?or" expression

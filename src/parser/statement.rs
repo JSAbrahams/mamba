@@ -38,28 +38,6 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
                 node: ASTNode::PrintLn { expr },
             })
         }
-        Some(TokenPos { token: Token::Ensure, .. }) => {
-            it.next();
-            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "ensure");
-            Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: expr.en_line,
-                en_pos: expr.en_pos,
-                node: ASTNode::Ensure { expr },
-            })
-        }
-        Some(TokenPos { token: Token::Require, .. }) => {
-            it.next();
-            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "require");
-            Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: expr.en_line,
-                en_pos: expr.en_pos,
-                node: ASTNode::Require { expr },
-            })
-        }
         Some(TokenPos { token: Token::Retry, .. }) => {
             let (en_line, en_pos) = end_pos(it);
             it.next();

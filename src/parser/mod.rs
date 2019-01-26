@@ -149,8 +149,6 @@ pub enum ASTNode {
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
     Retry,
 
-    Require { expr: Box<ASTNodePos> },
-    Ensure { expr: Box<ASTNodePos> },
     Id { _self: bool, lit: String },
     TypeRanged { id: Box<ASTNodePos>, range: Box<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },

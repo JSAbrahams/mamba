@@ -27,8 +27,6 @@ pub enum Token {
     Comma,
     DoublePoint,
     DDoublePoint,
-    Require,
-    Ensure,
 
     Id(String),
     Mut,
@@ -121,8 +119,6 @@ impl fmt::Display for Token {
             Token::Forward => "forward".to_string(),
             Token::_Self => "self".to_string(),
 
-            Token::Require => "require".to_string(),
-            Token::Ensure => "ensure".to_string(),
             Token::Point => ".".to_string(),
             Token::Comma => ",".to_string(),
             Token::DoublePoint => ":".to_string(),
