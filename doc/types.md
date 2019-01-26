@@ -17,7 +17,7 @@ The above seems simple, but there are two issues:
   
 To solve the above two issues, we can use type aliases. Observe the following:
 
-    type Kilometer <- Int
+    type Kilometer isa Int
     
 Type `Kilometer` can do everything an `Int` can (we can use all the same operators), but using such an alias allows us
 to more clearly express our ideas in the codebase without relying on documentation. (This is a recurring theme, source
@@ -64,17 +64,17 @@ type itself, instead of having to manually check the a type adheres to certain c
 We can use a trivial type `EvenNum` to demonstrate how one would use conditions in a type alias. Say we define the
 type-alias `EvenNum`:
 
-    type EvenNum <- Int where
+    type EvenNum isa Int where
         self mod 2 is 0 # we can list more conditions below this one. They must all evaluate to a boolean.
         
 Which is the same as:
    
-    type EvenNum <- Int where
+    type EvenNum isa Int where
         self mod 2 is 0 else Err()
         
 We can also rewrite it for a more descriptive error message:
 
-    type EvenNum <- Int where
+    type EvenNum isa Int where
         self mod 2 is 0 else Err("Expected an even number but was: [self]")
 
 This defines all `Int`, or Integers, that are even. That is, the condition listed above holds. 
