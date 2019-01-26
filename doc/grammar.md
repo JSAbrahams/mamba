@@ -38,7 +38,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id [ range ] | type-tuple [ "->" type ]
-    range            ::= "inrange" ( id | literal ) ( "to" | "toincl" ) ( id | literal )
+    range            ::= "in" ( id | literal ) ( "to" | "toincl" ) ( id | literal )
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
@@ -60,6 +60,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     expression       ::= "return" [ expression ]
                       | [ "self" ] expression
                       | expression "?or" expression
+                      | expression "as" id
                       | collection
                       | function-call 
                       | function-def-anon
@@ -93,7 +94,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     sizeof           ::= "|" expression "|"
     
     overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
-    unary            ::= "not" | "sqrt" | additive
+    unary            ::= "not" | "sqrt" | "in" | additive 
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"

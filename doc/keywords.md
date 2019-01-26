@@ -50,6 +50,11 @@ Keyword | Use
 `mod`   | Modulus operator
 `sqrt`  | Square root operator
 
+### Other operators
+Keyword | Use
+--------|-----
+`in`    | Check that an expression is contained within an expression which is a collection
+
 ### Control flow Expressions
 Keyword | Use 
 --------|-----

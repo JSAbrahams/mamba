@@ -37,7 +37,7 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
     return match it.peek() {
         Some(TokenPos { token: Token::Id(_), .. }) => {
             let id = get_or_err!(it, parse_id, "type");
-            if let Some(TokenPos { token: Token::InRange, .. }) = it.peek() {
+            if let Some(TokenPos { token: Token::In, .. }) = it.peek() {
                 let range = get_or_err!(it, parse_range, "type");
                 return Ok(ASTNodePos {
                     st_line,

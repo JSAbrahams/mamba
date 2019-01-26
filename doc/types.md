@@ -31,8 +31,6 @@ Type refinement expands upon type aliases by defining certain conditions an obje
 type. This can also be used to enforce pre-conditions of a function or method when used as a parameter, and 
 post-conditions when used as the return type. This is akin to the philosophy of Design by Contract.
 
-### Conditions
-
 Say we have a function:
 
     def f (x: Int): Int -> 
@@ -43,16 +41,15 @@ In some situations, this function does not behave as we expect it to. It may pri
 situation, we often turn to the design by contract philosophy, where a function has pre and post-conditions. There are
 several traditional approaches to solving this problem, both if which are valid, though the preferred approach does 
 depend on context:
-* Just return `x` if it is uneven and don't print anything using a simple `if`:
 
+Just return `x` if it is uneven and don't print anything using a simple `if`:
 
     def f (x: Int): Int -> 
         if x mod 2 isnt 0 return x
         println("this number is even: [x]")
         x
     
-* Raise and error if `x` is uneven
-
+Raise and error if `x` is uneven:
     
     def f (x: Int): Int raises [Err] -> 
         if x mod 2 isnt 0 raise Err("Expected x to be even.")
@@ -78,7 +75,7 @@ Which is the same as:
 We can also rewrite it for a more descriptive error message:
 
     type EvenNum <- Int where
-        self mod 2 is 0 else Err("Expected an even number but was: [x]")
+        self mod 2 is 0 else Err("Expected an even number but was: [self]")
 
 This defines all `Int`, or Integers, that are even. That is, the condition listed above holds. 
 
@@ -90,77 +87,61 @@ If we redefine the function as follows:
         x
     
 Now, the actual type of the argument describes what conditions the argument adheres to, instead of having to manually
-check these in the body of the function. Effectively, the body of the function is only executed of the pre-condition
-holds. So, the above desugars to:
+check these in the body of the function. We now know that these conditions hold in the body of the function. We can cast
+any variable that is an `Int` to `EvenNum`. During casting, the defined conditions are checked, and the respective error
+is thrown if a condition does not hold:
 
-    def g (x: Int): Int raises[Err] -> 
-        if not x mod 2 is 0 return Err("Expected an even number but was: [x]")
-        
-        println("this number is even: [x]")
-        x
+    # We can cast x to an EvenNum, which might give an error
+    def x <- 10 # here x is an Int
+    def y <- x as EvenNum raises [Err]
+    def first <- g(y)
+    
+    # We can also cast inside the function argument if we want
+    def z <- 10 # here x1 is an Int
+    def second <- g(z as EvenNum) raises [Err]   
+    
+    # Or just say that the variable is an EvenNum upon instantiation
+    def y: EvenNum <- 10 raises [Err]
+    def third <- g(y)
+    
+    # We can also use the isa to check that the conditions holds without raising an error
+    def a <- 9
+    # notice how we don't have to cast a to an EvenNum if the condition holds.
+    # We know that the then branch of the if is only executed if a is an EvenNum, so we assign it the type EvenNum
+    fourth <- if a isa EvenNum then g(a) else 0
+    
+    # first, second, third and fourth all have type Int
 
-We can also use it as a post-condition of the function:
+We can also use it as a sort of post-condition of the function. We ensure that the function returns an `EvenNum`:
 
     def g (x: EvenNum): EvenNum raises[Err] -> 
         println("this number is even: [x]")
-        x
-
-Which would desugar to:
-
-    def g (x: Int): Int raises[Err] -> 
-        if not x mod 2 is 0 return Err("Expected an even number but was: [x]")
+        def y <- x + some_other_function(x)
+        y as EvenNum raises [Err]
         
-        println("this number is even: [x]")
-        
-        if not x mod 2 is 0 return Err("Expected an even number but was: [x]")
-        x
-
-### Range
-
-This solves our first issue. We now know what covered actually symbolises. But we still do not do any bounds checking.
-Kilometer can be negative, or greater than the total. To this end, we can add ranges to the type definition itself:
-
-    type Kilometer <- Int where
-        inrange 0 to 10 # excluding 10, so we have [0, 1, ..., 9]
-    
 Or:
 
-    type Kilometer <- Int where
-        inrange 0 toincl 9 # including 9. Semantically speaking same as above but might be more clear
-                           # depending on the context.
-                           
-Which is the same as writing:
+    def g (x: EvenNum): EvenNum raises[Err] -> 
+        println("this number is even: [x]")
+        def y: EvenNum <- x + some_other_function(x) raises [Err]
+        y
 
-    type Kilometer <- Int where
-        inrange 0 to 10 else RangeErr("[self] is out of bounds. (From: [0.to_string], To: [10.to_string]))")
-      
-In the above example, `RangeErr` is a type of `Err`. We can also state that we wish to return our own type:
+We can even ensure that the function never returns an error:
 
-    type Kilomtere <- Int where
-        inrange 0 to 10 else MyErr(self)
+    def h (x: EvenNum): EvenNum -> 
+        println("this number is even: [x]")
+        def y <- x + some_other_function(x)
+        if y isa EvenNum then
+            y # type sensitive flow ensure that this is an EvenNum
+        else 
+            x # we know that x is an EvenNum
+
+So now:
+
+    def x <- 10 # here x is an Int
+    def a <- g(x as EvenNum) raises [Err]
     
-Here, `inrange` uses the `to_range` method of the type `Int`. This can also be defined for user defined types. More can
-be read about this in Control Flow Statement; For Loops. Of course, we may receive an error, so we must add an 
-`OutOfBounds` error to the function signature:
-
-    def distance_remaining(covered: Kilometer): Kilometer raises [OutOfBounds[Kilometer]] -> self total - covered
+    # a has type EvenNum
+    def b <- g(a) raises Err # we don't have to cast a to an EvenNum, it is already of that type
     
-Now, because type `Kilometer`, under the hood, the above is desugared to the following:
-
-    def distance_remaining(covered: Kilometer): Kilomter raises [OutOfBounds[Kilometer]] ->
-        if (covered < 0) raise OutOfBounds(covered, 0)
-        if (covered >= 10) raise OutOfBounds(covered, 0)
-        
-        return self.total - covered
-        
-This can also be combined with the Conditions defined above as such:
-
-    type EvenKilometer <- Int where
-        inrange 0 to 10
-        self mod 2 is 10 else Err("Expected an even number kilometers but was: [x]")
-
-Or, if `Kilometer` has already been defined, we can extend from it, so we effectively inherit all its conditions. So we
-can then rewrite the above as such:
-
-    type EvenKilometer <- Kilomter where
-        self mod 2 is 10 else Err("Expected an even number kilometers but was: [x]")
+    def c <- h(x) # function h never raises an error

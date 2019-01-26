@@ -41,7 +41,6 @@ pub enum Token {
     Bool(bool),
     Range,
     RangeIncl,
-    InRange,
 
     Add,
     Sub,
@@ -137,7 +136,6 @@ impl fmt::Display for Token {
             Token::Bool(boolean) => format!("<bool>: {}", boolean),
             Token::Range => "to".to_string(),
             Token::RangeIncl => "toincl".to_string(),
-            Token::InRange => "inrange".to_string(),
 
             Token::Add => "+".to_string(),
             Token::Sub => "-".to_string(),

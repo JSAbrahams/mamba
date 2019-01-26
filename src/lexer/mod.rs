@@ -288,7 +288,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "break" => Token::Break,
         "return" => Token::Ret,
 
-        "inrange" => Token::InRange,
+        "in" => Token::In,
         "to" => Token::Range,
         "toincl" => Token::RangeIncl,
 
