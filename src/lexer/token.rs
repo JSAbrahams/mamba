@@ -27,6 +27,7 @@ pub enum Token {
     Comma,
     DoublePoint,
     DDoublePoint,
+    Vararg,
 
     Id(String),
     Mut,
@@ -99,6 +100,8 @@ pub enum Token {
 
     Print,
     PrintLn,
+
+    Undefined,
 }
 
 impl fmt::Display for Token {
@@ -122,6 +125,7 @@ impl fmt::Display for Token {
             Token::Comma => ",".to_string(),
             Token::DoublePoint => ":".to_string(),
             Token::DDoublePoint => "::".to_string(),
+            Token::Vararg => "vararg".to_string(),
 
             Token::Id(id) => format!("<identifier>: {}", id),
             Token::Mut => "mut".to_string(),
@@ -192,7 +196,9 @@ impl fmt::Display for Token {
             Token::Retry => "retry".to_string(),
 
             Token::Print => "print".to_string(),
-            Token::PrintLn => "println".to_string()
+            Token::PrintLn => "println".to_string(),
+
+            Token::Undefined => "undefined".to_string()
         };
 
         write!(f, "{}", string_representation)

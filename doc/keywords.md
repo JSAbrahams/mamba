@@ -54,6 +54,8 @@ Keyword | Use
 Keyword | Use
 --------|-----
 `in`    | Check that an expression is contained within an expression which is a collection
+`to`    | Denote a range
+`toincl`| Denote an inclusive range
 
 ### Control flow Expressions
 Keyword | Use 
@@ -74,6 +76,18 @@ Keyword | Use
 ### Statements
 Keyword | Use 
 --------|-----
-`print` | print value of an expression
-`print` | print value of an expression with a newline at the end
-`return`| return from a function or method
+`print` | Print value of an expression
+`print` | Print value of an expression with a newline at the end
+`return`| Return from a function or method
+
+### Errors
+Keyword  | Use 
+---------|-----
+`handle` | Denote handle cases
+`raise`  | Denote that an expression, statement, or function may raise an error
+`retry`  | Retry an expression from within handle case
+
+### Special
+Keyword     | Use 
+------------|-----
+`undefined` | Denote an undefined value

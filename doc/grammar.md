@@ -11,35 +11,27 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     util             ::= { import newline } newline { newline }
                          "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ]
                          newline { newline }
-                         { top-level-def newline } { newline }
-                         { ( immutable-declaration | function-def-bod ) newline { newline } }
+                         { ( definition ) newline { newline } }
     class            ::= { import newline } newline { newline }
                          [ util ]
                          "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ]
                          [ "isa" id { "," id } ] newline { newline }
                          { top-level-def newline } { newline }
-                         { ( constructor-def | function-def-bod | definition ) ) newline
+                         { ( constructor | definition ) ) newline
                          { newline } }
     script           ::= { import newline } { newline }
                          { function-def newline { newline } }
                          [ block-no-indent ]
-    
-    definition-call  ::= id [ "." ] [ "?" ] id ( tuple | id )
-    function-call    ::= [ id "::" ] id ( tuple | id )
-    
-    constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
+        
+    constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= [ "self" ] id-maybe-type
-    
-    function-def     ::= "def" [ "private" ] id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ] [ raises ] 
-    function-def-bod ::= function-def "->" expr-or-stmt
-    function-def-anon::= tuple [ ":" type ] "->" expression
-    operator-def     ::= "def" overridable-op "(" [ id-and-type ] ")" [ ":" type ] "->" expression
+    constructor-arg  ::= [ "self" ] id-maybe-type | "vararg" id-maybe-type
     
     id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id [ range ] | type-tuple [ "->" type ]
-    type-def         ::= "type" id "<-" type
+    type             ::= id | type-tuple [ "->" type ]
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
+    type-def         ::= "type" id "<-" type [ "when" newline indent { condition } dedent ]
+    condition        ::= expression "else" expression
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
     id-and-type      ::= ( id | type-tuple ) ":" type
     
@@ -52,23 +44,29 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     raises           ::= "raises" "[" id { "," id } "]"
     handle           ::= "handle" "when" newline when-cases
     statement        ::= ( "print" | "println" ) expression 
-                      | definition
+                      | statement [ ( raises | handle ) ]
                       | control-flow-stmt
+                      | definition
                       | type-def
                       | "retry"
-    expression       ::= "return" [ expression ]
-                      | [ "self" ] expression
+    expression       ::= "(" expression ")" [ "->" expression ]
+                      | expression ( "to" | "toincl" ) expression
+                      | expression [ ( raises | handle ) ]
+                      | "return" [ expression ]
                       | expression "?or" expression
                       | expression "as" id
-                      | collection
-                      | function-call 
                       | function-def-anon
                       | control-flow-expr 
                       | reassignment
+                      | collection
                       | operation
-                      | range
+                      | call
                       | "_"
-                      
+                     
+    call             ::= function-call | method-call
+    function-call    ::= expression [ "::" expression ] ( expression | "(" [ expression { "," expression} ] ")" )
+    method-call      ::= expression "." ( expression | "(" [ expression { "," expression} ] ")" ) [ "?" ]
+                    
     collection       ::= tupe | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
@@ -80,10 +78,12 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     zero-or-more-expr::= [ ( expression { "," expression } ]
     
     reassignment     ::= expression "<-" expression
-    top-level-def    ::= definition [ forward ]
     forward          ::= "forward" id { "," id }
-    definition       ::=  empty-def [ "<-" expression ]
-    empty-def        ::= "def" [ "private" ] [ "mut" ] id-maybe-type [ "ofmut" ]
+    definition       ::= "def" ( [ "private" ] ( variable-def | fun-def ) | operator-def )
+    variable-def     ::= [ "mut" ] id-maybe-type [ "<-" expression [ ( "when" newline when-cases | forward ) ] ]
+    fun-def          ::= id ( "(" [ [ "vararg ] id-and-type { "," [ "vararg" ] id-and-type } ] ")" ":" type ) ) 
+                         [ raises ] [ "->" expression ]
+    operator-def     ::= overridable-op [ "(" [ id-and-type ] ")" ] [ ":" type ] [ "->" expression ]
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
@@ -102,8 +102,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
-    
-    range            ::= ( id | literal ) ( "to" | "toincl" ) ( id | literal )
     
     literal          ::= number | boolean | string
     number           ::= real | integer | e-notation
@@ -126,14 +124,15 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     newline          ::= \n | \r\n
     comment          ::= "#" { character }
 
-The language uses indentation to denote blocks. The indentation amount can't be described in the grammar directly, 
+The language uses indentation to denote code blocks. The indentation amount can't be described in the grammar directly, 
 but it does adhere to the following rules:
 
 * Every new expression or statement in a block must be preceded by n + 1 `indent`'s, where n is the amount of 
   `indent`'s before the block
 * The same holds for every new `when-case` in a `when`
 
-A `expression` is used in a situation where an expression is required, but we cannot know in advance whether it will be
-an expression or statement without type checking the program.
-`expr-or-stmt` may be used when it does not matter whether it is an expression or statement.
+A `expression` is used in a situation where an expression is required. However we cannot always know in advance whether
+this is the case, e.g. when it is a function call. In This should be verified by the type checker.
+`expr-or-stmt` may be used when it does not matter whether something is an expression or statement, such as the body of
+a loop.
                

@@ -15,7 +15,7 @@ it means that for every decision there are trade-offs, every advantage comes wit
 
 * Increased flexibility might make it easier to write bug prone code
 * Increased flexibility might come at the cost of performance
-* A strongly typed language might be more cumbersome to work with
+* A strongly typed language might be more cumbersome to work with and decreases flexibility
 * ...
 
 And the list just keeps on growing. Language design is tricky to say the least. There is this saying in computer 
@@ -46,7 +46,7 @@ made, why these were made, and what they aim to achieve (and/or improve).
 
 There are multiple programming paradigms in computer science, with the most well known being:
 
-Pradigm                      | Description
+Paradigm                     | Description
 -----------------------------|-------------
 Procedural Programming       | 
 Object Oriented Programming  | 
@@ -92,10 +92,13 @@ Notice how little program specific syntax there is:
 
 ### Null Safety and Error Handling
 
-> Null Pointers, the billion (or perhaps trillion) dollar mistake.
+The null value, a value which is meant to symbolize the concept of nothing, has been the bane of many a programmer, with
+headlines such as:
 
-Null safety is an oft raised topic in computer science. They either break the application flow of an application by
-throwing an exception (such as in Java), or simply result in undefined behaviour (such as in C++).
+> Null Pointers, the billion (or perhaps trillion) dollar mistake
+
+Null safety is an oft raised topic in computer science. Null values can either break the application flow of an 
+application by throwing an exception (such as in Java), or simply result in undefined behaviour (such as in C++).
 
 ### Mutability and Immutability
 
@@ -141,9 +144,13 @@ itself is inferred from an expression
 
     def x <- 10                 # x has type Int, we know this because 10 is an Int
     def c <- Complex(10, 20)    # c has type Complex
-    def y <- 20.1               # 20.1 uses decimal notation, so we know y is a real number
+    def y <- 20.1               # 20.1 uses decimal notation, so we know y is a real number, or Real
     
-    def z: Real <- 10.5         # In some situations however you might stil want to explicitly mention the type
+    def z: Real <- 10.5         # In some situations however, you still might want to explicitly mention the type
+
+Thus, we have the following:
+
+> In general, something is clear, or inferable, from context, don't make the developer write it out in full
 
 We can also use type aliases and type refinement to further refine types by adding conditions to types:
 
@@ -154,8 +161,8 @@ We now rewrite my_function so it only works for `DeadComposer`s:
 
     def my_function (composer: DeadComposer): Int -> today.year - composer.death.year
     
-Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function. Now we can be sure that the
-variable is a `Composer` contains a defined `death` field. To use such a function, we must explicitly cast a composer:
+Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function. To use such a function, we 
+must explicitly cast a composer:
 
     def chopin <- Composers("Chopin")
     
@@ -188,18 +195,17 @@ Language  | Description | Inspired
 Python    |  | Flexibility. Co-existence of functions and methods, or co-existence of functional and oop paradigms, and large portion of syntax
 Java      |  | OOP concepts
 C#        |  | OOP concepts
-Scala     |  | Everything is an object, including primitives. 
-Kotlin    |  | Ranges. Type aliases, relying in keywords to define common use cases instead of having to write everything explicitly
+Scala     |  | Everything is an object, including primitives of the language, pattern matching
+Kotlin    |  | Ranges. Type aliases, relying in keywords to define common use cases instead of having to write everything out explicitly
 Ada       |  | Custom data types (or type aliases) with ranges. Strict typing rules. Natural language over symbols, such using `and` stead of `&&`
 C++       |  | OOP concept
-C         |  | 
-Eiffel    |  | Design by contract features, the `retry` keyword
-Haskell   |  | Pattern Matching features. Lack of mutability. Closeness of mapping with mathematical notation, for instance set constructor notation
+C         |  | General programming concepts, not so much a direct inspiration but a general influence
+Eiffel    |  | Design by contract philosophy, the `retry` keyword
+Haskell   |  | Pattern Matching. Lack of mutability. Closeness of mapping with mathematical notation, for instance set constructor notation
 Rust      |  | Error handling mechanisms. Strict rules regarding mutability
 Ruby      |  | Syntax sugar, postfix `if` operator. Philosophy that flexibility is not inherently a bad thing
 Swift     |  | Error handling mechanisms
-Go        |  | Error handling mechanisms
+Go        |  | Error handling mechanisms, encouraging error handling on site
 MATLAB    |  | Concepts of flexibility
 SmallTalk |  | OOP concepts, emphasis on program state
 JavaScript|  | Interchangeability of variables and functions 
-

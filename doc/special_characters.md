@@ -34,11 +34,17 @@ Character | Use
 Character | Use
 ----------|-----
 `<-`      | Assign to definition
+`->`      | Denote start of function or method body
 `:`       | Specify type of identifier
 `::`      | Specify namespace of function call (if necessary)
 `.`       | Precedes method call, or fractional digits of real number
 `,`       | Separates arguments in collections or function or method signatures
 `_`       | Anonymous value
+
+### Context Dependent
+Character | Use
+----------|-----
+`e`       | If nested between integer or real, and integer, denotes e-number
 
 ### Comments
 Character | Use

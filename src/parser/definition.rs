@@ -26,30 +26,6 @@ pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     });
 }
 
-pub fn parse_top_level_def(it: &mut TPIterator) -> ParseResult {
-    let definition: Box<ASTNodePos> = get_or_err!(it, parse_definition, "class level definition");
-
-    match it.peek() {
-        Some(TokenPos { token: Token::Forward, .. }) => {
-            let forward: Box<ASTNodePos> = get_or_err!(it, parse_forward, "class level forward");
-            Ok(ASTNodePos {
-                st_line: definition.st_line,
-                st_pos: definition.st_pos,
-                en_line: forward.en_line,
-                en_pos: forward.en_pos,
-                node: ASTNode::TopLevelDef { definition, forward: Some(forward) },
-            })
-        }
-        _ => Ok(ASTNodePos {
-            st_line: 0,
-            st_pos: 0,
-            en_line: 0,
-            en_pos: 0,
-            node: ASTNode::TopLevelDef { definition, forward: None },
-        })
-    }
-}
-
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Forward);
@@ -82,62 +58,21 @@ pub fn parse_forward(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
-    let empty_def: Box<ASTNodePos> = get_or_err!(it, parse_empty_def, "definition");
-
-    return match it.peek() {
-        Some(TokenPos { token: Token::Assign, .. }) => {
-            it.next();
-            let expression: Box<ASTNodePos> = get_or_err!(it, parse_expression, "definition body");
-
-            Ok(ASTNodePos {
-                st_line: empty_def.st_line,
-                st_pos: empty_def.st_pos,
-                en_line: 0,
-                en_pos: 0,
-                node: ASTNode::Def { empty_def, expression: Some(expression) },
-            })
-        }
-        _ => Ok(ASTNodePos {
-            st_line: empty_def.st_line,
-            st_pos: empty_def.st_pos,
-            en_line: empty_def.en_line,
-            en_pos: empty_def.en_pos,
-            node: ASTNode::Def { empty_def, expression: None },
-        })
-    };
-}
-
-pub fn parse_empty_def(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Def);
 
-    let mut _mut = false;
-    let mut private = false;
-    let mut of_mut = false;
+    let private = it.peek().is_some() && it.peek().unwrap().token == Token::Private;
+    if private { it.next(); }
 
-    if let Some(TokenPos { token: Token::Private, .. }) = it.peek() {
-        it.next();
-        private = true;
-    }
+    let definition = match it.peek() {
+        _ => unimplemented!()
+    };
 
-    if let Some(TokenPos { token: Token::Mut, .. }) = it.peek() {
-        it.next();
-        _mut = true;
-    }
-
-    let id_maybe_type = get_or_err!(it, parse_id_maybe_type, "empty definition");
-
-    if let Some(TokenPos { token: Token::OfMut, .. }) = it.peek() {
-        it.next();
-        of_mut = true;
-    }
-
-    let (en_line, en_pos) = end_pos(it);
     return Ok(ASTNodePos {
         st_line,
         st_pos,
-        en_line,
-        en_pos,
-        node: ASTNode::EmptyDef { _mut, private, of_mut, id_maybe_type },
+        en_line: st_line,
+        en_pos: st_pos,
+        node: ASTNode::Def { private, definition },
     });
 }

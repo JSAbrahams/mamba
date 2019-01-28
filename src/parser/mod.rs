@@ -88,9 +88,9 @@ mod control_flow_stmt;
 mod control_flow_expr;
 mod definition;
 mod block;
+mod call;
 mod collection;
 mod expr_or_stmt;
-mod function;
 mod expression;
 mod module;
 mod operation;
@@ -140,22 +140,37 @@ pub enum ASTNode {
     ModNameIsA { name: String, isa: Vec<String> },
 
     ReAssign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    TopLevelDef { definition: Box<ASTNodePos>, forward: Option<Box<ASTNodePos>> },
     Forward { forwarded: Vec<ASTNodePos> },
-    Def { empty_def: Box<ASTNodePos>, expression: Option<Box<ASTNodePos>> },
-    EmptyDef { _mut: bool, private: bool, of_mut: bool, id_maybe_type: Box<ASTNodePos> },
+    Def { private: bool, definition: Box<ASTNodePos> },
+    VariableDef {
+        mutable: bool,
+        id_maybe_type: Box<ASTNodePos>,
+        expression: Option<Box<ASTNodePos>>,
+    },
+    FunDef {
+        id: Box<ASTNodePos>,
+        id_and_types: Vec<ASTNodePos>,
+        ret_ty: Box<ASTNodePos>,
+        body: Option<Box<ASTNodePos>>,
+    },
+    OperatorDef {
+        op: Box<ASTNodePos>,
+        id_and_type: Option<Box<ASTNodePos>>,
+        ret_ty: Box<ASTNodePos>,
+        body: Box<ASTNodePos>,
+    },
+
+    AnonFun { args: Box<ASTNodePos>, body: Box<ASTNodePos> },
 
     Raises { expr_or_stmt: Box<ASTNodePos>, errors: Vec<ASTNodePos> },
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
     Retry,
 
-    Id { _self: bool, lit: String },
-    TypeRanged { id: Box<ASTNodePos>, range: Box<ASTNodePos> },
-    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Id { _self: bool, lit: String, _type: Option<Box<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
+    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
-    Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
-    RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
+    IdMaybeType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
 
     Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
@@ -166,6 +181,9 @@ pub enum ASTNode {
     Map { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
     MapBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+
+    Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
+    RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
 
     Block { statements: Vec<ASTNodePos> },
 

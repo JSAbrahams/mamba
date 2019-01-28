@@ -2,13 +2,11 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
+use crate::parser::call::parse_call;
 use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::definition::parse_reassignment;
 use crate::parser::end_pos;
-use crate::parser::function::parse_function_anonymous;
-use crate::parser::function::parse_function_call;
-use crate::parser::function::parse_function_call_direct;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -50,14 +48,13 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Ok(pre) => match it.peek() {
             Some(TokenPos { token: Token::To, .. }) if tuple => {
                 it.next();
-                let right: Box<ASTNodePos> = get_or_err!(it, parse_function_anonymous,
-                                                         "anonymous function");
+                let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function");
                 Ok(ASTNodePos {
                     st_line,
                     st_pos,
-                    en_line: right.en_line,
-                    en_pos: right.en_pos,
-                    node: ASTNode::ReAssign { left: Box::new(pre), right },
+                    en_line: body.en_line,
+                    en_pos: body.en_pos,
+                    node: ASTNode::AnonFun { args: Box::new(pre), body },
                 })
             }
             Some(TokenPos { token: Token::QuestOr, .. }) => {
@@ -71,15 +68,40 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::QuestOr { _do: Box::new(pre), _default },
                 })
             }
-            Some(TokenPos { token: Token::LRBrack, .. }) => parse_function_call_direct(pre, it),
-            Some(TokenPos { token: Token::Point, .. }) => parse_function_call(pre, it),
+            Some(TokenPos { token: Token::Range, .. }) => {
+                it.next();
+                let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+                Ok(ASTNodePos {
+                    st_line,
+                    st_pos,
+                    en_line: to.en_line,
+                    en_pos: to.en_pos,
+                    node: ASTNode::Range { from: Box::from(pre), to },
+                })
+            }
+            Some(TokenPos { token: Token::RangeIncl, .. }) => {
+                it.next();
+                let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+                Ok(ASTNodePos {
+                    st_line,
+                    st_pos,
+                    en_line: to.en_line,
+                    en_pos: to.en_pos,
+                    node: ASTNode::RangeIncl { from: Box::from(pre), to },
+                })
+            }
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
+
+            Some(TokenPos { token: Token::LRBrack, .. }) |
+            Some(TokenPos { token: Token::DDoublePoint, .. }) |
+            Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
+
             Some(_) | None => Ok(pre)
         }
+
         err => err
     };
 }
-
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
