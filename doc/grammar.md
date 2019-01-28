@@ -38,7 +38,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id [ range ] | type-tuple [ "->" type ]
-    range            ::= "in" ( id | literal ) ( "to" | "toincl" ) ( id | literal )
     type-def         ::= "type" id "<-" type
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
@@ -67,6 +66,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | control-flow-expr 
                       | reassignment
                       | operation
+                      | range
                       | "_"
                       
     collection       ::= tupe | set | list | map
@@ -102,6 +102,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
+    
+    range            ::= ( id | literal ) ( "to" | "toincl" ) ( id | literal )
     
     literal          ::= number | boolean | string
     number           ::= real | integer | e-notation
