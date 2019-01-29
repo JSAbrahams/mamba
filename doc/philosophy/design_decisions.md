@@ -1,62 +1,23 @@
-# Philosophy of the language
+# Design Decisions
 
-Whilst designing the language, I made the following rule for myself:
+Here I outline in short some of the design decisions of the language. These are covered in greater detail in their
+respective chapters.
 
-> A language should make it easy to write clear descriptive unambiguous code, and difficult to write code that isn't 
-those things
+## Pragmatism over Ideology
 
-I also tried to keep the following in mind, which often bears repeating:
-
-> Code is more often read than it is written
-
-As such, I wanted to make a language that is both easy to write in, but also easy to read. There's also this famous
-thing in Computer Science called the "no free lunch theorem", and that holds true for language design as well. In short,
-it means that for every decision there are trade-offs, every advantage comes with its own baggage of problems.
-
-* Increased flexibility might make it easier to write bug prone code
-* Increased flexibility might come at the cost of performance
-* A strongly typed language might be more cumbersome to work with and decreases flexibility
-* ...
-
-And the list just keeps on growing. Language design is tricky to say the least. There is this saying in computer 
-science, or engineering in general:
-
-> A tool is either not used, or complained about
-
-And this is just as true for programming languages. I often see online blogs or posts talking about what the "best"
-language is. I language, ideally, is designed to solve problems in a certain domain reasonably well. Admittedly, what 
-this domain is becomes harder to define for more general purpose languages. 
-
-It is difficult to say whether a language is bad or not. I will say that certain features of certain languages, no
-matter how well intentioned they may have been, or insignificant they seemed at the time, may not have been the best
-choice in hindsight. But hindsight is 20/20 as they say, and I don't think there is much point in seriously arguing 
-about what language is best.
-
-Over time, I think that we have gotten better at designing languages. Things that are often complained about can be 
-weeded out, common programming mistakes can be discouraged via language design, and common patterns can be taken into 
-account when designing new languages, so these can be expressed in a more idiomatic manner. But as stated before, what
-a common pattern is might heavily depend on the domain of problems being solved.
-
-No language is perfect, but there certainly is always room for improvement. Below I outline some of the design decisions
-made, why these were made, and what they aim to achieve (and/or improve).
-
-- Joël Abrahams, 2019
-
-### Pragmatism over Ideology
-
-There are multiple programming paradigms in computer science, with the most well known being:
+There are multiple programming paradigms in computer science.
 
 Paradigm                     | Description
 -----------------------------|-------------
-Procedural Programming       | 
-Object Oriented Programming  | 
-Functional Programming       |
+Procedural Programming       | Use a set of functions, or procedures, to carry out computations
+Object Oriented Programming  | Model everything as an object. They may carry data, but on a conceptual level, they define behaviour
+Functional Programming       | Treat computation as a mathematical function, there is no concept of state, and there are no side-effects
 
 Each come with their own (or overlapping) set of philosophies and schools of thought. Certain languages stick to a
 single paradigm. SmallTalk to Object Oriented Programming, Haskell to functional programming, Java historically to 
 Object Oriented, though functional languages have been added retroactively, for better or worse.
 
-### Readability, Keywords, and Syntax Sugar
+## Readability, Keywords, and Syntax Sugar
 
 One thing that can significantly hinder the readability of source code is syntax noise. One way to combat this is
 through use of syntax sugar. Another however is to use clear keywords, and, in my opinion, less of a reliance on
@@ -87,10 +48,10 @@ Notice how little program specific syntax there is:
  
 * We use `[` `]` to insert variables into strings
 * We use `:` to denote what type `ago` is
-* `if` `else` is used for program flow, and `println` to print something to the screen
+* `if` and `else` are used for program flow, and `println` to print something to the screen
 * Indentation is used to denote code blocks, making it easy for the eyes to follow what is being done where and when
 
-### Null Safety and Error Handling
+## Null Safety and Error Handling
 
 The null value, a value which is meant to symbolize the concept of nothing, has been the bane of many a programmer, with
 headlines such as:
@@ -100,12 +61,21 @@ headlines such as:
 Null safety is an oft raised topic in computer science. Null values can either break the application flow of an 
 application by throwing an exception (such as in Java), or simply result in undefined behaviour (such as in C++).
 
-### Mutability and Immutability
+## Mutability and Immutability
 
 Immutability, which allows us to change a value of a variable, brings with it great flexibility, but in certain
 situations this flexibility comes at the detriment of safety.
 
-### Type Safety
+When a variable is immutable, it should truly be immutable. Often I see that even when a variable is declared immutable,
+it is possible to modify it's internal fields in object oriented programming languages. This led to one of the core
+features of the language.
+
+### Mutability Propagation
+
+Mutability propagation basically propagates the immutability of a variable to its contents, so that when it is declared
+to be immutable, it's fields are in essence locked, and cannot be changed.
+
+## Type Safety
 
 In programming, there is often a distinction made between static and dynamic typing. As stated before however, we want
 to only have checked Exceptions in our application. Once we run an application, we expect its behaviour to reflect what
@@ -172,7 +142,7 @@ must explicitly cast a composer:
 
 This draws on concepts of "Design by Contract", which is elaborated on below.
 
-### Design by Contract
+## Design by Contract
 
 Design by Contract is a software correctness methodology. It defines a set of preconditions that must be satisfied for a
 function to perform its operations, and a set of post-conditions that must be adhered to after the function has
@@ -181,31 +151,9 @@ verifies that the program is in one of the expected state after execution of the
 
 This term was invented by Bertrand Meyer, and implemented in the Eiffel language. 
 
-### The Mathematical Roots of Computer Science
+## The Mathematical Roots of Computer Science
 
-Computer Science has its roots in mathematics. I wanted to reflect this in the language.
+Computer Science has its roots in mathematics. I wanted to reflect this in the language. An obvious example is the
+set builder notation:
 
-## General inspirations of the language
-
-The following is a list of programming languages that inspired this one in one way or another. This can either be
-certain constructs or keywords in the language, or the philosophy of the language as a whole.
-
-Language  | Description | Inspired
-----------|-------------|------------
-Python    |  | Flexibility. Co-existence of functions and methods, or co-existence of functional and oop paradigms, and large portion of syntax
-Java      |  | OOP concepts
-C#        |  | OOP concepts
-Scala     |  | Everything is an object, including primitives of the language, pattern matching
-Kotlin    |  | Ranges. Type aliases, relying in keywords to define common use cases instead of having to write everything out explicitly
-Ada       |  | Custom data types (or type aliases) with ranges. Strict typing rules. Natural language over symbols, such using `and` stead of `&&`
-C++       |  | OOP concept
-C         |  | General programming concepts, not so much a direct inspiration but a general influence
-Eiffel    |  | Design by contract philosophy, the `retry` keyword
-Haskell   |  | Pattern Matching. Lack of mutability. Closeness of mapping with mathematical notation, for instance set constructor notation
-Rust      |  | Error handling mechanisms. Strict rules regarding mutability
-Ruby      |  | Syntax sugar, postfix `if` operator. Philosophy that flexibility is not inherently a bad thing
-Swift     |  | Error handling mechanisms
-Go        |  | Error handling mechanisms, encouraging error handling on site
-MATLAB    |  | Concepts of flexibility
-SmallTalk |  | OOP concepts, emphasis on program state
-JavaScript|  | Interchangeability of variables and functions 
+    def programmers <- { x | x in People, x.profession is "programmer" }
