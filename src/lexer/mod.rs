@@ -249,7 +249,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
     return match result.as_ref() {
         "from" => Token::From,
-        "util" => Token::Util,
+        "util.md" => Token::Util,
         "type" => Token::Type,
         "as" => Token::As,
         "isa" => Token::IsA,

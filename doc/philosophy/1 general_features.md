@@ -1,11 +1,7 @@
-# Design Decisions
+# General Features
 
 Here I outline in short some of the design decisions of the language. These are covered in greater detail in their
-respective chapters.
-
-## Pragmatism over Ideology
-
-There are multiple programming paradigms in computer science.
+respective chapters. There are multiple programming paradigms in computer science.
 
 Paradigm                     | Description
 -----------------------------|-------------

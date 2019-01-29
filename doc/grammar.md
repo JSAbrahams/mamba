@@ -40,7 +40,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     expr-or-stmt     ::= statement [ "if" maybe_expr ] [ ( raises | handle ) ]
                       | expression [ "if" maybe_expr ] [ ( raises | handle ) ]
-                      | newline block
     raises           ::= "raises" "[" id { "," id } "]"
     handle           ::= "handle" "when" newline when-cases
     statement        ::= ( "print" | "println" ) expression 
@@ -49,8 +48,9 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | definition
                       | type-def
                       | "retry"
-    expression       ::= "(" expression ")" [ "->" expression ]
+    expression       ::= newline block
                       | expression ( "to" | "toincl" ) expression
+                      | "(" expression ")" [ "->" expression ]
                       | expression [ ( raises | handle ) ]
                       | "return" [ expression ]
                       | expression "?or" expression
@@ -78,12 +78,17 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     zero-or-more-expr::= [ ( expression { "," expression } ]
     
     reassignment     ::= expression "<-" expression
-    forward          ::= "forward" id { "," id }
+    
     definition       ::= "def" ( [ "private" ] ( variable-def | fun-def ) | operator-def )
-    variable-def     ::= [ "mut" ] id-maybe-type [ "<-" expression [ ( "when" newline when-cases | forward ) ] ]
-    fun-def          ::= id ( "(" [ [ "vararg ] id-and-type { "," [ "vararg" ] id-and-type } ] ")" ":" type ) ) 
-                         [ raises ] [ "->" expression ]
-    operator-def     ::= overridable-op [ "(" [ id-and-type ] ")" ] [ ":" type ] [ "->" expression ]
+    variable-def     ::= [ "mut" ] id-maybe-type [ "<-" expression [ ( "when" newline conditions | forward ) ] ]
+    operator-def     ::= overridable-op [ "(" [ id-and-type ] ")" ] ":" type [ "->" expression ]
+    fun-def          ::= id "(" [ fun-args ] ")" ":" type [ raises ] [ "->" expression ]
+    fun-args         ::= fun-arg { "," fun-arg }
+    fun-arg          ::= [ "vararg" ] id-and-type
+    forward          ::= "forward" id { "," id }
+
+    conditions       ::= indent { condition } dedent
+    condition        ::= expression "else" expression
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
@@ -93,7 +98,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     factor           ::= [ unary ] ( literal | id | expression | sizeof )
     sizeof           ::= "|" expression "|"
     
-    overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | comparison
+    overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | "<" | ">"
     unary            ::= "not" | "sqrt" | additive 
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"

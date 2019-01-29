@@ -149,7 +149,7 @@ pub enum ASTNode {
     },
     FunDef {
         id: Box<ASTNodePos>,
-        id_and_types: Vec<ASTNodePos>,
+        fun_args: Vec<ASTNodePos>,
         ret_ty: Box<ASTNodePos>,
         body: Option<Box<ASTNodePos>>,
     },
@@ -172,6 +172,18 @@ pub enum ASTNode {
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
     IdMaybeType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+
+    _Self,
+    AddOp,
+    SubOp,
+    SqrtOp,
+    MulOp,
+    DivOp,
+    PowOp,
+    ModOp,
+    EqOp,
+    LeOp,
+    GeOp,
 
     Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
