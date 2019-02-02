@@ -30,6 +30,12 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
 
+        Some(TokenPos { token: Token::Underscore, .. }) => {
+            let (en_line, en_pos) = end_pos(it);
+            it.next();
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::UnderScore })
+        }
+
         Some(TokenPos { token: Token::_Self, .. }) |
         Some(TokenPos { token: Token::Real(_), .. }) |
         Some(TokenPos { token: Token::Int(_), .. }) |
@@ -94,14 +100,12 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             // normal method or function call
             Some(TokenPos { token: Token::LRBrack, .. }) |
             Some(TokenPos { token: Token::DDoublePoint, .. }) |
-            Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
+            Some(TokenPos { token: Token::Point, .. }) |
 
             // postfix function call
-            Some(TokenPos { token: Token::If, .. }) |
-            Some(TokenPos { token: Token::When, .. }) |
+            Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) |
             Some(TokenPos { token: Token::LSBrack, .. }) |
             Some(TokenPos { token: Token::LCBrack, .. }) |
-            Some(TokenPos { token: Token::Ret, .. }) |
             Some(TokenPos { token: Token::_Self, .. }) |
             Some(TokenPos { token: Token::Real(_), .. }) |
             Some(TokenPos { token: Token::Int(_), .. }) |
@@ -110,8 +114,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::Str(_), .. }) |
             Some(TokenPos { token: Token::Bool(_), .. }) |
             Some(TokenPos { token: Token::Not, .. }) |
-            Some(TokenPos { token: Token::Add, .. }) |
-            Some(TokenPos { token: Token::Sub, .. }) => parse_call(pre, it),
+            Some(TokenPos { token: Token::Add, .. }) | Some(TokenPos { token: Token::Sub, .. }) |
+            Some(TokenPos { token: Token::Not, .. }) => parse_call(pre, it),
 
             Some(_) | None => Ok(pre)
         }

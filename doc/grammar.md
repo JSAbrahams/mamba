@@ -30,18 +30,15 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id | type-tuple [ "->" type ]
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
-    type-def         ::= "type" id "<-" type [ "when" newline indent { condition } dedent ]
-    condition        ::= expression "else" expression
+    type-def         ::= "type" id "<-" type [ post-when ]
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
     id-and-type      ::= ( id | type-tuple ) ":" type
     
     block            ::= indent { expr-or-stmt { newline } } dedent
     block-no-inent   ::= { expr-or-stmt { newline } }
     
-    expr-or-stmt     ::= statement [ "if" maybe_expr ] [ ( raises | handle ) ]
-                      | expression [ "if" maybe_expr ] [ ( raises | handle ) ]
-    raises           ::= "raises" "[" id { "," id } "]"
-    handle           ::= "handle" "when" newline when-cases
+    expr-or-stmt     ::= statement [ ( "if" maybe_expr | raises | handle ) ]
+                      | expression [ ( "if" maybe_expr | raises | handle ) ]
     statement        ::= ( "print" | "println" ) expression 
                       | statement [ ( raises | handle ) ]
                       | control-flow-stmt
@@ -67,6 +64,13 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-call    ::= expression [ "::" expression ] ( expression | "(" [ expression { "," expression} ] ")" )
     method-call      ::= expression "." ( expression | "(" [ expression { "," expression} ] ")" ) [ "?" ]
                     
+    post-when        ::= "when" newline indent { condition } dedent
+    condition        ::= expression "else" expression
+    conditions       ::= indent { condition } dedent
+    condition        ::= expression "else" expression
+    raises           ::= "raises" "[" id { "," id } "]"
+    handle           ::= "handle" "when" newline when-cases
+    
     collection       ::= tuple | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
@@ -86,9 +90,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     fun-args         ::= fun-arg { "," fun-arg }
     fun-arg          ::= [ "vararg" ] id-and-type
     forward          ::= "forward" id { "," id }
-
-    conditions       ::= indent { condition } dedent
-    condition        ::= expression "else" expression
 
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]

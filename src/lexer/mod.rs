@@ -92,13 +92,13 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                     _ => next_pos_and_tp!(1, Token::DoublePoint),
                 }
             }
+            '_' => next_pos_and_tp!(1, Token::Underscore),
             ',' => next_pos_and_tp!(1, Token::Comma),
             '(' => next_pos_and_tp!(1, Token::LRBrack),
             ')' => next_pos_and_tp!(1, Token::RRBrack),
             '[' => next_pos_and_tp!(1, Token::LSBrack),
             ']' => next_pos_and_tp!(1, Token::RSBrack),
             '{' => next_pos_and_tp!(1, Token::LCBrack),
-
             '}' => next_pos_and_tp!(1, Token::RCBrack),
             '?' => match it.peek() {
                 Some('o') => {

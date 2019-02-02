@@ -76,6 +76,7 @@ pub enum Token {
     NL,
     Indent,
     Dedent,
+    Underscore,
 
     Raises,
     Retry,
@@ -174,6 +175,7 @@ impl fmt::Display for Token {
             Token::NL => "<newline>".to_string(),
             Token::Indent => "<indent>".to_string(),
             Token::Dedent => "<dedent>".to_string(),
+            Token::Underscore => "_".to_string(),
 
             Token::While => "while".to_string(),
             Token::For => "foreach".to_string(),

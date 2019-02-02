@@ -246,6 +246,7 @@ pub enum ASTNode {
 
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
+    UnderScore,
 
     QuestOr { _do: Box<ASTNodePos>, _default: Box<ASTNodePos> },
 
