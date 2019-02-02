@@ -67,7 +67,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-call    ::= expression [ "::" expression ] ( expression | "(" [ expression { "," expression} ] ")" )
     method-call      ::= expression "." ( expression | "(" [ expression { "," expression} ] ")" ) [ "?" ]
                     
-    collection       ::= tupe | set | list | map
+    collection       ::= tuple | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
     set-builder      ::= "{" expression "|" expression { "," expression } "}"
@@ -95,8 +95,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
-    factor           ::= [ unary ] ( literal | id | expression | sizeof )
-    sizeof           ::= "|" expression "|"
+    factor           ::= [ unary ] ( literal | id | expression )
     
     overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | "<" | ">"
     unary            ::= "not" | "sqrt" | additive 

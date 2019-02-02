@@ -166,6 +166,9 @@ pub enum ASTNode {
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
     Retry,
 
+    FunCall { namespace: Option<Box<ASTNodePos>>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    MethodCall { object: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+
     Id { _self: bool, lit: String, _type: Option<Box<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },

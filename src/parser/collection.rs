@@ -156,24 +156,19 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
     return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::List { head, tail } });
 }
 
-fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
     let (st_line, st_pos) = start_pos(it);
     let mut expressions = Vec::new();
-    let mut en_line = st_line;
-    let mut en_pos = st_pos;
     let mut pos = 0;
 
     while let Some(t) = it.peek() {
         match *t {
             TokenPos { token: Token::RRBrack, .. } | TokenPos { token: Token::RSBrack, .. } |
-            TokenPos { token: Token::RCBrack, .. } => break,
+            TokenPos { token: Token::RCBrack, .. } | TokenPos { token: Token::NL, .. } => break,
             TokenPos { token: Token::Comma, .. } => { it.next(); }
             tp => {
                 let expression: ASTNodePos = get_or_err_direct!(it, parse_expression,
                                              String::from(msg) + " (pos "+ &pos.to_string() + ")");
-
-                en_line = expression.en_line;
-                en_pos = expression.en_pos;
                 expressions.push(expression);
             }
         }
@@ -186,8 +181,6 @@ fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<AS
 fn parse_zero_or_more_key_value(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
     let (st_line, st_pos) = start_pos(it);
     let mut expressions = Vec::new();
-    let mut en_line = st_line;
-    let mut en_pos = st_pos;
     let mut pos = 0;
 
     while let Some(t) = it.peek() {
@@ -202,8 +195,6 @@ fn parse_zero_or_more_key_value(it: &mut TPIterator, msg: &str) -> ParseResult<V
                 let value = get_or_err!(it, parse_expression,
                                         String::from(msg) + " (pos "+ &pos.to_string() + ")");
 
-                en_line = value.en_line;
-                en_pos = value.en_pos;
                 expressions.push(ASTNodePos {
                     st_line: key.st_line,
                     st_pos: key.st_pos,

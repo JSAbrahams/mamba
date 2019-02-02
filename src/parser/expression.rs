@@ -18,8 +18,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let mut tuple = false;
 
     return match match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) =>
-            parse_cntrl_flow_expr(it),
+        Some(TokenPos { token: Token::If, .. }) |
+        Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
 
         Some(TokenPos { line: _, pos: _, token: Token::LRBrack }) => {
             tuple = true;
@@ -39,7 +39,6 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Bool(_), .. }) |
         Some(TokenPos { token: Token::Not, .. }) |
         Some(TokenPos { token: Token::Add, .. }) |
-        Some(TokenPos { token: Token::Ver, .. }) |
         Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
 
         Some(&next) => Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
@@ -92,9 +91,27 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             }
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
 
+            // normal method or function call
             Some(TokenPos { token: Token::LRBrack, .. }) |
             Some(TokenPos { token: Token::DDoublePoint, .. }) |
             Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
+
+            // postfix function call
+            Some(TokenPos { token: Token::If, .. }) |
+            Some(TokenPos { token: Token::When, .. }) |
+            Some(TokenPos { token: Token::LSBrack, .. }) |
+            Some(TokenPos { token: Token::LCBrack, .. }) |
+            Some(TokenPos { token: Token::Ret, .. }) |
+            Some(TokenPos { token: Token::_Self, .. }) |
+            Some(TokenPos { token: Token::Real(_), .. }) |
+            Some(TokenPos { token: Token::Int(_), .. }) |
+            Some(TokenPos { token: Token::ENum(_, _), .. }) |
+            Some(TokenPos { token: Token::Id(_), .. }) |
+            Some(TokenPos { token: Token::Str(_), .. }) |
+            Some(TokenPos { token: Token::Bool(_), .. }) |
+            Some(TokenPos { token: Token::Not, .. }) |
+            Some(TokenPos { token: Token::Add, .. }) |
+            Some(TokenPos { token: Token::Sub, .. }) => parse_call(pre, it),
 
             Some(_) | None => Ok(pre)
         }
