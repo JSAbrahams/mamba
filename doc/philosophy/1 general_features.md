@@ -1,7 +1,8 @@
 # General Features
 
-Here I outline in short some of the design decisions of the language. These are covered in greater detail in their
-respective chapters. There are multiple programming paradigms in computer science.
+Here I outline in short some of the core features of the language, and their motivation. These are covered in greater 
+detail in their respective chapters. Those however serve more as a solicitation and not so much as a motivation for
+their existence. There are multiple programming paradigms in computer science.
 
 Paradigm                     | Description
 -----------------------------|-------------
@@ -146,6 +147,8 @@ completed its operation. In effect, is verifies the program is in a valid state 
 verifies that the program is in one of the expected state after execution of the function.
 
 This term was invented by Bertrand Meyer, and implemented in the Eiffel language. 
+
+### Type Refinement
 
 ## The Mathematical Roots of Computer Science
 

@@ -58,15 +58,18 @@ We can do the following:
         
         def last_sent_message(self): String -> self last_message
         
+        # self must be disconnected
         def connect (self: DisconnectedHTTPServer, ip_address: IPAddress): Boolean ->
             # perform some operations here
             true
             
+        # self must be mutable to send message
         def send_message(mut self: ConnectedHTTPServer, message: String): Boolean ->
             # perform some operations here
             self last_message <- message
             true
             
+        # self must be connected to disconnect
         def disconnect(self: ConnectedHTTPServer): Boolean ->
             # perform some operations here
             true
