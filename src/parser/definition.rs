@@ -86,14 +86,15 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Le, .. }) => op!(LeOp),
 
         _ => match get_or_err_direct!(it, parse_id_maybe_type, "definition id") {
-            id @ ASTNodePos { node: ASTNode::IdAndType { .. }, .. } =>
+            id @ ASTNodePos { node: ASTNode::IdAndType { .. }, .. } |
+            id @ ASTNodePos { node: ASTNode::TypeTup { .. }, .. } =>
                 parse_variable_def_id(id, false, it),
             id @ ASTNodePos { node: ASTNode::Id { .. }, .. } => match it.peek() {
                 Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, it),
                 Some(other) => parse_variable_def_id(id, false, it),
                 None => Err(CustomEOFErr { expected: "id".to_string() })
             }
-            other => panic!("{:?}", other)
+            other => return Err(InternalErr { message: String::from("couldn't parse def") })
         }
     };
 

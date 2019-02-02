@@ -65,8 +65,8 @@ into some issues:
 * Every new feature added has the potential to add yet another way to solve the same problem.
 
 No language is perfect, including this one. As stated before, I think that it is impossible to design a perfect 
-language. People, problems, the domain in which computers reside, change over time, and different domains have different
-requirements. Nevertheless, I always think that it's worth to try to improve upon past decisions, and see where that 
-might lead us.
+language. People, problems, and the domain in which computers reside, change over time, and different domains have
+different requirements. Nevertheless, I always think that it's worth to try to improve upon past decisions, and see
+where that might lead us.
 
 Joël Abrahams, 2019

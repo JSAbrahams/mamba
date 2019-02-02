@@ -279,7 +279,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "foreach" => Token::For,
         "where" => Token::Where,
 
-        "in" => Token::In,
         "if" => Token::If,
         "then" => Token::Then,
         "else" => Token::Else,

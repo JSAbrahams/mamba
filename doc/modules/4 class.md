@@ -48,11 +48,11 @@ We can do the following:
         self not connected else ServerErr("Already connected.")
         
     util HTTPServer
-        def stateless_message <- "This message is always the same."
+        def stateless_message -> "This message is always the same."
         
     class HTTPServer isa Server
-        def connected <- false
-        def mut last_message <- ""
+        def connected -> false
+        def mut last_message -> ""
         
         def init(self: DisconnectedHTTPServer, def ip_address: IPAddress)
         
