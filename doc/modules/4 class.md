@@ -32,10 +32,10 @@ Say I have a type `Server`:
         def ip_address:         IPAddress
         def mut last_message:   String
         
-        def connect:            IPAddress -> Boolean throws [ConnectionErr]
-        def last_sent_message:  _ -> String
-        def send_message:       String -> Boolean    throws [ConnectionErr]
-        def disconnect:         _ -> Boolean
+        def connect:            (IPAddress) -> Boolean throws [ConnectionErr]
+        def last_sent_message:  () -> String
+        def send_message:       (String) -> Boolean    throws [ConnectionErr]
+        def disconnect:         () -> Boolean
         
     type ServerErr(msg: String) isa Err(msg)
 
@@ -70,4 +70,3 @@ We can do the following:
         def disconnect(self: ConnectedHTTPServer): Boolean ->
             # perform some operations here
             true
-            

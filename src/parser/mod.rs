@@ -172,6 +172,7 @@ pub enum ASTNode {
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
     IdMaybeType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    FunArg { vararg: bool, id_and_type: Box<ASTNodePos> },
 
     _Self,
     AddOp,

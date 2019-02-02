@@ -1,5 +1,4 @@
 use my_lang::desugarer::desugar;
-use my_lang::interpeter::interpret;
 use my_lang::lexer::tokenize;
 use my_lang::parser::parse;
 use my_lang::type_checker::type_check;
@@ -16,6 +15,4 @@ fn interpret_assigns_and_while() {
     let ast_nodes = parse(tokens).unwrap();
     let type_checked = type_check(ast_nodes);
     let desugared = desugar(type_checked);
-
-    interpret(desugared);
 }

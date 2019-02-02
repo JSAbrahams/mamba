@@ -66,39 +66,51 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let private = it.peek().is_some() && it.peek().unwrap().token == Token::Private;
     if private { it.next(); }
 
-    let definition: Box<ASTNodePos> = match it.peek() {
+    macro_rules! op{($node:ident) => {{
+        let (en_line, en_pos) = end_pos(it);
+        parse_operator_def(ASTNodePos{ st_line, st_pos, en_line, en_pos, node: ASTNode::$node }, it)
+    }}};
+
+    let definition: ParseResult = match it.peek() {
         Some(TokenPos { token: Token::Mut, .. }) => parse_variable_def(it),
 
-        Some(TokenPos { token: Token::Add, .. }) => parse_operator_def(ASTNode::AddOp, it),
-        Some(TokenPos { token: Token::Sub, .. }) => parse_operator_def(ASTNode::SubOp, it),
-        Some(TokenPos { token: Token::Sqrt, .. }) => parse_operator_def(ASTNode::SqrtOp, it),
-        Some(TokenPos { token: Token::Mul, .. }) => parse_operator_def(ASTNode::MulOp, it),
-        Some(TokenPos { token: Token::Div, .. }) => parse_operator_def(ASTNode::DivOp, it),
-        Some(TokenPos { token: Token::Pow, .. }) => parse_operator_def(ASTNode::PowOp, it),
-        Some(TokenPos { token: Token::Mod, .. }) => parse_operator_def(ASTNode::ModOp, it),
-        Some(TokenPos { token: Token::Eq, .. }) => parse_operator_def(ASTNode::EqOp, it),
-        Some(TokenPos { token: Token::Ge, .. }) => parse_operator_def(ASTNode::GeOp, it),
-        Some(TokenPos { token: Token::Le, .. }) => parse_operator_def(ASTNode::LeOp, it),
+        Some(TokenPos { token: Token::Add, .. }) => op!(AddOp),
+        Some(TokenPos { token: Token::Sub, .. }) => op!(SubOp),
+        Some(TokenPos { token: Token::Sqrt, .. }) => op!(SqrtOp),
+        Some(TokenPos { token: Token::Mul, .. }) => op!(MulOp),
+        Some(TokenPos { token: Token::Div, .. }) => op!(DivOp),
+        Some(TokenPos { token: Token::Pow, .. }) => op!(PowOp),
+        Some(TokenPos { token: Token::Mod, .. }) => op!(ModOp),
+        Some(TokenPos { token: Token::Eq, .. }) => op!(EqOp),
+        Some(TokenPos { token: Token::Ge, .. }) => op!(GeOp),
+        Some(TokenPos { token: Token::Le, .. }) => op!(LeOp),
 
         _ => match get_or_err_direct!(it, parse_id_maybe_type, "definition id") {
-            id @ ASTNode::IdAndType { .. } => parse_variable_def_id(id, false, it),
-            id @ ASTNode::Id { .. } => match it.peek() {
+            id @ ASTNodePos { node: ASTNode::IdAndType { .. }, .. } =>
+                parse_variable_def_id(id, false, it),
+            id @ ASTNodePos { node: ASTNode::Id { .. }, .. } => match it.peek() {
                 Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, it),
-                Some(other) => parse_variable_def_id(id, false, it)
+                Some(other) => parse_variable_def_id(id, false, it),
+                None => Err(CustomEOFErr { expected: "id".to_string() })
             }
+            other => panic!("{:?}", other)
         }
     };
 
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: definition.en_line,
-        en_pos: definition.en_pos,
-        node: ASTNode::Def { private, definition },
-    });
+    return match definition {
+        Ok(definition) => Ok(ASTNodePos {
+            st_line,
+            st_pos,
+            en_line: definition.en_line,
+            en_pos: definition.en_pos,
+            node: ASTNode::Def { private, definition: Box::from(definition) },
+        }),
+        err => err
+    };
 }
 
 fn parse_fun_def(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::LRBrack);
     let fun_args = get_or_err_direct!(it, parse_fun_args, "function arguments");
     check_next_is!(it, Token::RRBrack);
@@ -109,26 +121,27 @@ fn parse_fun_def(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let body: Option<Box<ASTNodePos>>;
     if let Some(TokenPos { token: Token::To, .. }) = it.peek() {
         it.next();
-        body = get_or_err!(it, parse_expression, "function body");
+        body = Some(get_or_err!(it, parse_expression, "function body"));
     } else { body = None }
 
-    return Ok(ASTNodePos {
-        st_line: id.st_line,
-        st_pos: id.st_pos,
-        en_line: if body.is_some() { body.unwrap().en_line } else { ret_ty.en_line },
-        en_pos: if body.is_some() { body.unwrap().en_pos } else { ret_ty.en_pos },
-        node: ASTNode::FunDef { id, fun_args, ret_ty, body },
-    });
+    let (en_line, en_pos) = match &body {
+        Some(b) => (b.en_line, b.en_pos),
+        None => (ret_ty.en_line, ret_ty.en_pos)
+    };
+
+    let node = ASTNode::FunDef { id: Box::from(id), fun_args, ret_ty, body };
+    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
 }
 
-fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNode>> {
+fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut args = Vec::new();
 
     loop {
         match it.peek() {
             Some(TokenPos { token: Token::RRBrack, .. }) => break,
             Some(_) =>
-                args.push(get_or_err_direct!(it, parse_id_and_type, "function argument"))
+                args.push(get_or_err_direct!(it, parse_id_and_type, "function argument")),
+            None => return Err(EOFErr { expected: Token::RRBrack })
         }
     }
 
@@ -136,22 +149,43 @@ fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNode>> {
 }
 
 fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
-    unimplemented!()
+    let (st_line, st_pos) = start_pos(it);
+    let vararg;
+    if let Some(TokenPos { token: Token::Vararg, .. }) = it.peek() {
+        it.next();
+        vararg = true;
+    } else { vararg = false; }
+
+    let id_and_type = get_or_err!(it, parse_id_and_type, "function argument");
+
+    let (en_line, en_pos) = end_pos(it);
+    return Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line,
+        en_pos,
+        node: ASTNode::FunArg { vararg, id_and_type },
+    });
 }
 
 fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> ParseResult {
     let expression: Option<Box<ASTNodePos>>;
     if let Some(TokenPos { token: Token::Assign, .. }) = it.peek() {
         it.next();
-        expression = get_or_err!(it, parse_expression, "definition expression");
+        expression = Some(get_or_err!(it, parse_expression, "definition expression"));
     } else { expression = None }
+
+    let (en_line, en_pos) = match &expression {
+        Some(expr) => (expr.en_line, expr.en_pos),
+        None => (id.en_line, id.en_pos)
+    };
 
     return Ok(ASTNodePos {
         st_line: id.st_line,
         st_pos: id.st_pos,
-        en_line: if expression.is_some() { expression.unwrap().en_line } else { id.en_line },
-        en_pos: if expression.is_some() { expression.unwrap().en_pos } else { id.en_pos },
-        node: ASTNode::VariableDef { mutable, id_maybe_type: *id, expression },
+        en_line,
+        en_pos,
+        node: ASTNode::VariableDef { mutable, id_maybe_type: Box::from(id), expression },
     });
 }
 
@@ -168,34 +202,44 @@ fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
     return parse_variable_def_id(id, mutable, it);
 }
 
-fn parse_operator_def(op: ASTNode, it: &mut TPIterator) -> ParseResult {
+fn parse_operator_def(op: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let arg;
+    let args;
     if let Some(TokenPos { token: Token::LRBrack, .. }) = it.peek() {
         it.next();
         if let Some(TokenPos { token: Token::RRBrack, .. }) = it.peek() {
             it.next();
-            arg = Vec::new();
-        } else { arg = vec![get_or_err!(it, parse_id_and_type, "operator overloaded argument")] }
-    } else { arg = Vec::new() }
+            args = Vec::new();
+        } else {
+            args = vec![get_or_err_direct!(it, parse_id_and_type, "operator overloaded argument")]
+        }
+    } else { args = Vec::new() }
 
     let ret_ty;
+    let (en_line, en_pos) = end_pos(it);
     if let Some(TokenPos { token: Token::DoublePoint, .. }) = it.peek() {
         it.next();
         ret_ty = get_or_err!(it, parse_id, "operator overloaded return type");
-    } else { ret_ty = ASTNode::_Self; }
+    } else {
+        ret_ty = Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::_Self })
+    }
 
     let body: Option<Box<ASTNodePos>>;
     if let Some(TokenPos { token: Token::To, .. }) = it.peek() {
         body = Some(get_or_err!(it, parse_expression, "operator overloaded body"))
     } else { body = None }
 
+    let (en_line, en_pos) = match &body {
+        Some(b) => (b.en_line, b.en_pos),
+        None => (ret_ty.en_line, ret_ty.en_pos)
+    };
+
     return Ok(ASTNodePos {
         st_line,
         st_pos,
-        en_line: if body.is_some() { body.unwrap().en_line } else { ret_ty.en_line },
-        en_pos: if body.is_some() { body.unwrap().en_pos } else { ret_ty.en_pos },
-        node: ASTNode::FunDef { id: *op, fun_args: arg, ret_ty, body: None },
+        en_line,
+        en_pos,
+        node: ASTNode::FunDef { id: Box::from(op), fun_args: args, ret_ty, body },
     });
 }
