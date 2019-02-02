@@ -11,6 +11,7 @@ pub enum ParseErr {
     UtilBodyErr,
     ParseErr { parsing: String, cause: Box<ParseErr>, position: Option<TokenPos> },
     CustomErr { expected: String, actual: TokenPos },
+    InternalErr { message: String },
     TokenErr { expected: Token, actual: TokenPos },
     EOFErr { expected: Token },
     CustomEOFErr { expected: String },
@@ -46,6 +47,7 @@ impl fmt::Display for ParseErr {
                                     expected, actual, pos.line, pos.pos, pos.token),
                 None => write!(f, "\nExpected indentation of {}, but was {}.", expected, actual)
             }
+            ParseErr::InternalErr { message } => write!(f, "{}.", message)
         }
     }
 }
@@ -59,7 +61,8 @@ impl error::Error for ParseErr {
             ParseErr::TokenErr { expected: _, actual: _ } => "Unexpected token encountered.",
             ParseErr::CustomErr { expected: _, actual: _ } => "Expected condition to be met.",
             ParseErr::CustomEOFErr { expected: _ } => "Expected condition to be met.",
-            ParseErr::IndErr { expected: _, actual: _, position: _ } => "Unexpected indentation."
+            ParseErr::IndErr { expected: _, actual: _, position: _ } => "Unexpected indentation.",
+            ParseErr::InternalErr { message: _ } => "Internal error."
         }
     }
 

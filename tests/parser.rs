@@ -1,6 +1,6 @@
+use crate::util::valid_resource;
 use my_lang::lexer::tokenize;
 use my_lang::parser::parse;
-use crate::util::valid_resource;
 
 mod util;
 
@@ -13,6 +13,12 @@ fn parse_assigns_and_while() {
 #[test]
 fn parse_class() {
     let source = valid_resource("class.txt");
+    assert_ok!(parse(tokenize(source).unwrap()));
+}
+
+#[test]
+fn parse_collections() {
+    let source = valid_resource("collections.txt");
     assert_ok!(parse(tokenize(source).unwrap()));
 }
 

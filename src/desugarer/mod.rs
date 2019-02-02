@@ -1,4 +1,6 @@
 use crate::parser::ASTNode;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[macro_use]
 /// Desugar and box.
@@ -30,9 +32,13 @@ pub enum Core {
     Int { integer_digits: i64 },
     BigInt { integer_digits: Vec<i64> },
     ENum { base: f64, exp: i64 },
-    Str(String),
-    Bool(bool),
-    Tuple(Vec<Core>),
+    Str { str: String },
+    Bool { _bool: bool },
+
+    Tuple { elements: Vec<Core> },
+    Set { elements: HashSet<Core> },
+    List { elements: Vec<Core> },
+    Map { elements: HashMap<Core, Core> },
 
     Add { left: Box<Core>, right: Box<Core> },
     AddU { expr: Box<Core> },
@@ -45,15 +51,13 @@ pub enum Core {
 
     Le { left: Box<Core>, right: Box<Core> },
     Ge { left: Box<Core>, right: Box<Core> },
-    Leq { left: Box<Core>, right: Box<Core> },
-    Geq { left: Box<Core>, right: Box<Core> },
 
     Is { left: Box<Core>, right: Box<Core> },
     Eq { left: Box<Core>, right: Box<Core> },
     Not { expr: Box<Core> },
+    IsA { expr: Box<Core>, _type: Box<Core> },
     And { left: Box<Core>, right: Box<Core> },
     Or { left: Box<Core>, right: Box<Core> },
-    IsA { expr: Box<Core>, _type: Box<Core> },
 
     IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },
     When { expr: Box<Core>, cases: Vec<Core> },

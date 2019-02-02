@@ -5,7 +5,8 @@ use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::definition::parse_definition;
-use crate::parser::maybe_expr::parse_expression;
+use crate::parser::end_pos;
+use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
@@ -17,7 +18,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     return match it.peek() {
         Some(TokenPos { token: Token::Print, .. }) => {
             it.next();
-            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "statement");
+            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "print");
             Ok(ASTNodePos {
                 st_line,
                 st_pos,
@@ -25,6 +26,22 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
                 en_pos: expr.en_pos,
                 node: ASTNode::Print { expr },
             })
+        }
+        Some(TokenPos { token: Token::PrintLn, .. }) => {
+            it.next();
+            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "print line");
+            Ok(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line: expr.en_line,
+                en_pos: expr.en_pos,
+                node: ASTNode::PrintLn { expr },
+            })
+        }
+        Some(TokenPos { token: Token::Retry, .. }) => {
+            let (en_line, en_pos) = end_pos(it);
+            it.next();
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Retry })
         }
 
         Some(TokenPos { token: Token::Def, .. }) => parse_definition(it),

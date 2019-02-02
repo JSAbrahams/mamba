@@ -1,22 +1,11 @@
-fun fun_a() -> print c
-
-fun fun_b(b: c) ->
-    print d
-
-fun fun_c(d: (e, f)) ->
-    print g
-    print gg
-
-fun fun_d(h: (i, j) -> k) ->
-    print l
-    print ll
-
-    print lll
-
-fun fun_e(m: n, o: (p, q), r: (s) -> t) -> print u
-
-fun fun_v(w: x, y:(z, aa), ab: (ac) -> (ad)): ae -> print u
-
 fun_a()
-me.fun_b(arg1)
-func(something)
+fun_b(123)
+fun_c asdf
+
+namespace_1::fun_d()
+namespace_2::fun_e(1,2,3,4)
+namespace_3::fun_f 12345
+
+object_1.fun_g()
+object_2.var
+object_3.fun_h a

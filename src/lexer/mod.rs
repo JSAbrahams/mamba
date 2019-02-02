@@ -16,6 +16,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut this_line_indent = 0;
     let mut consecutive_spaces = 0;
     let mut last_is_newline = true;
+    let mut consecutive_newlines = 0;
 
     let mut line = 1;
     let mut pos = 1;
@@ -28,12 +29,17 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         for _ in this_line_indent..current_indent {
             tokens.push(TokenPos { line, pos, token: Token::Dedent });
         }
+        for _ in 1..consecutive_newlines {
+            tokens.push(TokenPos { line, pos, token: Token::NL });
+        }
 
         it.next();
         tokens.push(TokenPos { line, pos, token: $tok });
         pos += $amount;
 
         current_indent = this_line_indent;
+        consecutive_newlines = 0;
+        last_is_newline = false;
     }};
     ($fun:path) => {{
         for _ in current_indent..this_line_indent {
@@ -42,21 +48,29 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         for _ in this_line_indent..current_indent {
             tokens.push(TokenPos { line, pos, token: Token::Dedent });
         }
+        for _ in 1..consecutive_newlines {
+            tokens.push(TokenPos { line, pos, token: Token::NL });
+        }
 
         tokens.push(TokenPos { line, pos, token: $fun(&mut it, &mut pos) });
 
         current_indent = this_line_indent;
+        consecutive_newlines = 0;
+        last_is_newline = false;
     }}
     };
 
     macro_rules! next_line_and_tp { () => {{
-        tokens.push(TokenPos { line, pos, token: Token::NL });
-
         it.next();
+        consecutive_newlines += 1;
         line += 1;
         pos = 1;
 
-        if !last_is_newline { current_indent = this_line_indent }
+        if !last_is_newline {
+            current_indent = this_line_indent;
+            tokens.push(TokenPos { line, pos, token: Token::NL });
+        }
+
         this_line_indent = 0;
         last_is_newline = true;
     }}};
@@ -70,28 +84,44 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         match c {
             '.' => next_pos_and_tp!(1, Token::Point),
             ':' => {
-                it.next();
                 match it.peek() {
-                    Some(':') => next_pos_and_tp!(2, Token::DDoublePoint),
+                    Some(':') => {
+                        it.next();
+                        next_pos_and_tp!(2, Token::DDoublePoint)
+                    }
                     _ => next_pos_and_tp!(1, Token::DoublePoint),
                 }
             }
             ',' => next_pos_and_tp!(1, Token::Comma),
-            '(' => next_pos_and_tp!(1, Token::LPar),
-            ')' => next_pos_and_tp!(1, Token::RPar),
-            '[' => next_pos_and_tp!(1, Token::LBrack),
-            ']' => next_pos_and_tp!(1, Token::RBrack),
-            '{' => next_pos_and_tp!(1, Token::LCurl),
-            '}' => next_pos_and_tp!(1, Token::RCurl),
+            '(' => next_pos_and_tp!(1, Token::LRBrack),
+            ')' => next_pos_and_tp!(1, Token::RRBrack),
+            '[' => next_pos_and_tp!(1, Token::LSBrack),
+            ']' => next_pos_and_tp!(1, Token::RSBrack),
+            '{' => next_pos_and_tp!(1, Token::LCBrack),
+
+            '}' => next_pos_and_tp!(1, Token::RCBrack),
+            '?' => match it.peek() {
+                Some('o') => {
+                    it.next();
+                    match it.next() {
+                        Some('r') => next_pos_and_tp!(3, Token::QuestOr),
+                        Some(other) =>
+                            return Err(format!("Expected `?or`. Was '{}'.", other)),
+                        None => return Err("Expected `?or`.".to_string())
+                    }
+                }
+                _ => next_pos_and_tp!(1, Token::Quest)
+            }
+
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
             '\r' => {
                 it.next();
                 match it.peek() {
                     Some('\n') => next_line_and_tp!(),
-                    Some(other) =>
-                        return Err(format!("Expected newline after carriage return. Was {}", other)),
-                    None => return Err("File ended with carriage return".to_string())
+                    Some(other) => return Err(format!("Expected newline after carriage return. \
+                    Was '{}'.", other)),
+                    None => return Err("File ended with carriage return.".to_string())
                 }
             }
             '\t' => increase_indent!(),
@@ -111,7 +141,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 it.next();
                 continue;
             }
-            c => return Err(format!("Unrecognized character whilst tokenizing: '{}'.", c)),
+            c => return Err(format!("Unrecognized character: '{}'.", c)),
         }
 
         consecutive_spaces = 0;
@@ -145,7 +175,10 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
             _ => Token::Ge
         }
         Some('+') => Token::Add,
-        Some('-') => Token::Sub,
+        Some('-') => match it.peek() {
+            Some('>') => next_and!(it, pos, Token::To),
+            _ => Token::Sub
+        }
         Some('/') => Token::Div,
         Some('*') => Token::Mul,
         Some('^') => Token::Pow,
@@ -187,11 +220,16 @@ fn get_number(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     it.next();
     let mut result = String::new();
+    let mut last_backslash = false;
 
     while let Some(&c) = it.peek() {
         match c {
-            '"' => next_and!(it, pos, break),
-            _ => next_and!(it, pos, result.push(c))
+            '"' => next_and!(it, pos, {
+                if !last_backslash { break; } else { result.push(c) };
+                last_backslash = false
+            }),
+            '\\' => next_and!(it, pos, { result.push(c); last_backslash = true }),
+            _ => next_and!(it, pos, { result.push(c); last_backslash = false })
         }
     }
 
@@ -210,48 +248,61 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     }
 
     return match result.as_ref() {
-        "util" => Token::Util,
+        "from" => Token::From,
+        "util.md" => Token::Util,
         "type" => Token::Type,
         "as" => Token::As,
         "isa" => Token::IsA,
         "constructor" => Token::Constructor,
+        "private" => Token::Private,
 
         "use" => Token::Use,
         "useall" => Token::UseAll,
         "class" => Token::Class,
         "forward" => Token::Forward,
         "self" => Token::_Self,
+        "vararg" => Token::Vararg,
 
-        "fun" => Token::Fun,
         "def" => Token::Def,
-        "mutable" => Token::Mut,
+        "ofmut" => Token::OfMut,
+        "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,
         "is" => Token::Is,
-        "isnot" => Token::IsN,
-        "equals" => Token::Eq,
-        "notequals" => Token::Neq,
+        "isnt" => Token::IsN,
+        "eq" => Token::Eq,
+        "neq" => Token::Neq,
         "mod" => Token::Mod,
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
-        "for" => Token::For,
+        "foreach" => Token::For,
         "where" => Token::Where,
 
-        "in" => Token::In,
         "if" => Token::If,
         "then" => Token::Then,
         "else" => Token::Else,
-        "unless" => Token::Unless,
         "when" => Token::When,
         "do" => Token::Do,
         "continue" => Token::Continue,
         "break" => Token::Break,
         "return" => Token::Ret,
 
+        "in" => Token::In,
+        "to" => Token::Range,
+        "toincl" => Token::RangeIncl,
+
+        "raises" => Token::Raises,
+        "handle" => Token::Handle,
+        "retry" => Token::Retry,
+
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),
         "print" => Token::Print,
+        "println" => Token::PrintLn,
+
+        "undefined" => Token::Undefined,
+        
         _ => Token::Id(result)
     };
 }

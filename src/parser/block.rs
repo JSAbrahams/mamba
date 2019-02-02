@@ -8,19 +8,16 @@ use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
 
-pub fn parse_block(it: &mut TPIterator) -> ParseResult {
+pub fn parse_block_no_indent(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     let mut stmts = Vec::new();
     let mut en_line = st_line;
     let mut en_pos = st_pos;
+
     loop {
         match it.peek() {
             None => break,
-            Some(TokenPos { token: Token::Dedent, .. }) => {
-                it.next();
-                break;
-            }
             Some(TokenPos { token: Token::NL, .. }) => {
                 it.next();
                 continue;
@@ -36,5 +33,34 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
         }
     }
 
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { stmts } });
+    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements: stmts } });
+}
+
+pub fn parse_block(it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
+    check_next_is!(it, Token::Indent);
+
+    let mut statements = Vec::new();
+    let mut en_line = st_line;
+    let mut en_pos = st_pos;
+
+    loop {
+        match it.peek() {
+            Some(TokenPos { token: Token::NL, .. }) => { it.next(); }
+            None | Some(TokenPos { token: Token::Dedent, .. }) => {
+                it.next();
+                break;
+            }
+
+            _ => {
+                let statement: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
+                en_line = statement.en_line;
+                en_pos = statement.en_pos;
+
+                statements.push(statement);
+            }
+        }
+    }
+
+    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } });
 }

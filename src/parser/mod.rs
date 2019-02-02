@@ -1,5 +1,5 @@
+use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::parse_result::ParseErr::CustomEOFErr;
 use crate::parser::parse_result::ParseResult;
 use std::iter::Peekable;
 use std::slice::Iter;
@@ -54,7 +54,7 @@ type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 fn start_pos(it: &mut TPIterator) -> (i32, i32) {
     match it.peek() {
         Some(TokenPos { line, pos, token: _ }) => (*line, *pos),
-        None => (-1, -1)
+        None => (0, 0)
     }
 }
 
@@ -64,7 +64,20 @@ fn start_pos(it: &mut TPIterator) -> (i32, i32) {
 /// token, by calling its [`fmt::Display`] method.
 fn end_pos(it: &mut TPIterator) -> (i32, i32) {
     match it.peek() {
-        Some(TokenPos { line, pos, token }) => (*line, *pos + format!("{}", token).len() as i32),
+        Some(TokenPos { line, pos, token }) => {
+            let tok_width = match token {
+                Token::Id(id) => id.len(),
+                Token::Real(real) => real.len(),
+                Token::Int(int) => int.len(),
+                Token::Bool(true) => 4,
+                Token::Bool(false) => 5,
+                Token::Str(_str) => _str.len(),
+                Token::ENum(num, exp) => num.len() + 1 + exp.len(),
+                other => format!("{}", other).len()
+            } as i32;
+
+            (*line, *pos + tok_width)
+        }
         None => (-1, -1)
     }
 }
@@ -75,15 +88,17 @@ mod control_flow_stmt;
 mod control_flow_expr;
 mod definition;
 mod block;
+mod call;
+mod collection;
 mod expr_or_stmt;
-mod function;
-mod maybe_expr;
+mod expression;
 mod module;
 mod operation;
 mod statement;
 mod _type;
 
-#[derive(PartialEq)]
+
+#[derive(PartialEq, Eq, Hash)]
 #[derive(Debug)]
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
@@ -95,7 +110,7 @@ pub struct ASTNodePos {
     pub node: ASTNode,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Hash)]
 #[derive(Debug)]
 pub enum ASTNode {
     ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
@@ -124,33 +139,77 @@ pub enum ASTNode {
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
 
-    EmptyDef { _mut: bool, id_maybe_type: Box<ASTNodePos> },
-    Def { _mut: bool, id_maybe_type: Box<ASTNodePos>, expr: Box<ASTNodePos> },
+    ReAssign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    Forward { forwarded: Vec<ASTNodePos> },
+    Def { private: bool, definition: Box<ASTNodePos> },
+    VariableDef {
+        mutable: bool,
+        id_maybe_type: Box<ASTNodePos>,
+        expression: Option<Box<ASTNodePos>>,
+    },
+    FunDef {
+        id: Box<ASTNodePos>,
+        fun_args: Vec<ASTNodePos>,
+        ret_ty: Box<ASTNodePos>,
+        body: Option<Box<ASTNodePos>>,
+    },
+    OperatorDef {
+        op: Box<ASTNodePos>,
+        id_and_type: Option<Box<ASTNodePos>>,
+        ret_ty: Box<ASTNodePos>,
+        body: Box<ASTNodePos>,
+    },
 
-    TypeId { id: String },
-    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    AnonFun { args: Box<ASTNodePos>, body: Box<ASTNodePos> },
+
+    Raises { expr_or_stmt: Box<ASTNodePos>, errors: Vec<ASTNodePos> },
+    Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+    Retry,
+
+    FunCall { namespace: Option<Box<ASTNodePos>>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    MethodCall { object: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+
+    Id { _self: bool, lit: String, _type: Option<Box<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
+    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
-    Id { id: String },
+    IdMaybeType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
     IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    FunArg { vararg: bool, id_and_type: Box<ASTNodePos> },
 
-    Defer { definition: Box<ASTNodePos>, forwarded: Vec<ASTNodePos> },
-    _Self { expr: Box<ASTNodePos> },
+    _Self,
+    AddOp,
+    SubOp,
+    SqrtOp,
+    MulOp,
+    DivOp,
+    PowOp,
+    ModOp,
+    EqOp,
+    LeOp,
+    GeOp,
 
-    Assign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-
-    SetBuilder { set: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
-    Set { elements: Vec<ASTNodePos> },
-    List { elements: Vec<ASTNodePos> },
+    Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    EmptySet,
+    SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+    List { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    EmptyList,
+    ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
+    Map { key_value: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
+    MapBuilder { key_value: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
 
-    Block { stmts: Vec<ASTNodePos> },
+    Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
+    RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
 
-    Real { real: String },
-    Int { int: String },
-    ENum { int_digits: String, frac_digits: String },
-    Str { string: String },
-    Bool { _bool: bool },
+    Block { statements: Vec<ASTNodePos> },
+
+    Real { lit: String },
+    Int { lit: String },
+    ENum { num: String, exp: String },
+    Str { lit: String },
+    Bool { lit: bool },
 
     Add { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     AddU { expr: Box<ASTNodePos> },
@@ -160,6 +219,7 @@ pub enum ASTNode {
     Div { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Mod { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Pow { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    In { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Sqrt { expr: Box<ASTNodePos> },
 
     Le { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -177,9 +237,8 @@ pub enum ASTNode {
 
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
-    Unless { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
-    UnlessElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
-    When { cond: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
+    When { cond: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+    WhenCases { cases: Vec<ASTNodePos> },
     For { expr: Box<ASTNodePos>, collection: Box<ASTNodePos>, body: Box<ASTNodePos> },
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,
@@ -187,8 +246,11 @@ pub enum ASTNode {
 
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
-    
+
+    QuestOr { _do: Box<ASTNodePos>, _default: Box<ASTNodePos> },
+
     Print { expr: Box<ASTNodePos> },
+    PrintLn { expr: Box<ASTNodePos> },
 }
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {

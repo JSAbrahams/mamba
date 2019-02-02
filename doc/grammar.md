@@ -2,122 +2,141 @@
 
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    import           ::= "use" string [ "as" id ] [ ( "use" { id { "," id } | "useall" ) ]
+    import           ::= "from" string [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
     
+    file             ::= { module }
     module           ::= interface | util | class | script
-    interface        ::= "type" id newline { newline }
-                         { ( function-def | immutable-def | immutable-asssign ) newline { newline } } ]
-    util             ::= { import newline } newline { newline } 
-                         "util" [ "[" id { "," id } "]" ] id [ "isa" id { "," id } ] newline { newline }
-                         { im-defer-def newline } { newline }
-                         { [ "private" ] ( immutable-declaration | function-def-bod ) newline { newline } }
+    interface        ::= "type" id [ "[" id_maybe_type { "," id_maybe_type } "]" ] newline { newline }
+                         { ( function-def | definition ) newline { newline } } ]
+    util             ::= { import newline } newline { newline }
+                         "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ]
+                         newline { newline }
+                         { ( definition ) newline { newline } }
     class            ::= { import newline } newline { newline }
                          [ util ]
-                         "class" [ constructor-args ] [ "isa" id { "," id } ] newline { newline } 
-                         { defer-def newline } { newline }
-                         { ( constructor-def | [ "private" ] ( function-def-bod | declaration ) ) newline { newline } }
-    script           ::= { import newline } { newline } 
-                         { function-def newline { newline } } 
-                         [ block ]
-    
-    method-call      ::= [ "self" | id "." ] id ( tuple | id )
-    function-call    ::= [ id "::" ] id ( tuple | id )
-    
-    constructor-def  ::= "init" constructor-args [ "<-" expr-or-stmt ]
+                         "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ]
+                         [ "isa" id { "," id } ] newline { newline }
+                         { top-level-def newline } { newline }
+                         { ( constructor | definition ) ) newline
+                         { newline } }
+    script           ::= { import newline } { newline }
+                         { function-def newline { newline } }
+                         [ block-no-indent ]
+        
+    constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= [ "self" ] id-and-type
+    constructor-arg  ::= [ "self" ] id-maybe-type | "vararg" id-maybe-type
     
-    function-def     ::= "def" id "(" [ id-and-type { "," id-and-type } ] ")" [ ":" type ]
-    function-def-bod ::= function-def "<-" expr-or-stmt
-    
-    function-anon    ::= args-anon "<-" maybe-expr
-    args-anon        ::= id | "(" [ args-anon { "," args-anon } ] ")"
-    
-    id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id | type "<-" type | "(" [ type { "," type } ] ")"
-    type-def         ::= "type" id "<-" type
-    type-tuple       ::= "(" [ id { "," id } ] ")" 
+    id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
+    type             ::= id | type-tuple [ "->" type ]
+    type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
+    type-def         ::= "type" id "<-" type [ "when" newline indent { condition } dedent ]
+    condition        ::= expression "else" expression
     id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
-    id-and-type      ::= ( id | type-tuple )  ":" type
+    id-and-type      ::= ( id | type-tuple ) ":" type
     
-    block            ::= indent { expr-or-stmt newline } dedent
+    block            ::= indent { expr-or-stmt { newline } } dedent
+    block-no-inent   ::= { expr-or-stmt { newline } }
     
-    expr-or-stmt     ::= statement 
-                      | maybe-expr [ ( "if" | "unless" ) maybe_expr ]
-    statement        ::= "print" maybe-expr 
-                      | definition 
+    expr-or-stmt     ::= statement [ "if" maybe_expr ] [ ( raises | handle ) ]
+                      | expression [ "if" maybe_expr ] [ ( raises | handle ) ]
+    raises           ::= "raises" "[" id { "," id } "]"
+    handle           ::= "handle" "when" newline when-cases
+    statement        ::= ( "print" | "println" ) expression 
+                      | statement [ ( raises | handle ) ]
                       | control-flow-stmt
+                      | definition
                       | type-def
-    maybe-expr       ::= "return" [ maybe-expr ] 
-                      | instance
-                      | operation 
-                      | tuple 
-                      | function-anon
+                      | "retry"
+    expression       ::= newline block
+                      | expression ( "to" | "toincl" ) expression
+                      | "(" expression ")" [ "->" expression ]
+                      | expression [ ( raises | handle ) ]
+                      | "return" [ expression ]
+                      | expression "?or" expression
+                      | expression "as" id
+                      | function-def-anon
                       | control-flow-expr 
-                      | reassignment 
-                      | function-call 
-                      | function-call-dir 
-                      | [ newline ] block
-                      | set-builder
+                      | reassignment
+                      | collection
+                      | operation
+                      | call
                       | "_"
-                      | [ "self" ] id
-    
+                     
+    call             ::= function-call | method-call
+    function-call    ::= expression [ "::" expression ] ( expression | "(" [ expression { "," expression} ] ")" )
+    method-call      ::= expression "." ( expression | "(" [ expression { "," expression} ] ")" ) [ "?" ]
+                    
+    collection       ::= tuple | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
-    set              ::= "{" zero-or-more-expr "}"
-    set-builder      ::= "{" maybe-expr | maybe-expr { "," maybe-expr } "}"
-    list             ::= "[" zero-or-more-expr "]"
-    zero-or-more-expr::= [ ( maybe-expr { "," maybe-expr } ]
+    set              ::= "{" zero-or-more-expr "}" | set-builder
+    set-builder      ::= "{" expression "|" expression { "," expression } "}"
+    list             ::= "[" zero-or-more-expr "]" | list-builder
+    list-builder     ::= "[" expression "|" expression { "," expression } "]"
+    map              ::= "{" expression "->" expression { "," expression "->" expression } "}" | map-builder
+    map-builder      ::= "{" expression "->" expression "|" zero-or-more-expr "}"
+    zero-or-more-expr::= [ ( expression { "," expression } ]
     
-    reassignment     ::= maybe-expr "<-" maybe-expr
-    defer-def        ::= definition [ "forward" id { "," id } ]
-    im-defer-def     ::= immutable-def [ "forward" id { "," id } ]
-    definition       ::= ( mutable-def | immutable-def )
-    mutable-def      ::= "def" "mut" id-maybe-type [ "<-" maybe-expr ]
-    immutable-def    ::= "def" id-maybe-type [ "<-" maybe-expr ]
+    reassignment     ::= expression "<-" expression
+    
+    definition       ::= "def" ( [ "private" ] ( variable-def | fun-def ) | operator-def )
+    variable-def     ::= [ "mut" ] id-maybe-type [ "<-" expression [ ( "when" newline conditions | forward ) ] ]
+    operator-def     ::= overridable-op [ "(" [ id-and-type ] ")" ] ":" type [ "->" expression ]
+    fun-def          ::= id "(" [ fun-args ] ")" ":" type [ raises ] [ "->" expression ]
+    fun-args         ::= fun-arg { "," fun-arg }
+    fun-arg          ::= [ "vararg" ] id-and-type
+    forward          ::= "forward" id { "," id }
 
-    operation        ::= relation | relation ( equality | binary-logic ) relation
+    conditions       ::= indent { condition } dedent
+    condition        ::= expression "else" expression
+
+    operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
     term             ::= inner-term [ multiclative term ]
     inner-term       ::= factor [ power inner-term ]
-    factor           ::= [ additive | "sqrt" ] ( constant | id | maybe-expr )
+    factor           ::= [ unary ] ( literal | id | expression )
     
-    unary            ::= "not" | additive
+    overrideable-op  ::= additive | "sqrt" | multiplicative | power | "eq" | "<" | ">"
+    unary            ::= "not" | "sqrt" | additive 
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    equality         ::= "equals" | "is" | "notequals" | "isnot" | "isa"
+    instance-eq      ::= "is" | "isnt" | "isa" | "in"
+    equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"
     
-    constant         ::= number | boolean | string
+    literal          ::= number | boolean | string
     number           ::= real | integer | e-notation
-    real             ::= digit "." { digit } | "." digit { digit }
+    real             ::= digit "." { digit }
     integer          ::= { digit }
     e-notation       ::= ( integer | real ) ( "e" | "E" ) [ "-" ] integer
     boolean          ::= "true" | "false"
-    string           ::= "\"" { character } "\""
+    string           ::= """ { character } """
                                      
     control-flow-expr::= if | from | when
-    if               ::= ( "if" | "unless" ) maybe-expr "then" expr-or-stmt [ "else" expr-or-stmt ]
-    when             ::= "when" maybe-expr newline indent { when-case newline } dedent
-    when-case        ::= maybe-expr "then" expr-or-stmt
+    if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
+    when             ::= "when" expression newline when-cases
+    when-cases       ::= indent { when-case { newline } } dedent
+    when-case        ::= expression "->" expr-or-stmt
     
-    control-flow-stmt::= loop | while | for | "break" | "continue"
-    while            ::= "while" maybe-expr "do" expr-or-stmt
-    for              ::= "for" maybe-expr "in" maybe-expr "do" expr-or-stmt
+    control-flow-stmt::= while | foreach | "break" | "continue"
+    while            ::= "while" expression "do" expr-or-stmt
+    foreach          ::= "foreach" expression "in" expression "do" expr-or-stmt
     
     newline          ::= \n | \r\n
     comment          ::= "#" { character }
 
-The language uses indentation to denote blocks. The indentation amount can't be described in the grammar directly, 
+The language uses indentation to denote code blocks. The indentation amount can't be described in the grammar directly, 
 but it does adhere to the following rules:
 
 * Every new expression or statement in a block must be preceded by n + 1 `indent`'s, where n is the amount of 
   `indent`'s before the block
 * The same holds for every new `when-case` in a `when`
 
-A `maybe-expr` is used in a situation where an expression is required,  but we cannot know in advance whether it will be
-an expression or statement without type checking the program.
-`expr-or-stmt` may be used when it does not matter whether it is an expression or statement.
+A `expression` is used in a situation where an expression is required. However we cannot always know in advance whether
+this is the case, e.g. when it is a function call. In This should be verified by the type checker.
+`expr-or-stmt` may be used when it does not matter whether something is an expression or statement, such as the body of
+a loop.
                
