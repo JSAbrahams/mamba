@@ -22,4 +22,3 @@ left hand side of the arrow before continuing on the right hand side of the arro
 
 A function may also be anonymous:\
 `(x) -> x + 1`\
-In this case the types of the function  arguments may be omitted, provided that these can be inferred elsewhere.
