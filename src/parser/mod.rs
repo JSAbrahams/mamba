@@ -187,13 +187,15 @@ pub enum ASTNode {
     GeOp,
 
     Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    EmptySet,
     SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     List { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    EmptyList,
     ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
-    Map { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
+    Map { key_value: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
     KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
-    MapBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
+    MapBuilder { key_value: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
 
     Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
     RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },

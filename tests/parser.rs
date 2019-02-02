@@ -17,6 +17,12 @@ fn parse_class() {
 }
 
 #[test]
+fn parse_collections() {
+    let source = valid_resource("collections.txt");
+    assert_ok!(parse(tokenize(source).unwrap()));
+}
+
+#[test]
 fn parse_empty_file() {
     let source = valid_resource("empty_file.txt");
     assert_ok!(parse(tokenize(source).unwrap()));

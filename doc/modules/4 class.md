@@ -51,8 +51,8 @@ We can do the following:
         def stateless_message -> "This message is always the same."
         
     class HTTPServer isa Server
-        def connected -> false
-        def mut last_message -> ""
+        def connected <- false
+        def mut last_message <- ""
         
         def init(self: DisconnectedHTTPServer, def ip_address: IPAddress)
         
@@ -61,6 +61,7 @@ We can do the following:
         # self must be disconnected
         def connect (self: DisconnectedHTTPServer, ip_address: IPAddress): Boolean ->
             # perform some operations here
+            connected <- true
             true
             
         # self must be mutable to send message
@@ -72,4 +73,5 @@ We can do the following:
         # self must be connected to disconnect
         def disconnect(self: ConnectedHTTPServer): Boolean ->
             # perform some operations here
+            connected <- false
             true

@@ -32,7 +32,7 @@ closely to the naturally spoken English language:
         if composer.death is undefined then
             println "[composer] has not died."
         else 
-            def years_ago <- today - composer.death
+            def years_ago -> today - composer.death
             pintln "[composer] died [years_ago] years ago"
             
 Without knowing the language, when reading above, it should be relatively clear that:
@@ -115,9 +115,9 @@ itself is inferred from an expression
     
     def z: Real <- 10.5         # In some situations however, you still might want to explicitly mention the type
 
-Thus, we have the following:
-
 > In general, something is clear, or inferable, from context, don't make the developer write it out in full
+
+### Type Aliases and Type Refinement
 
 We can also use type aliases and type refinement to further refine types by adding conditions to types:
 
@@ -126,7 +126,7 @@ We can also use type aliases and type refinement to further refine types by addi
 
 We now rewrite my_function so it only works for `DeadComposer`s:
 
-    def my_function (composer: DeadComposer): Int -> today.year - composer.death.year
+    def my_function (composer: DeadComposer): Int <- today.year - composer.death.year
     
 Again, we can rest assured that `composer` is a `DeadComposer` in the body of the function. To use such a function, we 
 must explicitly cast a composer:
@@ -146,13 +146,30 @@ function to perform its operations, and a set of post-conditions that must be ad
 completed its operation. In effect, is verifies the program is in a valid state for the function to be executed, and it
 verifies that the program is in one of the expected state after execution of the function.
 
-This term was invented by Bertrand Meyer, and implemented in the Eiffel language. 
+This term was conceived by Bertrand Meyer, and implemented in the Eiffel language. 
 
 ### Type Refinement
+
+Type refinement can also be used to enforce design by contract. Design by contract is not only used to check the
+arguments of a method, but also to check that the object is in a correct state. Usually, the state of an object is left
+implicit. By using type aliases with accompanying checks, we can explicitly name the different states an object can be
+in.
+
+For instance, take a simple server object, which forms a connection with a server. Then this can either be connected or
+disconnected (for the sake of simplicity). We can then define two states:
+
+    type connectedServer <- Server where
+        self connected else Err("Not connected.")
+        
+    type disconnectedServer <- Server where
+        self not connected else Err("connected.")
+
+Of course, this is a rather trivial example, but it can be more useful when states become more complicated. It can also
+be used as the return type of a method to signify that a object in is that state after execution of that method.
 
 ## The Mathematical Roots of Computer Science
 
 Computer Science has its roots in mathematics. I wanted to reflect this in the language. An obvious example is the
 set builder notation:
 
-    def programmers <- { x | x in People, x.profession is "programmer" }
+    def programmers <- { x | x in People, x.profession is PROGRAMMER }
