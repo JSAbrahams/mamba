@@ -16,6 +16,7 @@ pub enum Token {
     IsA,
     Constructor,
     Private,
+    Init,
 
     As,
     Use,
@@ -115,6 +116,7 @@ impl fmt::Display for Token {
             Token::IsA => "isa".to_string(),
             Token::Constructor => "constructor".to_string(),
             Token::Private => "private".to_string(),
+            Token::Init => "init".to_string(),
 
             Token::As => "as".to_string(),
             Token::Use => "use".to_string(),

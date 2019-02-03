@@ -57,8 +57,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         current_indent = this_line_indent;
         consecutive_newlines = 0;
         last_is_newline = false;
-    }}
-    };
+    }}};
 
     macro_rules! next_line_and_tp { () => {{
         it.next();
@@ -262,6 +261,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "forward" => Token::Forward,
         "self" => Token::_Self,
         "vararg" => Token::Vararg,
+        "init" => Token::Init,
 
         "def" => Token::Def,
         "ofmut" => Token::OfMut,

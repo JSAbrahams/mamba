@@ -25,7 +25,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
         
     constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= [ "self" ] id-maybe-type | "vararg" id-maybe-type
+    constructor-arg  ::= id-and-type | "vararg" id-and-type
     
     id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id | type-tuple [ "->" type ]

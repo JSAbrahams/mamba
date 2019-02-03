@@ -90,6 +90,7 @@ mod definition;
 mod block;
 mod call;
 mod collection;
+mod constructor;
 mod expr_or_stmt;
 mod expression;
 mod module;
@@ -135,6 +136,9 @@ pub enum ASTNode {
         decls: Box<ASTNodePos>,
         funcs: Vec<ASTNodePos>,
     },
+
+    Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
+    InitArg { vararg: bool, id_and_type: Box<ASTNodePos> },
 
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
