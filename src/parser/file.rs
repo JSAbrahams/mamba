@@ -15,7 +15,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::From);
 
-    let id = get_or_err!(it, parse_id, "import id");
+    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "import id");
 
     let (_use, all) = match it.peek() {
         Some(TokenPos { token: Token::Use, .. }) =>
@@ -37,7 +37,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         _ => (vec![], false)
     };
 
-    let _as = match it.peek() {
+    let _as: Option<Box<ASTNodePos>> = match it.peek() {
         Some(TokenPos { token: Token::As, .. }) => {
             it.next();
             Some(get_or_err!(it, parse_id, "as"))
@@ -45,17 +45,24 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         _ => None
     };
 
+    // end pos will be of id if useall is used
+    let (en_line, en_pos) = match (_use.last(), _as) {
+        (_, Some(def)) => (def.en_line, def.en_pos),
+        (Some(def), _) => (def.en_line, def.en_pos),
+        (_, _) => (id.en_line, id.en_pos)
+    };
+
     return Ok(ASTNodePos {
         st_line,
         st_pos,
-        en_line: 0,
-        en_pos: 0,
+        en_line,
+        en_pos,
         node: ASTNode::Import { id, _use, all, _as },
     });
 }
 
 pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
-    let id = get_or_err!(it, parse_id, "name");
+    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "name");
 
     let mut generics = Vec::new();
     if let Some(TokenPos { token: Token::LSBrack, .. }) = it.peek() {
@@ -95,11 +102,18 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
         }
     }
 
+    let (en_line, en_pos) = match (generics.last(), isa.last(), definitions.last()) {
+        (_, _, Some(def)) => (def.en_line, def.en_pos),
+        (_, Some(def), _) => (def.en_line, def.en_pos),
+        (Some(def), _, _) => (def.en_line, def.en_pos),
+        (_, _, _) => (id.en_line, id.en_pos)
+    };
+
     return Ok(ASTNodePos {
         st_line: id.st_line,
         st_pos: id.st_pos,
-        en_line: 0,
-        en_pos: 0,
+        en_line,
+        en_pos,
         node: ASTNode::Body { id, generics, isa, definitions },
     });
 }
