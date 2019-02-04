@@ -93,7 +93,7 @@ mod collection;
 mod constructor;
 mod expr_or_stmt;
 mod expression;
-mod module;
+mod file;
 mod operation;
 mod statement;
 mod _type;
@@ -114,27 +114,16 @@ pub struct ASTNodePos {
 #[derive(PartialEq, Eq, Hash)]
 #[derive(Debug)]
 pub enum ASTNode {
-    ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
-    ImportModUseAs { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos>, _as: Box<ASTNodePos> },
-    ImportModUseAll { _mod: Box<ASTNodePos> },
-
-    Script {
-        imports: Vec<ASTNodePos>,
-        decl: Box<ASTNodePos>,
-        funcs: Vec<ASTNodePos>,
-        body: Box<ASTNodePos>,
-    },
-    Class {
-        imports: Vec<ASTNodePos>,
-        name: Box<ASTNodePos>,
-        decls: Box<ASTNodePos>,
-        funcs: Vec<ASTNodePos>,
-    },
-    Util {
-        imports: Vec<ASTNodePos>,
-        name: Box<ASTNodePos>,
-        decls: Box<ASTNodePos>,
-        funcs: Vec<ASTNodePos>,
+    File { imports: Vec<ASTNodePos>, modules: Vec<ASTNodePos> },
+    Import { id: Box<ASTNodePos>, _use: Vec<ASTNodePos>, all: bool, _as: Option<Box<ASTNodePos>> },
+    Class { body: Box<ASTNodePos> },
+    Util { body: Box<ASTNodePos> },
+    Script { statements: Vec<ASTNodePos> },
+    Body {
+        id: Box<ASTNodePos>,
+        generics: Vec<ASTNodePos>,
+        isa: Vec<ASTNodePos>,
+        definitions: Vec<ASTNodePos>,
     },
 
     Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
@@ -261,5 +250,5 @@ pub enum ASTNode {
 }
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {
-    return module::parse_module(&mut input.iter().peekable());
+    return file::parse_module(&mut input.iter().peekable());
 }

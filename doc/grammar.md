@@ -2,19 +2,14 @@
 
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    import           ::= "from" string [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
-    
-    file             ::= { module }
-    module           ::= { import newline } newline { newline } ( interface | util | class | script )
-    interface        ::= "type" id [ "[" id_maybe_type { "," id_maybe_type } "]" ] newline { newline }
-                         { ( function-def | definition ) newline { newline } } ]
-    util             ::= "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ]
-                         newline { newline }
-                         { ( definition ) newline { newline } }
-    class            ::= "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ]
-                         [ "isa" id { "," id } ] newline { newline }
-                         { ( constructor | definition ) ) newline { newline }
+    import           ::= "from" id [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
+    class-body       ::= id [ "[" id_maybe_type { "," id_maybe_type } "]" ] [ "isa" id { "," id } ] newline { newline }
+                         { definition newline { newline } }
+    util             ::= "util" class-body
+    class            ::= "class" class-body
     script           ::= statements
+    module           ::= util | class | script
+    file             ::= ( import | module ) { newline { newline } }
     
     id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
     generics         ::= "[" id { "," id } "]"
