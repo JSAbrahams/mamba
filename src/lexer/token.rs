@@ -14,8 +14,10 @@ pub enum Token {
     Class,
     Util,
     IsA,
+    IsNA,
     Constructor,
     Private,
+    Init,
 
     As,
     Use,
@@ -76,6 +78,7 @@ pub enum Token {
     NL,
     Indent,
     Dedent,
+    Underscore,
 
     Raises,
     Retry,
@@ -112,8 +115,10 @@ impl fmt::Display for Token {
             Token::Type => "type".to_string(),
             Token::Class => "class".to_string(),
             Token::IsA => "isa".to_string(),
+            Token::IsNA => "isnta".to_string(),
             Token::Constructor => "constructor".to_string(),
             Token::Private => "private".to_string(),
+            Token::Init => "init".to_string(),
 
             Token::As => "as".to_string(),
             Token::Use => "use".to_string(),
@@ -174,6 +179,7 @@ impl fmt::Display for Token {
             Token::NL => "<newline>".to_string(),
             Token::Indent => "<indent>".to_string(),
             Token::Dedent => "<dedent>".to_string(),
+            Token::Underscore => "_".to_string(),
 
             Token::While => "while".to_string(),
             Token::For => "foreach".to_string(),

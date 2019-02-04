@@ -90,9 +90,10 @@ mod definition;
 mod block;
 mod call;
 mod collection;
+mod constructor;
 mod expr_or_stmt;
 mod expression;
-mod module;
+mod file;
 mod operation;
 mod statement;
 mod _type;
@@ -113,28 +114,20 @@ pub struct ASTNodePos {
 #[derive(PartialEq, Eq, Hash)]
 #[derive(Debug)]
 pub enum ASTNode {
-    ImportModUse { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos> },
-    ImportModUseAs { _mod: Box<ASTNodePos>, _use: Box<ASTNodePos>, _as: Box<ASTNodePos> },
-    ImportModUseAll { _mod: Box<ASTNodePos> },
+    File { imports: Vec<ASTNodePos>, modules: Vec<ASTNodePos> },
+    Import { id: Box<ASTNodePos>, _use: Vec<ASTNodePos>, all: bool, _as: Option<Box<ASTNodePos>> },
+    Class { body: Box<ASTNodePos> },
+    Util { body: Box<ASTNodePos> },
+    Script { statements: Vec<ASTNodePos> },
+    Body {
+        id: Box<ASTNodePos>,
+        generics: Vec<ASTNodePos>,
+        isa: Vec<ASTNodePos>,
+        definitions: Vec<ASTNodePos>,
+    },
 
-    Script {
-        imports: Vec<ASTNodePos>,
-        decl: Box<ASTNodePos>,
-        funcs: Vec<ASTNodePos>,
-        body: Box<ASTNodePos>,
-    },
-    Class {
-        imports: Vec<ASTNodePos>,
-        name: Box<ASTNodePos>,
-        decls: Box<ASTNodePos>,
-        funcs: Vec<ASTNodePos>,
-    },
-    Util {
-        imports: Vec<ASTNodePos>,
-        name: Box<ASTNodePos>,
-        decls: Box<ASTNodePos>,
-        funcs: Vec<ASTNodePos>,
-    },
+    Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
+    InitArg { vararg: bool, def: bool, id_and_type: Box<ASTNodePos> },
 
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
@@ -163,18 +156,20 @@ pub enum ASTNode {
     AnonFun { args: Box<ASTNodePos>, body: Box<ASTNodePos> },
 
     Raises { expr_or_stmt: Box<ASTNodePos>, errors: Vec<ASTNodePos> },
-    Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+    Handle { expr_or_stmt: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     Retry,
 
     FunCall { namespace: Option<Box<ASTNodePos>>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
     MethodCall { object: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
 
-    Id { _self: bool, lit: String, _type: Option<Box<ASTNodePos>> },
+    Id { lit: String },
+
+    TypeId { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
+    Type { id: Box<ASTNodePos>, generics: Option<Vec<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
-    IdMaybeType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
-    IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    Condition { condition: Box<ASTNodePos>, _else: Box<ASTNodePos> },
+    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
     FunArg { vararg: bool, id_and_type: Box<ASTNodePos> },
 
     _Self,
@@ -231,14 +226,14 @@ pub enum ASTNode {
     Eq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Neq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     IsA { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    IsNA { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Not { expr: Box<ASTNodePos> },
     And { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Or { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
 
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
-    When { cond: Box<ASTNodePos>, cases: Box<ASTNodePos> },
-    WhenCases { cases: Vec<ASTNodePos> },
+    When { cond: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     For { expr: Box<ASTNodePos>, collection: Box<ASTNodePos>, body: Box<ASTNodePos> },
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,
@@ -246,6 +241,7 @@ pub enum ASTNode {
 
     Return { expr: Box<ASTNodePos> },
     ReturnEmpty,
+    UnderScore,
 
     QuestOr { _do: Box<ASTNodePos>, _default: Box<ASTNodePos> },
 
@@ -254,5 +250,5 @@ pub enum ASTNode {
 }
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {
-    return module::parse_module(&mut input.iter().peekable());
+    return file::parse_module(&mut input.iter().peekable());
 }

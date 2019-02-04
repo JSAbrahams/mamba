@@ -1,7 +1,7 @@
 def b <- 40
 
+if a then print "hello world"
 if c then d <- 4 else asdf
-print a if true
 
 # this if doesn't do much yet
 if cond then
@@ -22,4 +22,3 @@ else # this is the else
         ccc
 # if we don't have this empty line here the above is still not newline terminated!
 if c then d <- 4 else asdf
-print a if true

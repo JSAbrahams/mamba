@@ -33,6 +33,7 @@ pub fn parse_operation(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Neq, .. }) => bin_op!(parse_operation, Neq, "not equal"),
         Some(TokenPos { token: Token::Is, .. }) => bin_op!(parse_operation, Is, "is"),
         Some(TokenPos { token: Token::IsN, .. }) => bin_op!(parse_operation, IsN, "is not"),
+        Some(TokenPos {token: Token::IsNA,..}) => bin_op!(parse_operation, IsNA, "is not a"),
         Some(TokenPos { token: Token::And, .. }) => bin_op!(parse_operation, And, "and"),
         Some(TokenPos { token: Token::Or, .. }) => bin_op!(parse_operation, Or, "or"),
         Some(TokenPos { token: Token::IsA, .. }) => bin_op!(parse_operation, IsA, "is a"),

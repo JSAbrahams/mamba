@@ -7,6 +7,8 @@ use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::definition::parse_reassignment;
 use crate::parser::end_pos;
+use crate::parser::expr_or_stmt::parse_handle;
+use crate::parser::expr_or_stmt::parse_raise;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -29,6 +31,12 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::LCBrack, .. }) => parse_collection(it),
 
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
+
+        Some(TokenPos { token: Token::Underscore, .. }) => {
+            let (en_line, en_pos) = end_pos(it);
+            it.next();
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::UnderScore })
+        }
 
         Some(TokenPos { token: Token::_Self, .. }) |
         Some(TokenPos { token: Token::Real(_), .. }) |
@@ -89,19 +97,20 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::RangeIncl { from: Box::from(pre), to },
                 })
             }
+            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre,it),
+            Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
+
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
 
             // normal method or function call
             Some(TokenPos { token: Token::LRBrack, .. }) |
             Some(TokenPos { token: Token::DDoublePoint, .. }) |
-            Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
+            Some(TokenPos { token: Token::Point, .. }) |
 
             // postfix function call
-            Some(TokenPos { token: Token::If, .. }) |
-            Some(TokenPos { token: Token::When, .. }) |
+            Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) |
             Some(TokenPos { token: Token::LSBrack, .. }) |
             Some(TokenPos { token: Token::LCBrack, .. }) |
-            Some(TokenPos { token: Token::Ret, .. }) |
             Some(TokenPos { token: Token::_Self, .. }) |
             Some(TokenPos { token: Token::Real(_), .. }) |
             Some(TokenPos { token: Token::Int(_), .. }) |
@@ -110,10 +119,10 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::Str(_), .. }) |
             Some(TokenPos { token: Token::Bool(_), .. }) |
             Some(TokenPos { token: Token::Not, .. }) |
-            Some(TokenPos { token: Token::Add, .. }) |
-            Some(TokenPos { token: Token::Sub, .. }) => parse_call(pre, it),
+            Some(TokenPos { token: Token::Add, .. }) | Some(TokenPos { token: Token::Sub, .. }) |
+            Some(TokenPos { token: Token::Not, .. }) => parse_call(pre, it),
 
-            Some(_) | None => Ok(pre)
+            _ => Ok(pre)
         }
 
         err => err

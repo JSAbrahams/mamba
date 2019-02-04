@@ -2,46 +2,27 @@
 
 The grammar of the language in Extended Backus-Naur Form (EBNF).
 
-    import           ::= "from" string [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
+    import           ::= "from" id [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
+    class-body       ::= id [ "[" id_maybe_type { "," id_maybe_type } "]" ] [ "isa" id { "," id } ] newline { newline }
+                         { definition newline { newline } }
+    util             ::= "util" class-body
+    class            ::= "class" class-body
+    script           ::= statements
+    module           ::= util | class | script
+    file             ::= ( import | module ) { newline { newline } }
     
-    file             ::= { module }
-    module           ::= interface | util | class | script
-    interface        ::= "type" id [ "[" id_maybe_type { "," id_maybe_type } "]" ] newline { newline }
-                         { ( function-def | definition ) newline { newline } } ]
-    util             ::= { import newline } newline { newline }
-                         "util" [ "[" id_maybe_type { "," id_maybe_type } "]" ] id [ "isa" id { "," id } ]
-                         newline { newline }
-                         { ( definition ) newline { newline } }
-    class            ::= { import newline } newline { newline }
-                         [ util ]
-                         "class" [ "[" id_maybe_type { "," id_maybe_type } "]"] [ constructor-args ]
-                         [ "isa" id { "," id } ] newline { newline }
-                         { top-level-def newline } { newline }
-                         { ( constructor | definition ) ) newline
-                         { newline } }
-    script           ::= { import newline } { newline }
-                         { function-def newline { newline } }
-                         [ block-no-indent ]
-        
-    constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]
-    constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= [ "self" ] id-maybe-type | "vararg" id-maybe-type
+    id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
+    generics         ::= "[" id { "," id } "]"
+    type             ::= id [ generic ] | type-tuple [ "->" type ]
+    type-tuple       ::= "(" [ type { "," type } ] ")" 
+    type-def         ::= "type" id "isa" type [ conditions ]
+    id-maybe-type    ::= id [ ":" type ]
+    id-and-type      ::= id ":" type
     
-    id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
-    type             ::= id | type-tuple [ "->" type ]
-    type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
-    type-def         ::= "type" id "<-" type [ "when" newline indent { condition } dedent ]
-    condition        ::= expression "else" expression
-    id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
-    id-and-type      ::= ( id | type-tuple ) ":" type
+    block            ::= indent statements dedent
+    statements       ::= { expr-or-stmt { newline } }
     
-    block            ::= indent { expr-or-stmt { newline } } dedent
-    block-no-inent   ::= { expr-or-stmt { newline } }
-    
-    expr-or-stmt     ::= statement [ "if" maybe_expr ] [ ( raises | handle ) ]
-                      | expression [ "if" maybe_expr ] [ ( raises | handle ) ]
-    raises           ::= "raises" "[" id { "," id } "]"
-    handle           ::= "handle" "when" newline when-cases
+    expr-or-stmt     ::= statement | expression
     statement        ::= ( "print" | "println" ) expression 
                       | statement [ ( raises | handle ) ]
                       | control-flow-stmt
@@ -67,6 +48,11 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     function-call    ::= expression [ "::" expression ] ( expression | "(" [ expression { "," expression} ] ")" )
     method-call      ::= expression "." ( expression | "(" [ expression { "," expression} ] ")" ) [ "?" ]
                     
+    conditions       ::= "when" newline indent { condition } dedent
+    condition        ::= expression "else" expression
+    raises           ::= "raises" generics
+    handle           ::= "handle" "when" newline when-cases
+    
     collection       ::= tuple | set | list | map
     tuple            ::= "(" zero-or-more-expr ")"
     set              ::= "{" zero-or-more-expr "}" | set-builder
@@ -79,7 +65,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     reassignment     ::= expression "<-" expression
     
-    definition       ::= "def" ( [ "private" ] ( variable-def | fun-def ) | operator-def )
+    definition       ::= "def" ( [ "private" ] ( variable-def | fun-def ) | operator-def | constructor )
     variable-def     ::= [ "mut" ] id-maybe-type [ "<-" expression [ ( "when" newline conditions | forward ) ] ]
     operator-def     ::= overridable-op [ "(" [ id-and-type ] ")" ] ":" type [ "->" expression ]
     fun-def          ::= id "(" [ fun-args ] ")" ":" type [ raises ] [ "->" expression ]
@@ -87,9 +73,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     fun-arg          ::= [ "vararg" ] id-and-type
     forward          ::= "forward" id { "," id }
 
-    conditions       ::= indent { condition } dedent
-    condition        ::= expression "else" expression
-
+    constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]
+    constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
+    constructor-arg  ::= [ ( "vararg" | "def" ) ] id-and-type
+    
     operation        ::= relation | relation ( equality | instance-eq | binary-logic ) relation
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
@@ -102,7 +89,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    instance-eq      ::= "is" | "isnt" | "isa" | "in"
+    instance-eq      ::= "is" | "isnt" | "isa" | "isnta" | "in"
     equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"

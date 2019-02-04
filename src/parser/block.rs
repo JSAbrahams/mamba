@@ -8,59 +8,29 @@ use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
 
-pub fn parse_block_no_indent(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-
-    let mut stmts = Vec::new();
-    let mut en_line = st_line;
-    let mut en_pos = st_pos;
-
-    loop {
-        match it.peek() {
-            None => break,
-            Some(TokenPos { token: Token::NL, .. }) => {
-                it.next();
-                continue;
-            }
-
-            _ => {
-                let ast_node: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
-                en_line = ast_node.en_line;
-                en_pos = ast_node.en_pos;
-
-                stmts.push(ast_node);
-            }
+pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let mut stmts: Vec<ASTNodePos> = Vec::new();
+    while let Some(&t) = it.peek() {
+        match t.token {
+            Token::Dedent => break,
+            Token::NL => { it.next(); }
+            _ => stmts.push(get_or_err_direct!(it, parse_expr_or_stmt, "block"))
         }
     }
 
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements: stmts } });
+    return Ok(stmts);
 }
 
 pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Indent);
 
-    let mut statements = Vec::new();
-    let mut en_line = st_line;
-    let mut en_pos = st_pos;
+    let mut statements: Vec<ASTNodePos> = get_or_err_direct!(it, parse_statements, "block");
+    let (en_line, en_pos) = match statements.last() {
+        Some(stmt) => (stmt.en_line, stmt.en_pos),
+        None => (st_line, st_pos)
+    };
 
-    loop {
-        match it.peek() {
-            Some(TokenPos { token: Token::NL, .. }) => { it.next(); }
-            None | Some(TokenPos { token: Token::Dedent, .. }) => {
-                it.next();
-                break;
-            }
-
-            _ => {
-                let statement: ASTNodePos = get_or_err_direct!(it, parse_expr_or_stmt, "block");
-                en_line = statement.en_line;
-                en_pos = statement.en_pos;
-
-                statements.push(statement);
-            }
-        }
-    }
-
+    check_next_is!(it, Token::Dedent);
     return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } });
 }

@@ -57,8 +57,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         current_indent = this_line_indent;
         consecutive_newlines = 0;
         last_is_newline = false;
-    }}
-    };
+    }}};
 
     macro_rules! next_line_and_tp { () => {{
         it.next();
@@ -92,13 +91,13 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                     _ => next_pos_and_tp!(1, Token::DoublePoint),
                 }
             }
+            '_' => next_pos_and_tp!(1, Token::Underscore),
             ',' => next_pos_and_tp!(1, Token::Comma),
             '(' => next_pos_and_tp!(1, Token::LRBrack),
             ')' => next_pos_and_tp!(1, Token::RRBrack),
             '[' => next_pos_and_tp!(1, Token::LSBrack),
             ']' => next_pos_and_tp!(1, Token::RSBrack),
             '{' => next_pos_and_tp!(1, Token::LCBrack),
-
             '}' => next_pos_and_tp!(1, Token::RCBrack),
             '?' => match it.peek() {
                 Some('o') => {
@@ -262,6 +261,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "forward" => Token::Forward,
         "self" => Token::_Self,
         "vararg" => Token::Vararg,
+        "init" => Token::Init,
 
         "def" => Token::Def,
         "ofmut" => Token::OfMut,
@@ -271,6 +271,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "not" => Token::Not,
         "is" => Token::Is,
         "isnt" => Token::IsN,
+        "isnta" => Token::IsNA,
         "eq" => Token::Eq,
         "neq" => Token::Neq,
         "mod" => Token::Mod,
