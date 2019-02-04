@@ -25,14 +25,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
         
     constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]
     constructor-args ::= "(" [ constructor-arg { "," constructor-arg } ] ")"
-    constructor-arg  ::= id-and-type | "vararg" id-and-type
+    constructor-arg  ::= [ ( "vararg" | "def" ) ] id-and-type
     
-    id               ::= [ "self" ] ( letter | "_" ) { ( letter | number | "_" ) }
+    id               ::= ( letter | "_" ) { ( letter | number | "_" ) }
     type             ::= id | type-tuple [ "->" type ]
     type-tuple       ::= "(" [ id-maybe-type { "," id-maybe-type } ] ")" 
-    type-def         ::= "type" id "<-" type [ post-when ]
-    id-maybe-type    ::= ( id | type-tuple ) [ ":" type ]
-    id-and-type      ::= ( id | type-tuple ) ":" type
+    type-def         ::= "type" id "isa" type [ post-when ]
+    id-maybe-type    ::= id [ ":" type ]
+    id-and-type      ::= id ":" type
     
     block            ::= indent { expr-or-stmt { newline } } dedent
     block-no-inent   ::= { expr-or-stmt { newline } }
@@ -103,7 +103,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     additive         ::= "+" | "-"
     multiplicative   ::= "*" | "/"
     power            ::= "^" | "mod"
-    instance-eq      ::= "is" | "isnt" | "isa" | "in"
+    instance-eq      ::= "is" | "isnt" | "isa" | "isnta" | "in"
     equality         ::= "eq" | "neq"
     comparison       ::= "<=" | ">=" | "<" | ">"
     binary-logic     ::= "and" | "or"

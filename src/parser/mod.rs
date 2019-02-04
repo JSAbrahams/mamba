@@ -138,7 +138,7 @@ pub enum ASTNode {
     },
 
     Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
-    InitArg { vararg: bool, id_and_type: Box<ASTNodePos> },
+    InitArg { vararg: bool, def: bool, id_and_type: Box<ASTNodePos> },
 
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
@@ -235,6 +235,7 @@ pub enum ASTNode {
     Eq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Neq { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     IsA { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
+    IsNA { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Not { expr: Box<ASTNodePos> },
     And { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Or { left: Box<ASTNodePos>, right: Box<ASTNodePos> },

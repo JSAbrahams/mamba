@@ -271,6 +271,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "not" => Token::Not,
         "is" => Token::Is,
         "isnt" => Token::IsN,
+        "isnta" => Token::IsNA,
         "eq" => Token::Eq,
         "neq" => Token::Neq,
         "mod" => Token::Mod,

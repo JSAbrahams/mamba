@@ -65,7 +65,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Type);
 
     let id = get_or_err!(it, parse_id, "type definition");
-    check_next_is!(it, Token::Assign);
+    check_next_is!(it, Token::IsA);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "type definition");
 
     return Ok(ASTNodePos {
@@ -116,11 +116,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
-    let id: Box<ASTNodePos> = match it.peek() {
-        Some(TokenPos { token: Token::LRBrack, .. }) =>
-            get_or_err!(it, parse_type_tuple, "id maybe type"),
-        _ => get_or_err!(it, parse_id, "id maybe type")
-    };
+    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "id maybe type");
 
     if let Some(TokenPos { token: Token::DoublePoint, .. }) = it.peek() {
         it.next();
@@ -136,11 +132,7 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_id_and_type(it: &mut TPIterator) -> ParseResult {
-    let id: Box<ASTNodePos> = match it.peek() {
-        Some(TokenPos { token: Token::LRBrack, .. }) =>
-            get_or_err!(it, parse_type_tuple, "id and type"),
-        _ => get_or_err!(it, parse_id, "id and type")
-    };
+    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "id and type");
 
     check_next_is!(it, Token::DDoublePoint);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "id and type");

@@ -14,10 +14,9 @@ pub fn parse_init(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Init);
 
-    let args: Vec<ASTNodePos> =
-        get_or_err_direct!(it, parse_constructor_args, "constructor arguments");
-
+    let args = get_or_err_direct!(it, parse_constructor_args, "constructor arguments");
     let body: Option<Box<ASTNodePos>>;
+
     if let Some(TokenPos { token: Token::Assign, .. }) = it.peek() {
         it.next();
         body = Some(get_or_err!(it, parse_expr_or_stmt, "constructor body"));
@@ -50,11 +49,12 @@ pub fn parse_constructor_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos
 pub fn parse_constructor_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let vararg;
-    if let Some(TokenPos { token: Token::Vararg, .. }) = it.peek() {
-        it.next();
-        vararg = true;
-    } else { vararg = false; }
+    let (vararg, def) = match it.peek() {
+        Some(TokenPos { token: Token::Vararg, .. }) => (true, false),
+        Some(TokenPos { token: Token::Def, .. }) => (false, true),
+        Some(_) => (false, false),
+        None => return Err(CustomEOFErr { expected: String::from("constructor arg") })
+    };
 
     let id_and_type = get_or_err!(it, parse_id_and_type, "constructor argument");
 
@@ -63,6 +63,6 @@ pub fn parse_constructor_arg(it: &mut TPIterator) -> ParseResult {
         st_pos,
         en_line: id_and_type.en_line,
         en_pos: id_and_type.en_pos,
-        node: ASTNode::InitArg { vararg, id_and_type },
+        node: ASTNode::InitArg { vararg, def, id_and_type },
     });
 }
