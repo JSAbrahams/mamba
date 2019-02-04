@@ -7,6 +7,8 @@ use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::definition::parse_reassignment;
 use crate::parser::end_pos;
+use crate::parser::expr_or_stmt::parse_handle;
+use crate::parser::expr_or_stmt::parse_raise;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -95,6 +97,9 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::RangeIncl { from: Box::from(pre), to },
                 })
             }
+            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre,it),
+            Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
+
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
 
             // normal method or function call
@@ -117,7 +122,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::Add, .. }) | Some(TokenPos { token: Token::Sub, .. }) |
             Some(TokenPos { token: Token::Not, .. }) => parse_call(pre, it),
 
-            Some(_) | None => Ok(pre)
+            _ => Ok(pre)
         }
 
         err => err

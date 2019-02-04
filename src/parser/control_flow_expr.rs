@@ -57,43 +57,32 @@ fn parse_when(it: &mut TPIterator) -> ParseResult {
 
     let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "when expression");
     check_next_is!(it, Token::NL);
-    let cases: Box<ASTNodePos> = get_or_err!(it, parse_when_cases, "when cases");
+    let cases: Vec<ASTNodePos> = get_or_err_direct!(it, parse_when_cases, "when cases");
 
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: cases.en_line,
-        en_pos: cases.en_pos,
-        node: ASTNode::When { cond, cases },
-    });
+    let (en_line, en_pos) = match cases.last() {
+        Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
+        None => (cond.en_line, cond.en_pos)
+    };
+    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::When { cond, cases } });
 }
 
-pub fn parse_when_cases(it: &mut TPIterator) -> ParseResult {
+pub fn parse_when_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Indent);
 
     let mut cases = Vec::new();
-    let mut en_line = st_line;
-    let mut en_pos = st_pos;
-
-    loop {
-        match it.peek() {
-            Some(TokenPos { token: Token::NL, .. }) => { it.next(); }
-            None | Some(TokenPos { token: Token::Dedent, .. }) => {
+    while let Some(&t) = it.peek() {
+        match t.token {
+            Token::NL => { it.next(); }
+            Token::Dedent => {
                 it.next();
                 break;
             }
-            _ => {
-                let when_case: ASTNodePos = get_or_err_direct!(it, parse_when_case, "when case");
-                en_line = when_case.en_line;
-                en_pos = when_case.en_pos;
-
-                cases.push(when_case);
-            }
+            _ => cases.push(get_or_err_direct!(it, parse_when_case, "when case"))
         }
     }
 
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::WhenCases { cases } });
+    return Ok(cases);
 }
 
 fn parse_when_case(it: &mut TPIterator) -> ParseResult {

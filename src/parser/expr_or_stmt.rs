@@ -1,5 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
+use crate::parser::_type::parse_generics;
 use crate::parser::_type::parse_id;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
@@ -19,7 +20,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     }
 
     let (st_line, st_pos) = start_pos(it);
-    let expr_or_stmt: Box<ASTNodePos> = match it.peek() {
+    return match it.peek() {
         Some(TokenPos { token: Token::Def, .. }) |
         Some(TokenPos { token: Token::Mut, .. }) |
         Some(TokenPos { token: Token::Print, .. }) |
@@ -27,64 +28,36 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::For, .. }) |
         Some(TokenPos { token: Token::While, .. }) |
         Some(TokenPos { token: Token::Retry, .. }) |
-        Some(TokenPos { token: Token::Type, .. }) =>
-            get_or_err!(it, parse_statement, "expression or statement"),
-        _ => get_or_err!(it, parse_expression, "expression or statement")
-    };
+        Some(TokenPos { token: Token::Type, .. }) => parse_statement(it),
+        _ => parse_expression(it)
+    }
+}
 
-    return match it.peek() {
-        Some(TokenPos { token: Token::Raises, .. }) => {
-            it.next();
-            check_next_is!(it, Token::LSBrack);
+pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
+    check_next_is!(it, Token::Raises);
 
-            let mut errors: Vec<ASTNodePos> = Vec::new();
-            loop {
-                match it.next() {
-                    Some(TokenPos { token: Token::Comma, .. }) => {
-                        it.next();
-                        errors.push(get_or_err_direct!(it, parse_id, "raises"))
-                    }
-                    Some(TokenPos { token: Token::RSBrack, .. }) => break,
-                    Some(tp) =>
-                        return Err(TokenErr { expected: Token::RSBrack, actual: tp.clone() }),
-                    None => return Err(EOFErr { expected: Token::RSBrack })
-                }
-            }
+    let errors: Vec<ASTNodePos> = get_or_err_direct!(it, parse_generics, "raises");
+    return Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line: 0,
+        en_pos: 0,
+        node: ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors },
+    });
+}
 
-            return Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: 0,
-                en_pos: 0,
-                node: ASTNode::Raises { expr_or_stmt, errors },
-            });
-        }
-        Some(TokenPos { token: Token::Handle, .. }) => {
-            it.next();
-            check_next_is!(it, Token::When);
+pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
+    check_next_is!(it, Token::Handle);
+    check_next_is!(it, Token::When);
 
-            let cases = get_or_err!(it, parse_when_cases, "handle cases");
-            return Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: 0,
-                en_pos: 0,
-                node: ASTNode::Handle { expr_or_stmt, cases },
-            });
-        }
-        Some(TokenPos { token: Token::If, .. }) => {
-            it.next();
-            let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "postfix if");
-            while let Some(TokenPos { token: Token::NL, .. }) = it.peek() { it.next(); }
-
-            Ok(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line: cond.en_line,
-                en_pos: cond.en_pos,
-                node: ASTNode::If { cond, then: expr_or_stmt },
-            })
-        }
-        _ => Ok(*expr_or_stmt)
-    };
+    let cases = get_or_err_direct!(it, parse_when_cases, "handle cases");
+    return Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line: 0,
+        en_pos: 0,
+        node: ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases },
+    });
 }

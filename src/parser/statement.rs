@@ -6,6 +6,8 @@ use crate::parser::ASTNodePos;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::definition::parse_definition;
 use crate::parser::end_pos;
+use crate::parser::expr_or_stmt::parse_handle;
+use crate::parser::expr_or_stmt::parse_raise;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -15,7 +17,7 @@ use crate::parser::TPIterator;
 pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    return match it.peek() {
+    return match match it.peek() {
         Some(TokenPos { token: Token::Print, .. }) => {
             it.next();
             let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "print");
@@ -52,5 +54,12 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
 
         Some(&next) => Err(CustomErr { expected: "statement".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "statement".to_string() })
+    } {
+        Ok(pre) => match it.peek() {
+            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),
+            Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
+            _ => Ok(pre)
+        }
+        err => err
     };
 }

@@ -167,18 +167,20 @@ pub enum ASTNode {
     AnonFun { args: Box<ASTNodePos>, body: Box<ASTNodePos> },
 
     Raises { expr_or_stmt: Box<ASTNodePos>, errors: Vec<ASTNodePos> },
-    Handle { expr_or_stmt: Box<ASTNodePos>, cases: Box<ASTNodePos> },
+    Handle { expr_or_stmt: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     Retry,
 
     FunCall { namespace: Option<Box<ASTNodePos>>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
     MethodCall { object: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
 
-    Id { _self: bool, lit: String, _type: Option<Box<ASTNodePos>> },
+    Id { lit: String },
+
+    TypeId { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
+    Type { id: Box<ASTNodePos>, generics: Option<Vec<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
-    IdMaybeType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
-    IdAndType { id: Box<ASTNodePos>, _type: Box<ASTNodePos> },
+    Condition { condition: Box<ASTNodePos>, _else: Box<ASTNodePos> },
+    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
     FunArg { vararg: bool, id_and_type: Box<ASTNodePos> },
 
     _Self,
@@ -242,8 +244,7 @@ pub enum ASTNode {
 
     If { cond: Box<ASTNodePos>, then: Box<ASTNodePos> },
     IfElse { cond: Box<ASTNodePos>, then: Box<ASTNodePos>, _else: Box<ASTNodePos> },
-    When { cond: Box<ASTNodePos>, cases: Box<ASTNodePos> },
-    WhenCases { cases: Vec<ASTNodePos> },
+    When { cond: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     For { expr: Box<ASTNodePos>, collection: Box<ASTNodePos>, body: Box<ASTNodePos> },
     While { cond: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Break,
