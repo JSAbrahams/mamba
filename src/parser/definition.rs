@@ -2,6 +2,7 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_generics;
+use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ASTNode;
@@ -160,6 +161,24 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
     });
 }
 
+pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let (st_line, st_pos) = start_pos(it);
+    check_next_is!(it, Token::Forward);
+
+    let mut forwarded: Vec<ASTNodePos> = Vec::new();
+    while let Some(&t) = it.peek() {
+        match t.token {
+            Token::NL => break,
+            _ => {
+                forwarded.push(get_or_err_direct!(it, parse_id, "forward"));
+                if it.peek().is_some() && it.peek().unwrap().token == Token::Comma { it.next(); }
+            }
+        };
+    }
+
+    return Ok(forwarded);
+}
+
 fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> ParseResult {
     let expression: Option<Box<ASTNodePos>>;
     if let Some(TokenPos { token: Token::Assign, .. }) = it.peek() {
@@ -167,17 +186,10 @@ fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> 
         expression = Some(get_or_err!(it, parse_expression, "definition expression"));
     } else { expression = None }
 
-    let (when, forward) = match it.peek() {
-        Some(TokenPos { token: Token::When, .. }) => {
-            it.next();
-            check_next_is!(it, Token::NL);
-            (Some(get_or_err_direct!(it, parse_conditions, "definition when")), None)
-        }
-        Some(TokenPos { token: Token::Raises, .. }) => {
-            it.next();
-            (None, Some(get_or_err_direct!(it, parse_generics, "definition raises")))
-        }
-        _ => (None, None)
+    let forward: Option<Vec<ASTNodePos>> = match it.peek() {
+        Some(TokenPos { token: Token::Forward, .. }) =>
+            Some(get_or_err_direct!(it, parse_forward, "definition raises")),
+        _ => None
     };
 
     let (en_line, en_pos) = match &expression {
@@ -194,7 +206,6 @@ fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> 
             mutable,
             id_maybe_type: Box::from(id),
             expression,
-            when,
             forward,
         },
     });

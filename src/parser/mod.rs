@@ -138,7 +138,6 @@ pub enum ASTNode {
         mutable: bool,
         id_maybe_type: Box<ASTNodePos>,
         expression: Option<Box<ASTNodePos>>,
-        when: Option<Vec<ASTNodePos>>,
         forward: Option<Vec<ASTNodePos>>,
     },
     FunDef {
