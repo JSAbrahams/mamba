@@ -13,9 +13,6 @@ fn parse_assigns_and_while() {
 #[test]
 fn parse_class() {
     let source = valid_resource("class.txt");
-    for token in tokenize(source.clone()).unwrap() {
-        println!("{:?}", token);
-    }
     assert_ok!(parse(tokenize(source).unwrap()));
 }
 

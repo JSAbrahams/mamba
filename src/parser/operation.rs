@@ -37,7 +37,6 @@ pub fn parse_operation(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::And, .. }) => bin_op!(parse_operation, And, "and"),
         Some(TokenPos { token: Token::Or, .. }) => bin_op!(parse_operation, Or, "or"),
         Some(TokenPos { token: Token::IsA, .. }) => bin_op!(parse_operation, IsA, "is a"),
-        Some(TokenPos { token: Token::In, .. }) => bin_op!(parse_operation, In, "in"),
         _ => Ok(*relation)
     };
 }

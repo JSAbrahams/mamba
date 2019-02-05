@@ -209,7 +209,6 @@ pub enum ASTNode {
     Div { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Mod { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Pow { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    In { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Sqrt { expr: Box<ASTNodePos> },
 
     Le { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
