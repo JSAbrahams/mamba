@@ -1,6 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::_type::parse_id_and_type;
+use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::end_pos;
@@ -56,13 +56,12 @@ pub fn parse_constructor_arg(it: &mut TPIterator) -> ParseResult {
         None => return Err(CustomEOFErr { expected: String::from("constructor arg") })
     };
 
-    let id_and_type = get_or_err!(it, parse_id_and_type, "constructor argument");
-
+    let id_maybe_type = get_or_err!(it, parse_id_maybe_type, "constructor argument");
     return Ok(ASTNodePos {
         st_line,
         st_pos,
-        en_line: id_and_type.en_line,
-        en_pos: id_and_type.en_pos,
-        node: ASTNode::InitArg { vararg, def, id_and_type },
+        en_line: id_maybe_type.en_line,
+        en_pos: id_maybe_type.en_pos,
+        node: ASTNode::InitArg { vararg, def, id_maybe_type },
     });
 }

@@ -12,83 +12,60 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();
 
-    let mut current_indent = 0;
-    let mut this_line_indent = 0;
-    let mut consecutive_spaces = 0;
-    let mut last_is_newline = true;
-    let mut consecutive_newlines = 0;
+    let mut cur_ind = 0;
+    let mut line_ind = 0;
+    let mut cons_spaces = 0;
+    let mut last_nl = true;
+    let mut cons_nl = 0;
 
     let mut line = 1;
     let mut pos = 1;
 
     macro_rules! next_pos_and_tp {
-    ($amount:expr, $tok:path) => {{
-        for _ in current_indent..this_line_indent {
-            tokens.push(TokenPos { line, pos, token: Token::Indent });
-        }
-        for _ in this_line_indent..current_indent {
-            tokens.push(TokenPos { line, pos, token: Token::Dedent });
-        }
-        for _ in 1..consecutive_newlines {
-            tokens.push(TokenPos { line, pos, token: Token::NL });
-        }
+        ($amount:expr, $tok:path) => {{ next_pos!($amount, $tok); it.next(); }};
+        ($fun:path) => {{ next_pos!($fun); it.next(); }};
+    };
 
-        it.next();
-        tokens.push(TokenPos { line, pos, token: $tok });
+    macro_rules! indentation { () => {{
+        for _ in cur_ind..line_ind { tokens.push(TokenPos { line, pos, token: Token::Indent }); }
+        for _ in line_ind..cur_ind { tokens.push(TokenPos { line, pos, token: Token::Dedent }); }
+        for _ in 1..cons_nl { tokens.push(TokenPos { line, pos, token: Token::NL });  }
+        cur_ind = line_ind;
+        cons_nl = 0;
+        last_nl = false;
+    }}}
+
+    macro_rules! next_pos {($amount:expr, $tok:path) => {{
+        indentation!();
         pos += $amount;
-
-        current_indent = this_line_indent;
-        consecutive_newlines = 0;
-        last_is_newline = false;
+        tokens.push(TokenPos { line, pos, token: $tok });
     }};
     ($fun:path) => {{
-        for _ in current_indent..this_line_indent {
-            tokens.push(TokenPos { line, pos, token: Token::Indent });
-        }
-        for _ in this_line_indent..current_indent {
-            tokens.push(TokenPos { line, pos, token: Token::Dedent });
-        }
-        for _ in 1..consecutive_newlines {
-            tokens.push(TokenPos { line, pos, token: Token::NL });
-        }
-
+        indentation!();
         tokens.push(TokenPos { line, pos, token: $fun(&mut it, &mut pos) });
-
-        current_indent = this_line_indent;
-        consecutive_newlines = 0;
-        last_is_newline = false;
     }}};
 
     macro_rules! next_line_and_tp { () => {{
-        it.next();
-        consecutive_newlines += 1;
+        cons_nl += 1;
         line += 1;
         pos = 1;
 
-        if !last_is_newline {
-            current_indent = this_line_indent;
-            tokens.push(TokenPos { line, pos, token: Token::NL });
-        }
-
-        this_line_indent = 0;
-        last_is_newline = true;
+        if !last_nl { cur_ind = line_ind; tokens.push(TokenPos { line, pos, token: Token::NL }); }
+        line_ind = 0;
+        last_nl = true;
+        it.next();
     }}};
 
-    macro_rules! increase_indent { () => {{
-        pos += 4;
-        this_line_indent += 1;
-    }}};
+    macro_rules! increase_indent { () => {{ pos += 4; line_ind += 1; }}};
 
     while let Some(&c) = it.peek() {
         match c {
             '.' => next_pos_and_tp!(1, Token::Point),
             ':' => {
+                it.next();
                 match it.peek() {
-                    Some(':') => {
-                        it.next();
-                        next_pos_and_tp!(2, Token::DDoublePoint)
-                    }
-                    _ => next_pos_and_tp!(1, Token::DoublePoint),
+                    Some(':') => next_pos_and_tp!(2, Token::DDoublePoint),
+                    _ => next_pos!(1, Token::DoublePoint),
                 }
             }
             '_' => next_pos_and_tp!(1, Token::Underscore),
@@ -99,19 +76,20 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             ']' => next_pos_and_tp!(1, Token::RSBrack),
             '{' => next_pos_and_tp!(1, Token::LCBrack),
             '}' => next_pos_and_tp!(1, Token::RCBrack),
-            '?' => match it.peek() {
-                Some('o') => {
-                    it.next();
-                    match it.next() {
-                        Some('r') => next_pos_and_tp!(3, Token::QuestOr),
-                        Some(other) =>
-                            return Err(format!("Expected `?or`. Was '{}'.", other)),
-                        None => return Err("Expected `?or`.".to_string())
+            '?' => {
+                it.next();
+                match it.peek() {
+                    Some('o') => {
+                        it.next();
+                        match it.peek() {
+                            Some('r') => next_pos_and_tp!(3, Token::QuestOr),
+                            Some(other) => return Err(format!("Expected `?or`. Was '{}'.", other)),
+                            None => return Err("Expected `?or`.".to_string())
+                        }
                     }
+                    _ => next_pos!(1, Token::Quest)
                 }
-                _ => next_pos_and_tp!(1, Token::Quest)
             }
-
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
             '\r' => {
@@ -124,16 +102,16 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 }
             }
             '\t' => increase_indent!(),
-            '<' | '>' | '+' | '-' | '*' | '/' | '^' => next_pos_and_tp!(get_operator),
-            '0'...'9' => next_pos_and_tp!(get_number),
-            '"' => next_pos_and_tp!(get_string),
-            'a'...'z' | 'A'...'Z' => next_pos_and_tp!(get_id_or_op),
+            '<' | '>' | '+' | '-' | '*' | '/' | '^' => next_pos!(get_operator),
+            '0'...'9' => next_pos!(get_number),
+            '"' => next_pos!(get_string),
+            'a'...'z' | 'A'...'Z' => next_pos!(get_id_or_op),
             '#' => ignore_comment(&mut it),
             ' ' => {
                 pos += 1;
-                consecutive_spaces += 1;
-                if consecutive_spaces == 4 {
-                    consecutive_spaces = 0;
+                cons_spaces += 1;
+                if cons_spaces == 4 {
+                    cons_spaces = 0;
                     increase_indent!();
                     pos -= 4;
                 }
@@ -143,7 +121,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             c => return Err(format!("Unrecognized character: '{}'.", c)),
         }
 
-        consecutive_spaces = 0;
+        cons_spaces = 0;
     }
 
     return Ok(tokens);
@@ -303,7 +281,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "println" => Token::PrintLn,
 
         "undefined" => Token::Undefined,
-        
+
         _ => Token::Id(result)
     };
 }

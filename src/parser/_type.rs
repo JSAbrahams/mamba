@@ -11,11 +11,11 @@ use crate::parser::TPIterator;
 
 pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    let _self;
     if let Some(TokenPos { token: Token::_Self, .. }) = it.peek() {
+        let (en_line, en_pos) = start_pos(it);
         it.next();
-        _self = true;
-    } else { _self = false; }
+        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::_Self });
+    }
 
     let (en_line, en_pos) = end_pos(it);
     match it.next() {
@@ -199,20 +199,5 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
         en_line,
         en_pos,
         node: ASTNode::TypeId { id, _type },
-    });
-}
-
-pub fn parse_id_and_type(it: &mut TPIterator) -> ParseResult {
-    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "id and type");
-
-    check_next_is!(it, Token::DDoublePoint);
-    let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "id and type");
-
-    return Ok(ASTNodePos {
-        st_line: id.st_line,
-        st_pos: id.st_pos,
-        en_line: _type.en_line,
-        en_pos: _type.en_pos,
-        node: ASTNode::TypeId { id, _type: Some(_type) },
     });
 }

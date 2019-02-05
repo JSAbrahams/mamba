@@ -46,7 +46,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     };
 
     // end pos will be of id if useall is used
-    let (en_line, en_pos) = match (_use.last(), _as) {
+    let (en_line, en_pos) = match (&_use.last(), &_as) {
         (_, Some(def)) => (def.en_line, def.en_pos),
         (Some(def), _) => (def.en_line, def.en_pos),
         (_, _) => (id.en_line, id.en_pos)
