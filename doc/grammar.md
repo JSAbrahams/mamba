@@ -4,7 +4,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 
     import           ::= "from" id [ ( "use" { id { "," id } | "useall" ) ] [ "as" id ]
     class-body       ::= id [ "[" id_maybe_type { "," id_maybe_type } "]" ] [ "isa" id { "," id } ] newline { newline }
-                         { definition newline { newline } }
+                         indent { definition newline { newline } } dedent
     util             ::= "util" class-body
     class            ::= "class" class-body
     script           ::= statements

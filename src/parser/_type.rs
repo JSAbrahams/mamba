@@ -115,7 +115,7 @@ pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         }
     }
 
-    check_next_is!(it, Token::Dedent);
+    if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
     return Ok(conditions);
 }
 

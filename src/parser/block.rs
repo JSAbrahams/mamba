@@ -30,6 +30,6 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
         None => (st_line, st_pos)
     };
 
-    check_next_is!(it, Token::Dedent);
+    if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
     return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } });
 }

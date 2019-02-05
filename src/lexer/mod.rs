@@ -226,8 +226,9 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
     return match result.as_ref() {
         "from" => Token::From,
-        "util.md" => Token::Util,
         "type" => Token::Type,
+        "class" => Token::Class,
+        "util" => Token::Util,
         "as" => Token::As,
         "isa" => Token::IsA,
         "constructor" => Token::Constructor,
@@ -235,7 +236,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
         "use" => Token::Use,
         "useall" => Token::UseAll,
-        "class" => Token::Class,
         "forward" => Token::Forward,
         "self" => Token::_Self,
         "vararg" => Token::Vararg,

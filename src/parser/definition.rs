@@ -1,12 +1,12 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_generics;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
+use crate::parser::constructor::parse_init;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
@@ -45,6 +45,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
 
     let definition: ParseResult = match it.peek() {
         Some(TokenPos { token: Token::Mut, .. }) => parse_variable_def(it),
+        Some(TokenPos { token: Token::Init, .. }) => parse_init(it),
 
         Some(TokenPos { token: Token::Add, .. }) => op!(AddOp),
         Some(TokenPos { token: Token::Sub, .. }) => op!(SubOp),

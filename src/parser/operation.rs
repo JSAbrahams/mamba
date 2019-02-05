@@ -137,18 +137,16 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                 Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
                 Some(TokenPos { token: Token::Bool(ref _bool), .. }) => literal!(*_bool, Bool),
                 Some(TokenPos { token: Token::Str(str), .. }) => literal!(str.to_string(), Str),
-                Some(TokenPos { token: Token::ENum(num, exp), .. }) =>
+                Some(TokenPos { token: Token::ENum(num, exp), .. }) => {
+                    it.next();
                     Ok(ASTNodePos {
                         st_line,
                         st_pos,
                         en_line,
                         en_pos,
-                        node: ASTNode::ENum {
-                            num: num.to_string(),
-                            exp: exp.to_string(),
-                        },
-                    }),
-
+                        node: ASTNode::ENum { num: num.to_string(), exp: exp.to_string() },
+                    })
+                },
                 Some(_) => parse_expression(it),
                 None => Err(CustomEOFErr { expected: "factor".to_string() })
             };

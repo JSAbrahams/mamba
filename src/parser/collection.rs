@@ -113,7 +113,6 @@ fn parse_set_or_map(it: &mut TPIterator) -> ParseResult {
 fn parse_key_value(key: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::To);
     let value = get_or_err!(it, parse_expression, "value");
-
     return Ok(ASTNodePos {
         st_line: key.st_line,
         st_pos: key.st_pos,
@@ -161,16 +160,12 @@ pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Ve
     let mut expressions = Vec::new();
     let mut pos = 0;
 
-    while let Some(t) = it.peek() {
-        match *t {
-            TokenPos { token: Token::RRBrack, .. } | TokenPos { token: Token::RSBrack, .. } |
-            TokenPos { token: Token::RCBrack, .. } | TokenPos { token: Token::NL, .. } => break,
-            TokenPos { token: Token::Comma, .. } => { it.next(); }
-            tp => {
-                let expression: ASTNodePos = get_or_err_direct!(it, parse_expression,
-                                             String::from(msg) + " (pos "+ &pos.to_string() + ")");
-                expressions.push(expression);
-            }
+    while let Some(&t) = it.peek() {
+        match t.token {
+            Token::RRBrack | Token::RSBrack | Token::RCBrack | Token::NL => break,
+            Token::Comma => { it.next(); }
+            _ => expressions.push(get_or_err_direct!(it, parse_expression,
+                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"))
         }
         pos += 1;
     }
@@ -183,12 +178,11 @@ fn parse_zero_or_more_key_value(it: &mut TPIterator, msg: &str) -> ParseResult<V
     let mut expressions = Vec::new();
     let mut pos = 0;
 
-    while let Some(t) = it.peek() {
-        match *t {
-            TokenPos { token: Token::RRBrack, .. } | TokenPos { token: Token::RSBrack, .. } |
-            TokenPos { token: Token::RCBrack, .. } => break,
-            TokenPos { token: Token::Comma, .. } => { it.next(); }
-            tp => {
+    while let Some(&t) = it.peek() {
+        match t.token {
+            Token::RRBrack | Token::RSBrack | Token::RCBrack => break,
+            Token::Comma => { it.next(); }
+            _ => {
                 let key = get_or_err!(it, parse_expression,
                                       String::from(msg) + " (pos "+ &pos.to_string() + ")");
                 check_next_is!(it, Token::To);

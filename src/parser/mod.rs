@@ -245,5 +245,5 @@ pub enum ASTNode {
 }
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {
-    return file::parse_module(&mut input.iter().peekable());
+    return file::parse_file(&mut input.iter().peekable());
 }
