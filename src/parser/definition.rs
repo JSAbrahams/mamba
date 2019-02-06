@@ -16,21 +16,6 @@ use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
 
-pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-
-    check_next_is!(it, Token::Assign);
-    let right: Box<ASTNodePos> = get_or_err!(it, parse_expression, "reassignment");
-
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: right.en_line,
-        en_pos: right.en_pos,
-        node: ASTNode::ReAssign { left: Box::new(pre), right },
-    });
-}
-
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Def);

@@ -60,7 +60,19 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
 
     while let Some(&c) = it.peek() {
         match c {
-            '.' => next_pos_and_tp!(1, Token::Point),
+            '.' => {
+                it.next();
+                match it.peek() {
+                    Some('.') => {
+                        it.next();
+                        match it.peek() {
+                            Some('=') => next_pos_and_tp!(3, Token::RangeIncl),
+                            _ => next_pos!(2, Token::Range)
+                        }
+                    }
+                    _ => next_pos!(1, Token::Point)
+                }
+            }
             ':' => {
                 it.next();
                 match it.peek() {
@@ -268,8 +280,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "return" => Token::Ret,
 
         "in" => Token::In,
-        "to" => Token::Range,
-        "toincl" => Token::RangeIncl,
 
         "raises" => Token::Raises,
         "handle" => Token::Handle,

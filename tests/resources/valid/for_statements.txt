@@ -10,3 +10,9 @@ foreach d in e do
 foreach aa in bb do
     print cc
     print dd
+
+foreach i in ty .. 34 do
+    print asdf
+
+foreach i in ty2 ..= 345 do
+    print asdfg

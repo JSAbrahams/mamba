@@ -9,3 +9,7 @@ namespace_3::fun_f 12345
 object_1.fun_g()
 object_2.var
 object_3.fun_h a
+
+object_4 postfix_fun()
+object_5 p_fun_1(a)
+object_6 p_fun_2 b

@@ -2,10 +2,11 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
-use crate::parser::call::parse_call;
+use crate::parser::call::parse_anon_fun;
+use crate::parser::call::parse_function_call;
+use crate::parser::call::parse_reassignment;
 use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
-use crate::parser::definition::parse_reassignment;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_handle;
 use crate::parser::expr_or_stmt::parse_raise;
@@ -49,17 +50,6 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     } {
         Ok(pre) => match it.peek() {
-            Some(TokenPos { token: Token::To, .. }) => {
-                it.next();
-                let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function");
-                Ok(ASTNodePos {
-                    st_line,
-                    st_pos,
-                    en_line: body.en_line,
-                    en_pos: body.en_pos,
-                    node: ASTNode::AnonFun { args: Box::new(pre), body },
-                })
-            }
             Some(TokenPos { token: Token::QuestOr, .. }) => {
                 it.next();
                 let _default: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
@@ -93,6 +83,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::RangeIncl { from: Box::from(pre), to },
                 })
             }
+            Some(TokenPos { token: Token::To, .. }) => parse_anon_fun(pre, it),
             Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),
             Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
 
@@ -103,7 +94,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::DDoublePoint, .. }) |
             Some(TokenPos { token: Token::Point, .. }) |
 
-            // postfix function call
+            // postfix method or function call
             Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) |
             Some(TokenPos { token: Token::LSBrack, .. }) |
             Some(TokenPos { token: Token::LCBrack, .. }) |
@@ -116,7 +107,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::Bool(_), .. }) |
             Some(TokenPos { token: Token::Not, .. }) |
             Some(TokenPos { token: Token::Add, .. }) | Some(TokenPos { token: Token::Sub, .. }) |
-            Some(TokenPos { token: Token::Not, .. }) => parse_call(pre, it),
+            Some(TokenPos { token: Token::Not, .. }) => parse_function_call(pre, it),
 
             _ => Ok(pre)
         }

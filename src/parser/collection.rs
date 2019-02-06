@@ -72,18 +72,6 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
     };
 }
 
-fn parse_key_value(key: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::To);
-    let value = get_or_err!(it, parse_expression, "value");
-    return Ok(ASTNodePos {
-        st_line: key.st_line,
-        st_pos: key.st_pos,
-        en_line: value.en_line,
-        en_pos: value.en_pos,
-        node: ASTNode::KeyValue { key: Box::from(key), value },
-    });
-}
-
 fn parse_list(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::LSBrack);
@@ -128,37 +116,6 @@ pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Ve
             Token::Comma => { it.next(); }
             _ => expressions.push(get_or_err_direct!(it, parse_expression,
                                   String::from(msg) + " (pos "+ &pos.to_string() + ")"))
-        }
-        pos += 1;
-    }
-
-    return Ok(expressions);
-}
-
-fn parse_zero_or_more_key_value(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
-    let (st_line, st_pos) = start_pos(it);
-    let mut expressions = Vec::new();
-    let mut pos = 0;
-
-    while let Some(&t) = it.peek() {
-        match t.token {
-            Token::RRBrack | Token::RSBrack | Token::RCBrack => break,
-            Token::Comma => { it.next(); }
-            _ => {
-                let key = get_or_err!(it, parse_expression,
-                                      String::from(msg) + " (pos "+ &pos.to_string() + ")");
-                check_next_is!(it, Token::To);
-                let value = get_or_err!(it, parse_expression,
-                                        String::from(msg) + " (pos "+ &pos.to_string() + ")");
-
-                expressions.push(ASTNodePos {
-                    st_line: key.st_line,
-                    st_pos: key.st_pos,
-                    en_line: value.en_line,
-                    en_pos: value.en_pos,
-                    node: ASTNode::KeyValue { key, value },
-                });
-            }
         }
         pos += 1;
     }
