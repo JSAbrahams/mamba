@@ -50,6 +50,17 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     } {
         Ok(pre) => match it.peek() {
+            Some(TokenPos { token: Token::To, .. }) => {
+                it.next();
+                let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function");
+                Ok(ASTNodePos {
+                    st_line,
+                    st_pos,
+                    en_line: body.en_line,
+                    en_pos: body.en_pos,
+                    node: ASTNode::AnonFun { args: Box::new(pre), body },
+                })
+            }
             Some(TokenPos { token: Token::QuestOr, .. }) => {
                 it.next();
                 let _default: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
@@ -83,7 +94,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::RangeIncl { from: Box::from(pre), to },
                 })
             }
-            Some(TokenPos { token: Token::To, .. }) => parse_anon_fun(pre, it),
+            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),]
             Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),
             Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
 
