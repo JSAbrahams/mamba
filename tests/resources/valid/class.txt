@@ -1,5 +1,13 @@
-from a use b as c
+from Math use abs
+
+util my_class
+    def SOME_CONSTANT <- 3.5E20
 
 class my_class
+    def private z_modified
+    def private other_field <- 10
 
-    def fun_1(d: (e,f) -> g): (h, i) -> j -> print "hello world"
+    def init(def my_field: Int, z: Int) ->
+        z_modified <- z * SOME_CONSTANT
+
+    def fun_a() -> print self

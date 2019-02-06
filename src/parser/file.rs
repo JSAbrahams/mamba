@@ -20,6 +20,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (_use, all) = match it.peek() {
         Some(TokenPos { token: Token::Use, .. }) =>
             ({
+                 it.next();
                  let mut ids: Vec<ASTNodePos> = Vec::new();
                  ids.push(get_or_err_direct!(it, parse_id, "use"));
                  while let Some(&t) = it.peek() {
@@ -46,7 +47,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     };
 
     // end pos will be of id if useall is used
-    let (en_line, en_pos) = match (_use.last(), _as) {
+    let (en_line, en_pos) = match (&_use.last(), &_as) {
         (_, Some(def)) => (def.en_line, def.en_pos),
         (Some(def), _) => (def.en_line, def.en_pos),
         (_, _) => (id.en_line, id.en_pos)
@@ -94,13 +95,16 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
     }
 
     while it.peek().is_some() && it.peek().unwrap().token == Token::NL { it.next(); }
+    if it.peek().is_some() { check_next_is!(it, Token::Indent); }
     let mut definitions = Vec::new();
     while let Some(&t) = it.peek() {
         match t.token {
-            Token::NL => continue,
+            Token::NL => { it.next(); }
+            Token::Dedent => break,
             _ => definitions.push(get_or_err_direct!(it, parse_definition, "body"))
         }
     }
+    if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
 
     let (en_line, en_pos) = match (generics.last(), isa.last(), definitions.last()) {
         (_, _, Some(def)) => (def.en_line, def.en_pos),

@@ -127,30 +127,26 @@ pub enum ASTNode {
     },
 
     Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
-    InitArg { vararg: bool, def: bool, id_and_type: Box<ASTNodePos> },
+    InitArg { vararg: bool, def: bool, id_maybe_type: Box<ASTNodePos> },
 
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },
 
     ReAssign { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    Forward { forwarded: Vec<ASTNodePos> },
     Def { private: bool, definition: Box<ASTNodePos> },
     VariableDef {
         mutable: bool,
+        ofmut: bool,
         id_maybe_type: Box<ASTNodePos>,
         expression: Option<Box<ASTNodePos>>,
+        forward: Option<Vec<ASTNodePos>>,
     },
     FunDef {
         id: Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
-        ret_ty: Box<ASTNodePos>,
+        ret_ty: Option<Box<ASTNodePos>>,
+        raises: Option<Vec<ASTNodePos>>,
         body: Option<Box<ASTNodePos>>,
-    },
-    OperatorDef {
-        op: Box<ASTNodePos>,
-        id_and_type: Option<Box<ASTNodePos>>,
-        ret_ty: Box<ASTNodePos>,
-        body: Box<ASTNodePos>,
     },
 
     AnonFun { args: Box<ASTNodePos>, body: Box<ASTNodePos> },
@@ -170,7 +166,7 @@ pub enum ASTNode {
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Condition { condition: Box<ASTNodePos>, _else: Box<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
-    FunArg { vararg: bool, id_and_type: Box<ASTNodePos> },
+    FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos> },
 
     _Self,
     AddOp,
@@ -214,7 +210,6 @@ pub enum ASTNode {
     Div { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Mod { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Pow { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    In { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Sqrt { expr: Box<ASTNodePos> },
 
     Le { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
@@ -250,5 +245,5 @@ pub enum ASTNode {
 }
 
 pub fn parse(input: Vec<TokenPos>) -> ParseResult {
-    return file::parse_module(&mut input.iter().peekable());
+    return file::parse_file(&mut input.iter().peekable());
 }
