@@ -9,7 +9,7 @@ def g ofmut <- [ 1, 2 ]
 def h <- [ 4, 9 * 9 mod 3 ]
 def i <- [ x | Person contains x ]
 
-def j <- { person to city | person in Person, city in City }
+def j <- { person to city | Persons contains person, Cities contains city }
 def k <- { happy to people, hello to "world" }
 
 def [first, second] ofmut <- [ 1, 2 ]

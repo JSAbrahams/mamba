@@ -45,42 +45,29 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
     if let Some(TokenPos { token: Token::RCBrack, .. }) = it.peek() {
         let (en_line, en_pos) = start_pos(it);
         it.next();
-        return Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line,
-            en_pos,
-            node: ASTNode::Set { elements: vec![] },
-        });
+        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::EmptySet });
     }
 
-    let head = get_or_err_direct!(it, parse_expression, "set");
+    let head = get_or_err!(it, parse_expression, "set or map");
 
     return match it.peek() {
         Some(TokenPos { token: Token::Ver, .. }) => {
             it.next();
             let conditions: Vec<ASTNodePos> = get_zero_or_more!(it, "set builder");
-            let (en_line, en_pos) = end_pos(it);
-            check_next_is!(it, Token::RCBrack);
             return Ok(ASTNodePos {
                 st_line,
                 st_pos,
-                en_line,
-                en_pos,
-                node: ASTNode::SetBuilder { items: Box::from(head), conditions },
+                en_line: 0,
+                en_pos: 0,
+                node: ASTNode::SetBuilder { items: head, conditions },
             });
         }
         _ => {
-            if let Some(&t) = it.peek() { if t.token == Token::Comma { it.next(); } }
-
-            let mut elements = vec![head];
             let tail: Vec<ASTNodePos> = get_zero_or_more!(it, "set");
-            elements.extend(tail);
-
             let (en_line, en_pos) = end_pos(it);
             check_next_is!(it, Token::RCBrack);
 
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Set { elements } })
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Set { head, tail } })
         }
     };
 }
@@ -91,17 +78,10 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
     if let Some(TokenPos { token: Token::RSBrack, .. }) = it.peek() {
         let (en_line, en_pos) = start_pos(it);
         it.next();
-        return Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line,
-            en_pos,
-            node:
-            ASTNode::List { elements: vec![] },
-        });
+        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::EmptyList });
     }
 
-    let head = get_or_err_direct!(it, parse_expression, "list");
+    let head = get_or_err!(it, parse_expression, "list");
 
     if let Some(TokenPos { token: Token::Ver, .. }) = it.peek() {
         it.next();
@@ -114,36 +94,28 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
             st_pos,
             en_line,
             en_pos,
-            node: ASTNode::ListBuilder { items: Box::from(head), conditions },
+            node: ASTNode::ListBuilder { items: head, conditions },
         });
     }
 
-    if let Some(&t) = it.peek() { if t.token == Token::Comma { it.next(); } }
-    let mut elements = vec![head];
     let tail: Vec<ASTNodePos> = get_zero_or_more!(it, "list");
-    elements.extend(tail);
-
     let (en_line, en_pos) = end_pos(it);
     check_next_is!(it, Token::RSBrack);
 
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::List { elements } });
+    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::List { head, tail } });
 }
 
 pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
+    let (st_line, st_pos) = start_pos(it);
     let mut expressions = Vec::new();
     let mut pos = 0;
 
     while let Some(&t) = it.peek() {
         match t.token {
             Token::RRBrack | Token::RSBrack | Token::RCBrack | Token::NL => break,
-            _ => {
-                expressions.push(get_or_err_direct!(it, parse_expression,
-                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"));
-                match it.peek() {
-                    Some(TokenPos { token: Token::Comma, .. }) => { it.next(); }
-                    _ => continue
-                }
-            }
+            Token::Comma => { it.next(); }
+            _ => expressions.push(get_or_err_direct!(it, parse_expression,
+                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"))
         }
         pos += 1;
     }
