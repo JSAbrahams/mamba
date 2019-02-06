@@ -6,6 +6,7 @@ use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
+use crate::parser::collection::parse_collection;
 use crate::parser::constructor::parse_init;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -37,14 +38,17 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let private = it.peek().is_some() && it.peek().unwrap().token == Token::Private;
     if private { it.next(); }
 
-    macro_rules! op{($node:ident) => {{
+    macro_rules! op {($node:ident) => {{
         let (en_line, en_pos) = end_pos(it);
         it.next();
         parse_fun_def(ASTNodePos{ st_line, st_pos, en_line, en_pos, node: ASTNode::$node }, it)
     }}};
 
     let definition: ParseResult = match it.peek() {
-        Some(TokenPos { token: Token::Mut, .. }) => parse_variable_def(it),
+        Some(TokenPos { token: Token::Mut, .. }) |
+        Some(TokenPos { token: Token::LRBrack, .. }) |
+        Some(TokenPos { token: Token::LCBrack, .. }) |
+        Some(TokenPos { token: Token::LSBrack, .. }) => parse_variable_def(it),
         Some(TokenPos { token: Token::Init, .. }) => parse_init(it),
 
         Some(TokenPos { token: Token::Add, .. }) => op!(AddOp),
@@ -221,6 +225,13 @@ fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
         mutable = true;
     } else { mutable = false; }
 
-    let id = get_or_err_direct!(it, parse_id_maybe_type, "variable id");
+    let id = match it.peek() {
+        Some(TokenPos { token: Token::LRBrack, .. }) |
+        Some(TokenPos { token: Token::LCBrack, .. }) |
+        Some(TokenPos { token: Token::LSBrack, .. }) =>
+            get_or_err_direct!(it, parse_collection, "collection"),
+        _ => get_or_err_direct!(it, parse_id_maybe_type, "variable id")
+    };
+
     return parse_variable_def_id(id, mutable, it);
 }
