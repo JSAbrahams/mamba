@@ -1,3 +1,6 @@
 when a
     b then c
     d then e
+
+when b
+    (a, c) then print "hello world"

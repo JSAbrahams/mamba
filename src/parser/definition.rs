@@ -185,6 +185,12 @@ pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 }
 
 fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> ParseResult {
+    let ofmut;
+    if let Some(TokenPos { token: Token::OfMut, .. }) = it.peek() {
+        it.next();
+        ofmut = true;
+    } else { ofmut = false }
+
     let expression: Option<Box<ASTNodePos>>;
     if let Some(TokenPos { token: Token::Assign, .. }) = it.peek() {
         it.next();
@@ -209,6 +215,7 @@ fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> 
         en_pos,
         node: ASTNode::VariableDef {
             mutable,
+            ofmut,
             id_maybe_type: Box::from(id),
             expression,
             forward,

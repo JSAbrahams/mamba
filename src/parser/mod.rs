@@ -136,6 +136,7 @@ pub enum ASTNode {
     Def { private: bool, definition: Box<ASTNodePos> },
     VariableDef {
         mutable: bool,
+        ofmut: bool,
         id_maybe_type: Box<ASTNodePos>,
         expression: Option<Box<ASTNodePos>>,
         forward: Option<Vec<ASTNodePos>>,
