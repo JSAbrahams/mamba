@@ -187,9 +187,6 @@ pub enum ASTNode {
     EmptyList,
     ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
-    Map { key_value: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
-    KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
-    MapBuilder { key_value: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
 
     Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
     RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },

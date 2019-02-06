@@ -21,7 +21,7 @@ pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_tuple(it),
         Some(TokenPos { token: Token::LSBrack, .. }) => parse_list(it),
-        Some(TokenPos { token: Token::LCBrack, .. }) => parse_set_or_map(it),
+        Some(TokenPos { token: Token::LCBrack, .. }) => parse_set(it),
 
         Some(&next) => Err(CustomErr { expected: "collection".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "collection".to_string() })
@@ -39,7 +39,7 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Tuple { elements } });
 }
 
-fn parse_set_or_map(it: &mut TPIterator) -> ParseResult {
+fn parse_set(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::LCBrack);
     if let Some(TokenPos { token: Token::RCBrack, .. }) = it.peek() {
@@ -61,44 +61,6 @@ fn parse_set_or_map(it: &mut TPIterator) -> ParseResult {
                 en_pos: 0,
                 node: ASTNode::SetBuilder { items: head, conditions },
             });
-        }
-        Some(TokenPos { token: Token::To, .. }) => {
-            let key_value = match parse_key_value(*head, it) {
-                Ok(k_v) => k_v,
-                err => return err
-            };
-
-            if let Some(TokenPos { token: Token::Ver, .. }) = it.peek() {
-                it.next();
-                let conditions: Vec<ASTNodePos> = get_zero_or_more!(it, "map builder");
-                let (en_line, en_pos) = start_pos(it);
-                check_next_is!(it, Token::RCBrack);
-                return Ok(ASTNodePos {
-                    st_line,
-                    st_pos,
-                    en_line,
-                    en_pos,
-                    node: ASTNode::MapBuilder {
-                        key_value: Box::from(key_value),
-                        conditions: Vec::new(),
-                    },
-                });
-            } else {
-                let tail: Vec<ASTNodePos> = match parse_zero_or_more_key_value(it, "map") {
-                    Ok(t) => t,
-                    Err(err) => return Err(err)
-                };
-
-                let (en_line, en_pos) = end_pos(it);
-                check_next_is!(it, Token::RCBrack);
-                return Ok(ASTNodePos {
-                    st_line,
-                    st_pos,
-                    en_line,
-                    en_pos,
-                    node: ASTNode::Map { key_value: Box::from(key_value), tail },
-                });
-            }
         }
         _ => {
             let tail: Vec<ASTNodePos> = get_zero_or_more!(it, "set");

@@ -17,16 +17,12 @@ use crate::parser::TPIterator;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    let mut tuple = false;
 
     return match match it.peek() {
         Some(TokenPos { token: Token::If, .. }) |
         Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
 
-        Some(TokenPos { line: _, pos: _, token: Token::LRBrack }) => {
-            tuple = true;
-            parse_collection(it)
-        }
+        Some(TokenPos { line: _, pos: _, token: Token::LRBrack }) => parse_collection(it),
         Some(TokenPos { token: Token::LSBrack, .. }) |
         Some(TokenPos { token: Token::LCBrack, .. }) => parse_collection(it),
 
@@ -53,7 +49,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     } {
         Ok(pre) => match it.peek() {
-            Some(TokenPos { token: Token::To, .. }) if tuple => {
+            Some(TokenPos { token: Token::To, .. }) => {
                 it.next();
                 let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function");
                 Ok(ASTNodePos {
@@ -97,7 +93,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::RangeIncl { from: Box::from(pre), to },
                 })
             }
-            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre,it),
+            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),
             Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
 
             Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
