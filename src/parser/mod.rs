@@ -157,6 +157,7 @@ pub enum ASTNode {
 
     FunCall { namespace: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
     MetCall { instance: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    Call { instance_or_met: Box<ASTNodePos>, met_or_arg: Box<ASTNodePos> },
 
     Id { lit: String },
 
@@ -180,11 +181,9 @@ pub enum ASTNode {
     LeOp,
     GeOp,
 
-    Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
-    EmptySet,
+    Set { elements: Vec<ASTNodePos> },
     SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
-    List { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
-    EmptyList,
+    List { elements: Vec<ASTNodePos> },
     ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
 

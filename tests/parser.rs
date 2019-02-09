@@ -31,9 +31,6 @@ fn parse_empty_file() {
 #[test]
 fn parse_for_statements() {
     let source = valid_resource("for_statements.txt");
-    for token in tokenize(source.clone()).unwrap() {
-        println!("{}", token.token);
-    }
     assert_ok!(parse(tokenize(source).unwrap()));
 }
 

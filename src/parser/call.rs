@@ -49,14 +49,16 @@ pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Point, .. }) => parse_regular_call(false, pre, it),
         Some(TokenPos { token: Token::DDoublePoint, .. }) => parse_regular_call(true, pre, it),
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_direct_call(pre, it),
-        Some(_) => unimplemented!(),
+        Some(&tp) if is_expression(tp.clone()) => parse_postfix_call(pre, it),
+        Some(&tp) => return Err(CustomErr {
+            expected: String::from("function call"),
+            actual: tp.clone(),
+        }),
         None => return Err(CustomEOFErr { expected: String::from("function call") })
     }
 }
 
 fn parse_direct_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::LRBrack);
-
     let namespace = Box::from(ASTNodePos {
         st_line: pre.st_line,
         st_pos: pre.st_pos,
@@ -88,30 +90,31 @@ fn parse_direct_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
 fn parse_regular_call(fun: bool, pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     it.next();
-
-    let name: Box<ASTNodePos> = get_or_err!(it, parse_expression, "call name");
+    let name: Box<ASTNodePos> = get_or_err!(it, parse_id, "call name");
 
     let args: Vec<ASTNodePos> = match it.peek() {
         Some(TokenPos { token: Token::LRBrack, .. }) =>
-            match parse_expressions(it, "arguments") {
+            match parse_arguments(it, "arguments") {
                 Ok(args) => {
                     check_next_is!(it, Token::RRBrack);
                     args
                 }
                 Err(err) => return Err(err)
             }
-        _ => match parse_expressions(it, "arguments") {
-            Ok(args) => {
-                if args.len() > 1 {
-                    return Err(InternalErr {
-                        message: format!("Postfix notation only possible with 1 argument,\
+        Some(&tp) if is_expression(tp.clone()) =>
+            match parse_expressions(it, "arguments") {
+                Ok(args) => {
+                    if args.len() > 1 {
+                        return Err(InternalErr {
+                            message: format!("Postfix notation only possible with 1 argument,\
                     but {} were given.", args.len())
-                    });
+                        });
+                    }
+                    args
                 }
-                args
+                Err(err) => return Err(err)
             }
-            Err(err) => return Err(err)
-        }
+        _ => vec![]
     };
 
     return Ok(ASTNodePos {
@@ -128,6 +131,7 @@ fn parse_regular_call(fun: bool, pre: ASTNodePos, it: &mut TPIterator) -> ParseR
 }
 
 fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
+    check_next_is!(it, Token::LRBrack);
     let mut arguments = Vec::new();
     let mut pos = 0;
 
@@ -137,7 +141,6 @@ fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos
             _ => {
                 arguments.push(get_or_err_direct!(it, parse_expression,
                                   String::from(msg) + " (pos "+ &pos.to_string() + ")"));
-
                 if let Some(&t) = it.peek() {
                     if t.token != Token::RRBrack { check_next_is!(it, Token::Comma); }
                 }
@@ -147,6 +150,21 @@ fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos
     }
 
     return Ok(arguments);
+}
+
+fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let name_or_arg = get_or_err!(it, parse_expression, "method name or function argument");
+
+    return Ok(ASTNodePos {
+        st_line: pre.st_line,
+        st_pos: pre.st_pos,
+        en_line: name_or_arg.en_line,
+        en_pos: name_or_arg.en_pos,
+        node: ASTNode::Call {
+            instance_or_met: Box::from(pre),
+            met_or_arg: Box::from(name_or_arg),
+        },
+    });
 }
 
 fn parse_expressions(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
