@@ -21,8 +21,7 @@ pub enum Core {
     FunctionCall { namespace: String, function: String, args: Vec<Core> },
     Import { file: String, _use: Vec<Core> },
 
-    Id { id: String },
-    Let { id: String, right: Box<Core> },
+    Def { id: String, right: Box<Core> },
     Assign { left: Box<Core>, right: Box<Core> },
 
     Block { stmts: Vec<Core> },

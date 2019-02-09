@@ -28,25 +28,28 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | definition
                       | type-def
                       | "retry"
-    expression       ::= newline block
-                      | expression ( "to" | "toincl" ) expression
-                      | "(" expression ")" [ "->" expression ]
+    expression       ::= "(" expression ")" 
+                      | newline block
+                      | expression ( ".." | "..=" ) expression
+                      | anon-fun
                       | expression [ ( raises | handle ) ]
                       | "return" [ expression ]
                       | expression "?or" expression
-                      | expression "as" id
-                      | function-def-anon
+                      | expression "as" id 
                       | control-flow-expr 
+                      | function-call
                       | reassignment
                       | collection
+                      | key-value
                       | operation
-                      | call
                       | "_"
                      
-    call             ::= function-call | method-call
-    function-call    ::= expression [ "::" expression ] ( expression | "(" [ expression { "," expression} ] ")" )
-    method-call      ::= expression "." ( expression | "(" [ expression { "," expression} ] ")" ) [ "?" ]
-                    
+    reassignment     ::= expression "<-" expression
+    anon-fun         ::= expression "->" expression
+    call             ::= id ( [ "." ] id | [ "::" id ] ) ( tuple | expression )
+    regular-call     ::= id ( "." id | "::" id ) ( tuple | expression )
+    direct-call      ::= id tuple
+    
     conditions       ::= "when" newline indent { condition } dedent
     condition        ::= expression "else" expression
     raises           ::= "raises" generics
@@ -58,18 +61,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     set-builder      ::= "{" expression "|" expression { "," expression } "}"
     list             ::= "[" zero-or-more-expr "]" | list-builder
     list-builder     ::= "[" expression "|" expression { "," expression } "]"
-    map              ::= "{" expression "->" expression { "," expression "->" expression } "}" | map-builder
-    map-builder      ::= "{" expression "->" expression "|" zero-or-more-expr "}"
     zero-or-more-expr::= [ ( expression { "," expression } ]
-    
-    reassignment     ::= expression "<-" expression
     
     definition       ::= "def" ( [ "private" ] ( variable-def | fun-def ) | operator-def | constructor )
     variable-def     ::= [ "mut" ] ( id-maybe-type | collection ) [ "ofmut" ] [ "<-" expression ] [ forward ]
     operator-def     ::= overridable-op [ "(" [ id-maybe-type ] ")" ] ":" type [ "->" expression ]
     fun-def          ::= id fun-args [ ":" type ] [ raises ] [ "->" expression ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
-    fun-arg          ::= [ "vararg" ] id-maybe-type
+    fun-arg          ::= [ "vararg" ] ( id-maybe-type | literal ) [ "<-" expression ]
     forward          ::= "forward" id { "," id }
 
     constructor      ::= "init" constructor-args [ "<-" expr-or-stmt ]

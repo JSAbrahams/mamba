@@ -155,8 +155,9 @@ pub enum ASTNode {
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     Retry,
 
-    FunCall { namespace: Option<Box<ASTNodePos>>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
-    MethodCall { object: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    FunCall { namespace: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    MetCall { instance: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    Call { instance_or_met: Box<ASTNodePos>, met_or_arg: Box<ASTNodePos> },
 
     Id { lit: String },
 
@@ -166,7 +167,7 @@ pub enum ASTNode {
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Condition { condition: Box<ASTNodePos>, _else: Box<ASTNodePos> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
-    FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos> },
+    FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos>, default: Option<Box<ASTNodePos>> },
 
     _Self,
     AddOp,
@@ -180,16 +181,11 @@ pub enum ASTNode {
     LeOp,
     GeOp,
 
-    Set { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
-    EmptySet,
+    Set { elements: Vec<ASTNodePos> },
     SetBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
-    List { head: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
-    EmptyList,
+    List { elements: Vec<ASTNodePos> },
     ListBuilder { items: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
     Tuple { elements: Vec<ASTNodePos> },
-    Map { key_value: Box<ASTNodePos>, tail: Vec<ASTNodePos> },
-    KeyValue { key: Box<ASTNodePos>, value: Box<ASTNodePos> },
-    MapBuilder { key_value: Box<ASTNodePos>, conditions: Vec<ASTNodePos> },
 
     Range { from: Box<ASTNodePos>, to: Box<ASTNodePos> },
     RangeIncl { from: Box<ASTNodePos>, to: Box<ASTNodePos> },

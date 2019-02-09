@@ -11,3 +11,6 @@ class my_class
         z_modified <- z * SOME_CONSTANT
 
     def fun_a() -> print self
+
+    def factorial(0) -> 1
+    def factorial(x: Int) -> x * factorial x - 1

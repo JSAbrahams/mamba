@@ -143,8 +143,8 @@ impl fmt::Display for Token {
             Token::ENum(int, exp) => format!("<e-number>: {}e{}", int, exp),
             Token::Str(string) => format!("<string>: \"{}\"", string),
             Token::Bool(boolean) => format!("<bool>: {}", boolean),
-            Token::Range => "to".to_string(),
-            Token::RangeIncl => "toincl".to_string(),
+            Token::Range => "..".to_string(),
+            Token::RangeIncl => "..=".to_string(),
 
             Token::Add => "+".to_string(),
             Token::Sub => "-".to_string(),

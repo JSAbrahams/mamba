@@ -1,11 +1,7 @@
 fun_a()
 fun_b(123)
-fun_c asdf
 
 namespace_1::fun_d()
 namespace_2::fun_e(1,2,3,4)
-namespace_3::fun_f 12345
 
-object_1.fun_g()
-object_2.var
-object_3.fun_h a
+object_1.met_g()
