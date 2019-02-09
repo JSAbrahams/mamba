@@ -167,7 +167,7 @@ pub enum ASTNode {
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Condition { condition: Box<ASTNodePos>, _else: Option<Box<ASTNodePos>> },
     TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
-    FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos> },
+    FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos>, default: Option<Box<ASTNodePos>> },
 
     _Self,
     AddOp,

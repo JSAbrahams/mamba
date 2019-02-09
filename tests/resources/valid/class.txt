@@ -22,3 +22,6 @@ class MyClass
     def connect(self: SomeState) -> other_field <- 200
 
     def fun_a(self) -> print self
+
+    def factorial(0) -> 1
+    def factorial(x: Int) -> x * factorial x - 1
