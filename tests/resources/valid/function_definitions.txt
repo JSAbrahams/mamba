@@ -12,3 +12,6 @@ def fun_v(w: x, y: (z, aa), ab: (ac) -> (ad)): ae -> print u
 def - (self: Something, other: Int): Something -> self.a + other.b
 
 def + (self, other: Int): Int -> self + other
+
+def factorial(0) -> 1
+def factorial(x: Int) -> x * factorial x - 1
