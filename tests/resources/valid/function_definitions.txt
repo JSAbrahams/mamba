@@ -1,9 +1,9 @@
 def fun_a() -> print c
 
+def fun_b(0) -> print 0
 def fun_b(b: c) -> print c
 
 def fun_c(d: (e, f)) -> print g
-
 def fun_d(h: (i, j) -> k) -> print l
 
 def fun_e(m: n, o: (p, q), r: (s) -> t) -> print u

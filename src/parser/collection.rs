@@ -106,16 +106,20 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
-    let (st_line, st_pos) = start_pos(it);
     let mut expressions = Vec::new();
     let mut pos = 0;
 
     while let Some(&t) = it.peek() {
         match t.token {
             Token::RRBrack | Token::RSBrack | Token::RCBrack | Token::NL => break,
-            Token::Comma => { it.next(); }
-            _ => expressions.push(get_or_err_direct!(it, parse_expression,
-                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"))
+            _ => {
+                expressions.push(get_or_err_direct!(it, parse_expression,
+                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"));
+                match it.peek() {
+                    Some(TokenPos { token: Token::Comma, .. }) => { it.next(); }
+                    _ => continue
+                }
+            }
         }
         pos += 1;
     }

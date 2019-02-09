@@ -46,8 +46,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                      
     reassignment     ::= expression "<-" expression
     anon-fun         ::= expression "->" expression
-    function-call    ::= expression [ ( "::" id | [ "." ] id ) ] 
-                         ( expression | "(" [ expression ] { "," expression } ")" )
+    call             ::= id ( [ "." ] id | [ "::" id ] ) ( tuple | expression )
     
     conditions       ::= "when" newline indent { condition } dedent
     condition        ::= expression "else" expression
