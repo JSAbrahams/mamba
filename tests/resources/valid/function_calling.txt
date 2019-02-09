@@ -4,5 +4,4 @@ fun_b(123)
 namespace_1::fun_d()
 namespace_2::fun_e(1,2,3,4)
 
-object_1.fun_g()
-object_2.var
+object_1.met_g()

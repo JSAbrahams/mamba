@@ -31,9 +31,6 @@ fn parse_empty_file() {
 #[test]
 fn parse_for_statements() {
     let source = valid_resource("for_statements.txt");
-    for token in tokenize(source.clone()).unwrap() {
-        println!("{}", token.token);
-    }
     assert_ok!(parse(tokenize(source).unwrap()));
 }
 
@@ -70,5 +67,12 @@ fn parse_function_definitions() {
 #[test]
 fn parse_function_calling() {
     let source = valid_resource("function_calling.txt");
-    assert_ok!(parse(tokenize(source).unwrap()))
+    assert_ok!(parse(tokenize(source).unwrap()));
+}
+
+
+#[test]
+fn parse_infix_function_calling() {
+    let source = valid_resource("infix_function_calling.txt");
+    assert_ok!(parse(tokenize(source).unwrap()));
 }

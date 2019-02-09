@@ -2,8 +2,10 @@ fun_c asdf
 
 namespace_3::fun_f 12345
 
-object_3.fun_h a
+object_3.met_h a
 
-object_4 postfix_fun()
-object_5 p_fun_1(a)
-object_6 p_fun_2 b
+object_4 met_0()
+object_5 met_1(b)
+object_6 met_2 c
+
+object_7 met_3 object_8 met_4 arg
