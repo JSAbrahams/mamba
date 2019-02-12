@@ -268,7 +268,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
         "foreach" => Token::For,
-        "where" => Token::Where,
 
         "if" => Token::If,
         "then" => Token::Then,

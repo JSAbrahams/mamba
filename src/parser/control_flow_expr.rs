@@ -30,25 +30,18 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Then);
     let then: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "if then branch");
 
-    if let Some(&&TokenPos { token: Token::Else, .. }) = it.peek() {
+    let _else = if let Some(&&TokenPos { token: Token::Else, .. }) = it.peek() {
         it.next();
-        let _else = get_or_err!(it, parse_expr_or_stmt, "if else branch");
-        Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line: _else.en_line,
-            en_pos: _else.en_pos,
-            node: ASTNode::IfElse { cond, then, _else },
-        })
-    } else {
-        Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line: then.en_line,
-            en_pos: then.en_pos,
-            node: ASTNode::If { cond, then },
-        })
-    }
+        Some(get_or_err!(it, parse_expr_or_stmt, "if else branch"))
+    } else { None };
+
+    Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line: then.en_line,
+        en_pos: then.en_pos,
+        node: ASTNode::IfElse { cond, then, _else },
+    })
 }
 
 fn parse_when(it: &mut TPIterator) -> ParseResult {
@@ -90,13 +83,13 @@ fn parse_when_case(it: &mut TPIterator) -> ParseResult {
 
     let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "when case");
     check_next_is!(it, Token::Then);
-    let then: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
+    let expr_or_stmt: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
 
     return Ok(ASTNodePos {
         st_line,
         st_pos,
-        en_line: then.en_line,
-        en_pos: then.en_pos,
-        node: ASTNode::If { cond, then },
+        en_line: expr_or_stmt.en_line,
+        en_pos: expr_or_stmt.en_pos,
+        node: ASTNode::Case { cond, expr_or_stmt },
     });
 }

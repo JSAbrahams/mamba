@@ -3,6 +3,13 @@ from Math use abs
 util my_class
     def SOME_CONSTANT <- 3.5E20
 
+type some_state isa my_class when z_modified > 2
+
+type other_state isa my_class when
+    z_modified > 10
+    z_modified < 200
+    other_field < 50
+
 class my_class
     def private z_modified
     def private other_field <- 10
