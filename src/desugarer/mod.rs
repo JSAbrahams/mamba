@@ -1,76 +1,65 @@
-use crate::parser::ASTNode;
+use crate::desugarer::expression::desugar_expression;
+use crate::parser::ASTNodePos;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
 #[macro_use]
 /// Desugar and box.
-macro_rules! des { ($ast:expr ) => {{ Box::new(desugar(*$ast)) }} }
+macro_rules! desugar { ($ast:expr ) => {{ Box::new(desugar($ast)) }} }
 
-macro_rules! des_direct { ($ast:expr ) => {{ desugar(*$ast) }} }
-
-macro_rules! des_vec { ($ast:expr ) => {{ panic!("not implemented") }} }
-
-//mod expression;
-//mod function;
-//mod module;
-//mod statement;
+mod expression;
 
 pub enum Core {
+    Import { file: String, _use: Vec<Core> },
     Module { id: String, imports: Vec<String>, functions: Vec<Core>, body: Box<Core> },
     Function { function: String, args: Vec<String>, body: Box<Core> },
     FunctionCall { namespace: String, function: String, args: Vec<Core> },
-    Import { file: String, _use: Vec<Core> },
+    MethodCall { object: Box<Core>, method: String, args: Vec<Core> },
 
-    Def { id: String, right: Box<Core> },
+    Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },
+    VarDef { id: Box<Core>, right: Box<Core> },
+    FunDef { id: String, args: Vec<Core>, raises: Vec<Core>, right: Box<Core> },
+    FunArg { vararg: bool, id: String },
 
-    Block { stmts: Vec<Core> },
+    Block { statements: Vec<Core> },
 
-    Real { int_digits: f64 },
-    BigReal { int_digits: Vec<i64>, frac_digits: Vec<i64> },
-    Int { integer_digits: i64 },
-    BigInt { integer_digits: Vec<i64> },
-    ENum { base: f64, exp: i64 },
+    BigFloat { int_digits: Vec<i64>, frac_digits: Vec<i64> },
+    BigInt { integers: Vec<i64> },
     Str { str: String },
     Bool { _bool: bool },
 
     Tuple { elements: Vec<Core> },
     Set { elements: HashSet<Core> },
     List { elements: Vec<Core> },
-    Map { elements: HashMap<Core, Core> },
-
-    Add { left: Box<Core>, right: Box<Core> },
-    AddU { expr: Box<Core> },
-    Sub { left: Box<Core>, right: Box<Core> },
-    SubU { expr: Box<Core> },
-    Mul { left: Box<Core>, right: Box<Core> },
-    Div { left: Box<Core>, right: Box<Core> },
-    Mod { left: Box<Core>, right: Box<Core> },
-    Pow { left: Box<Core>, right: Box<Core> },
 
     Le { left: Box<Core>, right: Box<Core> },
     Ge { left: Box<Core>, right: Box<Core> },
+    Leq { left: Box<Core>, right: Box<Core> },
+    Geq { left: Box<Core>, right: Box<Core> },
 
+    Not { expr: Box<Core> },
     Is { left: Box<Core>, right: Box<Core> },
     Eq { left: Box<Core>, right: Box<Core> },
-    Not { expr: Box<Core> },
-    IsA { expr: Box<Core>, _type: Box<Core> },
+    IsA { left: Box<Core>, right: Box<Core> },
     And { left: Box<Core>, right: Box<Core> },
     Or { left: Box<Core>, right: Box<Core> },
 
     IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },
-    When { expr: Box<Core>, cases: Vec<Core> },
+    When { cond: Box<Core>, cases: Vec<Core> },
+    Case { cond: Box<Core>, then: Box<Core> },
     While { cond: Box<Core>, body: Box<Core> },
     Break,
     Continue,
 
     Return { expr: Box<Core> },
     Print { expr: Box<Core> },
+    UnderScore,
 
+    Undefined,
     Empty,
-    All,
 }
 
-pub fn desugar(input: ASTNode) -> Core {
-    panic!("not implemented")
+pub fn desugar(input: ASTNodePos) -> Core {
+    desugar_expression(input)
 }
