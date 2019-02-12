@@ -53,10 +53,10 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
                 parse_variable_def_id(id, false, it),
             id @ ASTNodePos { node: ASTNode::TypeId { _type: None, .. }, .. } => match it.peek() {
                 Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, it),
-                Some(other) => parse_variable_def_id(id, false, it),
+                Some(_) => parse_variable_def_id(id, false, it),
                 None => Err(CustomEOFErr { expected: "id".to_string() })
             }
-            other => return Err(InternalErr { message: String::from("couldn't parse def") })
+            _ => return Err(InternalErr { message: String::from("couldn't parse def") })
         }
     };
 
@@ -184,7 +184,6 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
 }
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Forward);
 
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
@@ -241,8 +240,6 @@ fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> 
 }
 
 fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-
     let mutable;
     if let Some(TokenPos { token: Token::Mut, .. }) = it.peek() {
         it.next();

@@ -127,8 +127,8 @@ fn parse_condition(it: &mut TPIterator) -> ParseResult {
     return Ok(ASTNodePos {
         st_line: condition.st_line,
         st_pos: condition.st_pos,
-        en_line: 0,
-        en_pos: 0,
+        en_line,
+        en_pos,
         node: ASTNode::Condition { condition, _else },
     });
 }

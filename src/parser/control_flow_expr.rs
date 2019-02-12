@@ -60,7 +60,6 @@ fn parse_when(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_when_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Indent);
 
     let mut cases = Vec::new();

@@ -3,8 +3,6 @@ use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
-use crate::parser::collection::parse_tuple;
-use crate::parser::collection::parse_zero_or_more_expr;
 use crate::parser::end_pos;
 use crate::parser::expression::is_expression;
 use crate::parser::expression::parse_expression;
@@ -43,8 +41,6 @@ pub fn parse_anon_fun(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-
     match it.peek() {
         Some(TokenPos { token: Token::Point, .. }) => parse_regular_call(false, pre, it),
         Some(TokenPos { token: Token::DDoublePoint, .. }) => parse_regular_call(true, pre, it),

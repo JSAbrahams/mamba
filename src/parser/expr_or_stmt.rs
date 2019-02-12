@@ -18,7 +18,6 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         return Ok(get_or_err_direct!(it, parse_block, "expression or statement"));
     }
 
-    let (st_line, st_pos) = start_pos(it);
     return match it.peek() {
         Some(TokenPos { token: Token::Def, .. }) |
         Some(TokenPos { token: Token::Mut, .. }) |
