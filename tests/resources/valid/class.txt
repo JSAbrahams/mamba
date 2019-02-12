@@ -1,23 +1,24 @@
 from Math use abs
 
-util my_class
+util MyClass
     def SOME_CONSTANT <- 3.5E20
 
-type some_state isa my_class when z_modified > 2
+    def constant_func() -> 400
 
-type other_state isa my_class when
+type SomeState isa MyClass when z_modified > 2
+
+type OtherState isa MyClass when
     z_modified > 10
     z_modified < 200
     other_field < 50
 
-class my_class
+class MyClass
     def private z_modified
-    def private other_field <- 10
+    def mut private other_field <- 10
 
-    def init(def my_field: Int, z: Int) ->
-        z_modified <- z * SOME_CONSTANT
+    def init(self, def my_field: Int, z: Int) ->
+        self.z_modified <- z * SOME_CONSTANT
 
-    def fun_a() -> print self
+    def connect(self: SomeState) -> other_field <- 200
 
-    def factorial(0) -> 1
-    def factorial(x: Int) -> x * factorial x - 1
+    def fun_a(self) -> print self
