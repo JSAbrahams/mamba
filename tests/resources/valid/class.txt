@@ -1,6 +1,10 @@
 from Math use abs
 
-util MyClass
+type my_class
+    def fun_a: () -> ()
+    def factorial: Int -> Int
+
+util my_class
     def SOME_CONSTANT <- 3.5E20
 
     def constant_func() -> 400
