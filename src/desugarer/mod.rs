@@ -3,10 +3,6 @@ use crate::parser::ASTNodePos;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-#[macro_use]
-/// Desugar and box.
-macro_rules! desugar { ($ast:expr ) => {{ Box::new(desugar($ast)) }} }
-
 mod expression;
 
 pub enum Core {
@@ -18,7 +14,7 @@ pub enum Core {
 
     Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },
-    VarDef { id: Box<Core>, right: Box<Core> },
+    VarDef { id: String, right: Box<Core> },
     FunDef { id: String, args: Vec<Core>, raises: Vec<Core>, right: Box<Core> },
     FunArg { vararg: bool, id: String },
 
