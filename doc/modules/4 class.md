@@ -18,8 +18,6 @@ implementation is used.
 For contained instances of the classes, this is only done for forwarded definitions. See "Operator Overloading" for more
 details on operator overloading.
 
-The size operator: `| <expression> |` only works if the type of the expression is a `class` which defines `size`.
-
 ## Using Type Aliases to Define State of Self
 
 In certain situations, we want to make sure that certain methods can only be called when an instance of a class is in a
