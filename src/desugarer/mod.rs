@@ -34,9 +34,7 @@ pub enum Core {
     List { elements: Vec<Core> },
 
     Le { left: Box<Core>, right: Box<Core> },
-    Ge { left: Box<Core>, right: Box<Core> },
     Leq { left: Box<Core>, right: Box<Core> },
-    Geq { left: Box<Core>, right: Box<Core> },
 
     Not { expr: Box<Core> },
     Is { left: Box<Core>, right: Box<Core> },
