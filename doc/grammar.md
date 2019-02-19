@@ -37,7 +37,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | expression "?or" expression
                       | expression "as" id 
                       | control-flow-expr 
-                      | function-call
+                      | call
                       | reassignment
                       | collection
                       | key-value
@@ -47,8 +47,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     reassignment     ::= expression "<-" expression
     anon-fun         ::= expression "->" expression
     call             ::= id ( [ "." ] id | [ "::" id ] ) ( tuple | expression )
-    regular-call     ::= id ( "." id | "::" id ) ( tuple | expression )
-    direct-call      ::= id tuple
     
     conditions       ::= "when" newline indent { condition } dedent
     condition        ::= expression "else" expression
