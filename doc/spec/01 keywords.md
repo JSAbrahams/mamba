@@ -66,19 +66,19 @@ Keyword | Use
 `when`  | Denote start of a when expression or statement
 
 ### Control Flow Statements
-Keyword | Use 
---------|-----
-`while` | Denote start of while statement
-`for`   | Denote start of for statement
-`in`    | Specify which collection to iterate over in for statement
-`do`    | Specify what needs to be done in control flow statement
+Keyword   | Use 
+----------|-----
+`while`   | Denote start of while statement
+`foreach` | Denote start of for statement
+`in`      | Specify which collection to iterate over in for statement
+`do`      | Specify what needs to be done in control flow statement
 
 ### Statements
-Keyword | Use 
---------|-----
-`print` | Print value of an expression
-`print` | Print value of an expression with a newline at the end
-`return`| Return from a function or method
+Keyword   | Use 
+----------|-----
+`print`   | Print value of an expression
+`println` | Print value of an expression with a newline at the end
+`return`  | Return from a function or method
 
 ### Errors
 Keyword  | Use 

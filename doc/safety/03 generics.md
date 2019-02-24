@@ -6,7 +6,7 @@ To demonstrate generics, we will use an incomplete implementation of a graph.
 
 File `node.mylang`:
 
-    Type Node
+    type Node
         def id: Int
         def to_hash: Int
         

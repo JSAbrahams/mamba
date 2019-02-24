@@ -99,14 +99,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     string           ::= """ { character } """
                                      
     control-flow-expr::= if | from | when
-    if               ::= "if" expression "then" expr-or-stmt [ "else" expr-or-stmt ]
+    if               ::= "if" expression "=>" expr-or-stmt [ "else" expr-or-stmt ]
     when             ::= "when" expression newline when-cases
     when-cases       ::= indent { when-case { newline } } dedent
-    when-case        ::= expression "->" expr-or-stmt
+    when-case        ::= expression "=>" expr-or-stmt
     
     control-flow-stmt::= while | foreach | "break" | "continue"
-    while            ::= "while" expression "do" expr-or-stmt
-    foreach          ::= "foreach" expression "in" expression "do" expr-or-stmt
+    while            ::= "while" expression "=>" expr-or-stmt
+    foreach          ::= "foreach" expression { "," expression } "in" expression "=>" expr-or-stmt
     
     newline          ::= \n | \r\n
     comment          ::= "#" { character }

@@ -44,7 +44,7 @@ Character | Use
 ### Context Dependent
 Character | Use
 ----------|-----
-`e`       | If nested between integer or real, and integer, denotes e-number
+`e`       | If nested between two integer, or an integer and a real, denotes e-number
 
 ### Comments
 Character | Use

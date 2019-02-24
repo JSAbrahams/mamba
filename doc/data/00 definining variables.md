@@ -1,4 +1,15 @@
-# Functions and Methods
+# Defining Variables and Functions (or Methods)
+
+Every definition must be preceded with the `def` keyword. This is not necessary when reassigning however.
+
+Functions and methods cannot be reassigned, mutable values can however. A value is an expression which may be evaluated.
+
+## Variables
+
+A variable `x` is assigned to as such:\
+`def x <- <expression>` or `def mut x <- <expression>`
+
+## Functions and Methods
 
 The definition of a function or method very closely resembles that of a variable. So similar is it in fact that we use
 the term definition for both interchangeably. We would define a function or method as follows:
@@ -12,11 +23,11 @@ define the function `f` as such:
 
 The below outline the specifics for each.
 
-## Functions
+### Functions
 
 Functions are found within a `script` or `util`.
 
-## Methods
+### Methods
 
 Methods are found within a `class`. Methods have access to the fields of an instance of a `class` by preceding these
 with the `self` keyword. A method in a class would look as such:
