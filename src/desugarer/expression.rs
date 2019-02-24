@@ -1,6 +1,6 @@
 #![feature(box_syntax, box_patterns)]
 
-use crate::desugarer::Core;
+use crate::core::core::Core;
 use crate::desugarer::desugar;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
@@ -210,35 +210,4 @@ pub fn desugar_expression(node_pos: ASTNodePos) -> Core {
 
         _ => panic!("")
     }
-}
-
-fn desugar_num(node: ASTNode) -> Core {
-    match node {
-        ASTNode::ENum { num, exp } => unimplemented!(),
-        ASTNode::Int { mut lit } => to_bit_int(&mut lit),
-        ASTNode::Real { mut lit } => unimplemented!(),
-        _ => panic!("Tried to desugar {:?} as number", node)
-    }
-}
-
-fn to_big_float(lit: &mut String) -> Core {
-    let mut integers: Vec<i64> = Vec::new();
-    for i in (0..lit.len()).step_by(LONG_MAX.len() - 1) {
-        let num: String =
-            lit.drain(..cmp::min(lit.len(), LONG_MAX.len())).collect();
-        integers.push(num.parse().unwrap());
-    }
-
-    return Core::BigFloat { int_digits: Vec::new(), frac_digits: Vec::new() };
-}
-
-fn to_bit_int(lit: &mut String) -> Core {
-    let mut integers: Vec<i64> = Vec::new();
-    for i in (0..lit.len()).step_by(LONG_MAX.len() - 1) {
-        let num: String =
-            lit.drain(..cmp::min(lit.len(), LONG_MAX.len())).collect();
-        integers.push(num.parse().unwrap());
-    }
-
-    return Core::BigInt { integers };
 }
