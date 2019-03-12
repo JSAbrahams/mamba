@@ -1,21 +1,18 @@
-use std::collections::HashSet;
-
+#[derive(Debug)]
 pub enum Core {
     Module { id: String, imports: Vec<String>, body: Box<Core> },
     Import { file: String, _use: Vec<Core>, _as: Vec<Core> },
-    ClassDef { functions: Vec<Core>, body: Box<Core> },
-    UtilDef { functions: Vec<Core>, body: Box<Core> },
-    TypeDef { functions: Vec<Core> },
+    ClassDef { functions: Vec<Core> },
 
     FunctionCall { namespace: String, function: String, args: Vec<Core> },
     MethodCall { object: Box<Core>, method: String, args: Vec<Core> },
 
     Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },
-    VarDef { id: String, right: Box<Core> },
-    Init { id: String, args: Vec<Core>, body: Box<Core> },
+    VarDef { id: Box<Core>, right: Box<Core> },
+    Init { args: Vec<Core>, body: Box<Core> },
     FunDef { id: Box<Core>, args: Vec<Core>, body: Box<Core> },
-    FunArg { vararg: bool, id: String },
+    FunArg { vararg: bool, id: Box<Core> },
 
     Block { statements: Vec<Core> },
 
@@ -50,8 +47,10 @@ pub enum Core {
 
     AddOp,
     Add { left: Box<Core>, right: Box<Core> },
+    AddU { expr: Box<Core> },
     SubOp,
     Sub { left: Box<Core>, right: Box<Core> },
+    SubU { expr: Box<Core> },
     MulOp,
     Mul { left: Box<Core>, right: Box<Core> },
     ModOp,
@@ -60,6 +59,7 @@ pub enum Core {
     Pow { left: Box<Core>, right: Box<Core> },
     DivOp,
     Div { left: Box<Core>, right: Box<Core> },
+    Sqrt { expr: Box<Core> },
 
     For { expr: Box<Core>, coll: Box<Core>, body: Box<Core> },
     If { cond: Box<Core>, then: Box<Core> },

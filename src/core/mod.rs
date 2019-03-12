@@ -2,127 +2,125 @@ use crate::core::core::Core;
 
 pub mod core;
 
-pub fn to_py_source(core: Core) -> string {
-    to_py(core, 0)
+pub fn to_py_source(core: Core) -> String {
+    to_py(&core, 0)
 }
 
-pub fn to_py(core: Core, ind: i32) -> String {
+// TODO add indentation when newlining inside format
+
+fn to_py(core: &Core, ind: i32) -> String {
     match core {
-        Core::Id { id } => id,
-        Core::Str { _str } => _str,
-        Core::Int { int } => int,
-        Core::Float { float } => float,
-        Core::Bool { _bool } => String::from(if _bool { "True" } else { "False" }),
+        Core::Id { lit } => lit.clone(),
+        Core::Str { _str } => _str.clone(),
+        Core::Int { int } => int.clone(),
+        Core::Float { float } => float.clone(),
+        Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::Init { id, args, body } => String::from(Core::Id { lit: String::from("__init__") },
-                                                      "(", comma_delimited(args, ind), "):\n",
-                                                      to_py(*body, ind)),
-        Core::FunDef { id, args, body } => fun_def(id, args, body, ind),
+        Core::Init { args, body } =>
+            format!("__init__({}):\n{}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind)),
+        Core::FunDef { id, args, body } => {
+            let name = String::from(match id.as_ref() {
+                Core::GeOp => "__gt__",
+                Core::GeqOp => "__ge__",
+                Core::LeOp => "__lt__",
+                Core::LeqOp => "__le__",
 
-        Core::Assign { left, right } => String::from(to_py(*left, ind), " = ", to_py(*right, ind)),
-        Core::VarDef { left, right } => String::from(to_py(*left, ind), " = ", to_py(*right, ind)),
+                Core::EqOp => "__eq__",
+                Core::NeqOp => "__ne__",
 
-        Core::FunArg { vararg, expr } => String::from(if vararg { "*" } else { "" }, to_py(*expr, ind)),
+                Core::AddOp => "__add__",
+                Core::SubOp => "__sub__",
+                Core::MulOp => "__mul__",
+                Core::ModOp => "__mod__",
+                Core::DivOp => "__truediv__",
 
-        Core::Block { exprs } => {
+                Core::Id { ref lit } => match lit.as_str() {
+                    "size" => "__size__",
+                    other => other
+                }
+                _ => panic!()
+            });
+
+            format!("{}({}):\n{}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
+        }
+
+        Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::VarDef { id, right } => format!("{} = {}", to_py(id.as_ref(), ind), to_py(right.as_ref(), ind)),
+
+        Core::FunArg { vararg, id } => format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
+
+        Core::Block { statements } => {
             let mut block = String::new();
-            for expr in exprs {
+            for statement in statements {
                 for _ in 0..(ind + 1) { block.push_str("    ") };
-                block.push_str(to_py(*expr, ind + 1));
+                block.push_str(to_py(&statement, ind + 1).as_ref());
                 block.push('\n');
             }
             block
         }
 
-        Core::FunctionCall { namespace, function, args, } => String::from(namespace, ".", function,
-                                                                          "(", comma_delimited(args, ind), ")"),
-        Core::MethodCall { namespace, method, args, } => String::from(namespace, ".", method,
-                                                                      "(", comma_delimited(args, ind), ")"),
+        Core::FunctionCall { namespace, function, args, } =>
+            format!("{}.{}({})", namespace, function, comma_delimited(args.as_ref(), ind)),
+        Core::MethodCall { object, method, args, } =>
+            format!("{}.{}({})", to_py(object.as_ref(), ind), method, comma_delimited(args.as_ref(), ind)),
 
-        Core::Tuple { elements } => String::from("(", comma_delimited(elements, ind), ")"),
-        Core::Set { elements } => String::from("{", comma_delimited(elements, ind), "}"),
-        Core::List { elements } => String::from("[", comma_delimited(elements, ind), "]"),
+        Core::Tuple { elements } => format!("({})", comma_delimited(elements.as_ref(), ind)),
+        Core::Set { elements } => format!("{{{}}}", comma_delimited(elements.as_ref(), ind)),
+        Core::List { elements } => format!("[{}]", comma_delimited(elements.as_ref(), ind)),
 
-        Core::Ge { left, right } => String::from(to_py(*left, ind), " > ", to_py(*right, ind)),
-        Core::Geq { left, right } => String::from(to_py(*left, ind), " >= ", to_py(*right, ind)),
-        Core::Le { left, right } => String::from(to_py(*left, ind), " < ", to_py(*right, ind)),
-        Core::Geq { left, right } => String::from(to_py(*left, ind), " <= ", to_py(*right, ind)),
+        Core::Ge { left, right } => format!("{} > {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Geq { left, right } => format!("{} >= {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Le { left, right } => format!("{} < {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Leq { left, right } => format!("{} <= {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
-        Core::Not { expr } => String::from("not ", to_py(*expr, ind)),
-        Core::And { left, right } => String::from(to_py(*left, ind), " && ", to_py(*right, ind)),
-        Core::Or { left, right } => String::from(to_py(*left, ind), " || ", to_py(*right, ind)),
-        Core::Is { left, right } => String::from(to_py(*left, ind), " is ", to_py(*right, ind)),
-        Core::Eq { left, right } => String::from(to_py(*left, ind), " == ", to_py(*right, ind)),
-        Core::Neq { left, right } => String::from(to_py(*left, ind), " != ", to_py(*right, ind)),
-        Core::IsA { left, right } => String::from("isinstance(",
-                                                  to_py(*left, ind), ", ", to_py(*right, ind), ")"),
+        Core::Not { expr } => format!("not {}", to_py(expr.as_ref(), ind)),
+        Core::And { left, right } => format!("{} && {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Or { left, right } => format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Is { left, right } => format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Eq { left, right } => format!("{} == {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Neq { left, right } => format!("{} != {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::IsA { left, right } => format!("isintance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
-        Core::Add { left, right } => String::from(to_py(*left, ind), " + ", to_py(*right, ind)),
-        Core::Sub { left, right } => String::from(to_py(*left, ind), " - ", to_py(*right, ind)),
-        Core::Mul { left, right } => String::from(to_py(*left, ind), " * ", to_py(*right, ind)),
-        Core::Div { left, right } => String::from(to_py(*left, ind), " / ", to_py(*right, ind)),
-        Core::Pow { left, right } => String::from(to_py(*left, ind), " ** ", to_py(*right, ind)),
-        Core::Mod { left, right } => String::from(to_py(*left, ind), " % ", to_py(*right, ind)),
+        Core::Add { left, right } => format!("{} + {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Sub { left, right } => format!("{} - {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Mul { left, right } => format!("{} * {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Div { left, right } => format!("{} / {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Pow { left, right } => format!("{} ** {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Mod { left, right } => format!("{} % {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
-        Core::Return { expr } => String::from("return ", to_py(*expr, ind)),
-        Core::Print { expr } => String::from("print(", to_py(*expr, ind), ")"),
+        Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
+        Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, coll, body } => String::from("for ", to_py(*expr, ind), " in ",
-                                                       to_py(*coll, ind), ": ",
-                                                       to_py(*body, ind)),
-        Core::If { cond, then } => String::from("if ", to_py(*cond, ind), ": ",
-                                                to_py(*then, ind)),
-        Core::IfElse { cond, then, _else } => String::from("if ", to_py(*cond, ind), ": ",
-                                                           to_py(*then, ind), " else: ",
-                                                           to_py(*_else, ind)),
-        Core::While { cond, body } => String::from("while", to_py(*cond, ind), ": ",
-                                                   to_py(*body, ind)),
+        Core::For { expr, coll, body } =>
+            format!("for {} in {}:\n {}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
+                    to_py(body.as_ref(), ind)),
+        Core::If { cond, then } =>
+            format!("if {}:\n {}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind)),
+        Core::IfElse { cond, then, _else } =>
+            format!("if {}:\n{}\nelse:\n{}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind), to_py(_else.as_ref(), ind)),
+        Core::While { cond, body } =>
+            format!("while {}:\n {}", to_py(cond.as_ref(), ind), to_py(body.as_ref(), ind)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
         Core::Undefined => String::from("None"),
         Core::Empty => String::new(),
+
+        other => panic!("Not implemented yet: {:?}", other)
     }
 }
 
-fn comma_delimited(items: Vec<Core>, ind: i32) -> String {
+fn comma_delimited(items: &Vec<Core>, ind: i32) -> String {
     if items.is_empty() { return String::new(); }
 
-    let mut items = String::new();
+    let mut result = String::new();
     let mut pos = 0;
     for item in items {
-        items.push_str(to_py(*item, ind));
+        result.push_str(to_py(item, ind).as_ref());
 
         pos += 1;
-        if pos < items.len() { items.push(','); }
+        if pos < items.len() { result.push(','); }
     }
 
-    items
-}
-
-fn fun_def(id: Box<Core>, args: Vec<Core>, body: Box<Core>, ind: i32) -> String {
-    let name = String::fom(match *id {
-        Core::GeOp => "__gt__",
-        Core::GeqOp => "__ge__",
-        Core::LeOp => "__lt__",
-        Core::LeqOp => "__le__",
-
-        Core::EqOp => "__eq__",
-        Core::NeqOp => "__eq__",
-
-        Core::AddOp => "__add__",
-        Core::SubOp => "__sub__",
-        Core::MulOp => "__mul__",
-        Core::ModOp => "__mod__",
-        Core::DivOp => "__truediv__",
-
-        Core::Id { id } => if id == "size" { "__size__" } else { id },
-        _ => panic!()
-    });
-
-    String::from(
-        name,
-        "(", comma_delimited(args, ind), "):\n",
-        to_py(*body, ind),
-    )
+    result
 }
