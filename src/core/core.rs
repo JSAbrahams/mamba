@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 pub enum Core {
     Module { id: String, imports: Vec<String>, body: Box<Core> },
-    Import { file: String, _use: Vec<Core> },
+    Import { file: String, _use: Vec<Core>, _as: Vec<Core> },
     ClassDef { functions: Vec<Core>, body: Box<Core> },
     UtilDef { functions: Vec<Core>, body: Box<Core> },
     TypeDef { functions: Vec<Core> },
@@ -33,7 +33,6 @@ pub enum Core {
 
     Not { expr: Box<Core> },
     Is { left: Box<Core>, right: Box<Core> },
-    Isnt { left: Box<Core>, right: Box<Core> },
     Eq { left: Box<Core>, right: Box<Core> },
     Neq { left: Box<Core>, right: Box<Core> },
     IsA { left: Box<Core>, right: Box<Core> },

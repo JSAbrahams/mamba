@@ -46,9 +46,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
     }}};
 
     macro_rules! next_line_and_tp { () => {{
-        cons_nl += 1;
-        line += 1;
-        pos = 1;
+        cons_nl += 1; line += 1; pos = 1;
 
         if !last_nl { cur_ind = line_ind; tokens.push(TokenPos { line, pos, token: Token::NL }); }
         line_ind = 0;
@@ -60,25 +58,16 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
 
     while let Some(&c) = it.peek() {
         match c {
-            '.' => {
-                it.next();
-                match it.peek() {
-                    Some('.') => {
-                        it.next();
-                        match it.peek() {
-                            Some('=') => next_pos_and_tp!(3, Token::RangeIncl),
-                            _ => next_pos!(2, Token::Range)
-                        }
-                    }
-                    _ => next_pos!(1, Token::Point)
+            '.' => match (it.next(), it.peek()) {
+                (_, Some('.')) => match (it.next(), it.peek()) {
+                    (_, Some('=')) => next_pos_and_tp!(3, Token::RangeIncl),
+                    _ => next_pos!(2, Token::Range)
                 }
+                _ => next_pos!(1, Token::Point)
             }
-            ':' => {
-                it.next();
-                match it.peek() {
-                    Some(':') => next_pos_and_tp!(2, Token::DDoublePoint),
-                    _ => next_pos!(1, Token::DoublePoint),
-                }
+            ':' => match (it.next(), it.peek()) {
+                (_, Some(':')) => next_pos_and_tp!(2, Token::DDoublePoint),
+                _ => next_pos!(1, Token::DoublePoint),
             }
             '_' => next_pos_and_tp!(1, Token::Underscore),
             ',' => next_pos_and_tp!(1, Token::Comma),
@@ -88,30 +77,21 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             ']' => next_pos_and_tp!(1, Token::RSBrack),
             '{' => next_pos_and_tp!(1, Token::LCBrack),
             '}' => next_pos_and_tp!(1, Token::RCBrack),
-            '?' => {
-                it.next();
-                match it.peek() {
-                    Some('o') => {
-                        it.next();
-                        match it.peek() {
-                            Some('r') => next_pos_and_tp!(3, Token::QuestOr),
-                            Some(other) => return Err(format!("Expected `?or`. Was '{}'.", other)),
-                            None => return Err("Expected `?or`.".to_string())
-                        }
-                    }
-                    _ => next_pos!(1, Token::Quest)
+            '?' => match (it.next(), it.peek()) {
+                (_, Some('o')) => match (it.next(), it.peek()) {
+                    (_, Some('r')) => next_pos_and_tp!(3, Token::QuestOr),
+                    (_, Some(other)) => return Err(format!("Expected `?or`. Was '{}'.", other)),
+                    (_, None) => return Err("Expected `?or`.".to_string())
                 }
+                _ => next_pos!(1, Token::Quest)
             }
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
-            '\r' => {
-                it.next();
-                match it.peek() {
-                    Some('\n') => next_line_and_tp!(),
-                    Some(other) => return Err(format!("Expected newline after carriage return. \
+            '\r' => match (it.next(), it.peek()) {
+                (_, Some('\n')) => next_line_and_tp!(),
+                (_, Some(other)) => return Err(format!("Expected newline after carriage return. \
                     Was '{}'.", other)),
-                    None => return Err("File ended with carriage return.".to_string())
-                }
+                (_, None) => return Err("File ended with carriage return.".to_string())
             }
             '\t' => increase_indent!(),
             '<' | '>' | '+' | '-' | '*' | '/' | '^' => next_pos!(get_operator),

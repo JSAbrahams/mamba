@@ -67,7 +67,7 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
                 st_pos,
                 en_line: 0,
                 en_pos: 0,
-                node: ASTNode::Type { id, generics },
+                node: ASTNode::TypeDef { id, generics, body: None },
             });
         }
         _ => {
@@ -153,7 +153,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
         st_pos,
         en_line: _type.en_line,
         en_pos: _type.en_pos,
-        node: ASTNode::TypeDef { id, _type, conditions },
+        node: ASTNode::TypeAlias { id, _type, conditions },
     });
 }
 

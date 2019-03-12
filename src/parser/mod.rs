@@ -162,11 +162,15 @@ pub enum ASTNode {
     Id { lit: String },
 
     TypeId { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
-    Type { id: Box<ASTNodePos>, generics: Option<Vec<ASTNodePos>> },
+    TypeDef {
+        id: Box<ASTNodePos>,
+        generics: Option<Vec<ASTNodePos>>,
+        body: Option<Box<ASTNodePos>>,
+    },
+    TypeAlias { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
     TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
     Condition { condition: Box<ASTNodePos>, _else: Option<Box<ASTNodePos>> },
-    TypeDef { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
     FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos>, default: Option<Box<ASTNodePos>> },
 
     _Self,

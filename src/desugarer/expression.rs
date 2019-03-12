@@ -1,6 +1,7 @@
 #![feature(box_syntax, box_patterns)]
 
 use crate::core::core::Core;
+use crate::desugarer::context::Context;
 use crate::desugarer::desugar;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
@@ -22,7 +23,7 @@ macro_rules! operator {
     }}}
 }
 
-pub fn desugar_expression(node_pos: ASTNodePos) -> Core {
+pub fn desugar_expression(node_pos: ASTNodePos, context: Context) -> Core {
     match node_pos.node {
         ASTNode::Def {
             definition: box ASTNode::VariableDef {

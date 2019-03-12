@@ -7,5 +7,5 @@ use std::collections::HashSet;
 mod expression;
 
 pub fn desugar(input: ASTNodePos) -> Core {
-    desugar_expression(input)
+    desugar_expression(input, context)
 }
