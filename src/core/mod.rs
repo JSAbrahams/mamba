@@ -8,7 +8,7 @@ pub fn to_py_source(core: Core) -> String {
 
 // TODO add indentation when newlining inside format
 
-fn to_py(core: &Core, ind: i32) -> String {
+fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => _str.clone(),
@@ -17,7 +17,7 @@ fn to_py(core: &Core, ind: i32) -> String {
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
         Core::Init { args, body } =>
-            format!("__init__({}):\n{}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind)),
+            format!("__init__({}):{}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind)),
         Core::FunDef { id, args, body } => {
             let name = String::from(match id.as_ref() {
                 Core::GeOp => "__gt__",
@@ -41,7 +41,7 @@ fn to_py(core: &Core, ind: i32) -> String {
                 _ => panic!()
             });
 
-            format!("{}({}):\n{}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
+            format!("{}({}):{}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
         }
 
         Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
@@ -50,10 +50,10 @@ fn to_py(core: &Core, ind: i32) -> String {
         Core::FunArg { vararg, id } => format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
 
         Core::Block { statements } => {
-            let mut block = String::new();
+            let mut block = String::from("\n");
             for statement in statements {
-                for _ in 0..(ind + 1) { block.push_str("    ") };
-                block.push_str(to_py(&statement, ind + 1).as_ref());
+                block.push_str(indent(ind).as_ref());
+                block.push_str(to_py(&statement, ind).as_ref());
                 block.push('\n');
             }
             block
@@ -92,14 +92,17 @@ fn to_py(core: &Core, ind: i32) -> String {
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, coll, body } =>
-            format!("for {} in {}:\n {}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
+            format!("for {} in {}:{}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
                     to_py(body.as_ref(), ind)),
         Core::If { cond, then } =>
-            format!("if {}:\n {}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind)),
+            format!("if {}:{}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind)),
         Core::IfElse { cond, then, _else } =>
-            format!("if {}:\n{}\nelse:\n{}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind), to_py(_else.as_ref(), ind)),
+            format!("if {}:{}\n{}else:\n{}", to_py(cond.as_ref(), ind),
+                    to_py(then.as_ref(), ind),
+                    indent(ind), to_py(_else.as_ref(), ind)),
         Core::While { cond, body } =>
-            format!("while {}:\n {}", to_py(cond.as_ref(), ind), to_py(body.as_ref(), ind)),
+            format!("while {}: {}", to_py(cond.as_ref(), ind),
+                    to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
@@ -110,7 +113,9 @@ fn to_py(core: &Core, ind: i32) -> String {
     }
 }
 
-fn comma_delimited(items: &Vec<Core>, ind: i32) -> String {
+fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
+
+fn comma_delimited(items: &Vec<Core>, ind: usize) -> String {
     if items.is_empty() { return String::new(); }
 
     let mut result = String::new();

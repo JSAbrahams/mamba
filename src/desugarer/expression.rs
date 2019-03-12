@@ -55,11 +55,13 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::Int { lit } => Core::Int { int: lit.clone() },
         ASTNode::Real { lit } => Core::Float { float: lit.clone() },
         ASTNode::ENum { num, exp } => Core::FunctionCall {
-            namespace: String::from("__enum"),
+            namespace: String::from("enum"),
             function: String::from("__init__"),
             args: vec![Core::Str { _str: num.clone() }, Core::Str { _str: exp.clone() }],
         },
+        ASTNode::Str { lit } => Core::Str { _str: lit.clone() },
 
+        ASTNode::TypeId { id, _type } => desugar_expression(id),
         ASTNode::Id { lit } => Core::Id { lit: lit.clone() },
         ASTNode::_Self => Core::Id { lit: String::from("self") },
         ASTNode::Bool { lit } => Core::Bool { _bool: lit.clone() },
@@ -165,6 +167,15 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             ]
         },
 
-        _ => panic!("")
+        ASTNode::Script { statements } => Core::Block { statements: desugar_vec(statements) },
+
+        ASTNode::File { modules, .. } => {
+            match modules.first() {
+                Some(module) => desugar_expression(module),
+                None => Core::Empty
+            }
+        }
+
+        other => panic!("didn't recognize {:?}.", other)
     }
 }
