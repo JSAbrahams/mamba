@@ -41,16 +41,14 @@ pub fn desugar_expression(node_pos: ASTNodePos, context: Context) -> Core {
         } => Core::FunDef {
             id: box desugar(id),
             args: box desugar(fun_args),
-            raises: box desugar(raises),
-            right: box desugar(expression),
+            body: box desugar(expression),
         },
         ASTNode::Def { definition, .. } => panic!("invalid definition format: {:?}", definition),
 
-        ASTNode::Init { box args, box body } => Core::FunDef {
+        ASTNode::Init { box args, box body } => Core::Init {
             id: String::from("init"),
             args: box desugar(box args),
-            raises: vec![],
-            right: box desugar(box body),
+            body: box desugar(box body),
         },
         ASTNode::InitArg { vararg, def, id_maybe_type: box ASTNode::TypeId { id, .. } } =>
             Core::FunArg { vararg, id },
