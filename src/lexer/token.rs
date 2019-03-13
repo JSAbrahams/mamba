@@ -85,7 +85,6 @@ pub enum Token {
 
     While,
     For,
-    Where,
     Map,
     In,
     If,
@@ -183,7 +182,6 @@ impl fmt::Display for Token {
 
             Token::While => "while".to_string(),
             Token::For => "foreach".to_string(),
-            Token::Where => "where".to_string(),
             Token::Map => "map".to_string(),
             Token::In => "in".to_string(),
             Token::If => "if".to_string(),

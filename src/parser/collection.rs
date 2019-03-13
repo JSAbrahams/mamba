@@ -10,7 +10,6 @@ use crate::parser::start_pos;
 use crate::parser::TPIterator;
 
 macro_rules! get_zero_or_more { ($it:expr, $msg:expr) => {{
-    let current = $it.peek().cloned();
     match parse_zero_or_more_expr($it, $msg) {
         Ok(node) => node,
         Err(err) => return Err(err)

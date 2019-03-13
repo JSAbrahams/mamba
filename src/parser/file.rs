@@ -2,6 +2,7 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_type;
+use crate::parser::_type::parse_type_def;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::block::parse_statements;
@@ -168,11 +169,13 @@ pub fn parse_module(it: &mut TPIterator) -> ParseResult {
 pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut imports = Vec::new();
     let mut modules = Vec::new();
+    let mut type_defs = Vec::new();
 
     while let Some(&t) = it.peek() {
         match t.token {
             Token::NL => { it.next(); }
             Token::From => imports.push(get_or_err_direct!(it, parse_import, "import")),
+            Token::Type => type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition")),
             _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
         }
     }
@@ -182,6 +185,6 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
         st_pos: 0,
         en_line: 0,
         en_pos: 0,
-        node: ASTNode::File { imports, modules },
+        node: ASTNode::File { imports, modules, type_defs },
     });
 }
