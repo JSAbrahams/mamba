@@ -18,17 +18,22 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         return Ok(get_or_err_direct!(it, parse_block, "expression or statement"));
     }
 
-    return match it.peek() {
+    let result = match it.peek() {
         Some(TokenPos { token: Token::Def, .. }) |
         Some(TokenPos { token: Token::Mut, .. }) |
         Some(TokenPos { token: Token::Print, .. }) |
         Some(TokenPos { token: Token::PrintLn, .. }) |
         Some(TokenPos { token: Token::For, .. }) |
         Some(TokenPos { token: Token::While, .. }) |
-        Some(TokenPos { token: Token::Retry, .. }) |
-        Some(TokenPos { token: Token::Type, .. }) => parse_statement(it),
+        Some(TokenPos { token: Token::Retry, .. }) => parse_statement(it),
         _ => parse_expression(it)
     };
+
+    match (result, it.peek()) {
+        (Ok(pre), Some(TokenPos { token: Token::Raises, .. })) => parse_raise(pre, it),
+        (Ok(pre), Some(TokenPos { token: Token::Handle, .. })) => parse_handle(pre, it),
+        (result, _) => result
+    }
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {

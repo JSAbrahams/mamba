@@ -18,8 +18,7 @@ use crate::parser::TPIterator;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-
-    return match match it.peek() {
+    let result = match it.peek() {
         Some(TokenPos { token: Token::If, .. }) |
         Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
 
@@ -48,58 +47,58 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
         Some(&next) => Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "expression".to_string() })
-    } {
-        Ok(pre) => match it.peek() {
-            Some(TokenPos { token: Token::QuestOr, .. }) => {
-                it.next();
-                let _default: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
-                Ok(ASTNodePos {
-                    st_line,
-                    st_pos,
-                    en_line: _default.en_line,
-                    en_pos: _default.en_pos,
-                    node: ASTNode::QuestOr { _do: Box::new(pre), _default },
-                })
-            }
-            Some(TokenPos { token: Token::Range, .. }) => {
-                it.next();
-                let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
-                Ok(ASTNodePos {
-                    st_line,
-                    st_pos,
-                    en_line: to.en_line,
-                    en_pos: to.en_pos,
-                    node: ASTNode::Range { from: Box::from(pre), to },
-                })
-            }
-            Some(TokenPos { token: Token::RangeIncl, .. }) => {
-                it.next();
-                let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
-                Ok(ASTNodePos {
-                    st_line,
-                    st_pos,
-                    en_line: to.en_line,
-                    en_pos: to.en_pos,
-                    node: ASTNode::RangeIncl { from: Box::from(pre), to },
-                })
-            }
-            Some(TokenPos { token: Token::To, .. }) => parse_anon_fun(pre, it),
-            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),
-            Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
-
-            Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
-
-            // normal method or function call
-            Some(TokenPos { token: Token::LRBrack, .. }) |
-            Some(TokenPos { token: Token::DDoublePoint, .. }) |
-            Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
-            Some(&tp) if is_expression(tp.clone()) => parse_call(pre, it),
-
-            _ => Ok(pre)
-        }
-
-        err => err
     };
+
+    match result {
+        Ok(res) => parse_post_expr(res, it),
+        err => return err
+    }
+}
+
+fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = (pre.st_line, pre.st_pos);
+    let result = match it.peek() {
+        Some(TokenPos { token: Token::QuestOr, .. }) => {
+            it.next();
+            let _def: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+
+            let (en_line, en_pos) = (_def.en_line, _def.en_pos);
+            let node = ASTNode::QuestOr { _do: Box::new(pre), _default: _def };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
+        Some(TokenPos { token: Token::Range, .. }) => {
+            it.next();
+            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+
+            let (en_line, en_pos) = (to.en_line, to.en_pos);
+            let node = ASTNode::Range { from: Box::from(pre), to };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
+        Some(TokenPos { token: Token::RangeIncl, .. }) => {
+            it.next();
+            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+
+            let (en_line, en_pos) = (to.en_line, to.en_pos);
+            let node = ASTNode::RangeIncl { from: Box::from(pre), to };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
+        Some(TokenPos { token: Token::To, .. }) => parse_anon_fun(pre, it),
+
+        Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
+
+        // normal method or function call
+        Some(TokenPos { token: Token::LRBrack, .. }) |
+        Some(TokenPos { token: Token::DDoublePoint, .. }) |
+        Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
+        Some(&tp) if is_expression(tp.clone()) => parse_call(pre, it),
+
+        _ => return Ok(pre)
+    };
+
+    match result {
+        Ok(res) => parse_post_expr(res, it),
+        err => return err
+    }
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {

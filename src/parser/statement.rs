@@ -16,7 +16,7 @@ use crate::parser::TPIterator;
 pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    return match match it.peek() {
+    let result = match it.peek() {
         Some(TokenPos { token: Token::Print, .. }) => {
             it.next();
             let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "print");
@@ -45,12 +45,11 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
 
         Some(&next) => Err(CustomErr { expected: "statement".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "statement".to_string() })
-    } {
-        Ok(pre) => match it.peek() {
-            Some(TokenPos { token: Token::Raises, .. }) => parse_raise(pre, it),
-            Some(TokenPos { token: Token::Handle, .. }) => parse_handle(pre, it),
-            _ => Ok(pre)
-        }
-        err => err
     };
+
+    match (result, it.peek()) {
+        (Ok(pre), Some(TokenPos { token: Token::Raises, .. })) => parse_raise(pre, it),
+        (Ok(pre), Some(TokenPos { token: Token::Handle, .. })) => parse_handle(pre, it),
+        (result, _) => result
+    }
 }
