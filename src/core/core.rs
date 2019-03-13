@@ -18,6 +18,7 @@ pub enum Core {
 
     Float { float: String },
     Int { int: String },
+    ENum { num: String, exp: String},
     Str { _str: String },
     Bool { _bool: bool },
 

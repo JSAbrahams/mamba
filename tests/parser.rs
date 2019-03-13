@@ -1,6 +1,6 @@
 use crate::util::valid_resource;
-use my_lang::lexer::tokenize;
-use my_lang::parser::parse;
+use mamba::lexer::tokenize;
+use mamba::parser::parse;
 
 mod util;
 

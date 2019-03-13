@@ -13,6 +13,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => _str.clone(),
         Core::Int { int } => int.clone(),
+        Core::ENum { num, exp } => format!("Enum({},{})", num, exp),
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 

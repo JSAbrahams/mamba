@@ -1,9 +1,9 @@
 use crate::util::valid_resource;
 
-use my_lang::lexer::tokenize;
-use my_lang::parser::parse;
-use my_lang::desugarer::desugar;
-use my_lang::core::to_py_source;
+use mamba::lexer::tokenize;
+use mamba::parser::parse;
+use mamba::desugarer::desugar;
+use mamba::core::to_py_source;
 
 mod util;
 

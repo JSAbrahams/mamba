@@ -54,11 +54,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
 
         ASTNode::Int { lit } => Core::Int { int: lit.clone() },
         ASTNode::Real { lit } => Core::Float { float: lit.clone() },
-        ASTNode::ENum { num, exp } => Core::FunctionCall {
-            namespace: String::from("enum"),
-            function: String::from("__init__"),
-            args: vec![Core::Str { _str: num.clone() }, Core::Str { _str: exp.clone() }],
-        },
+        ASTNode::ENum { num, exp } => Core::ENum { num: num.clone(), exp: exp.clone() },
         ASTNode::Str { lit } => Core::Str { _str: lit.clone() },
 
         ASTNode::TypeId { id, _type } => desugar_expression(id),
