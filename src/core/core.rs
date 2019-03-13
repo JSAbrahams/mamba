@@ -9,9 +9,9 @@ pub enum Core {
 
     Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },
-    VarDef { id: Box<Core>, right: Box<Core> },
+    VarDef { private: bool, id: Box<Core>, right: Box<Core> },
     Init { args: Vec<Core>, body: Box<Core> },
-    FunDef { id: Box<Core>, args: Vec<Core>, body: Box<Core> },
+    FunDef { private: bool, id: Box<Core>, args: Vec<Core>, body: Box<Core> },
     FunArg { vararg: bool, id: Box<Core> },
 
     Block { statements: Vec<Core> },

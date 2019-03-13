@@ -7,20 +7,20 @@ fn desugar_vec(node_pos: &Vec<ASTNodePos>) -> Vec<Core> {
     node_pos.iter().map(|node_pos| desugar_expression(node_pos)).collect()
 }
 
-// TODO use private of definition
-
 pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
     match &node_pos.node {
-        ASTNode::Def { private: _, definition } => match &definition.deref().node {
+        ASTNode::Def { private, definition } => match &definition.deref().node {
             ASTNode::VariableDef { mutable: _, ofmut: _, id_maybe_type, expression, forward } =>
                 match (id_maybe_type, expression) {
                     (id, Some(expr)) => Core::VarDef {
+                        private: private.clone(),
                         id: Box::from(desugar_expression(id)),
                         right: Box::from(desugar_expression(expr)),
                     },
                     (id, None) => desugar_expression(id)
                 },
             ASTNode::FunDef { id, fun_args, body: expression, .. } => Core::FunDef {
+                private: private.clone(),
                 id: Box::from(desugar_expression(id)),
                 args: desugar_vec(fun_args),
                 body: Box::from(match expression {
@@ -204,7 +204,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::UnderScore => Core::UnderScore,
         ASTNode::QuestOr { _do, _default } => Core::Block {
             statements: vec![
-                Core::VarDef { id: Box::from(Core::Id { lit: String::from("$temp") }), right: Box::from(desugar_expression(_do)) },
+                Core::VarDef { private: true, id: Box::from(Core::Id { lit: String::from("$temp") }), right: Box::from(desugar_expression(_do)) },
                 Core::IfElse {
                     cond: Box::from(Core::Not {
                         expr: Box::from(Core::Eq {
@@ -234,7 +234,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                 parents: desugar_vec(isa.as_ref()),
                 definitions: desugar_vec(definitions.as_ref()),
             },
-            other => panic!("desugarer didn't recognize while making class: {:?}.")
+            other => panic!("desugarer didn't recognize while making class: {:?}.", other)
         }
 
         ASTNode::TypeDef { .. } => Core::Empty,

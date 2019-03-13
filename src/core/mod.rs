@@ -19,34 +19,36 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::Init { args, body } =>
             format!("__init__({}): {}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
-        Core::FunDef { id, args, body } => {
-            let name = String::from(match id.as_ref() {
-                Core::GeOp => "__gt__",
-                Core::GeqOp => "__ge__",
-                Core::LeOp => "__lt__",
-                Core::LeqOp => "__le__",
+        Core::FunDef { private, id, args, body } => {
+            let name = match id.as_ref() {
+                Core::GeOp => String::from("__gt__"),
+                Core::GeqOp => String::from("__ge__"),
+                Core::LeOp => String::from("__lt__"),
+                Core::LeqOp => String::from("__le__"),
 
-                Core::EqOp => "__eq__",
-                Core::NeqOp => "__ne__",
+                Core::EqOp => String::from("__eq__"),
+                Core::NeqOp => String::from("__ne__"),
 
-                Core::AddOp => "__add__",
-                Core::SubOp => "__sub__",
-                Core::MulOp => "__mul__",
-                Core::ModOp => "__mod__",
-                Core::DivOp => "__truediv__",
+                Core::AddOp => String::from("__add__"),
+                Core::SubOp => String::from("__sub__"),
+                Core::MulOp => String::from("__mul__"),
+                Core::ModOp => String::from("__mod__"),
+                Core::DivOp => String::from("__truediv__"),
 
                 Core::Id { ref lit } => match lit.as_str() {
-                    "size" => "__size__",
-                    other => other
+                    "size" => String::from("__size__"),
+                    other => if *private { format!("_{}", other) } else { String::from(other) }
                 }
                 _ => panic!()
-            });
+            };
 
             format!("{}({}): {}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
         }
 
         Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::VarDef { id, right } => format!("{} = {}", to_py(id.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::VarDef { private, id, right } =>
+            format!("{}{} = {}", if *private { "_" } else { "" },
+                    to_py(id.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::FunArg { vararg, id } => format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
 

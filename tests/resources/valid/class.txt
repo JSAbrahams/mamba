@@ -27,6 +27,8 @@ stateful MyClass
 
     def fun_a(self) -> print self
 
+    def private fun_b(self) -> print "this function is private!"
+
     def factorial(0) -> 1
     def factorial(x: Int) -> x * factorial (x - 1)
     def factorial_infinite(x: Int) -> x * factorial x
