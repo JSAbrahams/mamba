@@ -104,7 +104,8 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::IfElse { cond, then, _else } =>
             format!("if {}: {}\n{}else: {}", to_py(cond.as_ref(), ind),
                     to_py(then.as_ref(), ind + 1),
-                    indent(ind), to_py(_else.as_ref(), ind + 1)),
+                    indent(ind),
+                    to_py(_else.as_ref(), ind + 1)),
         Core::While { cond, body } =>
             format!("while {}: {}", to_py(cond.as_ref(), ind),
                     to_py(body.as_ref(), ind + 1)),

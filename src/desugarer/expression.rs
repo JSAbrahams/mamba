@@ -72,13 +72,16 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::Print { expr } => Core::Print { expr: Box::from(desugar_expression(expr)) },
         ASTNode::PrintLn { expr } => Core::Print { expr: Box::from(desugar_expression(expr)) },
 
-        ASTNode::IfElse { cond, then, _else } => Core::IfElse {
-            cond: Box::from(desugar_expression(cond)),
-            then: Box::from(desugar_expression(then)),
-            _else: Box::from(match _else {
-                Some(el) => desugar_expression(el),
-                None => Core::Empty
-            }),
+        ASTNode::IfElse { cond, then, _else } => match _else {
+            Some(_else) => Core::IfElse {
+                cond: Box::from(desugar_expression(cond)),
+                then: Box::from(desugar_expression(then)),
+                _else: Box::from(desugar_expression(_else)),
+            },
+            None => Core::If {
+                cond: Box::from(desugar_expression(cond)),
+                then: Box::from(desugar_expression(then)),
+            }
         },
         ASTNode::When { cond, cases } => Core::When {
             cond: Box::from(desugar_expression(cond)),
