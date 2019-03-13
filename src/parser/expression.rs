@@ -8,8 +8,6 @@ use crate::parser::call::parse_reassignment;
 use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::end_pos;
-use crate::parser::expr_or_stmt::parse_handle;
-use crate::parser::expr_or_stmt::parse_raise;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -90,7 +88,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::LRBrack, .. }) |
         Some(TokenPos { token: Token::DDoublePoint, .. }) |
         Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
-        Some(&tp) if is_expression(tp.clone()) => parse_call(pre, it),
+        Some(&tp) if is_start_expression(tp.clone()) => parse_call(pre, it),
 
         _ => return Ok(pre)
     };
@@ -116,7 +114,8 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
-pub fn is_expression(next: TokenPos) -> bool {
+/// Excluding unary addition and subtraction
+pub fn is_start_expression(next: TokenPos) -> bool {
     return match next {
         TokenPos { token: Token::If, .. } |
         TokenPos { token: Token::When, .. } |
@@ -131,8 +130,6 @@ pub fn is_expression(next: TokenPos) -> bool {
         TokenPos { token: Token::Str(_), .. } |
         TokenPos { token: Token::Bool(_), .. } |
         TokenPos { token: Token::Not, .. } |
-        TokenPos { token: Token::Add, .. } |
-        TokenPos { token: Token::Sub, .. } |
         TokenPos { token: Token::Id(_), .. } => true,
         _ => false
     };

@@ -29,3 +29,8 @@ stateful MyClass
 
     def factorial(0) -> 1
     def factorial(x: Int) -> x * factorial (x - 1)
+    def factorial_infinite(x: Int) -> x * factorial x
+
+    def postfix1() -> a b
+    def postfix2() -> a b c
+    def postfix3() -> a b c d

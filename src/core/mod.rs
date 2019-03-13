@@ -13,12 +13,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => _str.clone(),
         Core::Int { int } => int.clone(),
-        Core::ENum { num, exp } => format!("Enum({},{})", num, exp),
+        Core::ENum { num, exp } => format!("Enum({}, {})", num, exp),
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
         Core::Init { args, body } =>
-            format!("__init__({}):{}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind)),
+            format!("__init__({}): {}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
         Core::FunDef { id, args, body } => {
             let name = String::from(match id.as_ref() {
                 Core::GeOp => "__gt__",
@@ -42,7 +42,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 _ => panic!()
             });
 
-            format!("{}({}):{}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
+            format!("{}({}): {}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
         }
 
         Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
@@ -94,22 +94,23 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, coll, body } =>
-            format!("for {} in {}:{}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
-                    to_py(body.as_ref(), ind)),
+            format!("for {} in {}: {}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
+                    to_py(body.as_ref(), ind + 1)),
         Core::If { cond, then } =>
-            format!("if {}:{}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind)),
+            format!("if {}: {}", to_py(cond.as_ref(), ind),
+                    to_py(then.as_ref(), ind + 1)),
         Core::IfElse { cond, then, _else } =>
-            format!("if {}:{}\n{}else:{}", to_py(cond.as_ref(), ind),
-                    to_py(then.as_ref(), ind),
-                    indent(ind), to_py(_else.as_ref(), ind)),
+            format!("if {}: {}\n{}else: {}", to_py(cond.as_ref(), ind),
+                    to_py(then.as_ref(), ind + 1),
+                    indent(ind), to_py(_else.as_ref(), ind + 1)),
         Core::While { cond, body } =>
-            format!("while {}:{}", to_py(cond.as_ref(), ind),
+            format!("while {}: {}", to_py(cond.as_ref(), ind),
                     to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
         Core::ClassDef { name, generics: _, parents, definitions } =>
-            format!("class {}({}):{}",
+            format!("class {}({}): {}\n",
                     to_py(name, ind), comma_delimited(parents, ind),
                     newline_delimited(definitions, ind + 1)),
 

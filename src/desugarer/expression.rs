@@ -175,6 +175,14 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             },
             call => panic!("invalid function call format: {:?}", call),
         }
+        ASTNode::FunctionCallDirect { name, args } => match &name.deref().node {
+            ASTNode::Id { lit } => Core::MethodCall {
+                object: Box::from(Core::Empty),
+                method: lit.clone(),
+                args: desugar_vec(args),
+            },
+            call => panic!("invalid function call format: {:?}", call),
+        }
         ASTNode::MethodCall { instance, name, args } => match &name.deref().node {
             ASTNode::Id { lit } => Core::MethodCall {
                 object: Box::from(desugar_expression(instance)),

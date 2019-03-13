@@ -2,7 +2,9 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
+use crate::parser::call::parse_call;
 use crate::parser::end_pos;
+use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -29,6 +31,20 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
 
         Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
         None => Err(EOFErr { expected: Token::Id(String::new()) })
+    }
+}
+
+pub fn parse_id_maybe_call(it: &mut TPIterator) -> ParseResult {
+    let id = match parse_id(it) {
+        Ok(id) => id,
+        err => return err
+    };
+
+    match it.peek() {
+        Some(TokenPos { token: Token::Point, .. }) |
+        Some(TokenPos { token: Token::LRBrack, .. }) => parse_call(id, it),
+        Some(&tp) if is_start_expression(tp.clone()) => parse_call(id, it),
+        _ => Ok(id)
     }
 }
 

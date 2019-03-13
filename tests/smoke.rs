@@ -13,8 +13,6 @@ fn class_to_python() {
 
     let tokens = tokenize(source).unwrap();
     let ast_tree = parse(tokens).unwrap();
-    println!("{:?}", ast_tree);
-
     let core_tree = desugar(ast_tree);
     println!("{}", to_py_source(core_tree));
 }
