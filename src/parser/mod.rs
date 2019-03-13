@@ -122,7 +122,7 @@ pub enum ASTNode {
     Body { isa: Vec<ASTNodePos>, definitions: Vec<ASTNodePos> },
 
     Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
-    InitArg { vararg: bool, def: bool, id_maybe_type: Box<ASTNodePos> },
+    InitArg { vararg: bool, id_maybe_type: Box<ASTNodePos> },
 
     ModName { name: String },
     ModNameIsA { name: String, isa: Vec<String> },

@@ -52,20 +52,17 @@ pub fn parse_constructor_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos
 pub fn parse_constructor_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let (vararg, def) = match it.peek() {
-        Some(TokenPos { token: Token::Vararg, .. }) => (true, false),
-        Some(TokenPos { token: Token::Def, .. }) => (false, true),
-        Some(_) => (false, false),
+    let vararg = match it.peek() {
+        Some(TokenPos { token: Token::Vararg, .. }) => {
+            it.next();
+            true
+        }
+        Some(_) => false,
         None => return Err(CustomEOFErr { expected: String::from("constructor argument") })
     };
 
-    if vararg || def { it.next(); }
     let id_maybe_type = get_or_err!(it, parse_id_maybe_type, "constructor argument");
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: id_maybe_type.en_line,
-        en_pos: id_maybe_type.en_pos,
-        node: ASTNode::InitArg { vararg, def, id_maybe_type },
-    });
+    let (en_line, en_pos) = (id_maybe_type.en_line, id_maybe_type.en_pos);
+    let node = ASTNode::InitArg { vararg, id_maybe_type };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

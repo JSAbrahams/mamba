@@ -1,5 +1,3 @@
-#![feature(box_syntax, box_patterns)]
-
 use crate::core::core::Core;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
@@ -40,7 +38,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                 None => Core::Empty
             }),
         },
-        ASTNode::InitArg { vararg, def, id_maybe_type } => match &id_maybe_type.deref().node {
+        ASTNode::InitArg { vararg, id_maybe_type } => match &id_maybe_type.deref().node {
             ASTNode::IdType { id, .. } => Core::FunArg { vararg: *vararg, id: Box::from(desugar_expression(id.as_ref())) },
             id_maybe_type => panic!("invalid init format: {:?}", id_maybe_type),
         }

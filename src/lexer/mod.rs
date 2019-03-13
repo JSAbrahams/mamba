@@ -223,7 +223,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "stateless" => Token::Stateless,
         "as" => Token::As,
         "isa" => Token::IsA,
-        "constructor" => Token::Constructor,
         "private" => Token::Private,
 
         "use" => Token::Use,

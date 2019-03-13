@@ -15,7 +15,6 @@ pub enum Token {
     Stateless,
     IsA,
     IsNA,
-    Constructor,
     Private,
     Init,
 
@@ -115,7 +114,6 @@ impl fmt::Display for Token {
             Token::Stateful => "class".to_string(),
             Token::IsA => "isa".to_string(),
             Token::IsNA => "isnta".to_string(),
-            Token::Constructor => "constructor".to_string(),
             Token::Private => "private".to_string(),
             Token::Init => "init".to_string(),
 
