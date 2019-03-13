@@ -98,14 +98,19 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::If { cond, then } =>
             format!("if {}:{}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind)),
         Core::IfElse { cond, then, _else } =>
-            format!("if {}:{}\n{}else:\n{}", to_py(cond.as_ref(), ind),
+            format!("if {}:{}\n{}else:{}", to_py(cond.as_ref(), ind),
                     to_py(then.as_ref(), ind),
                     indent(ind), to_py(_else.as_ref(), ind)),
         Core::While { cond, body } =>
-            format!("while {}: {}", to_py(cond.as_ref(), ind),
+            format!("while {}:{}", to_py(cond.as_ref(), ind),
                     to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
+
+        Core::ClassDef { name, generics: _, parents, definitions } =>
+            format!("class {}({}):{}",
+                    to_py(name, ind), comma_delimited(parents, ind),
+                    newline_delimited(definitions, ind + 1)),
 
         Core::Undefined => String::from("None"),
         Core::Empty => String::new(),
@@ -115,6 +120,17 @@ fn to_py(core: &Core, ind: usize) -> String {
 }
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
+
+fn newline_delimited(items: &Vec<Core>, ind: usize) -> String {
+    let mut result = String::new();
+    for item in items {
+        result.push('\n');
+        result.push_str(indent(ind).as_ref());
+        result.push_str(to_py(item, ind).as_ref());
+    }
+
+    result
+}
 
 fn comma_delimited(items: &Vec<Core>, ind: usize) -> String {
     if items.is_empty() { return String::new(); }

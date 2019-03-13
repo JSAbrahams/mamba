@@ -2,7 +2,7 @@
 pub enum Core {
     Module { id: String, imports: Vec<String>, body: Box<Core> },
     Import { file: String, _use: Vec<Core>, _as: Vec<Core> },
-    ClassDef { functions: Vec<Core> },
+    ClassDef { name: Box<Core>, generics: Vec<Core>, parents: Vec<Core>, definitions: Vec<Core> },
 
     FunctionCall { namespace: String, function: String, args: Vec<Core> },
     MethodCall { object: Box<Core>, method: String, args: Vec<Core> },
