@@ -103,7 +103,7 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::Util);
+    check_next_is!(it, Token::Stateless);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
     let body = get_or_err!(it, parse_class_body, "util");
     return Ok(ASTNodePos {
@@ -116,7 +116,7 @@ pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::Class);
+    check_next_is!(it, Token::Stateful);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
     let body: Box<ASTNodePos> = get_or_err!(it, parse_class_body, "class");
 
@@ -143,8 +143,8 @@ pub fn parse_script(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_module(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
-        Some(TokenPos { token: Token::Util, .. }) => parse_stateless(it),
-        Some(TokenPos { token: Token::Class, .. }) => parse_stateful(it),
+        Some(TokenPos { token: Token::Stateless, .. }) => parse_stateless(it),
+        Some(TokenPos { token: Token::Stateful, .. }) => parse_stateful(it),
         _ => parse_script(it)
     }
 }

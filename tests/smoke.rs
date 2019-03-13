@@ -9,7 +9,7 @@ mod util;
 
 #[test]
 fn class_to_python() {
-    let source = valid_resource("assign_and_while.txt");
+    let source = valid_resource("class.txt");
 
     let tokens = tokenize(source).unwrap();
     let ast_tree = parse(tokens).unwrap();

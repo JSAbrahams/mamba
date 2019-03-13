@@ -4,7 +4,7 @@ type my_class
     def fun_a: () -> ()
     def factorial: Int -> Int
 
-util my_class
+stateless my_class
     def SOME_CONSTANT <- 3.5E20
 
     def constant_func() -> 400
@@ -16,7 +16,7 @@ type OtherState isa MyClass when
     z_modified < 200
     other_field < 50
 
-class MyClass
+stateful MyClass
     def private z_modified
     def private mut other_field <- 10
 
