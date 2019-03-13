@@ -150,8 +150,8 @@ pub enum ASTNode {
     Handle { expr_or_stmt: Box<ASTNodePos>, cases: Vec<ASTNodePos> },
     Retry,
 
-    FunCall { namespace: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
-    MetCall { instance: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    FunctionCall { namespace: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
+    MethodCall { instance: Box<ASTNodePos>, name: Box<ASTNodePos>, args: Vec<ASTNodePos> },
     Call { instance_or_met: Box<ASTNodePos>, met_or_arg: Box<ASTNodePos> },
 
     Id { lit: String },

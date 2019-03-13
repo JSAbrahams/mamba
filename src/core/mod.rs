@@ -60,10 +60,11 @@ fn to_py(core: &Core, ind: usize) -> String {
             block
         }
 
-        Core::FunctionCall { namespace, function, args, } =>
-            format!("{}.{}({})", namespace, function, comma_delimited(args.as_ref(), ind)),
-        Core::MethodCall { object, method, args, } =>
-            format!("{}.{}({})", to_py(object.as_ref(), ind), method, comma_delimited(args.as_ref(), ind)),
+        Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
+        Core::MethodCall { object, method, args, } => match object.as_ref() {
+            Core::Empty => format!("{}({})", method, comma_delimited(args.as_ref(), ind)),
+            other => format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args.as_ref(), ind))
+        }
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements.as_ref(), ind)),
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements.as_ref(), ind)),

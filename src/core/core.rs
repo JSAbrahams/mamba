@@ -4,8 +4,8 @@ pub enum Core {
     Import { file: String, _use: Vec<Core>, _as: Vec<Core> },
     ClassDef { name: Box<Core>, generics: Vec<Core>, parents: Vec<Core>, definitions: Vec<Core> },
 
-    FunctionCall { namespace: String, function: String, args: Vec<Core> },
     MethodCall { object: Box<Core>, method: String, args: Vec<Core> },
+    PropertyCall { object: Box<Core>, property: String },
 
     Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },
@@ -18,7 +18,7 @@ pub enum Core {
 
     Float { float: String },
     Int { int: String },
-    ENum { num: String, exp: String},
+    ENum { num: String, exp: String },
     Str { _str: String },
     Bool { _bool: bool },
 

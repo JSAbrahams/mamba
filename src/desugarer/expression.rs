@@ -138,9 +138,36 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             vararg: vararg.clone(),
             id: Box::from(desugar_expression(id_maybe_type)),
         },
-        ASTNode::Call { instance_or_met, met_or_arg } => unimplemented!(),
 
-        ASTNode::FunCall { namespace, name, args } => match &name.deref().node {
+        // TODO use context to check whether identifier is function or property
+        // Currently:
+        // a b => a.b , where a may be expression, b must be id
+        // a b c => a.b(c), where and c may be expression, b must be id
+        // a b c d => a.b(c.d) etc.
+        ASTNode::Call { instance_or_met, met_or_arg } => match &met_or_arg.deref().node {
+            ASTNode::Call { instance_or_met: method, met_or_arg } => match &method.deref().node {
+                ASTNode::Id { lit: method } => Core::MethodCall {
+                    object: Box::from(desugar_expression(instance_or_met)),
+                    method: method.clone(),
+                    args: vec![desugar_expression(met_or_arg)],
+                },
+                other => panic!("Chained method call must have identifier, was {:?}", other)
+            }
+            ASTNode::Id { lit } => Core::PropertyCall {
+                object: Box::from(desugar_expression(instance_or_met)),
+                property: lit.clone(),
+            },
+            other => match &instance_or_met.deref().node {
+                ASTNode::Id { lit: method } => Core::MethodCall {
+                    object: Box::from(Core::Empty),
+                    method: method.clone(),
+                    args: vec![desugar_expression(met_or_arg)],
+                },
+                other => panic!("desugaring calls not that advanced yet: {:?}.", other)
+            }
+        }
+
+        ASTNode::FunctionCall { namespace, name, args } => match &name.deref().node {
             ASTNode::Id { lit } => Core::MethodCall {
                 object: Box::from(desugar_expression(namespace)),
                 method: lit.clone(),
@@ -148,7 +175,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             },
             call => panic!("invalid function call format: {:?}", call),
         }
-        ASTNode::MetCall { instance, name, args } => match &name.deref().node {
+        ASTNode::MethodCall { instance, name, args } => match &name.deref().node {
             ASTNode::Id { lit } => Core::MethodCall {
                 object: Box::from(desugar_expression(instance)),
                 method: lit.clone(),
@@ -166,7 +193,6 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             method: String::from("range_incl"),
             args: vec![desugar_expression(to)],
         },
-
         ASTNode::UnderScore => Core::UnderScore,
         ASTNode::QuestOr { _do, _default } => Core::Block {
             statements: vec![
@@ -183,10 +209,10 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                 }
             ]
         },
-
         ASTNode::Script { statements } => Core::Block { statements: desugar_vec(statements) },
-
-        ASTNode::File { imports: _, modules, type_defs } => {
+        ASTNode::File {
+            imports: _, modules, type_defs
+        } => {
             let mut statements: Vec<Core> = desugar_vec(type_defs);
             statements.append(desugar_vec(modules).as_mut());
             Core::Block { statements }
