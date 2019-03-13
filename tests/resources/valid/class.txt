@@ -18,7 +18,7 @@ type OtherState isa MyClass when
 
 class MyClass
     def private z_modified
-    def mut private other_field <- 10
+    def private mut other_field <- 10
 
     def init(self, def my_field: Int, z: Int) ->
         self.z_modified <- z * SOME_CONSTANT

@@ -28,7 +28,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Retry, .. }) |
         Some(TokenPos { token: Token::Type, .. }) => parse_statement(it),
         _ => parse_expression(it)
-    }
+    };
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -36,13 +36,8 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
     check_next_is!(it, Token::Raises);
 
     let errors: Vec<ASTNodePos> = get_or_err_direct!(it, parse_generics, "raises");
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: 0,
-        en_pos: 0,
-        node: ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors },
-    });
+    let node = ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors };
+    Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })
 }
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -51,11 +46,7 @@ pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResul
     check_next_is!(it, Token::When);
 
     let cases = get_or_err_direct!(it, parse_when_cases, "handle cases");
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: 0,
-        en_pos: 0,
-        node: ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases },
-    });
+
+    let node = ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
+    Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })
 }

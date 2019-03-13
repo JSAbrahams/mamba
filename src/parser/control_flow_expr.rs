@@ -35,13 +35,9 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
         Some(get_or_err!(it, parse_expr_or_stmt, "if else branch"))
     } else { None };
 
-    Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: then.en_line,
-        en_pos: then.en_pos,
-        node: ASTNode::IfElse { cond, then, _else },
-    })
+    let (en_line, en_pos) = (then.en_line, then.en_pos);
+    let node = ASTNode::IfElse { cond, then, _else };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 fn parse_when(it: &mut TPIterator) -> ParseResult {

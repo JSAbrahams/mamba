@@ -112,13 +112,9 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
     }
 
     let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "return");
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: expr.en_line,
-        en_pos: expr.en_pos,
-        node: ASTNode::Return { expr },
-    });
+    let (en_line, en_pos) = (expr.en_line, expr.en_pos);
+    let node = ASTNode::Return { expr };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn is_expression(next: TokenPos) -> bool {

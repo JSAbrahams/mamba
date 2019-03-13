@@ -11,7 +11,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut stmts: Vec<ASTNodePos> = Vec::new();
     while let Some(&t) = it.peek() {
         match t.token {
-            Token::Dedent => break,
+            Token::Dedent | Token::Class | Token::Type => break,
             Token::NL => { it.next(); }
             _ => stmts.push(get_or_err_direct!(it, parse_expr_or_stmt, "block"))
         }
@@ -31,5 +31,5 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     };
 
     if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } });
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } })
 }

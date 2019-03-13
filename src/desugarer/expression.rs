@@ -41,7 +41,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             }),
         },
         ASTNode::InitArg { vararg, def, id_maybe_type } => match &id_maybe_type.deref().node {
-            ASTNode::TypeId { id, .. } => Core::FunArg { vararg: *vararg, id: Box::from(desugar_expression(id.as_ref())) },
+            ASTNode::IdType { id, .. } => Core::FunArg { vararg: *vararg, id: Box::from(desugar_expression(id.as_ref())) },
             id_maybe_type => panic!("invalid init format: {:?}", id_maybe_type),
         }
 
@@ -57,7 +57,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::ENum { num, exp } => Core::ENum { num: num.clone(), exp: exp.clone() },
         ASTNode::Str { lit } => Core::Str { _str: lit.clone() },
 
-        ASTNode::TypeId { id, _type } => desugar_expression(id),
+        ASTNode::IdType { id, _type } => desugar_expression(id),
         ASTNode::Id { lit } => Core::Id { lit: lit.clone() },
         ASTNode::_Self => Core::Id { lit: String::from("self") },
         ASTNode::Bool { lit } => Core::Bool { _bool: lit.clone() },

@@ -17,13 +17,9 @@ pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Assign);
     let right: Box<ASTNodePos> = get_or_err!(it, parse_expression, "reassignment");
 
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: right.en_line,
-        en_pos: right.en_pos,
-        node: ASTNode::ReAssign { left: Box::new(pre), right },
-    });
+    let (en_line, en_pos) = (right.en_line, right.en_pos);
+    let node = ASTNode::ReAssign { left: Box::new(pre), right };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_anon_fun(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -31,13 +27,9 @@ pub fn parse_anon_fun(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::To);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function");
 
-    Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::AnonFun { args: Box::new(pre), body },
-    })
+    let (en_line, en_pos) = (body.en_line, body.en_pos);
+    let node = ASTNode::AnonFun { args: Box::new(pre), body };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -55,6 +47,7 @@ pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_direct_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = (pre.st_line, pre.st_pos);
     let namespace = Box::from(ASTNodePos {
         st_line: pre.st_line,
         st_pos: pre.st_pos,
@@ -71,20 +64,12 @@ fn parse_direct_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (en_line, en_pos) = end_pos(it);
     check_next_is!(it, Token::RRBrack);
 
-    return Ok(ASTNodePos {
-        st_line: pre.st_line,
-        st_pos: pre.st_pos,
-        en_line,
-        en_pos,
-        node: ASTNode::FunCall {
-            namespace,
-            name: Box::from(pre),
-            args,
-        },
-    });
+    let node = ASTNode::FunCall { namespace, name: Box::from(pre), args };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 fn parse_regular_call(fun: bool, pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = (pre.st_line, pre.st_pos);
     it.next();
     let name: Box<ASTNodePos> = get_or_err!(it, parse_id, "call name");
 
@@ -113,17 +98,13 @@ fn parse_regular_call(fun: bool, pre: ASTNodePos, it: &mut TPIterator) -> ParseR
         _ => vec![]
     };
 
-    return Ok(ASTNodePos {
-        st_line: pre.st_line,
-        st_pos: pre.st_pos,
-        en_line: 0,
-        en_pos: 0,
-        node: if fun {
-            ASTNode::FunCall { namespace: Box::from(pre), name, args }
-        } else {
-            ASTNode::MetCall { instance: Box::from(pre), name, args }
-        },
-    });
+    let node = if fun {
+        ASTNode::FunCall { namespace: Box::from(pre), name, args }
+    } else {
+        ASTNode::MetCall { instance: Box::from(pre), name, args }
+    };
+
+    Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })
 }
 
 fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
@@ -136,7 +117,7 @@ fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos
             Token::RRBrack => break,
             _ => {
                 arguments.push(get_or_err_direct!(it, parse_expression,
-                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"));
+                                String::from(msg) + " (pos " + & pos.to_string() + ")"));
                 if let Some(&t) = it.peek() {
                     if t.token != Token::RRBrack { check_next_is!(it, Token::Comma); }
                 }
@@ -170,7 +151,7 @@ fn parse_expressions(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodeP
     while let Some(&t) = it.peek() {
         if is_expression(t.clone()) {
             expressions.push(get_or_err_direct!(it, parse_expression,
-                                  String::from(msg) + " (pos "+ &pos.to_string() + ")"));
+                             String::from(msg) + " (pos " + & pos.to_string() + ")"));
         } else { break; }
         pos += 1;
     }

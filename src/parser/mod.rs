@@ -116,15 +116,10 @@ pub struct ASTNodePos {
 pub enum ASTNode {
     File { imports: Vec<ASTNodePos>, modules: Vec<ASTNodePos>, type_defs: Vec<ASTNodePos> },
     Import { id: Box<ASTNodePos>, _use: Vec<ASTNodePos>, all: bool, _as: Option<Box<ASTNodePos>> },
-    Class { body: Box<ASTNodePos> },
-    Util { body: Box<ASTNodePos> },
+    Stateful { _type: Box<ASTNodePos>, body: Box<ASTNodePos> },
+    Stateless { _type: Box<ASTNodePos>, body: Box<ASTNodePos> },
     Script { statements: Vec<ASTNodePos> },
-    Body {
-        id: Box<ASTNodePos>,
-        generics: Vec<ASTNodePos>,
-        isa: Vec<ASTNodePos>,
-        definitions: Vec<ASTNodePos>,
-    },
+    Body { isa: Vec<ASTNodePos>, definitions: Vec<ASTNodePos> },
 
     Init { args: Vec<ASTNodePos>, body: Option<Box<ASTNodePos>> },
     InitArg { vararg: bool, def: bool, id_maybe_type: Box<ASTNodePos> },
@@ -161,16 +156,13 @@ pub enum ASTNode {
 
     Id { lit: String },
 
-    TypeId { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
-    TypeDef {
-        id: Box<ASTNodePos>,
-        generics: Option<Vec<ASTNodePos>>,
-        body: Option<Box<ASTNodePos>>,
-    },
-    TypeAlias { id: Box<ASTNodePos>, _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
+    IdType { id: Box<ASTNodePos>, _type: Option<Box<ASTNodePos>> },
+    TypeDef { _type: Box<ASTNodePos>, body: Option<Box<ASTNodePos>> },
+    TypeAlias { _type: Box<ASTNodePos>, conditions: Option<Vec<ASTNodePos>> },
     TypeTup { types: Vec<ASTNodePos> },
-    TypeFun { left: Box<ASTNodePos>, right: Box<ASTNodePos> },
-    Condition { condition: Box<ASTNodePos>, _else: Option<Box<ASTNodePos>> },
+    Type { id: Box<ASTNodePos>, generics: Vec<ASTNodePos> },
+    TypeFun { _type: Box<ASTNodePos>, body: Box<ASTNodePos> },
+    Condition { cond: Box<ASTNodePos>, _else: Option<Box<ASTNodePos>> },
     FunArg { vararg: bool, id_maybe_type: Box<ASTNodePos>, default: Option<Box<ASTNodePos>> },
 
     _Self,
