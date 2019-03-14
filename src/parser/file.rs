@@ -20,7 +20,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "import id");
 
     let (_use, all) = match it.peek() {
-        Some(TokenPos { token: Token::Use, .. }) => {
+        Some(TokenPos { token: Token::Use, .. }) =>
             ({
                  it.next();
                  let mut ids: Vec<ASTNodePos> = Vec::new();
@@ -36,8 +36,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
                  }
                  ids
              },
-             false)
-        }
+             false),
         Some(TokenPos { token: Token::UseAll, .. }) => (vec![], true),
         _ => (vec![], false)
     };
@@ -169,9 +168,8 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
                 it.next();
             }
             Token::From => imports.push(get_or_err_direct!(it, parse_import, "import")),
-            Token::Type => {
-                type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition"))
-            }
+            Token::Type =>
+                type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition")),
             _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
         }
     }
@@ -193,9 +191,8 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "type definition");
 
             let conditions: Option<Vec<ASTNodePos>> = match it.peek() {
-                Some(TokenPos { token: Token::When, .. }) => {
-                    Some(get_or_err_direct!(it, parse_conditions, "type definition"))
-                }
+                Some(TokenPos { token: Token::When, .. }) =>
+                    Some(get_or_err_direct!(it, parse_conditions, "type definition")),
                 _ => None
             };
 

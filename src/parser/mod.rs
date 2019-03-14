@@ -14,7 +14,7 @@ macro_rules! get_or_err {
         let current = $it.peek().cloned();
         match $fun($it) {
             Ok(node) => Box::new(node),
-            Err(err) => {
+            Err(err) =>
                 return match current {
                     Some(tp) => Err(ParseErr { parsing:  $msg.to_string(),
                                                cause:    Box::new(err),
@@ -22,8 +22,7 @@ macro_rules! get_or_err {
                     None => Err(ParseErr { parsing:  $msg.to_string(),
                                            cause:    Box::new(err),
                                            position: None })
-                }
-            }
+                },
         }
     }};
 }
@@ -37,7 +36,7 @@ macro_rules! get_or_err_direct {
         let current = $it.peek().cloned();
         match $fun($it) {
             Ok(node) => node,
-            Err(e) => {
+            Err(e) =>
                 return match current {
                     Some(tp) => Err(ParseErr { parsing:  $msg.to_string(),
                                                cause:    Box::new(e),
@@ -45,8 +44,7 @@ macro_rules! get_or_err_direct {
                     None => Err(ParseErr { parsing:  $msg.to_string(),
                                            cause:    Box::new(e),
                                            position: None })
-                }
-            }
+                },
         }
     }};
 }

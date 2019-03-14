@@ -37,9 +37,8 @@ pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Point, .. }) => parse_regular_call(false, pre, it),
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_direct_call(pre, it),
         Some(&tp) if is_start_expression(tp.clone()) => parse_postfix_call(pre, it),
-        Some(&tp) => {
-            Err(CustomErr { expected: String::from("function call"), actual: tp.clone() })
-        }
+        Some(&tp) =>
+            Err(CustomErr { expected: String::from("function call"), actual: tp.clone() }),
         None => Err(CustomEOFErr { expected: String::from("function call") })
     }
 }
@@ -127,15 +126,14 @@ fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (pre.st_line, pre.st_pos);
 
     let (en_line, en_pos, node) = match it.peek() {
-        Some(&tp) if is_start_expression(tp.clone()) => {
+        Some(&tp) if is_start_expression(tp.clone()) =>
             match parse_postfix_call(*name_or_arg, it) {
                 Ok(post) => (post.en_line,
                              post.en_pos,
                              ASTNode::Call { instance_or_met: Box::from(pre),
                                              met_or_arg:      Box::from(post) }),
                 err => return err
-            }
-        }
+            },
         _ => (name_or_arg.en_line,
               name_or_arg.en_pos,
               ASTNode::Call { instance_or_met: Box::from(pre), met_or_arg: name_or_arg })

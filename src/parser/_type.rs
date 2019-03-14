@@ -21,13 +21,12 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = end_pos(it);
     match it.next() {
-        Some(TokenPos { token: Token::Id(id), .. }) => {
+        Some(TokenPos { token: Token::Id(id), .. }) =>
             Ok(ASTNodePos { st_line,
                             st_pos,
                             en_line,
                             en_pos,
-                            node: ASTNode::Id { lit: id.to_string() } })
-        }
+                            node: ASTNode::Id { lit: id.to_string() } }),
 
         Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
         None => Err(EOFErr { expected: Token::Id(String::new()) })
@@ -75,9 +74,8 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Id(_), .. }) => {
             let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "type");
             let generics: Vec<ASTNodePos> = match it.peek() {
-                Some(TokenPos { token: Token::LSBrack, .. }) => {
-                    get_or_err_direct!(it, parse_generics, "type generic")
-                }
+                Some(TokenPos { token: Token::LSBrack, .. }) =>
+                    get_or_err_direct!(it, parse_generics, "type generic"),
                 _ => vec![]
             };
 
@@ -136,9 +134,8 @@ pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 fn parse_condition(it: &mut TPIterator) -> ParseResult {
     let condition: Box<ASTNodePos> = get_or_err!(it, parse_expression, "condition");
     let _else: Option<Box<ASTNodePos>> = match it.peek() {
-        Some(TokenPos { token: Token::Else, .. }) => {
-            Some(get_or_err!(it, parse_expression, "condition else"))
-        }
+        Some(TokenPos { token: Token::Else, .. }) =>
+            Some(get_or_err!(it, parse_expression, "condition else")),
         _ => None
     };
 

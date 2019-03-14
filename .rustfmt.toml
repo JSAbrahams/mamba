@@ -22,6 +22,7 @@ struct_lit_single_line = true
 
 trailing_comma = "Never"
 
+match_arm_blocks = false
 overflow_delimited_expr = true
 use_field_init_shorthand = true
 

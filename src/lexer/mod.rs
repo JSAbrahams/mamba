@@ -123,9 +123,8 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
             '\n' => next_line_and_tp!(),
             '\r' => match (it.next(), it.peek()) {
                 (_, Some('\n')) => next_line_and_tp!(),
-                (_, Some(other)) => {
-                    return Err(format!("Expected newline after carriage return. Was '{}'.", other))
-                }
+                (_, Some(other)) =>
+                    return Err(format!("Expected newline after carriage return. Was '{}'.", other)),
                 (_, None) => return Err("File ended with carriage return.".to_string())
             },
             '\t' => increase_indent!(),

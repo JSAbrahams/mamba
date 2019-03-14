@@ -17,9 +17,8 @@ use crate::parser::TPIterator;
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     let result = match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) => {
-            parse_cntrl_flow_expr(it)
-        }
+        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) =>
+            parse_cntrl_flow_expr(it),
 
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_collection(it),
         Some(TokenPos { token: Token::LSBrack, .. })
@@ -44,9 +43,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         | Some(TokenPos { token: Token::Id(_), .. })
         | Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
 
-        Some(&next) => {
-            Err(CustomErr { expected: "expression".to_string(), actual: next.clone() })
-        }
+        Some(&next) =>
+            Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     };
 

@@ -24,9 +24,8 @@ pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::LSBrack, .. }) => parse_list(it),
         Some(TokenPos { token: Token::LCBrack, .. }) => parse_set(it),
 
-        Some(&next) => {
-            Err(CustomErr { expected: "collection".to_string(), actual: next.clone() })
-        }
+        Some(&next) =>
+            Err(CustomErr { expected: "collection".to_string(), actual: next.clone() }),
         None => Err(CustomEOFErr { expected: "collection".to_string() })
     }
 }

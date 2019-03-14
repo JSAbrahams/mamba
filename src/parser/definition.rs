@@ -56,9 +56,8 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
 
         _ => match get_or_err_direct!(it, parse_id_maybe_type, "definition id") {
             id @ ASTNodePos { node: ASTNode::IdType { _type: Some(_), .. }, .. }
-            | id @ ASTNodePos { node: ASTNode::TypeTup { .. }, .. } => {
-                parse_variable_def_id(id, false, it)
-            }
+            | id @ ASTNodePos { node: ASTNode::TypeTup { .. }, .. } =>
+                parse_variable_def_id(id, false, it),
             id @ ASTNodePos { node: ASTNode::IdType { _type: None, .. }, .. } => match it.peek() {
                 Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, it),
                 Some(_) => parse_variable_def_id(id, false, it),
@@ -69,13 +68,12 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     };
 
     match definition {
-        Ok(definition) => {
+        Ok(definition) =>
             Ok(ASTNodePos { st_line,
                             st_pos,
                             en_line: definition.en_line,
                             en_pos: definition.en_pos,
-                            node: ASTNode::Def { private, definition: Box::from(definition) } })
-        }
+                            node: ASTNode::Def { private, definition: Box::from(definition) } }),
         err => err
     }
 }
@@ -110,9 +108,8 @@ fn parse_fun_def(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = match (&ret_ty, &raises, &body) {
         (_, _, Some(b)) => (b.en_line, b.en_pos),
-        (_, Some(b), _) if b.last().is_some() => {
-            (b.last().unwrap().en_line, b.last().unwrap().en_pos)
-        }
+        (_, Some(b), _) if b.last().is_some() =>
+            (b.last().unwrap().en_line, b.last().unwrap().en_pos),
         (Some(b), ..) => (b.en_line, b.en_pos),
         _ => (id.en_line, id.en_pos)
     };
@@ -239,9 +236,8 @@ fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> 
     }
 
     let forward: Option<Vec<ASTNodePos>> = match it.peek() {
-        Some(TokenPos { token: Token::Forward, .. }) => {
-            Some(get_or_err_direct!(it, parse_forward, "definition raises"))
-        }
+        Some(TokenPos { token: Token::Forward, .. }) =>
+            Some(get_or_err_direct!(it, parse_forward, "definition raises")),
         _ => None
     };
 
@@ -273,9 +269,8 @@ fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
     let id = match it.peek() {
         Some(TokenPos { token: Token::LRBrack, .. })
         | Some(TokenPos { token: Token::LCBrack, .. })
-        | Some(TokenPos { token: Token::LSBrack, .. }) => {
-            get_or_err_direct!(it, parse_collection, "collection")
-        }
+        | Some(TokenPos { token: Token::LSBrack, .. }) =>
+            get_or_err_direct!(it, parse_collection, "collection"),
         _ => get_or_err_direct!(it, parse_id_maybe_type, "variable id")
     };
 
