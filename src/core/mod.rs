@@ -64,11 +64,11 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
 
         Core::Block { statements } => {
-            let mut block = String::from("\n");
+            let mut block = String::new();
             for statement in statements {
+                block.push('\n');
                 block.push_str(indent(ind).as_ref());
                 block.push_str(to_py(&statement, ind).as_ref());
-                block.push('\n');
             }
             block
         }
