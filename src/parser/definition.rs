@@ -20,8 +20,11 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Def);
 
-    let private = it.peek().is_some() && it.peek().unwrap().token == Token::Private;
-    if private { it.next(); }
+    let private;
+    if let Some(TokenPos { token: Token::Private, .. }) = it.peek() {
+        it.next();
+        private = true;
+    } else { private = false; }
 
     macro_rules! op {($node:ident) => {{
         let (en_line, en_pos) = end_pos(it);
@@ -48,10 +51,10 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Le, .. }) => op!(LeOp),
 
         _ => match get_or_err_direct!(it, parse_id_maybe_type, "definition id") {
-            id @ ASTNodePos { node: ASTNode::TypeId { _type: Some(_), .. }, .. } |
+            id @ ASTNodePos { node: ASTNode::IdType { _type: Some(_), .. }, .. } |
             id @ ASTNodePos { node: ASTNode::TypeTup { .. }, .. } =>
                 parse_variable_def_id(id, false, it),
-            id @ ASTNodePos { node: ASTNode::TypeId { _type: None, .. }, .. } => match it.peek() {
+            id @ ASTNodePos { node: ASTNode::IdType { _type: None, .. }, .. } => match it.peek() {
                 Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, it),
                 Some(_) => parse_variable_def_id(id, false, it),
                 None => Err(CustomEOFErr { expected: "id".to_string() })
@@ -60,7 +63,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
         }
     };
 
-    return match definition {
+    match definition {
         Ok(definition) => Ok(ASTNodePos {
             st_line,
             st_pos,
@@ -69,7 +72,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
             node: ASTNode::Def { private, definition: Box::from(definition) },
         }),
         err => err
-    };
+    }
 }
 
 fn parse_fun_def(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -166,7 +169,7 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
     };
 
     let default = match it.peek() {
-        Some(TokenPos{token:Token::Assign,..}) => {
+        Some(TokenPos { token: Token::Assign, .. }) => {
             it.next();
             Some(get_or_err!(it, parse_expression, format!("argument default (pos {})", pos)))
         }

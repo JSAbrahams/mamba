@@ -11,11 +11,10 @@ pub struct TokenPos {
 pub enum Token {
     From,
     Type,
-    Class,
-    Util,
+    Stateful,
+    Stateless,
     IsA,
     IsNA,
-    Constructor,
     Private,
     Init,
 
@@ -110,12 +109,11 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string_representation = match self.clone() {
             Token::From => "from".to_string(),
-            Token::Util => "util".to_string(),
+            Token::Stateless => "util".to_string(),
             Token::Type => "type".to_string(),
-            Token::Class => "class".to_string(),
+            Token::Stateful => "class".to_string(),
             Token::IsA => "isa".to_string(),
             Token::IsNA => "isnta".to_string(),
-            Token::Constructor => "constructor".to_string(),
             Token::Private => "private".to_string(),
             Token::Init => "init".to_string(),
 

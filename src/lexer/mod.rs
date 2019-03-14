@@ -219,11 +219,10 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     return match result.as_ref() {
         "from" => Token::From,
         "type" => Token::Type,
-        "class" => Token::Class,
-        "util" => Token::Util,
+        "stateful" => Token::Stateful,
+        "stateless" => Token::Stateless,
         "as" => Token::As,
         "isa" => Token::IsA,
-        "constructor" => Token::Constructor,
         "private" => Token::Private,
 
         "use" => Token::Use,

@@ -4,7 +4,7 @@ type my_class
     def fun_a: () -> ()
     def factorial: Int -> Int
 
-util my_class
+stateless my_class
     def SOME_CONSTANT <- 3.5E20
 
     def constant_func() -> 400
@@ -16,16 +16,23 @@ type OtherState isa MyClass when
     z_modified < 200
     other_field < 50
 
-class MyClass
+stateful MyClass
     def private z_modified
-    def mut private other_field <- 10
+    def private mut other_field <- 10
 
-    def init(self, def my_field: Int, z: Int) ->
+    def init(self, my_field: Int, z: Int) ->
         self.z_modified <- z * SOME_CONSTANT
 
     def connect(self: SomeState) -> other_field <- 200
 
     def fun_a(self) -> print self
 
+    def private fun_b(self) -> print "this function is private!"
+
     def factorial(0) -> 1
-    def factorial(x: Int) -> x * factorial x - 1
+    def factorial(x: Int) -> x * factorial (x - 1)
+    def factorial_infinite(x: Int) -> x * factorial x
+
+    def postfix1() -> a b
+    def postfix2() -> a b c
+    def postfix3() -> a b c d

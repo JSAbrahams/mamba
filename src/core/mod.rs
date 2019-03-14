@@ -13,40 +13,42 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => _str.clone(),
         Core::Int { int } => int.clone(),
-        Core::ENum { num, exp } => format!("Enum({},{})", num, exp),
+        Core::ENum { num, exp } => format!("Enum({}, {})", num, exp),
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
         Core::Init { args, body } =>
-            format!("__init__({}):{}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind)),
-        Core::FunDef { id, args, body } => {
-            let name = String::from(match id.as_ref() {
-                Core::GeOp => "__gt__",
-                Core::GeqOp => "__ge__",
-                Core::LeOp => "__lt__",
-                Core::LeqOp => "__le__",
+            format!("__init__({}): {}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
+        Core::FunDef { private, id, args, body } => {
+            let name = match id.as_ref() {
+                Core::GeOp => String::from("__gt__"),
+                Core::GeqOp => String::from("__ge__"),
+                Core::LeOp => String::from("__lt__"),
+                Core::LeqOp => String::from("__le__"),
 
-                Core::EqOp => "__eq__",
-                Core::NeqOp => "__ne__",
+                Core::EqOp => String::from("__eq__"),
+                Core::NeqOp => String::from("__ne__"),
 
-                Core::AddOp => "__add__",
-                Core::SubOp => "__sub__",
-                Core::MulOp => "__mul__",
-                Core::ModOp => "__mod__",
-                Core::DivOp => "__truediv__",
+                Core::AddOp => String::from("__add__"),
+                Core::SubOp => String::from("__sub__"),
+                Core::MulOp => String::from("__mul__"),
+                Core::ModOp => String::from("__mod__"),
+                Core::DivOp => String::from("__truediv__"),
 
                 Core::Id { ref lit } => match lit.as_str() {
-                    "size" => "__size__",
-                    other => other
+                    "size" => String::from("__size__"),
+                    other => if *private { format!("_{}", other) } else { String::from(other) }
                 }
                 _ => panic!()
-            });
+            };
 
-            format!("{}({}):{}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
+            format!("{}({}): {}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
         }
 
         Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::VarDef { id, right } => format!("{} = {}", to_py(id.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::VarDef { private, id, right } =>
+            format!("{}{} = {}", if *private { "_" } else { "" },
+                    to_py(id.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::FunArg { vararg, id } => format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
 
@@ -60,10 +62,11 @@ fn to_py(core: &Core, ind: usize) -> String {
             block
         }
 
-        Core::FunctionCall { namespace, function, args, } =>
-            format!("{}.{}({})", namespace, function, comma_delimited(args.as_ref(), ind)),
-        Core::MethodCall { object, method, args, } =>
-            format!("{}.{}({})", to_py(object.as_ref(), ind), method, comma_delimited(args.as_ref(), ind)),
+        Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
+        Core::MethodCall { object, method, args, } => match object.as_ref() {
+            Core::Empty => format!("{}({})", method, comma_delimited(args.as_ref(), ind)),
+            other => format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args.as_ref(), ind))
+        }
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements.as_ref(), ind)),
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements.as_ref(), ind)),
@@ -93,19 +96,26 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, coll, body } =>
-            format!("for {} in {}:{}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
-                    to_py(body.as_ref(), ind)),
+            format!("for {} in {}: {}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
+                    to_py(body.as_ref(), ind + 1)),
         Core::If { cond, then } =>
-            format!("if {}:{}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind)),
+            format!("if {}: {}", to_py(cond.as_ref(), ind),
+                    to_py(then.as_ref(), ind + 1)),
         Core::IfElse { cond, then, _else } =>
-            format!("if {}:{}\n{}else:\n{}", to_py(cond.as_ref(), ind),
-                    to_py(then.as_ref(), ind),
-                    indent(ind), to_py(_else.as_ref(), ind)),
+            format!("if {}: {}\n{}else: {}", to_py(cond.as_ref(), ind),
+                    to_py(then.as_ref(), ind + 1),
+                    indent(ind),
+                    to_py(_else.as_ref(), ind + 1)),
         Core::While { cond, body } =>
             format!("while {}: {}", to_py(cond.as_ref(), ind),
                     to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
+
+        Core::ClassDef { name, generics: _, parents, definitions } =>
+            format!("class {}({}): {}\n",
+                    to_py(name, ind), comma_delimited(parents, ind),
+                    newline_delimited(definitions, ind + 1)),
 
         Core::Undefined => String::from("None"),
         Core::Empty => String::new(),
@@ -115,6 +125,17 @@ fn to_py(core: &Core, ind: usize) -> String {
 }
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
+
+fn newline_delimited(items: &Vec<Core>, ind: usize) -> String {
+    let mut result = String::new();
+    for item in items {
+        result.push('\n');
+        result.push_str(indent(ind).as_ref());
+        result.push_str(to_py(item, ind).as_ref());
+    }
+
+    result
+}
 
 fn comma_delimited(items: &Vec<Core>, ind: usize) -> String {
     if items.is_empty() { return String::new(); }

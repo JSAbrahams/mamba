@@ -2,7 +2,9 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
+use crate::parser::call::parse_call;
 use crate::parser::end_pos;
+use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -32,6 +34,20 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     }
 }
 
+pub fn parse_id_maybe_call(it: &mut TPIterator) -> ParseResult {
+    let id = match parse_id(it) {
+        Ok(id) => id,
+        err => return err
+    };
+
+    match it.peek() {
+        Some(TokenPos { token: Token::Point, .. }) |
+        Some(TokenPos { token: Token::LRBrack, .. }) => parse_call(id, it),
+        Some(&tp) if is_start_expression(tp.clone()) => parse_call(id, it),
+        _ => Ok(id)
+    }
+}
+
 pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     check_next_is!(it, Token::LSBrack);
     let mut generics = Vec::new();
@@ -53,41 +69,40 @@ pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    return match it.peek() {
+    let _type: ASTNodePos = match it.peek() {
         Some(TokenPos { token: Token::Id(_), .. }) => {
-            let id = get_or_err!(it, parse_id, "type");
-            let generics: Option<Vec<ASTNodePos>> = match it.peek() {
+            let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "type");
+            let generics: Vec<ASTNodePos> = match it.peek() {
                 Some(TokenPos { token: Token::LSBrack, .. }) =>
-                    Some(get_or_err_direct!(it, parse_generics, "type generic")),
-                _ => None
+                    get_or_err_direct!(it, parse_generics, "type generic"),
+                _ => vec![]
             };
 
-            return Ok(ASTNodePos {
+            let (en_line, en_pos) = match generics.last() {
+                Some(generic) => (generic.en_line, generic.en_pos),
+                None => (id.en_line, id.en_pos)
+            };
+
+            let node = ASTNode::Type { id, generics };
+            ASTNodePos { st_line, st_pos, en_line, en_pos, node }
+        }
+        _ => get_or_err_direct!(it, parse_type_tuple, "type")
+    };
+
+    match it.peek() {
+        Some(TokenPos { token: Token::To, .. }) => {
+            it.next();
+            let right: Box<ASTNodePos> = get_or_err!(it, parse_type, "type");
+            Ok(ASTNodePos {
                 st_line,
                 st_pos,
-                en_line: 0,
-                en_pos: 0,
-                node: ASTNode::TypeDef { id, generics, body: None },
-            });
+                en_line: right.en_line,
+                en_pos: right.en_pos,
+                node: ASTNode::TypeFun { _type: Box::from(_type), body: right },
+            })
         }
-        _ => {
-            let tuple = get_or_err!(it, parse_type_tuple, "type");
-            match it.peek() {
-                Some(TokenPos { token: Token::To, .. }) => {
-                    it.next();
-                    let right: Box<ASTNodePos> = get_or_err!(it, parse_type, "type");
-                    Ok(ASTNodePos {
-                        st_line,
-                        st_pos,
-                        en_line: right.en_line,
-                        en_pos: right.en_pos,
-                        node: ASTNode::TypeFun { left: tuple, right },
-                    })
-                }
-                _ => Ok(*tuple)
-            }
-        }
-    };
+        _ => Ok(_type)
+    }
 }
 
 pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
@@ -124,37 +139,9 @@ fn parse_condition(it: &mut TPIterator) -> ParseResult {
         None => (condition.en_line, condition.en_pos)
     };
 
-    return Ok(ASTNodePos {
-        st_line: condition.st_line,
-        st_pos: condition.st_pos,
-        en_line,
-        en_pos,
-        node: ASTNode::Condition { condition, _else },
-    });
-}
-
-pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-
-    check_next_is!(it, Token::Type);
-
-    let id = get_or_err!(it, parse_id, "type definition");
-    check_next_is!(it, Token::IsA);
-    let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "type definition");
-
-    let conditions: Option<Vec<ASTNodePos>> = match it.peek() {
-        Some(TokenPos { token: Token::When, .. }) =>
-            Some(get_or_err_direct!(it, parse_conditions, "type definition")),
-        _ => None
-    };
-
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: _type.en_line,
-        en_pos: _type.en_pos,
-        node: ASTNode::TypeAlias { id, _type, conditions },
-    });
+    let (st_line, st_pos) = (condition.st_line, condition.st_pos);
+    let node = ASTNode::Condition { cond: condition, _else };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
@@ -186,13 +173,8 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
     }
 
     check_next_is!(it, Token::RRBrack);
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line,
-        en_pos,
-        node: ASTNode::TypeTup { types },
-    });
+    let node = ASTNode::TypeTup { types };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
@@ -207,11 +189,7 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
         _ => (id.en_line, id.en_pos, None)
     };
 
-    return Ok(ASTNodePos {
-        st_line: id.st_line,
-        st_pos: id.st_pos,
-        en_line,
-        en_pos,
-        node: ASTNode::TypeId { id, _type },
-    });
+    let (st_line, st_pos) = (id.st_line, id.st_pos);
+    let node = ASTNode::IdType { id, _type };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

@@ -43,13 +43,9 @@ fn parse_while(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Do);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "while body");
 
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::While { cond, body },
-    });
+    let (en_line, en_pos) = (body.en_line, body.en_pos);
+    let node = ASTNode::While { cond, body };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 fn parse_for(it: &mut TPIterator) -> ParseResult {
@@ -62,11 +58,7 @@ fn parse_for(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Do);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "for body");
 
-    return Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::For { expr, collection, body },
-    });
+    let (en_line, en_pos) = (body.en_line, body.en_pos);
+    let node = ASTNode::For { expr, collection, body };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

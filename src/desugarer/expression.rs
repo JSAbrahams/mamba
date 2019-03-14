@@ -1,5 +1,3 @@
-#![feature(box_syntax, box_patterns)]
-
 use crate::core::core::Core;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
@@ -9,20 +7,20 @@ fn desugar_vec(node_pos: &Vec<ASTNodePos>) -> Vec<Core> {
     node_pos.iter().map(|node_pos| desugar_expression(node_pos)).collect()
 }
 
-// TODO use private of definition
-
 pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
     match &node_pos.node {
-        ASTNode::Def { private: _, definition } => match &definition.deref().node {
+        ASTNode::Def { private, definition } => match &definition.deref().node {
             ASTNode::VariableDef { mutable: _, ofmut: _, id_maybe_type, expression, forward } =>
                 match (id_maybe_type, expression) {
                     (id, Some(expr)) => Core::VarDef {
+                        private: private.clone(),
                         id: Box::from(desugar_expression(id)),
                         right: Box::from(desugar_expression(expr)),
                     },
                     (id, None) => desugar_expression(id)
                 },
             ASTNode::FunDef { id, fun_args, body: expression, .. } => Core::FunDef {
+                private: private.clone(),
                 id: Box::from(desugar_expression(id)),
                 args: desugar_vec(fun_args),
                 body: Box::from(match expression {
@@ -30,18 +28,18 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                     None => Core::Empty
                 }),
             },
+            ASTNode::Init { args, body } => Core::Init {
+                args: desugar_vec(args.as_ref()),
+                body: Box::from(match body {
+                    Some(body) => desugar_expression(body.as_ref()),
+                    None => Core::Empty
+                }),
+            },
             definition => panic!("invalid definition format: {:?}", definition),
         }
 
-        ASTNode::Init { args, body } => Core::Init {
-            args: desugar_vec(args.as_ref()),
-            body: Box::from(match body {
-                Some(body) => desugar_expression(body.as_ref()),
-                None => Core::Empty
-            }),
-        },
-        ASTNode::InitArg { vararg, def, id_maybe_type } => match &id_maybe_type.deref().node {
-            ASTNode::TypeId { id, .. } => Core::FunArg { vararg: *vararg, id: Box::from(desugar_expression(id.as_ref())) },
+        ASTNode::InitArg { vararg, id_maybe_type } => match &id_maybe_type.deref().node {
+            ASTNode::IdType { id, .. } => Core::FunArg { vararg: *vararg, id: Box::from(desugar_expression(id.as_ref())) },
             id_maybe_type => panic!("invalid init format: {:?}", id_maybe_type),
         }
 
@@ -57,7 +55,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::ENum { num, exp } => Core::ENum { num: num.clone(), exp: exp.clone() },
         ASTNode::Str { lit } => Core::Str { _str: lit.clone() },
 
-        ASTNode::TypeId { id, _type } => desugar_expression(id),
+        ASTNode::IdType { id, _type } => desugar_expression(id),
         ASTNode::Id { lit } => Core::Id { lit: lit.clone() },
         ASTNode::_Self => Core::Id { lit: String::from("self") },
         ASTNode::Bool { lit } => Core::Bool { _bool: lit.clone() },
@@ -74,13 +72,16 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::Print { expr } => Core::Print { expr: Box::from(desugar_expression(expr)) },
         ASTNode::PrintLn { expr } => Core::Print { expr: Box::from(desugar_expression(expr)) },
 
-        ASTNode::IfElse { cond, then, _else } => Core::IfElse {
-            cond: Box::from(desugar_expression(cond)),
-            then: Box::from(desugar_expression(then)),
-            _else: Box::from(match _else {
-                Some(el) => desugar_expression(el),
-                None => Core::Empty
-            }),
+        ASTNode::IfElse { cond, then, _else } => match _else {
+            Some(_else) => Core::IfElse {
+                cond: Box::from(desugar_expression(cond)),
+                then: Box::from(desugar_expression(then)),
+                _else: Box::from(desugar_expression(_else)),
+            },
+            None => Core::If {
+                cond: Box::from(desugar_expression(cond)),
+                then: Box::from(desugar_expression(then)),
+            }
         },
         ASTNode::When { cond, cases } => Core::When {
             cond: Box::from(desugar_expression(cond)),
@@ -135,6 +136,64 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::Geq { left, right } =>
             Core::Geq { left: Box::from(desugar_expression(left)), right: Box::from(desugar_expression(right)) },
 
+        // TODO do something with default
+        ASTNode::FunArg { vararg, id_maybe_type, default } => Core::FunArg {
+            vararg: vararg.clone(),
+            id: Box::from(desugar_expression(id_maybe_type)),
+        },
+
+        // TODO use context to check whether identifier is function or property
+        // Currently:
+        // a b => a.b , where a may be expression, b must be id
+        // a b c => a.b(c), where and c may be expression, b must be id
+        // a b c d => a.b(c.d) etc.
+        ASTNode::Call { instance_or_met, met_or_arg } => match &met_or_arg.deref().node {
+            ASTNode::Call { instance_or_met: method, met_or_arg } => match &method.deref().node {
+                ASTNode::Id { lit: method } => Core::MethodCall {
+                    object: Box::from(desugar_expression(instance_or_met)),
+                    method: method.clone(),
+                    args: vec![desugar_expression(met_or_arg)],
+                },
+                other => panic!("Chained method call must have identifier, was {:?}", other)
+            }
+            ASTNode::Id { lit } => Core::PropertyCall {
+                object: Box::from(desugar_expression(instance_or_met)),
+                property: lit.clone(),
+            },
+            other => match &instance_or_met.deref().node {
+                ASTNode::Id { lit: method } => Core::MethodCall {
+                    object: Box::from(Core::Empty),
+                    method: method.clone(),
+                    args: vec![desugar_expression(met_or_arg)],
+                },
+                other => panic!("desugaring calls not that advanced yet: {:?}.", other)
+            }
+        }
+
+        ASTNode::FunctionCall { namespace, name, args } => match &name.deref().node {
+            ASTNode::Id { lit } => Core::MethodCall {
+                object: Box::from(desugar_expression(namespace)),
+                method: lit.clone(),
+                args: desugar_vec(args),
+            },
+            call => panic!("invalid function call format: {:?}", call),
+        }
+        ASTNode::FunctionCallDirect { name, args } => match &name.deref().node {
+            ASTNode::Id { lit } => Core::MethodCall {
+                object: Box::from(Core::Empty),
+                method: lit.clone(),
+                args: desugar_vec(args),
+            },
+            call => panic!("invalid function call format: {:?}", call),
+        }
+        ASTNode::MethodCall { instance, name, args } => match &name.deref().node {
+            ASTNode::Id { lit } => Core::MethodCall {
+                object: Box::from(desugar_expression(instance)),
+                method: lit.clone(),
+                args: desugar_vec(args),
+            },
+            call => panic!("invalid function call format: {:?}", call),
+        }
         ASTNode::Range { from, to } => Core::MethodCall {
             object: Box::from(desugar_expression(from)),
             method: String::from("range"),
@@ -145,11 +204,10 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             method: String::from("range_incl"),
             args: vec![desugar_expression(to)],
         },
-
         ASTNode::UnderScore => Core::UnderScore,
         ASTNode::QuestOr { _do, _default } => Core::Block {
             statements: vec![
-                Core::VarDef { id: Box::from(Core::Id { lit: String::from("$temp") }), right: Box::from(desugar_expression(_do)) },
+                Core::VarDef { private: true, id: Box::from(Core::Id { lit: String::from("$temp") }), right: Box::from(desugar_expression(_do)) },
                 Core::IfElse {
                     cond: Box::from(Core::Not {
                         expr: Box::from(Core::Eq {
@@ -162,16 +220,29 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                 }
             ]
         },
-
         ASTNode::Script { statements } => Core::Block { statements: desugar_vec(statements) },
-
-        ASTNode::File { modules, .. } => {
-            match modules.first() {
-                Some(module) => desugar_expression(module),
-                None => Core::Empty
-            }
+        ASTNode::File {
+            imports: _, modules, type_defs
+        } => {
+            let mut statements: Vec<Core> = desugar_vec(type_defs);
+            statements.append(desugar_vec(modules).as_mut());
+            Core::Block { statements }
         }
 
-        other => panic!("didn't recognize {:?}.", other)
+        ASTNode::Stateful { _type, body } |
+        ASTNode::Stateless { _type, body } => match (&_type.deref().node, &body.deref().node) {
+            (ASTNode::Type { id, generics }, ASTNode::Body { isa, definitions }) => Core::ClassDef {
+                name: Box::from(desugar_expression(id)),
+                generics: desugar_vec(generics),
+                parents: desugar_vec(isa.as_ref()),
+                definitions: desugar_vec(definitions.as_ref()),
+            },
+            other => panic!("desugarer didn't recognize while making class: {:?}.", other)
+        }
+
+        ASTNode::TypeDef { .. } => Core::Empty,
+        ASTNode::TypeAlias { .. } => Core::Empty,
+
+        other => panic!("desugarer didn't recognize {:?}.", other)
     }
 }

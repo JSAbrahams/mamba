@@ -1,6 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
+use crate::parser::_type::parse_id_maybe_call;
 use crate::parser::ASTNode;
 use crate::parser::ASTNodePos;
 use crate::parser::end_pos;
@@ -130,7 +131,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             }}}
 
             return match it.peek() {
-                Some(TokenPos { token: Token::Id(_), .. }) |
+                Some(TokenPos { token: Token::Id(_), .. }) => parse_id_maybe_call(it),
                 Some(TokenPos { token: Token::_Self, .. }) => parse_id(it),
                 Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
                 Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
@@ -145,7 +146,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                         en_pos,
                         node: ASTNode::ENum { num: num.to_string(), exp: exp.to_string() },
                     })
-                },
+                }
                 Some(_) => parse_expression(it),
                 None => Err(CustomEOFErr { expected: "factor".to_string() })
             };
