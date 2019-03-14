@@ -13,9 +13,9 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::Init { args, body } => format!("__init__({}): {}",
-                                             comma_delimited(args, ind),
-                                             to_py(body.as_ref(), ind + 1)),
+        Core::Init { args, body } => {
+            format!("__init__({}): {}", comma_delimited(args, ind), to_py(body.as_ref(), ind + 1))
+        }
         Core::FunDef { private, id, args, body } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
@@ -45,10 +45,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 _ => panic!()
             };
 
-            format!("{}({}): {}",
-                    name,
-                    comma_delimited(args, ind),
-                    to_py(body.as_ref(), ind))
+            format!("{}({}): {}", name, comma_delimited(args, ind), to_py(body.as_ref(), ind))
         }
 
         Core::Assign { left, right } => {
@@ -76,9 +73,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
         Core::MethodCall { object, method, args } => match object.as_ref() {
             Core::Empty => format!("{}({})", method, comma_delimited(args, ind)),
-            other => {
-                format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args, ind))
-            }
+            other => format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args, ind))
         },
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),

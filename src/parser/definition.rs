@@ -4,6 +4,8 @@ use crate::parser::_type::parse_generics;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::collection::parse_collection;
 use crate::parser::constructor::parse_init;
 use crate::parser::end_pos;
@@ -12,8 +14,6 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {

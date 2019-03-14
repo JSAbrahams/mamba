@@ -123,6 +123,4 @@ mod file;
 mod operation;
 mod statement;
 
-pub fn parse(input: &[TokenPos]) -> ParseResult {
-    file::parse_file(&mut input.iter().peekable())
-}
+pub fn parse(input: &[TokenPos]) -> ParseResult { file::parse_file(&mut input.iter().peekable()) }

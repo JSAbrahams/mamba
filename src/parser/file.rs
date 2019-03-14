@@ -3,14 +3,14 @@ use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_type;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::block::parse_statements;
 use crate::parser::definition::parse_definition;
 use crate::parser::end_pos;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
@@ -120,10 +120,10 @@ pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
     let body = get_or_err!(it, parse_class_body, "util");
 
     Ok(ASTNodePos { st_line: body.st_line,
-                           st_pos:  body.st_pos,
-                           en_line: body.en_line,
-                           en_pos:  body.en_pos,
-                           node:    ASTNode::Stateless { _type, body } })
+                    st_pos:  body.st_pos,
+                    en_line: body.en_line,
+                    en_pos:  body.en_pos,
+                    node:    ASTNode::Stateless { _type, body } })
 }
 
 pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {

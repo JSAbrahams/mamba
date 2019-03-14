@@ -1,14 +1,14 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::end_pos;
 use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -138,8 +138,7 @@ fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         }
         _ => (name_or_arg.en_line,
               name_or_arg.en_pos,
-              ASTNode::Call { instance_or_met: Box::from(pre),
-                              met_or_arg:      name_or_arg })
+              ASTNode::Call { instance_or_met: Box::from(pre), met_or_arg: name_or_arg })
     };
 
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })

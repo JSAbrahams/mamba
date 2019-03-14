@@ -1,10 +1,10 @@
 use crate::lexer::token::Token;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {

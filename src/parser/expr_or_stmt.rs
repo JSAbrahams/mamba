@@ -1,6 +1,8 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_generics;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::block::parse_block;
 use crate::parser::control_flow_expr::parse_when_cases;
 use crate::parser::expression::parse_expression;
@@ -8,8 +10,6 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::statement::parse_statement;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
