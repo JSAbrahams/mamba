@@ -7,7 +7,7 @@ pub fn to_py_source(core: Core) -> String { to_py(&core, 0) }
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Id { lit } => lit.clone(),
-        Core::Str { _str } => _str.clone(),
+        Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } => format!("Enum({}, {})", num, exp),
         Core::Float { float } => float.clone(),
