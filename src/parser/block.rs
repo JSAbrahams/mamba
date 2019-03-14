@@ -3,8 +3,8 @@ use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
@@ -19,7 +19,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         }
     }
 
-    return Ok(stmts);
+    Ok(stmts)
 }
 
 pub fn parse_block(it: &mut TPIterator) -> ParseResult {
@@ -35,5 +35,6 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     if it.peek().is_some() {
         check_next_is!(it, Token::Dedent);
     }
+
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } })
 }

@@ -7,8 +7,8 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_id(it: &mut TPIterator) -> ParseResult {
@@ -65,7 +65,7 @@ pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     }
 
     check_next_is!(it, Token::RSBrack);
-    return Ok(generics);
+    Ok(generics)
 }
 
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {
@@ -130,7 +130,7 @@ pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     if it.peek().is_some() {
         check_next_is!(it, Token::Dedent);
     }
-    return Ok(conditions);
+    Ok(conditions)
 }
 
 fn parse_condition(it: &mut TPIterator) -> ParseResult {

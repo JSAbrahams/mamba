@@ -8,8 +8,8 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::statement::parse_statement;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
@@ -41,6 +41,7 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
     check_next_is!(it, Token::Raises);
 
     let errors: Vec<ASTNodePos> = get_or_err_direct!(it, parse_generics, "raises");
+
     let node = ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors };
     Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })
 }

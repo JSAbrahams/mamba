@@ -6,14 +6,14 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    return match it.peek() {
+    match it.peek() {
         Some(TokenPos { token: Token::While, .. }) => parse_while(it),
         Some(TokenPos { token: Token::For, .. }) => parse_for(it),
         Some(TokenPos { token: Token::Break, .. }) => {
@@ -27,12 +27,10 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Continue })
         }
 
-        Some(&next) => {
-            return Err(CustomErr { expected: "control flow statement".to_string(),
-                                   actual:   next.clone() })
-        }
-        None => return Err(CustomEOFErr { expected: "control flow statement".to_string() })
-    };
+        Some(&next) => Err(CustomErr { expected: "control flow statement".to_string(),
+                                       actual:   next.clone() }),
+        None => Err(CustomEOFErr { expected: "control flow statement".to_string() })
+    }
 }
 
 fn parse_while(it: &mut TPIterator) -> ParseResult {
@@ -45,6 +43,7 @@ fn parse_while(it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::While { cond, body };
+
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
@@ -60,5 +59,6 @@ fn parse_for(it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::For { expr, collection, body };
+
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

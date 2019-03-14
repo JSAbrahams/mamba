@@ -6,8 +6,8 @@ use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_init(it: &mut TPIterator) -> ParseResult {
@@ -51,7 +51,7 @@ pub fn parse_constructor_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos
     }
 
     check_next_is!(it, Token::RRBrack);
-    return Ok(args);
+    Ok(args)
 }
 
 pub fn parse_constructor_arg(it: &mut TPIterator) -> ParseResult {

@@ -1,10 +1,8 @@
-use crate::core::core::Core;
+use crate::core::core_node::Core;
 
-pub mod core;
+pub mod core_node;
 
 pub fn to_py_source(core: Core) -> String { to_py(&core, 0) }
-
-// TODO add indentation when newlining inside format
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
@@ -16,7 +14,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
         Core::Init { args, body } => format!("__init__({}): {}",
-                                             comma_delimited(args.as_ref(), ind),
+                                             comma_delimited(args, ind),
                                              to_py(body.as_ref(), ind + 1)),
         Core::FunDef { private, id, args, body } => {
             let name = match id.as_ref() {
@@ -49,7 +47,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
             format!("{}({}): {}",
                     name,
-                    comma_delimited(args.as_ref(), ind),
+                    comma_delimited(args, ind),
                     to_py(body.as_ref(), ind))
         }
 
@@ -77,15 +75,15 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
         Core::MethodCall { object, method, args } => match object.as_ref() {
-            Core::Empty => format!("{}({})", method, comma_delimited(args.as_ref(), ind)),
+            Core::Empty => format!("{}({})", method, comma_delimited(args, ind)),
             other => {
-                format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args.as_ref(), ind))
+                format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args, ind))
             }
         },
 
-        Core::Tuple { elements } => format!("({})", comma_delimited(elements.as_ref(), ind)),
-        Core::Set { elements } => format!("{{{}}}", comma_delimited(elements.as_ref(), ind)),
-        Core::List { elements } => format!("[{}]", comma_delimited(elements.as_ref(), ind)),
+        Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
+        Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
+        Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
 
         Core::Ge { left, right } => {
             format!("{} > {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind))
@@ -160,7 +158,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, generics: _, parents, definitions } => format!("class {}({}): {}\n",
+        Core::ClassDef { name, parents, definitions, .. } => format!("class {}({}): {}\n",
                     to_py(name, ind), comma_delimited(parents, ind),
                     newline_delimited(definitions, ind + 1)),
 
@@ -173,7 +171,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
 
-fn newline_delimited(items: &Vec<Core>, ind: usize) -> String {
+fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut result = String::new();
     for item in items {
         result.push('\n');
@@ -184,17 +182,14 @@ fn newline_delimited(items: &Vec<Core>, ind: usize) -> String {
     result
 }
 
-fn comma_delimited(items: &Vec<Core>, ind: usize) -> String {
+fn comma_delimited(items: &[Core], ind: usize) -> String {
     if items.is_empty() {
         return String::new();
     }
 
     let mut result = String::new();
-    let mut pos = 0;
-    for item in items {
+    for (pos, item) in items.iter().enumerate() {
         result.push_str(to_py(item, ind).as_ref());
-
-        pos += 1;
         if pos < items.len() {
             result.push(',');
         }

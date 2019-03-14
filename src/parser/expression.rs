@@ -10,8 +10,8 @@ use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
@@ -52,7 +52,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
     match result {
         Ok(res) => parse_post_expr(res, it),
-        err => return err
+        err => err
     }
 }
 
@@ -98,7 +98,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
     match result {
         Ok(res) => parse_post_expr(res, it),
-        err => return err
+        err => err
     }
 }
 
@@ -112,6 +112,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
     }
 
     let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "return");
+
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
     let node = ASTNode::Return { expr };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
@@ -119,7 +120,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
 
 /// Excluding unary addition and subtraction
 pub fn is_start_expression(next: TokenPos) -> bool {
-    return match next {
+    match next {
         TokenPos { token: Token::If, .. }
         | TokenPos { token: Token::When, .. }
         | TokenPos { token: Token::LRBrack, .. }
@@ -135,5 +136,5 @@ pub fn is_start_expression(next: TokenPos) -> bool {
         | TokenPos { token: Token::Not, .. }
         | TokenPos { token: Token::Id(_), .. } => true,
         _ => false
-    };
+    }
 }

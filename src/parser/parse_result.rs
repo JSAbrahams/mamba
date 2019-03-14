@@ -1,6 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNodePos;
 use std::error;
 use std::fmt;
 
@@ -62,12 +62,12 @@ impl error::Error for ParseErr {
         match self {
             ParseErr::ParseErr { .. } => "A parsing error occurred",
             ParseErr::UtilBodyErr => "Util module cannot have a body.",
-            ParseErr::EOFErr { expected: _ } => "Expected token but end of file.",
-            ParseErr::TokenErr { expected: _, actual: _ } => "Unexpected token encountered.",
-            ParseErr::CustomErr { expected: _, actual: _ } => "Expected condition to be met.",
-            ParseErr::CustomEOFErr { expected: _ } => "Expected condition to be met.",
-            ParseErr::IndErr { expected: _, actual: _, position: _ } => "Unexpected indentation.",
-            ParseErr::InternalErr { message: _ } => "Internal error."
+            ParseErr::EOFErr { .. } => "Expected token but end of file.",
+            ParseErr::TokenErr { .. } => "Unexpected token encountered.",
+            ParseErr::CustomErr { .. } => "Expected condition to be met.",
+            ParseErr::CustomEOFErr { .. } => "Expected condition to be met.",
+            ParseErr::IndErr { .. } => "Unexpected indentation.",
+            ParseErr::InternalErr { .. } => "Internal error."
         }
     }
 

@@ -9,8 +9,8 @@ use crate::parser::end_pos;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
@@ -82,6 +82,7 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
     if it.peek().is_some() {
         check_next_is!(it, Token::Indent);
     }
+
     let mut definitions = Vec::new();
     while let Some(&t) = it.peek() {
         match t.token {
@@ -92,6 +93,7 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
             _ => definitions.push(get_or_err_direct!(it, parse_definition, "body"))
         }
     }
+
     if it.peek().is_some() {
         check_next_is!(it, Token::Dedent);
     }
@@ -109,18 +111,19 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
     };
 
     let node = ASTNode::Body { isa, definitions };
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Stateless);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
     let body = get_or_err!(it, parse_class_body, "util");
-    return Ok(ASTNodePos { st_line: body.st_line,
+
+    Ok(ASTNodePos { st_line: body.st_line,
                            st_pos:  body.st_pos,
                            en_line: body.en_line,
                            en_pos:  body.en_pos,
-                           node:    ASTNode::Stateless { _type, body } });
+                           node:    ASTNode::Stateless { _type, body } })
 }
 
 pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
@@ -128,11 +131,11 @@ pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
     let body: Box<ASTNodePos> = get_or_err!(it, parse_class_body, "class");
 
-    return Ok(ASTNodePos { st_line: body.st_line,
-                           st_pos:  body.st_pos,
-                           en_line: body.en_line,
-                           en_pos:  body.en_pos,
-                           node:    ASTNode::Stateful { _type, body } });
+    Ok(ASTNodePos { st_line: body.st_line,
+                    st_pos:  body.st_pos,
+                    en_line: body.en_line,
+                    en_pos:  body.en_pos,
+                    node:    ASTNode::Stateful { _type, body } })
 }
 
 pub fn parse_script(it: &mut TPIterator) -> ParseResult {
@@ -144,7 +147,7 @@ pub fn parse_script(it: &mut TPIterator) -> ParseResult {
     };
 
     let node = ASTNode::Script { statements };
-    return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_module(it: &mut TPIterator) -> ParseResult {

@@ -7,8 +7,8 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -38,9 +38,9 @@ pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_direct_call(pre, it),
         Some(&tp) if is_start_expression(tp.clone()) => parse_postfix_call(pre, it),
         Some(&tp) => {
-            return Err(CustomErr { expected: String::from("function call"), actual: tp.clone() })
+            Err(CustomErr { expected: String::from("function call"), actual: tp.clone() })
         }
-        None => return Err(CustomEOFErr { expected: String::from("function call") })
+        None => Err(CustomEOFErr { expected: String::from("function call") })
     }
 }
 
@@ -119,7 +119,7 @@ fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos
         pos += 1;
     }
 
-    return Ok(arguments);
+    Ok(arguments)
 }
 
 fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -139,7 +139,7 @@ fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         _ => (name_or_arg.en_line,
               name_or_arg.en_pos,
               ASTNode::Call { instance_or_met: Box::from(pre),
-                              met_or_arg:      Box::from(name_or_arg) })
+                              met_or_arg:      name_or_arg })
     };
 
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })

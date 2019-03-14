@@ -5,8 +5,8 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 macro_rules! get_zero_or_more {
@@ -147,5 +147,5 @@ pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Ve
         pos += 1;
     }
 
-    return Ok(expressions);
+    Ok(expressions)
 }

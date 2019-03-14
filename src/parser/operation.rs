@@ -7,8 +7,8 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 use crate::parser::TPIterator;
 
 macro_rules! inner_bin_op {
@@ -33,7 +33,7 @@ pub fn parse_operation(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    return match it.peek() {
+    match it.peek() {
         Some(TokenPos { token: Token::Eq, .. }) => bin_op!(parse_operation, Eq, "equal"),
         Some(TokenPos { token: Token::Neq, .. }) => bin_op!(parse_operation, Neq, "not equal"),
         Some(TokenPos { token: Token::Is, .. }) => bin_op!(parse_operation, Is, "is"),
@@ -43,7 +43,7 @@ pub fn parse_operation(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Or, .. }) => bin_op!(parse_operation, Or, "or"),
         Some(TokenPos { token: Token::IsA, .. }) => bin_op!(parse_operation, IsA, "is a"),
         _ => Ok(*relation)
-    };
+    }
 }
 
 fn parse_relation(it: &mut TPIterator) -> ParseResult {
@@ -56,7 +56,7 @@ fn parse_relation(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    return match it.peek() {
+    match it.peek() {
         Some(TokenPos { token: Token::Ge, .. }) => bin_op!(parse_relation, IsA, "greater than"),
         Some(TokenPos { token: Token::Geq, .. }) => {
             bin_op!(parse_relation, Geq, "greater or equal than")
@@ -66,7 +66,7 @@ fn parse_relation(it: &mut TPIterator) -> ParseResult {
             bin_op!(parse_relation, Leq, "less or equal than")
         }
         _ => Ok(*arithmetic)
-    };
+    }
 }
 
 fn parse_arithmetic(it: &mut TPIterator) -> ParseResult {
@@ -96,11 +96,11 @@ fn parse_term(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    return match it.peek() {
+    match it.peek() {
         Some(TokenPos { token: Token::Mul, .. }) => bin_op!(parse_term, Mul, "multiply"),
         Some(TokenPos { token: Token::Div, .. }) => bin_op!(parse_term, Div, "divide"),
         _ => Ok(*inner_term)
-    };
+    }
 }
 
 fn parse_inner_term(it: &mut TPIterator) -> ParseResult {
@@ -113,11 +113,11 @@ fn parse_inner_term(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    return match it.peek() {
+    match it.peek() {
         Some(TokenPos { token: Token::Pow, .. }) => bin_op!(parse_inner_term, Pow, "power"),
         Some(TokenPos { token: Token::Mod, .. }) => bin_op!(parse_inner_term, Mod, "modulus"),
         _ => Ok(*factor)
-    };
+    }
 }
 
 fn parse_factor(it: &mut TPIterator) -> ParseResult {
@@ -135,7 +135,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    return match it.peek() {
+    match it.peek() {
         Some(TokenPos { token: Token::Not, .. }) => un_op!(parse_operation, Not, "not"),
         Some(TokenPos { token: Token::Add, .. }) => un_op!(parse_operation, AddU, "plus"),
         Some(TokenPos { token: Token::Sub, .. }) => un_op!(parse_operation, SubU, "subtract"),
@@ -154,7 +154,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                 }};
             }
 
-            return match it.peek() {
+            match it.peek() {
                 Some(TokenPos { token: Token::Id(_), .. }) => parse_id_maybe_call(it),
                 Some(TokenPos { token: Token::_Self, .. }) => parse_id(it),
                 Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
@@ -172,7 +172,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                 }
                 Some(_) => parse_expression(it),
                 None => Err(CustomEOFErr { expected: "factor".to_string() })
-            };
+            }
         }
-    };
+    }
 }

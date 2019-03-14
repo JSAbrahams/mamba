@@ -151,7 +151,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
         cons_spaces = 0;
     }
 
-    return Ok(tokens);
+    Ok(tokens)
 }
 
 fn ignore_comment(it: &mut Peekable<Chars>) {
@@ -168,7 +168,7 @@ fn ignore_comment(it: &mut Peekable<Chars>) {
 
 fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     *pos += 1;
-    return match it.next() {
+    match it.next() {
         Some('<') => match it.peek() {
             Some('=') => next_and!(it, pos, Token::Leq),
             Some('-') => next_and!(it, pos, Token::Assign),
@@ -187,7 +187,7 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         Some('*') => Token::Mul,
         Some('^') => Token::Pow,
         _ => panic!("get operator received a character it shouldn't have.")
-    };
+    }
 }
 
 fn get_number(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
@@ -217,11 +217,11 @@ fn get_number(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         }
     }
 
-    return match (e_found, comma) {
+    match (e_found, comma) {
         (true, _) => Token::ENum(num, exp),
         (false, true) => Token::Real(num),
         (false, false) => Token::Int(num)
-    };
+    }
 }
 
 fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
@@ -250,7 +250,7 @@ fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         }
     }
 
-    return Token::Str(result);
+    Token::Str(result)
 }
 
 fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
@@ -264,7 +264,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         }
     }
 
-    return match result.as_ref() {
+    match result.as_ref() {
         "from" => Token::From,
         "type" => Token::Type,
         "stateful" => Token::Stateful,
@@ -319,5 +319,5 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "undefined" => Token::Undefined,
 
         _ => Token::Id(result)
-    };
+    }
 }
