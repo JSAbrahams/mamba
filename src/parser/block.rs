@@ -1,10 +1,10 @@
 use crate::lexer::token::Token;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
+use crate::parser::ASTNode;
+use crate::parser::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
@@ -12,7 +12,9 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     while let Some(&t) = it.peek() {
         match t.token {
             Token::Dedent | Token::Stateful | Token::Type => break,
-            Token::NL => { it.next(); }
+            Token::NL => {
+                it.next();
+            }
             _ => stmts.push(get_or_err_direct!(it, parse_expr_or_stmt, "block"))
         }
     }
@@ -30,6 +32,8 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
         None => (st_line, st_pos)
     };
 
-    if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
+    if it.peek().is_some() {
+        check_next_is!(it, Token::Dedent);
+    }
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } })
 }

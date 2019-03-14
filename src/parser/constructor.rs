@@ -1,13 +1,13 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id_maybe_type;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
+use crate::parser::ASTNode;
+use crate::parser::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_init(it: &mut TPIterator) -> ParseResult {
@@ -20,7 +20,9 @@ pub fn parse_init(it: &mut TPIterator) -> ParseResult {
     if let Some(TokenPos { token: Token::To, .. }) = it.peek() {
         it.next();
         body = Some(get_or_err!(it, parse_expr_or_stmt, "constructor body"));
-    } else { body = None; }
+    } else {
+        body = None;
+    }
 
     let (en_line, en_pos) = match &body {
         Some(b) => (b.en_line, b.en_pos),
@@ -38,9 +40,12 @@ pub fn parse_constructor_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos
     while let Some(&t) = it.peek() {
         match t.token {
             Token::RRBrack => break,
-            Token::Comma => { it.next(); }
-            _ => args.push(get_or_err_direct!(it, parse_constructor_arg,
-                           format!("constructor argument (pos {})", pos)))
+            Token::Comma => {
+                it.next();
+            }
+            _ => args.push(get_or_err_direct!(it,
+                                              parse_constructor_arg,
+                                              format!("constructor argument (pos {})", pos)))
         }
         pos += 1;
     }

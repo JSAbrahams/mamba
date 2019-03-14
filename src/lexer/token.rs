@@ -2,9 +2,9 @@ use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TokenPos {
-    pub line: i32,
-    pub pos: i32,
-    pub token: Token,
+    pub line:  i32,
+    pub pos:   i32,
+    pub token: Token
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -102,7 +102,7 @@ pub enum Token {
     Print,
     PrintLn,
 
-    Undefined,
+    Undefined
 }
 
 impl fmt::Display for Token {

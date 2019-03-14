@@ -3,14 +3,14 @@ use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_type;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
 use crate::parser::block::parse_statements;
 use crate::parser::definition::parse_definition;
 use crate::parser::end_pos;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
+use crate::parser::ASTNode;
+use crate::parser::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
@@ -20,7 +20,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "import id");
 
     let (_use, all) = match it.peek() {
-        Some(TokenPos { token: Token::Use, .. }) =>
+        Some(TokenPos { token: Token::Use, .. }) => {
             ({
                  it.next();
                  let mut ids: Vec<ASTNodePos> = Vec::new();
@@ -35,7 +35,9 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
                      }
                  }
                  ids
-             }, false),
+             },
+             false)
+        }
         Some(TokenPos { token: Token::UseAll, .. }) => (vec![], true),
         _ => (vec![], false)
     };
@@ -52,7 +54,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (en_line, en_pos) = match (&_use.last(), &_as) {
         (_, Some(def)) => (def.en_line, def.en_pos),
         (Some(def), _) => (def.en_line, def.en_pos),
-        (_, _) => (id.en_line, id.en_pos)
+        (..) => (id.en_line, id.en_pos)
     };
 
     let node = ASTNode::Import { id, _use, all, _as };
@@ -74,17 +76,25 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
         }
     }
 
-    while it.peek().is_some() && it.peek().unwrap().token == Token::NL { it.next(); }
-    if it.peek().is_some() { check_next_is!(it, Token::Indent); }
+    while it.peek().is_some() && it.peek().unwrap().token == Token::NL {
+        it.next();
+    }
+    if it.peek().is_some() {
+        check_next_is!(it, Token::Indent);
+    }
     let mut definitions = Vec::new();
     while let Some(&t) = it.peek() {
         match t.token {
-            Token::NL => { it.next(); }
+            Token::NL => {
+                it.next();
+            }
             Token::Dedent => break,
             _ => definitions.push(get_or_err_direct!(it, parse_definition, "body"))
         }
     }
-    if it.peek().is_some() { check_next_is!(it, Token::Dedent); }
+    if it.peek().is_some() {
+        check_next_is!(it, Token::Dedent);
+    }
 
     let (st_line, st_pos) = match (isa.first(), definitions.first()) {
         (_, Some(def)) => (def.st_line, def.st_pos),
@@ -106,13 +116,11 @@ pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Stateless);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
     let body = get_or_err!(it, parse_class_body, "util");
-    return Ok(ASTNodePos {
-        st_line: body.st_line,
-        st_pos: body.st_pos,
-        en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::Stateless { _type, body },
-    });
+    return Ok(ASTNodePos { st_line: body.st_line,
+                           st_pos:  body.st_pos,
+                           en_line: body.en_line,
+                           en_pos:  body.en_pos,
+                           node:    ASTNode::Stateless { _type, body } });
 }
 
 pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
@@ -120,13 +128,11 @@ pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
     let body: Box<ASTNodePos> = get_or_err!(it, parse_class_body, "class");
 
-    return Ok(ASTNodePos {
-        st_line: body.st_line,
-        st_pos: body.st_pos,
-        en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::Stateful { _type, body },
-    });
+    return Ok(ASTNodePos { st_line: body.st_line,
+                           st_pos:  body.st_pos,
+                           en_line: body.en_line,
+                           en_pos:  body.en_pos,
+                           node:    ASTNode::Stateful { _type, body } });
 }
 
 pub fn parse_script(it: &mut TPIterator) -> ParseResult {
@@ -134,7 +140,7 @@ pub fn parse_script(it: &mut TPIterator) -> ParseResult {
 
     let (st_line, st_pos, en_line, en_pos) = match (statements.first(), statements.last()) {
         (Some(first), Some(last)) => (first.st_line, first.st_pos, last.en_line, last.en_pos),
-        (_, _) => (0, 0, 0, 0),
+        (..) => (0, 0, 0, 0)
     };
 
     let node = ASTNode::Script { statements };
@@ -156,9 +162,13 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 
     while let Some(&t) = it.peek() {
         match t.token {
-            Token::NL => { it.next(); }
+            Token::NL => {
+                it.next();
+            }
             Token::From => imports.push(get_or_err_direct!(it, parse_import, "import")),
-            Token::Type => type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition")),
+            Token::Type => {
+                type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition"))
+            }
             _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
         }
     }
@@ -180,8 +190,9 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "type definition");
 
             let conditions: Option<Vec<ASTNodePos>> = match it.peek() {
-                Some(TokenPos { token: Token::When, .. }) =>
-                    Some(get_or_err_direct!(it, parse_conditions, "type definition")),
+                Some(TokenPos { token: Token::When, .. }) => {
+                    Some(get_or_err_direct!(it, parse_conditions, "type definition"))
+                }
                 _ => None
             };
 
@@ -196,12 +207,10 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             let node = ASTNode::TypeDef { _type, body: Some(body) };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
-        _ => Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line: _type.en_line,
-            en_pos: _type.en_pos,
-            node: ASTNode::TypeDef { _type, body: None },
-        })
+        _ => Ok(ASTNodePos { st_line,
+                             st_pos,
+                             en_line: _type.en_line,
+                             en_pos: _type.en_pos,
+                             node: ASTNode::TypeDef { _type, body: None } })
     }
 }

@@ -1,7 +1,5 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
 use crate::parser::call::parse_anon_fun;
 use crate::parser::call::parse_call;
 use crate::parser::call::parse_reassignment;
@@ -12,17 +10,20 @@ use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
+use crate::parser::ASTNode;
+use crate::parser::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     let result = match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) |
-        Some(TokenPos { token: Token::When, .. }) => parse_cntrl_flow_expr(it),
+        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) => {
+            parse_cntrl_flow_expr(it)
+        }
 
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_collection(it),
-        Some(TokenPos { token: Token::LSBrack, .. }) |
-        Some(TokenPos { token: Token::LCBrack, .. }) => parse_collection(it),
+        Some(TokenPos { token: Token::LSBrack, .. })
+        | Some(TokenPos { token: Token::LCBrack, .. }) => parse_collection(it),
 
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
 
@@ -32,18 +33,20 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::UnderScore })
         }
 
-        Some(TokenPos { token: Token::_Self, .. }) |
-        Some(TokenPos { token: Token::Real(_), .. }) |
-        Some(TokenPos { token: Token::Int(_), .. }) |
-        Some(TokenPos { token: Token::ENum(_, _), .. }) |
-        Some(TokenPos { token: Token::Str(_), .. }) |
-        Some(TokenPos { token: Token::Bool(_), .. }) |
-        Some(TokenPos { token: Token::Not, .. }) |
-        Some(TokenPos { token: Token::Add, .. }) |
-        Some(TokenPos { token: Token::Id(_), .. }) |
-        Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
+        Some(TokenPos { token: Token::_Self, .. })
+        | Some(TokenPos { token: Token::Real(_), .. })
+        | Some(TokenPos { token: Token::Int(_), .. })
+        | Some(TokenPos { token: Token::ENum(..), .. })
+        | Some(TokenPos { token: Token::Str(_), .. })
+        | Some(TokenPos { token: Token::Bool(_), .. })
+        | Some(TokenPos { token: Token::Not, .. })
+        | Some(TokenPos { token: Token::Add, .. })
+        | Some(TokenPos { token: Token::Id(_), .. })
+        | Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
 
-        Some(&next) => Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
+        Some(&next) => {
+            Err(CustomErr { expected: "expression".to_string(), actual: next.clone() })
+        }
         None => Err(CustomEOFErr { expected: "expression".to_string() })
     };
 
@@ -85,9 +88,9 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
 
         // normal method or function call
-        Some(TokenPos { token: Token::LRBrack, .. }) |
-        Some(TokenPos { token: Token::DDoublePoint, .. }) |
-        Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
+        Some(TokenPos { token: Token::LRBrack, .. })
+        | Some(TokenPos { token: Token::DDoublePoint, .. })
+        | Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
         Some(&tp) if is_start_expression(tp.clone()) => parse_call(pre, it),
 
         _ => return Ok(pre)
@@ -117,20 +120,20 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
 /// Excluding unary addition and subtraction
 pub fn is_start_expression(next: TokenPos) -> bool {
     return match next {
-        TokenPos { token: Token::If, .. } |
-        TokenPos { token: Token::When, .. } |
-        TokenPos { token: Token::LRBrack, .. } |
-        TokenPos { token: Token::LSBrack, .. } |
-        TokenPos { token: Token::LCBrack, .. } |
-        TokenPos { token: Token::Underscore, .. } |
-        TokenPos { token: Token::_Self, .. } |
-        TokenPos { token: Token::Real(_), .. } |
-        TokenPos { token: Token::Int(_), .. } |
-        TokenPos { token: Token::ENum(_, _), .. } |
-        TokenPos { token: Token::Str(_), .. } |
-        TokenPos { token: Token::Bool(_), .. } |
-        TokenPos { token: Token::Not, .. } |
-        TokenPos { token: Token::Id(_), .. } => true,
+        TokenPos { token: Token::If, .. }
+        | TokenPos { token: Token::When, .. }
+        | TokenPos { token: Token::LRBrack, .. }
+        | TokenPos { token: Token::LSBrack, .. }
+        | TokenPos { token: Token::LCBrack, .. }
+        | TokenPos { token: Token::Underscore, .. }
+        | TokenPos { token: Token::_Self, .. }
+        | TokenPos { token: Token::Real(_), .. }
+        | TokenPos { token: Token::Int(_), .. }
+        | TokenPos { token: Token::ENum(..), .. }
+        | TokenPos { token: Token::Str(_), .. }
+        | TokenPos { token: Token::Bool(_), .. }
+        | TokenPos { token: Token::Not, .. }
+        | TokenPos { token: Token::Id(_), .. } => true,
         _ => false
     };
 }

@@ -1,13 +1,13 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
+use crate::parser::ASTNode;
+use crate::parser::ASTNodePos;
 use crate::parser::TPIterator;
 
 pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
@@ -27,10 +27,10 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Continue })
         }
 
-        Some(&next) => return Err(CustomErr {
-            expected: "control flow statement".to_string(),
-            actual: next.clone(),
-        }),
+        Some(&next) => {
+            return Err(CustomErr { expected: "control flow statement".to_string(),
+                                   actual:   next.clone() })
+        }
         None => return Err(CustomEOFErr { expected: "control flow statement".to_string() })
     };
 }

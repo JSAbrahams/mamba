@@ -70,7 +70,6 @@ fn parse_function_calling() {
     assert_ok!(parse(tokenize(source).unwrap()));
 }
 
-
 #[test]
 fn parse_infix_function_calling() {
     let source = valid_resource("infix_function_calling.txt");

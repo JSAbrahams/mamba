@@ -15,7 +15,7 @@ pub enum ParseErr {
     TokenErr { expected: Token, actual: TokenPos },
     EOFErr { expected: Token },
     CustomEOFErr { expected: String },
-    IndErr { expected: i32, actual: i32, position: Option<TokenPos> },
+    IndErr { expected: i32, actual: i32, position: Option<TokenPos> }
 }
 
 impl fmt::Display for ParseErr {
@@ -25,28 +25,33 @@ impl fmt::Display for ParseErr {
                 Ok(_) => match position {
                     Some(pos) => write!(f, "\nIn <{}> at ({}:{})", parsing, pos.line, pos.pos),
                     None => write!(f, "\nIn <{}>", parsing)
-                }
+                },
                 err => err
-            }
+            },
             ParseErr::UtilBodyErr => write!(f, "\nUtil module cannot have a body."),
-            ParseErr::EOFErr { expected } =>
-                write!(f, "\nExpected '{}', but end of file.", expected),
-            ParseErr::CustomErr { expected, actual } =>
-                write!(f, "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                       expected,
-                       actual.line, actual.pos, actual.token),
-            ParseErr::TokenErr { expected, actual } =>
-                write!(f, "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                       expected,
-                       actual.line, actual.pos, actual.token),
-            ParseErr::CustomEOFErr { expected } =>
-                write!(f, "\nExpected '{}', but end of file.", expected),
+            ParseErr::EOFErr { expected } => {
+                write!(f, "\nExpected '{}', but end of file.", expected)
+            }
+            ParseErr::CustomErr { expected, actual } => {
+                write!(f,
+                       "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
+                       expected, actual.line, actual.pos, actual.token)
+            }
+            ParseErr::TokenErr { expected, actual } => {
+                write!(f,
+                       "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
+                       expected, actual.line, actual.pos, actual.token)
+            }
+            ParseErr::CustomEOFErr { expected } => {
+                write!(f, "\nExpected '{}', but end of file.", expected)
+            }
             ParseErr::IndErr { expected, actual, position } => match position {
-                Some(pos) => write!(f, "\nExpected indentation of {}, but was {}, at ({}:{})\
-                                    (next token: {})",
+                Some(pos) => write!(f,
+                                    "\nExpected indentation of {}, but was {}, at ({}:{})(next \
+                                     token: {})",
                                     expected, actual, pos.line, pos.pos, pos.token),
                 None => write!(f, "\nExpected indentation of {}, but was {}.", expected, actual)
-            }
+            },
             ParseErr::InternalErr { message } => write!(f, "{}.", message)
         }
     }
