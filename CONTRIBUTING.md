@@ -1,6 +1,7 @@
 # 👥 Contributing Guidelines
 
 Contributions are encouraged!
+A good place to start is by looking at [good first issues](https://github.com/JSAbrahams/mamba/labels/good%20first%20issue).
 
 ## 😄 Etiquette
 
@@ -25,7 +26,7 @@ Experience will vary greatly.
 * Do reference the appropriate issues
 * Do actively engage comments on the pull request
 * Do use the template
-* Do make sure the build passes
+* Do make sure the build passes, ideally by running `rustfmt` and `clippy` locally before pushing
 * Do make sure that this PR is targeting one issue, large pull requests are not likely to get merged
 
 In general, it is better to only comment on open pull requests and issues.
