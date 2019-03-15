@@ -38,15 +38,6 @@ pub enum ASTNode {
         definitions: Vec<ASTNodePos>
     },
 
-    Init {
-        args: Vec<ASTNodePos>,
-        body: Option<Box<ASTNodePos>>
-    },
-    InitArg {
-        vararg:        bool,
-        id_maybe_type: Box<ASTNodePos>
-    },
-
     ModName {
         name: String
     },
@@ -79,7 +70,7 @@ pub enum ASTNode {
     },
 
     AnonFun {
-        args: Box<ASTNodePos>,
+        arg:  Box<ASTNodePos>,
         body: Box<ASTNodePos>
     },
 

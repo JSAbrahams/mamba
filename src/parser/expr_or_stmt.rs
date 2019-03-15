@@ -4,7 +4,7 @@ use crate::parser::_type::parse_generics;
 use crate::parser::ast_node::ASTNode;
 use crate::parser::ast_node::ASTNodePos;
 use crate::parser::block::parse_block;
-use crate::parser::control_flow_expr::parse_when_cases;
+use crate::parser::control_flow_expr::parse_match_cases;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -51,7 +51,7 @@ pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResul
     check_next_is!(it, Token::Handle);
     check_next_is!(it, Token::When);
 
-    let cases = get_or_err_direct!(it, parse_when_cases, "handle cases");
+    let cases = get_or_err_direct!(it, parse_match_cases, "handle cases");
 
     let node = ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
     Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })

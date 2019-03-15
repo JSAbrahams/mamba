@@ -182,7 +182,6 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     check_next_is!(it, Token::Type);
-
     let _type = get_or_err!(it, parse_type, "type definition");
 
     match it.peek() {

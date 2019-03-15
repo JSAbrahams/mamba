@@ -29,19 +29,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                     None => Core::Empty
                 }),
             },
-            ASTNode::Init { args, body } => Core::Init {
-                args: desugar_vec(args),
-                body: Box::from(match body {
-                    Some(body) => desugar_expression(body.as_ref()),
-                    None => Core::Empty
-                }),
-            },
             definition => panic!("invalid definition format: {:?}", definition),
-        }
-
-        ASTNode::InitArg { vararg, id_maybe_type } => match &id_maybe_type.deref().node {
-            ASTNode::IdType { id, .. } => Core::FunArg { vararg: *vararg, id: Box::from(desugar_expression(id.as_ref())) },
-            id_maybe_type => panic!("invalid init format: {:?}", id_maybe_type),
         }
 
         ASTNode::ReAssign { left, right } =>
@@ -195,6 +183,11 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
             },
             call => panic!("invalid function call format: {:?}", call),
         }
+        ASTNode::AnonFun { arg, body } => Core::AnonFun {
+            arg: Box::from(desugar_expression(arg)),
+            body: Box::from(desugar_expression(body)),
+        },
+
         ASTNode::Range { from, to } => Core::MethodCall {
             object: Box::from(desugar_expression(from)),
             method: String::from("range"),

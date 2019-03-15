@@ -21,6 +21,12 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = end_pos(it);
     match it.next() {
+        Some(TokenPos { token: Token::Init, .. }) =>
+            Ok(ASTNodePos { st_line,
+                            st_pos,
+                            en_line,
+                            en_pos,
+                            node: ASTNode::Id { lit: String::from("init") } }),
         Some(TokenPos { token: Token::Id(id), .. }) =>
             Ok(ASTNodePos { st_line,
                             st_pos,

@@ -39,10 +39,6 @@ pub enum Core {
         id:      Box<Core>,
         right:   Box<Core>
     },
-    Init {
-        args: Vec<Core>,
-        body: Box<Core>
-    },
     FunDef {
         private: bool,
         id:      Box<Core>,
@@ -52,6 +48,10 @@ pub enum Core {
     FunArg {
         vararg: bool,
         id:     Box<Core>
+    },
+    AnonFun {
+        arg:  Box<Core>,
+        body: Box<Core>
     },
 
     Block {

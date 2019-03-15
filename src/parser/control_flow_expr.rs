@@ -12,7 +12,7 @@ use crate::parser::TPIterator;
 pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
         Some(TokenPos { token: Token::If, .. }) => parse_if(it),
-        Some(TokenPos { token: Token::When, .. }) => parse_when(it),
+        Some(TokenPos { token: Token::Match, .. }) => parse_match(it),
 
         Some(&next) => Err(CustomErr { expected: "control flow expression".to_string(),
                                        actual:   next.clone() }),
@@ -41,13 +41,14 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
-fn parse_when(it: &mut TPIterator) -> ParseResult {
+fn parse_match(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::When);
+    check_next_is!(it, Token::Match);
 
-    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "when expression");
+    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "match expression");
+    check_next_is!(it, Token::With);
     check_next_is!(it, Token::NL);
-    let cases: Vec<ASTNodePos> = get_or_err_direct!(it, parse_when_cases, "when cases");
+    let cases: Vec<ASTNodePos> = get_or_err_direct!(it, parse_match_cases, "match cases");
 
     let (en_line, en_pos) = match cases.last() {
         Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
@@ -57,7 +58,7 @@ fn parse_when(it: &mut TPIterator) -> ParseResult {
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::When { cond, cases } })
 }
 
-pub fn parse_when_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     check_next_is!(it, Token::Indent);
 
     let mut cases = Vec::new();
@@ -70,18 +71,18 @@ pub fn parse_when_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
                 it.next();
                 break;
             }
-            _ => cases.push(get_or_err_direct!(it, parse_when_case, "when case"))
+            _ => cases.push(get_or_err_direct!(it, parse_match_case, "when case"))
         }
     }
 
     Ok(cases)
 }
 
-fn parse_when_case(it: &mut TPIterator) -> ParseResult {
+fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "when case");
-    check_next_is!(it, Token::Then);
+    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "match case");
+    check_next_is!(it, Token::BTo);
     let expr_or_stmt: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
 
     Ok(ASTNodePos { st_line,

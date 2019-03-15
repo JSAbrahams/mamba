@@ -14,7 +14,8 @@ macro_rules! next_and {
     }};
 }
 
-pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
+#[allow(clippy::cyclomatic_complexity)]
+pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();
 
@@ -128,7 +129,7 @@ pub fn tokenize(input: String) -> Result<Vec<TokenPos>, String> {
                 (_, None) => return Err("File ended with carriage return.".to_string())
             },
             '\t' => increase_indent!(),
-            '<' | '>' | '+' | '-' | '*' | '/' | '^' => next_pos!(get_operator),
+            '<' | '>' | '+' | '-' | '*' | '/' | '\\' | '^' | '=' => next_pos!(get_operator),
             '0'...'9' => next_pos!(get_number),
             '"' => next_pos!(get_string),
             'a'...'z' | 'A'...'Z' => next_pos!(get_id_or_op),
@@ -182,9 +183,17 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
             Some('>') => next_and!(it, pos, Token::To),
             _ => Token::Sub
         },
-        Some('/') => Token::Div,
+        Some('/') => match it.peek() {
+            Some('=') => next_and!(it, pos, Token::Eq),
+            _ => Token::Div
+        },
+        Some('\\') => Token::BSlash,
         Some('*') => Token::Mul,
         Some('^') => Token::Pow,
+        Some('=') => match it.peek() {
+            Some('>') => next_and!(it, pos, Token::BTo),
+            _ => Token::Eq
+        },
         _ => panic!("get operator received a character it shouldn't have.")
     }
 }
@@ -288,27 +297,27 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "is" => Token::Is,
         "isnt" => Token::IsN,
         "isnta" => Token::IsNA,
-        "eq" => Token::Eq,
-        "neq" => Token::Neq,
         "mod" => Token::Mod,
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
         "foreach" => Token::For,
 
         "if" => Token::If,
-        "then" => Token::Then,
         "else" => Token::Else,
-        "when" => Token::When,
-        "do" => Token::Do,
+        "match" => Token::Match,
+        "with" => Token::With,
         "continue" => Token::Continue,
         "break" => Token::Break,
         "return" => Token::Ret,
+        "then" => Token::Then,
+        "do" => Token::Do,
 
         "in" => Token::In,
 
         "raises" => Token::Raises,
         "handle" => Token::Handle,
         "retry" => Token::Retry,
+        "when" => Token::When,
 
         "true" => Token::Bool(true),
         "false" => Token::Bool(false),

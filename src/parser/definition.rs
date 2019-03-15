@@ -7,7 +7,6 @@ use crate::parser::_type::parse_type;
 use crate::parser::ast_node::ASTNode;
 use crate::parser::ast_node::ASTNodePos;
 use crate::parser::collection::parse_collection;
-use crate::parser::constructor::parse_init;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
@@ -41,7 +40,6 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
         | Some(TokenPos { token: Token::LRBrack, .. })
         | Some(TokenPos { token: Token::LCBrack, .. })
         | Some(TokenPos { token: Token::LSBrack, .. }) => parse_variable_def(it),
-        Some(TokenPos { token: Token::Init, .. }) => parse_init(it),
 
         Some(TokenPos { token: Token::Add, .. }) => op!(AddOp),
         Some(TokenPos { token: Token::Sub, .. }) => op!(SubOp),
@@ -99,7 +97,7 @@ fn parse_fun_def(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     }
 
     let body: Option<Box<ASTNodePos>>;
-    if let Some(TokenPos { token: Token::To, .. }) = it.peek() {
+    if let Some(TokenPos { token: Token::BTo, .. }) = it.peek() {
         it.next();
         body = Some(get_or_err!(it, parse_expr_or_stmt, "function body"));
     } else {

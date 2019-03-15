@@ -2,7 +2,7 @@ use crate::core::core_node::Core;
 
 pub mod core_node;
 
-pub fn to_py_source(core: Core) -> String { to_py(&core, 0) }
+pub fn to_py_source(core: &Core) -> String { to_py(&core, 0) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
@@ -13,8 +13,6 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::Init { args, body } =>
-            format!("__init__({}): {}", comma_delimited(args, ind), to_py(body.as_ref(), ind + 1)),
         Core::FunDef { private, id, args, body } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
@@ -33,6 +31,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
                 Core::Id { ref lit } => match lit.as_str() {
                     "size" => String::from("__size__"),
+                    "init" => String::from("__init__"),
                     other =>
                         if *private {
                             format!("_{}", other)
@@ -43,7 +42,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 _ => panic!()
             };
 
-            format!("{}({}): {}", name, comma_delimited(args, ind), to_py(body.as_ref(), ind))
+            format!("{}({}): {}", name, comma_delimited(args, ind), to_py(body.as_ref(), ind + 1))
         }
 
         Core::Assign { left, right } =>
@@ -55,6 +54,8 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::FunArg { vararg, id } =>
             format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
+
+        Core::AnonFun { arg, body } => format!("lambda {} : {}", to_py(arg, ind), to_py(body, ind)),
 
         Core::Block { statements } => {
             let mut block = String::new();
@@ -131,8 +132,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions, .. } => format!("class {}({}): {}\n",
-                    to_py(name, ind), comma_delimited(parents, ind),
+        Core::ClassDef { name, parents, definitions, .. } =>
+            format!("class {}({}): {}\n",
+                    to_py(name, ind),
+                    comma_delimited(parents, ind),
                     newline_delimited(definitions, ind + 1)),
 
         Core::Undefined => String::from("None"),
@@ -163,7 +166,7 @@ fn comma_delimited(items: &[Core], ind: usize) -> String {
     let mut result = String::new();
     for (pos, item) in items.iter().enumerate() {
         result.push_str(to_py(item, ind).as_ref());
-        if pos < items.len() {
+        if pos < items.len() - 1 {
             result.push(',');
         }
     }

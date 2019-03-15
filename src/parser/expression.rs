@@ -17,7 +17,7 @@ use crate::parser::TPIterator;
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     let result = match it.peek() {
-        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::When, .. }) =>
+        Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::Match, .. }) =>
             parse_cntrl_flow_expr(it),
 
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_collection(it),
@@ -42,6 +42,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         | Some(TokenPos { token: Token::Add, .. })
         | Some(TokenPos { token: Token::Id(_), .. })
         | Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
+
+        Some(TokenPos { token: Token::BSlash, .. }) => parse_anon_fun(it),
 
         Some(&next) =>
             Err(CustomErr { expected: "expression".to_string(), actual: next.clone() }),
@@ -81,7 +83,6 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
             let node = ASTNode::RangeIncl { from: Box::from(pre), to };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
-        Some(TokenPos { token: Token::To, .. }) => parse_anon_fun(pre, it),
 
         Some(TokenPos { token: Token::Assign, .. }) => parse_reassignment(pre, it),
 
@@ -120,7 +121,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
 pub fn is_start_expression(next: TokenPos) -> bool {
     match next {
         TokenPos { token: Token::If, .. }
-        | TokenPos { token: Token::When, .. }
+        | TokenPos { token: Token::Match, .. }
         | TokenPos { token: Token::LRBrack, .. }
         | TokenPos { token: Token::LSBrack, .. }
         | TokenPos { token: Token::LCBrack, .. }

@@ -22,13 +22,15 @@ pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
-pub fn parse_anon_fun(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
+pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::To);
-    let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function");
+    check_next_is!(it, Token::BSlash);
+    let arg: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function args");
+    check_next_is!(it, Token::BTo);
+    let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function body");
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
-    let node = ASTNode::AnonFun { args: Box::new(pre), body };
+    let node = ASTNode::AnonFun { arg, body };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
