@@ -25,6 +25,13 @@ Experience will vary greatly.
 * Do reference the appropriate issues
 * Do actively engage comments on the pull request
 * Do use the template
+* Do make sure the build passes
 * Do make sure that this PR is targeting one issue, large pull requests are not likely to get merged
 
 In general, it is better to only comment on open pull requests and issues.
+
+## 🔄 Continuous Integration Tools
+
+We use continuous integration tools to help ensure that no regression takes place.
+Please read the tooling section in the [readme](/README.md) to get more information on how to set up tooling locally, which are used by the CI tools.
+A pull request will only be merged if all builds pass.
