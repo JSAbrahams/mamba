@@ -1,4 +1,8 @@
-# ![mamba logo](image/logo_tiny.png) Mamba
+<p align="center">
+    <img src="/image/logo_medium.png">
+</p>
+
+# Mamba
 
 The Mamba programming language. Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
 
@@ -7,7 +11,11 @@ It's like python, but with null and type safety. T
 This is transpiler, which converts Mamba source code to python source files. 
 Mamba code should therefore be interoperable with python code, meaning functions written in python can be called in Mamba and vice versa.
 
-## Tooling
+## 👥 Contributing
+
+Check out the [contributing](/CONTRIBUTING.md) document for contribution guidelines.
+
+## 🔨 Tooling
 
 Several tools are used to ensure the quality of the codebase.
 
