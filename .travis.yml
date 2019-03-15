@@ -1,8 +1,7 @@
 language: rust
-rust:
-  - stable
-  - nightly
 before_script:
+  - rustup install stable
+  - rustup install nightly
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
 script:

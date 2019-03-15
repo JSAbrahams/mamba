@@ -15,7 +15,11 @@ macro_rules! assert_ok {
 pub fn resource_string_content(file: String) -> String {
     let mut content = String::new();
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    source_path.push("tests\\resources\\".to_owned());
+    source_path.push(if cfg!(windows) {
+                         String::from("tests\\resources\\")
+                     } else {
+                         String::from("tests/resources/")
+                     });
     source_path.push(file);
 
     match source_path.to_str() {
@@ -31,4 +35,10 @@ pub fn resource_string_content(file: String) -> String {
     return content;
 }
 
-pub fn valid_resource(file: &str) -> String { resource_string_content("valid\\".to_owned() + file) }
+pub fn valid_resource(file: &str) -> String {
+    if cfg!(windows) {
+        resource_string_content(format!("{}{}", "valid\\", file))
+    } else {
+        resource_string_content(format!("{}{}", "valid/", file))
+    }
+}
