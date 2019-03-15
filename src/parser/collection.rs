@@ -127,7 +127,7 @@ pub fn parse_one_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec
     let mut pos = 0;
 
     if let Some(&t) = it.peek() {
-        if is_start_expression(t.clone()) {
+        if !is_start_expression(t) {
             return Err(CustomErr { expected: String::from("expression"), actual: t.clone() });
         }
     } else {
@@ -135,7 +135,7 @@ pub fn parse_one_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec
     }
 
     while let Some(&t) = it.peek() {
-        if !is_start_expression(t.clone()) {
+        if !is_start_expression(t) {
             break;
         }
         expressions.push(get_or_err_direct!(it,
@@ -155,7 +155,7 @@ pub fn parse_one_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec
 
 pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
     match it.peek() {
-        Some(&t) if is_start_expression(t.clone()) => parse_one_or_more_expr(it, msg),
+        Some(&t) if is_start_expression(t) => parse_one_or_more_expr(it, msg),
         _ => Ok(vec![])
     }
 }

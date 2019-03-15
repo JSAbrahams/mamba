@@ -55,7 +55,8 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::FunArg { vararg, id } =>
             format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
 
-        Core::AnonFun { arg, body } => format!("lambda {} : {}", to_py(arg, ind), to_py(body, ind)),
+        Core::AnonFun { args, body } =>
+            format!("lambda {} : {}", comma_delimited(args, ind), to_py(body, ind)),
 
         Core::Block { statements } => {
             let mut block = String::new();

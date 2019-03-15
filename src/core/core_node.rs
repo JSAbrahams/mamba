@@ -50,7 +50,7 @@ pub enum Core {
         id:     Box<Core>
     },
     AnonFun {
-        arg:  Box<Core>,
+        args: Vec<Core>,
         body: Box<Core>
     },
 

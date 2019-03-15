@@ -70,7 +70,7 @@ pub enum ASTNode {
     },
 
     AnonFun {
-        arg:  Box<ASTNodePos>,
+        args: Vec<ASTNodePos>,
         body: Box<ASTNodePos>
     },
 

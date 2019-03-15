@@ -174,8 +174,8 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                                                       args:   desugar_vec(args) },
             call => panic!("invalid function call format: {:?}", call)
         },
-        ASTNode::AnonFun { arg, body } => Core::AnonFun { arg:  Box::from(desugar_expression(arg)),
-                                                          body: Box::from(desugar_expression(body)) },
+        ASTNode::AnonFun { args, body } =>
+            Core::AnonFun { args: desugar_vec(args), body: Box::from(desugar_expression(body)) },
 
         ASTNode::Range { from, to } => Core::MethodCall { object:
                                                               Box::from(desugar_expression(from)),
@@ -186,9 +186,7 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
                                method: String::from("range_incl"),
                                args:   vec![desugar_expression(to)] },
         ASTNode::UnderScore => Core::UnderScore,
-        ASTNode::QuestOr { _do, _default } =>
-            Core::Block { statements:
-                              vec![
+        ASTNode::QuestOr { _do, _default } => Core::Block { statements: vec![
                                    Core::VarDef { private: true,
                                                   id:      Box::from(Core::Id { lit: String::from(
                     "$temp"

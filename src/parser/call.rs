@@ -4,12 +4,14 @@ use crate::parser::_type::parse_id;
 use crate::parser::ast_node::ASTNode;
 use crate::parser::ast_node::ASTNodePos;
 use crate::parser::end_pos;
-use crate::parser::expression::is_start_expression;
+use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
+use crate::parser::_type::parse_id_maybe_type;
+use crate::parser::expression::is_start_expression;
 
 pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
@@ -25,12 +27,27 @@ pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::BSlash);
-    let arg: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function args");
+
+    let mut args: Vec<ASTNodePos> = vec![];
+    let mut pos = 1;
+    while let Some(&t) = it.peek() {
+        if t.token == Token::BTo {
+            break;
+        }
+
+        args.push(get_or_err_direct!(it,
+                                     parse_id_maybe_type,
+                                     String::from("anonymous function arg (pos ")
+                                     + &pos.to_string()
+                                     + ")"));
+        pos += 1;
+    }
+
     check_next_is!(it, Token::BTo);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expression, "anonymous function body");
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
-    let node = ASTNode::AnonFun { arg, body };
+    let node = ASTNode::AnonFun { args, body };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
@@ -38,7 +55,7 @@ pub fn parse_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     match it.peek() {
         Some(TokenPos { token: Token::Point, .. }) => parse_regular_call(false, pre, it),
         Some(TokenPos { token: Token::LRBrack, .. }) => parse_direct_call(pre, it),
-        Some(&tp) if is_start_expression(tp.clone()) => parse_postfix_call(pre, it),
+        Some(&tp) if is_start_expression_exclude_unary(tp) => parse_postfix_call(pre, it),
         Some(&tp) =>
             Err(CustomErr { expected: String::from("function call"), actual: tp.clone() }),
         None => Err(CustomEOFErr { expected: String::from("function call") })
@@ -72,7 +89,9 @@ fn parse_regular_call(fun: bool, pre: ASTNodePos, it: &mut TPIterator) -> ParseR
             }
             Err(err) => return Err(err)
         },
-        Some(&tp) if is_start_expression(tp.clone()) => match parse_expressions(it, "arguments") {
+        Some(&tp) if is_start_expression_exclude_unary(tp) => match parse_expressions(it,
+                                                                                      "arguments")
+        {
             Ok(args) => {
                 if args.len() > 1 {
                     return Err(InternalErr { message: format!("Postfix notation only possible \
@@ -128,7 +147,7 @@ fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (pre.st_line, pre.st_pos);
 
     let (en_line, en_pos, node) = match it.peek() {
-        Some(&tp) if is_start_expression(tp.clone()) =>
+        Some(&tp) if is_start_expression_exclude_unary(tp) =>
             match parse_postfix_call(*name_or_arg, it) {
                 Ok(post) => (post.en_line,
                              post.en_pos,
@@ -149,7 +168,7 @@ fn parse_expressions(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodeP
     let mut pos = 0;
 
     while let Some(&t) = it.peek() {
-        if is_start_expression(t.clone()) {
+        if is_start_expression(t) {
             expressions.push(get_or_err_direct!(it,
                                                 parse_expression,
                                                 String::from(msg)

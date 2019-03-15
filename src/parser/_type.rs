@@ -4,7 +4,7 @@ use crate::parser::ast_node::ASTNode;
 use crate::parser::ast_node::ASTNodePos;
 use crate::parser::call::parse_call;
 use crate::parser::end_pos;
-use crate::parser::expression::is_start_expression;
+use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -48,7 +48,7 @@ pub fn parse_id_maybe_call(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
         Some(TokenPos { token: Token::Point, .. })
         | Some(TokenPos { token: Token::LRBrack, .. }) => parse_call(id, it),
-        Some(&tp) if is_start_expression(tp.clone()) => parse_call(id, it),
+        Some(&tp) if is_start_expression_exclude_unary(tp) => parse_call(id, it),
         _ => Ok(id)
     }
 }
