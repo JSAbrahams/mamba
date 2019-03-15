@@ -90,7 +90,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::LRBrack, .. })
         | Some(TokenPos { token: Token::DDoublePoint, .. })
         | Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
-        Some(&tp) if is_start_expression(tp.clone()) => parse_call(pre, it),
+        Some(&tp) if is_start_expression_exclude_unary(tp) => parse_call(pre, it),
 
         _ => return Ok(pre)
     };
@@ -118,7 +118,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
 }
 
 /// Excluding unary addition and subtraction
-pub fn is_start_expression(next: TokenPos) -> bool {
+pub fn is_start_expression_exclude_unary(next: &TokenPos) -> bool {
     match next {
         TokenPos { token: Token::If, .. }
         | TokenPos { token: Token::Match, .. }
@@ -136,4 +136,9 @@ pub fn is_start_expression(next: TokenPos) -> bool {
         | TokenPos { token: Token::Id(_), .. } => true,
         _ => false
     }
+}
+
+pub fn is_start_expression(next: &TokenPos) -> bool {
+    let start_expr = is_start_expression_exclude_unary(next);
+    start_expr || next.token == Token::Add || next.token == Token::Sub
 }
