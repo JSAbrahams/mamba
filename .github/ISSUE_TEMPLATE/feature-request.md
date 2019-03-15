@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-### Description of Feature
+### Description of the feature
 _A clear and concise description of the proposed feature, and what it wishes to address if relevant._
 _Also reference relevant issues (or pull requests) here._
 
