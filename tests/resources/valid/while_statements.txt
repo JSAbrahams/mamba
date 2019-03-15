@@ -8,3 +8,5 @@ while d do
     print g
 
 print "hello"
+
+while aa, bb do c

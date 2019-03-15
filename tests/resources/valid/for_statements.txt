@@ -7,7 +7,7 @@ foreach d in e do
 
     print h
 
-foreach aa in bb do
+foreach aa, ab in bb do
     print cc
     print dd
 
