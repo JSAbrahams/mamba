@@ -3,12 +3,14 @@ use std::io::Read;
 use std::path::PathBuf;
 
 #[macro_export]
-macro_rules! assert_ok { ( $ expr: expr) => {{
-    match $ expr {
-        Ok(_) => (),
-        Err(err) => panic!("{}", err)
-    }
-}}}
+macro_rules! assert_ok {
+    ($expr:expr) => {{
+        match $expr {
+            Ok(_) => (),
+            Err(err) => panic!("{}", err)
+        }
+    }};
+}
 
 pub fn resource_string_content(file: String) -> String {
     let mut content = String::new();
@@ -18,9 +20,11 @@ pub fn resource_string_content(file: String) -> String {
 
     match source_path.to_str() {
         Some(path) => match File::open(path) {
-            Ok(mut file) => { file.read_to_string(&mut content).unwrap(); }
-            Err(error) => { panic!("Error opening file {}: {}", path, error) }
-        }
+            Ok(mut file) => {
+                file.read_to_string(&mut content).unwrap();
+            }
+            Err(error) => panic!("Error opening file {}: {}", path, error)
+        },
         None => panic!("Error opening file: path can't be converted to string.")
     }
 

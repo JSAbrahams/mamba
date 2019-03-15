@@ -1,13 +1,14 @@
 from Math use abs
 
-type my_class
+type MyClass
     def fun_a: () -> ()
     def factorial: Int -> Int
 
-stateless my_class
+# This class has no state
+stateless MyClassStateless
     def SOME_CONSTANT <- 3.5E20
 
-    def constant_func() -> 400
+    def constant_func() => 400
 
 type SomeState isa MyClass when z_modified > 2
 
@@ -16,23 +17,26 @@ type OtherState isa MyClass when
     z_modified < 200
     other_field < 50
 
-stateful MyClass
+# This class does have state
+stateful MyClassStateful
     def private z_modified
     def private mut other_field <- 10
 
-    def init(self, my_field: Int, z: Int) ->
+    def init(self, my_field: Int, z: Int) =>
         self.z_modified <- z * SOME_CONSTANT
 
-    def connect(self: SomeState) -> other_field <- 200
+    def connect(self: SomeState) => other_field <- 200
 
-    def fun_a(self) -> print self
+    def fun_a(self) => print self
 
-    def private fun_b(self) -> print "this function is private!"
+    def private fun_b(self) => print "this function is private!"
 
-    def factorial(0) -> 1
-    def factorial(x: Int) -> x * factorial (x - 1)
-    def factorial_infinite(x: Int) -> x * factorial x
+    def factorial(0) => 1
+    def factorial(x: Int) => x * factorial (x - 1)
+    def factorial_infinite(x: Int) => x * factorial x
 
-    def postfix1() -> a b
-    def postfix2() -> a b c
-    def postfix3() -> a b c d
+    def postfix1() => a b
+    def postfix2() => a b c
+    def postfix3() => a b c d
+
+    def fancy() => some_higher_order(\x => x * 2)

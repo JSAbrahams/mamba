@@ -1,7 +1,5 @@
 fun_c asdf
 
-namespace_3::fun_f 12345
-
 object_3.met_h a
 
 object_4 met_0()

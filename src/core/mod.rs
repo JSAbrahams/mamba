@@ -1,24 +1,18 @@
-use crate::core::core::Core;
+use crate::core::core_node::Core;
 
-pub mod core;
+pub mod core_node;
 
-pub fn to_py_source(core: Core) -> String {
-    to_py(&core, 0)
-}
-
-// TODO add indentation when newlining inside format
+pub fn to_py_source(core: &Core) -> String { to_py(&core, 0) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Id { lit } => lit.clone(),
-        Core::Str { _str } => _str.clone(),
+        Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } => format!("Enum({}, {})", num, exp),
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::Init { args, body } =>
-            format!("__init__({}): {}", comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
         Core::FunDef { private, id, args, body } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
@@ -37,84 +31,111 @@ fn to_py(core: &Core, ind: usize) -> String {
 
                 Core::Id { ref lit } => match lit.as_str() {
                     "size" => String::from("__size__"),
-                    other => if *private { format!("_{}", other) } else { String::from(other) }
-                }
+                    "init" => String::from("__init__"),
+                    other =>
+                        if *private {
+                            format!("_{}", other)
+                        } else {
+                            String::from(other)
+                        },
+                },
                 _ => panic!()
             };
 
-            format!("{}({}): {}", name, comma_delimited(args.as_ref(), ind), to_py(body.as_ref(), ind))
+            format!("{}({}): {}", name, comma_delimited(args, ind), to_py(body.as_ref(), ind + 1))
         }
 
-        Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::VarDef { private, id, right } =>
-            format!("{}{} = {}", if *private { "_" } else { "" },
-                    to_py(id.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Assign { left, right } =>
+            format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::VarDef { private, id, right } => format!("{}{} = {}",
+                                                       if *private { "_" } else { "" },
+                                                       to_py(id.as_ref(), ind),
+                                                       to_py(right.as_ref(), ind)),
 
-        Core::FunArg { vararg, id } => format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
+        Core::FunArg { vararg, id } =>
+            format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
+
+        Core::AnonFun { arg, body } => format!("lambda {} : {}", to_py(arg, ind), to_py(body, ind)),
 
         Core::Block { statements } => {
-            let mut block = String::from("\n");
+            let mut block = String::new();
             for statement in statements {
+                block.push('\n');
                 block.push_str(indent(ind).as_ref());
                 block.push_str(to_py(&statement, ind).as_ref());
-                block.push('\n');
             }
             block
         }
 
         Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
-        Core::MethodCall { object, method, args, } => match object.as_ref() {
-            Core::Empty => format!("{}({})", method, comma_delimited(args.as_ref(), ind)),
-            other => format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args.as_ref(), ind))
-        }
+        Core::MethodCall { object, method, args } => match object.as_ref() {
+            Core::Empty => format!("{}({})", method, comma_delimited(args, ind)),
+            other => format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args, ind))
+        },
 
-        Core::Tuple { elements } => format!("({})", comma_delimited(elements.as_ref(), ind)),
-        Core::Set { elements } => format!("{{{}}}", comma_delimited(elements.as_ref(), ind)),
-        Core::List { elements } => format!("[{}]", comma_delimited(elements.as_ref(), ind)),
+        Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
+        Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
+        Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
 
-        Core::Ge { left, right } => format!("{} > {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Geq { left, right } => format!("{} >= {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Le { left, right } => format!("{} < {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Leq { left, right } => format!("{} <= {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Ge { left, right } =>
+            format!("{} > {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Geq { left, right } =>
+            format!("{} >= {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Le { left, right } =>
+            format!("{} < {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Leq { left, right } =>
+            format!("{} <= {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::Not { expr } => format!("not {}", to_py(expr.as_ref(), ind)),
-        Core::And { left, right } => format!("{} && {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Or { left, right } => format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Is { left, right } => format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Eq { left, right } => format!("{} == {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Neq { left, right } => format!("{} != {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::IsA { left, right } => format!("isintance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::And { left, right } =>
+            format!("{} && {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Or { left, right } =>
+            format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Is { left, right } =>
+            format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Eq { left, right } =>
+            format!("{} == {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Neq { left, right } =>
+            format!("{} != {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::IsA { left, right } =>
+            format!("isintance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
-        Core::Add { left, right } => format!("{} + {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Sub { left, right } => format!("{} - {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Mul { left, right } => format!("{} * {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Div { left, right } => format!("{} / {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Pow { left, right } => format!("{} ** {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::Mod { left, right } => format!("{} % {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Add { left, right } =>
+            format!("{} + {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Sub { left, right } =>
+            format!("{} - {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Mul { left, right } =>
+            format!("{} * {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Div { left, right } =>
+            format!("{} / {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Pow { left, right } =>
+            format!("{} ** {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Mod { left, right } =>
+            format!("{} % {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, coll, body } =>
-            format!("for {} in {}: {}", to_py(expr.as_ref(), ind), to_py(coll.as_ref(), ind),
-                    to_py(body.as_ref(), ind + 1)),
+        Core::For { expr, coll, body } => format!("for {} in {}: {}",
+                                                  to_py(expr.as_ref(), ind),
+                                                  to_py(coll.as_ref(), ind),
+                                                  to_py(body.as_ref(), ind + 1)),
         Core::If { cond, then } =>
-            format!("if {}: {}", to_py(cond.as_ref(), ind),
-                    to_py(then.as_ref(), ind + 1)),
-        Core::IfElse { cond, then, _else } =>
-            format!("if {}: {}\n{}else: {}", to_py(cond.as_ref(), ind),
-                    to_py(then.as_ref(), ind + 1),
-                    indent(ind),
-                    to_py(_else.as_ref(), ind + 1)),
+            format!("if {}: {}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
+        Core::IfElse { cond, then, _else } => format!("if {}: {}\n{}else: {}",
+                                                      to_py(cond.as_ref(), ind),
+                                                      to_py(then.as_ref(), ind + 1),
+                                                      indent(ind),
+                                                      to_py(_else.as_ref(), ind + 1)),
         Core::While { cond, body } =>
-            format!("while {}: {}", to_py(cond.as_ref(), ind),
-                    to_py(body.as_ref(), ind + 1)),
+            format!("while {}: {}", to_py(cond.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, generics: _, parents, definitions } =>
+        Core::ClassDef { name, parents, definitions, .. } =>
             format!("class {}({}): {}\n",
-                    to_py(name, ind), comma_delimited(parents, ind),
+                    to_py(name, ind),
+                    comma_delimited(parents, ind),
                     newline_delimited(definitions, ind + 1)),
 
         Core::Undefined => String::from("None"),
@@ -126,7 +147,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
 
-fn newline_delimited(items: &Vec<Core>, ind: usize) -> String {
+fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut result = String::new();
     for item in items {
         result.push('\n');
@@ -137,16 +158,17 @@ fn newline_delimited(items: &Vec<Core>, ind: usize) -> String {
     result
 }
 
-fn comma_delimited(items: &Vec<Core>, ind: usize) -> String {
-    if items.is_empty() { return String::new(); }
+fn comma_delimited(items: &[Core], ind: usize) -> String {
+    if items.is_empty() {
+        return String::new();
+    }
 
     let mut result = String::new();
-    let mut pos = 0;
-    for item in items {
+    for (pos, item) in items.iter().enumerate() {
         result.push_str(to_py(item, ind).as_ref());
-
-        pos += 1;
-        if pos < items.len() { result.push(','); }
+        if pos < items.len() - 1 {
+            result.push(',');
+        }
     }
 
     result

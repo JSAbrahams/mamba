@@ -1,0 +1,19 @@
+language: rust
+rust:
+  - stable
+  - nightly
+before_script:
+  - rustup component add rustfmt --toolchain nightly
+  - rustup component add clippy
+script:
+  # fail when formatting error encountered
+  - cargo +nightly fmt --all -- --check
+
+  - cargo clippy
+  # fail when encountering clippy warnings
+  - cargo clippy -- -D warnings
+
+  - cargo build
+  - cargo test
+
+

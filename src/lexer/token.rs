@@ -2,9 +2,9 @@ use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TokenPos {
-    pub line: i32,
-    pub pos: i32,
-    pub token: Token,
+    pub line:  i32,
+    pub pos:   i32,
+    pub token: Token
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -29,6 +29,7 @@ pub enum Token {
     DoublePoint,
     DDoublePoint,
     Vararg,
+    BSlash,
 
     Id(String),
     Mut,
@@ -73,6 +74,7 @@ pub enum Token {
     RCBrack,
     Ver,
     To,
+    BTo,
 
     NL,
     Indent,
@@ -81,14 +83,16 @@ pub enum Token {
 
     Raises,
     Retry,
+    When,
 
     While,
     For,
     Map,
     In,
     If,
-    When,
     Then,
+    Match,
+    With,
     Else,
     Do,
     Continue,
@@ -102,7 +106,7 @@ pub enum Token {
     Print,
     PrintLn,
 
-    Undefined,
+    Undefined
 }
 
 impl fmt::Display for Token {
@@ -128,6 +132,7 @@ impl fmt::Display for Token {
             Token::DoublePoint => ":".to_string(),
             Token::DDoublePoint => "::".to_string(),
             Token::Vararg => "vararg".to_string(),
+            Token::BSlash => "\\".to_string(),
 
             Token::Id(id) => format!("<identifier>: {}", id),
             Token::Mut => "mut".to_string(),
@@ -172,6 +177,7 @@ impl fmt::Display for Token {
             Token::RCBrack => "}".to_string(),
             Token::Ver => "|".to_string(),
             Token::To => "->".to_string(),
+            Token::BTo => "=>".to_string(),
 
             Token::NL => "<newline>".to_string(),
             Token::Indent => "<indent>".to_string(),
@@ -183,19 +189,21 @@ impl fmt::Display for Token {
             Token::Map => "map".to_string(),
             Token::In => "in".to_string(),
             Token::If => "if".to_string(),
-            Token::When => "when".to_string(),
             Token::Then => "then".to_string(),
+            Token::Match => "when".to_string(),
+            Token::With => "with".to_string(),
             Token::Else => "else".to_string(),
-            Token::Do => "do".to_string(),
             Token::Continue => "continue".to_string(),
             Token::Break => "break".to_string(),
             Token::Ret => "return".to_string(),
+            Token::Do => "do".to_string(),
 
             Token::Quest => "?".to_string(),
             Token::QuestOr => "?or".to_string(),
             Token::Handle => "handle".to_string(),
             Token::Raises => "raises".to_string(),
             Token::Retry => "retry".to_string(),
+            Token::When => "when".to_string(),
 
             Token::Print => "print".to_string(),
             Token::PrintLn => "println".to_string(),

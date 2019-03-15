@@ -1,6 +1,6 @@
-when a
-    b then c
-    d then e
+match a with
+    b => c
+    d => e
 
-when b
-    (a, c) then print "hello world"
+match b with
+    (a, c) => print "hello world"
