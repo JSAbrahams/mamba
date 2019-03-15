@@ -4,20 +4,28 @@
 
 # Mamba
 
-The Mamba programming language. Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
+This is the Mamba programming language. 
+The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
+This documentation outlines the different language features, and also contains a formal specification of the language.
 
-It's like python, but with null and type safety. T
+In short, Mamba is Python but with a few key features:
+* Type checking
+* Null safety
+* Clear distinction between state and mutability, and immutability and statelessness
 
-This is transpiler, which converts Mamba source code to python source files. 
-Mamba code should therefore be interoperable with python code, meaning functions written in python can be called in Mamba and vice versa.
+This is a transpiler that converts Mamba source code to Python source files, written in Rust.
+Mamba code should therefore be interoperable with Python code, meaning functions written in Python can be called in Mamba and vice versa.
 
 ## 👥 Contributing
 
 Check out the [contributing](/CONTRIBUTING.md) document for contribution guidelines.
+Please read this document carefully before submitting your first issue or pull request.
 
 ## 🔨 Tooling
 
-Several tools are used to ensure the quality of the codebase.
+Several tools are used to maintain the quality of the codebase.
+These tools are used by the continuous integration tools to statically check submitted code.
+Therefore, to save time, it is a good idea to install these tools locally and run them before pushing your changes.
 
 ### Rustfmt
 
