@@ -3,6 +3,7 @@ use crate::lexer::token::TokenPos;
 use crate::parser::ast_node::ASTNode;
 use crate::parser::ast_node::ASTNodePos;
 use crate::parser::end_pos;
+use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -121,30 +122,40 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::List { elements } })
 }
 
-pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_one_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
     let mut expressions = Vec::new();
     let mut pos = 0;
 
+    if let Some(&t) = it.peek() {
+        if is_start_expression(t.clone()) {
+            return Err(CustomErr { expected: String::from("expression"), actual: t.clone() });
+        }
+    } else {
+        return Err(CustomEOFErr { expected: String::from("expression") });
+    }
+
     while let Some(&t) = it.peek() {
-        match t.token {
-            Token::RRBrack | Token::RSBrack | Token::RCBrack | Token::NL => break,
-            _ => {
-                expressions.push(get_or_err_direct!(it,
-                                                    parse_expression,
-                                                    String::from(msg)
-                                                    + " (pos "
-                                                    + &pos.to_string()
-                                                    + ")"));
-                match it.peek() {
-                    Some(TokenPos { token: Token::Comma, .. }) => {
-                        it.next();
-                    }
-                    _ => continue
-                }
+        if !is_start_expression(t.clone()) {
+            break;
+        }
+        expressions.push(get_or_err_direct!(it,
+                                            parse_expression,
+                                            String::from(msg) + " (pos " + &pos.to_string() + ")"));
+        match it.peek() {
+            Some(TokenPos { token: Token::Comma, .. }) => {
+                it.next();
             }
+            _ => continue
         }
         pos += 1;
     }
 
     Ok(expressions)
+}
+
+pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
+    match it.peek() {
+        Some(&t) if is_start_expression(t.clone()) => parse_one_or_more_expr(it, msg),
+        _ => Ok(vec![])
+    }
 }

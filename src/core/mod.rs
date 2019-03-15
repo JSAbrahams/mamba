@@ -117,23 +117,24 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, coll, body } => format!("for {} in {}: {}",
-                                                  to_py(expr.as_ref(), ind),
+                                                  newline_delimited(expr.as_ref(), ind),
                                                   to_py(coll.as_ref(), ind),
                                                   to_py(body.as_ref(), ind + 1)),
-        Core::If { cond, then } =>
-            format!("if {}: {}", to_py(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
+        Core::If { cond, then } => format!("if {}: {}",
+                                           newline_delimited(cond.as_ref(), ind),
+                                           to_py(then.as_ref(), ind + 1)),
         Core::IfElse { cond, then, _else } => format!("if {}: {}\n{}else: {}",
-                                                      to_py(cond.as_ref(), ind),
+                                                      newline_delimited(cond.as_ref(), ind),
                                                       to_py(then.as_ref(), ind + 1),
                                                       indent(ind),
                                                       to_py(_else.as_ref(), ind + 1)),
-        Core::While { cond, body } =>
-            format!("while {}: {}", to_py(cond.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
+        Core::While { cond, body } => format!("while {}: {}",
+                                              newline_delimited(cond.as_ref(), ind),
+                                              to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions, .. } =>
-            format!("class {}({}): {}\n",
+        Core::ClassDef { name, parents, definitions, .. } => format!("class {}({}): {}\n",
                     to_py(name, ind),
                     comma_delimited(parents, ind),
                     newline_delimited(definitions, ind + 1)),

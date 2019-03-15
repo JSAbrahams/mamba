@@ -2,6 +2,7 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast_node::ASTNode;
 use crate::parser::ast_node::ASTNodePos;
+use crate::parser::collection::parse_one_or_more_expr;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
@@ -9,6 +10,15 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::start_pos;
 use crate::parser::TPIterator;
+
+macro_rules! get_one_or_more {
+    ($it:expr, $msg:expr) => {{
+        match parse_one_or_more_expr($it, $msg) {
+            Ok(node) => node,
+            Err(err) => return Err(err)
+        }
+    }};
+}
 
 pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
@@ -37,7 +47,7 @@ fn parse_while(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     check_next_is!(it, Token::While);
-    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "while condition");
+    let cond: Vec<ASTNodePos> = get_one_or_more!(it, "while condition");
     check_next_is!(it, Token::Do);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "while body");
 
@@ -51,7 +61,7 @@ fn parse_for(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     check_next_is!(it, Token::For);
-    let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "for expression");
+    let expr: Vec<ASTNodePos> = get_one_or_more!(it, "for expression");
     check_next_is!(it, Token::In);
     let collection: Box<ASTNodePos> = get_or_err!(it, parse_expression, "for collection");
     check_next_is!(it, Token::Do);

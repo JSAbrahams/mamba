@@ -178,21 +178,21 @@ pub enum Core {
     },
 
     For {
-        expr: Box<Core>,
+        expr: Vec<Core>,
         coll: Box<Core>,
         body: Box<Core>
     },
     If {
-        cond: Box<Core>,
+        cond: Vec<Core>,
         then: Box<Core>
     },
     IfElse {
-        cond:  Box<Core>,
+        cond:  Vec<Core>,
         then:  Box<Core>,
         _else: Box<Core>
     },
     When {
-        cond:  Box<Core>,
+        cond:  Vec<Core>,
         cases: Vec<Core>
     },
     Case {
@@ -200,7 +200,7 @@ pub enum Core {
         then: Box<Core>
     },
     While {
-        cond: Box<Core>,
+        cond: Vec<Core>,
         body: Box<Core>
     },
     Break,

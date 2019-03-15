@@ -287,12 +287,12 @@ pub enum ASTNode {
     },
 
     IfElse {
-        cond:  Box<ASTNodePos>,
+        cond:  Vec<ASTNodePos>,
         then:  Box<ASTNodePos>,
         _else: Option<Box<ASTNodePos>>
     },
     When {
-        cond:  Box<ASTNodePos>,
+        cond:  Vec<ASTNodePos>,
         cases: Vec<ASTNodePos>
     },
     Case {
@@ -300,12 +300,12 @@ pub enum ASTNode {
         expr_or_stmt: Box<ASTNodePos>
     },
     For {
-        expr:       Box<ASTNodePos>,
+        expr:       Vec<ASTNodePos>,
         collection: Box<ASTNodePos>,
         body:       Box<ASTNodePos>
     },
     While {
-        cond: Box<ASTNodePos>,
+        cond: Vec<ASTNodePos>,
         body: Box<ASTNodePos>
     },
     Break,
