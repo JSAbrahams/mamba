@@ -1,6 +1,4 @@
 language: rust
-rust:
-  - nightly
 
 sudo: true
 before_install:
