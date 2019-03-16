@@ -1,9 +1,14 @@
 language: rust
+
 before_script:
   - rustup install stable
   - rustup install nightly
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 script:
   # fail when formatting error encountered
   - cargo +nightly fmt --all -- --check
@@ -14,5 +19,3 @@ script:
 
   - cargo build
   - cargo test
-
-
