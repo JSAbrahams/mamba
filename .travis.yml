@@ -1,9 +1,29 @@
 language: rust
+
+sudo: true
+before_install:
+  - sudo apt-get update
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - binutils-dev
+
 before_script:
   - rustup install stable
   - rustup install nightly
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
+
+after_success:
+  # Coverage report
+  - bash <(curl -s https://codecov.io/bash)
+
 script:
   # fail when formatting error encountered
   - cargo +nightly fmt --all -- --check
@@ -15,4 +35,16 @@ script:
   - cargo build
   - cargo test
 
-
+  # Coverage report
+  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+  - tar xzf master.tar.gz
+  - cd kcov-master
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+  - sudo make install
+  - cd ../..
+  - rm -rf kcov-master
+  - for file in target/debug/deps/smoke-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done
+  - for file in target/debug/deps/parser-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done
