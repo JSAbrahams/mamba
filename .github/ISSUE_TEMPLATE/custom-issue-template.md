@@ -7,7 +7,10 @@ assignees: ''
 
  ---	
 ### Current Issue
+_A description of a current issue._
 
 ### Proposed Solution
+_Proposed solution of said issue._
 
 ### Additional Context
+_Other relevant remarks._
