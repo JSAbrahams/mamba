@@ -4,7 +4,7 @@ Contributions are encouraged!
 
 A good place to start is by looking at [good first issues](https://github.com/JSAbrahams/mamba/labels/good%20first%20issue).
 
-Please read our [code of conduct](https://github.com/JSAbrahams/mamba/blob/master/CODE_OF_CONDUCT.md) before contributing.
+Please read our [code of conduct](/CODE_OF_CONDUCT.md) before contributing.
 
 ## 📝 Procedures
 
