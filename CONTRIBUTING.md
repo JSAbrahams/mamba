@@ -1,17 +1,11 @@
 # 👥 Contributing Guidelines
 
 Contributions are encouraged!
+
 A good place to start is by looking at [good first issues](https://github.com/JSAbrahams/mamba/labels/good%20first%20issue).
 
-## 😄 Etiquette
+Please read our [code of conduct](https://github.com/JSAbrahams/mamba/blob/code-of-conduct/CODE_OF_CONDUCT.md) before contributing.
 
-We want to maintain a pleasant atmosphere and encourage people to come up with new ideas.
-We always welcome new ideas and fresh perspectives on existing ideas with open arms.
-
-Please be respectful and be mindful of one-another. 
-This is an open source project, developers contribute to it in their free time.
-Keep in mind that experience will vary greatly between developers as well.
-Don't be afraid to add some extra context to you decisions, as it helps others think along as well.
 
 ## 📝 Procedures
 
