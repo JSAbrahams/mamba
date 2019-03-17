@@ -8,7 +8,6 @@
  [![GitHub](https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge)](https://github.com/JSAbrahams/mamba/blob/master/LICENSE)
  [![Love](https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge)](https://github.com/JSAbrahams/mamba)
 
-
 # Mamba
 
 This is the Mamba programming language. 
@@ -16,10 +15,10 @@ The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
-* Strict typing rules, but with type inference so it doesn't get in the way too much
-* Null safety features
-* More explicit error handling
-* Clear distinction between state and mutability, and immutability and statelessness
+- Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
+- Null safety features.
+- More explicit error handling.
+- Clear distinction between state and mutability, and immutability and statelessness.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
 Mamba code should therefore, in theory, be interoperable with Python code.
@@ -29,7 +28,7 @@ Functions written in Python can be called in Mamba and vice versa.
 
 Check out the [contributing](/CONTRIBUTING.md) document for contribution guidelines.
 
-Please read this document carefully before submitting your first issue or pull request.
+Please also read our [code of conduct](https://github.com/JSAbrahams/mamba/blob/code-of-conduct/CODE_OF_CONDUCT.md) before contributing.
 
 ## 🔨 Tooling
 
@@ -47,7 +46,6 @@ Therefore, to save time, it is a good idea to install these tools locally and ru
 The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
 
 *Note* The nightly build of `cargo` must be used.
-
 To install the nightly build of `cargo`, run `rustup install nightly`.
 
 ### Clippy
