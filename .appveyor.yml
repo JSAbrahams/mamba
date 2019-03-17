@@ -11,56 +11,17 @@ environment:
   # Stable 64-bit MSVC
     - channel: stable
       target: x86_64-pc-windows-msvc
-  # Stable 32-bit MSVC
-    - channel: stable
-      target: i686-pc-windows-msvc
-  # Beta 64-bit MSVC
-    - channel: beta
-      target: x86_64-pc-windows-msvc
-  # Beta 32-bit MSVC
-    - channel: beta
-      target: i686-pc-windows-msvc
   # Nightly 64-bit MSVC
     - channel: nightly
       target: x86_64-pc-windows-msvc
-      #cargoflags: --features "unstable"
-  # Nightly 32-bit MSVC
-    - channel: nightly
-      target: i686-pc-windows-msvc
-      #cargoflags: --features "unstable"
-
-### GNU Toolchains ###
-
-  # Stable 64-bit GNU
-    - channel: stable
-      target: x86_64-pc-windows-gnu
-  # Stable 32-bit GNU
-    - channel: stable
-      target: i686-pc-windows-gnu
-  # Beta 64-bit GNU
-    - channel: beta
-      target: x86_64-pc-windows-gnu
-  # Beta 32-bit GNU
-    - channel: beta
-      target: i686-pc-windows-gnu
-  # Nightly 64-bit GNU
-    - channel: nightly
-      target: x86_64-pc-windows-gnu
-      #cargoflags: --features "unstable"
-  # Nightly 32-bit GNU
-    - channel: nightly
-      target: i686-pc-windows-gnu
-      #cargoflags: --features "unstable"
 
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
 
-  - rustup install stable
-  - rustup install nightly
   - rustup component add rustfmt --toolchain nightly
-  - rustup component add clippy
+  - if %channel% == "stable" rustup component add clippy
 
   - rustc -vV
   - cargo -vV
@@ -69,10 +30,10 @@ install:
 build: false
 test_script:
   # fail when formatting error encountered
-  - cmd: cargo +nightly fmt --all -- --check
+  - cargo +nightly fmt --all -- --check
   # fail when encountering clippy warnings
-  - cmd: cargo clippy -- -D warnings
-  - cmd: cargo test --verbose
+  - if %channel% == "stable"  cargo clippy -- -D warnings
+  - cargo test --verbose
 
 # Skip commits
 skip_commits:
