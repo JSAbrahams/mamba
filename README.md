@@ -26,7 +26,7 @@ Functions written in Python can be called in Mamba and vice versa.
 
 ## 👥 Contributing
 
-Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](/CONTRIBUTING.md) and our [code of conduct](https://github.com/JSAbrahams/mamba/blob/master/CODE_OF_CONDUCT.md).
+Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](/CONTRIBUTING.md) and our [code of conduct](/CODE_OF_CONDUCT.md).
 
 ## 🔨 Tooling
 
