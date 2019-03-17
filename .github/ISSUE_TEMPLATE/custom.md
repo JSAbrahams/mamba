@@ -12,3 +12,6 @@ _What is observed to be an issue, or might be an issue in the future._
 
 ### Potential solutions
 _Potential solutions to this issue._
+
+### Additional Context
+_Any additional remarks._
