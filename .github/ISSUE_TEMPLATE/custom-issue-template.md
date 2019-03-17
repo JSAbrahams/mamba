@@ -1,11 +1,11 @@
----	
-name: "\U0001F464 Custom issue template"	
-about: An issue that is neither a bug nor a feature request.	
-title: ''	
-labels: ''	
-assignees: ''	
+---
+name: "\U0001F464 Custom issue template"
+about: An issue that is neither a bug nor a feature request.
+title: ''
+labels: ''
+assignees: ''
 
- ---	
+ ---
 ### Current Issue
 _A description of a current issue._
 
