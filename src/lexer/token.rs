@@ -27,7 +27,6 @@ pub enum Token {
     Point,
     Comma,
     DoublePoint,
-    DDoublePoint,
     Vararg,
     BSlash,
 
@@ -101,10 +100,10 @@ pub enum Token {
 
     Quest,
     QuestOr,
+    QuestCall,
     Handle,
 
     Print,
-    PrintLn,
 
     Undefined
 }
@@ -130,7 +129,6 @@ impl fmt::Display for Token {
             Token::Point => ".".to_string(),
             Token::Comma => ",".to_string(),
             Token::DoublePoint => ":".to_string(),
-            Token::DDoublePoint => "::".to_string(),
             Token::Vararg => "vararg".to_string(),
             Token::BSlash => "\\".to_string(),
 
@@ -200,14 +198,14 @@ impl fmt::Display for Token {
 
             Token::Quest => "?".to_string(),
             Token::QuestOr => "?or".to_string(),
+            Token::QuestCall => "?.".to_string(),
+
             Token::Handle => "handle".to_string(),
             Token::Raises => "raises".to_string(),
             Token::Retry => "retry".to_string(),
             Token::When => "when".to_string(),
 
             Token::Print => "print".to_string(),
-            Token::PrintLn => "println".to_string(),
-
             Token::Undefined => "undefined".to_string()
         };
 

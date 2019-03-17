@@ -41,15 +41,19 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
 
     macro_rules! indentation {
         () => {{
+            let mut indent_pos = 1;
             for _ in cur_ind..line_ind {
-                tokens.push(TokenPos { line, pos, token: Token::Indent });
+                tokens.push(TokenPos { line, pos: indent_pos, token: Token::Indent });
+                indent_pos += 4;
             }
             for _ in line_ind..cur_ind {
                 tokens.push(TokenPos { line, pos, token: Token::Dedent });
             }
+
             for _ in 1..cons_nl {
                 tokens.push(TokenPos { line, pos, token: Token::NL });
             }
+
             cur_ind = line_ind;
             cons_nl = 0;
             last_nl = false;
@@ -70,14 +74,15 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
 
     macro_rules! next_line_and_tp {
         () => {{
-            cons_nl += 1;
-            line += 1;
-            pos = 1;
-
             if !last_nl {
                 cur_ind = line_ind;
                 tokens.push(TokenPos { line, pos, token: Token::NL });
             }
+
+            cons_nl += 1;
+            line += 1;
+            pos = 1;
+
             line_ind = 0;
             last_nl = true;
             it.next();
@@ -100,11 +105,8 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                 },
                 _ => next_pos!(1, Token::Point)
             },
-            ':' => match (it.next(), it.peek()) {
-                (_, Some(':')) => next_pos_and_tp!(2, Token::DDoublePoint),
-                _ => next_pos!(1, Token::DoublePoint)
-            },
-            '_' => next_pos_and_tp!(1, Token::Underscore),
+            ':' => next_pos_and_tp!(1, Token::DoublePoint),
+            '_' => next_pos!(get_id_or_op),
             ',' => next_pos_and_tp!(1, Token::Comma),
             '(' => next_pos_and_tp!(1, Token::LRBrack),
             ')' => next_pos_and_tp!(1, Token::RRBrack),
@@ -113,12 +115,16 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             '{' => next_pos_and_tp!(1, Token::LCBrack),
             '}' => next_pos_and_tp!(1, Token::RCBrack),
             '?' => match (it.next(), it.peek()) {
+                (_, Some('.')) => next_pos_and_tp!(1, Token::QuestCall),
                 (_, Some('o')) => match (it.next(), it.peek()) {
-                    (_, Some('r')) => next_pos_and_tp!(3, Token::QuestOr),
+                    (_, Some('r')) => {
+                        next_pos_and_tp!(2, Token::QuestOr);
+                        pos += 3
+                    }
                     (_, Some(other)) => return Err(format!("Expected `?or`. Was '{}'.", other)),
                     (_, None) => return Err("Expected `?or`.".to_string())
                 },
-                _ => next_pos!(1, Token::Quest)
+                _ => next_pos!(0, Token::Quest)
             },
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
@@ -184,7 +190,7 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
             _ => Token::Sub
         },
         Some('/') => match it.peek() {
-            Some('=') => next_and!(it, pos, Token::Eq),
+            Some('=') => next_and!(it, pos, Token::Neq),
             _ => Token::Div
         },
         Some('\\') => Token::BSlash,
@@ -258,12 +264,12 @@ fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         }
     }
 
+    *pos += 1; // for closing " character
     Token::Str(result)
 }
 
 fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     let mut result = String::new();
-    *pos += 1;
 
     while let Some(&c) = it.peek() {
         match c {
@@ -273,6 +279,8 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     }
 
     match result.as_ref() {
+        "_" => Token::Underscore,
+
         "from" => Token::From,
         "type" => Token::Type,
         "stateful" => Token::Stateful,
@@ -319,10 +327,9 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "retry" => Token::Retry,
         "when" => Token::When,
 
-        "true" => Token::Bool(true),
-        "false" => Token::Bool(false),
+        "True" => Token::Bool(true),
+        "False" => Token::Bool(false),
         "print" => Token::Print,
-        "println" => Token::PrintLn,
 
         "undefined" => Token::Undefined,
 

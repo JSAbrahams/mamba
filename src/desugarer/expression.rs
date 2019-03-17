@@ -40,7 +40,9 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
 
         ASTNode::Int { lit } => Core::Int { int: lit.clone() },
         ASTNode::Real { lit } => Core::Float { float: lit.clone() },
-        ASTNode::ENum { num, exp } => Core::ENum { num: num.clone(), exp: exp.clone() },
+        ASTNode::ENum { num, exp } =>
+            Core::ENum { num: num.clone(),
+                         exp: if exp.is_empty() { String::from("0") } else { exp.clone() } },
         ASTNode::Str { lit } => Core::Str { _str: lit.clone() },
 
         ASTNode::IdType { id, _type } => desugar_expression(id),
@@ -58,7 +60,6 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
         ASTNode::ReturnEmpty => Core::Return { expr: Box::from(Core::Empty) },
         ASTNode::Return { expr } => Core::Return { expr: Box::from(desugar_expression(expr)) },
         ASTNode::Print { expr } => Core::Print { expr: Box::from(desugar_expression(expr)) },
-        ASTNode::PrintLn { expr } => Core::Print { expr: Box::from(desugar_expression(expr)) },
 
         ASTNode::IfElse { cond, then, _else } => match _else {
             Some(_else) => Core::IfElse { cond:  desugar_vec(cond),

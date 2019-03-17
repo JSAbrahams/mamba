@@ -88,7 +88,6 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
         // normal method or function call
         Some(TokenPos { token: Token::LRBrack, .. })
-        | Some(TokenPos { token: Token::DDoublePoint, .. })
         | Some(TokenPos { token: Token::Point, .. }) => parse_call(pre, it),
         Some(&tp) if is_start_expression_exclude_unary(tp) => parse_call(pre, it),
 
