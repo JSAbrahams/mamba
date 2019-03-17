@@ -103,7 +103,6 @@ pub enum Token {
     Handle,
 
     Print,
-    PrintLn,
 
     Undefined
 }
@@ -204,8 +203,6 @@ impl fmt::Display for Token {
             Token::When => "when".to_string(),
 
             Token::Print => "print".to_string(),
-            Token::PrintLn => "println".to_string(),
-
             Token::Undefined => "undefined".to_string()
         };
 

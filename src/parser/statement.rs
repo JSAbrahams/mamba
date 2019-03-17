@@ -25,14 +25,6 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             let node = ASTNode::Print { expr };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
-        Some(TokenPos { token: Token::PrintLn, .. }) => {
-            it.next();
-            let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "print line");
-
-            let (en_line, en_pos) = (expr.en_line, expr.en_pos);
-            let node = ASTNode::PrintLn { expr };
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
-        }
         Some(TokenPos { token: Token::Retry, .. }) => {
             let (en_line, en_pos) = end_pos(it);
             it.next();

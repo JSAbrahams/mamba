@@ -41,15 +41,19 @@ pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
 
     macro_rules! indentation {
         () => {{
+            let mut indent_pos = 1;
             for _ in cur_ind..line_ind {
-                tokens.push(TokenPos { line, pos, token: Token::Indent });
+                tokens.push(TokenPos { line, pos: indent_pos, token: Token::Indent });
+                indent_pos += 4;
             }
             for _ in line_ind..cur_ind {
                 tokens.push(TokenPos { line, pos, token: Token::Dedent });
             }
+
             for _ in 1..cons_nl {
                 tokens.push(TokenPos { line, pos, token: Token::NL });
             }
+
             cur_ind = line_ind;
             cons_nl = 0;
             last_nl = false;
@@ -70,14 +74,15 @@ pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
 
     macro_rules! next_line_and_tp {
         () => {{
-            cons_nl += 1;
-            line += 1;
-            pos = 1;
-
             if !last_nl {
                 cur_ind = line_ind;
                 tokens.push(TokenPos { line, pos, token: Token::NL });
             }
+
+            cons_nl += 1;
+            line += 1;
+            pos = 1;
+
             line_ind = 0;
             last_nl = true;
             it.next();
@@ -255,6 +260,7 @@ fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         }
     }
 
+    *pos += 1; // for closing " character
     Token::Str(result)
 }
 
@@ -315,10 +321,9 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "retry" => Token::Retry,
         "when" => Token::When,
 
-        "true" => Token::Bool(true),
-        "false" => Token::Bool(false),
+        "True" => Token::Bool(true),
+        "False" => Token::Bool(false),
         "print" => Token::Print,
-        "println" => Token::PrintLn,
 
         "undefined" => Token::Undefined,
 

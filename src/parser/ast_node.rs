@@ -324,8 +324,5 @@ pub enum ASTNode {
 
     Print {
         expr: Box<ASTNodePos>
-    },
-    PrintLn {
-        expr: Box<ASTNodePos>
     }
 }
