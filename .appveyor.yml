@@ -20,7 +20,9 @@ install:
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
 
-  - rustup component add rustfmt --toolchain nightly
+  - if %channel% == "nightly" rustup install nightly
+
+  - if %channel% == "nightly"  rustup component add rustfmt --toolchain nightly
   - if %channel% == "stable" rustup component add clippy
 
   - rustc -vV
@@ -30,7 +32,7 @@ install:
 build: false
 test_script:
   # fail when formatting error encountered
-  - cargo +nightly fmt --all -- --check
+  - if %channel% == "nightly"  cargo +nightly fmt --all -- --check
   # fail when encountering clippy warnings
   - if %channel% == "stable"  cargo clippy -- -D warnings
   - cargo test --verbose
