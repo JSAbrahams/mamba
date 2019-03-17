@@ -100,10 +100,7 @@ pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
                 },
                 _ => next_pos!(1, Token::Point)
             },
-            ':' => match (it.next(), it.peek()) {
-                (_, Some(':')) => next_pos_and_tp!(2, Token::DDoublePoint),
-                _ => next_pos!(1, Token::DoublePoint)
-            },
+            ':' => next_pos_and_tp!(1, Token::DoublePoint),
             '_' => next_pos_and_tp!(1, Token::Underscore),
             ',' => next_pos_and_tp!(1, Token::Comma),
             '(' => next_pos_and_tp!(1, Token::LRBrack),
@@ -184,7 +181,7 @@ fn get_operator(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
             _ => Token::Sub
         },
         Some('/') => match it.peek() {
-            Some('=') => next_and!(it, pos, Token::Eq),
+            Some('=') => next_and!(it, pos, Token::Neq),
             _ => Token::Div
         },
         Some('\\') => Token::BSlash,
