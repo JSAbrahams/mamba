@@ -6,10 +6,12 @@ labels: enhancement
 assignees: ''
 
 ---
+### Current Issue
+_A description of an issue that this feature aims to solve_
+_Also reference relevant issues (or pull requests) here._
 
 ### Description of the feature
 _A clear and concise description of the proposed feature, and what it wishes to address if relevant._
-_Also reference relevant issues (or pull requests) here._
 
 ### Description of potential solution
 _A clear and concise description of what you want to happen._
