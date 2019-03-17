@@ -2,9 +2,11 @@
     <img src="/image/logo_medium.png" height="250">
 </p>
 
+[![Travis Build Status][travis-status]](https://travis-ci.org/JSAbrahams/mamba)
+[![codecov][codecov-status]](https://codecov.io/gh/JSAbrahams/mamba)
+[![Built with love][baby-dont-hurt-me]](https://github.com/JSAbrahams/)
+
 # Mamba
-[![Travis Build Status](https://travis-ci.org/JSAbrahams/mamba.svg?branch=master)](https://travis-ci.org/JSAbrahams/mamba)
-[![codecov](https://codecov.io/gh/JSAbrahams/mamba/branch/master/graph/badge.svg)](https://codecov.io/gh/JSAbrahams/mamba)
 
 This is the Mamba programming language. 
 The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
