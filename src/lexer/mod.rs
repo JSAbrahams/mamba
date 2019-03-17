@@ -106,7 +106,7 @@ pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
                 _ => next_pos!(1, Token::Point)
             },
             ':' => next_pos_and_tp!(1, Token::DoublePoint),
-            '_' => next_pos_and_tp!(1, Token::Underscore),
+            '_' => next_pos!(get_id_or_op),
             ',' => next_pos_and_tp!(1, Token::Comma),
             '(' => next_pos_and_tp!(1, Token::LRBrack),
             ')' => next_pos_and_tp!(1, Token::RRBrack),
@@ -275,6 +275,8 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     }
 
     match result.as_ref() {
+        "_" => Token::Underscore,
+
         "from" => Token::From,
         "type" => Token::Type,
         "stateful" => Token::Stateful,

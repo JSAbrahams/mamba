@@ -70,19 +70,37 @@ fn lex_if() {
 fn lex_numbers_and_strings() {
     let source = String::from("1 2.0 3e10 5e 2 \"hello\" True False i");
     let tokens = tokenize(&source).unwrap();
-
-    println!("{}", source);
     assert_eq!(tokens,
                vec![TokenPos { line: 1, pos: 1, token: Token::Int(String::from("1")) },
                     TokenPos { line: 1, pos: 3, token: Token::Real(String::from("2.0")) },
-                    TokenPos { line: 1, pos: 7, token: Token::ENum(String::from("3"),
-                                                                   String::from("10")) },
-                    TokenPos { line: 1, pos: 12, token: Token::ENum(String::from("5"),
-                                                                    String::new()) },
+                    TokenPos {
+                        line: 1,
+                        pos: 7,
+                        token: Token::ENum(String::from("3"),
+                                           String::from("10")),
+                    },
+                    TokenPos {
+                        line: 1,
+                        pos: 12,
+                        token: Token::ENum(String::from("5"),
+                                           String::new()),
+                    },
                     TokenPos { line: 1, pos: 15, token: Token::Int(String::from("2")) },
                     TokenPos { line: 1, pos: 17, token: Token::Str(String::from("hello")) },
                     TokenPos { line: 1, pos: 25, token: Token::Bool(true) },
                     TokenPos { line: 1, pos: 30, token: Token::Bool(false) },
                     TokenPos { line: 1, pos: 36, token: Token::Id(String::from("i")) }
+               ]);
+}
+
+#[test]
+fn lex_identifiers() {
+    let source = String::from("i _i 3a");
+    let tokens = tokenize(&source).unwrap();
+    assert_eq!(tokens,
+               vec![TokenPos { line: 1, pos: 1, token: Token::Id(String::from("i")) },
+                    TokenPos { line: 1, pos: 3, token: Token::Id(String::from("_i")) },
+                    TokenPos { line: 1, pos: 6, token: Token::Int(String::from("3")) },
+                    TokenPos { line: 1, pos: 7, token: Token::Id(String::from("a")) },
                ]);
 }
