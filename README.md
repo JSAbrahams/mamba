@@ -2,9 +2,14 @@
     <img src="/image/logo_medium.png" height="250">
 </p>
 
+![Travis (.org)](https://img.shields.io/travis/JSAbrahams/mamba.svg?style=for-the-badge&logo=travis)
+ ![AppVeyor](https://img.shields.io/appveyor/ci/JSAbrahams/mamba.svg?style=for-the-badge&logo=appveyor)
+ ![Codecov](https://img.shields.io/codecov/c/github/JSAbrahams/mamba.svg?style=for-the-badge&logo=codecov)
+ ![GitHub](https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge)
+ ![Love](https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge)
+
+
 # Mamba
-[![Travis Build Status](https://travis-ci.org/JSAbrahams/mamba.svg?branch=master)](https://travis-ci.org/JSAbrahams/mamba)
-[![codecov](https://codecov.io/gh/JSAbrahams/mamba/branch/master/graph/badge.svg)](https://codecov.io/gh/JSAbrahams/mamba)
 
 This is the Mamba programming language. 
 The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
