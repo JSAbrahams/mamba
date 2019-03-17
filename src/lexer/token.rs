@@ -27,7 +27,6 @@ pub enum Token {
     Point,
     Comma,
     DoublePoint,
-    DDoublePoint,
     Vararg,
     BSlash,
 
@@ -130,7 +129,6 @@ impl fmt::Display for Token {
             Token::Point => ".".to_string(),
             Token::Comma => ",".to_string(),
             Token::DoublePoint => ":".to_string(),
-            Token::DDoublePoint => "::".to_string(),
             Token::Vararg => "vararg".to_string(),
             Token::BSlash => "\\".to_string(),
 

@@ -15,7 +15,7 @@ macro_rules! next_and {
 }
 
 #[allow(clippy::cyclomatic_complexity)]
-pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
+pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();
 
@@ -263,7 +263,6 @@ fn get_string(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
 
 fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
     let mut result = String::new();
-    *pos += 1;
 
     while let Some(&c) = it.peek() {
         match c {
