@@ -100,6 +100,7 @@ pub enum Token {
 
     Quest,
     QuestOr,
+    QuestCall,
     Handle,
 
     Print,
@@ -197,6 +198,8 @@ impl fmt::Display for Token {
 
             Token::Quest => "?".to_string(),
             Token::QuestOr => "?or".to_string(),
+            Token::QuestCall => "?.".to_string(),
+
             Token::Handle => "handle".to_string(),
             Token::Raises => "raises".to_string(),
             Token::Retry => "retry".to_string(),

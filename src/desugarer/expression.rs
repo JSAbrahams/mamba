@@ -40,10 +40,9 @@ pub fn desugar_expression(node_pos: &ASTNodePos) -> Core {
 
         ASTNode::Int { lit } => Core::Int { int: lit.clone() },
         ASTNode::Real { lit } => Core::Float { float: lit.clone() },
-        ASTNode::ENum { num, exp } => Core::ENum {
-            num: num.clone(),
-            exp: if exp.is_empty() { String::from("0") } else { exp.clone() }
-        },
+        ASTNode::ENum { num, exp } =>
+            Core::ENum { num: num.clone(),
+                         exp: if exp.is_empty() { String::from("0") } else { exp.clone() } },
         ASTNode::Str { lit } => Core::Str { _str: lit.clone() },
 
         ASTNode::IdType { id, _type } => desugar_expression(id),

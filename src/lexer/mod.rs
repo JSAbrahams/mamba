@@ -115,12 +115,16 @@ pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
             '{' => next_pos_and_tp!(1, Token::LCBrack),
             '}' => next_pos_and_tp!(1, Token::RCBrack),
             '?' => match (it.next(), it.peek()) {
+                (_, Some('.')) => next_pos_and_tp!(1, Token::QuestCall),
                 (_, Some('o')) => match (it.next(), it.peek()) {
-                    (_, Some('r')) => next_pos_and_tp!(3, Token::QuestOr),
+                    (_, Some('r')) => {
+                        next_pos_and_tp!(2, Token::QuestOr);
+                        pos += 3
+                    }
                     (_, Some(other)) => return Err(format!("Expected `?or`. Was '{}'.", other)),
                     (_, None) => return Err("Expected `?or`.".to_string())
                 },
-                _ => next_pos!(1, Token::Quest)
+                _ => next_pos!(0, Token::Quest)
             },
             '|' => next_pos_and_tp!(1, Token::Ver),
             '\n' => next_line_and_tp!(),
