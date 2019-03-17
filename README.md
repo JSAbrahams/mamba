@@ -2,9 +2,9 @@
     <img src="/image/logo_medium.png" height="250">
 </p>
 
-[![Travis Build Status](https://travis-ci.org/JSAbrahams/mamba.svg?branch=master)](https://travis-ci.org/JSAbrahams/mamba)	
-[![Build status](https://ci.appveyor.com/api/projects/status/3jr22340lhv3bj7s?svg=true)](https://ci.appveyor.com/project/JSAbrahams/mamba)
-[![codecov](https://codecov.io/gh/JSAbrahams/mamba/branch/master/graph/badge.svg)](https://codecov.io/gh/JSAbrahams/mamba)
+![Travis (.org)](https://img.shields.io/travis/JSAbrahams/mamba.svg?style=for-the-badge)
+ ![AppVeyor](https://img.shields.io/appveyor/ci/JSAbrahams/mamba.svg?style=for-the-badge)
+ ![Codecov](https://img.shields.io/codecov/c/github/JSAbrahams/mamba.svg?style=for-the-badge)
 
 
 # Mamba
