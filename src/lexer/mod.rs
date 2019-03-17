@@ -15,7 +15,7 @@ macro_rules! next_and {
 }
 
 #[allow(clippy::cyclomatic_complexity)]
-pub fn tokenize(input: &String) -> Result<Vec<TokenPos>, String> {
+pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();
 
