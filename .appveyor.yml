@@ -56,18 +56,17 @@ install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+
+  - rustup install stable
+  - rustup install nightly
+  - rustup component add rustfmt --toolchain nightly
+  - rustup component add clippy
+
   - rustc -vV
   - cargo -vV
 
-init:
-  - cmd: rustup install stable
-  - cmd: rustup install nightly
-  - cmd: rustup component add rustfmt --toolchain nightly
-  - cmd: rustup component add clippy
-
-# Build
-build_script:
-  - cmd: cargo build
+# cargo does this for us
+build: false
 test_script:
   # fail when formatting error encountered
   - cmd: cargo +nightly fmt --all -- --check
