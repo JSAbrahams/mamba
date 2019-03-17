@@ -27,8 +27,6 @@ after_success:
 script:
   # fail when formatting error encountered
   - cargo +nightly fmt --all -- --check
-
-  - cargo clippy
   # fail when encountering clippy warnings
   - cargo clippy -- -D warnings
 

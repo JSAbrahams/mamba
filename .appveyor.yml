@@ -1,0 +1,21 @@
+init:
+  - rustup install stable
+  - rustup install nightly
+  - rustup component add rustfmt --toolchain nightly
+  - rustup component add clippy
+
+build_script:
+  - cargo build
+
+test_script:
+  # fail when formatting error encountered
+  - cargo +nightly fmt --all -- --check
+  # fail when encountering clippy warnings
+  - cargo clippy -- -D warnings
+  - cargo test
+
+# Skip commits
+skip_commits:
+  files:
+  - '*.md'
+  - .gitignore
