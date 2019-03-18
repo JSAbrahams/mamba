@@ -1,5 +1,5 @@
 use crate::util::valid_resource_path;
-use mamba::command::quick_transpile;
+use mamba::command::mamba_to_python_direct;
 use std::path::Path;
 
 mod util;
@@ -7,5 +7,5 @@ mod util;
 #[test]
 fn test_output_class() {
     let source = valid_resource_path(&String::from("class.txt"));
-    quick_transpile(Path::new(&source));
+    mamba_to_python_direct(Path::new(&source));
 }
