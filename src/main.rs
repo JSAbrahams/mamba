@@ -15,6 +15,8 @@ fn main() -> Result<(), String> {
     let mut output: Option<String> = None;
 
     let mut args = std::env::args();
+    args.next(); // skip program name
+
     while let Some(arg) = args.next() {
         match arg.as_str() {
             INPUT_FLAG => input = Option::from(args.next().expect("Expected input file path.")),
@@ -25,12 +27,11 @@ fn main() -> Result<(), String> {
     }
 
     match (input, output) {
-        (Some(input), Some(output)) => match command::mamba_to_python(
-            Path::new(&input),
-            Path::new(&output)) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err)
-        },
+        (Some(input), Some(output)) =>
+            match command::mamba_to_python(Path::new(&input), Path::new(&output)) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err)
+            },
         (Some(input), None) => match command::mamba_to_python_direct(Path::new(&input)) {
             Ok(_) => Ok(()),
             Err(err) => Err(err)

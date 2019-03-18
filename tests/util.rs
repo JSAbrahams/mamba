@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use std::path::PathBuf;
+use std::path::PathBuf;use std::fs;
 
 #[macro_export]
 macro_rules! assert_ok {
@@ -16,10 +16,10 @@ macro_rules! assert_ok {
 fn resource_path(file: &String) -> String {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     source_path.push(if cfg!(windows) {
-        String::from("tests\\resources\\")
-    } else {
-        String::from("tests/resources/")
-    });
+                         String::from("tests\\resources\\")
+                     } else {
+                         String::from("tests/resources/")
+                     });
     source_path.push(file);
 
     String::from(source_path.to_string_lossy())
@@ -51,6 +51,12 @@ pub fn valid_resource_path(file: &str) -> String {
     }
 }
 
-pub fn valid_resource_exists(file: &str) -> bool {
-    Path::exists(file.as_ref())
+/// Checks if a resource exists and then immediately deletes it if it does.
+pub fn valid_resource_exists_and_delete(file: &str) -> bool {
+    let path_string = valid_resource_path(file);
+    let path = Path::new(&path_string);
+    if path.exists() {
+        fs::remove_file(path);
+        true
+    } else { false }
 }
