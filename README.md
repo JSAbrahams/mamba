@@ -11,7 +11,7 @@
 # Mamba
 
 This is the Mamba programming language. 
-The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
+The Documentation can be found [here](https://joelabrahams.nl/mamba_doc/).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
