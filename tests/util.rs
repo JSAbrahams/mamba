@@ -12,8 +12,7 @@ macro_rules! assert_ok {
     }};
 }
 
-pub fn resource_string_content(file: String) -> String {
-    let mut content = String::new();
+fn resource_path(file: &String) -> String {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     source_path.push(if cfg!(windows) {
                          String::from("tests\\resources\\")
@@ -22,23 +21,30 @@ pub fn resource_string_content(file: String) -> String {
                      });
     source_path.push(file);
 
-    match source_path.to_str() {
-        Some(path) => match File::open(path) {
-            Ok(mut file) => {
-                file.read_to_string(&mut content).unwrap();
-            }
-            Err(error) => panic!("Error opening file {}: {}", path, error)
-        },
-        None => panic!("Error opening file: path can't be converted to string.")
-    }
-
-    return content;
+    String::from(source_path.to_string_lossy())
 }
 
-pub fn valid_resource(file: &str) -> String {
+fn resource_string_content(file: &String) -> String {
+    let mut content = String::new();
+
+    let path = valid_resource_path(file);
+    File::open(path).unwrap().read_to_string(&mut content);
+
+    content
+}
+
+pub fn valid_resource_contents(file: &str) -> String {
     if cfg!(windows) {
-        resource_string_content(format!("{}{}", "valid\\", file))
+        resource_string_content(&format!("{}{}", "valid\\", file))
     } else {
-        resource_string_content(format!("{}{}", "valid/", file))
+        resource_string_content(&format!("{}{}", "valid/", file))
+    }
+}
+
+pub fn valid_resource_path(file: &str) -> String {
+    if cfg!(windows) {
+        resource_path(&format!("{}{}", "valid\\", file))
+    } else {
+        resource_path(&format!("{}{}", "valid/", file))
     }
 }

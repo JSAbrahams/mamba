@@ -2,7 +2,7 @@ use crate::core::core_node::Core;
 
 pub mod core_node;
 
-pub fn to_py_source(core: &Core) -> String { to_py(&core, 0) }
+pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
@@ -58,15 +58,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::AnonFun { args, body } =>
             format!("lambda {} : {}", comma_delimited(args, ind), to_py(body, ind)),
 
-        Core::Block { statements } => {
-            let mut block = String::new();
-            for statement in statements {
-                block.push('\n');
-                block.push_str(indent(ind).as_ref());
-                block.push_str(to_py(&statement, ind).as_ref());
-            }
-            block
-        }
+        Core::Block { statements } => format!("\n{}", newline_delimited(statements, ind)),
 
         Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
         Core::MethodCall { object, method, args } => match object.as_ref() {
@@ -118,19 +110,18 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, coll, body } => format!("for {} in {}: {}",
-                                                  newline_delimited(expr.as_ref(), ind),
+                                                  comma_delimited(expr.as_ref(), ind),
                                                   to_py(coll.as_ref(), ind),
                                                   to_py(body.as_ref(), ind + 1)),
-        Core::If { cond, then } => format!("if {}: {}",
-                                           newline_delimited(cond.as_ref(), ind),
-                                           to_py(then.as_ref(), ind + 1)),
+        Core::If { cond, then } =>
+            format!("if {}: {}", comma_delimited(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
         Core::IfElse { cond, then, _else } => format!("if {}: {}\n{}else: {}",
-                                                      newline_delimited(cond.as_ref(), ind),
+                                                      comma_delimited(cond.as_ref(), ind),
                                                       to_py(then.as_ref(), ind + 1),
                                                       indent(ind),
                                                       to_py(_else.as_ref(), ind + 1)),
         Core::While { cond, body } => format!("while {}: {}",
-                                              newline_delimited(cond.as_ref(), ind),
+                                              comma_delimited(cond.as_ref(), ind),
                                               to_py(body.as_ref(), ind + 1)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
@@ -151,10 +142,14 @@ fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
 
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut result = String::new();
-    for item in items {
-        result.push('\n');
+
+    for (pos, item) in items.iter().enumerate() {
         result.push_str(indent(ind).as_ref());
         result.push_str(to_py(item, ind).as_ref());
+
+        if pos < items.len() - 1 {
+            result.push('\n');
+        }
     }
 
     result
@@ -170,6 +165,7 @@ fn comma_delimited(items: &[Core], ind: usize) -> String {
         result.push_str(to_py(item, ind).as_ref());
         if pos < items.len() - 1 {
             result.push(',');
+            result.push(' ');
         }
     }
 
