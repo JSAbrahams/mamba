@@ -1,6 +1,6 @@
 theme: jekyll-theme-minimal
 
 title: Mamba Documentation
-description: You can find the documentation of the Mamba Language here
+description: This is the page of the Mamba repo itself. For documentation, go [here](https://joelabrahams.nl/mamba_doc)
 
 logo: /image/logo_medium.png
