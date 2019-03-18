@@ -6,39 +6,36 @@ use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 
-pub fn mamba_to_python_direct(path: &Path) -> Result<File, String> {
-    let file_path =
-        match path.parent() {
-            Some(parent) => parent,
-            None => return Err(format!("Not in a directory: {}", path.to_string_lossy()))
-        }.join(match path.file_stem() {
-                   Some(path) => path,
-                   None =>
-                       return Err(format!("File does not have name: {}", path.to_string_lossy())),
-               });
+pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
+    let file_path = match input_path.parent() {
+        Some(parent) => parent,
+        None => return Err(format!("Not in a directory: {}", input_path.to_string_lossy()))
+    }.join(match input_path.file_stem() {
+        Some(path) => path,
+        None => return Err(format!("File does not have name: {}", input_path.to_string_lossy())),
+    });
 
-    let new_file_path = format!("{}.py", file_path.to_string_lossy());
-
-    let mut output_file = match File::create(new_file_path) {
-        Ok(file) => file,
-        Err(err) => return Err(format!("{}", err))
-    };
-
-    let mut input_file = match File::open(path) {
-        Ok(file) => file,
-        Err(err) => return Err(format!("{}", err))
-    };
-
-    match mamba_to_python(&mut input_file, &mut output_file) {
-        Ok(_) => Ok(output_file),
+    let output_path_string = format!("{}.py", file_path.to_string_lossy());
+    let output_path = Path::new(&output_path_string);
+    match mamba_to_python(input_path,  output_path) {
+        Ok(output_path) => Ok(output_path),
         Err(err) => Err(err)
     }
 }
 
-pub fn mamba_to_python(input: &mut File, output: &mut File) -> Result<(), String> {
+pub fn mamba_to_python(input: &Path, output: &Path) -> Result<PathBuf, String> {
     let mut input_string = String::new();
-    match input.read_to_string(&mut input_string) {
+    let res_output = output.to_owned();
+
+    let (mut input_file, mut output_file) = match (File::open(input), File::open(output)) {
+        (Ok(input_file), Ok(output_file)) => (input_file, output_file),
+        (Err(err), _) => return Err(err.to_string()),
+        (_, Err(err)) => return Err(err.to_string())
+    };
+
+    match input_file.read_to_string(&mut input_string) {
         Ok(_) => (),
         Err(err) => return Err(format!("{}", err))
     }
@@ -48,8 +45,8 @@ pub fn mamba_to_python(input: &mut File, output: &mut File) -> Result<(), String
         Err(err) => return Err(format!("{}", err))
     };
 
-    match output.write(output_string.as_ref()) {
-        Ok(_) => Ok(()),
+    match output_file.write(output_string.as_ref()) {
+        Ok(_) => Ok(res_output),
         Err(err) => Err(format!("{}", err))
     }
 }

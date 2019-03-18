@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 use std::path::PathBuf;
 
 #[macro_export]
@@ -15,10 +16,10 @@ macro_rules! assert_ok {
 fn resource_path(file: &String) -> String {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     source_path.push(if cfg!(windows) {
-                         String::from("tests\\resources\\")
-                     } else {
-                         String::from("tests/resources/")
-                     });
+        String::from("tests\\resources\\")
+    } else {
+        String::from("tests/resources/")
+    });
     source_path.push(file);
 
     String::from(source_path.to_string_lossy())
@@ -48,4 +49,8 @@ pub fn valid_resource_path(file: &str) -> String {
     } else {
         resource_path(&format!("{}{}", "valid/", file))
     }
+}
+
+pub fn valid_resource_exists(file: &str) -> bool {
+    Path::exists(file.as_ref())
 }

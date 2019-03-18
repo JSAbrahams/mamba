@@ -7,5 +7,7 @@ mod util;
 #[test]
 fn test_output_class() {
     let source = valid_resource_path(&String::from("class.txt"));
-    mamba_to_python_direct(Path::new(&source));
+    let path = &mut Path::new(&source);
+
+    mamba_to_python_direct(path);
 }
