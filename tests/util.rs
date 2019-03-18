@@ -27,7 +27,7 @@ fn resource_path(file: &String) -> String {
 fn resource_string_content(file: &String) -> String {
     let mut content = String::new();
 
-    let path = valid_resource_path(file);
+    let path = resource_path(file);
     File::open(path).unwrap().read_to_string(&mut content);
 
     content

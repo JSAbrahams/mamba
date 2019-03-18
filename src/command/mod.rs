@@ -8,15 +8,15 @@ use std::io::Write;
 use std::path::Path;
 
 pub fn quick_transpile(path: &Path) -> File {
-    let new_file_path = format!("{}.py", match path.parent() {
-        Some(parent) => parent,
-        None => panic!()
-    }.join(match path.file_stem() {
-        Some(path) => path,
-        None => panic!()
-    }).to_string_lossy());
-
-    println!("{}", new_file_path);
+    let new_file_path = format!("{}.py",
+                                match path.parent() {
+                                    Some(parent) => parent,
+                                    None => panic!()
+                                }.join(match path.file_stem() {
+                                           Some(path) => path,
+                                           None => panic!()
+                                       })
+                                 .to_string_lossy());
 
     let mut output_file = match File::create(new_file_path) {
         Ok(file) => file,
