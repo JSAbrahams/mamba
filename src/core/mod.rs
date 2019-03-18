@@ -42,7 +42,11 @@ fn to_py(core: &Core, ind: usize) -> String {
                 _ => panic!()
             };
 
-            format!("{}({}): {}", name, comma_delimited(args, ind), to_py(body.as_ref(), ind + 1))
+            format!("\n{}{}({}): {}",
+                    indent(ind),
+                    name,
+                    comma_delimited(args, ind),
+                    to_py(body.as_ref(), ind + 1))
         }
 
         Core::Assign { left, right } =>
