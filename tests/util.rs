@@ -24,6 +24,7 @@ fn resource_path(file: &String) -> String {
     String::from(source_path.to_string_lossy())
 }
 
+#[ignore(unused_must_use)]
 fn resource_string_content(file: &String) -> String {
     let mut content = String::new();
 

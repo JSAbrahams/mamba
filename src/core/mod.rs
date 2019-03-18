@@ -126,7 +126,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions, .. } => format!("class {}({}): {}\n",
+        Core::ClassDef { name, parents, definitions, .. } => format!("class {}({}):\n{}\n",
                     to_py(name, ind),
                     comma_delimited(parents, ind),
                     newline_delimited(definitions, ind + 1)),
