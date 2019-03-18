@@ -14,11 +14,11 @@ pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
             Some(parent) => parent,
             None => return Err(format!("Not in a directory: {}", input_path.to_string_lossy()))
         }.join(match input_path.file_stem() {
-            Some(path) => path,
-            None =>
-                return Err(format!("File does not have name: {}",
-                                   input_path.to_string_lossy())),
-        });
+                   Some(path) => path,
+                   None =>
+                       return Err(format!("File does not have name: {}",
+                                          input_path.to_string_lossy())),
+               });
 
     let output_path_string = format!("{}.py", file_path.to_string_lossy());
     let output_path = Path::new(&output_path_string);
@@ -31,13 +31,8 @@ pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
 pub fn mamba_to_python(input: &Path, output: &Path) -> Result<PathBuf, String> {
     let res_output = output.to_owned();
 
-    let input_file_option = OpenOptions::new()
-        .read(true)
-        .open(input);
-    let output_file_options = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(output);
+    let input_file_option = OpenOptions::new().read(true).open(input);
+    let output_file_options = OpenOptions::new().write(true).create(true).open(output);
 
     let (mut input_file, mut output_file) = match (input_file_option, output_file_options) {
         (Ok(input_file), Ok(output_file)) => (input_file, output_file),

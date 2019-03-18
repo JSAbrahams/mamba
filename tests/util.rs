@@ -1,7 +1,8 @@
+use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use std::path::PathBuf;use std::fs;
+use std::path::PathBuf;
 
 #[macro_export]
 macro_rules! assert_ok {
@@ -58,5 +59,7 @@ pub fn valid_resource_exists_and_delete(file: &str) -> bool {
     if path.exists() {
         fs::remove_file(path);
         true
-    } else { false }
+    } else {
+        false
+    }
 }
