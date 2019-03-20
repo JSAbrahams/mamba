@@ -1,9 +1,7 @@
 use crate::util::check_valid_resource_exists_and_delete;
 use assert_cmd::prelude::*;
-// Run programs
 use crate::util::valid_resource_path;
 use std::process::Command;
-// Add methods on commands
 
 mod util;
 
