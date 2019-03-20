@@ -33,10 +33,10 @@ fn resource_content(subdir: &str, file: &str) -> String {
 fn resource_path(subdir: &str, file: &str) -> String {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     source_path.push(if cfg!(windows) {
-                         format!("tests\\resources\\{}\\{}", subdir, file)
-                     } else {
-                         format!("tests/resources/{}/{}", subdir, file)
-                     });
+        format!("tests\\resources\\{}\\{}", subdir, file)
+    } else {
+        format!("tests/resources/{}/{}", subdir, file)
+    });
 
     String::from(source_path.to_string_lossy())
 }

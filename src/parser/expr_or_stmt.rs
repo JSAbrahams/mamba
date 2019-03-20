@@ -1,8 +1,8 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_generics;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::block::parse_block;
 use crate::parser::control_flow_expr::parse_match_cases;
 use crate::parser::expression::parse_expression;

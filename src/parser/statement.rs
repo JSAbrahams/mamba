@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::definition::parse_definition;
 use crate::parser::end_pos;

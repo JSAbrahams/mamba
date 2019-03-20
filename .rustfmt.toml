@@ -1,5 +1,3 @@
-indent_style = "Visual"
-
 error_on_unformatted = true
 brace_style = "PreferSameLine"
 enum_discrim_align_threshold = 10

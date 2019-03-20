@@ -4,8 +4,8 @@ use crate::parser::_type::parse_generics;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::collection::parse_collection;
 use crate::parser::end_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -66,12 +66,13 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     };
 
     match definition {
-        Ok(definition) =>
-            Ok(ASTNodePos { st_line,
-                            st_pos,
-                            en_line: definition.en_line,
-                            en_pos: definition.en_pos,
-                            node: ASTNode::Def { private, definition: Box::from(definition) } }),
+        Ok(definition) => Ok(ASTNodePos {
+            st_line,
+            st_pos,
+            en_line: definition.en_line,
+            en_pos: definition.en_pos,
+            node: ASTNode::Def { private, definition: Box::from(definition) }
+        }),
         err => err
     }
 }
@@ -155,11 +156,13 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
         ($factor:expr, $ast:ident) => {{
             let (en_line, en_pos) = end_pos(it);
             it.next();
-            Box::from(ASTNodePos { st_line,
-                                   st_pos,
-                                   en_line,
-                                   en_pos,
-                                   node: ASTNode::$ast { lit: $factor } })
+            Box::from(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line,
+                en_pos,
+                node: ASTNode::$ast { lit: $factor }
+            })
         }};
     }
 
@@ -171,12 +174,13 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
         Some(TokenPos { token: Token::Str(str), .. }) => literal!(str.to_string(), Str),
         Some(TokenPos { token: Token::ENum(num, exp), .. }) => {
             it.next();
-            Box::from(ASTNodePos { st_line,
-                                   st_pos,
-                                   en_line,
-                                   en_pos,
-                                   node: ASTNode::ENum { num: num.to_string(),
-                                                         exp: exp.to_string() } })
+            Box::from(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line,
+                en_pos,
+                node: ASTNode::ENum { num: num.to_string(), exp: exp.to_string() }
+            })
         }
         _ => get_or_err!(it, parse_id_maybe_type, format!("argument (pos {})", pos))
     };
@@ -190,11 +194,13 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
     };
 
     let (en_line, en_pos) = end_pos(it);
-    Ok(ASTNodePos { st_line,
-                    st_pos,
-                    en_line,
-                    en_pos,
-                    node: ASTNode::FunArg { vararg, id_maybe_type, default } })
+    Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line,
+        en_pos,
+        node: ASTNode::FunArg { vararg, id_maybe_type, default }
+    })
 }
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
@@ -244,15 +250,19 @@ fn parse_variable_def_id(id: ASTNodePos, mutable: bool, it: &mut TPIterator) -> 
         None => (id.en_line, id.en_pos)
     };
 
-    Ok(ASTNodePos { st_line: id.st_line,
-                    st_pos: id.st_pos,
-                    en_line,
-                    en_pos,
-                    node: ASTNode::VariableDef { mutable,
-                                                 ofmut,
-                                                 id_maybe_type: Box::from(id),
-                                                 expression,
-                                                 forward } })
+    Ok(ASTNodePos {
+        st_line: id.st_line,
+        st_pos: id.st_pos,
+        en_line,
+        en_pos,
+        node: ASTNode::VariableDef {
+            mutable,
+            ofmut,
+            id_maybe_type: Box::from(id),
+            expression,
+            forward
+        }
+    })
 }
 
 fn parse_variable_def(it: &mut TPIterator) -> ParseResult {

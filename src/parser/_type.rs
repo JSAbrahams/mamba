@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::call::parse_call;
 use crate::parser::end_pos;
 use crate::parser::expression::is_start_expression_exclude_unary;
@@ -21,18 +21,20 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = end_pos(it);
     match it.next() {
-        Some(TokenPos { token: Token::Init, .. }) =>
-            Ok(ASTNodePos { st_line,
-                            st_pos,
-                            en_line,
-                            en_pos,
-                            node: ASTNode::Id { lit: String::from("init") } }),
-        Some(TokenPos { token: Token::Id(id), .. }) =>
-            Ok(ASTNodePos { st_line,
-                            st_pos,
-                            en_line,
-                            en_pos,
-                            node: ASTNode::Id { lit: id.to_string() } }),
+        Some(TokenPos { token: Token::Init, .. }) => Ok(ASTNodePos {
+            st_line,
+            st_pos,
+            en_line,
+            en_pos,
+            node: ASTNode::Id { lit: String::from("init") }
+        }),
+        Some(TokenPos { token: Token::Id(id), .. }) => Ok(ASTNodePos {
+            st_line,
+            st_pos,
+            en_line,
+            en_pos,
+            node: ASTNode::Id { lit: id.to_string() }
+        }),
 
         Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
         None => Err(EOFErr { expected: Token::Id(String::new()) })
@@ -100,11 +102,13 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::To, .. }) => {
             it.next();
             let right: Box<ASTNodePos> = get_or_err!(it, parse_type, "type");
-            Ok(ASTNodePos { st_line,
-                            st_pos,
-                            en_line: right.en_line,
-                            en_pos: right.en_pos,
-                            node: ASTNode::TypeFun { _type: Box::from(_type), body: right } })
+            Ok(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line: right.en_line,
+                en_pos: right.en_pos,
+                node: ASTNode::TypeFun { _type: Box::from(_type), body: right }
+            })
         }
         _ => Ok(_type)
     }

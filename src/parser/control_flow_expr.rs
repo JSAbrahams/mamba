@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::collection::parse_one_or_more_expr;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
@@ -24,8 +24,10 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::If, .. }) => parse_if(it),
         Some(TokenPos { token: Token::Match, .. }) => parse_match(it),
 
-        Some(&next) => Err(CustomErr { expected: "control flow expression".to_string(),
-                                       actual:   next.clone() }),
+        Some(&next) => Err(CustomErr {
+            expected: "control flow expression".to_string(),
+            actual:   next.clone()
+        }),
         None => Err(CustomEOFErr { expected: "control flow expression".to_string() })
     }
 }
@@ -96,9 +98,11 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::BTo);
     let expr_or_stmt: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
 
-    Ok(ASTNodePos { st_line,
-                    st_pos,
-                    en_line: expr_or_stmt.en_line,
-                    en_pos: expr_or_stmt.en_pos,
-                    node: ASTNode::Case { cond, expr_or_stmt } })
+    Ok(ASTNodePos {
+        st_line,
+        st_pos,
+        en_line: expr_or_stmt.en_line,
+        en_pos: expr_or_stmt.en_pos,
+        node: ASTNode::Case { cond, expr_or_stmt }
+    })
 }
