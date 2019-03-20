@@ -1,6 +1,0 @@
-match a with
-    b => c
-    d => e
-
-match b, bb, bbb with
-    (a, c) => print "hello world"

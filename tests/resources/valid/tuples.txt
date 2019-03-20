@@ -1,2 +1,0 @@
-def (a, b)
-def (c, d) <- (2, true)

@@ -68,7 +68,7 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
         _ => (st_line, st_pos)
     };
 
-    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::When { cond, cases } })
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Match { cond, cases } })
 }
 
 pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {

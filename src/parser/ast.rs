@@ -291,7 +291,7 @@ pub enum ASTNode {
         then:  Box<ASTNodePos>,
         _else: Option<Box<ASTNodePos>>
     },
-    When {
+    Match {
         cond:  Vec<ASTNodePos>,
         cases: Vec<ASTNodePos>
     },
