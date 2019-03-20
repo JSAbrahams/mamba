@@ -34,7 +34,7 @@ before_script:
 
 after_success:
   # Coverage report
-  - bash <(curl -s https://codecov.io/bash) -s /target/debug
+  - bash <(curl -s https://codecov.io/bash)
 
 script:
   # fail when formatting error encountered
