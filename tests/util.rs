@@ -14,40 +14,42 @@ macro_rules! assert_ok {
     }};
 }
 
-pub fn valid_resource_content(file: &str) -> String { resource_content("valid", file) }
+pub fn valid_resource_content(dirs: &[&str], file: &str) -> String { resource_content(true, dirs, file) }
 
-pub fn valid_resource_path(file: &str) -> String { resource_path("valid", file) }
+pub fn valid_resource_path(dirs: &[&str], file: &str) -> String { resource_path(true, dirs, file) }
 
-pub fn invalid_resource_content(file: &str) -> String { resource_content("invalid", file) }
+pub fn invalid_resource_content(dirs: &[&str], file: &str) -> String { resource_content(false, dirs, file) }
 
-pub fn invalid_resource_path(file: &str) -> String { resource_path("invalid", file) }
+pub fn invalid_resource_path(dirs: &[&str], file: &str) -> String { resource_path(false, dirs, file) }
 
-fn resource_content(subdir: &str, file: &str) -> String {
+fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
     let mut content = String::new();
-    let path = resource_path(subdir, file);
+    let path = resource_path(valid, subdirs, file);
     File::open(path).unwrap().read_to_string(&mut content);
 
     content
 }
 
-fn resource_path(subdir: &str, file: &str) -> String {
-    let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    source_path.push(if cfg!(windows) {
-        format!("tests\\resources\\{}\\{}", subdir, file)
-    } else {
-        format!("tests/resources/{}/{}", subdir, file)
-    });
+fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
+    let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("resources")
+        .join(if valid { "valid" } else { "invalid" });
 
+    for dir in subdirs { source_path = source_path.join(dir); }
+    source_path = source_path.join(file);
+
+    println!("{}", source_path.to_string_lossy());
     String::from(source_path.to_string_lossy())
 }
 
-pub fn check_valid_resource_exists_and_delete(file: &str) -> bool {
-    let path_string = valid_resource_path(file);
+pub fn check_valid_resource_exists_and_delete(subdirs: &[&str], file: &str) -> bool {
+    let path_string = valid_resource_path(subdirs, file);
     remove(&path_string)
 }
 
-pub fn check_invalid_resource_exists_and_delete(file: &str) -> bool {
-    let path_string = invalid_resource_path(file);
+pub fn check_invalid_resource_exists_and_delete(subdirs: &[&str], file: &str) -> bool {
+    let path_string = invalid_resource_path(subdirs, file);
     remove(&path_string)
 }
 

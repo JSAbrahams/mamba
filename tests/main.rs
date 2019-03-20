@@ -8,13 +8,14 @@ mod util;
 #[test]
 fn command_line_class() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    cmd.arg("-i").arg(valid_resource_path("class"));
+    cmd.arg("-i").arg(valid_resource_path(&["class"],"class"));
 
     cmd.output().unwrap();
-    if check_valid_resource_exists_and_delete("class.py") {
+
+    if check_valid_resource_exists_and_delete(&["class"],"class.py") {
         Ok(())
     } else {
-        let output = format!("{}.py", valid_resource_path("class"));
+        let output = valid_resource_path(&["class"],"class.py");
         panic!("no output file found. {}", output)
     }
 }
@@ -22,13 +23,12 @@ fn command_line_class() -> Result<(), Box<std::error::Error>> {
 #[test]
 fn command_line_class_with_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    println!("{:?}", cmd);
-
-    let output = format!("{}.py", valid_resource_path("class"));
-    cmd.arg("-i").arg(valid_resource_path("class.txt")).arg("-o").arg(output.clone());
+    let output = valid_resource_path(&["class"],"class.py");
+    cmd.arg("-i").arg(valid_resource_path(&["class"],"class.txt")).arg("-o").arg(output.clone());
 
     cmd.output().unwrap();
-    if check_valid_resource_exists_and_delete("class.py") {
+
+    if check_valid_resource_exists_and_delete(&["class"],"class.py") {
         Ok(())
     } else {
         panic!("no output file found: {}", output)
