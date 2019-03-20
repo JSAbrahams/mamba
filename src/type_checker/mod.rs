@@ -1,6 +1,4 @@
-use crate::parser::ASTNode;
-use crate::parser::ASTNodePos;
+use crate::parser::ast_node::ASTNode;
+use crate::parser::ast_node::ASTNodePos;
 
-pub fn type_check(input: &ASTNodePos) -> ASTNode {
-    return input.node
-}
+pub fn type_check(input: ASTNodePos) -> ASTNode { input.node }

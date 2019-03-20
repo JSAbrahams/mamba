@@ -1,5 +1,4 @@
-use crate::util::valid_resource;
-
+use crate::util::valid_resource_content;
 use mamba::core::to_py_source;
 use mamba::desugarer::desugar;
 use mamba::lexer::tokenize;
@@ -9,7 +8,7 @@ mod util;
 
 #[test]
 fn class_to_python() {
-    let source = valid_resource("class.txt");
+    let source = valid_resource_content("class.txt");
 
     let tokens = tokenize(&source).unwrap();
     let ast_tree = parse(&tokens).unwrap();

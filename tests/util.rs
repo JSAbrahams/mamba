@@ -1,5 +1,7 @@
+use std::fs;
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 use std::path::PathBuf;
 
 #[macro_export]
@@ -12,33 +14,49 @@ macro_rules! assert_ok {
     }};
 }
 
-pub fn resource_string_content(file: String) -> String {
+pub fn valid_resource_content(file: &str) -> String { resource_content("valid", file) }
+
+pub fn valid_resource_path(file: &str) -> String { resource_path("valid", file) }
+
+pub fn invalid_resource_content(file: &str) -> String { resource_content("invalid", file) }
+
+pub fn invalid_resource_path(file: &str) -> String { resource_path("invalid", file) }
+
+fn resource_content(subdir: &str, file: &str) -> String {
     let mut content = String::new();
-    let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    source_path.push(if cfg!(windows) {
-                         String::from("tests\\resources\\")
-                     } else {
-                         String::from("tests/resources/")
-                     });
-    source_path.push(file);
+    let path = resource_path(subdir, file);
+    File::open(path).unwrap().read_to_string(&mut content);
 
-    match source_path.to_str() {
-        Some(path) => match File::open(path) {
-            Ok(mut file) => {
-                file.read_to_string(&mut content).unwrap();
-            }
-            Err(error) => panic!("Error opening file {}: {}", path, error)
-        },
-        None => panic!("Error opening file: path can't be converted to string.")
-    }
-
-    return content;
+    content
 }
 
-pub fn valid_resource(file: &str) -> String {
-    if cfg!(windows) {
-        resource_string_content(format!("{}{}", "valid\\", file))
+fn resource_path(subdir: &str, file: &str) -> String {
+    let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    source_path.push(if cfg!(windows) {
+                         format!("tests\\resources\\{}\\{}", subdir, file)
+                     } else {
+                         format!("tests/resources/{}/{}", subdir, file)
+                     });
+
+    String::from(source_path.to_string_lossy())
+}
+
+pub fn check_valid_resource_exists_and_delete(file: &str) -> bool {
+    let path_string = valid_resource_path(file);
+    remove(&path_string)
+}
+
+pub fn check_invalid_resource_exists_and_delete(file: &str) -> bool {
+    let path_string = invalid_resource_path(file);
+    remove(&path_string)
+}
+
+fn remove(path_string: &String) -> bool {
+    let path = Path::new(&path_string);
+    if path.exists() {
+        fs::remove_file(path);
+        true
     } else {
-        resource_string_content(format!("{}{}", "valid/", file))
+        false
     }
 }
