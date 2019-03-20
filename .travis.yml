@@ -20,9 +20,21 @@ before_script:
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
 
+  # Install kcov
+  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+  - tar xzf master.tar.gz
+  - cd kcov-master
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+  - sudo make install
+  - cd ../..
+  - rm -rf kcov-master
+
 after_success:
   # Coverage report
-  - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash) -s target/debug
 
 script:
   # fail when formatting error encountered
@@ -34,16 +46,4 @@ script:
   - cargo test --verbose
 
   # Coverage report
-  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-  - tar xzf master.tar.gz
-  - cd kcov-master
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make
-  - sudo make install
-  - cd ../..
-  - rm -rf kcov-master
-  - for file in target/debug/deps/smoke-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done
-  - for file in target/debug/deps/parser-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done
-  - for file in target/debug/deps/lexer-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done
+  - kcov target/debug mamba.exe
