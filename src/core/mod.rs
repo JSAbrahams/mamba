@@ -101,8 +101,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::IsA { left, right } =>
             format!("isintance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
+        Core::AddU { expr } => format!("+{}", to_py(expr, ind)),
         Core::Add { left, right } =>
             format!("{} + {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::SubU { expr } => format!("-{}", to_py(expr, ind)),
         Core::Sub { left, right } =>
             format!("{} - {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Mul { left, right } =>
@@ -117,10 +119,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, coll, body } => format!(
+        Core::For { expr, collection, body } => format!(
             "for {} in {}: {}",
             comma_delimited(expr.as_ref(), ind),
-            to_py(coll.as_ref(), ind),
+            to_py(collection.as_ref(), ind),
             to_py(body.as_ref(), ind + 1)
         ),
         Core::If { cond, then } =>
@@ -150,7 +152,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Undefined => String::from("None"),
         Core::Empty => String::new(),
 
-        other => panic!("Not implemented yet: {:?}", other)
+        other => panic!("To python not implemented yet for: {:?}", other)
     }
 }
 

@@ -4,3 +4,9 @@ match a with
 
 match b, bb, bbb with
     (a, c) => print "hello world"
+
+match nested with
+    a => b
+    c => match c with
+        other => even_other
+        other_one => better_one

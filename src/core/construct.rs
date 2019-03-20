@@ -178,9 +178,9 @@ pub enum Core {
     },
 
     For {
-        expr: Vec<Core>,
-        coll: Box<Core>,
-        body: Box<Core>
+        expr:       Vec<Core>,
+        collection: Box<Core>,
+        body:       Box<Core>
     },
     If {
         cond: Vec<Core>,

@@ -6,6 +6,7 @@ use std::process::Command;
 #[macro_use]
 mod util;
 
+mod core;
 mod lexer;
 mod parser;
 
