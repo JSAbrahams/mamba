@@ -34,7 +34,7 @@ before_script:
 
 after_success:
   # Coverage report
-  - bash <(curl -s https://codecov.io/bash) -s target/debug
+  - bash <(curl -s https://codecov.io/bash) -s /target/debug
 
 script:
   # fail when formatting error encountered
@@ -46,4 +46,4 @@ script:
   - cargo test --verbose
 
   # Coverage report
-  - kcov target/debug mamba.exe
+  - kcov /target/debug mamba.exe
