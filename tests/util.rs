@@ -14,13 +14,19 @@ macro_rules! assert_ok {
     }};
 }
 
-pub fn valid_resource_content(dirs: &[&str], file: &str) -> String { resource_content(true, dirs, file) }
+pub fn valid_resource_content(dirs: &[&str], file: &str) -> String {
+    resource_content(true, dirs, file)
+}
 
 pub fn valid_resource_path(dirs: &[&str], file: &str) -> String { resource_path(true, dirs, file) }
 
-pub fn invalid_resource_content(dirs: &[&str], file: &str) -> String { resource_content(false, dirs, file) }
+pub fn invalid_resource_content(dirs: &[&str], file: &str) -> String {
+    resource_content(false, dirs, file)
+}
 
-pub fn invalid_resource_path(dirs: &[&str], file: &str) -> String { resource_path(false, dirs, file) }
+pub fn invalid_resource_path(dirs: &[&str], file: &str) -> String {
+    resource_path(false, dirs, file)
+}
 
 fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
     let mut content = String::new();
@@ -36,7 +42,9 @@ fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
         .join("resources")
         .join(if valid { "valid" } else { "invalid" });
 
-    for dir in subdirs { source_path = source_path.join(dir); }
+    for dir in subdirs {
+        source_path = source_path.join(dir);
+    }
     source_path = source_path.join(file);
 
     String::from(source_path.to_string_lossy())

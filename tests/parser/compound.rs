@@ -4,6 +4,6 @@ use mamba::parser::parse;
 
 #[test]
 fn parse_assigns_and_while() {
-    let source = valid_resource_content(&["compound"],"assign_and_while.mamba");
+    let source = valid_resource_content(&["compound"], "assign_and_while.mamba");
     assert_ok!(parse(&tokenize(&source).unwrap()));
 }
