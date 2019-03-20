@@ -2,13 +2,14 @@
     <img src="image/logo_medium.png" height="250">
 </p>
 
-[![Travis (.org)](https://img.shields.io/travis/JSAbrahams/mamba.svg?style=for-the-badge&logo=travis)](https://travis-ci.org/JSAbrahams/mamba)
- [![AppVeyor](https://img.shields.io/appveyor/ci/JSAbrahams/mamba.svg?style=for-the-badge&logo=appveyor)](https://ci.appveyor.com/project/JSAbrahams/mamba)
- 
- [![Codecov](https://img.shields.io/codecov/c/github/JSAbrahams/mamba.svg?style=for-the-badge&logo=codecov)](https://codecov.io/gh/JSAbrahams/mamba)
- 
- [![GitHub](https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge)](https://github.com/JSAbrahams/mamba/blob/master/LICENSE)
- [![Love](https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge)](https://github.com/JSAbrahams/mamba)
+<p align="center">
+    <a href="https://travis-ci.org/JSAbrahams/mamba"><img src="https://img.shields.io/travis/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=travis" alt="Travis"/></a>
+    <a href="https://ci.appveyor.com/project/JSAbrahams/mamba"><img src="https://img.shields.io/appveyor/ci/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=appveyor" alt="Appveyor"/></a>
+    <a href="https://codecov.io/gh/JSAbrahams/mamba"><img src="https://img.shields.io/codecov/c/github/JSAbrahams/mamba.svg?style=for-the-badge&logo=codecov" alt="CodeCov"/></a>
+    <br>
+    <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE"><img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/></a>
+    <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
+</p>
 
 # Mamba
 
