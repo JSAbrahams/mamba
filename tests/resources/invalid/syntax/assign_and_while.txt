@@ -1,10 +1,11 @@
 def a <- 10
 def b <- 4.6
 def c <- 4.2E2
+def illegal <- e * def other
 
 def d <- 0
 while e < f, b do
     def g <- h * i
-    j - k mod 2 + "300"
+    j <- k mod 2 + "300"
 
 while l < m do print n
