@@ -1,6 +1,6 @@
 use crate::util::check_valid_resource_exists_and_delete;
-use assert_cmd::prelude::*;
 use crate::util::valid_resource_path;
+use assert_cmd::prelude::*;
 use std::process::Command;
 
 mod util;
