@@ -1,6 +1,6 @@
-use crate::core::core_node::Core;
+use crate::core::construct::Core;
 
-pub mod core_node;
+pub mod construct;
 
 pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -42,19 +42,23 @@ fn to_py(core: &Core, ind: usize) -> String {
                 _ => panic!()
             };
 
-            format!("\n{}{}({}): {}",
-                    indent(ind),
-                    name,
-                    comma_delimited(args, ind),
-                    to_py(body.as_ref(), ind + 1))
+            format!(
+                "\n{}{}({}): {}",
+                indent(ind),
+                name,
+                comma_delimited(args, ind),
+                to_py(body.as_ref(), ind + 1)
+            )
         }
 
         Core::Assign { left, right } =>
             format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::VarDef { private, id, right } => format!("{}{} = {}",
-                                                       if *private { "_" } else { "" },
-                                                       to_py(id.as_ref(), ind),
-                                                       to_py(right.as_ref(), ind)),
+        Core::VarDef { private, id, right } => format!(
+            "{}{} = {}",
+            if *private { "_" } else { "" },
+            to_py(id.as_ref(), ind),
+            to_py(right.as_ref(), ind)
+        ),
 
         Core::FunArg { vararg, id } =>
             format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
@@ -113,27 +117,35 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, coll, body } => format!("for {} in {}: {}",
-                                                  comma_delimited(expr.as_ref(), ind),
-                                                  to_py(coll.as_ref(), ind),
-                                                  to_py(body.as_ref(), ind + 1)),
+        Core::For { expr, coll, body } => format!(
+            "for {} in {}: {}",
+            comma_delimited(expr.as_ref(), ind),
+            to_py(coll.as_ref(), ind),
+            to_py(body.as_ref(), ind + 1)
+        ),
         Core::If { cond, then } =>
             format!("if {}: {}", comma_delimited(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
-        Core::IfElse { cond, then, _else } => format!("if {}: {}\n{}else: {}",
-                                                      comma_delimited(cond.as_ref(), ind),
-                                                      to_py(then.as_ref(), ind + 1),
-                                                      indent(ind),
-                                                      to_py(_else.as_ref(), ind + 1)),
-        Core::While { cond, body } => format!("while {}: {}",
-                                              comma_delimited(cond.as_ref(), ind),
-                                              to_py(body.as_ref(), ind + 1)),
+        Core::IfElse { cond, then, _else } => format!(
+            "if {}: {}\n{}else: {}",
+            comma_delimited(cond.as_ref(), ind),
+            to_py(then.as_ref(), ind + 1),
+            indent(ind),
+            to_py(_else.as_ref(), ind + 1)
+        ),
+        Core::While { cond, body } => format!(
+            "while {}: {}",
+            comma_delimited(cond.as_ref(), ind),
+            to_py(body.as_ref(), ind + 1)
+        ),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions, .. } => format!("class {}({}):\n{}\n",
-                    to_py(name, ind),
-                    comma_delimited(parents, ind),
-                    newline_delimited(definitions, ind + 1)),
+        Core::ClassDef { name, parents, definitions, .. } => format!(
+            "class {}({}):\n{}\n",
+            to_py(name, ind),
+            comma_delimited(parents, ind),
+            newline_delimited(definitions, ind + 1)
+        ),
 
         Core::Undefined => String::from("None"),
         Core::Empty => String::new(),

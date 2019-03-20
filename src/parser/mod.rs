@@ -16,12 +16,16 @@ macro_rules! get_or_err {
             Ok(node) => Box::new(node),
             Err(err) =>
                 return match current {
-                    Some(tp) => Err(ParseErr { parsing:  $msg.to_string(),
-                                               cause:    Box::new(err),
-                                               position: Some(tp.clone()) }),
-                    None => Err(ParseErr { parsing:  $msg.to_string(),
-                                           cause:    Box::new(err),
-                                           position: None })
+                    Some(tp) => Err(ParseErr {
+                        parsing:  $msg.to_string(),
+                        cause:    Box::new(err),
+                        position: Some(tp.clone())
+                    }),
+                    None => Err(ParseErr {
+                        parsing:  $msg.to_string(),
+                        cause:    Box::new(err),
+                        position: None
+                    })
                 },
         }
     }};
@@ -38,12 +42,16 @@ macro_rules! get_or_err_direct {
             Ok(node) => node,
             Err(e) =>
                 return match current {
-                    Some(tp) => Err(ParseErr { parsing:  $msg.to_string(),
-                                               cause:    Box::new(e),
-                                               position: Some(tp.clone()) }),
-                    None => Err(ParseErr { parsing:  $msg.to_string(),
-                                           cause:    Box::new(e),
-                                           position: None })
+                    Some(tp) => Err(ParseErr {
+                        parsing:  $msg.to_string(),
+                        cause:    Box::new(e),
+                        position: Some(tp.clone())
+                    }),
+                    None => Err(ParseErr {
+                        parsing:  $msg.to_string(),
+                        cause:    Box::new(e),
+                        position: None
+                    })
                 },
         }
     }};
@@ -103,7 +111,7 @@ fn end_pos(it: &mut TPIterator) -> (i32, i32) {
     }
 }
 
-pub mod ast_node;
+pub mod ast;
 
 mod parse_result;
 

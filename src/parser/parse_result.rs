@@ -1,6 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNodePos;
 use std::error;
 use std::fmt;
 
@@ -31,21 +31,24 @@ impl fmt::Display for ParseErr {
             ParseErr::UtilBodyErr => write!(f, "\nUtil module cannot have a body."),
             ParseErr::EOFErr { expected } =>
                 write!(f, "\nExpected '{}', but end of file.", expected),
-            ParseErr::CustomErr { expected, actual } =>
-                write!(f,
-                       "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                       expected, actual.line, actual.pos, actual.token),
-            ParseErr::TokenErr { expected, actual } =>
-                write!(f,
-                       "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                       expected, actual.line, actual.pos, actual.token),
+            ParseErr::CustomErr { expected, actual } => write!(
+                f,
+                "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
+                expected, actual.line, actual.pos, actual.token
+            ),
+            ParseErr::TokenErr { expected, actual } => write!(
+                f,
+                "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
+                expected, actual.line, actual.pos, actual.token
+            ),
             ParseErr::CustomEOFErr { expected } =>
                 write!(f, "\nExpected '{}', but end of file.", expected),
             ParseErr::IndErr { expected, actual, position } => match position {
-                Some(pos) => write!(f,
-                                    "\nExpected indentation of {}, but was {}, at ({}:{})(next \
-                                     token: {})",
-                                    expected, actual, pos.line, pos.pos, pos.token),
+                Some(pos) => write!(
+                    f,
+                    "\nExpected indentation of {}, but was {}, at ({}:{})(next token: {})",
+                    expected, actual, pos.line, pos.pos, pos.token
+                ),
                 None => write!(f, "\nExpected indentation of {}, but was {}.", expected, actual)
             },
             ParseErr::InternalErr { message } => write!(f, "{}.", message)

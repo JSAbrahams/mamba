@@ -10,16 +10,15 @@ use std::path::PathBuf;
 
 pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
     let file_path = match input_path.parent() {
-                        Some(parent) => parent,
-                        None =>
-                            return Err(format!("Input was not in a directory: {}",
-                                               input_path.to_string_lossy())),
-                    }.join(match input_path.file_stem() {
-                               Some(path) => path,
-                               None =>
-                                   return Err(format!("Input file did not have a name: {}",
-                                                      input_path.to_string_lossy())),
-                           });
+        Some(parent) => parent,
+        None =>
+            return Err(format!("Input was not in a directory: {}", input_path.to_string_lossy())),
+    }
+    .join(match input_path.file_stem() {
+        Some(path) => path,
+        None =>
+            return Err(format!("Input file did not have a name: {}", input_path.to_string_lossy())),
+    });
 
     let output_path_string = format!("{}.py", file_path.to_string_lossy());
     let output_path = Path::new(&output_path_string);

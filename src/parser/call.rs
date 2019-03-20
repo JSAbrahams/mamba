@@ -1,8 +1,8 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::end_pos;
 use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
@@ -35,11 +35,11 @@ pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
             break;
         }
 
-        args.push(get_or_err_direct!(it,
-                                     parse_id_maybe_type,
-                                     String::from("anonymous function arg (pos ")
-                                     + &pos.to_string()
-                                     + ")"));
+        args.push(get_or_err_direct!(
+            it,
+            parse_id_maybe_type,
+            String::from("anonymous function arg (pos ") + &pos.to_string() + ")"
+        ));
         pos += 1;
     }
 
@@ -89,19 +89,21 @@ fn parse_regular_call(fun: bool, pre: ASTNodePos, it: &mut TPIterator) -> ParseR
             }
             Err(err) => return Err(err)
         },
-        Some(&tp) if is_start_expression_exclude_unary(tp) => match parse_expressions(it,
-                                                                                      "arguments")
-        {
-            Ok(args) => {
-                if args.len() > 1 {
-                    return Err(InternalErr { message: format!("Postfix notation only possible \
-                                                               with 1 argument,but {} were given.",
-                                                              args.len()) });
+        Some(&tp) if is_start_expression_exclude_unary(tp) =>
+            match parse_expressions(it, "arguments") {
+                Ok(args) => {
+                    if args.len() > 1 {
+                        return Err(InternalErr {
+                            message: format!(
+                                "Postfix notation only possible with 1 argument,but {} were given.",
+                                args.len()
+                            )
+                        });
+                    }
+                    args
                 }
-                args
-            }
-            Err(err) => return Err(err)
-        },
+                Err(err) => return Err(err)
+            },
         _ => vec![]
     };
 
@@ -123,12 +125,11 @@ fn parse_arguments(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos
         match t.token {
             Token::RRBrack => break,
             _ => {
-                arguments.push(get_or_err_direct!(it,
-                                                  parse_expression,
-                                                  String::from(msg)
-                                                  + " (pos "
-                                                  + &pos.to_string()
-                                                  + ")"));
+                arguments.push(get_or_err_direct!(
+                    it,
+                    parse_expression,
+                    String::from(msg) + " (pos " + &pos.to_string() + ")"
+                ));
                 if let Some(&t) = it.peek() {
                     if t.token != Token::RRBrack {
                         check_next_is!(it, Token::Comma);
@@ -149,15 +150,16 @@ fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (en_line, en_pos, node) = match it.peek() {
         Some(&tp) if is_start_expression_exclude_unary(tp) =>
             match parse_postfix_call(*name_or_arg, it) {
-                Ok(post) => (post.en_line,
-                             post.en_pos,
-                             ASTNode::Call { instance_or_met: Box::from(pre),
-                                             met_or_arg:      Box::from(post) }),
+                Ok(post) => (post.en_line, post.en_pos, ASTNode::Call {
+                    instance_or_met: Box::from(pre),
+                    met_or_arg:      Box::from(post)
+                }),
                 err => return err
             },
-        _ => (name_or_arg.en_line,
-              name_or_arg.en_pos,
-              ASTNode::Call { instance_or_met: Box::from(pre), met_or_arg: name_or_arg })
+        _ => (name_or_arg.en_line, name_or_arg.en_pos, ASTNode::Call {
+            instance_or_met: Box::from(pre),
+            met_or_arg:      name_or_arg
+        })
     };
 
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
@@ -169,12 +171,11 @@ fn parse_expressions(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodeP
 
     while let Some(&t) = it.peek() {
         if is_start_expression(t) {
-            expressions.push(get_or_err_direct!(it,
-                                                parse_expression,
-                                                String::from(msg)
-                                                + " (pos "
-                                                + &pos.to_string()
-                                                + ")"));
+            expressions.push(get_or_err_direct!(
+                it,
+                parse_expression,
+                String::from(msg) + " (pos " + &pos.to_string() + ")"
+            ));
         } else {
             break;
         }

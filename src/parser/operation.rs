@@ -2,8 +2,8 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_call;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::end_pos;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
@@ -15,11 +15,13 @@ macro_rules! inner_bin_op {
     ($it:expr, $st_line:expr, $st_pos:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
         $it.next();
         let right: Box<ASTNodePos> = get_or_err!($it, $fun, $msg);
-        Ok(ASTNodePos { st_line: $st_line,
-                        st_pos:  $st_pos,
-                        en_line: right.en_line,
-                        en_pos:  right.en_pos,
-                        node:    ASTNode::$ast { left: $left, right } })
+        Ok(ASTNodePos {
+            st_line: $st_line,
+            st_pos:  $st_pos,
+            en_line: right.en_line,
+            en_pos:  right.en_pos,
+            node:    ASTNode::$ast { left: $left, right }
+        })
     }};
 }
 
@@ -125,11 +127,13 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
         ($fun:path, $ast:ident, $msg:expr) => {{
             it.next();
             let factor: Box<ASTNodePos> = get_or_err!(it, $fun, $msg);
-            Ok(ASTNodePos { st_line,
-                            st_pos,
-                            en_line: factor.en_line,
-                            en_pos: factor.en_pos,
-                            node: ASTNode::$ast { expr: factor } })
+            Ok(ASTNodePos {
+                st_line,
+                st_pos,
+                en_line: factor.en_line,
+                en_pos: factor.en_pos,
+                node: ASTNode::$ast { expr: factor }
+            })
         }};
     }
 
@@ -144,11 +148,13 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             macro_rules! literal {
                 ($factor:expr, $ast:ident) => {{
                     it.next();
-                    Ok(ASTNodePos { st_line,
-                                    st_pos,
-                                    en_line,
-                                    en_pos,
-                                    node: ASTNode::$ast { lit: $factor } })
+                    Ok(ASTNodePos {
+                        st_line,
+                        st_pos,
+                        en_line,
+                        en_pos,
+                        node: ASTNode::$ast { lit: $factor }
+                    })
                 }};
             }
 
@@ -161,12 +167,13 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
                 Some(TokenPos { token: Token::Str(str), .. }) => literal!(str.to_string(), Str),
                 Some(TokenPos { token: Token::ENum(num, exp), .. }) => {
                     it.next();
-                    Ok(ASTNodePos { st_line,
-                                    st_pos,
-                                    en_line,
-                                    en_pos,
-                                    node: ASTNode::ENum { num: num.to_string(),
-                                                          exp: exp.to_string() } })
+                    Ok(ASTNodePos {
+                        st_line,
+                        st_pos,
+                        en_line,
+                        en_pos,
+                        node: ASTNode::ENum { num: num.to_string(), exp: exp.to_string() }
+                    })
                 }
                 Some(_) => parse_expression(it),
                 None => Err(CustomEOFErr { expected: "factor".to_string() })

@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast_node::ASTNode;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNode;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::end_pos;
 use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
@@ -138,9 +138,11 @@ pub fn parse_one_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec
         if !is_start_expression(t) {
             break;
         }
-        expressions.push(get_or_err_direct!(it,
-                                            parse_expression,
-                                            String::from(msg) + " (pos " + &pos.to_string() + ")"));
+        expressions.push(get_or_err_direct!(
+            it,
+            parse_expression,
+            String::from(msg) + " (pos " + &pos.to_string() + ")"
+        ));
         match it.peek() {
             Some(TokenPos { token: Token::Comma, .. }) => {
                 it.next();

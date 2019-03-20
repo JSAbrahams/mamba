@@ -1,6 +1,6 @@
-use crate::core::core_node::Core;
+use crate::core::construct::Core;
 use crate::desugarer::expression::desugar_expression;
-use crate::parser::ast_node::ASTNodePos;
+use crate::parser::ast::ASTNodePos;
 
 mod expression;
 
