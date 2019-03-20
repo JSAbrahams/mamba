@@ -10,7 +10,7 @@ mod util;
 
 #[test]
 fn output_class_direct() {
-    let source = valid_resource_path(&["class"],"class.txt");
+    let source = valid_resource_path(&["class"],"class.mamba");
     let path = &mut Path::new(&source);
 
     mamba_to_python_direct(path);
@@ -20,7 +20,7 @@ fn output_class_direct() {
 
 #[test]
 fn output_class_output_non_existent() {
-    let source = valid_resource_path(&["class"],"class.txt");
+    let source = valid_resource_path(&["class"],"class.mamba");
     let output = valid_resource_path(&["class"],"class-other.py");
 
     let path = &mut Path::new(&source);
@@ -32,7 +32,7 @@ fn output_class_output_non_existent() {
 
 #[test]
 fn output_class_output_exists() {
-    let source = valid_resource_path(&["class"],"class.txt");
+    let source = valid_resource_path(&["class"],"class.mamba");
     let output = valid_resource_path(&["class"],"class-already-exists.py");
 
     let path = &mut Path::new(&source);
@@ -48,7 +48,7 @@ fn output_class_output_exists() {
 
 #[test]
 fn test_empty_file_direct() {
-    let source = valid_resource_path(&[],"empty_file.txt");
+    let source = valid_resource_path(&[],"empty_file.mamba");
     let path = &mut Path::new(&source);
 
     mamba_to_python_direct(path);

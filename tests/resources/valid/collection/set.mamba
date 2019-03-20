@@ -1,0 +1,7 @@
+def c <- {}
+def d <- { c, d }
+def e <- { 1 + 1, e }
+
+def c ofmut <- {}
+def d ofmut <- { c, d }
+def e ofmut <- { 1 + 1, e }

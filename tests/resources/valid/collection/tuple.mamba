@@ -1,0 +1,9 @@
+def a <- (a, b)
+def b <- ()
+def (c, d)
+def (e, f) <- (2, true)
+
+def a ofmut <- (a, b)
+def b ofmut <- ()
+def (c, d) ofmut
+def (e, f) ofmut <- (2, true)

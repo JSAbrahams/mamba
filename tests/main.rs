@@ -3,7 +3,11 @@ use crate::util::valid_resource_path;
 use assert_cmd::prelude::*;
 use std::process::Command;
 
+#[macro_use]
 mod util;
+
+mod parser;
+mod lexer;
 
 #[test]
 fn command_line_class() -> Result<(), Box<std::error::Error>> {
@@ -24,7 +28,7 @@ fn command_line_class() -> Result<(), Box<std::error::Error>> {
 fn command_line_class_with_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
     let output = valid_resource_path(&["class"],"class.py");
-    cmd.arg("-i").arg(valid_resource_path(&["class"],"class.txt")).arg("-o").arg(output.clone());
+    cmd.arg("-i").arg(valid_resource_path(&["class"],"class.mamba")).arg("-o").arg(output.clone());
 
     cmd.output().unwrap();
 

@@ -39,7 +39,6 @@ fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     for dir in subdirs { source_path = source_path.join(dir); }
     source_path = source_path.join(file);
 
-    println!("{}", source_path.to_string_lossy());
     String::from(source_path.to_string_lossy())
 }
 
