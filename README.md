@@ -56,8 +56,8 @@ To install the nightly build of `cargo`, run `rustup install nightly`.
 [Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
 
 -   **To install** 
-    - make sure you have the latest version of `rustup` by running `rustup update`
-    - run `rustup component add clippy`
+    -  make sure you have the latest version of `rustup` by running `rustup update`
+    -  run `rustup component add clippy`
 -   **To run** run `cargo clippy`
 
 The configuration of `Clippy` can be found in `.clippy.toml`.
