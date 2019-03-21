@@ -10,14 +10,15 @@ fn parse_for_statement_check() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     match ast_tree.node {
-        ASTNode::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            ASTNode::For { expr, collection, body } => {
-                assert_eq!(expr[0].node, ASTNode::Id { lit: String::from("a") });
-                assert_eq!(collection.node, ASTNode::Id { lit: String::from("c") });
-                assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::For { expr, collection, body } => {
+                    assert_eq!(expr[0].node, ASTNode::Id { lit: String::from("a") });
+                    assert_eq!(collection.node, ASTNode::Id { lit: String::from("c") });
+                    assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
+                }
+                _ => panic!("first element script was not for loop.")
             },
-            _ => panic!("first element script was not for loop.")
-        }
         _ => panic!("ast_tree was not script.")
     };
 }
@@ -28,15 +29,16 @@ fn parse_for_statement_multiple_expr_check() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     match ast_tree.node {
-        ASTNode::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            ASTNode::For { expr, collection, body } => {
-                assert_eq!(expr[0].node, ASTNode::Id { lit: String::from("a") });
-                assert_eq!(expr[1].node, ASTNode::Id { lit: String::from("b") });
-                assert_eq!(collection.node, ASTNode::Id { lit: String::from("c") });
-                assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
-            }
-            _ => panic!("first element script was not for loop.")
-        }
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::For { expr, collection, body } => {
+                    assert_eq!(expr[0].node, ASTNode::Id { lit: String::from("a") });
+                    assert_eq!(expr[1].node, ASTNode::Id { lit: String::from("b") });
+                    assert_eq!(collection.node, ASTNode::Id { lit: String::from("c") });
+                    assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
+                }
+                _ => panic!("first element script was not for loop.")
+            },
         _ => panic!("ast_tree was not script.")
     };
 }
