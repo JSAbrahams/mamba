@@ -4,6 +4,16 @@ sudo: true
 before_install:
   - sudo apt-get update
 
+# Need to cache the whole `.cargo` directory to keep .crates.toml for
+# cargo-update to work
+cache:
+  directories:
+    - /home/travis/.cargo
+
+# But don't cache the cargo registry
+before_cache:
+  - rm -rf /home/travis/.cargo/registry
+
 addons:
   apt:
     packages:
