@@ -18,10 +18,10 @@ The Documentation can be found [here](https://joelabrahams.nl/mamba_doc).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
--  Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
--  Null safety features.
--  More explicit error handling.
--  Clear distinction between state and mutability, and immutability and statelessness.
+-	Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
+-	Null safety features.
+-	More explicit error handling.
+-	Clear distinction between state and mutability, and immutability and statelessness.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
 Mamba code should therefore, in theory, be interoperable with Python code.
@@ -41,8 +41,8 @@ Therefore, to save time, it is a good idea to install these tools locally and ru
 
 [Rustfmt](https://github.com/rust-lang/rustfmt) formats Rust code and ensures the formatting is consistent across the codebase.
 
--  **To install** run `rustup component add rustfmt --toolchain nightly`
--  **To run** run `cargo +nightly fmt`
+-	**To install** run `rustup component add rustfmt --toolchain nightly`
+-	**To run** run `cargo +nightly fmt`
 
 The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
 
@@ -53,10 +53,10 @@ To install the nightly build of `cargo`, run `rustup install nightly`.
 
 [Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
 
--  **To install** 
+-	**To install** 
     -  make sure you have the latest version of `rustup` by running `rustup update`
     -  run `rustup component add clippy`
--  **To run** run `cargo clippy`
+-	**To run** run `cargo clippy`
 
 The configuration of `Clippy` can be found in `.clippy.toml`.
 
