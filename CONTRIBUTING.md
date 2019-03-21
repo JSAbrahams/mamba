@@ -26,10 +26,10 @@ Comments on closed issues and pull requests are more likely to be read over.
 
 -  Do use the provided template.
 -  Do check that there are no other pull requests that are doing the same thing. 
-  -  If you think your solution is better than an existing pull request, it is better to comment there first and engage in discussion before opening your own pull request.
+  - If you think your solution is better than an existing pull request, it is better to comment there first and engage in discussion before opening your own pull request.
 -  Do reference other issues and pull requests that are relevant
 -  Do actively engage with the comments on the pull request. 
-  -  An active discussion might lead to an even better solution or new ideas!
+  - An active discussion might lead to an even better solution or new ideas!
 -  Do make sure the build passes, ideally by running `rustfmt` and `clippy` locally before pushing.
 -  Do add tests when fixing a bug or adding new functionality.
 -  Do make sure that this PR is targets one single issue, as large pull requests are difficult to review and unlikely to get merged
