@@ -128,4 +128,8 @@ mod file;
 mod operation;
 mod statement;
 
+/// Parse input as regular file.
 pub fn parse(input: &[TokenPos]) -> ParseResult { file::parse_file(&mut input.iter().peekable()) }
+
+/// Parse input as a script.
+pub fn parse_direct(input: &[TokenPos]) -> ParseResult { file::parse_script(&mut input.iter().peekable())}
