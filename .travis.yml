@@ -14,6 +14,12 @@ addons:
       - gcc
       - binutils-dev
 
+branches:
+  only:
+    - staging # bors r+
+    - trying  # bors try
+    - master
+
 before_script:
   - rustup install stable
   - rustup install nightly
@@ -42,7 +48,7 @@ script:
   # fail when encountering clippy warnings
   - cargo clippy -- -D warnings
 
-  - cargo build
+  - cargo build --verbose
   - cargo test --verbose
 
   # Coverage report
