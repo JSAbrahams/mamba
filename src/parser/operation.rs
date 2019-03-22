@@ -59,7 +59,7 @@ fn parse_relation(it: &mut TPIterator) -> ParseResult {
     }
 
     match it.peek() {
-        Some(TokenPos { token: Token::Ge, .. }) => bin_op!(parse_relation, IsA, "greater than"),
+        Some(TokenPos { token: Token::Ge, .. }) => bin_op!(parse_relation, Ge, "greater than"),
         Some(TokenPos { token: Token::Geq, .. }) =>
             bin_op!(parse_relation, Geq, "greater or equal than"),
         Some(TokenPos { token: Token::Le, .. }) => bin_op!(parse_relation, Le, "less than"),

@@ -7,6 +7,7 @@ pub mod collection;
 pub mod compound;
 pub mod control_flow;
 pub mod function;
+pub mod operation;
 
 #[test]
 fn parse_empty_file() {
