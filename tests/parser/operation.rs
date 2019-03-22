@@ -42,6 +42,15 @@ fn addition_verify() {
 }
 
 #[test]
+fn addition_unary_verify() {
+    let source = String::from("+ b");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let expr = verify_is_un_operation!(AddU, ast_tree);
+    assert_eq!(expr.node, ASTNode::Id { lit: String::from("b") });
+}
+
+#[test]
 fn subtraction_verify() {
     let source = String::from("a - False");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
@@ -49,6 +58,15 @@ fn subtraction_verify() {
     let (left, right) = verify_is_operation!(Sub, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(right.node, ASTNode::Bool { lit: false });
+}
+
+#[test]
+fn subtraction_unary_verify() {
+    let source = String::from("- c");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let expr = verify_is_un_operation!(SubU, ast_tree);
+    assert_eq!(expr.node, ASTNode::Id { lit: String::from("c") });
 }
 
 #[test]
