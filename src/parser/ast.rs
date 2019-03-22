@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
 pub struct ASTNodePos {
@@ -9,7 +9,7 @@ pub struct ASTNodePos {
     pub node:    ASTNode
 }
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum ASTNode {
     File {
         imports:   Vec<ASTNodePos>,

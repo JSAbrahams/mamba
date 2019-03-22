@@ -1,7 +1,6 @@
 use crate::util::*;
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
-use mamba::parser::ast::ASTNodePos;
 use mamba::parser::parse_direct;
 
 use mamba::parser::parse;
@@ -152,12 +151,12 @@ fn tuple_single_verify() {
     };
 
     assert_eq!(elements.len(), 1);
-    assert_eq!(elements[0].node, ASTNode::Id {lit: String::from("a")});
+    assert_eq!(elements[0].node, ASTNode::Id { lit: String::from("a") });
 }
 
 #[test]
 fn tuple_multiple_verify() {
-    let source = String::from("(a, b)");
+    let source = String::from("(d, c)");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
@@ -173,6 +172,6 @@ fn tuple_multiple_verify() {
     };
 
     assert_eq!(elements.len(), 2);
-    assert_eq!(elements[0].node, ASTNode::Id {lit: String::from("a")});
-    assert_eq!(elements[0].node, ASTNode::Id {lit: String::from("b")});
+    assert_eq!(elements[0].node, ASTNode::Id { lit: String::from("d") });
+    assert_eq!(elements[1].node, ASTNode::Id { lit: String::from("c") });
 }
