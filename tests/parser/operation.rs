@@ -23,7 +23,7 @@ macro_rules! verify_is_un_operation {
         match $ast_tree.node {
             ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::$op { expr } => expr,
+                    ASTNode::$op { expr } => expr.clone(),
                     _ => panic!("first element script was not tuple.")
                 },
             _ => panic!("ast_tree was not script.")
@@ -201,4 +201,22 @@ fn or_verify() {
     let (left, right) = verify_is_operation!(Or, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
     assert_eq!(right.node, ASTNode::Str { lit: String::from("asdf") });
+}
+
+#[test]
+fn not_verify() {
+    let source = String::from("not some_cond");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let expr = verify_is_un_operation!(Not, ast_tree);
+    assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_cond") });
+}
+
+#[test]
+fn sqrt_verify() {
+    let source = String::from("sqrt some_num");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let expr = verify_is_un_operation!(Sqrt, ast_tree);
+    assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_num") });
 }
