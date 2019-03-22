@@ -43,31 +43,31 @@ fn addition_verify() {
 
 #[test]
 fn subtraction_verify() {
-    let source = String::from("a - b");
+    let source = String::from("a - False");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Sub, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(right.node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(right.node, ASTNode::Bool { lit: false });
 }
 
 #[test]
-fn multiplcation_verify() {
-    let source = String::from("c * b");
+fn multiplication_verify() {
+    let source = String::from("True * b");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Mul, ast_tree);
-    assert_eq!(left.node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(left.node, ASTNode::Bool { lit: true });
     assert_eq!(right.node, ASTNode::Id { lit: String::from("b") });
 }
 
 #[test]
 fn division_verify() {
-    let source = String::from("asd / fgh");
+    let source = String::from("10.0 / fgh");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Div, ast_tree);
-    assert_eq!(left.node, ASTNode::Id { lit: String::from("asd") });
+    assert_eq!(left.node, ASTNode::Real { lit: String::from("10.0") });
     assert_eq!(right.node, ASTNode::Id { lit: String::from("fgh") });
 }
 
@@ -83,12 +83,12 @@ fn power_verify() {
 
 #[test]
 fn mod_verify() {
-    let source = String::from("chopin mod liszt");
+    let source = String::from("chopin mod 3e10");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Mod, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("chopin") });
-    assert_eq!(right.node, ASTNode::Id { lit: String::from("liszt") });
+    assert_eq!(right.node, ASTNode::ENum { num: String::from("3"), exp: String::from("10") });
 }
 
 #[test]
@@ -219,4 +219,13 @@ fn sqrt_verify() {
 
     let expr = verify_is_un_operation!(Sqrt, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_num") });
+}
+
+#[test]
+fn print() {
+    let source = String::from("print my_name");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let expr = verify_is_un_operation!(Print, ast_tree);
+    assert_eq!(expr.node, ASTNode::Id { lit: String::from("my_name") });
 }
