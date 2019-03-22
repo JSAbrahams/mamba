@@ -29,7 +29,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Underscore, .. }) => {
             let (en_line, en_pos) = end_pos(it);
             it.next();
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::UnderScore })
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore })
         }
 
         Some(TokenPos { token: Token::_Self, .. })
@@ -70,7 +70,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         }
         Some(TokenPos { token: Token::Range, .. }) => {
             it.next();
-            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "..");
 
             let (en_line, en_pos) = (to.en_line, to.en_pos);
             let node = ASTNode::Range { from: Box::from(pre), to };
@@ -78,7 +78,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         }
         Some(TokenPos { token: Token::RangeIncl, .. }) => {
             it.next();
-            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "..=");
 
             let (en_line, en_pos) = (to.en_line, to.en_pos);
             let node = ASTNode::RangeIncl { from: Box::from(pre), to };

@@ -244,7 +244,7 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
             method: String::from("range_incl"),
             args:   vec![desugar_node(to)]
         },
-        ASTNode::UnderScore => Core::UnderScore,
+        ASTNode::Underscore => Core::UnderScore,
         ASTNode::QuestOr { _do, _default } => Core::Block {
             statements: vec![
                 Core::VarDef {
