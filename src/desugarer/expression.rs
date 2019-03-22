@@ -184,38 +184,30 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         // a b => a.b , where a may be expression, b must be id
         // a b c => a.b(c), where and c may be expression, b must be id
         // a b c d => a.b(c.d) etc.
-        ASTNode::Call { instance_or_met, met_or_arg } => match &met_or_arg.deref().node {
-            ASTNode::Call { instance_or_met: method, met_or_arg } => match &method.deref().node {
+        ASTNode::Call { left, right } => match &right.deref().node {
+            ASTNode::Call { left: method, right: args } => match &method.deref().node {
                 ASTNode::Id { lit: method } => Core::MethodCall {
-                    object: Box::from(desugar_node(instance_or_met)),
+                    object: Box::from(desugar_node(left)),
                     method: method.clone(),
-                    args:   vec![desugar_node(met_or_arg)]
+                    args:   vec![desugar_node(args)]
                 },
                 other => panic!("Chained method call must have identifier, was {:?}", other)
             },
             ASTNode::Id { lit } => Core::PropertyCall {
-                object:   Box::from(desugar_node(instance_or_met)),
+                object:   Box::from(desugar_node(left)),
                 property: lit.clone()
             },
-            _ => match &instance_or_met.deref().node {
+            _ => match &left.deref().node {
                 ASTNode::Id { lit: method } => Core::MethodCall {
                     object: Box::from(Core::Empty),
                     method: method.clone(),
-                    args:   vec![desugar_node(met_or_arg)]
+                    args:   vec![desugar_node(right)]
                 },
                 other => panic!("desugaring calls not that advanced yet: {:?}.", other)
             }
         },
 
-        ASTNode::FunctionCall { namespace, name, args } => match &name.deref().node {
-            ASTNode::Id { lit } => Core::MethodCall {
-                object: Box::from(desugar_node(namespace)),
-                method: lit.clone(),
-                args:   desugar_vec(args)
-            },
-            call => panic!("invalid function call format: {:?}", call)
-        },
-        ASTNode::FunctionCallDirect { name, args } => match &name.deref().node {
+        ASTNode::DirectCall { name, args } => match &name.deref().node {
             ASTNode::Id { lit } => Core::MethodCall {
                 object: Box::from(Core::Empty),
                 method: lit.clone(),

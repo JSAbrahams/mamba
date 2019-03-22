@@ -2,6 +2,7 @@ use crate::util::*;
 use mamba::lexer::tokenize;
 use mamba::parser::parse;
 
+pub mod call;
 pub mod class;
 pub mod collection;
 pub mod compound;
