@@ -103,6 +103,6 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
         st_pos,
         en_line: expr_or_stmt.en_line,
         en_pos: expr_or_stmt.en_pos,
-        node: ASTNode::Case { cond, expr_or_stmt }
+        node: ASTNode::Case { cond, expr: expr_or_stmt }
     })
 }

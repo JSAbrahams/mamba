@@ -85,10 +85,8 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         },
         ASTNode::Match { cond, cases } =>
             Core::When { cond: desugar_vec(cond), cases: desugar_vec(cases) },
-        ASTNode::Case { cond, expr_or_stmt } => Core::Case {
-            cond: Box::from(desugar_node(cond)),
-            then: Box::from(desugar_node(expr_or_stmt))
-        },
+        ASTNode::Case { cond, expr } =>
+            Core::Case { cond: Box::from(desugar_node(cond)), then: Box::from(desugar_node(expr)) },
         ASTNode::While { cond, body } =>
             Core::While { cond: desugar_vec(cond), body: Box::from(desugar_node(body)) },
         ASTNode::For { expr, collection, body } => Core::For {

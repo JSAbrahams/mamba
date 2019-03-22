@@ -296,8 +296,8 @@ pub enum ASTNode {
         cases: Vec<ASTNodePos>
     },
     Case {
-        cond:         Box<ASTNodePos>,
-        expr_or_stmt: Box<ASTNodePos>
+        cond: Box<ASTNodePos>,
+        expr: Box<ASTNodePos>
     },
     For {
         expr:       Vec<ASTNodePos>,
