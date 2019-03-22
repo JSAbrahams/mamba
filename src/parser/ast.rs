@@ -84,12 +84,7 @@ pub enum ASTNode {
     },
     Retry,
 
-    FunctionCall {
-        namespace: Box<ASTNodePos>,
-        name:      Box<ASTNodePos>,
-        args:      Vec<ASTNodePos>
-    },
-    FunctionCallDirect {
+    DirectCall {
         name: Box<ASTNodePos>,
         args: Vec<ASTNodePos>
     },
@@ -99,8 +94,8 @@ pub enum ASTNode {
         args:     Vec<ASTNodePos>
     },
     Call {
-        instance_or_met: Box<ASTNodePos>,
-        met_or_arg:      Box<ASTNodePos>
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
     },
 
     Id {
