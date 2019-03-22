@@ -86,6 +86,35 @@ fn if_verify() {
 }
 
 #[test]
+fn if_with_block_verify() {
+    let source = String::from("if a then\n    c\n    d");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (cond, then, _else) = match ast_tree.node {
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::IfElse { cond, then, _else } =>
+                    (cond.clone(), then.clone(), _else.clone()),
+                _ => panic!("first element script was not if.")
+            },
+        _ => panic!("ast_tree was not script.")
+    };
+
+    assert_eq!(cond.len(), 1);
+    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(_else.is_none(), true);
+
+    let block = match then.node {
+        ASTNode::Block { statements } => statements,
+        other => panic!("then of if was not block, was: {:?}", other)
+    };
+
+    assert_eq!(block.len(), 2);
+    assert_eq!(block[0].node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(block[1].node, ASTNode::Id { lit: String::from("d") });
+}
+
+#[test]
 fn if_else_verify() {
     let source = String::from("if a then c else d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
