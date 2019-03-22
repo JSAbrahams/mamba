@@ -22,7 +22,7 @@ fn foreach_statement_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::For { expr, collection, body } => (expr, collection, body),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not foreach.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -44,7 +44,7 @@ fn foreach_tuple_statement_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::For { expr, collection, body } => (expr, collection, body),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not foreach.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -73,7 +73,7 @@ fn if_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } => (cond, then, _else),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not if.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -96,7 +96,7 @@ fn if_else_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } => (cond, then, _else),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not if.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -119,7 +119,7 @@ fn if_tuple_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } => (cond, then, _else),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not if.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -149,7 +149,7 @@ fn match_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::Match { cond, cases } => (cond, cases),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not match.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -184,7 +184,7 @@ fn match_tuple_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::Match { cond, cases } => (cond, cases),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not match.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -212,7 +212,7 @@ fn while_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::While { cond, body } => (cond, body),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not while.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -234,7 +234,7 @@ fn while_tuple_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::While { cond, body } => (cond, body),
-                _ => panic!("first element script was not for loop.")
+                _ => panic!("first element script was not while.")
             }
         }
         _ => panic!("ast_tree was not script.")
