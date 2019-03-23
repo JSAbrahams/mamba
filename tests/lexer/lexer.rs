@@ -3,7 +3,7 @@ use mamba::lexer::token::TokenPos;
 use mamba::lexer::tokenize;
 
 #[test]
-fn lex_from() {
+fn from() {
     let source = String::from("from i use b");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
@@ -15,7 +15,7 @@ fn lex_from() {
 }
 
 #[test]
-fn lex_operators() {
+fn operators() {
     let source = String::from("+ - * / ^ mod sqrt i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
@@ -31,7 +31,7 @@ fn lex_operators() {
 }
 
 #[test]
-fn lex_comparison() {
+fn comparison() {
     let source = String::from("< > <= >= = /= is isnt i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
@@ -68,7 +68,7 @@ fn lex_if() {
 }
 
 #[test]
-fn lex_numbers_and_strings() {
+fn numbers_and_strings() {
     let source = String::from("1 2.0 3e10 5e 2 \"hello\" True False i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
@@ -85,7 +85,7 @@ fn lex_numbers_and_strings() {
 }
 
 #[test]
-fn lex_identifiers() {
+fn identifiers() {
     let source = String::from("i _i 3a");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
@@ -97,7 +97,7 @@ fn lex_identifiers() {
 }
 
 #[test]
-fn lex_question() {
+fn question() {
     let source = String::from("? ?. ?or i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
@@ -105,5 +105,16 @@ fn lex_question() {
         TokenPos { line: 1, pos: 3, token: Token::QuestCall },
         TokenPos { line: 1, pos: 6, token: Token::QuestOr },
         TokenPos { line: 1, pos: 10, token: Token::Id(String::from("i")) }
+    ]);
+}
+
+#[test]
+fn pass_undefined_underscore() {
+    let source = String::from("pass undefined _");
+    let tokens = tokenize(&source).unwrap();
+    assert_eq!(tokens, vec![
+        TokenPos { line: 1, pos: 1, token: Token::Pass },
+        TokenPos { line: 1, pos: 6, token: Token::Undefined },
+        TokenPos { line: 1, pos: 16, token: Token::Underscore }
     ]);
 }

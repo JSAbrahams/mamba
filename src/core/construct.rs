@@ -214,6 +214,7 @@ pub enum Core {
     },
     UnderScore,
 
+    Pass,
     Undefined,
     Empty
 }

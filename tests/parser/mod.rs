@@ -2,14 +2,8 @@ use crate::util::*;
 use mamba::lexer::tokenize;
 use mamba::parser::parse;
 
-pub mod call;
-pub mod class;
-pub mod collection;
-pub mod compound;
-pub mod control_flow;
-pub mod expression_and_statement;
-pub mod function;
-pub mod operation;
+pub mod invalid;
+pub mod valid;
 
 #[test]
 fn parse_empty_file() {

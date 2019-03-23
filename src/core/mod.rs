@@ -149,6 +149,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_delimited(definitions, ind + 1)
         ),
 
+        Core::Pass => String::from("pass"),
         Core::Undefined => String::from("None"),
         Core::Empty => String::new(),
 

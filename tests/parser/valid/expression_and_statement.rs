@@ -133,3 +133,16 @@ fn underscore_verify() {
 
     assert_eq!(node_pos.node, ASTNode::Underscore);
 }
+
+#[test]
+fn pass_verify() {
+    let source = String::from("pass");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let node_pos = match ast_tree.node {
+        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        _ => panic!("ast_tree was not script.")
+    };
+
+    assert_eq!(node_pos.node, ASTNode::Pass);
+}
