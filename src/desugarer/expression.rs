@@ -278,6 +278,8 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         ASTNode::TypeDef { .. } => Core::Empty,
         ASTNode::TypeAlias { .. } => Core::Empty,
 
+        ASTNode::Pass => Core::Pass,
+
         other => panic!("desugarer didn't recognize {:?}.", other)
     }
 }

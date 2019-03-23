@@ -105,6 +105,7 @@ pub enum Token {
 
     Print,
 
+    Pass,
     Undefined
 }
 
@@ -205,6 +206,7 @@ impl fmt::Display for Token {
             Token::Retry => "retry".to_string(),
             Token::When => "when".to_string(),
 
+            Token::Pass => "pass".to_string(),
             Token::Print => "print".to_string(),
             Token::Undefined => "undefined".to_string()
         };

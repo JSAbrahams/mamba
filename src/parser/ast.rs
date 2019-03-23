@@ -311,6 +311,7 @@ pub enum ASTNode {
     },
     ReturnEmpty,
     Underscore,
+    Pass,
 
     QuestOr {
         _do:      Box<ASTNodePos>,

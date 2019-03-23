@@ -238,12 +238,3 @@ fn sqrt_verify() {
     let expr = verify_is_un_operation!(Sqrt, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_num") });
 }
-
-#[test]
-fn print() {
-    let source = String::from("print my_name");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let expr = verify_is_un_operation!(Print, ast_tree);
-    assert_eq!(expr.node, ASTNode::Id { lit: String::from("my_name") });
-}

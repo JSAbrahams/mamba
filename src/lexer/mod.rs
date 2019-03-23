@@ -332,6 +332,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "print" => Token::Print,
 
         "undefined" => Token::Undefined,
+        "pass" => Token::Pass,
 
         _ => Token::Id(result)
     }
