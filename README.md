@@ -1,3 +1,5 @@
+<link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
+
 <p align="center">
     <img src="image/logo_text.png" height="250">
 </p>
