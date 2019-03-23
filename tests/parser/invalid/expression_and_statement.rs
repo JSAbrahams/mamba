@@ -50,3 +50,10 @@ fn quest_or_missing_alternative() {
     let err = parse_direct(&tokenize(&source).unwrap());
     assert_eq!(err.is_err(), true);
 }
+
+#[test]
+fn quest_or_on_nothing() {
+    let source = String::from("?or");
+    let err = parse_direct(&tokenize(&source).unwrap());
+    assert_eq!(err.is_err(), true);
+}
