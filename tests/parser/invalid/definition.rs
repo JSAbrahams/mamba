@@ -36,3 +36,11 @@ fn def_fun_missing_arrow() {
     println!("{:?}", err);
     assert_eq!(err.is_err(), true);
 }
+
+#[test]
+fn def_fun_missing_brackets() {
+    let source = String::from("def f => print a");
+    let err = parse_direct(&tokenize(&source).unwrap());
+    println!("{:?}", err);
+    assert_eq!(err.is_err(), true);
+}
