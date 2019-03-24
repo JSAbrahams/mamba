@@ -39,7 +39,11 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     let (en_line, en_pos) = end_pos(it);
     check_next_is!(it, Token::RRBrack);
 
-    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Tuple { elements } })
+    Ok(if elements.is_empty() || elements.len() >= 2 {
+        ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Tuple { elements } }
+    } else {
+        elements[0].clone()
+    })
 }
 
 fn parse_set(it: &mut TPIterator) -> ParseResult {

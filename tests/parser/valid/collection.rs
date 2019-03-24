@@ -134,24 +134,23 @@ fn tuple_empty_verify() {
 }
 
 #[test]
-fn tuple_single_verify() {
+fn tuple_single_is_expr_verify() {
     let source = String::from("(a)");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let elements = match ast_tree.node {
+    let lit = match ast_tree.node {
         ASTNode::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
-                ASTNode::Tuple { elements } => elements,
+                ASTNode::Id { lit } => lit,
                 _ => panic!("first element script was not tuple.")
             }
         }
         _ => panic!("ast_tree was not script.")
     };
 
-    assert_eq!(elements.len(), 1);
-    assert_eq!(elements[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(lit.as_str(), "a");
 }
 
 #[test]
