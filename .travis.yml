@@ -4,6 +4,23 @@ sudo: true
 before_install:
   - sudo apt-get update
 
+cache:
+  cargo: true
+  install:
+    - bundle install --deployment # to cache vendor/bundle
+
+    # Install kcov
+    - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+    - tar xzf master.tar.gz
+    - cd kcov-master
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+    - sudo make install
+    - cd ../..
+    - rm -rf kcov-master
+
 addons:
   apt:
     packages:
@@ -23,18 +40,6 @@ before_script:
   - rustup install nightly
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
-
-  # Install kcov
-  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-  - tar xzf master.tar.gz
-  - cd kcov-master
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make
-  - sudo make install
-  - cd ../..
-  - rm -rf kcov-master
 
 after_success:
   # Coverage report
