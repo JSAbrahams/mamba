@@ -1,6 +1,4 @@
-use mamba::lexer::token::Token::*;
 use mamba::lexer::tokenize;
-use mamba::parser::ast::ASTNode;
 use mamba::parser::parse_direct;
 
 #[test]

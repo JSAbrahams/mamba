@@ -58,8 +58,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
                 parse_variable_def_id(id, false, it),
             id @ ASTNodePos { node: ASTNode::IdType { _type: None, .. }, .. } => match it.peek() {
                 Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, it),
-                Some(_) => parse_variable_def_id(id, false, it),
-                None => Err(CustomEOFErr { expected: "id".to_string() })
+                None | Some(_) => parse_variable_def_id(id, false, it)
             },
             _ => return Err(InternalErr { message: String::from("couldn't parse def") })
         }
