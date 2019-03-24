@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-    <a href="https://travis-ci.org/JSAbrahams/mamba"><img src="https://img.shields.io/travis/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=linux" alt="Travis"/></a>
+    <a href="https://travis-ci.org/JSAbrahams/mamba/branches?branch=master"><img src="https://img.shields.io/travis/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=linux" alt="Travis"/></a>
     <a href="https://ci.appveyor.com/project/JSAbrahams/mamba"><img src="https://img.shields.io/appveyor/ci/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=windows" alt="Appveyor"/></a>
     <a href="https://app.codacy.com/project/JSAbrahams/mamba/dashboard"><img src="https://img.shields.io/codacy/grade/74944b486d444bf2b772e7311e9ae2f4.svg?style=for-the-badge" alt="Code Quality"/></a>
     <a href="https://codecov.io/gh/JSAbrahams/mamba"><img src="https://img.shields.io/codecov/c/github/JSAbrahams/mamba.svg?style=for-the-badge" alt="Coverage"/></a>
