@@ -7,8 +7,6 @@ before_install:
 cache:
   cargo: true
   install:
-    - bundle install --deployment # to cache vendor/bundle
-
     # Install kcov
     - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
     - tar xzf master.tar.gz
