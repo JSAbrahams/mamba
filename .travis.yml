@@ -6,6 +6,11 @@ before_install:
 
 cache:
   cargo: true
+  directories:
+    - /usr/local/share/doc/kcov
+    - /usr/local/bin/kcov
+    - /usr/local/bin/kcov-system-daemon
+    - /usr/local/share/man/man1/kcov.1
   install:
     # Install kcov
     - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
