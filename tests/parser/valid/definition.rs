@@ -126,7 +126,7 @@ fn typed_definition_verify() {
 
     let type_id = match _type {
         Some(_type_pos) => match _type_pos.node {
-            ASTNode::Type { id, generics } => id,
+            ASTNode::Type { id, generics: _ } => id,
             other => panic!("Expected type but was: {:?}", other)
         },
         None => panic!("Expected type but was none.")
