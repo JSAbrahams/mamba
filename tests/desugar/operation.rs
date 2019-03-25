@@ -3,6 +3,14 @@ use mamba::desugarer::desugar;
 use mamba::parser::ast::ASTNode;
 use mamba::parser::ast::ASTNodePos;
 
+macro_rules! verify_op {
+    ($op:ident) => {{
+        let add_op = to_pos!(ASTNode::$op);
+        let core = desugar(&add_op);
+        assert_eq!(core, Core::$op);
+    }};
+}
+
 macro_rules! verify {
     ($ast:ident) => {{
         let left = ASTNode::Id { lit: String::from("left") };
@@ -121,4 +129,55 @@ fn and_verify() {
 #[test]
 fn or_verify() {
     verify!(Or);
+}
+
+#[test]
+fn add_op_verify() {
+    verify_op!(AddOp);
+}
+
+#[test]
+fn sub_op_verify() {
+    verify_op!(SubOp);
+}
+
+#[test]
+#[ignore]
+fn sqrt_op_verify() {
+    unimplemented!();
+}
+
+#[test]
+fn mul_op_verify() {
+    verify_op!(MulOp);
+}
+
+#[test]
+fn div_op_verify() {
+    verify_op!(DivOp);
+}
+
+#[test]
+fn pow_op_verify() {
+    verify_op!(PowOp);
+}
+
+#[test]
+fn mod_op_verify() {
+    verify_op!(ModOp);
+}
+
+#[test]
+fn eq_op_verify() {
+    verify_op!(EqOp);
+}
+
+#[test]
+fn le_op_verify() {
+    verify_op!(LeOp);
+}
+
+#[test]
+fn ge_op_verify() {
+    verify_op!(GeOp);
 }
