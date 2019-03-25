@@ -37,6 +37,7 @@ pub enum ASTNode {
         isa:         Vec<ASTNodePos>,
         definitions: Vec<ASTNodePos>
     },
+    Init,
 
     ModName {
         name: String

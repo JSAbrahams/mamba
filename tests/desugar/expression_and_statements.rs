@@ -36,3 +36,42 @@ fn print_verify() {
 
     assert_eq!(*expr_core, Core::Str { _str: String::from("a") });
 }
+
+#[test]
+fn return_verify() {
+    let expr = to_pos!(ASTNode::Str { lit: String::from("a") });
+    let print_stmt = to_pos!(ASTNode::Return { expr });
+
+    let expr_core = match desugar(&print_stmt) {
+        Core::Return { expr } => expr,
+        other => panic!("Expected print but got: {:?}", other)
+    };
+
+    assert_eq!(*expr_core, Core::Str { _str: String::from("a") });
+}
+
+#[test]
+fn return_empty_verify() {
+    let print_stmt = to_pos!(ASTNode::ReturnEmpty);
+
+    let expr_core = match desugar(&print_stmt) {
+        Core::Return { expr } => expr,
+        other => panic!("Expected print but got: {:?}", other)
+    };
+
+    assert_eq!(*expr_core, Core::Empty);
+}
+
+#[test]
+fn init_verify() {
+    let _break = to_pos!(ASTNode::Init);
+    let core = desugar(&_break);
+    assert_eq!(core, Core::Id { lit: String::from("init") });
+}
+
+#[test]
+fn self_verify() {
+    let _break = to_pos!(ASTNode::_Self);
+    let core = desugar(&_break);
+    assert_eq!(core, Core::Id { lit: String::from("self") });
+}

@@ -62,6 +62,7 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         ASTNode::IdType { id, _type } => desugar_node(id),
         ASTNode::Id { lit } => Core::Id { lit: lit.clone() },
         ASTNode::_Self => Core::Id { lit: String::from("self") },
+        ASTNode::Init => Core::Id { lit: String::from("init") },
         ASTNode::Bool { lit } => Core::Bool { _bool: *lit },
 
         ASTNode::Tuple { elements } => Core::Tuple { elements: desugar_vec(elements) },
