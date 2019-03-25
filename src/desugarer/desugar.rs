@@ -116,11 +116,9 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         },
         ASTNode::Eq { left, right } =>
             Core::Eq { left: Box::from(desugar_node(left)), right: Box::from(desugar_node(right)) },
-        ASTNode::Neq { left, right } => Core::Not {
-            expr: Box::from(Core::Eq {
-                left:  Box::from(desugar_node(left)),
-                right: Box::from(desugar_node(right))
-            })
+        ASTNode::Neq { left, right } => Core::Neq {
+            left:  Box::from(desugar_node(left)),
+            right: Box::from(desugar_node(right))
         },
         ASTNode::IsA { left, right } => Core::IsA {
             left:  Box::from(desugar_node(left)),
