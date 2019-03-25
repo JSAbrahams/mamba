@@ -25,8 +25,11 @@ fn tuple_verify() {
 fn set_verify() {
     let elements = vec![
         to_pos_unboxed!(ASTNode::IdType {
-            id:    String::from("a"),
-            _type: to_pos!(ASTNode::Type)
+            id:    to_pos!(ASTNode::Id { lit: String::from("a") }),
+            _type: Some(to_pos!(ASTNode::Type {
+                id:       to_pos!(ASTNode::Id { lit: String::from("some_type") }),
+                generics: vec![]
+            }))
         }),
         to_pos_unboxed!(ASTNode::Bool { lit: true }),
     ];
