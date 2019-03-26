@@ -15,12 +15,12 @@ pub fn desugar_control_flow(node: &ASTNode) -> Core {
         },
         ASTNode::Match { cond, cases } =>
             Core::Match { cond: desugar_vec(cond), cases: desugar_vec(cases) },
-        ASTNode::Case { cond, expr } =>
-            Core::Case { cond: Box::from(desugar_node(cond)), then: Box::from(desugar_node(expr)) },
+        ASTNode::Case { cond, body } =>
+            Core::Case { cond: Box::from(desugar_node(cond)), body: Box::from(desugar_node(body)) },
         ASTNode::While { cond, body } =>
             Core::While { cond: desugar_vec(cond), body: Box::from(desugar_node(body)) },
         ASTNode::For { expr, collection, body } => Core::For {
-            expr:       desugar_vec(expr),
+            exprs:      desugar_vec(expr),
             collection: Box::from(desugar_node(collection)),
             body:       Box::from(desugar_node(body))
         },

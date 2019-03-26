@@ -182,7 +182,7 @@ pub enum Core {
     },
 
     For {
-        expr:       Vec<Core>,
+        exprs:      Vec<Core>,
         collection: Box<Core>,
         body:       Box<Core>
     },
@@ -201,7 +201,7 @@ pub enum Core {
     },
     Case {
         cond: Box<Core>,
-        then: Box<Core>
+        body: Box<Core>
     },
     While {
         cond: Vec<Core>,

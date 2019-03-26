@@ -64,7 +64,7 @@ fn reassign_verify() {
     let (left, right) = match ast_tree.node {
         ASTNode::Script { statements, .. } =>
             match &statements.first().expect("script empty.").node {
-                ASTNode::ReAssign { left, right } => (left.clone(), right.clone()),
+                ASTNode::Reassign { left, right } => (left.clone(), right.clone()),
                 _ => panic!("first element script was not reassign.")
             },
         _ => panic!("ast_tree was not script.")

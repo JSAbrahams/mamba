@@ -190,8 +190,8 @@ fn match_verify() {
     assert_eq!(cases.len(), 2);
     let (cond1, expr1, cond2, expr2) = match (&cases[0], &cases[1]) {
         (
-            ASTNodePos { node: ASTNode::Case { cond: cond1, expr: expr1 }, .. },
-            ASTNodePos { node: ASTNode::Case { cond: cond2, expr: expr2 }, .. }
+            ASTNodePos { node: ASTNode::Case { cond: cond1, body: expr1 }, .. },
+            ASTNodePos { node: ASTNode::Case { cond: cond2, body: expr2 }, .. }
         ) => (cond1, expr1, cond2, expr2),
         _ => panic!("Cases incorrect.")
     };

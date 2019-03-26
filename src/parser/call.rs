@@ -20,7 +20,7 @@ pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let right: Box<ASTNodePos> = get_or_err!(it, parse_expression, "reassignment");
 
     let (en_line, en_pos) = (right.en_line, right.en_pos);
-    let node = ASTNode::ReAssign { left: Box::new(pre), right };
+    let node = ASTNode::Reassign { left: Box::new(pre), right };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 

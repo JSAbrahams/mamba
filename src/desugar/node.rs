@@ -10,7 +10,7 @@ use std::ops::Deref;
 pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
     match &node_pos.node {
         definition @ ASTNode::Def { .. } => desugar_definition(definition),
-        ASTNode::ReAssign { left, right } => Core::Assign {
+        ASTNode::Reassign { left, right } => Core::Assign {
             left:  Box::from(desugar_node(left)),
             right: Box::from(desugar_node(right))
         },

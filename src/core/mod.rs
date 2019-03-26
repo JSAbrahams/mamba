@@ -122,9 +122,9 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, collection, body } => format!(
+        Core::For { exprs, collection, body } => format!(
             "for {} in {}: {}",
-            comma_delimited(expr.as_ref(), ind),
+            comma_delimited(exprs.as_ref(), ind),
             to_py(collection.as_ref(), ind),
             to_py(body.as_ref(), ind + 1)
         ),
