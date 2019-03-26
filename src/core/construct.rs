@@ -114,6 +114,10 @@ pub enum Core {
         left:  Box<Core>,
         right: Box<Core>
     },
+    IsN {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
     EqOp,
     Eq {
         left:  Box<Core>,
@@ -191,7 +195,7 @@ pub enum Core {
         then:  Box<Core>,
         _else: Box<Core>
     },
-    When {
+    Match {
         cond:  Vec<Core>,
         cases: Vec<Core>
     },

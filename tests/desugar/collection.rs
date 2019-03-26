@@ -1,5 +1,5 @@
 use mamba::core::construct::Core;
-use mamba::desugarer::desugar;
+use mamba::desugar::desugar;
 use mamba::parser::ast::ASTNode;
 use mamba::parser::ast::ASTNodePos;
 

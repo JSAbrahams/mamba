@@ -9,7 +9,8 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
-        Core::ENum { num, exp } => format!("Enum({}, {})", num, exp),
+        Core::ENum { num, exp } =>
+            format!("Enum({}, {})", num, if exp.is_empty() { "0" } else { exp }),
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
@@ -94,6 +95,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Is { left, right } =>
             format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::IsN { left, right } =>
+            format!("{} is not {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Eq { left, right } =>
             format!("{} == {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Neq { left, right } =>

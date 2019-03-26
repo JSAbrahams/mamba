@@ -1,5 +1,5 @@
 use crate::core::to_py_source;
-use crate::desugarer::desugar;
+use crate::desugar::desugar;
 use crate::lexer::tokenize;
 use crate::parser::parse;
 use std::fs::OpenOptions;
