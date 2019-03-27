@@ -130,7 +130,6 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
             right: Box::from(desugar_node(right))
         },
 
-        // TODO do something with default
         ASTNode::FunArg { vararg, id_maybe_type, default } => Core::FunArg {
             vararg:  *vararg,
             id:      Box::from(desugar_node(id_maybe_type)),
