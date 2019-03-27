@@ -7,9 +7,10 @@ pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Id { lit } => lit.clone(),
-        Core::Str { _str } => format!("\"{}\"", _str),
+        Core::Str { _str } => format!("\'{}\'", _str),
         Core::Int { int } => int.clone(),
-        Core::ENum { num, exp } => format!("Enum({}, {})", num, exp),
+        Core::ENum { num, exp } =>
+            format!("Enum({}, {})", num, if exp.is_empty() { "0" } else { exp }),
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
@@ -60,8 +61,16 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(right.as_ref(), ind)
         ),
 
-        Core::FunArg { vararg, id } =>
-            format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
+        Core::FunArg { vararg, id, default } => format!(
+            "{}{}{}",
+            if *vararg { "*" } else { "" },
+            to_py(id.as_ref(), ind),
+            if **default == Core::Empty {
+                String::new()
+            } else {
+                format!(" = {}", to_py(default.as_ref(), ind))
+            }
+        ),
 
         Core::AnonFun { args, body } =>
             format!("lambda {} : {}", comma_delimited(args, ind), to_py(body, ind)),
@@ -94,6 +103,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Is { left, right } =>
             format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::IsN { left, right } =>
+            format!("{} is not {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Eq { left, right } =>
             format!("{} == {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Neq { left, right } =>
@@ -119,9 +130,9 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, collection, body } => format!(
+        Core::For { exprs, collection, body } => format!(
             "for {} in {}: {}",
-            comma_delimited(expr.as_ref(), ind),
+            comma_delimited(exprs.as_ref(), ind),
             to_py(collection.as_ref(), ind),
             to_py(body.as_ref(), ind + 1)
         ),

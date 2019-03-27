@@ -37,6 +37,7 @@ pub enum ASTNode {
         isa:         Vec<ASTNodePos>,
         definitions: Vec<ASTNodePos>
     },
+    Init,
 
     ModName {
         name: String
@@ -46,7 +47,7 @@ pub enum ASTNode {
         isa:  Vec<String>
     },
 
-    ReAssign {
+    Reassign {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
     },
@@ -292,7 +293,7 @@ pub enum ASTNode {
     },
     Case {
         cond: Box<ASTNodePos>,
-        expr: Box<ASTNodePos>
+        body: Box<ASTNodePos>
     },
     For {
         expr:       Vec<ASTNodePos>,

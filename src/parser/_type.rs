@@ -20,25 +20,16 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     }
 
     let (en_line, en_pos) = end_pos(it);
-    match it.next() {
-        Some(TokenPos { token: Token::Init, .. }) => Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line,
-            en_pos,
-            node: ASTNode::Id { lit: String::from("init") }
-        }),
-        Some(TokenPos { token: Token::Id(id), .. }) => Ok(ASTNodePos {
-            st_line,
-            st_pos,
-            en_line,
-            en_pos,
-            node: ASTNode::Id { lit: id.to_string() }
-        }),
+    let node = match it.next() {
+        Some(TokenPos { token: Token::Init, .. }) => ASTNode::Init,
+        Some(TokenPos { token: Token::Id(id), .. }) => ASTNode::Id { lit: id.to_string() },
 
-        Some(next) => Err(TokenErr { expected: Token::Id(String::new()), actual: next.clone() }),
-        None => Err(EOFErr { expected: Token::Id(String::new()) })
-    }
+        Some(next) =>
+            return Err(CustomErr { expected: String::from("id"), actual: next.clone() }),
+        None => return Err(EOFErr { expected: Token::Id(String::new()) })
+    };
+
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_id_maybe_call(it: &mut TPIterator) -> ParseResult {

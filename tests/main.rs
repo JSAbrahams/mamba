@@ -7,6 +7,7 @@ use std::process::Command;
 mod util;
 
 mod core;
+mod desugar;
 mod lexer;
 mod parser;
 

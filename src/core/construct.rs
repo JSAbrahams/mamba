@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Core {
     Module {
         id:      String,
@@ -46,8 +46,9 @@ pub enum Core {
         body:    Box<Core>
     },
     FunArg {
-        vararg: bool,
-        id:     Box<Core>
+        vararg:  bool,
+        id:      Box<Core>,
+        default: Box<Core>
     },
     AnonFun {
         args: Vec<Core>,
@@ -111,6 +112,10 @@ pub enum Core {
         expr: Box<Core>
     },
     Is {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
+    IsN {
         left:  Box<Core>,
         right: Box<Core>
     },
@@ -178,7 +183,7 @@ pub enum Core {
     },
 
     For {
-        expr:       Vec<Core>,
+        exprs:      Vec<Core>,
         collection: Box<Core>,
         body:       Box<Core>
     },
@@ -191,13 +196,13 @@ pub enum Core {
         then:  Box<Core>,
         _else: Box<Core>
     },
-    When {
+    Match {
         cond:  Vec<Core>,
         cases: Vec<Core>
     },
     Case {
         cond: Box<Core>,
-        then: Box<Core>
+        body: Box<Core>
     },
     While {
         cond: Vec<Core>,
