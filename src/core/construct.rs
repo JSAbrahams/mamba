@@ -46,8 +46,9 @@ pub enum Core {
         body:    Box<Core>
     },
     FunArg {
-        vararg: bool,
-        id:     Box<Core>
+        vararg:  bool,
+        id:      Box<Core>,
+        default: Box<Core>
     },
     AnonFun {
         args: Vec<Core>,

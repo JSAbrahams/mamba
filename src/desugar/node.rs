@@ -131,8 +131,14 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         },
 
         // TODO do something with default
-        ASTNode::FunArg { vararg, id_maybe_type, .. } =>
-            Core::FunArg { vararg: *vararg, id: Box::from(desugar_node(id_maybe_type)) },
+        ASTNode::FunArg { vararg, id_maybe_type, default } => Core::FunArg {
+            vararg:  *vararg,
+            id:      Box::from(desugar_node(id_maybe_type)),
+            default: match default {
+                Some(default) => Box::from(desugar_node(default)),
+                None => Box::from(Core::Empty)
+            }
+        },
 
         call @ ASTNode::Call { .. } => desugar_call(call),
 

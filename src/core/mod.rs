@@ -7,7 +7,7 @@ pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Id { lit } => lit.clone(),
-        Core::Str { _str } => format!("\"{}\"", _str),
+        Core::Str { _str } => format!("\'{}\'", _str),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } =>
             format!("Enum({}, {})", num, if exp.is_empty() { "0" } else { exp }),
@@ -61,8 +61,16 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(right.as_ref(), ind)
         ),
 
-        Core::FunArg { vararg, id } =>
-            format!("{}{}", if *vararg { "*" } else { "" }, to_py(id.as_ref(), ind)),
+        Core::FunArg { vararg, id, default } => format!(
+            "{}{}{}",
+            if *vararg { "*" } else { "" },
+            to_py(id.as_ref(), ind),
+            if **default == Core::Empty {
+                String::new()
+            } else {
+                format!(" = {}", to_py(default.as_ref(), ind))
+            }
+        ),
 
         Core::AnonFun { args, body } =>
             format!("lambda {} : {}", comma_delimited(args, ind), to_py(body, ind)),

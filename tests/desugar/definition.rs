@@ -82,14 +82,21 @@ fn variable_def_empty_verify() {
 }
 
 // TODO add tests for default arguments once implemented
-// TODO add tests for default values once implemented
 #[test]
 fn fun_def_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         fun_args: vec![
-            to_pos_unboxed!(ASTNode::Id { lit: String::from("arg1") }),
-            to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
+            to_pos_unboxed!(ASTNode::FunArg {
+                vararg:        false,
+                id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
+                default:       None
+            }),
+            to_pos_unboxed!(ASTNode::FunArg {
+                vararg:        true,
+                id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg2") }),
+                default:       None
+            })
         ],
         ret_ty:   None,
         raises:   None,
@@ -106,8 +113,48 @@ fn fun_def_verify() {
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 2);
-    assert_eq!(args[0], Core::Id { lit: String::from("arg1") });
-    assert_eq!(args[1], Core::Id { lit: String::from("arg2") });
+    assert_eq!(args[0], Core::FunArg {
+        vararg:  false,
+        id:      Box::from(Core::Id { lit: String::from("arg1") }),
+        default: Box::from(Core::Empty)
+    });
+    assert_eq!(args[1], Core::FunArg {
+        vararg:  true,
+        id:      Box::from(Core::Id { lit: String::from("arg2") }),
+        default: Box::from(Core::Empty)
+    });
+    assert_eq!(*body, Core::Empty);
+}
+
+#[test]
+fn fun_def_default_arg_verify() {
+    let definition = to_pos!(ASTNode::FunDef {
+        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
+            vararg:        false,
+            id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
+            default:       Some(to_pos!(ASTNode::Str { lit: String::from("asdf") }))
+        })],
+        ret_ty:   None,
+        raises:   None,
+        body:     None
+    });
+    let def = to_pos!(ASTNode::Def { private: false, definition });
+
+    let (private, id, args, body) = match desugar(&def) {
+        Core::FunDef { private, id, args, body } => (private, id, args, body),
+        other => panic!("Expected fun def but got: {:?}.", other)
+    };
+
+    assert_eq!(private, false);
+    assert_eq!(*id, Core::Id { lit: String::from("fun") });
+
+    assert_eq!(args.len(), 1);
+    assert_eq!(args[0], Core::FunArg {
+        vararg:  false,
+        id:      Box::from(Core::Id { lit: String::from("arg1") }),
+        default: Box::from(Core::Str { _str: String::from("asdf") })
+    });
     assert_eq!(*body, Core::Empty);
 }
 
