@@ -290,7 +290,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "private" => Token::Private,
 
         "use" => Token::Use,
-        "useall" => Token::UseAll,
         "forward" => Token::Forward,
         "self" => Token::_Self,
         "vararg" => Token::Vararg,

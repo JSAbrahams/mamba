@@ -146,3 +146,70 @@ fn pass_verify() {
 
     assert_eq!(node_pos.node, ASTNode::Pass);
 }
+
+#[test]
+fn from_import_verify() {
+    let source = String::from("from a import b");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let node_pos = match ast_tree.node {
+        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        _ => panic!("ast_tree was not script.")
+    };
+
+    let (id, _use, _as) = match node_pos.node {
+        ASTNode::FromImport { id, import } => match import.node {
+            ASTNode::Import { _use, _as } => (id, _use, _as),
+            other => panic!("Expected import but was {:?}.", other)
+        }
+        other => panic!("Expected from import but was {:?}.", other)
+    };
+
+    assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(_use.len(), 1);
+    assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(_as, None);
+}
+
+#[test]
+fn import_verify() {
+    let source = String::from("import c");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let node_pos = match ast_tree.node {
+        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        _ => panic!("ast_tree was not script.")
+    };
+
+    let (_use, _as) = match node_pos.node {
+        ASTNode::Import { _use, _as } => (_use, _as),
+        other => panic!("Expected import but was {:?}.", other)
+    };
+
+    assert_eq!(_use.len(), 1);
+    assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(_as, None);
+}
+
+#[test]
+fn import_as_verify() {
+    let source = String::from("import a, b as c, d");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let node_pos = match ast_tree.node {
+        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        _ => panic!("ast_tree was not script.")
+    };
+
+    let (_use, _as) = match node_pos.node {
+        ASTNode::Import { _use, _as: Some(thing) } => (_use, thing),
+        other => panic!("Expected import but was {:?}.", other)
+    };
+
+    assert_eq!(_use.len(), 2);
+    assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(_use[1].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(_as.len(), 2);
+    assert_eq!(_as[0].node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(_as[1].node, ASTNode::Id { lit: String::from("d") });
+}
