@@ -24,8 +24,7 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Init, .. }) => ASTNode::Init,
         Some(TokenPos { token: Token::Id(id), .. }) => ASTNode::Id { lit: id.to_string() },
 
-        Some(next) =>
-            return Err(CustomErr { expected: String::from("id"), actual: next.clone() }),
+        Some(next) => return Err(CustomErr { expected: String::from("id"), actual: next.clone() }),
         None => return Err(EOFErr { expected: Token::Id(String::new()) })
     };
 

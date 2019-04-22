@@ -4,13 +4,13 @@ use mamba::lexer::tokenize;
 
 #[test]
 fn from() {
-    let source = String::from("from i use b");
+    let source = String::from("from i import b");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
         TokenPos { line: 1, pos: 1, token: Token::From },
         TokenPos { line: 1, pos: 6, token: Token::Id(String::from("i")) },
-        TokenPos { line: 1, pos: 8, token: Token::Use },
-        TokenPos { line: 1, pos: 12, token: Token::Id(String::from("b")) }
+        TokenPos { line: 1, pos: 8, token: Token::Import },
+        TokenPos { line: 1, pos: 15, token: Token::Id(String::from("b")) }
     ]);
 }
 

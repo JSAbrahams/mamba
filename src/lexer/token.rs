@@ -19,7 +19,7 @@ pub enum Token {
     Init,
 
     As,
-    Use,
+    Import,
     Forward,
     _Self,
 
@@ -121,7 +121,7 @@ impl fmt::Display for Token {
             Token::Init => "init".to_string(),
 
             Token::As => "as".to_string(),
-            Token::Use => "use".to_string(),
+            Token::Import => "import".to_string(),
             Token::Forward => "forward".to_string(),
             Token::_Self => "self".to_string(),
 

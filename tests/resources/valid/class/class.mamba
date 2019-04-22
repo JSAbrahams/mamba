@@ -1,4 +1,4 @@
-from Math use abs
+from Math import abs
 
 type MyClass
     def fun_a: () -> ()
