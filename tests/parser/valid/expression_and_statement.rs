@@ -161,9 +161,9 @@ fn from_import_verify() {
     assert_eq!(imports.len(), 1);
     let (id, _use, _as) = match &imports[0].node {
         ASTNode::FromImport { id, import } => match &import.node {
-            ASTNode::Import { _use, _as } => (id, _use, _as),
+            ASTNode::Import { import, _as } => (id, import, _as),
             other => panic!("Expected import but was {:?}.", other)
-        }
+        },
         other => panic!("Expected from import but was {:?}.", other)
     };
 
@@ -185,7 +185,7 @@ fn import_verify() {
 
     assert_eq!(imports.len(), 1);
     let (_use, _as) = match &imports[0].node {
-        ASTNode::Import { _use, _as } => (_use, _as),
+        ASTNode::Import { import, _as } => (import, _as),
         other => panic!("Expected import but was {:?}.", other)
     };
 
@@ -206,7 +206,7 @@ fn import_as_verify() {
 
     assert_eq!(imports.len(), 1);
     let (_use, _as) = match &imports[0].node {
-        ASTNode::Import { _use, _as: Some(thing) } => (_use, thing),
+        ASTNode::Import { import, _as: Some(thing) } => (import, thing),
         other => panic!("Expected import but was {:?}.", other)
     };
 

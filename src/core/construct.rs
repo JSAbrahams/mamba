@@ -5,10 +5,14 @@ pub enum Core {
         imports: Vec<String>,
         body:    Box<Core>
     },
+    FromImport {
+        from:   Box<Core>,
+        import: Vec<Core>,
+        _as:    Vec<Core>
+    },
     Import {
-        file: String,
-        _use: Vec<Core>,
-        _as:  Vec<Core>
+        import: Vec<Core>,
+        _as:    Vec<Core>
     },
     ClassDef {
         name:        Box<Core>,

@@ -19,7 +19,8 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
 
     let id = Box::from(match it.peek() {
         Some(TokenPos { token: Token::Id(_), .. }) => get_or_err_direct!(it, parse_id, "from id"),
-        Some(&other) => return Err(TokenErr { expected: Token::Id(String::new()), actual: other.clone() }),
+        Some(&other) =>
+            return Err(TokenErr { expected: Token::Id(String::new()), actual: other.clone() }),
         None => return Err(EOFErr { expected: Token::Id(String::new()) })
     });
     let import = get_or_err!(it, parse_import, "import");
@@ -38,9 +39,13 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         match tp.token {
             Token::Id(_) => {
                 _use.push(get_or_err_direct!(it, parse_id, "import id"));
-                if it.peek().is_some() && it.peek().unwrap().token == Token::Comma { it.next(); }
+                if it.peek().is_some() && it.peek().unwrap().token == Token::Comma {
+                    it.next();
+                }
             }
-            Token::NL => { it.next(); }
+            Token::NL => {
+                it.next();
+            }
             _ => break
         }
     }
@@ -54,9 +59,13 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
                 match tp.token {
                     Token::Id(_) => {
                         aliases.push(get_or_err_direct!(it, parse_id, "import"));
-                        if it.peek().is_some() && it.peek().unwrap().token == Token::Comma { it.next(); }
+                        if it.peek().is_some() && it.peek().unwrap().token == Token::Comma {
+                            it.next();
+                        }
                     }
-                    Token::NL => { it.next(); }
+                    Token::NL => {
+                        it.next();
+                    }
                     _ => break
                 }
             }
@@ -69,7 +78,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     }
 
     let (en_line, en_pos) = end_pos(it);
-    let node = ASTNode::Import { _use, _as };
+    let node = ASTNode::Import { import: _use, _as };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
@@ -133,10 +142,10 @@ pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
 
     Ok(ASTNodePos {
         st_line: body.st_line,
-        st_pos: body.st_pos,
+        st_pos:  body.st_pos,
         en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::Stateless { _type, body },
+        en_pos:  body.en_pos,
+        node:    ASTNode::Stateless { _type, body }
     })
 }
 
@@ -147,10 +156,10 @@ pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
 
     Ok(ASTNodePos {
         st_line: body.st_line,
-        st_pos: body.st_pos,
+        st_pos:  body.st_pos,
         en_line: body.en_line,
-        en_pos: body.en_pos,
-        node: ASTNode::Stateful { _type, body },
+        en_pos:  body.en_pos,
+        node:    ASTNode::Stateful { _type, body }
     })
 }
 
@@ -181,7 +190,9 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 
     while let Some(&t) = it.peek() {
         match t.token {
-            Token::NL => { it.next(); }
+            Token::NL => {
+                it.next();
+            }
             Token::Import => imports.push(get_or_err_direct!(it, parse_import, "import")),
             Token::From => imports.push(get_or_err_direct!(it, parse_from_import, "from import")),
             Token::Type =>
@@ -227,7 +238,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             st_pos,
             en_line: _type.en_line,
             en_pos: _type.en_pos,
-            node: ASTNode::TypeDef { _type, body: None },
+            node: ASTNode::TypeDef { _type, body: None }
         })
     }
 }
