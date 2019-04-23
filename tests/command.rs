@@ -3,6 +3,7 @@ use crate::common::valid_resource_path;
 use mamba::command::mamba_to_python;
 use mamba::command::mamba_to_python_direct;
 use std::fs::OpenOptions;
+use std::process::Command;
 use std::path::Path;
 
 mod common;
