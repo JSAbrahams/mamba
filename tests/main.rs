@@ -10,6 +10,7 @@ mod util;
 mod core;
 mod desugar;
 mod lexer;
+mod output;
 mod parser;
 
 #[test]
