@@ -26,18 +26,19 @@ stateful MyClassStateful
     def init(self, my_field: Int, z: Int) =>
         self.z_modified <- z * SOME_CONSTANT
 
-    def connect(self: SomeState) => other_field <- 200
+    def connect(self: SomeState) => self.other_field <- 200
 
     def fun_a(self) => print self
 
     def private fun_b(self) => print "this function is private!"
 
-    def factorial(0) => 1
-    def factorial(x: Int) => x * factorial (x - 1)
-    def factorial_infinite(x: Int) => x * factorial x
+    def factorial(self, 0) => 1
+    def factorial(self, x: Int) => x * self.factorial (x - 1)
+    def factorial_infinite(self, x: Int) => x * self.factorial x
 
-    def postfix1() => a b
-    def postfix2() => a b c
-    def postfix3() => a b c d
+    def postfix1(self) => self.a b
+    def postfix2(self) => self.a b c
+    def postfix3(self) => self.a b c d
 
-    def fancy() => some_higher_order(\x => x * 2)
+    def some_higher_order (self, fun: Int -> Int) => 0
+    def fancy(self) => self.some_higher_order(\x => x * 2)

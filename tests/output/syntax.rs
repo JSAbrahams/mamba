@@ -9,10 +9,7 @@ fn output_class_valid_syntax() {
     let path = &mut Path::new(&source);
 
     let path = mamba_to_python_direct(path).unwrap();
-    let mut cmd = Command::new("py")
-        .arg("-m").arg("py_compile")
-        .arg(path)
-        .output().unwrap();
+    let mut cmd = Command::new("py").arg("-m").arg("py_compile").arg(path).output().unwrap();
 
     if cmd.status.code().unwrap() != 0 {
         panic!("{}", String::from_utf8(cmd.stderr).unwrap());
