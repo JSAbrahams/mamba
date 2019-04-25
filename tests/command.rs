@@ -4,7 +4,6 @@ use mamba::command::mamba_to_python;
 use mamba::command::mamba_to_python_direct;
 use std::fs::OpenOptions;
 use std::path::Path;
-use std::process::Command;
 
 mod util;
 
