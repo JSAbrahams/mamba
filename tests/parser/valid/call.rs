@@ -38,8 +38,8 @@ fn anon_fun_verify() {
     assert_eq!(args.len(), 2);
     let (id1, id2) = match (&args[0], &args[1]) {
         (
-            ASTNodePos { node: ASTNode::IdType { id: id1, _type: None }, .. },
-            ASTNodePos { node: ASTNode::IdType { id: id2, _type: None }, .. }
+            ASTNodePos { node: ASTNode::IdType { id: id1, _type: None, mutable: false }, .. },
+            ASTNodePos { node: ASTNode::IdType { id: id2, _type: None, mutable: false }, .. }
         ) => (id1.clone(), id2.clone()),
         other => panic!("Id's of anon fun not id maybe type: {:?}", other)
     };

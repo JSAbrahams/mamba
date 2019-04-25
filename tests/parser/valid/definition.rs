@@ -35,9 +35,9 @@ macro_rules! unwrap_definition {
         };
 
         let (mutable, ofmut, id, _type, expression, forward) = match definition.node {
-            ASTNode::VariableDef { mutable, ofmut, id_maybe_type, expression, forward } =>
+            ASTNode::VariableDef { ofmut, id_maybe_type, expression, forward } =>
                 match id_maybe_type.node {
-                    ASTNode::IdType { id, _type } =>
+                    ASTNode::IdType { id, mutable, _type } =>
                         (mutable, ofmut, id, _type, expression, forward),
                     other => panic!("Expected id type in variable def but was {:?}.", other)
                 },
@@ -241,8 +241,8 @@ fn function_definition_verify() {
 
             match (&id1.node, &id2.node) {
                 (
-                    ASTNode::IdType { id: id1, _type: t1 },
-                    ASTNode::IdType { id: id2, _type: t2 }
+                    ASTNode::IdType { id: id1, _type: t1, mutable: false },
+                    ASTNode::IdType { id: id2, _type: t2, mutable: false }
                 ) => {
                     assert_eq!(id1.node, ASTNode::Id { lit: String::from("b") });
                     assert_eq!(id2.node, ASTNode::Id { lit: String::from("c") });
@@ -307,7 +307,7 @@ fn function_definition_with_literal_verify() {
             assert_eq!(d2.clone(), None);
 
             match (&id1.node, &id2.node) {
-                (ASTNode::Int { lit }, ASTNode::IdType { id: id2, _type: t2 }) => {
+                (ASTNode::Int { lit }, ASTNode::IdType { id: id2, mutable: false, _type: t2 }) => {
                     assert_eq!(lit.as_str(), "0");
                     assert_eq!(id2.node, ASTNode::Id { lit: String::from("b") });
 
