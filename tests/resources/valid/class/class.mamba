@@ -1,12 +1,12 @@
 from Math import abs
 import something
 
-type MyClass
+type MyType
     def fun_a: () -> ()
     def factorial: Int -> Int
 
 # This class has no state
-stateless MyClassStateless
+stateless MyClass isa MyType
     def SOME_CONSTANT <- 3.5E20
 
     def constant_func() => 400
@@ -19,7 +19,7 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-stateful MyClassStateful
+stateful MyClass isa MyType
     def private z_modified
     def private mut other_field <- 10
 

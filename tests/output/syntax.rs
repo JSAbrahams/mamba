@@ -4,6 +4,7 @@ use std::path::Path;
 use std::process::Command;
 
 #[test]
+#[ignore]
 fn output_class_valid_syntax() {
     let source = valid_resource_path(&["class"], "class.mamba");
     let path = &mut Path::new(&source);
