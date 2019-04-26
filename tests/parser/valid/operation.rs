@@ -182,9 +182,7 @@ fn leq_verify() {
 #[test]
 fn ge_verify() {
     let source = String::from("r > 10");
-    println!("{:?}", &tokenize(&source).unwrap());
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    println!("{:?}", ast_tree);
 
     let (left, right) = verify_is_operation!(Ge, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("r") });

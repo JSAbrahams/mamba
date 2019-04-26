@@ -1,5 +1,6 @@
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
+use mamba::parser::parse;
 use mamba::parser::parse_direct;
 
 #[test]
@@ -145,4 +146,74 @@ fn pass_verify() {
     };
 
     assert_eq!(node_pos.node, ASTNode::Pass);
+}
+
+#[test]
+fn from_import_verify() {
+    let source = String::from("from a import b");
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+
+    let imports = match ast_tree.node {
+        ASTNode::File { imports, .. } => imports,
+        _ => panic!("ast_tree was not file.")
+    };
+
+    assert_eq!(imports.len(), 1);
+    let (id, _use, _as) = match &imports[0].node {
+        ASTNode::FromImport { id, import } => match &import.node {
+            ASTNode::Import { import, _as } => (id, import, _as),
+            other => panic!("Expected import but was {:?}.", other)
+        },
+        other => panic!("Expected from import but was {:?}.", other)
+    };
+
+    assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(_use.len(), 1);
+    assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(_as.len(), 0);
+}
+
+#[test]
+fn import_verify() {
+    let source = String::from("import c");
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+
+    let imports = match ast_tree.node {
+        ASTNode::File { imports, .. } => imports,
+        _ => panic!("ast_tree was not file.")
+    };
+
+    assert_eq!(imports.len(), 1);
+    let (_use, _as) = match &imports[0].node {
+        ASTNode::Import { import, _as } => (import, _as),
+        other => panic!("Expected import but was {:?}.", other)
+    };
+
+    assert_eq!(_use.len(), 1);
+    assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(_as.len(), 0);
+}
+
+#[test]
+fn import_as_verify() {
+    let source = String::from("import a, b as c, d");
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+
+    let imports = match ast_tree.node {
+        ASTNode::File { imports, .. } => imports,
+        _ => panic!("ast_tree was not file.")
+    };
+
+    assert_eq!(imports.len(), 1);
+    let (_use, _as) = match &imports[0].node {
+        ASTNode::Import { import, _as } => (import, _as),
+        other => panic!("Expected import but was {:?}.", other)
+    };
+
+    assert_eq!(_use.len(), 2);
+    assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(_use[1].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(_as.len(), 2);
+    assert_eq!(_as[0].node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(_as[1].node, ASTNode::Id { lit: String::from("d") });
 }

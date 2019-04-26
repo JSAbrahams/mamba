@@ -9,6 +9,14 @@ use std::ops::Deref;
 
 pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
     match &node_pos.node {
+        ASTNode::Import { import, _as: things } =>
+            Core::Import { import: desugar_vec(import), _as: desugar_vec(things) },
+        ASTNode::FromImport { id, import } => match desugar_node(import) {
+            Core::Import { import, _as } =>
+                Core::FromImport { from: Box::from(desugar_node(id)), import, _as },
+            other => panic!("No import in from import: {:?}.", other)
+        },
+
         definition @ ASTNode::Def { .. } => desugar_definition(definition),
         ASTNode::Reassign { left, right } => Core::Assign {
             left:  Box::from(desugar_node(left)),

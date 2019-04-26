@@ -6,6 +6,26 @@ pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
+        Core::FromImport { from, import, _as } => format!(
+            "from {} import {}{}",
+            to_py(from, ind),
+            comma_delimited(import, ind),
+            if _as.is_empty() {
+                String::new()
+            } else {
+                format!(" as {}", comma_delimited(_as, ind))
+            }
+        ),
+        Core::Import { import, _as } => format!(
+            "import {}{}",
+            comma_delimited(import, ind),
+            if _as.is_empty() {
+                String::new()
+            } else {
+                format!(" as {}", comma_delimited(_as, ind))
+            }
+        ),
+
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => format!("\'{}\'", _str),
         Core::Int { int } => int.clone(),

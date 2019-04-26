@@ -17,10 +17,12 @@ pub enum ASTNode {
         type_defs: Vec<ASTNodePos>
     },
     Import {
-        id:   Box<ASTNodePos>,
-        _use: Vec<ASTNodePos>,
-        all:  bool,
-        _as:  Option<Box<ASTNodePos>>
+        import: Vec<ASTNodePos>,
+        _as:    Vec<ASTNodePos>
+    },
+    FromImport {
+        id:     Box<ASTNodePos>,
+        import: Box<ASTNodePos>
     },
     Stateful {
         _type: Box<ASTNodePos>,

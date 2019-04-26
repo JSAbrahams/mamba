@@ -1,4 +1,5 @@
-from Math use abs
+from Math import abs
+import something
 
 type MyClass
     def fun_a: () -> ()
