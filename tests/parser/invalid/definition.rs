@@ -33,7 +33,6 @@ fn def_fun_no_closing_brack() {
 fn def_fun_missing_arrow() {
     let source = String::from("def f(a) a * 10");
     let err = parse_direct(&tokenize(&source).unwrap());
-    println!("{:?}", err);
     assert_eq!(err.is_err(), true);
 }
 
@@ -41,6 +40,5 @@ fn def_fun_missing_arrow() {
 fn def_fun_missing_brackets() {
     let source = String::from("def f => print a");
     let err = parse_direct(&tokenize(&source).unwrap());
-    println!("{:?}", err);
     assert_eq!(err.is_err(), true);
 }
