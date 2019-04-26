@@ -112,9 +112,9 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let string_representation = match self.clone() {
             Token::From => "from".to_string(),
-            Token::Stateless => "util".to_string(),
+            Token::Stateless => "stateless".to_string(),
             Token::Type => "type".to_string(),
-            Token::Stateful => "class".to_string(),
+            Token::Stateful => "stateful".to_string(),
             Token::IsA => "isa".to_string(),
             Token::IsNA => "isnta".to_string(),
             Token::Private => "private".to_string(),
@@ -158,10 +158,10 @@ impl fmt::Display for Token {
             Token::Le => "<".to_string(),
             Token::Leq => "<=".to_string(),
 
-            Token::Eq => "eq".to_string(),
+            Token::Eq => "=".to_string(),
             Token::Is => "is".to_string(),
             Token::IsN => "isnt".to_string(),
-            Token::Neq => "neq".to_string(),
+            Token::Neq => "/=".to_string(),
             Token::And => "and".to_string(),
             Token::Or => "or".to_string(),
             Token::Not => "not".to_string(),
@@ -187,7 +187,7 @@ impl fmt::Display for Token {
             Token::In => "in".to_string(),
             Token::If => "if".to_string(),
             Token::Then => "then".to_string(),
-            Token::Match => "when".to_string(),
+            Token::Match => "match".to_string(),
             Token::With => "with".to_string(),
             Token::Else => "else".to_string(),
             Token::Continue => "continue".to_string(),
