@@ -1,4 +1,7 @@
 language: rust
+dist: xenial
+python:
+  - "3.7"
 
 sudo: true
 before_install:
