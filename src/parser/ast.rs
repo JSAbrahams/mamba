@@ -58,7 +58,6 @@ pub enum ASTNode {
         definition: Box<ASTNodePos>
     },
     VariableDef {
-        mutable:       bool,
         ofmut:         bool,
         id_maybe_type: Box<ASTNodePos>,
         expression:    Option<Box<ASTNodePos>>,
@@ -106,8 +105,9 @@ pub enum ASTNode {
     },
 
     IdType {
-        id:    Box<ASTNodePos>,
-        _type: Option<Box<ASTNodePos>>
+        id:      Box<ASTNodePos>,
+        mutable: bool,
+        _type:   Option<Box<ASTNodePos>>
     },
     TypeDef {
         _type: Box<ASTNodePos>,

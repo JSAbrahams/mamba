@@ -184,6 +184,14 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
+    let mutable;
+    if it.peek().is_some() && it.peek().unwrap().token == Token::Mut {
+        mutable = true;
+        it.next();
+    } else {
+        mutable = false;
+    }
+
     let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "id maybe type");
 
     let (en_line, en_pos, _type) = match it.peek() {
@@ -196,6 +204,6 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     };
 
     let (st_line, st_pos) = (id.st_line, id.st_pos);
-    let node = ASTNode::IdType { id, _type };
+    let node = ASTNode::IdType { id, mutable, _type };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

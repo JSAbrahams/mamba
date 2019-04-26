@@ -41,7 +41,7 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         ASTNode::LeOp => Core::LeOp,
         ASTNode::GeOp => Core::GeOp,
 
-        ASTNode::IdType { id, _type } => desugar_node(id),
+        ASTNode::IdType { id, .. } => desugar_node(id),
         ASTNode::Id { lit } => Core::Id { lit: lit.clone() },
         ASTNode::_Self => Core::Id { lit: String::from("self") },
         ASTNode::Init => Core::Id { lit: String::from("init") },
