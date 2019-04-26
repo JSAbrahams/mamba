@@ -21,7 +21,6 @@ fn reassign_verify() {
 #[test]
 fn variable_private_def_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
-        mutable:       false,
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
@@ -42,7 +41,6 @@ fn variable_private_def_verify() {
 #[test]
 fn variable_def_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
-        mutable:       false,
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
@@ -63,7 +61,6 @@ fn variable_def_verify() {
 #[test]
 fn variable_def_empty_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
-        mutable:       false,
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    None,
