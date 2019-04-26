@@ -18,7 +18,7 @@ pub enum ASTNode {
     },
     Import {
         import: Vec<ASTNodePos>,
-        _as:    Option<Vec<ASTNodePos>>
+        _as:    Vec<ASTNodePos>
     },
     FromImport {
         id:     Box<ASTNodePos>,

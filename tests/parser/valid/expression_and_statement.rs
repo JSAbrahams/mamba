@@ -170,7 +170,7 @@ fn from_import_verify() {
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_use.len(), 1);
     assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("b") });
-    assert_eq!(_as.is_none(), true);
+    assert_eq!(_as.len(), 0);
 }
 
 #[test]
@@ -191,7 +191,7 @@ fn import_verify() {
 
     assert_eq!(_use.len(), 1);
     assert_eq!(_use[0].node, ASTNode::Id { lit: String::from("c") });
-    assert_eq!(_as.is_none(), true);
+    assert_eq!(_as.len(), 0);
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn import_as_verify() {
 
     assert_eq!(imports.len(), 1);
     let (_use, _as) = match &imports[0].node {
-        ASTNode::Import { import, _as: Some(thing) } => (import, thing),
+        ASTNode::Import { import, _as } => (import, _as),
         other => panic!("Expected import but was {:?}.", other)
     };
 

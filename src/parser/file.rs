@@ -34,51 +34,40 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Import);
 
-    let mut _use = Vec::new();
+    let mut import = Vec::new();
     while let Some(tp) = it.peek() {
         match tp.token {
             Token::Id(_) => {
-                _use.push(get_or_err_direct!(it, parse_id, "import id"));
+                import.push(get_or_err_direct!(it, parse_id, "import id"));
                 if it.peek().is_some() && it.peek().unwrap().token == Token::Comma {
                     it.next();
                 }
-            }
-            Token::NL => {
-                it.next();
             }
             _ => break
         }
     }
 
-    let _as;
-    if let Some(&tp) = it.peek() {
-        if tp.token == Token::As {
-            it.next();
-            let mut aliases = Vec::new();
-            while let Some(tp) = it.peek() {
-                match tp.token {
-                    Token::Id(_) => {
-                        aliases.push(get_or_err_direct!(it, parse_id, "import"));
-                        if it.peek().is_some() && it.peek().unwrap().token == Token::Comma {
-                            it.next();
-                        }
-                    }
-                    Token::NL => {
+    let _as = if it.peek().is_some() && it.peek().unwrap().token == Token::As {
+        it.next();
+        let mut aliases = Vec::new();
+        while let Some(tp) = it.peek() {
+            match tp.token {
+                Token::Id(_) => {
+                    aliases.push(get_or_err_direct!(it, parse_id, "import"));
+                    if it.peek().is_some() && it.peek().unwrap().token == Token::Comma {
                         it.next();
                     }
-                    _ => break
                 }
+                _ => break
             }
-            _as = Some(aliases)
-        } else {
-            _as = None
         }
+        aliases
     } else {
-        _as = None
-    }
+        vec![]
+    };
 
     let (en_line, en_pos) = end_pos(it);
-    let node = ASTNode::Import { import: _use, _as };
+    let node = ASTNode::Import { import, _as };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 

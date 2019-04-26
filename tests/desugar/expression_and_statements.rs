@@ -75,3 +75,34 @@ fn self_verify() {
     let core = desugar(&_break);
     assert_eq!(core, Core::Id { lit: String::from("self") });
 }
+
+#[test]
+fn import_verify() {
+    let _break = to_pos!(ASTNode::Import {
+        import: vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("a") })],
+        _as:    vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("b") })]
+    });
+    let core = desugar(&_break);
+    assert_eq!(core, Core::Import {
+        import: vec![Core::Id { lit: String::from("a") }],
+        _as:    vec![Core::Id { lit: String::from("b") }]
+    });
+}
+
+#[test]
+fn from_import_as_verify() {
+    let _break = to_pos!(ASTNode::FromImport {
+        id:     to_pos!(ASTNode::Id { lit: String::from("f") }),
+        import: to_pos!(ASTNode::Import {
+            import: vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("a") })],
+            _as:    vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("b") })]
+        })
+    });
+
+    let core = desugar(&_break);
+    assert_eq!(core, Core::FromImport {
+        from:   Box::from(Core::Id { lit: String::from("f") }),
+        import: vec![Core::Id { lit: String::from("a") }],
+        _as:    vec![Core::Id { lit: String::from("b") }]
+    });
+}
