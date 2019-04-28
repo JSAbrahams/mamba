@@ -190,7 +190,7 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
                     cond:  vec![Core::Not {
                         expr: Box::from(Core::Eq {
                             left:  Box::from(Core::Id { lit: String::from("$temp") }),
-                            right: Box::from(Core::Undefined)
+                            right: Box::from(Core::None)
                         })
                     }],
                     then:  Box::from(Core::Id { lit: String::from("$temp") }),

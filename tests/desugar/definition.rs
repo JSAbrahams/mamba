@@ -75,7 +75,7 @@ fn variable_def_empty_verify() {
 
     assert_eq!(private, true);
     assert_eq!(*id, Core::Id { lit: String::from("d") });
-    assert_eq!(*right, Core::Empty);
+    assert_eq!(*right, Core::None);
 }
 
 // TODO add tests for default arguments once implemented

@@ -17,7 +17,7 @@ pub fn desugar_definition(node: &ASTNode) -> Core {
                     (id, None) => Core::VarDef {
                         private: *private,
                         id:      Box::from(desugar_node(&id)),
-                        right:   Box::from(Core::Empty)
+                        right:   Box::from(Core::None)
                     }
                 },
             ASTNode::FunDef { id, fun_args, body: expression, .. } => Core::FunDef {
