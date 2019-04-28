@@ -284,7 +284,7 @@ fn function_no_args_definition_verify() {
 fn function_definition_with_literal_verify() {
     let source = String::from("def f(x, vararg b: Something) => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
+    let (private, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
