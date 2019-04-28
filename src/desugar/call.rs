@@ -1,4 +1,6 @@
 use crate::core::construct::Core;
+use crate::desugar::context::Context;
+use crate::desugar::context::State;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNode;
 
@@ -7,26 +9,26 @@ use crate::parser::ast::ASTNode;
 // a b => a.b , where a may be expression, b must be id
 // a b c => a.b(c), where and c may be expression, b must be id
 // a b c d => a.b(c.d) etc.
-pub fn desugar_call(node: &ASTNode) -> Core {
+pub fn desugar_call(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
         ASTNode::Call { left, right } => match &right.node {
             ASTNode::Call { left: method, right: args } => match &method.node {
                 ASTNode::Id { lit: method } => Core::MethodCall {
-                    object: Box::from(desugar_node(&left)),
+                    object: Box::from(desugar_node(&left, ctx, state)),
                     method: method.clone(),
-                    args:   vec![desugar_node(&args)]
+                    args:   vec![desugar_node(&args, ctx, state)]
                 },
                 other => panic!("Chained method call must have identifier, was {:?}", other)
             },
             ASTNode::Id { lit } => Core::PropertyCall {
-                object:   Box::from(desugar_node(&left)),
+                object:   Box::from(desugar_node(&left, ctx, state)),
                 property: lit.clone()
             },
             _ => match &left.node {
                 ASTNode::Id { lit: method } => Core::MethodCall {
                     object: Box::from(Core::Empty),
                     method: method.clone(),
-                    args:   vec![desugar_node(&right)]
+                    args:   vec![desugar_node(&right, ctx, state)]
                 },
                 other => panic!("desugar calls not that advanced yet: {:?}.", other)
             }
