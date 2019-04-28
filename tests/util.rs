@@ -4,16 +4,6 @@ use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
 
-#[macro_export]
-macro_rules! assert_ok {
-    ($expr:expr) => {{
-        match $expr {
-            Ok(_) => (),
-            Err(err) => panic!("{}", err)
-        }
-    }};
-}
-
 pub fn valid_resource_content(dirs: &[&str], file: &str) -> String {
     resource_content(true, dirs, file)
 }
@@ -29,11 +19,16 @@ pub fn invalid_resource_path(dirs: &[&str], file: &str) -> String {
 }
 
 fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
-    let mut content = String::new();
-    let path = resource_path(valid, subdirs, file);
-    File::open(path).unwrap().read_to_string(&mut content);
-
-    content
+    match File::open(resource_path(valid, subdirs, file)) {
+        Ok(mut path) => {
+            let mut content = String::new();
+            match path.read_to_string(&mut content) {
+                Ok(_) => content,
+                Err(err) => panic!("Error while reading file contents: {}.", err)
+            }
+        }
+        Err(err) => panic!("Error while opening file while reading resource contents: {}.", err)
+    }
 }
 
 fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
@@ -45,27 +40,27 @@ fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     for dir in subdirs {
         source_path = source_path.join(dir);
     }
-    source_path = source_path.join(file);
 
+    source_path = source_path.join(file);
     String::from(source_path.to_string_lossy())
 }
 
 pub fn check_valid_resource_exists_and_delete(subdirs: &[&str], file: &str) -> bool {
-    let path_string = valid_resource_path(subdirs, file);
-    remove(&path_string)
+    remove(&valid_resource_path(subdirs, file))
 }
 
 pub fn check_invalid_resource_exists_and_delete(subdirs: &[&str], file: &str) -> bool {
-    let path_string = invalid_resource_path(subdirs, file);
-    remove(&path_string)
+    remove(&invalid_resource_path(subdirs, file))
 }
 
 fn remove(path_string: &String) -> bool {
     let path = Path::new(&path_string);
-    if path.exists() {
-        fs::remove_file(path);
-        true
-    } else {
-        false
+    if !path.exists() {
+        return false;
+    }
+
+    match fs::remove_file(path) {
+        Ok(_) => true,
+        Err(err) => panic!("Error while removing file: {}.", err)
     }
 }

@@ -12,9 +12,10 @@ fn output_class_direct() {
     let source = valid_resource_path(&["class"], "class.mamba");
     let path = &mut Path::new(&source);
 
-    mamba_to_python_direct(path);
-
-    check_valid_resource_exists_and_delete(&["class"], "class.py");
+    match mamba_to_python_direct(path) {
+        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class.py"),
+        Err(err) => panic!("{}", err)
+    };
 }
 
 #[test]
@@ -24,9 +25,10 @@ fn output_class_output_non_existent() {
 
     let path = &mut Path::new(&source);
     let out_path = &mut Path::new(&output);
-    mamba_to_python(path, out_path);
-
-    check_valid_resource_exists_and_delete(&["class"], "class-other.py");
+    match mamba_to_python(path, out_path) {
+        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class.py"),
+        Err(err) => panic!("{}", err)
+    };
 }
 
 #[test]
@@ -37,12 +39,15 @@ fn output_class_output_exists() {
     let path = &mut Path::new(&source);
     let out_path = &mut Path::new(&output);
 
-    OpenOptions::new().write(true).create(true).open(&output); // Create file beforehand
-    assert_eq!(true, Path::new(&out_path).exists());
+    match OpenOptions::new().write(true).create(true).open(&output) {
+        Ok(_) => assert_eq!(true, Path::new(&out_path).exists()),
+        Err(err) => panic!("{}", err)
+    };
 
-    mamba_to_python(path, out_path);
-
-    check_valid_resource_exists_and_delete(&["class"], "class-already-exists.py");
+    match mamba_to_python(path, out_path) {
+        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class-already-exists.py"),
+        Err(err) => panic!("{}", err)
+    };
 }
 
 #[test]
@@ -50,7 +55,8 @@ fn test_empty_file_direct() {
     let source = valid_resource_path(&[], "empty_file.mamba");
     let path = &mut Path::new(&source);
 
-    mamba_to_python_direct(path);
-
-    check_valid_resource_exists_and_delete(&[], "empty_file.py");
+    match mamba_to_python_direct(path) {
+        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class.py"),
+        Err(err) => panic!("{}", err)
+    };
 }
