@@ -5,7 +5,5 @@ use mamba::parser::parse;
 #[test]
 fn assigns_and_while() {
     let source = invalid_resource_content(&["syntax"], "assign_and_while.mamba");
-    let err = parse(&tokenize(&source).unwrap());
-
-    assert_eq!(err.is_err(), true);
+    parse(&tokenize(&source).unwrap()).unwrap_err();
 }

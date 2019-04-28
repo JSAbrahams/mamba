@@ -4,55 +4,47 @@ use mamba::parser::parse_direct;
 #[test]
 fn print_missing_arg() {
     let source = String::from("print");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
 fn range_missing_from() {
     let source = String::from(".. b");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
 fn range_inc_missing_from() {
     let source = String::from("..= b");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
 fn range_missing_to() {
     let source = String::from("a ..");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
 fn range_incl_missing_to() {
     let source = String::from("a ..=");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
-fn rassign_missing_value() {
+fn reassign_missing_value() {
     let source = String::from("a <-");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
 fn quest_or_missing_alternative() {
     let source = String::from("a ?or");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
 fn quest_or_on_nothing() {
     let source = String::from("?or");
-    let err = parse_direct(&tokenize(&source).unwrap());
-    assert_eq!(err.is_err(), true);
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }

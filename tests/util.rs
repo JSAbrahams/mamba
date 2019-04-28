@@ -19,13 +19,14 @@ pub fn invalid_resource_path(dirs: &[&str], file: &str) -> String {
 }
 
 fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
-    let mut content = String::new();
-    let path = resource_path(valid, subdirs, file);
-    match File::open(path) {
-        Ok(mut path) => match path.read_to_string(&mut content) {
-            Ok(_) => content,
-            Err(err) => panic!("Error while reading file contents: {}.", err)
-        },
+    match File::open(resource_path(valid, subdirs, file)) {
+        Ok(mut path) => {
+            let mut content = String::new();
+            match path.read_to_string(&mut content) {
+                Ok(_) => content,
+                Err(err) => panic!("Error while reading file contents: {}.", err)
+            }
+        }
         Err(err) => panic!("Error while opening file while reading resource contents: {}.", err)
     }
 }
