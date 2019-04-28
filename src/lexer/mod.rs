@@ -286,7 +286,6 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "stateful" => Token::Stateful,
         "stateless" => Token::Stateless,
         "as" => Token::As,
-        "isa" => Token::IsA,
         "private" => Token::Private,
 
         "import" => Token::Import,
@@ -302,6 +301,7 @@ fn get_id_or_op(it: &mut Peekable<Chars>, pos: &mut i32) -> Token {
         "or" => Token::Or,
         "not" => Token::Not,
         "is" => Token::Is,
+        "isa" => Token::IsA,
         "isnt" => Token::IsN,
         "isnta" => Token::IsNA,
         "mod" => Token::Mod,
