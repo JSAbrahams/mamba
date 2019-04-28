@@ -22,12 +22,16 @@ branches:
     - master
 
 before_script:
+  # Python
+  - sudo apt-get install python3
+
+  # Cargo components
   - rustup install stable
   - rustup install nightly
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
 
-  # Install kcov
+  # Kcov
   - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
   - tar xzf master.tar.gz
   - cd kcov-master
