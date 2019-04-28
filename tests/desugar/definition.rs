@@ -59,7 +59,7 @@ fn variable_def_verify() {
 }
 
 #[test]
-fn variable_def_empty_verify() {
+fn variable_def_none_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),

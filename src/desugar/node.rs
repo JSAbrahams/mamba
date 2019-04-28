@@ -57,7 +57,7 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         ASTNode::ListBuilder { .. } => unimplemented!("list builder"),
         ASTNode::SetBuilder { .. } => unimplemented!("set builder"),
 
-        ASTNode::ReturnEmpty => Core::Return { expr: Box::from(Core::Empty) },
+        ASTNode::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         ASTNode::Return { expr } => Core::Return { expr: Box::from(desugar_node(expr)) },
         ASTNode::Print { expr } => Core::Print { expr: Box::from(desugar_node(expr)) },
 
@@ -151,7 +151,6 @@ pub fn desugar_node(node_pos: &ASTNodePos) -> Core {
         },
 
         call @ ASTNode::Call { .. } => desugar_call(call),
-
         ASTNode::DirectCall { name, args } => match &name.deref().node {
             ASTNode::Id { lit } => Core::MethodCall {
                 object: Box::from(Core::Empty),
