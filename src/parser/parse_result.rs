@@ -1,8 +1,13 @@
+#![feature(termination_trait_lib)]
+#![feature(process_exitcode_placeholder)]
+
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNodePos;
 use std::error;
 use std::fmt;
+use std::process::ExitCode;
+use std::process::Termination;
 
 pub type ParseResult<T = ASTNodePos> = std::result::Result<T, ParseErr>;
 
@@ -71,4 +76,16 @@ impl error::Error for ParseErr {
     }
 
     fn source(&self) -> Option<&(error::Error + 'static)> { None }
+}
+
+impl Termination for ParseResult {
+    fn report(self) -> i32 {
+        match self {
+            Ok(_) => ExitCode::SUCCESS.report(),
+            Err(err) => {
+                eprintln!("Parse error: {:?}", err);
+                ExitCode::FAILURE.report()
+            }
+        }
+    }
 }

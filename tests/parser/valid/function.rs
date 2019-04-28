@@ -6,17 +6,17 @@ use mamba::parser::parse;
 #[ignore]
 fn function_definitions() {
     let source = valid_resource_content(&["function"], "definition.mamba");
-    assert_ok!(parse(&tokenize(&source).unwrap()));
+    parse(&tokenize(&source).unwrap())
 }
 
 #[test]
 fn function_calling() {
     let source = valid_resource_content(&["function"], "calls.mamba");
-    assert_ok!(parse(&tokenize(&source).unwrap()));
+    parse(&tokenize(&source).unwrap())
 }
 
 #[test]
 fn infix_function_calling() {
     let source = valid_resource_content(&["function"], "infix_calls.mamba");
-    assert_ok!(parse(&tokenize(&source).unwrap()));
+    parse(&tokenize(&source).unwrap())
 }

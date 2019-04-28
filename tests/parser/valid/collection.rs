@@ -8,7 +8,7 @@ use mamba::parser::parse;
 #[test]
 fn list_expression() {
     let source = valid_resource_content(&["collection"], "tuple.mamba");
-    assert_ok!(parse(&tokenize(&source).unwrap()));
+    parse(&tokenize(&source).unwrap())
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn list_builder_verify() {
 #[test]
 fn parse_map() {
     let source = valid_resource_content(&["collection"], "map.mamba");
-    assert_ok!(parse(&tokenize(&source).unwrap()));
+    parse(&tokenize(&source).unwrap())
 }
 
 #[test]
@@ -110,7 +110,7 @@ fn set_builder_verify() {
 #[test]
 fn parse_tuple() {
     let source = valid_resource_content(&["collection"], "tuple.mamba");
-    assert_ok!(parse(&tokenize(&source).unwrap()));
+    parse(&tokenize(&source).unwrap())
 }
 
 #[test]

@@ -113,7 +113,7 @@ fn end_pos(it: &mut TPIterator) -> (i32, i32) {
 
 pub mod ast;
 
-mod parse_result;
+pub mod parse_result;
 
 mod _type;
 mod block;
