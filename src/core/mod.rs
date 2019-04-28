@@ -2,10 +2,12 @@ use crate::core::construct::Core;
 
 pub mod construct;
 
-/// Convert [Core](crate::core::construct::Core) to a String which represent python source code.
+/// Convert [Core](crate::core::construct::Core) to a String which represent
+/// python source code.
 ///
-/// Takes [Core](crate::core::construct::Core) nodes as-is, meaning that this should never panic,
-/// unless a certain core construct can still not be converted.
+/// Takes [Core](crate::core::construct::Core) nodes as-is, meaning that this
+/// should never panic, unless a certain core construct can still not be
+/// converted.
 ///
 /// # Examples
 ///
@@ -26,15 +28,13 @@ pub mod construct;
 /// # use mamba::core::construct::Core;
 /// # use mamba::core::to_py_source;
 /// let core_node = Core::IfElse {
-///     cond: vec![Core::Id { lit: String::from("a") }],
-///     then: Box::from(Core::Str { _str: String::from("b") }),
+///     cond:  vec![Core::Id { lit: String::from("a") }],
+///     then:  Box::from(Core::Str { _str: String::from("b") }),
 ///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_py_source(&core_node),
-///            "if a: 'b'\nelse: 'c'\n");
+/// assert_eq!(to_py_source(&core_node), "if a: 'b'\nelse: 'c'\n");
 /// ```
-///
 pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
 fn to_py(core: &Core, ind: usize) -> String {

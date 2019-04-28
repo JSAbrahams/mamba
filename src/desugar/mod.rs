@@ -11,11 +11,12 @@ mod control_flow;
 mod definition;
 mod node;
 
-/// Consumes the given [ASTNodePos](crate::parser::ast::ASTNodePos) and produces a
-/// [Core](crate::core::construct::Core) node.
+/// Consumes the given [ASTNodePos](crate::parser::ast::ASTNodePos) and produces
+/// a [Core](crate::core::construct::Core) node.
 ///
-/// Note that the given [ASTNodePos](crate::parser::ast::ASTNodePos) must be correctly formed.
-/// Therefore, malformed [ASTNodePos](crate::parser::ast::ASTNodePos)'s should be caught by either
+/// Note that the given [ASTNodePos](crate::parser::ast::ASTNodePos) must be
+/// correctly formed. Therefore, malformed
+/// [ASTNodePos](crate::parser::ast::ASTNodePos)'s should be caught by either
 /// the parser or the type checker.
 ///
 /// The desugar stage itself should never throw an error.
@@ -36,8 +37,8 @@ mod node;
 ///
 /// # Panics
 ///
-/// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) would for instance be a definition
-/// which does not contain a definition.
+/// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) would for instance
+/// be a definition which does not contain a definition.
 ///
 /// ```rust,should_panic
 /// # use mamba::parser::ast::ASTNode;
