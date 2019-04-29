@@ -9,20 +9,21 @@ branches:
 
 environment:
   matrix:
-
-### MSVC Toolchains ###
-
   # Stable 64-bit MSVC
     - channel: stable
+      PYTHON: "C:\\Python37"
       target: x86_64-pc-windows-msvc
   # Nightly 64-bit MSVC
     - channel: nightly
+      PYTHON: "C:\\Python37"
       target: x86_64-pc-windows-msvc
 
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
   - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+
+  - "%PYTHON%/Scripts/pip.exe install nose"
 
   - if %channel% == "nightly" rustup install nightly
 
@@ -46,3 +47,4 @@ skip_commits:
   files:
   - '*.md'
   - .gitignore
+  - .travis

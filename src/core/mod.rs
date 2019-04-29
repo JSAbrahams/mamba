@@ -64,8 +64,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             };
 
             format!(
-                "\n{}{}({}): {}",
-                indent(ind),
+                "def {}({}): {}",
                 name,
                 comma_delimited(args, ind),
                 to_py(body.as_ref(), ind + 1)
@@ -93,7 +92,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
 
         Core::AnonFun { args, body } =>
-            format!("lambda {} : {}", comma_delimited(args, ind), to_py(body, ind)),
+            format!("lambda {}: {}", comma_delimited(args, ind), to_py(body, ind)),
 
         Core::Block { statements } => format!("\n{}", newline_delimited(statements, ind)),
 
@@ -181,7 +180,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
 
         Core::Pass => String::from("pass"),
-        Core::Undefined => String::from("None"),
+        Core::None => String::from("None"),
         Core::Empty => String::new(),
 
         other => panic!("To python not implemented yet for: {:?}", other)

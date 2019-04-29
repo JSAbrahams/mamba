@@ -74,6 +74,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
 pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
     let mut isa = Vec::new();
     if let Some(TokenPos { token: Token::IsA, .. }) = it.peek() {
+        it.next();
         isa.push(get_or_err_direct!(it, parse_id, "generic"));
         while let Some(&t) = it.peek() {
             match t.token {

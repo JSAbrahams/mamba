@@ -171,39 +171,7 @@ fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
         vararg = false;
     }
 
-    macro_rules! literal {
-        ($factor:expr, $ast:ident) => {{
-            let (en_line, en_pos) = end_pos(it);
-            it.next();
-            Box::from(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line,
-                en_pos,
-                node: ASTNode::$ast { lit: $factor }
-            })
-        }};
-    }
-
-    let (en_line, en_pos) = end_pos(it);
-    let id_maybe_type = match it.peek() {
-        Some(TokenPos { token: Token::Real(real), .. }) => literal!(real.to_string(), Real),
-        Some(TokenPos { token: Token::Int(int), .. }) => literal!(int.to_string(), Int),
-        Some(TokenPos { token: Token::Bool(ref _bool), .. }) => literal!(*_bool, Bool),
-        Some(TokenPos { token: Token::Str(str), .. }) => literal!(str.to_string(), Str),
-        Some(TokenPos { token: Token::ENum(num, exp), .. }) => {
-            it.next();
-            Box::from(ASTNodePos {
-                st_line,
-                st_pos,
-                en_line,
-                en_pos,
-                node: ASTNode::ENum { num: num.to_string(), exp: exp.to_string() }
-            })
-        }
-        _ => get_or_err!(it, parse_id_maybe_type, format!("argument (pos {})", pos))
-    };
-
+    let id_maybe_type = get_or_err!(it, parse_id_maybe_type, format!("argument (pos {})", pos));
     let default = match it.peek() {
         Some(TokenPos { token: Token::Assign, .. }) => {
             it.next();

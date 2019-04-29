@@ -267,7 +267,7 @@ fn function_definition_verify() {
 fn function_no_args_definition_verify() {
     let source = String::from("def f() => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
+    let (private, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
@@ -282,9 +282,9 @@ fn function_no_args_definition_verify() {
 
 #[test]
 fn function_definition_with_literal_verify() {
-    let source = String::from("def f(0, vararg b: Something) => d");
+    let source = String::from("def f(x, vararg b: Something) => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
+    let (private, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
@@ -307,8 +307,11 @@ fn function_definition_with_literal_verify() {
             assert_eq!(d2.clone(), None);
 
             match (&id1.node, &id2.node) {
-                (ASTNode::Int { lit }, ASTNode::IdType { id: id2, mutable: false, _type: t2 }) => {
-                    assert_eq!(lit.as_str(), "0");
+                (
+                    ASTNode::IdType { id: id1, mutable: false, _type: None },
+                    ASTNode::IdType { id: id2, mutable: false, _type: t2 }
+                ) => {
+                    assert_eq!(id1.node, ASTNode::Id { lit: String::from("x") });
                     assert_eq!(id2.node, ASTNode::Id { lit: String::from("b") });
 
                     match t2.clone().unwrap().node {
