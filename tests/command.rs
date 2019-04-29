@@ -26,7 +26,7 @@ fn output_class_output_non_existent() {
     let path = &mut Path::new(&source);
     let out_path = &mut Path::new(&output);
     match mamba_to_python(path, out_path) {
-        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class.py"),
+        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class-other.py"),
         Err(err) => panic!("{}", err)
     };
 }
@@ -56,7 +56,7 @@ fn test_empty_file_direct() {
     let path = &mut Path::new(&source);
 
     match mamba_to_python_direct(path) {
-        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class.py"),
+        Ok(_) => check_valid_resource_exists_and_delete(&[], "empty_file.py"),
         Err(err) => panic!("{}", err)
     };
 }
