@@ -4,16 +4,19 @@ use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 pub fn valid_resource_content(dirs: &[&str], file: &str) -> String {
     resource_content(true, dirs, file)
 }
 
 pub fn valid_resource_path(dirs: &[&str], file: &str) -> String { resource_path(true, dirs, file) }
 
+#[allow(dead_code)]
 pub fn invalid_resource_content(dirs: &[&str], file: &str) -> String {
     resource_content(false, dirs, file)
 }
 
+#[allow(dead_code)]
 pub fn invalid_resource_path(dirs: &[&str], file: &str) -> String {
     resource_path(false, dirs, file)
 }
@@ -49,6 +52,7 @@ pub fn check_valid_resource_exists_and_delete(subdirs: &[&str], file: &str) -> b
     remove(&valid_resource_path(subdirs, file))
 }
 
+#[allow(dead_code)]
 pub fn check_invalid_resource_exists_and_delete(subdirs: &[&str], file: &str) -> bool {
     remove(&invalid_resource_path(subdirs, file))
 }

@@ -1,4 +1,4 @@
-use crate::util::*;
+use crate::common::*;
 use mamba::lexer::tokenize;
 use mamba::parser::parse;
 
