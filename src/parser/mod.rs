@@ -35,7 +35,6 @@ type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 /// # Failures
 ///
 /// // examples of failure here
-///
 pub fn parse(input: &[TokenPos]) -> ParseResult { file::parse_file(&mut input.iter().peekable()) }
 
 /// Parse input as a script.

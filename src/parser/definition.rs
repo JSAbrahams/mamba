@@ -8,11 +8,11 @@ use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::collection::parse_collection;
 use crate::parser::common::end_pos;
+use crate::parser::common::start_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::common::start_pos;
 use crate::parser::TPIterator;
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
