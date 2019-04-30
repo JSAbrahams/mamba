@@ -50,7 +50,7 @@ fn while_verify() {
 
     assert_eq!(core_cond.len(), 1);
     assert_eq!(core_cond[0], Core::Id { lit: String::from("cond") });
-    assert_eq!(*core_body, Core::ENum { num: String::from("num"), exp: String::from("") });
+    assert_eq!(*core_body, Core::ENum { num: String::from("num"), exp: String::from("0") });
 }
 
 #[test]
