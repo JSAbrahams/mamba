@@ -59,7 +59,7 @@ fn return_empty_verify() {
         other => panic!("Expected print but got: {:?}", other)
     };
 
-    assert_eq!(*expr_core, Core::Empty);
+    assert_eq!(*expr_core, Core::None);
 }
 
 #[test]

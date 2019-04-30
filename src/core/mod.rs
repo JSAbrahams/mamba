@@ -70,14 +70,23 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
 
-        Core::Assign { left, right } =>
-            format!("{} = {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
-        Core::VarDef { private, id, right } => format!(
-            "{}{} = {}",
-            if *private { "_" } else { "" },
-            to_py(id.as_ref(), ind),
-            to_py(right.as_ref(), ind)
-        ),
+        Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), {
+            let right = to_py(right.as_ref(), ind);
+            if right.is_empty() {
+                String::from("None")
+            } else {
+                right
+            }
+        }),
+        Core::VarDef { private, id, right } =>
+            format!("{}{} = {}", if *private { "_" } else { "" }, to_py(id.as_ref(), ind), {
+                let right = to_py(right.as_ref(), ind);
+                if right.is_empty() {
+                    String::from("None")
+                } else {
+                    right
+                }
+            }),
 
         Core::FunArg { vararg, id, default } => format!(
             "{}{}{}",

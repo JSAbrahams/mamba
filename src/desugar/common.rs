@@ -4,11 +4,6 @@ use crate::desugar::context::State;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNodePos;
 
-mod call;
-mod common;
-mod context;
-mod control_flow;
-mod definition;
-mod node;
-
-pub fn desugar(input: &ASTNodePos) -> Core { desugar_node(&input, &Context::new(), &State::new()) }
+pub fn desugar_vec(node_pos: &[ASTNodePos], ctx: &Context, state: &State) -> Vec<Core> {
+    node_pos.iter().map(|node_pos| desugar_node(node_pos, ctx, state)).collect()
+}

@@ -59,7 +59,38 @@ fn variable_def_verify() {
 }
 
 #[test]
-fn variable_def_empty_verify() {
+fn tuple_def_verify() {
+    let elements = vec![
+        to_pos_unboxed!(ASTNode::Id { lit: String::from("a") }),
+        to_pos_unboxed!(ASTNode::Id { lit: String::from("b") }),
+    ];
+    let expressions = vec![
+        to_pos_unboxed!(ASTNode::Id { lit: String::from("c") }),
+        to_pos_unboxed!(ASTNode::Id { lit: String::from("d") }),
+    ];
+    let definition = to_pos!(ASTNode::VariableDef {
+        ofmut:         false,
+        id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
+        expression:    Some(to_pos!(ASTNode::Tuple { elements: expressions })),
+        forward:       None
+    });
+    let def = to_pos!(ASTNode::Def { private: true, definition });
+
+    let (private, id, right) = match desugar(&def) {
+        Core::VarDef { private, id, right } => (private, id, right),
+        other => panic!("Expected var def but got: {:?}.", other)
+    };
+
+    assert_eq!(private, true);
+    let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
+    assert_eq!(*id, Core::Tuple { elements });
+    let expressions =
+        vec![Core::Id { lit: String::from("c") }, Core::Id { lit: String::from("d") }];
+    assert_eq!(*right, Core::Tuple { elements: expressions });
+}
+
+#[test]
+fn variable_def_none_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
@@ -76,6 +107,31 @@ fn variable_def_empty_verify() {
     assert_eq!(private, true);
     assert_eq!(*id, Core::Id { lit: String::from("d") });
     assert_eq!(*right, Core::None);
+}
+
+#[test]
+fn tuple_def_none_verify() {
+    let elements = vec![
+        to_pos_unboxed!(ASTNode::Id { lit: String::from("a") }),
+        to_pos_unboxed!(ASTNode::Id { lit: String::from("b") }),
+    ];
+    let definition = to_pos!(ASTNode::VariableDef {
+        ofmut:         false,
+        id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
+        expression:    None,
+        forward:       None
+    });
+
+    let def = to_pos!(ASTNode::Def { private: true, definition });
+    let (private, id, right) = match desugar(&def) {
+        Core::VarDef { private, id, right } => (private, id, right),
+        other => panic!("Expected var def but got: {:?}.", other)
+    };
+
+    assert_eq!(private, true);
+    let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
+    assert_eq!(*id, Core::Tuple { elements });
+    assert_eq!(*right, Core::Tuple { elements: vec![Core::None, Core::None] });
 }
 
 // TODO add tests for default arguments once implemented
