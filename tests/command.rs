@@ -1,11 +1,11 @@
-use crate::util::check_valid_resource_exists_and_delete;
-use crate::util::valid_resource_path;
+use crate::common::check_valid_resource_exists_and_delete;
+use crate::common::valid_resource_path;
 use mamba::command::mamba_to_python;
 use mamba::command::mamba_to_python_direct;
 use std::fs::OpenOptions;
 use std::path::Path;
 
-mod util;
+mod common;
 
 #[test]
 fn output_class_direct_valid_syntax() {

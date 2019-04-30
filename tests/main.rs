@@ -1,11 +1,11 @@
-use crate::util::check_valid_resource_exists_and_delete;
-use crate::util::valid_resource_path;
+use crate::common::check_valid_resource_exists_and_delete;
+use crate::common::valid_resource_path;
 use assert_cmd::prelude::*;
 use std::prelude::v1::Result::Ok;
 use std::process::Command;
 
 #[macro_use]
-mod util;
+mod common;
 
 mod core;
 mod desugar;
