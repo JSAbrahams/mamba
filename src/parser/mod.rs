@@ -30,11 +30,35 @@ type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 ///
 /// # Examples
 ///
-/// // examples here
+/// ```
+/// # use mamba::lexer::token::Token;
+/// # use mamba::lexer::token::TokenPos;
+/// # use mamba::parser::parse;
+/// // Assigning 10 to b
+/// let def = TokenPos { line: 0, pos: 0, token: Token::Def };
+/// let id = TokenPos { line: 0, pos: 4, token: Token::Id(String::from("b")) };
+/// let assign = TokenPos { line: 0, pos: 6, token: Token::Assign };
+/// let number = TokenPos { line: 0, pos: 9, token: Token::Int(String::from("9")) };
+///
+/// let result = parse(&[def, id, assign, number]);
+/// assert_eq!(result.is_ok(), true);
+/// ```
 ///
 /// # Failures
 ///
-/// // examples of failure here
+/// If we receive an illegal sequence of tokens it fails.
+///
+/// ```
+/// # use mamba::lexer::token::Token;
+/// # use mamba::lexer::token::TokenPos;
+/// # use mamba::parser::parse;
+/// let def = TokenPos { line: 0, pos: 0, token: Token::Def };
+/// let id = TokenPos { line: 0, pos: 4, token: Token::Id(String::from("b")) };
+/// let number = TokenPos { line: 0, pos: 9, token: Token::Int(String::from("9")) };
+///
+/// let result = parse(&[def, id, number]);
+/// assert_eq!(result.is_err(), true);
+/// ```
 pub fn parse(input: &[TokenPos]) -> ParseResult { file::parse_file(&mut input.iter().peekable()) }
 
 /// Parse input as a script.
