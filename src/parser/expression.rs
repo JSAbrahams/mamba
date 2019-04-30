@@ -7,11 +7,11 @@ use crate::parser::call::parse_call;
 use crate::parser::call::parse_reassignment;
 use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
-use crate::parser::end_pos;
+use crate::parser::common::end_pos;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::start_pos;
+use crate::parser::common::start_pos;
 use crate::parser::TPIterator;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {

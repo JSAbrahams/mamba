@@ -7,10 +7,10 @@ use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::block::parse_statements;
 use crate::parser::definition::parse_definition;
-use crate::parser::end_pos;
+use crate::parser::common::end_pos;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::start_pos;
+use crate::parser::common::start_pos;
 use crate::parser::TPIterator;
 
 pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
