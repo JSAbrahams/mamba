@@ -16,7 +16,7 @@ pub mod construct;
 /// ```
 /// # use mamba::core::construct::Core;
 /// # use mamba::core::to_py_source;
-/// let core_node = Core::Return { expr: Box::from(Core::Undefined) };
+/// let core_node = Core::Return { expr: Box::from(Core::None) };
 /// let py_source = to_py_source(&core_node);
 ///
 /// assert_eq!(py_source, "return None\n");
