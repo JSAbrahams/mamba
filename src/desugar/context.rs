@@ -1,25 +1,14 @@
 pub struct State {
-    pub in_tup: bool
+    pub tup:         usize,
+    pub expect_expr: bool
 }
 
 impl State {
-    pub fn new() -> State { State { in_tup: false } }
+    pub fn new() -> State { State { tup: 1, expect_expr: false } }
 }
 
-pub struct Context {
-    fields:    Vec<String>,
-    functions: Vec<String>,
-    classes:   Vec<String>
-}
+pub struct Context {}
 
 impl Context {
-    pub fn new() -> Context {
-        Context { fields: Vec::new(), functions: Vec::new(), classes: Vec::new() }
-    }
-
-    pub fn contains_field(self, field: String) -> bool { self.fields.contains(&field) }
-
-    pub fn contains_function(self, function: String) -> bool { self.functions.contains(&function) }
-
-    pub fn contains_class(self, class: String) -> bool { self.classes.contains(&class) }
+    pub fn new() -> Context { Context {} }
 }

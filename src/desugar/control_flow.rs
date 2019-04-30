@@ -1,8 +1,8 @@
 use crate::core::construct::Core;
+use crate::desugar::common::desugar_vec;
 use crate::desugar::context::Context;
 use crate::desugar::context::State;
 use crate::desugar::node::desugar_node;
-use crate::desugar::util::desugar_vec;
 use crate::parser::ast::ASTNode;
 
 pub fn desugar_control_flow(node: &ASTNode, ctx: &Context, state: &State) -> Core {
@@ -38,6 +38,6 @@ pub fn desugar_control_flow(node: &ASTNode, ctx: &Context, state: &State) -> Cor
 
         ASTNode::Break => Core::Break,
         ASTNode::Continue => Core::Continue,
-        other => panic!("Expected definition but was: {:?}.", other)
+        other => panic!("Expected control flow but was: {:?}.", other)
     }
 }

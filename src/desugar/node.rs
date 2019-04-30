@@ -1,10 +1,10 @@
 use crate::core::construct::Core;
 use crate::desugar::call::desugar_call;
+use crate::desugar::common::desugar_vec;
 use crate::desugar::context::Context;
 use crate::desugar::context::State;
 use crate::desugar::control_flow::desugar_control_flow;
 use crate::desugar::definition::desugar_definition;
-use crate::desugar::util::desugar_vec;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use std::ops::Deref;
