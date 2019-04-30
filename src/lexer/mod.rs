@@ -14,6 +14,38 @@ macro_rules! next_and {
     }};
 }
 
+/// Convert a given string to a sequence of
+/// [TokenPos](crate::lexer::token::TokenPos), each containing a
+/// [Token](crate::lexer::token::Token), in addition to line number and
+/// position. Note that line number and position are 1-indexed.
+///
+/// Should never panic.
+///
+/// # Examples
+///
+/// ```
+/// # use mamba::lexer::tokenize;
+/// # use mamba::lexer::token::Token;
+/// # use mamba::lexer::token::TokenPos;
+/// let source = "a <- 2";
+/// let tokens = tokenize(&source).unwrap();
+///
+/// assert_eq!(tokens[0], TokenPos { line: 1, pos: 1, token: Token::Id(String::from("a")) });
+/// assert_eq!(tokens[1], TokenPos { line: 1, pos: 3, token: Token::Assign });
+/// assert_eq!(tokens[2], TokenPos { line: 1, pos: 6, token: Token::Int(String::from("2")) });
+/// ```
+///
+/// # Failures
+///
+/// Fails if it encounters an unrecognized character.
+///
+/// ```
+/// # use mamba::lexer::tokenize;
+/// // The '$' character on its own is meaningless in Mamba.
+/// let source = "$";
+/// let result = tokenize(&source);
+/// assert_eq!(result.is_err(), true);
+/// ```
 #[allow(clippy::cyclomatic_complexity)]
 pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
