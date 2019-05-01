@@ -7,10 +7,12 @@ pub enum Core {
     },
     FromImport {
         from:   Box<Core>,
-        import: Vec<Core>,
-        _as:    Vec<Core>
+        import: Box<Core>
     },
     Import {
+        import: Vec<Core>
+    },
+    ImportAs {
         import: Vec<Core>,
         _as:    Vec<Core>
     },

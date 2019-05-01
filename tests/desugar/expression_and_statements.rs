@@ -6,35 +6,28 @@ use mamba::parser::ast::ASTNodePos;
 #[test]
 fn break_verify() {
     let _break = to_pos!(ASTNode::Break);
-    let core = desugar(&_break);
-    assert_eq!(core, Core::Break);
+    assert_eq!(desugar(&_break), Core::Break);
 }
 
 #[test]
 fn continue_verify() {
     let _continue = to_pos!(ASTNode::Continue);
-    let core = desugar(&_continue);
-    assert_eq!(core, Core::Continue);
+    assert_eq!(desugar(&_continue), Core::Continue);
 }
 
 #[test]
 fn pass_verify() {
     let pass = to_pos!(ASTNode::Pass);
-    let core = desugar(&pass);
-    assert_eq!(core, Core::Pass);
+    assert_eq!(desugar(&pass), Core::Pass);
 }
 
 #[test]
 fn print_verify() {
     let expr = to_pos!(ASTNode::Str { lit: String::from("a") });
     let print_stmt = to_pos!(ASTNode::Print { expr });
-
-    let expr_core = match desugar(&print_stmt) {
-        Core::Print { expr } => expr,
-        other => panic!("Expected print but got: {:?}", other)
-    };
-
-    assert_eq!(*expr_core, Core::Str { _str: String::from("a") });
+    assert_eq!(desugar(&print_stmt), Core::Print {
+        expr: Box::from(Core::Str { _str: String::from("a") })
+    });
 }
 
 #[test]
@@ -42,38 +35,27 @@ fn return_verify() {
     let expr = to_pos!(ASTNode::Str { lit: String::from("a") });
     let print_stmt = to_pos!(ASTNode::Return { expr });
 
-    let expr_core = match desugar(&print_stmt) {
-        Core::Return { expr } => expr,
-        other => panic!("Expected print but got: {:?}", other)
-    };
-
-    assert_eq!(*expr_core, Core::Str { _str: String::from("a") });
+    assert_eq!(desugar(&print_stmt), Core::Return {
+        expr: Box::from(Core::Str { _str: String::from("a") })
+    });
 }
 
 #[test]
 fn return_empty_verify() {
     let print_stmt = to_pos!(ASTNode::ReturnEmpty);
-
-    let expr_core = match desugar(&print_stmt) {
-        Core::Return { expr } => expr,
-        other => panic!("Expected print but got: {:?}", other)
-    };
-
-    assert_eq!(*expr_core, Core::None);
+    assert_eq!(desugar(&print_stmt), Core::Return { expr: Box::from(Core::None) });
 }
 
 #[test]
 fn init_verify() {
     let _break = to_pos!(ASTNode::Init);
-    let core = desugar(&_break);
-    assert_eq!(core, Core::Id { lit: String::from("init") });
+    assert_eq!(desugar(&_break), Core::Id { lit: String::from("init") });
 }
 
 #[test]
 fn self_verify() {
     let _break = to_pos!(ASTNode::_Self);
-    let core = desugar(&_break);
-    assert_eq!(core, Core::Id { lit: String::from("self") });
+    assert_eq!(desugar(&_break), Core::Id { lit: String::from("self") });
 }
 
 #[test]
@@ -82,8 +64,8 @@ fn import_verify() {
         import: vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("a") })],
         _as:    vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("b") })]
     });
-    let core = desugar(&_break);
-    assert_eq!(core, Core::Import {
+
+    assert_eq!(desugar(&_break), Core::ImportAs {
         import: vec![Core::Id { lit: String::from("a") }],
         _as:    vec![Core::Id { lit: String::from("b") }]
     });
@@ -99,10 +81,11 @@ fn from_import_as_verify() {
         })
     });
 
-    let core = desugar(&_break);
-    assert_eq!(core, Core::FromImport {
+    assert_eq!(desugar(&_break), Core::FromImport {
         from:   Box::from(Core::Id { lit: String::from("f") }),
-        import: vec![Core::Id { lit: String::from("a") }],
-        _as:    vec![Core::Id { lit: String::from("b") }]
+        import: Box::from(Core::ImportAs {
+            import: vec![Core::Id { lit: String::from("a") }],
+            _as:    vec![Core::Id { lit: String::from("b") }]
+        })
     });
 }
