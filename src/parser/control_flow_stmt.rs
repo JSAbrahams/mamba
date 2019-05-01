@@ -3,12 +3,12 @@ use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::collection::parse_one_or_more_expr;
-use crate::parser::end_pos;
+use crate::parser::common::end_pos;
+use crate::parser::common::start_pos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::start_pos;
 use crate::parser::TPIterator;
 
 macro_rules! get_one_or_more {

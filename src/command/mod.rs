@@ -8,6 +8,8 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
+/// Transpile a `*.mamba` file to a Python source `*.py` file, which has the
+/// same name and is stored in the same directory.
 pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
     let file_path = match input_path.parent() {
         Some(parent) => parent,
@@ -28,6 +30,8 @@ pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
     }
 }
 
+/// Transpile a `*.mamba` file to Python source and store it in the given output
+/// directory.
 pub fn mamba_to_python(input: &Path, output: &Path) -> Result<PathBuf, String> {
     let res_output = output.to_owned();
 

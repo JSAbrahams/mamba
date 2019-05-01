@@ -4,11 +4,11 @@ use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_id_maybe_call;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
-use crate::parser::end_pos;
+use crate::parser::common::end_pos;
+use crate::parser::common::start_pos;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::start_pos;
 use crate::parser::TPIterator;
 
 macro_rules! inner_bin_op {
