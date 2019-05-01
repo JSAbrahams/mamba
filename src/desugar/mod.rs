@@ -32,7 +32,7 @@ mod node;
 /// let ast_node_pos = ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node };
 /// let core_node = desugar(&ast_node_pos);
 ///
-/// assert_eq!(core_node, Core::Return { expr: Box::from(Core::Empty) });
+/// assert_eq!(core_node, Core::Return { expr: Box::from(Core::None) });
 /// ```
 ///
 /// # Panics
@@ -55,5 +55,4 @@ mod node;
 /// // should panic since definition is a literal
 /// let core_node = desugar(&ast_definition_node_pos);
 /// ```
-///
 pub fn desugar(input: &ASTNodePos) -> Core { desugar_node(&input, &Context::new(), &State::new()) }
