@@ -39,25 +39,11 @@ pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
-        Core::FromImport { from, import, _as } => format!(
-            "from {} import {}{}",
-            to_py(from, ind),
-            comma_delimited(import, ind),
-            if _as.is_empty() {
-                String::new()
-            } else {
-                format!(" as {}", comma_delimited(_as, ind))
-            }
-        ),
-        Core::Import { import, _as } => format!(
-            "import {}{}",
-            comma_delimited(import, ind),
-            if _as.is_empty() {
-                String::new()
-            } else {
-                format!(" as {}", comma_delimited(_as, ind))
-            }
-        ),
+        Core::FromImport { from, import } =>
+            format!("from {} {}", to_py(from, ind), to_py(import, ind)),
+        Core::Import { import } => format!("import {}", comma_delimited(import, ind)),
+        Core::ImportAs { import, _as } =>
+            format!("import {} as {}", comma_delimited(import, ind), comma_delimited(_as, ind)),
 
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => format!("\'{}\'", _str),
@@ -170,7 +156,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Neq { left, right } =>
             format!("{} != {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::IsA { left, right } =>
-            format!("isintance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+            format!("isinstance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::AddU { expr } => format!("+{}", to_py(expr, ind)),
         Core::Add { left, right } =>
