@@ -123,7 +123,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Neq { left, right } =>
             format!("{} != {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::IsA { left, right } =>
-            format!("isintance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+            format!("isinstance({},{})", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::AddU { expr } => format!("+{}", to_py(expr, ind)),
         Core::Add { left, right } =>
