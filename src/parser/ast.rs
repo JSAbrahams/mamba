@@ -61,7 +61,7 @@ pub enum ASTNode {
         ofmut:         bool,
         id_maybe_type: Box<ASTNodePos>,
         expression:    Option<Box<ASTNodePos>>,
-        forward:       Option<Vec<ASTNodePos>>
+        forward:       Vec<ASTNodePos>
     },
     FunDef {
         id:       Box<ASTNodePos>,

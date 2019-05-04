@@ -60,7 +60,7 @@ fn empty_definition_verify() {
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(expression, None);
-    assert_eq!(forward, None);
+    assert_eq!(forward, vec![]);
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn definition_verify() {
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_type, None);
-    assert_eq!(forward, None);
+    assert_eq!(forward, vec![]);
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -93,7 +93,7 @@ fn mutable_definition_verify() {
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_type, None);
-    assert_eq!(forward, None);
+    assert_eq!(forward, vec![]);
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -112,7 +112,7 @@ fn ofmut_definition_verify() {
     assert_eq!(ofmut, true);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_type, None);
-    assert_eq!(forward, None);
+    assert_eq!(forward, vec![]);
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -131,7 +131,7 @@ fn private_definition_verify() {
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_type, None);
-    assert_eq!(forward, None);
+    assert_eq!(forward, vec![]);
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -161,7 +161,7 @@ fn typed_definition_verify() {
     assert_eq!(mutable, false);
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(forward, None);
+    assert_eq!(forward, vec![]);
     assert_eq!(expr.node, ASTNode::Int { lit: String::from("10") });
     assert_eq!(type_id.node, ASTNode::Id { lit: String::from("Object") });
 }
@@ -172,19 +172,14 @@ fn forward_empty_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    let forwarded = match forward {
-        Some(forward) => forward,
-        None => panic!("Expected type but was none.")
-    };
-
     assert_eq!(private, false);
     assert_eq!(mutable, false);
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(expression, None);
-    assert_eq!(forwarded.len(), 2);
-    assert_eq!(forwarded[0].node, ASTNode::Id { lit: String::from("b") });
-    assert_eq!(forwarded[1].node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(forward.len(), 2);
+    assert_eq!(forward[0].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(forward[1].node, ASTNode::Id { lit: String::from("c") });
 }
 
 #[test]
@@ -193,18 +188,13 @@ fn forward_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    let forwarded = match forward {
-        Some(forward) => forward,
-        None => panic!("Expected type but was none.")
-    };
-
     assert_eq!(private, false);
     assert_eq!(mutable, false);
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(forwarded.len(), 2);
-    assert_eq!(forwarded[0].node, ASTNode::Id { lit: String::from("b") });
-    assert_eq!(forwarded[1].node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(forward.len(), 2);
+    assert_eq!(forward[0].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(forward[1].node, ASTNode::Id { lit: String::from("c") });
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Id { lit: String::from("class") }),

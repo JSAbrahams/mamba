@@ -20,6 +20,8 @@ type OtherState isa MyClass when
 
 # This class does have state
 stateful MyClass isa MyType
+    def something: MyClass forward method_1, method_2
+
     def private z_modified
     def private mut other_field <- 10
 

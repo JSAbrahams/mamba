@@ -17,7 +17,6 @@ fn output_tuple_valid_syntax() {
 }
 
 #[test]
-#[ignore]
 fn output_class_valid_syntax() {
     let source = valid_resource_path(&["class"], "class.mamba");
     let path = mamba_to_python_direct(Path::new(&source)).unwrap();
@@ -26,5 +25,5 @@ fn output_class_valid_syntax() {
     if cmd.status.code().unwrap() != 0 {
         panic!("{}", String::from_utf8(cmd.stderr).unwrap());
     }
-    check_valid_resource_exists_and_delete(&["class"], "class.py");
+    //    check_valid_resource_exists_and_delete(&["class"], "class.py");
 }

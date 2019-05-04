@@ -24,7 +24,7 @@ fn variable_private_def_verify() {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
-        forward:       None
+        forward:       vec![]
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
@@ -44,7 +44,7 @@ fn variable_def_verify() {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
-        forward:       None
+        forward:       vec![]
     });
     let def = to_pos!(ASTNode::Def { private: true, definition });
 
@@ -72,7 +72,7 @@ fn tuple_def_verify() {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
         expression:    Some(to_pos!(ASTNode::Tuple { elements: expressions })),
-        forward:       None
+        forward:       vec![]
     });
     let def = to_pos!(ASTNode::Def { private: true, definition });
 
@@ -95,7 +95,7 @@ fn variable_def_none_verify() {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    None,
-        forward:       None
+        forward:       vec![]
     });
     let def = to_pos!(ASTNode::Def { private: true, definition });
 
@@ -119,7 +119,7 @@ fn tuple_def_none_verify() {
         ofmut:         false,
         id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
         expression:    None,
-        forward:       None
+        forward:       vec![]
     });
 
     let def = to_pos!(ASTNode::Def { private: true, definition });
