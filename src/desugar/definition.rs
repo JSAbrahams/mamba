@@ -66,7 +66,11 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
 
 fn forward_def(id: String, method: String) -> Core {
     // TODO derive args from object type and method from context
-    let args = vec![Core::Id { lit: String::from("self") }];
+    let args = vec![Core::FunArg {
+        vararg:  false,
+        id:      Box::from(Core::Id { lit: String::from("self") }),
+        default: Box::from(Core::Empty)
+    }];
     let object = Box::from(Core::PropertyCall {
         object:   Box::from(Core::Id { lit: String::from("self") }),
         property: id
