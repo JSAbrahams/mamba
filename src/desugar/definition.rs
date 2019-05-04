@@ -29,17 +29,22 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
                     }
                 };
 
-                let mut statements = vec![item];
-                forward.iter().for_each(|node_pos| match (&id, &node_pos.node) {
-                    (Core::Id { lit: item_lit }, ASTNode::Id { lit: method_lit }) =>
-                        statements.push(forward_def(item_lit.clone(), method_lit.clone())),
-                    (Core::Id { .. }, other) =>
-                        panic!("Expected id in forward but was: {:?}", other),
-                    (other, _) =>
-                        panic!("Expected forward on an id, but tried to forward on: {:?}", other),
-                });
-
-                Core::Block { statements }
+                if forward.is_empty() {
+                    item
+                } else {
+                    let mut statements = vec![item];
+                    forward.iter().for_each(|node_pos| match (&id, &node_pos.node) {
+                        (Core::Id { lit: item_lit }, ASTNode::Id { lit: method_lit }) =>
+                            statements.push(forward_def(item_lit.clone(), method_lit.clone())),
+                        (Core::Id { .. }, other) =>
+                            panic!("Expected id in forward but was: {:?}", other),
+                        (other, _) => panic!(
+                            "Expected forward on an id, but tried to forward on: {:?}",
+                            other
+                        )
+                    });
+                    Core::Block { statements }
+                }
             }
             ASTNode::FunDef { id, fun_args, body: expression, .. } => Core::FunDef {
                 private: *private,
