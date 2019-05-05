@@ -37,7 +37,7 @@ For more extensive examples and explanations check out the [documentation](https
 
 ### ➕ Functions
 
-I can write a simple script that computes the factorial of 100.
+We can write a simple script that computes the factorial of a value given by the user.
 ```mamba
 def factorial (x: Int) => match x with
     0 => 1
@@ -49,11 +49,11 @@ print "Factorial [num] is: [result]"
 ```
 
 Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
-This means that the compiler will check for us that factorial is only used with an integer as argument.
+This means that the compiler will check for us that factorial is only used with integers as argument.
 
 ### 🔓🔒 Stateful and stateless (and mutability)
 
-Mamba allows us to explicitly state whether something has a state or not.
+Mamba allows us to explicitly state whether something has a state or is indeed without state.
 A stateful object can modify its internal state (i.e. by changing a value of an internal field), whereas a stateless object cannot.
 
 We showcase this using a simple dummy `Server` object.
@@ -117,13 +117,13 @@ type Server
 
 type ServerErr(msg: String) isa Err(msg)
 
-stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: IPAddress) isa Server
+stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: ipaddress.ip_address) isa Server
     def mut connected: Bool              <- false
     def mut private last_message: String <- undefined
 
     def last_sent(self): String => self last_message
 
-    def connect (mut self: DisconnectedHTTPServer, ip_address: IPAddress) => self connected <- true
+    def connect (mut self: DisconnectedHTTPServer) => self connected <- true
 
     def send_message(mut self: ConnectedHTTPServer, message: String) => self last_message <- message
 
@@ -177,7 +177,7 @@ Type refinement allows us to to some additional things:
     This means that we don't constantly have to check that certain conditions hold.
     We can simply ask whether a given object is a certain state by checking whether it is a certain type.
 
-### ⚠ Error handling code
+### ⚠ Error handling
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
 Instead, we aim to directly handle errors on-site so the origins of errors is more easily tracable.
