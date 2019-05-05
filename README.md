@@ -38,7 +38,7 @@ For more extensive examples and explanations check out the [documentation](https
 ### ➕ Functions
 
 I can write a simple script that computes the factorial of 100.
-```
+```mamba
 def factorial (x: Int) => match x with
     0 => 1
     n => n * factorial (n - 1)
@@ -57,7 +57,7 @@ Mamba allows us to explicitly state whether something has a state or not.
 A stateful object can modify its internal state (i.e. by changing a value of an internal field), whereas a stateless object cannot.
 
 We showcase this using a simple dummy `Server` object.
-```
+```mamba
 import ipaddress
 
 stateful HTTPServer(def ip_address: ipaddress.ip_address)
@@ -84,7 +84,7 @@ Notice how:
     Instead, we call `server.last_sent`.
 
 Which we can then use as follows in our script:
-```
+```mamba
 import ipaddress
 from server import HTTPServer
 
@@ -105,7 +105,7 @@ As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
 
 Lets expand our server example from above, and rewrite it slightly:
-```
+```mamba
 import ipaddress
 
 type Server
@@ -141,7 +141,7 @@ Notice how above, we define the type of `self`.
 Each type effectively denotes another state that `self` can be in.
 For each type, we use `when` to show that it is a type refinement, which certain conditions.
 
-```
+```mamba
 import ipaddress
 from server import HTTPServer
 
@@ -162,7 +162,7 @@ if http_server isa ConnectedHTTPServer then http_server disconnect
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
-```
+```mamba
 type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was [self].")
 
 # only takes positive integers and returns positive integers
@@ -186,7 +186,7 @@ Error handling can at times becomes quite verbose, so we do recommend checking o
 
 We can modify the above script such that we don't check whether the server is connected or not.
 In that case, we must handle the case where `http_server` throws a `ServerErr`:
-```
+```mamba
 import ipaddress
 from server import HTTPServer
 
