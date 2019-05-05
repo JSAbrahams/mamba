@@ -150,11 +150,7 @@ fn variable_def_forward_verify() {
             property: String::from("object")
         }),
         method: String::from("m1"),
-        args:   vec![Core::FunArg {
-            vararg:  false,
-            id:      Box::from(Core::Id { lit: String::from("self") }),
-            default: Box::from(Core::Empty)
-        }]
+        args:   vec![]
     });
 }
 

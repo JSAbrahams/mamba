@@ -80,6 +80,6 @@ fn forward_def(id: String, method: String) -> Core {
         private: false,
         id:      Box::from(Core::Id { lit: method.clone() }),
         args:    args.clone(),
-        body:    Box::from(Core::MethodCall { object, method, args })
+        body:    Box::from(Core::MethodCall { object, method, args: vec![] })
     }
 }
