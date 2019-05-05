@@ -136,7 +136,7 @@ type ConnectedHTTPServer isa HTTPServer when
     self connected else ServerErr("Not connected.")
 
 type DiconnectedHTTPServer isa HTTPServer when
-    self not connected else ServerErr("Already connected.")
+    not self connected else ServerErr("Already connected.")
 ```
 
 Notice how above, we define the type of `self`.
