@@ -222,10 +222,10 @@ fn parse_variable_def_id(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
         expression = None
     }
 
-    let forward: Option<Vec<ASTNodePos>> = match it.peek() {
+    let forward: Vec<ASTNodePos> = match it.peek() {
         Some(TokenPos { token: Token::Forward, .. }) =>
-            Some(get_or_err_direct!(it, parse_forward, "definition raises")),
-        _ => None
+            get_or_err_direct!(it, parse_forward, "definition raises"),
+        _ => vec![]
     };
 
     let (en_line, en_pos) = match &expression {
