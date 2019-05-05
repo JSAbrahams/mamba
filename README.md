@@ -99,7 +99,7 @@ print "last message sent before disconnect: \"[http_server.last_sent]\""
 http_server disconnect
 ```
 
-### 🗃 Type and type refinement
+### 🗃 Types and type refinement
 
 As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
@@ -146,7 +146,7 @@ import ipaddress
 from server import HTTPServer
 
 def some_ip <- ipaddress.ip_address "151.101.193.140"
-def http_server = HTTPServer(some_ip)
+def http_server <- HTTPServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
 http_server connect
@@ -180,7 +180,7 @@ Type refinement allows us to to some additional things:
 ### ⚠ Error handling
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
-Instead, we aim to directly handle errors on-site so the origins of errors is more easily tracable.
+Instead, we aim to directly handle errors on-site so the origin of errors is more tracable.
 The following is only a brief example.
 Error handling can at times becomes quite verbose, so we do recommend checking out the [docs](https://joelabrahams.nl/mamba_doc/features/safety/error_handling.html) on error handling to get a better feel for error handling.
 
