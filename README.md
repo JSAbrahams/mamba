@@ -191,7 +191,7 @@ import ipaddress
 from server import HTTPServer
 
 def some_ip <- ipaddress.ip_address "151.101.193.140"
-def http_server = HTTPServer(some_ip)
+def http_server <- HTTPServer(some_ip)
 
 def message <- "Hello World!"
 http_server send message handle
