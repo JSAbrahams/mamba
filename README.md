@@ -44,8 +44,11 @@ def factorial (x: Int) => match x with
     n => n * factorial (n - 1)
 
 def num    <- input "Compute factorial: "
-def result <- factorial num
-print "Factorial [num] is: [result]"
+if num is_digit then
+    def result <- factorial num
+    print "Factorial [num] is: [result]"
+else
+    print "Input was not an integer."
 ```
 
 Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
@@ -64,9 +67,9 @@ stateful HTTPServer(def ip_address: ipaddress.ip_address)
     def mut connected: Bool              <- false
     def mut private last_message: String <- undefined
 
-    def last_sent(self) =>
-        if last_message = undefined then Err("No last message!")
-        else                             message
+    def last_sent(self) => if last_message /= undefined 
+        then message
+        else Err("No last message!")
 
     def connect(mut self) => self.connected <- true
 
@@ -88,7 +91,7 @@ Which we can then use as follows in our script:
 import ipaddress
 from server import HTTPServer
 
-def some_ip <- ipaddress.ip_address "151.101.193.140"
+def some_ip     <- ipaddress.ip_address "151.101.193.140"
 def http_server <- HTTPServer(some_ip)
 
 http_server connect
@@ -121,11 +124,11 @@ stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: ipaddress.
     def mut connected: Bool              <- false
     def mut private last_message: String <- undefined
 
-    def last_sent(self): String => self last_message
+    def last_sent (self): String => self last_message
 
     def connect (mut self: DisconnectedHTTPServer) => self connected <- true
 
-    def send_message(mut self: ConnectedHTTPServer, message: String) => self last_message <- message
+    def send (mut self: ConnectedHTTPServer, message: String) => self last_message <- message
 
     def disconnect(mut self: ConnectedHTTPServer) => self connected <- false
 
@@ -133,7 +136,7 @@ type ConnectedHTTPServer isa HTTPServer when
     self connected else ServerErr("Not connected.")
 
 type DiconnectedHTTPServer isa HTTPServer when
-    self not connected else ServerErr("Already connected.")
+    not self connected else ServerErr("Already connected.")
 ```
 
 Notice how above, we define the type of `self`.
@@ -145,7 +148,7 @@ For each type, we use `when` to show that it is a type refinement, which certain
 import ipaddress
 from server import HTTPServer
 
-def some_ip <- ipaddress.ip_address "151.101.193.140"
+def some_ip     <- ipaddress.ip_address "151.101.193.140"
 def http_server <- HTTPServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
@@ -190,12 +193,12 @@ In that case, we must handle the case where `http_server` throws a `ServerErr`:
 import ipaddress
 from server import HTTPServer
 
-def some_ip <- ipaddress.ip_address "151.101.193.140"
+def some_ip     <- ipaddress.ip_address "151.101.193.140"
 def http_server <- HTTPServer(some_ip)
 
 def message <- "Hello World!"
 http_server send message handle
-    err: ServerErr => print "Error while sending [message]: err"
+    err: ServerErr => print "Error while sending message: \"[message]\": [err]"
 
 if http_server isa ConnectedHTTPServer then http_server disconnect
 ```
