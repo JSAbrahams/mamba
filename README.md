@@ -125,11 +125,11 @@ stateful MyServer(mut self: DisconnectedHTTPServer, def ip_address: ipaddress.ip
 
     def last_sent(self): String => self last_message
 
-    def connect(mut self: DisconnectedHTTPServer) => self is_connected <- true
+    def connect(mut self: DisconnectedMyServer) => self is_connected <- true
 
-    def send(mut self: ConnectedHTTPServer, message: String) => self last_message <- message
+    def send(mut self: ConnectedMyServer, message: String) => self last_message <- message
 
-    def disconnect(mut self: ConnectedHTTPServer) => self is_connected <- false
+    def disconnect(mut self: ConnectedMyServer) => self is_connected <- false
 
 type ConnectedMyServer isa MyServer when
     self is_connected else ServerErr("Not connected.")
@@ -199,7 +199,7 @@ def message <- "Hello World!"
 my_server send message handle
     err: ServerErr => print "Error while sending message: \"[message]\": [err]"
 
-if my_server isa ConnectedHTTPServer then my_server disconnect
+if my_server isa ConnectedMyServer then my_server disconnect
 ```
 
 In the above script, we will always print the error since we forgot to actually connect to the server.
