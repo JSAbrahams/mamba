@@ -39,14 +39,14 @@ For more extensive examples and explanations check out the [documentation](https
 
 We can write a simple script that computes the factorial of a value given by the user.
 ```mamba
-def factorial (x: Int) => match x with
+def factorial(x: Int) => match x with
     0 => 1
     n => n * factorial (n - 1)
 
-def num    <- input "Compute factorial: "
+def num <- input "Compute factorial: "
 if num is_digit then
-    def result <- factorial num
-    print "Factorial [num] is: [result]"
+    def result <- factorial int num
+    print "Factorial [num] is: [result]."
 else
     print "Input was not an integer."
 ```
@@ -63,21 +63,21 @@ We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
-stateful HTTPServer(def ip_address: ipaddress.ip_address)
-    def mut connected: Bool              <- false
+stateful MyServer(def ip_address: ipaddress.ip_address)
+    def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
     def last_sent(self) => if last_message /= undefined 
         then message
         else Err("No last message!")
 
-    def connect(mut self) => self.connected <- true
+    def connect(mut self) => self is_connected <- true
 
-    def send (mut self, message: String) => 
-        if self.connected then self.last_message <- message
-        else                   return Err("Not connected!")
+    def send(mut self, message: String) => if self is_connected 
+        then self last_message <- message
+        else Err("Not connected!")
 
-    def disconnect(mut self) => self.connected <- true
+    def disconnect(mut self) => self is_connected <- true
 ```
 
 Notice how:
@@ -89,17 +89,16 @@ Notice how:
 Which we can then use as follows in our script:
 ```mamba
 import ipaddress
-from server import HTTPServer
+from server import MyServer
 
-def some_ip     <- ipaddress.ip_address "151.101.193.140"
-def http_server <- HTTPServer(some_ip)
+def some_ip   <- ipaddress.ip_address "151.101.193.140"
+def my_server <- MyServer(some_ip)
 
 http_server connect
-if http_server connected then
-    http_server send "Hello World!"
+if my_server connected then http_server send "Hello World!"
 
-print "last message sent before disconnect: \"[http_server.last_sent]\""
-http_server disconnect
+print "last message sent before disconnect: \"[my_server.last_sent]\"."
+my_server disconnect
 ```
 
 ### 🗃 Types and type refinement
@@ -112,7 +111,7 @@ Lets expand our server example from above, and rewrite it slightly:
 import ipaddress
 
 type Server
-    def ip_address:            ipaddres.ip_address
+    def ip_address: ipaddres.ip_address
 
     def connect:    () -> ()       throws [ServerErr]
     def send:       (String) -> () throws [ServerErr]
@@ -120,23 +119,23 @@ type Server
 
 type ServerErr(msg: String) isa Err(msg)
 
-stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: ipaddress.ip_address) isa Server
-    def mut connected: Bool              <- false
+stateful MyServer(mut self: DisconnectedHTTPServer, def ip_address: ipaddress.ip_address) isa Server
+    def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
-    def last_sent (self): String => self last_message
+    def last_sent(self): String => self last_message
 
-    def connect (mut self: DisconnectedHTTPServer) => self connected <- true
+    def connect(mut self: DisconnectedHTTPServer) => self is_connected <- true
 
-    def send (mut self: ConnectedHTTPServer, message: String) => self last_message <- message
+    def send(mut self: ConnectedHTTPServer, message: String) => self last_message <- message
 
-    def disconnect(mut self: ConnectedHTTPServer) => self connected <- false
+    def disconnect(mut self: ConnectedHTTPServer) => self is_connected <- false
 
-type ConnectedHTTPServer isa HTTPServer when
-    self connected else ServerErr("Not connected.")
+type ConnectedMyServer isa MyServer when
+    self is_connected else ServerErr("Not connected.")
 
-type DiconnectedHTTPServer isa HTTPServer when
-    not self connected else ServerErr("Already connected.")
+type DisconnectedMyServer isa MyServer when
+    not self is_connected else ServerErr("Already connected.")
 ```
 
 Notice how above, we define the type of `self`.
@@ -146,30 +145,30 @@ For each type, we use `when` to show that it is a type refinement, which certain
 
 ```mamba
 import ipaddress
-from server import HTTPServer
+from server import MyServer
 
-def some_ip     <- ipaddress.ip_address "151.101.193.140"
-def http_server <- HTTPServer(some_ip)
+def some_ip   <- ipaddress.ip_address "151.101.193.140"
+def my_server <- MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
 http_server connect
 
 # We check the state
-if http_server isa ConnectedHTTPServer then
-    # http_server is a ConnectedServer if the above is true
-    http_server send "Hello World!"
+if my_server isa ConnectedMyServer then
+    # http_server is a Connected Server if the above is true
+    my_server send "Hello World!"
 
-print "last message sent before disconnect: \"[http_server.last_sent]\""
-
-if http_server isa ConnectedHTTPServer then http_server disconnect
+print "last message sent before disconnect: \"[my_server.last_sent]\"."
+if my_server isa ConnectedMyServer then my_server disconnect
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 ```mamba
 type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was [self].")
 
-# only takes positive integers and returns positive integers
-def my_function (x: PositiveInt): PositiveInt => x * 6 + 2
+def factorial (x: PositiveInt) => match x with
+    0 => 1
+    n => n * factorial (n - 1)
 ```
 
 In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `String`.
@@ -191,16 +190,16 @@ We can modify the above script such that we don't check whether the server is co
 In that case, we must handle the case where `http_server` throws a `ServerErr`:
 ```mamba
 import ipaddress
-from server import HTTPServer
+from server import MyServer
 
-def some_ip     <- ipaddress.ip_address "151.101.193.140"
-def http_server <- HTTPServer(some_ip)
+def some_ip   <- ipaddress.ip_address "151.101.193.140"
+def my_server <- MyServer(some_ip)
 
 def message <- "Hello World!"
-http_server send message handle
+my_server send message handle
     err: ServerErr => print "Error while sending message: \"[message]\": [err]"
 
-if http_server isa ConnectedHTTPServer then http_server disconnect
+if my_server isa ConnectedHTTPServer then my_server disconnect
 ```
 
 In the above script, we will always print the error since we forgot to actually connect to the server.
