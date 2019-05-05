@@ -68,9 +68,9 @@ stateful HTTPServer(def ip_address: ipaddress.ip_address)
         if last_message = undefined then Err("No last message!")
         else                             message
 
-    def connect(self) => self.connected <- true
+    def connect(mut self) => self.connected <- true
 
-    def send (message: String) => 
+    def send (mut self, message: String) => 
         if self.connected then self.last_message <- message
         else                   return Err("Not connected!")
 
@@ -86,6 +86,7 @@ Notice how:
 Which we can then use as follows in our script:
 ```
 import ipaddress
+from server import HTTPServer
 
 def some_ip <- ipaddress.ip_address "151.101.193.140"
 def http_server = HTTPServer(some_ip)
@@ -103,25 +104,18 @@ http_server disconnect
 As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
 
-Lets expand our server example from above:
+Lets expand our server example from above, and rewrite it slightly:
 ```
 import ipaddress
 
-type Server 
-    def mut connected:     Boolean
-    def ip_address:        ipaddres.ip_address
+type Server
+    def ip_address:            ipaddres.ip_address
 
-    def connect:           () -> ()       throws [ServerErr]
-    def send:              (String) -> () throws [ServerErr]
-    def disconnect:        () -> ()
+    def connect:    () -> ()       throws [ServerErr]
+    def send:       (String) -> () throws [ServerErr]
+    def disconnect: () -> ()
 
 type ServerErr(msg: String) isa Err(msg)
-
-type ConnectedHTTPServer isa HTTPServer when
-    self connected else ServerErr("Not connected.")
-    
-type DiconnectedHTTPServer isa HTTPServer when
-    self not connected else ServerErr("Already connected.")
 
 stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: IPAddress) isa Server
     def mut connected: Bool              <- false
@@ -134,9 +128,82 @@ stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: IPAddress)
     def send_message(mut self: ConnectedHTTPServer, message: String) => self last_message <- message
 
     def disconnect(mut self: ConnectedHTTPServer) => self connected <- false
+
+type ConnectedHTTPServer isa HTTPServer when
+    self connected else ServerErr("Not connected.")
+
+type DiconnectedHTTPServer isa HTTPServer when
+    self not connected else ServerErr("Already connected.")
 ```
 
+Notice how above, we define the type of `self`.
+
+Each type effectively denotes another state that `self` can be in.
+For each type, we use `when` to show that it is a type refinement, which certain conditions.
+
+```
+import ipaddress
+from server import HTTPServer
+
+def some_ip <- ipaddress.ip_address "151.101.193.140"
+def http_server = HTTPServer(some_ip)
+
+# The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
+http_server connect
+
+# We check the state
+if http_server isa ConnectedHTTPServer then
+    # http_server is a ConnectedServer if the above is true
+    http_server send "Hello World!"
+
+print "last message sent before disconnect: \"[http_server.last_sent]\""
+
+if http_server isa ConnectedHTTPServer then http_server disconnect
+```
+
+Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
+```
+type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was [self].")
+
+# only takes positive integers and returns positive integers
+def my_function (x: PositiveInt): PositiveInt => x * 6 + 2
+```
+
+In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `String`.
+
+Type refinement allows us to to some additional things:
+-   It allows us to further specify the domain or co-domain of a function
+-   It allows us to explicitly name the possible states of an object.
+    This means that we don't constantly have to check that certain conditions hold.
+    We can simply ask whether a given object is a certain state by checking whether it is a certain type.
+
 ### ⚠ Error handling code
+
+Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
+Instead, we aim to directly handle errors on-site so the origins of errors is more easily tracable.
+The following is only a brief example.
+Error handling can at times becomes quite verbose, so we do recommend checking out the [docs](https://joelabrahams.nl/mamba_doc/features/safety/error_handling.html) on error handling to get a better feel for error handling.
+
+We can modify the above script such that we don't check whether the server is connected or not.
+In that case, we must handle the case where `http_server` throws a `ServerErr`:
+```
+import ipaddress
+from server import HTTPServer
+
+def some_ip <- ipaddress.ip_address "151.101.193.140"
+def http_server = HTTPServer(some_ip)
+
+def message <- "Hello World!"
+http_server send message handle
+    err: ServerErr => print "Error while sending [message]: err"
+
+if http_server isa ConnectedHTTPServer then http_server disconnect
+```
+
+In the above script, we will always print the error since we forgot to actually connect to the server.
+Here we shocase showcase how we try to handle errors on-site instead of in a `try` block.
+This means that we don't need a `finally` block: We aim to deal with the error where it happens and then continue executing the remaining code.
+This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
 
 ## 👥 Contributing
 
