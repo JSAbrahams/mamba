@@ -99,7 +99,7 @@ print "last message sent before disconnect: \"[http_server.last_sent]\""
 http_server disconnect
 ```
 
-### Type and type refinement
+### 🗃 Type and type refinement
 
 As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
