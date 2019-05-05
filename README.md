@@ -119,7 +119,7 @@ type Server
 
 type ServerErr(msg: String) isa Err(msg)
 
-stateful MyServer(mut self: DisconnectedHTTPServer, def ip_address: ipaddress.ip_address) isa Server
+stateful MyServer(mut self: DisconnectedMyServer, def ip_address: ipaddress.ip_address) isa Server
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
