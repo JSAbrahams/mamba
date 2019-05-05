@@ -30,6 +30,114 @@ This is a transpiler, written in [Rust](https://www.rust-lang.org/), which conve
 Mamba code should therefore, in theory, be interoperable with Python code.
 Functions written in Python can be called in Mamba and vice versa.
 
+## ⌨️ Code Examples
+
+Below are some code examples to showcase the features of Mamba.
+For more extensive examples and explanations check out the [documentation](https://joelabrahams.nl/mamba_doc).
+
+### ➕ Functions
+
+I can write a simple script that computes the factorial of 100.
+```
+def factorial (x: Int) => match x with
+    0 => 1
+    n => n * factorial (n - 1)
+
+def num    <- input "Compute factorial: "
+def result <- factorial num
+print "Factorial [num] is: [result]"
+```
+
+Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
+This means that the compiler will check for us that factorial is only used with an integer as argument.
+
+### 🔓🔒 Stateful and stateless (and mutability)
+
+Mamba allows us to explicitly state whether something has a state or not.
+A stateful object can modify its internal state (i.e. by changing a value of an internal field), whereas a stateless object cannot.
+
+We showcase this using a simple dummy `Server` object.
+```
+import ipaddress
+
+stateful HTTPServer(def ip_address: ipaddress.ip_address)
+    def mut connected: Bool              <- false
+    def mut private last_message: String <- undefined
+
+    def last_sent(self) =>
+        if last_message = undefined then Err("No last message!")
+        else                             message
+
+    def connect(self) => self.connected <- true
+
+    def send (message: String) => 
+        if self.connected then self.last_message <- message
+        else                   return Err("Not connected!")
+
+    def disconnect(mut self) => self.connected <- true
+```
+
+Notice how:
+-   `HTTPServer` is `stateful`, so we can have mutable top-level definitions such as `connected`, which may change over the lifetime of an object.
+-   `last_message` is private, denoted by the `private` keyword.
+    This means that we cannot access is directly, meaning we cannot for instance do `server.last_message <- "Mischief"`.
+    Instead, we call `server.last_sent`.
+
+Which we can then use as follows in our script:
+```
+import ipaddress
+
+def some_ip <- ipaddress.ip_address "151.101.193.140"
+def http_server = HTTPServer(some_ip)
+
+http_server connect
+if http_server connected then
+    http_server send "Hello World!"
+
+print "last message sent before disconnect: \"[http_server.last_sent]\""
+http_server disconnect
+```
+
+### Type and type refinement
+
+As shown above Mamba has a type system.
+Mamba however also has type refinement features to assign additional properties to types.
+
+Lets expand our server example from above:
+```
+import ipaddress
+
+type Server 
+    def mut connected:     Boolean
+    def ip_address:        ipaddres.ip_address
+
+    def connect:           () -> ()       throws [ServerErr]
+    def send:              (String) -> () throws [ServerErr]
+    def disconnect:        () -> ()
+
+type ServerErr(msg: String) isa Err(msg)
+
+type ConnectedHTTPServer isa HTTPServer when
+    self connected else ServerErr("Not connected.")
+    
+type DiconnectedHTTPServer isa HTTPServer when
+    self not connected else ServerErr("Already connected.")
+
+stateful HTTPServer(mut self: DisconnectedHTTPServer, def ip_address: IPAddress) isa Server
+    def mut connected: Bool              <- false
+    def mut private last_message: String <- undefined
+
+    def last_sent(self): String => self last_message
+
+    def connect (mut self: DisconnectedHTTPServer, ip_address: IPAddress) => self connected <- true
+
+    def send_message(mut self: ConnectedHTTPServer, message: String) => self last_message <- message
+
+    def disconnect(mut self: ConnectedHTTPServer) => self connected <- false
+```
+
+### ⚠ Error handling code
+
 ## 👥 Contributing
 
 Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
@@ -44,24 +152,20 @@ Therefore, to save time, it is a good idea to install these tools locally and ru
 
 [Rustfmt](https://github.com/rust-lang/rustfmt) formats Rust code and ensures the formatting is consistent across the codebase.
 
--   **To install** run `rustup component add rustfmt --toolchain nightly`
--   **To run** run `cargo +nightly fmt`
+-   **To install** `rustup component add rustfmt --toolchain nightly`
+-   **To run** `cargo +nightly fmt`
 
 The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
 
-*Note* The nightly build of `cargo` must be used.
-To install the nightly build of `cargo`, run `rustup install nightly`.
+*Note* The nightly build of `cargo` must be used (`rustup install nightly`).
 
 ### Clippy
 
 [Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
 
--   **To install** 
-    -   make sure you have the latest version of `rustup` by running `rustup update`
-    -   run `rustup component add clippy`
--   **To run** run `cargo clippy`
+-   **To install** `rustup component add clippy`
+-   **To run** `cargo clippy`
 
 The configuration of `Clippy` can be found in `.clippy.toml`.
 
-*Note* The stable build of `cargo` must be used.
-This is installed by default but in case it isn't, run `rustup install stable`.
+*Note* The stable build of `cargo` must be used (`rustup install stable`).
