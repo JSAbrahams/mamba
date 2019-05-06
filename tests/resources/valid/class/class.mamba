@@ -26,6 +26,7 @@ stateful MyClass isa MyType
     def private mut other_field <- 10
 
     def init(mut self, my_field: Int, z: Int) =>
+        if z > 10 then return Err("Something is wrong!")
         self.z_modified <- z * SOME_CONSTANT
 
     def connect(mut self: SomeState) => self.other_field <- 200

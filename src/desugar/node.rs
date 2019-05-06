@@ -240,11 +240,23 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
                 other => panic!("desugarer didn't recognize while making class: {:?}.", other)
             },
 
-        ASTNode::TypeDef { .. } => Core::Empty,
-        ASTNode::TypeAlias { .. } => Core::Empty,
+        ASTNode::TypeDef { .. }
+        | ASTNode::TypeAlias { .. }
+        | ASTNode::TypeTup { .. }
+        | ASTNode::Type { .. }
+        | ASTNode::TypeFun { .. } => Core::Empty,
+
+        ASTNode::Condition { .. } => unimplemented!("Condition has not yet been implemented."),
 
         ASTNode::Pass => Core::Pass,
 
-        other => panic!("desugarer didn't recognize {:?}.", other)
+        ASTNode::Body { .. } => panic!("Body cannot be top level."),
+        ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
+        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level."),
+
+        ASTNode::Raises { .. } => Core::Empty,
+
+        ASTNode::Handle { .. } => unimplemented!("Handle has not yet been implemented."),
+        ASTNode::Retry { .. } => unimplemented!("Retry has not yet bee implemented.")
     }
 }

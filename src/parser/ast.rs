@@ -41,14 +41,6 @@ pub enum ASTNode {
     },
     Init,
 
-    ModName {
-        name: String
-    },
-    ModNameIsA {
-        name: String,
-        isa:  Vec<String>
-    },
-
     Reassign {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
