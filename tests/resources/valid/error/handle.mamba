@@ -1,0 +1,2 @@
+def a <- f(10) handle
+    err => print "Something went wrong"

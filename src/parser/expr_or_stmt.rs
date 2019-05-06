@@ -50,6 +50,7 @@ pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResul
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Handle);
 
+    check_next_is!(it, Token::NL);
     let cases = get_or_err_direct!(it, parse_match_cases, "handle cases");
 
     let node = ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
