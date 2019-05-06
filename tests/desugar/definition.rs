@@ -2,6 +2,7 @@ use mamba::core::construct::Core;
 use mamba::desugar::desugar;
 use mamba::parser::ast::ASTNode;
 use mamba::parser::ast::ASTNodePos;
+use std::panic;
 
 #[test]
 fn reassign_verify() {
@@ -302,4 +303,33 @@ fn anon_fun_verify() {
     assert_eq!(args[0], Core::Id { lit: String::from("first") });
     assert_eq!(args[1], Core::Id { lit: String::from("second") });
     assert_eq!(*body, Core::Str { _str: String::from("this_string") });
+}
+
+#[test]
+fn top_level_var_def_panic_verify() {
+    let var_def = to_pos!(ASTNode::VariableDef {
+        ofmut:         false,
+        id_maybe_type: to_pos!(ASTNode::Pass),
+        expression:    None,
+        forward:       vec![]
+    });
+
+    panic::set_hook(Box::new(|_info| {}));
+    let result = std::panic::catch_unwind(|| desugar(&var_def));
+    assert!(result.is_err());
+}
+
+#[test]
+fn top_level_fun_def_panic_verify() {
+    let var_def = to_pos!(ASTNode::FunDef {
+        id:       Box::from(to_pos!(ASTNode::Pass)),
+        fun_args: vec![],
+        ret_ty:   None,
+        raises:   None,
+        body:     None
+    });
+
+    panic::set_hook(Box::new(|_info| {}));
+    let result = std::panic::catch_unwind(|| desugar(&var_def));
+    assert!(result.is_err());
 }
