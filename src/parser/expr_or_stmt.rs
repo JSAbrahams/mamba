@@ -49,7 +49,6 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Handle);
-    check_next_is!(it, Token::When);
 
     let cases = get_or_err_direct!(it, parse_match_cases, "handle cases");
 
