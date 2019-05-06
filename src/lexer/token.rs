@@ -174,7 +174,7 @@ impl fmt::Display for Token {
             Token::RCBrack => String::from("}"),
             Token::Ver => String::from("|"),
             Token::To => String::from("->"),
-            Token::BTo => String::from("=> String::from("),
+            Token::BTo => String::from("=>"),
 
             Token::NL => String::from("<newline>"),
             Token::Indent => String::from("<indent>"),
