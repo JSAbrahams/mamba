@@ -23,5 +23,7 @@ impl State {
         }
     }
 
-    pub fn token(token: Token) {}
+    pub fn token(mut self, token: Token) {}
+
+    pub fn space(mut self) {}
 }
