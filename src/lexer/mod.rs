@@ -100,6 +100,14 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                 }
                 create(&state, Token::Comment(comment))
             }
+            '?' => match it.peek() {
+                Some('.') => next_and_create(it, &state, Token::QuestCall),
+                Some('o') => match (it.next(), it.peek()) {
+                    (_, Some('r')) => create(&state, Token::QuestOr),
+                    _ => panic!("Create good error message.")
+                }
+                _ => create(&state, Token::Quest)
+            }
             '0'..='9' => {
                 let mut number = c.to_string();
                 while it.peek().is_some() && it.peek().unwrap().is_numeric() {
