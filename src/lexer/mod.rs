@@ -2,6 +2,7 @@ use crate::lexer::common::State;
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use std::iter::Peekable;
+use std::str::Chars;
 
 pub mod token;
 
@@ -48,82 +49,86 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
 
     while let Some(c) = it.next() {
         let token_pos = match c {
-            ':' => create(&state, Token::DoublePoint),
-            '(' => create(&state, Token::LRBrack),
-            ')' => create(&state, Token::RRBrack),
-            '[' => create(&state, Token::LSBrack),
-            ']' => create(&state, Token::RSBrack),
-            '{' => create(&state, Token::LCBrack),
-            '}' => create(&state, Token::RCBrack),
-            '|' => create(&state, Token::Ver),
-            '\n' => create(&state, Token::NL),
+            ',' => create(&mut state, Token::Comma),
+            ':' => create(&mut state, Token::DoublePoint),
+            '(' => create(&mut state, Token::LRBrack),
+            ')' => create(&mut state, Token::RRBrack),
+            '[' => create(&mut state, Token::LSBrack),
+            ']' => create(&mut state, Token::RSBrack),
+            '{' => create(&mut state, Token::LCBrack),
+            '}' => create(&mut state, Token::RCBrack),
+            '|' => create(&mut state, Token::Ver),
+            '\n' => create(&mut state, Token::NL),
             '\r' => match it.next() {
-                Some('\n') => create(&state, Token::NL),
+                Some('\n') => create(&mut state, Token::NL),
                 _ => panic!("Create good error message.")
             },
             '.' => match it.peek() {
                 Some('.') => match (it.next(), it.peek()) {
-                    (_, Some('=')) => next_and_create(it, &state, Token::RangeIncl),
-                    (..) => create(&state, Token::Range)
+                    (_, Some('=')) => next_and_create(&mut it, &mut state, Token::RangeIncl),
+                    (..) => create(&mut state, Token::Range)
                 },
-                _ => create(&state, Token::Point)
+                _ => create(&mut state, Token::Point)
             },
             '<' => match it.peek() {
-                Some('-') => next_and_create(it, &state, Token::Assign),
-                Some('=') => next_and_create(it, &state, Token::Leq),
-                _ => create(&state, Token::Le)
+                Some('-') => next_and_create(&mut it, &mut state, Token::Assign),
+                Some('=') => next_and_create(&mut it, &mut state, Token::Leq),
+                _ => create(&mut state, Token::Le)
             },
             '>' => match it.peek() {
-                Some('=') => next_and_create(it, &state, Token::Geq),
-                _ => create(&state, Token::Ge)
+                Some('=') => next_and_create(&mut it, &mut state, Token::Geq),
+                _ => create(&mut state, Token::Ge)
             },
-            '+' => create(&state, Token::Add),
+            '+' => create(&mut state, Token::Add),
             '-' => match it.peek() {
-                Some('>') => next_and_create(it, &state, Token::To),
-                _ => create(&state, Token::Sub)
+                Some('>') => next_and_create(&mut it, &mut state, Token::To),
+                _ => create(&mut state, Token::Sub)
             },
-            '*' => create(&state, Token::Mul),
+            '*' => create(&mut state, Token::Mul),
             '/' => match it.peek() {
-                Some('=') => next_and_create(it, &state, Token::Neq),
-                _ => create(&state, Token::Div)
+                Some('=') => next_and_create(&mut it, &mut state, Token::Neq),
+                _ => create(&mut state, Token::Div)
             },
-            '\\' => create(&state, Token::BSlash),
-            '^' => create(&state, Token::Pow),
+            '\\' => create(&mut state, Token::BSlash),
+            '^' => create(&mut state, Token::Pow),
             '=' => match it.peek() {
-                Some('>') => next_and_create(it, &state, Token::BTo),
-                _ => create(&state, Token::Eq)
+                Some('>') => next_and_create(&mut it, &mut state, Token::BTo),
+                _ => create(&mut state, Token::Eq)
             },
             '#' => {
                 let mut comment = String::new();
                 while it.peek().is_some() && it.peek().unwrap().is_numeric() {
                     comment.push(it.next().unwrap());
                 }
-                create(&state, Token::Comment(comment))
+                create(&mut state, Token::Comment(comment))
             }
             '?' => match it.peek() {
-                Some('.') => next_and_create(it, &state, Token::QuestCall),
+                Some('.') => next_and_create(&mut it, &mut state, Token::QuestCall),
                 Some('o') => match (it.next(), it.peek()) {
-                    (_, Some('r')) => create(&state, Token::QuestOr),
+                    (_, Some('r')) => create(&mut state, Token::QuestOr),
                     _ => panic!("Create good error message.")
-                }
-                _ => create(&state, Token::Quest)
-            }
+                },
+                _ => create(&mut state, Token::Quest)
+            },
             '0'..='9' => {
                 let mut number = c.to_string();
                 while it.peek().is_some() && it.peek().unwrap().is_numeric() {
                     number.push(it.next().unwrap());
                 }
-                create(&state, Token::Int(number))
+                create(&mut state, Token::Int(number))
             }
             'a'..='z' | 'A'..='Z' | '_' => {
                 let mut id_or_operation = c.to_string();
                 while let Some(c) = it.peek() {
                     match c {
-                        'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => id_or_operation.push(*c),
+                        'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => {
+                            id_or_operation.push(*c);
+                            it.next();
+                        }
                         _ => break
                     }
                 }
-                create(&state, as_op_or_id(id_or_operation))
+                create(&mut state, as_op_or_id(id_or_operation))
             }
             '"' => {
                 let mut string = String::new();
@@ -133,35 +138,36 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                     }
                     string.push(c)
                 }
-                create(&state, Token::Str(string))
+                create(&mut state, Token::Str(string))
             }
             ' ' => {
-                &state.space();
-                None
+                state.space();
+                vec![]
             }
-            other => panic!("Create good error message.")
+
+            other => panic!("Create good error message: {}.", other)
         };
 
-        if token_pos.is_some() {
-            tokens.push(token_pos.unwrap());
+        for tp in token_pos {
+            tokens.push(tp);
         }
     }
 
     Ok(tokens)
 }
 
-fn next_and_create(mut it: &Peekable<Char>, mut state: &State, token: Token) -> Option<TokenPos> {
+fn next_and_create(it: &mut Peekable<Chars>, state: &mut State, token: Token) -> Vec<TokenPos> {
     it.next();
-    state.token(token);
-    Some(TokenPos { line: state.line, pos: state.pos, token })
+    create(state, token)
 }
 
-fn create(mut state: &State, token: Token) -> Option<TokenPos> {
-    state.token(token);
-    Some(TokenPos { line: state.line, pos: state.pos, token })
+fn create(state: &mut State, token: Token) -> Vec<TokenPos> {
+    let mut tokens = state.token(&token);
+    tokens.push(TokenPos { line: state.line, pos: state.pos, token });
+    tokens
 }
 
-fn as_op_or_id(mut string: String) -> Token {
+fn as_op_or_id(string: String) -> Token {
     match string.as_ref() {
         "_" => Token::Underscore,
 
