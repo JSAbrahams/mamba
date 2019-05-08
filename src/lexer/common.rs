@@ -7,12 +7,12 @@ pub struct State {
     line_indent: i32,
     hit_token_this_line: bool,
     pub line: i32,
-    pub pos: i32
+    pub pos: i32,
 }
 
 impl State {
     pub fn new() -> State {
-        State { current_indent: 0, line_indent: 0, hit_token_this_line: false, line: 0, pos: 0 }
+        State { current_indent: 1, line_indent: 1, hit_token_this_line: false, line: 1, pos: 1 }
     }
 
     pub fn token(&mut self, token: &Token) -> Vec<TokenPos> {
@@ -20,9 +20,12 @@ impl State {
         debug_assert_ne!(*token, Token::Dedent);
 
         if *token == Token::NL {
+            let res = vec![TokenPos { line: self.line, pos: self.pos, token: Token::NL }];
+            self.hit_token_this_line = false;
             self.pos = 1;
             self.line += 1;
-            return vec![];
+
+            return res;
         }
 
         self.pos += match token {
@@ -40,12 +43,12 @@ impl State {
         if self.line_indent >= self.current_indent {
             vec![
                 TokenPos { line: self.line, pos: self.pos, token: Token::Indent };
-                ((self.line_indent - self.current_indent) % 4) as usize
+                ((self.line_indent - self.current_indent) / 4) as usize
             ]
         } else {
             vec![
                 TokenPos { line: self.line, pos: self.pos, token: Token::Dedent };
-                ((self.current_indent - self.line_indent) % 4) as usize
+                ((self.current_indent - self.line_indent) / 4) as usize
             ]
         }
     }
