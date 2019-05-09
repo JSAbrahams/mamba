@@ -1,9 +1,6 @@
 use crate::common::*;
 use crate::output::common::PYTHON;
 use mamba::command::mamba_to_python_direct;
-use mamba::lexer::tokenize;
-use std::fs::OpenOptions;
-use std::io::Read;
 use std::path::Path;
 use std::process::Command;
 

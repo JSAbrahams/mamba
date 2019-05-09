@@ -20,25 +20,15 @@ impl State {
         debug_assert_ne!(token, Token::Dedent);
 
         if token == Token::NL {
+            let res = vec![TokenPos { line: self.line, pos: self.pos, token: token.clone() }];
             self.hit_token_this_line = false;
             self.line_indent = 1;
             self.pos = 1;
             self.line += 1;
-            return vec![TokenPos { line: self.line, pos: self.pos, token: token.clone() }];
+            return res;
         }
 
         self.hit_token_this_line = true;
-        self.pos += match token.clone() {
-            Token::Id(id) => id.len(),
-            Token::Real(real) => real.len(),
-            Token::Int(int) => int.len(),
-            Token::Bool(true) => 4,
-            Token::Bool(false) => 5,
-            Token::Str(_str) => _str.len() + 2,
-            Token::ENum(num, exp) => num.len() + exp.len() + 1,
-            other => format!("{}", other).len()
-        } as i32;
-
         let mut res = if self.line_indent >= self.current_indent {
             vec![
                 TokenPos { line: self.line, pos: self.pos, token: Token::Indent };
@@ -50,9 +40,26 @@ impl State {
                 ((self.current_indent - self.line_indent) / 4) as usize
             ]
         };
+        match res.last() {
+            Some(TokenPos { token: Token::Dedent, .. }) =>
+                res.push(TokenPos { line: self.line, pos: self.pos, token: Token::NL }),
+            _ => ()
+        };
+
+        res.push(TokenPos { line: self.line, pos: self.pos, token: token.clone() });
 
         self.current_indent = self.line_indent;
-        res.push(TokenPos { line: self.line, pos: self.pos, token });
+        self.pos += match token {
+            Token::Id(id) => id.len(),
+            Token::Real(real) => real.len(),
+            Token::Int(int) => int.len(),
+            Token::Bool(true) => 4,
+            Token::Bool(false) => 5,
+            Token::Str(_str) => _str.len() + 2,
+            Token::ENum(num, exp) => num.len() + exp.len() + 1,
+            other => format!("{}", other).len()
+        } as i32;
+
         res
     }
 

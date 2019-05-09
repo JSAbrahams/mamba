@@ -108,7 +108,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             '?' => match it.peek() {
                 Some('.') => next_and_create(&mut it, &mut state, Token::QuestCall),
                 Some('o') => match (it.next(), it.peek()) {
-                    (_, Some('r')) => create(&mut state, Token::QuestOr),
+                    (_, Some('r')) => next_and_create(&mut it, &mut state, Token::QuestOr),
                     _ => panic!("Create good error message.")
                 },
                 _ => create(&mut state, Token::Quest)
@@ -169,11 +169,13 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             }
             '"' => {
                 let mut string = String::new();
+                let mut back_slash = false;
                 while let Some(c) = it.next() {
-                    if c == '"' {
+                    if !back_slash && c == '"' {
                         break;
                     }
-                    string.push(c)
+                    string.push(c);
+                    back_slash = c == '\\';
                 }
                 create(&mut state, Token::Str(string))
             }

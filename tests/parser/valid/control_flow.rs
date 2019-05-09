@@ -59,7 +59,7 @@ fn foreach_tuple_statement_verify() {
 #[test]
 fn if_stmt() {
     let source = valid_resource_content(&["control_flow"], "if.mamba");
-    parse(&tokenize(&source).unwrap()).unwrap();
+    assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }
 
 #[test]
