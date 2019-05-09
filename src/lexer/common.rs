@@ -7,7 +7,7 @@ pub struct State {
     line_indent: i32,
     hit_token_this_line: bool,
     pub line: i32,
-    pub pos: i32,
+    pub pos: i32
 }
 
 impl State {
@@ -40,11 +40,15 @@ impl State {
         } as i32;
 
         let mut res = if self.line_indent >= self.current_indent {
-            vec![TokenPos { line: self.line, pos: self.pos, token: Token::Indent };
-                 ((self.line_indent - self.current_indent) / 4) as usize]
+            vec![
+                TokenPos { line: self.line, pos: self.pos, token: Token::Indent };
+                ((self.line_indent - self.current_indent) / 4) as usize
+            ]
         } else {
-            vec![TokenPos { line: self.line, pos: self.pos, token: Token::Dedent };
-                 ((self.current_indent - self.line_indent) / 4) as usize]
+            vec![
+                TokenPos { line: self.line, pos: self.pos, token: Token::Dedent };
+                ((self.current_indent - self.line_indent) / 4) as usize
+            ]
         };
 
         self.current_indent = self.line_indent;
