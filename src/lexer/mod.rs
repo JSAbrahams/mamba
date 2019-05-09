@@ -115,10 +115,44 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             },
             '0'..='9' => {
                 let mut number = c.to_string();
-                while it.peek().is_some() && it.peek().unwrap().is_numeric() {
-                    number.push(it.next().unwrap());
+                let mut exp = String::new();
+                let mut float = false;
+                let mut e_num = false;
+
+                while let Some(&c) = it.peek() {
+                    match c {
+                        '0'...'9' if !e_num => {
+                            number.push(c);
+                            it.next();
+                        }
+                        '0'...'9' if e_num => {
+                            exp.push(c);
+                            it.next();
+                        }
+                        'E' if e_num => break,
+                        'E' => {
+                            e_num = true;
+                            it.next();
+                        }
+                        '.' if float || e_num => break,
+                        '.' => {
+                            number.push(c);
+                            float = true;
+                            it.next();
+                        }
+                        _ => break
+                    }
                 }
-                create(&mut state, Token::Int(number))
+                create(
+                    &mut state,
+                    if e_num {
+                        Token::ENum(number, exp)
+                    } else if float {
+                        Token::Real(number)
+                    } else {
+                        Token::Int(number)
+                    }
+                )
             }
             'a'..='z' | 'A'..='Z' | '_' => {
                 let mut id_or_operation = c.to_string();
