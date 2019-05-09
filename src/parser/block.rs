@@ -15,6 +15,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
             Token::NL => {
                 it.next();
             }
+            Token::Comment(_) => (),
             _ => {
                 statements.push(get_or_err_direct!(it, parse_expr_or_stmt, "block"));
                 if let Some(&t) = it.peek() {

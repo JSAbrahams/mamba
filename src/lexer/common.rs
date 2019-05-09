@@ -15,20 +15,20 @@ impl State {
         State { current_indent: 1, line_indent: 1, hit_token_this_line: false, line: 1, pos: 1 }
     }
 
-    pub fn token(&mut self, token: &Token) -> Vec<TokenPos> {
-        debug_assert_ne!(*token, Token::Indent);
-        debug_assert_ne!(*token, Token::Dedent);
+    pub fn token(&mut self, token: Token) -> Vec<TokenPos> {
+        debug_assert_ne!(token, Token::Indent);
+        debug_assert_ne!(token, Token::Dedent);
 
-        if *token == Token::NL {
-            let res = vec![TokenPos { line: self.line, pos: self.pos, token: Token::NL }];
+        if token == Token::NL {
             self.hit_token_this_line = false;
+            self.line_indent = 1;
             self.pos = 1;
             self.line += 1;
-
-            return res;
+            return vec![TokenPos { line: self.line, pos: self.pos, token: token.clone() }];
         }
 
-        self.pos += match token {
+        self.hit_token_this_line = true;
+        self.pos += match token.clone() {
             Token::Id(id) => id.len(),
             Token::Real(real) => real.len(),
             Token::Int(int) => int.len(),
@@ -39,18 +39,17 @@ impl State {
             other => format!("{}", other).len()
         } as i32;
 
-        self.hit_token_this_line = true;
-        if self.line_indent >= self.current_indent {
-            vec![
-                TokenPos { line: self.line, pos: self.pos, token: Token::Indent };
-                ((self.line_indent - self.current_indent) / 4) as usize
-            ]
+        let mut res = if self.line_indent >= self.current_indent {
+            vec![TokenPos { line: self.line, pos: self.pos, token: Token::Indent };
+                 ((self.line_indent - self.current_indent) / 4) as usize]
         } else {
-            vec![
-                TokenPos { line: self.line, pos: self.pos, token: Token::Dedent };
-                ((self.current_indent - self.line_indent) / 4) as usize
-            ]
-        }
+            vec![TokenPos { line: self.line, pos: self.pos, token: Token::Dedent };
+                 ((self.current_indent - self.line_indent) / 4) as usize]
+        };
+
+        self.current_indent = self.line_indent;
+        res.push(TokenPos { line: self.line, pos: self.pos, token });
+        res
     }
 
     pub fn space(&mut self) {

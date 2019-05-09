@@ -97,7 +97,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             },
             '#' => {
                 let mut comment = String::new();
-                while it.peek().is_some() && it.peek().unwrap().is_numeric() {
+                while it.peek().is_some() && *it.peek().unwrap() != '\n' && *it.peek().unwrap() != '\r' {
                     comment.push(it.next().unwrap());
                 }
                 create(&mut state, Token::Comment(comment))
@@ -162,9 +162,7 @@ fn next_and_create(it: &mut Peekable<Chars>, state: &mut State, token: Token) ->
 }
 
 fn create(state: &mut State, token: Token) -> Vec<TokenPos> {
-    let mut tokens = state.token(&token);
-    tokens.push(TokenPos { line: state.line, pos: state.pos, token });
-    tokens
+    state.token(token)
 }
 
 fn as_op_or_id(string: String) -> Token {
