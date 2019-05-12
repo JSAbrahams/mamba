@@ -11,7 +11,11 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut statements: Vec<ASTNodePos> = Vec::new();
     while let Some(&t) = it.peek() {
         match &t.token {
-            Token::Dedent | Token::Stateful | Token::Stateless | Token::Type => break,
+            Token::Dedent => {
+                it.next();
+                break;
+            }
+            Token::Stateful | Token::Stateless | Token::Type => break,
             Token::NL => {
                 it.next();
             }
@@ -40,13 +44,11 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Indent);
 
     let statements: Vec<ASTNodePos> = get_or_err_direct!(it, parse_statements, "block");
-    if it.peek().is_some() {
-        check_next_is!(it, Token::Dedent);
-    }
 
     let (en_line, en_pos) = match statements.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)
     };
+
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } })
 }

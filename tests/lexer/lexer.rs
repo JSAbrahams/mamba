@@ -60,7 +60,6 @@ fn lex_if() {
         TokenPos { line: 2, pos: 5, token: Token::Id(String::from("b")) },
         TokenPos { line: 2, pos: 6, token: Token::NL },
         TokenPos { line: 3, pos: 1, token: Token::Dedent },
-        TokenPos { line: 3, pos: 1, token: Token::NL },
         TokenPos { line: 3, pos: 1, token: Token::Else },
         TokenPos { line: 3, pos: 5, token: Token::NL },
         TokenPos { line: 4, pos: 5, token: Token::Indent },

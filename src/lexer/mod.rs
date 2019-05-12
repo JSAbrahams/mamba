@@ -41,7 +41,7 @@ mod common;
 /// let result = tokenize(&source);
 /// assert_eq!(result.is_err(), true);
 /// ```
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cyclomatic_complexity,clippy::while_let_on_iterator)]
 pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();
@@ -61,7 +61,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             '\n' => create(&mut state, Token::NL),
             '\r' => match it.next() {
                 Some('\n') => create(&mut state, Token::NL),
-                _ => panic!("Create good error message.")
+                _ => return Err(String::from("Create good error message."))
             },
             '.' => match it.peek() {
                 Some('.') => match (it.next(), it.peek()) {
@@ -109,7 +109,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                 Some('.') => next_and_create(&mut it, &mut state, Token::QuestCall),
                 Some('o') => match (it.next(), it.peek()) {
                     (_, Some('r')) => next_and_create(&mut it, &mut state, Token::QuestOr),
-                    _ => panic!("Create good error message.")
+                    _ => return Err(String::from("Create good error message."))
                 },
                 _ => create(&mut state, Token::Quest)
             },
@@ -184,7 +184,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                 vec![]
             }
 
-            other => panic!("Create good error message: {}.", other)
+            other => return Err(format!("Create good error message: {}.", other))
         };
 
         for tp in token_pos {

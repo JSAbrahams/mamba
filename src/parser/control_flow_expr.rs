@@ -40,14 +40,6 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Then);
     let then: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "if then branch");
 
-    while let Some(&t) = it.peek() {
-        if t.token == Token::NL {
-            it.next();
-        } else {
-            break;
-        }
-    }
-
     let _else = if let Some(&&TokenPos { token: Token::Else, .. }) = it.peek() {
         it.next();
         Some(get_or_err!(it, parse_expr_or_stmt, "if else branch"))

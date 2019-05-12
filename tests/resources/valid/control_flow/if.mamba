@@ -12,6 +12,10 @@ if cond, cond2 then
         bbb
     else
         ccc
+
+    if ggg then
+        hhh
+    else iii
 else
     other
     print "hello \"world\""
