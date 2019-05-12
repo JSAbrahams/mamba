@@ -24,11 +24,7 @@ pub enum ASTNode {
         id:     Box<ASTNodePos>,
         import: Box<ASTNodePos>
     },
-    Stateful {
-        _type: Box<ASTNodePos>,
-        body:  Box<ASTNodePos>
-    },
-    Stateless {
+    Class {
         _type: Box<ASTNodePos>,
         body:  Box<ASTNodePos>
     },
@@ -56,6 +52,7 @@ pub enum ASTNode {
         forward:       Vec<ASTNodePos>
     },
     FunDef {
+        stateful: bool,
         id:       Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
         ret_ty:   Option<Box<ASTNodePos>>,

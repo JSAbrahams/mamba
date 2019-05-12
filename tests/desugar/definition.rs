@@ -184,6 +184,7 @@ fn tuple_def_none_verify() {
 fn fun_def_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        stateful: false,
         fun_args: vec![
             to_pos_unboxed!(ASTNode::FunArg {
                 vararg:        false,
@@ -228,6 +229,7 @@ fn fun_def_verify() {
 fn fun_def_default_arg_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        stateful: false,
         fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
             vararg:        false,
             id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
@@ -260,6 +262,7 @@ fn fun_def_default_arg_verify() {
 fn fun_def_with_body_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        stateful: false,
         fun_args: vec![
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg1") }),
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
@@ -323,6 +326,7 @@ fn top_level_var_def_panic_verify() {
 fn top_level_fun_def_panic_verify() {
     let var_def = to_pos!(ASTNode::FunDef {
         id:       Box::from(to_pos!(ASTNode::Pass)),
+        stateful: false,
         fun_args: vec![],
         ret_ty:   None,
         raises:   None,

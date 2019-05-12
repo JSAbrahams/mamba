@@ -13,13 +13,13 @@ macro_rules! unwrap_func_definition {
             _ => panic!("ast_tree was not script.")
         };
 
-        let (id, fun_args, ret_ty, raises, body) = match definition.node {
-            ASTNode::FunDef { id, fun_args, ret_ty, raises, body } =>
-                (id, fun_args, ret_ty, raises, body),
+        let (id, stateful, fun_args, ret_ty, raises, body) = match definition.node {
+            ASTNode::FunDef { id, stateful, fun_args, ret_ty, raises, body } =>
+                (id, stateful, fun_args, ret_ty, raises, body),
             other => panic!("Expected variabledef but was {:?}.", other)
         };
 
-        (private, id, fun_args, ret_ty, raises, body)
+        (private, stateful, id, fun_args, ret_ty, raises, body)
     }};
 }
 
@@ -184,7 +184,7 @@ fn forward_empty_definition_verify() {
 
 #[test]
 fn forward_definition_verify() {
-    let source = String::from("def a <- class forward b, c");
+    let source = String::from("def a <- MyClass forward b, c");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
@@ -192,23 +192,20 @@ fn forward_definition_verify() {
     assert_eq!(mutable, false);
     assert_eq!(ofmut, false);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(expression.unwrap().node, ASTNode::Id { lit: String::from("MyClass") });
     assert_eq!(forward.len(), 2);
     assert_eq!(forward[0].node, ASTNode::Id { lit: String::from("b") });
     assert_eq!(forward[1].node, ASTNode::Id { lit: String::from("c") });
-
-    match expression {
-        Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Id { lit: String::from("class") }),
-        other => panic!("Unexpected expression: {:?}", other)
-    }
 }
 
 #[test]
 fn function_definition_verify() {
     let source = String::from("def f(b: Something, vararg c) => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
+    let (private, stateful, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
+    assert!(stateful);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
     assert_eq!(ret_ty, None);
@@ -257,9 +254,10 @@ fn function_definition_verify() {
 fn function_no_args_definition_verify() {
     let source = String::from("def f() => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
+    let (private, stateful, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
+    assert!(stateful);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 0);
     assert_eq!(ret_ty, None);
@@ -274,9 +272,10 @@ fn function_no_args_definition_verify() {
 fn function_definition_with_literal_verify() {
     let source = String::from("def f(x, vararg b: Something) => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
+    let (private, stateful, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
+    assert!(stateful);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
     assert_eq!(ret_ty, None);
