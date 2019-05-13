@@ -21,7 +21,13 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
             }
             Token::Comment(comment) => {
                 let node = ASTNode::Comment { comment: comment.clone() };
-                let node_pos = ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node };
+                let node_pos = ASTNodePos {
+                    st_line: t.line,
+                    st_pos: t.pos,
+                    en_line: t.line,
+                    en_pos: t.pos + comment.len() as i32,
+                    node
+                };
                 statements.push(node_pos);
                 it.next();
             }
