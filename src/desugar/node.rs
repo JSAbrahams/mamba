@@ -228,17 +228,16 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             Core::Block { statements }
         }
 
-        ASTNode::Stateful { _type, body } | ASTNode::Stateless { _type, body } =>
-            match (&_type.deref().node, &body.deref().node) {
-                (ASTNode::Type { id, generics }, ASTNode::Body { isa, definitions }) =>
-                    Core::ClassDef {
-                        name:        Box::from(desugar_node(id, ctx, state)),
-                        generics:    desugar_vec(generics, ctx, state),
-                        parents:     desugar_vec(isa, ctx, state),
-                        definitions: desugar_vec(definitions, ctx, state)
-                    },
-                other => panic!("desugarer didn't recognize while making class: {:?}.", other)
-            },
+        ASTNode::Class { _type, body } => match (&_type.deref().node, &body.deref().node) {
+            (ASTNode::Type { id, generics }, ASTNode::Body { isa, definitions }) =>
+                Core::ClassDef {
+                    name:        Box::from(desugar_node(id, ctx, state)),
+                    generics:    desugar_vec(generics, ctx, state),
+                    parents:     desugar_vec(isa, ctx, state),
+                    definitions: desugar_vec(definitions, ctx, state)
+                },
+            other => panic!("desugarer didn't recognize while making class: {:?}.", other)
+        },
 
         ASTNode::TypeDef { .. }
         | ASTNode::TypeAlias { .. }

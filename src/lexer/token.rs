@@ -11,7 +11,7 @@ pub struct TokenPos {
 pub enum Token {
     From,
     Type,
-    Stateful,
+    Class,
     Stateless,
     IsA,
     IsNA,
@@ -115,7 +115,7 @@ impl fmt::Display for Token {
             Token::From => String::from("from"),
             Token::Stateless => String::from("stateless"),
             Token::Type => String::from("type"),
-            Token::Stateful => String::from("stateful"),
+            Token::Class => String::from("class"),
             Token::IsA => String::from("isa"),
             Token::IsNA => String::from("isnta"),
             Token::Private => String::from("private"),

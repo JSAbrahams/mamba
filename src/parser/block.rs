@@ -15,21 +15,18 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
                 it.next();
                 break;
             }
-            Token::Stateful | Token::Stateless | Token::Type => break,
             Token::NL => {
                 it.next();
             }
             Token::Comment(comment) => {
-                let node = ASTNode::Comment { comment: comment.clone() };
-                let node_pos = ASTNodePos {
-                    st_line: t.line,
-                    st_pos: t.pos,
-                    en_line: t.line,
-                    en_pos: t.pos + comment.len() as i32,
-                    node
-                };
-                statements.push(node_pos);
                 it.next();
+                statements.push(ASTNodePos {
+                    st_line: t.line,
+                    st_pos:  t.pos,
+                    en_line: t.line,
+                    en_pos:  t.pos + comment.len() as i32,
+                    node:    ASTNode::Comment { comment: comment.clone() }
+                })
             }
             _ => {
                 statements.push(get_or_err_direct!(it, parse_expr_or_stmt, "block"));

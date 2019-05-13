@@ -183,8 +183,9 @@ fn tuple_def_none_verify() {
 #[test]
 fn fun_def_verify() {
     let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
-        fun_args: vec![
+        id:        to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        stateless: false,
+        fun_args:  vec![
             to_pos_unboxed!(ASTNode::FunArg {
                 vararg:        false,
                 id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
@@ -196,9 +197,9 @@ fn fun_def_verify() {
                 default:       None
             })
         ],
-        ret_ty:   None,
-        raises:   None,
-        body:     None
+        ret_ty:    None,
+        raises:    None,
+        body:      None
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
@@ -227,15 +228,16 @@ fn fun_def_verify() {
 #[test]
 fn fun_def_default_arg_verify() {
     let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
-        fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
+        id:        to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        stateless: false,
+        fun_args:  vec![to_pos_unboxed!(ASTNode::FunArg {
             vararg:        false,
             id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
             default:       Some(to_pos!(ASTNode::Str { lit: String::from("asdf") }))
         })],
-        ret_ty:   None,
-        raises:   None,
-        body:     None
+        ret_ty:    None,
+        raises:    None,
+        body:      None
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
@@ -259,14 +261,15 @@ fn fun_def_default_arg_verify() {
 #[test]
 fn fun_def_with_body_verify() {
     let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
-        fun_args: vec![
+        id:        to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        stateless: false,
+        fun_args:  vec![
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg1") }),
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
         ],
-        ret_ty:   None,
-        raises:   None,
-        body:     Some(to_pos!(ASTNode::Real { lit: String::from("2.4") }))
+        ret_ty:    None,
+        raises:    None,
+        body:      Some(to_pos!(ASTNode::Real { lit: String::from("2.4") }))
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
@@ -322,11 +325,12 @@ fn top_level_var_def_panic_verify() {
 #[test]
 fn top_level_fun_def_panic_verify() {
     let var_def = to_pos!(ASTNode::FunDef {
-        id:       Box::from(to_pos!(ASTNode::Pass)),
-        fun_args: vec![],
-        ret_ty:   None,
-        raises:   None,
-        body:     None
+        id:        Box::from(to_pos!(ASTNode::Pass)),
+        stateless: false,
+        fun_args:  vec![],
+        ret_ty:    None,
+        raises:    None,
+        body:      None
     });
 
     panic::set_hook(Box::new(|_info| {}));

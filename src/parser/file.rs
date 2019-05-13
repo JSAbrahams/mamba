@@ -125,31 +125,17 @@ pub fn parse_class_body(it: &mut TPIterator) -> ParseResult {
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
-pub fn parse_stateless(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::Stateless);
+pub fn parse_class(it: &mut TPIterator) -> ParseResult {
+    check_next_is!(it, Token::Class);
     let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
-    let body = get_or_err!(it, parse_class_body, "util");
+    let body = get_or_err!(it, parse_class_body, "body");
 
     Ok(ASTNodePos {
         st_line: body.st_line,
         st_pos:  body.st_pos,
         en_line: body.en_line,
         en_pos:  body.en_pos,
-        node:    ASTNode::Stateless { _type, body }
-    })
-}
-
-pub fn parse_stateful(it: &mut TPIterator) -> ParseResult {
-    check_next_is!(it, Token::Stateful);
-    let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "name");
-    let body: Box<ASTNodePos> = get_or_err!(it, parse_class_body, "class");
-
-    Ok(ASTNodePos {
-        st_line: body.st_line,
-        st_pos:  body.st_pos,
-        en_line: body.en_line,
-        en_pos:  body.en_pos,
-        node:    ASTNode::Stateful { _type, body }
+        node:    ASTNode::Class { _type, body }
     })
 }
 
@@ -167,8 +153,7 @@ pub fn parse_script(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_module(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
-        Some(TokenPos { token: Token::Stateless, .. }) => parse_stateless(it),
-        Some(TokenPos { token: Token::Stateful, .. }) => parse_stateful(it),
+        Some(TokenPos { token: Token::Class, .. }) => parse_class(it),
         _ => parse_script(it)
     }
 }
@@ -178,8 +163,13 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut modules = Vec::new();
     let mut type_defs = Vec::new();
 
+    let stateless = it.peek().is_some() && it.peek().unwrap().token == Token::Stateless;
+    if stateless {
+        it.next();
+    }
+
     while let Some(&t) = it.peek() {
-        match t.token {
+        match &t.token {
             Token::NL => {
                 it.next();
             }
@@ -187,11 +177,21 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Token::From => imports.push(get_or_err_direct!(it, parse_from_import, "from import")),
             Token::Type =>
                 type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition")),
+            Token::Comment(comment) => {
+                it.next();
+                modules.push(ASTNodePos {
+                    st_line: t.line,
+                    st_pos:  t.pos,
+                    en_line: t.line,
+                    en_pos:  t.pos + comment.len() as i32,
+                    node:    ASTNode::Comment { comment: comment.clone() }
+                })
+            }
             _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
         }
     }
 
-    let node = ASTNode::File { imports, modules, type_defs };
+    let node = ASTNode::File { stateless, imports, modules, type_defs };
     Ok(ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node })
 }
 

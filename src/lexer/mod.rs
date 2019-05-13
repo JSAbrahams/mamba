@@ -208,7 +208,7 @@ fn as_op_or_id(string: String) -> Token {
 
         "from" => Token::From,
         "type" => Token::Type,
-        "stateful" => Token::Stateful,
+        "class" => Token::Class,
         "stateless" => Token::Stateless,
         "as" => Token::As,
         "private" => Token::Private,

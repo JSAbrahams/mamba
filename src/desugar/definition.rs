@@ -7,7 +7,7 @@ use crate::parser::ast::ASTNode;
 
 pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
-        ASTNode::Def { private, definition } => match &definition.node {
+        ASTNode::Def { private, definition, .. } => match &definition.node {
             ASTNode::VariableDef { id_maybe_type, expression, forward, .. } => {
                 let id = desugar_node(id_maybe_type, ctx, state);
                 let new_state = &State {
