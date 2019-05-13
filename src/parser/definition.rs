@@ -19,16 +19,12 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     check_next_is!(it, Token::Def);
 
-    let private = if let Some(TokenPos { token: Token::Private, .. }) = it.peek() {
+    let private = it.peek().is_some() && it.peek().unwrap().token == Token::Private;
+    if private {
         it.next();
-        true
-    } else {
-        false
-    };
+    }
 
-    let stateful_token = it.peek().is_some()
-        && (it.peek().unwrap().token == Token::Stateless
-            || it.peek().unwrap().token == Token::Stateful);
+    let stateful_token = it.peek().is_some() && it.peek().unwrap().token == Token::Stateless;
     let stateful = !(it.peek().is_some() && it.peek().unwrap().token == Token::Stateless);
     if stateful_token {
         it.next();
