@@ -14,7 +14,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
             Token::Dedent => {
                 it.next();
                 break;
-            },
+            }
             Token::NL => {
                 it.next();
             }
