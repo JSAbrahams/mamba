@@ -4,7 +4,6 @@ use crate::lexer::token::TokenPos;
 #[derive(Clone)]
 pub struct State {
     newlines: Vec<TokenPos>,
-
     current_indent: i32,
     line_indent: i32,
     hit_token_this_line: bool,
