@@ -10,8 +10,11 @@ use crate::parser::TPIterator;
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut statements: Vec<ASTNodePos> = Vec::new();
     while let Some(&t) = it.peek() {
-        match t.token {
-            Token::Dedent => break,
+        match &t.token {
+            Token::Dedent => {
+                it.next();
+                break;
+            },
             Token::NL => {
                 it.next();
             }
