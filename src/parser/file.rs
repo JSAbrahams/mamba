@@ -169,7 +169,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     }
 
     while let Some(&t) = it.peek() {
-        match t.token {
+        match &t.token {
             Token::NL => {
                 it.next();
             }
@@ -177,6 +177,16 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Token::From => imports.push(get_or_err_direct!(it, parse_from_import, "from import")),
             Token::Type =>
                 type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition")),
+            Token::Comment(comment) => {
+                it.next();
+                modules.push(ASTNodePos {
+                    st_line: t.line,
+                    st_pos:  t.pos,
+                    en_line: t.line,
+                    en_pos:  t.pos + comment.len() as i32,
+                    node:    ASTNode::Comment { comment: comment.clone() }
+                })
+            }
             _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
         }
     }
