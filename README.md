@@ -185,20 +185,41 @@ This is similar to "pure" functional programming languages such as Haskell.
 By default, everything is stateful, such as in Python.
 However, in some cases we may wish to make everything without state, such as when writing helper functions which should only rely on a given input.
 A function that is `stateless` cannot:
--   read mutable variables not passed as an argument (with one exception).
--   read mutable properties of `self`.
--   call non-stateless functions.
+-   Read mutable variables not passed as an argument (with one exception).
+-   Read mutable properties of `self`.
+    Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
+-   Call non-stateless functions.
 
+With the above properties, we can ensure that a function is injective.
 `stateless` is similar to `mut`, however, statlessness is more a property concerned with reading variables that might change, whereas mutability is more concerned with writing to variables that might change.
 
 ```mamba
-# Add code example
+def taylor = 7
+
+# the sinus function is injective, its output depends solely on the input
+def stateless sin(x: Int) =>
+    def mut res <- x
+    for i in 1 ..= taylor do
+        res <- (x ^ (i + 2)) / (factorial (i + 2))
+    res
 ```
 
 We can add `stateless` to the top of a file, which ensures all functions in said file must be stateless.
+This is useful when we want to write multiple injective functions.
 
 ```mamba
-# Add code example
+stateless
+def taylor = 7
+
+def sin(x: Int): Real =>
+    def mut ans <- x
+    for i in 1 ..= taylor do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    ans
+    
+def cos(x: Int): Real =>
+    def mut ans <- x
+    for i in 0 .. taylor do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    ans
 ```
 
 ### ⚠ Error handling
