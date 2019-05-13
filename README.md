@@ -33,6 +33,7 @@ Functions written in Python can be called in Mamba and vice versa.
 ## ⌨️ Code Examples
 
 Below are some code examples to showcase the features of Mamba.
+We highlight how functions work, how de define classes, how types and type refinement features are applied, how Mamba can be used to ensure statelessness, and how error handling works.
 For more extensive examples and explanations check out the [documentation](https://joelabrahams.nl/mamba_doc).
 
 ### ➕ Functions
@@ -54,16 +55,14 @@ else
 Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
 This means that the compiler will check for us that factorial is only used with integers as argument.
 
-### 🔓🔒 Stateful and stateless (and mutability)
+### 📋 Classes and mutability
 
-Mamba allows us to explicitly state whether something has a state or is indeed without state.
-A stateful object can modify its internal state (i.e. by changing a value of an internal field), whereas a stateless object cannot.
-
+Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
 We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
-stateful MyServer(def ip_address: ipaddress.ip_address)
+class MyServer(def ip_address: ipaddress.ip_address)
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
@@ -81,7 +80,7 @@ stateful MyServer(def ip_address: ipaddress.ip_address)
 ```
 
 Notice how:
--   `HTTPServer` is `stateful`, so we can have mutable top-level definitions such as `connected`, which may change over the lifetime of an object.
+-   `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
 -   `last_message` is private, denoted by the `private` keyword.
     This means that we cannot access is directly, meaning we cannot for instance do `server.last_message <- "Mischief"`.
     Instead, we call `server.last_sent`.
@@ -178,6 +177,50 @@ Type refinement allows us to to some additional things:
 -   It allows us to explicitly name the possible states of an object.
     This means that we don't constantly have to check that certain conditions hold.
     We can simply ask whether a given object is a certain state by checking whether it is a certain type.
+    
+### 🔒 Stateless
+
+Mamba has features to ensure that functions are injective, meaning that if `x = y`, for any stateless `f`, `f(x) = f(y)`.
+This is similar to "pure" functional programming languages such as Haskell.
+By default, everything is stateful, such as in Python.
+However, in some cases we may wish to make everything without state, such as when writing helper functions which should only rely on a given input.
+A function that is `stateless` cannot:
+-   Read mutable variables not passed as an argument (with one exception).
+-   Read mutable properties of `self`.
+    Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
+-   Call non-stateless functions.
+
+With the above properties, we can ensure that a function is injective.
+`stateless` is similar to `mut`, however, statlessness is more a property concerned with reading variables that might change, whereas mutability is more concerned with writing to variables that shouldn't change.
+
+```mamba
+def taylor <- 7
+
+# the sinus function is injective, its output depends solely on the input
+def stateless sin(x: Int) =>
+    def mut res <- x
+    for i in 1 ..= taylor do
+        res <- (x ^ (i + 2)) / (factorial (i + 2))
+    res
+```
+
+We can add `stateless` to the top of a file, which ensures all functions in said file must be stateless.
+This is useful when we want to write multiple injective functions.
+
+```mamba
+stateless
+def taylor <- 7
+
+def sin(x: Int): Real =>
+    def mut ans <- x
+    for i in 1 ..= taylor do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    ans
+    
+def cos(x: Int): Real =>
+    def mut ans <- x
+    for i in 0 .. taylor do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    ans
+```
 
 ### ⚠ Error handling
 
