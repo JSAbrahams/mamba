@@ -10,9 +10,25 @@ use crate::parser::TPIterator;
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut statements: Vec<ASTNodePos> = Vec::new();
     while let Some(&t) = it.peek() {
-        match t.token {
-            Token::Dedent | Token::Stateful | Token::Stateless | Token::Type => break,
+        match &t.token {
+            Token::Dedent => {
+                it.next();
+                break;
+            }
+            Token::Stateful | Token::Stateless | Token::Type => break,
             Token::NL => {
+                it.next();
+            }
+            Token::Comment(comment) => {
+                let node = ASTNode::Comment { comment: comment.clone() };
+                let node_pos = ASTNodePos {
+                    st_line: t.line,
+                    st_pos: t.pos,
+                    en_line: t.line,
+                    en_pos: t.pos + comment.len() as i32,
+                    node
+                };
+                statements.push(node_pos);
                 it.next();
             }
             _ => {
@@ -34,13 +50,11 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Indent);
 
     let statements: Vec<ASTNodePos> = get_or_err_direct!(it, parse_statements, "block");
-    if it.peek().is_some() {
-        check_next_is!(it, Token::Dedent);
-    }
 
     let (en_line, en_pos) = match statements.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)
     };
+
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Block { statements } })
 }

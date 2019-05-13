@@ -315,5 +315,8 @@ pub enum ASTNode {
 
     Print {
         expr: Box<ASTNodePos>
+    },
+    Comment {
+        comment: String
     }
 }

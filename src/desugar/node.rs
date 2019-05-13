@@ -248,6 +248,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
 
         ASTNode::Condition { .. } => unimplemented!("Condition has not yet been implemented."),
 
+        ASTNode::Comment { comment } => Core::Comment { comment: comment.clone() },
         ASTNode::Pass => Core::Pass,
 
         ASTNode::Body { .. } => panic!("Body cannot be top level."),

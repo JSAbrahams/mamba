@@ -209,6 +209,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Pass => String::from("pass"),
         Core::None => String::from("None"),
         Core::Empty => String::new(),
+        Core::Comment { comment } => format!("#{}", comment),
 
         other => panic!("To python not implemented yet for: {:?}", other)
     }

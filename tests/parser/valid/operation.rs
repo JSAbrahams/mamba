@@ -101,7 +101,7 @@ fn power_verify() {
 
 #[test]
 fn mod_verify() {
-    let source = String::from("chopin mod 3e10");
+    let source = String::from("chopin mod 3E10");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Mod, ast_tree);

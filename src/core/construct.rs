@@ -227,5 +227,8 @@ pub enum Core {
 
     Pass,
     None,
-    Empty
+    Empty,
+    Comment {
+        comment: String
+    }
 }

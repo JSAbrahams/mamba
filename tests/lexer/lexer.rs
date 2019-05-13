@@ -56,20 +56,20 @@ fn lex_if() {
         TokenPos { line: 1, pos: 4, token: Token::Id(String::from("a")) },
         TokenPos { line: 1, pos: 6, token: Token::Then },
         TokenPos { line: 1, pos: 10, token: Token::NL },
-        TokenPos { line: 2, pos: 1, token: Token::Indent },
+        TokenPos { line: 2, pos: 5, token: Token::Indent },
         TokenPos { line: 2, pos: 5, token: Token::Id(String::from("b")) },
         TokenPos { line: 2, pos: 6, token: Token::NL },
         TokenPos { line: 3, pos: 1, token: Token::Dedent },
         TokenPos { line: 3, pos: 1, token: Token::Else },
         TokenPos { line: 3, pos: 5, token: Token::NL },
-        TokenPos { line: 4, pos: 1, token: Token::Indent },
+        TokenPos { line: 4, pos: 5, token: Token::Indent },
         TokenPos { line: 4, pos: 5, token: Token::Id(String::from("c")) }
     ]);
 }
 
 #[test]
 fn numbers_and_strings() {
-    let source = String::from("1 2.0 3e10 5e 2 \"hello\" True False i");
+    let source = String::from("1 2.0 3E10 5E 2 \"hello\" True False i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
         TokenPos { line: 1, pos: 1, token: Token::Int(String::from("1")) },
