@@ -24,27 +24,23 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
         it.next();
     }
 
-    let stateful_token = it.peek().is_some() && it.peek().unwrap().token == Token::Stateless;
-    let stateful = !(it.peek().is_some() && it.peek().unwrap().token == Token::Stateless);
-    if stateful_token {
+    let stateless = it.peek().is_some() && it.peek().unwrap().token == Token::Stateless;
+    if stateless {
         it.next();
     }
 
     macro_rules! op {
         ($node:ident) => {{
             let (en_line, en_pos) = end_pos(it);
+            let node_pos = ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::$node };
             it.next();
-            parse_fun_def(
-                ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::$node },
-                stateful,
-                it
-            )
+            parse_fun_def(node_pos, stateless, it)
         }};
     };
 
-    let definition = if stateful_token {
+    let definition = if stateless {
         let id = get_or_err_direct!(it, parse_id_maybe_type, "definition id");
-        parse_fun_def(id, stateful, it)
+        parse_fun_def(id, stateless, it)
     } else {
         match it.peek() {
             Some(TokenPos { token: Token::Mut, .. })
@@ -71,7 +67,8 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
                     node: ASTNode::IdType { _type: None, mutable: false, .. },
                     ..
                 } => match it.peek() {
-                    Some(TokenPos { token: Token::LRBrack, .. }) => parse_fun_def(id, stateful, it),
+                    Some(TokenPos { token: Token::LRBrack, .. }) =>
+                        parse_fun_def(id, stateless, it),
                     None | Some(_) => parse_variable_def_id(id, it)
                 },
                 _ => return Err(InternalErr { message: String::from("couldn't parse def") })
@@ -91,7 +88,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     }
 }
 
-fn parse_fun_def(id_type: ASTNodePos, stateful: bool, it: &mut TPIterator) -> ParseResult {
+fn parse_fun_def(id_type: ASTNodePos, stateless: bool, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     let fun_args = get_or_err_direct!(it, parse_fun_args, "function arguments");
 
@@ -145,7 +142,7 @@ fn parse_fun_def(id_type: ASTNodePos, stateful: bool, it: &mut TPIterator) -> Pa
         _ => (id_type.en_line, id_type.en_pos)
     };
 
-    let node = ASTNode::FunDef { id, stateful, fun_args, ret_ty, raises, body };
+    let node = ASTNode::FunDef { id, stateless, fun_args, ret_ty, raises, body };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 

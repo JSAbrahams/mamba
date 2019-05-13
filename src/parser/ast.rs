@@ -52,12 +52,12 @@ pub enum ASTNode {
         forward:       Vec<ASTNodePos>
     },
     FunDef {
-        stateful: bool,
-        id:       Box<ASTNodePos>,
-        fun_args: Vec<ASTNodePos>,
-        ret_ty:   Option<Box<ASTNodePos>>,
-        raises:   Option<Vec<ASTNodePos>>,
-        body:     Option<Box<ASTNodePos>>
+        stateless: bool,
+        id:        Box<ASTNodePos>,
+        fun_args:  Vec<ASTNodePos>,
+        ret_ty:    Option<Box<ASTNodePos>>,
+        raises:    Option<Vec<ASTNodePos>>,
+        body:      Option<Box<ASTNodePos>>
     },
 
     AnonFun {
