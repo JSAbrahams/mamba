@@ -191,7 +191,7 @@ A function that is `stateless` cannot:
 -   Call non-stateless functions.
 
 With the above properties, we can ensure that a function is injective.
-`stateless` is similar to `mut`, however, statlessness is more a property concerned with reading variables that might change, whereas mutability is more concerned with writing to variables that might change.
+`stateless` is similar to `mut`, however, statlessness is more a property concerned with reading variables that might change, whereas mutability is more concerned with writing to variables that shouldn't change.
 
 ```mamba
 def taylor = 7
