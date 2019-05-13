@@ -22,6 +22,19 @@ fn quest_or_verify() {
 }
 
 #[test]
+fn stateless_file() {
+    let source = String::from("stateless");
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+
+    let stateless = match ast_tree.node {
+        ASTNode::File { stateless, .. } => stateless,
+        _ => panic!("ast_tree was not file.")
+    };
+
+    assert!(stateless);
+}
+
+#[test]
 fn range_verify() {
     let source = String::from("hello .. world");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();

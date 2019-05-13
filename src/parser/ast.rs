@@ -12,6 +12,7 @@ pub struct ASTNodePos {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum ASTNode {
     File {
+        stateless: bool,
         imports:   Vec<ASTNodePos>,
         modules:   Vec<ASTNodePos>,
         type_defs: Vec<ASTNodePos>

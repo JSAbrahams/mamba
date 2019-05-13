@@ -163,6 +163,11 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut modules = Vec::new();
     let mut type_defs = Vec::new();
 
+    let stateless = it.peek().is_some() && it.peek().unwrap().token == Token::Stateless;
+    if stateless {
+        it.next();
+    }
+
     while let Some(&t) = it.peek() {
         match t.token {
             Token::NL => {
@@ -176,7 +181,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
         }
     }
 
-    let node = ASTNode::File { imports, modules, type_defs };
+    let node = ASTNode::File { stateless, imports, modules, type_defs };
     Ok(ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node })
 }
 
