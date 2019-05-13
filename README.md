@@ -194,7 +194,7 @@ With the above properties, we can ensure that a function is injective.
 `stateless` is similar to `mut`, however, statlessness is more a property concerned with reading variables that might change, whereas mutability is more concerned with writing to variables that shouldn't change.
 
 ```mamba
-def taylor = 7
+def taylor <- 7
 
 # the sinus function is injective, its output depends solely on the input
 def stateless sin(x: Int) =>
@@ -209,7 +209,7 @@ This is useful when we want to write multiple injective functions.
 
 ```mamba
 stateless
-def taylor = 7
+def taylor <- 7
 
 def sin(x: Int): Real =>
     def mut ans <- x
