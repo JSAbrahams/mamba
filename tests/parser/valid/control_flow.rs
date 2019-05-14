@@ -6,14 +6,14 @@ use mamba::parser::parse;
 use mamba::parser::parse_direct;
 
 #[test]
-fn foreach_statements() {
+fn for_statements() {
     let source = valid_resource_content(&["control_flow"], "for_statements.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
 
 #[test]
-fn foreach_statement_verify() {
-    let source = String::from("foreach a in c do d");
+fn for_statement_verify() {
+    let source = String::from("for a in c do d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
@@ -22,7 +22,7 @@ fn foreach_statement_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::For { expr, collection, body } => (expr, collection, body),
-                _ => panic!("first element script was not foreach.")
+                _ => panic!("first element script was not for.")
             }
         }
         _ => panic!("ast_tree was not script.")
@@ -34,8 +34,8 @@ fn foreach_statement_verify() {
 }
 
 #[test]
-fn foreach_tuple_statement_verify() {
-    let source = String::from("foreach a,b in c do d");
+fn for_tuple_statement_verify() {
+    let source = String::from("for a,b in c do d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
@@ -44,7 +44,7 @@ fn foreach_tuple_statement_verify() {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::For { expr, collection, body } => (expr, collection, body),
-                _ => panic!("first element script was not foreach.")
+                _ => panic!("first element script was not for.")
             }
         }
         _ => panic!("ast_tree was not script.")

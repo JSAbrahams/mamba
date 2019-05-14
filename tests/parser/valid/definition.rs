@@ -8,7 +8,7 @@ macro_rules! unwrap_func_definition {
             ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
                     ASTNode::Def { private, definition } => (private.clone(), definition.clone()),
-                    _ => panic!("first element script was not foreach.")
+                    _ => panic!("first element script was not for.")
                 },
             _ => panic!("ast_tree was not script.")
         };
@@ -29,7 +29,7 @@ macro_rules! unwrap_definition {
             ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
                     ASTNode::Def { private, definition } => (private.clone(), definition.clone()),
-                    _ => panic!("first element script was not foreach.")
+                    _ => panic!("first element script was not for.")
                 },
             _ => panic!("ast_tree was not script.")
         };

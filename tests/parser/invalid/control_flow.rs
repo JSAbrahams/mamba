@@ -2,20 +2,20 @@ use mamba::lexer::tokenize;
 use mamba::parser::parse_direct;
 
 #[test]
-fn foreach_missing_in() {
-    let source = String::from("foreach a c do d");
+fn for_missing_in() {
+    let source = String::from("for a c do d");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
-fn foreach_missing_do() {
-    let source = String::from("foreach a in c d");
+fn for_missing_do() {
+    let source = String::from("for a in c d");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
 #[test]
-fn foreach_missing_body() {
-    let source = String::from("foreach a in c");
+fn for_missing_body() {
+    let source = String::from("for a in c");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
