@@ -49,7 +49,6 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
 
     let (en_line, en_pos) = (then.en_line, then.en_pos);
     let node = ASTNode::IfElse { cond, then, _else };
-
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
@@ -67,7 +66,6 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
         (Some(cond), _) => (cond.en_line, cond.en_pos),
         _ => (st_line, st_pos)
     };
-
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Match { cond, cases } })
 }
 
@@ -84,7 +82,7 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
                 it.next();
                 break;
             }
-            _ => cases.push(get_or_err_direct!(it, parse_match_case, "when case"))
+            _ => cases.push(get_or_err_direct!(it, parse_match_case, "match case"))
         }
     }
 
@@ -96,13 +94,9 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
 
     let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "match case");
     check_next_is!(it, Token::BTo);
-    let expr_or_stmt: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
+    let body: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
 
-    Ok(ASTNodePos {
-        st_line,
-        st_pos,
-        en_line: expr_or_stmt.en_line,
-        en_pos: expr_or_stmt.en_pos,
-        node: ASTNode::Case { cond, body: expr_or_stmt }
-    })
+    let (en_line, en_pos) = (body.en_line, body.en_pos);
+    let node = ASTNode::Case { cond, body };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

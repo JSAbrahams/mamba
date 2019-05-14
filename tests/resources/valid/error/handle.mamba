@@ -1,2 +1,3 @@
 def a <- f(10) handle
     err => print "Something went wrong"
+    err2: MyErr => print "Something else went wrong"
