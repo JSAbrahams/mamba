@@ -199,7 +199,7 @@ def taylor <- 7
 # the sinus function is injective, its output depends solely on the input
 def stateless sin(x: Int) =>
     def mut res <- x
-    for i in 1 ..= taylor do
+    for i in 1 ..= taylor step 2 do
         res <- (x ^ (i + 2)) / (factorial (i + 2))
     res
 ```
@@ -213,12 +213,14 @@ def taylor <- 7
 
 def sin(x: Int): Real =>
     def mut ans <- x
-    for i in 1 ..= taylor do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    for i in 1 ..= taylor step 2
+        do ans <- (x ^ (i + 2)) / (factorial (i + 2))
     ans
     
 def cos(x: Int): Real =>
     def mut ans <- x
-    for i in 0 .. taylor do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    for i in 0 .. taylor step 2
+        do ans <- (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
 
