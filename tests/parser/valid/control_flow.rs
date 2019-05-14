@@ -57,6 +57,64 @@ fn for_tuple_statement_verify() {
 }
 
 #[test]
+fn foreach_range_step_verify() {
+    let source = String::from("foreach a in c .. d step e do f");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let _statements;
+    let (expr, from, to, step, inclusive, body) = match ast_tree.node {
+        ASTNode::Script { statements, .. } => {
+            _statements = statements;
+            match &_statements.first().expect("script empty.").node {
+                ASTNode::For { expr, collection, body } => match &collection.node {
+                    ASTNode::Range { from, to, inclusive, step } =>
+                        (expr, from, to, step.clone(), inclusive, body),
+                    _ => panic!("Expected range")
+                },
+                _ => panic!("first element script was not foreach.")
+            }
+        }
+        _ => panic!("ast_tree was not script.")
+    };
+
+    assert_eq!(expr[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(from.node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(to.node, ASTNode::Id { lit: String::from("d") });
+    assert!(!inclusive);
+    assert_eq!(step.unwrap().node, ASTNode::Id { lit: String::from("e") });
+    assert_eq!(body.node, ASTNode::Id { lit: String::from("f") });
+}
+
+#[test]
+fn foreach_range_incl_verify() {
+    let source = String::from("foreach a in c ..= d do f");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let _statements;
+    let (expr, from, to, step, inclusive, body) = match ast_tree.node {
+        ASTNode::Script { statements, .. } => {
+            _statements = statements;
+            match &_statements.first().expect("script empty.").node {
+                ASTNode::For { expr, collection, body } => match &collection.node {
+                    ASTNode::Range { from, to, inclusive, step } =>
+                        (expr, from, to, step.clone(), inclusive, body),
+                    _ => panic!("Expected range")
+                },
+                _ => panic!("first element script was not foreach.")
+            }
+        }
+        _ => panic!("ast_tree was not script.")
+    };
+
+    assert_eq!(expr[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(from.node, ASTNode::Id { lit: String::from("c") });
+    assert_eq!(to.node, ASTNode::Id { lit: String::from("d") });
+    assert!(inclusive);
+    assert!(step.is_none());
+    assert_eq!(body.node, ASTNode::Id { lit: String::from("f") });
+}
+
+#[test]
 fn if_stmt() {
     let source = valid_resource_content(&["control_flow"], "if.mamba");
     assert!(parse(&tokenize(&source).unwrap()).is_ok());

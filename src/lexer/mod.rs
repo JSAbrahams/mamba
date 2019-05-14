@@ -233,6 +233,7 @@ fn as_op_or_id(string: String) -> Token {
         "sqrt" => Token::Sqrt,
         "while" => Token::While,
         "for" => Token::For,
+        "step" => Token::Step,
 
         "if" => Token::If,
         "else" => Token::Else,

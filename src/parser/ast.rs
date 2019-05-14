@@ -159,12 +159,10 @@ pub enum ASTNode {
     },
 
     Range {
-        from: Box<ASTNodePos>,
-        to:   Box<ASTNodePos>
-    },
-    RangeIncl {
-        from: Box<ASTNodePos>,
-        to:   Box<ASTNodePos>
+        from:      Box<ASTNodePos>,
+        to:        Box<ASTNodePos>,
+        inclusive: bool,
+        step:      Option<Box<ASTNodePos>>
     },
 
     Block {
@@ -291,6 +289,9 @@ pub enum ASTNode {
         expr:       Vec<ASTNodePos>,
         collection: Box<ASTNodePos>,
         body:       Box<ASTNodePos>
+    },
+    Step {
+        amount: Box<ASTNodePos>
     },
     While {
         cond: Vec<ASTNodePos>,

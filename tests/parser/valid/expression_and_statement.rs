@@ -39,10 +39,11 @@ fn range_verify() {
     let source = String::from("hello .. world");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (from, to) = match ast_tree.node {
+    let (from, to, inclusive, step) = match ast_tree.node {
         ASTNode::Script { statements, .. } =>
             match &statements.first().expect("script empty.").node {
-                ASTNode::Range { from, to } => (from.clone(), to.clone()),
+                ASTNode::Range { from, to, inclusive, step } =>
+                    (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range.")
             },
         _ => panic!("ast_tree was not script.")
@@ -50,6 +51,29 @@ fn range_verify() {
 
     assert_eq!(from.node, ASTNode::Id { lit: String::from("hello") });
     assert_eq!(to.node, ASTNode::Id { lit: String::from("world") });
+    assert!(!inclusive);
+    assert_eq!(step, None);
+}
+
+#[test]
+fn range_step_verify() {
+    let source = String::from("hello .. world step 2");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (from, to, inclusive, step) = match ast_tree.node {
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::Range { from, to, inclusive, step } =>
+                    (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+                _ => panic!("first element script was not range.")
+            },
+        _ => panic!("ast_tree was not script.")
+    };
+
+    assert_eq!(from.node, ASTNode::Id { lit: String::from("hello") });
+    assert_eq!(to.node, ASTNode::Id { lit: String::from("world") });
+    assert!(!inclusive);
+    assert_eq!(step.unwrap().node, ASTNode::Int { lit: String::from("2") });
 }
 
 #[test]
@@ -57,10 +81,11 @@ fn range_incl_verify() {
     let source = String::from("foo ..= bar");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (from, to) = match ast_tree.node {
+    let (from, to, inclusive, step) = match ast_tree.node {
         ASTNode::Script { statements, .. } =>
             match &statements.first().expect("script empty.").node {
-                ASTNode::RangeIncl { from, to } => (from.clone(), to.clone()),
+                ASTNode::Range { from, to, inclusive, step } =>
+                    (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range inclusive.")
             },
         _ => panic!("ast_tree was not script.")
@@ -68,6 +93,8 @@ fn range_incl_verify() {
 
     assert_eq!(from.node, ASTNode::Id { lit: String::from("foo") });
     assert_eq!(to.node, ASTNode::Id { lit: String::from("bar") });
+    assert!(inclusive);
+    assert_eq!(step, None);
 }
 
 #[test]

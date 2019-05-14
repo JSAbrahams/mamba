@@ -193,6 +193,11 @@ pub enum Core {
         collection: Box<Core>,
         body:       Box<Core>
     },
+    Range {
+        from: Box<Core>,
+        to:   Box<Core>,
+        step: Box<Core>
+    },
     If {
         cond: Vec<Core>,
         then: Box<Core>
