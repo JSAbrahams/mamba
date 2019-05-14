@@ -57,8 +57,8 @@ fn for_tuple_statement_verify() {
 }
 
 #[test]
-fn foreach_range_step_verify() {
-    let source = String::from("foreach a in c .. d step e do f");
+fn for_range_step_verify() {
+    let source = String::from("for a in c .. d step e do f");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
@@ -86,8 +86,8 @@ fn foreach_range_step_verify() {
 }
 
 #[test]
-fn foreach_range_incl_verify() {
-    let source = String::from("foreach a in c ..= d do f");
+fn for_range_incl_verify() {
+    let source = String::from("for a in c ..= d do f");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;

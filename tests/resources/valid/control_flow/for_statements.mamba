@@ -17,8 +17,8 @@ for i in ty .. 34 do
 for i in ty2 ..= 345 do
     print asdfg
 
-foreach i in a .. b step 1 do
+for i in a .. b step 1 do
     print "hello"
 
-foreach i in a ..= c step 20 do
+for i in a ..= c step 20 do
     print "world"
