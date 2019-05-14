@@ -240,7 +240,9 @@ def my_server <- MyServer(some_ip)
 
 def message <- "Hello World!"
 my_server send message handle
-    err: ServerErr => print "Error while sending message: \"[message]\": [err]"
+    err: ServerErr => 
+        print "Error while sending message: \"[message]\": [err]"
+        return
 
 if my_server isa ConnectedMyServer then my_server disconnect
 ```
