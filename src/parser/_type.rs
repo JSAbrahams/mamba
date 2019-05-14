@@ -42,6 +42,15 @@ pub fn parse_id_maybe_call(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Point, .. })
         | Some(TokenPos { token: Token::LRBrack, .. }) => parse_call(id, it),
         Some(&tp) if is_start_expression_exclude_unary(tp) => parse_call(id, it),
+        Some(TokenPos { token: Token::DoublePoint, .. }) => {
+            it.next();
+            let _type = get_or_err!(it, parse_type, "type");
+            let (st_line, st_pos) = (id.st_line, id.st_pos);
+            let (en_line, en_pos) = (_type.en_line, _type.en_pos);
+            let node =
+                ASTNode::IdType { id: Box::from(id), mutable: false, _type: Some(_type) };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
         _ => Ok(id)
     }
 }
