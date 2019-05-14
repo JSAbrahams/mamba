@@ -190,15 +190,21 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             body: Box::from(desugar_node(body, ctx, state))
         },
 
-        ASTNode::Range { from, to } => Core::MethodCall {
-            object: Box::from(desugar_node(from, ctx, state)),
-            method: String::from("range"),
-            args:   vec![desugar_node(to, ctx, state)]
-        },
-        ASTNode::RangeIncl { from, to } => Core::MethodCall {
-            object: Box::from(desugar_node(from, ctx, state)),
-            method: String::from("range_incl"),
-            args:   vec![desugar_node(to, ctx, state)]
+        ASTNode::Range { from, to, inclusive, step } => Core::Range {
+            from: Box::from(desugar_node(from, ctx, state)),
+            to:   Box::from(if *inclusive {
+                Core::Add {
+                    left:  Box::from(desugar_node(to, ctx, state)),
+                    right: Box::from(Core::Int { int: String::from("1") })
+                }
+            } else {
+                desugar_node(to, ctx, state)
+            }),
+            step: Box::from(if let Some(step) = step {
+                desugar_node(step, ctx, state)
+            } else {
+                Core::Int { int: String::from("1") }
+            })
         },
         ASTNode::Underscore => Core::UnderScore,
         ASTNode::QuestOr { _do, _default } => Core::Block {
@@ -254,6 +260,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
         ASTNode::FunDef { .. } => panic!("Function definition cannot be top level."),
 
+        ASTNode::Step { .. } => panic!("Step cannot be top level."),
         ASTNode::Raises { .. } => Core::Empty,
 
         ASTNode::Handle { .. } => unimplemented!("Handle has not yet been implemented."),

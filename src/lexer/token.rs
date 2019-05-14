@@ -85,7 +85,7 @@ pub enum Token {
 
     While,
     For,
-    Map,
+    Step,
     In,
     If,
     Then,
@@ -184,7 +184,7 @@ impl fmt::Display for Token {
 
             Token::While => String::from("while"),
             Token::For => String::from("for"),
-            Token::Map => String::from("map"),
+            Token::Step => String::from("step"),
             Token::In => String::from("in"),
             Token::If => String::from("if"),
             Token::Then => String::from("then"),

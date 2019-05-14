@@ -182,6 +182,12 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(collection.as_ref(), ind),
             to_py(body.as_ref(), ind + 1)
         ),
+        Core::Range { from, to, step } => format!(
+            "range({}, {}, {})",
+            to_py(from.as_ref(), ind),
+            to_py(to.as_ref(), ind),
+            to_py(step.as_ref(), ind),
+        ),
         Core::If { cond, then } =>
             format!("if {}: {}", comma_delimited(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
         Core::IfElse { cond, then, _else } => format!(

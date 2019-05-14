@@ -95,7 +95,7 @@ fn for_verify() {
 
     let (core_exprs, core_collection, core_body) = match desugar(&for_stmt) {
         Core::For { exprs, collection, body } => (exprs, collection, body),
-        other => panic!("Expected reassign but was {:?}", other)
+        other => panic!("Expected for but was {:?}", other)
     };
 
     assert_eq!(core_exprs.len(), 2);
@@ -103,4 +103,56 @@ fn for_verify() {
     assert_eq!(core_exprs[1], Core::Id { lit: String::from("expr_2") });
     assert_eq!(*core_collection, Core::Id { lit: String::from("collection") });
     assert_eq!(*core_body, Core::Id { lit: String::from("body") });
+}
+
+#[test]
+fn range_verify() {
+    let from = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let to = to_pos!(ASTNode::Id { lit: String::from("b") });
+    let range = to_pos!(ASTNode::Range { from, to, inclusive: false, step: None });
+
+    let (from, to, step) = match desugar(&range) {
+        Core::Range { from, to, step } => (from, to, step),
+        other => panic!("Expected range but was {:?}", other)
+    };
+
+    assert_eq!(*from, Core::Id { lit: String::from("a") });
+    assert_eq!(*to, Core::Id { lit: String::from("b") });
+    assert_eq!(*step, Core::Int { int: String::from("1") });
+}
+
+#[test]
+fn range_incl_verify() {
+    let from = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let to = to_pos!(ASTNode::Id { lit: String::from("b") });
+    let range = to_pos!(ASTNode::Range { from, to, inclusive: true, step: None });
+
+    let (from, to, step) = match desugar(&range) {
+        Core::Range { from, to, step } => (from, to, step),
+        other => panic!("Expected range but was {:?}", other)
+    };
+
+    assert_eq!(*from, Core::Id { lit: String::from("a") });
+    assert_eq!(*to, Core::Add {
+        left:  Box::from(Core::Id { lit: String::from("b") }),
+        right: Box::from(Core::Int { int: String::from("1") })
+    });
+    assert_eq!(*step, Core::Int { int: String::from("1") });
+}
+
+#[test]
+fn range_step_verify() {
+    let from = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let to = to_pos!(ASTNode::Id { lit: String::from("b") });
+    let step = Some(to_pos!(ASTNode::Id { lit: String::from("c") }));
+    let range = to_pos!(ASTNode::Range { from, to, inclusive: false, step });
+
+    let (from, to, step) = match desugar(&range) {
+        Core::Range { from, to, step } => (from, to, step),
+        other => panic!("Expected range but was {:?}", other)
+    };
+
+    assert_eq!(*from, Core::Id { lit: String::from("a") });
+    assert_eq!(*to, Core::Id { lit: String::from("b") });
+    assert_eq!(*step, Core::Id { lit: String::from("c") });
 }
