@@ -213,14 +213,12 @@ def taylor <- 7
 
 def sin(x: Int): Real =>
     def mut ans <- x
-    for i in 1 ..= taylor step 2
-        do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    for i in 1 ..= taylor step 2 do ans <- (x ^ (i + 2)) / (factorial (i + 2))
     ans
     
 def cos(x: Int): Real =>
     def mut ans <- x
-    for i in 0 .. taylor step 2
-        do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    for i in 0 .. taylor step 2 do ans <- (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
 
