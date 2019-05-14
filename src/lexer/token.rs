@@ -183,7 +183,7 @@ impl fmt::Display for Token {
             Token::Underscore => String::from("_"),
 
             Token::While => String::from("while"),
-            Token::For => String::from("foreach"),
+            Token::For => String::from("for"),
             Token::Map => String::from("map"),
             Token::In => String::from("in"),
             Token::If => String::from("if"),

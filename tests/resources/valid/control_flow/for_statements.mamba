@@ -1,18 +1,18 @@
-foreach a in b do print c
+for a in b do print c
 
-foreach d in e do
+for d in e do
     print f
 
     print g
 
     print h
 
-foreach aa, ab in bb do
+for aa, ab in bb do
     print cc
     print dd
 
-foreach i in ty .. 34 do
+for i in ty .. 34 do
     print asdf
 
-foreach i in ty2 ..= 345 do
+for i in ty2 ..= 345 do
     print asdfg
