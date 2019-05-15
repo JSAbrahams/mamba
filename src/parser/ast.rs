@@ -12,7 +12,7 @@ pub struct ASTNodePos {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum ASTNode {
     File {
-        stateless: bool,
+        pure:      bool,
         imports:   Vec<ASTNodePos>,
         modules:   Vec<ASTNodePos>,
         type_defs: Vec<ASTNodePos>
@@ -53,12 +53,12 @@ pub enum ASTNode {
         forward:       Vec<ASTNodePos>
     },
     FunDef {
-        stateless: bool,
-        id:        Box<ASTNodePos>,
-        fun_args:  Vec<ASTNodePos>,
-        ret_ty:    Option<Box<ASTNodePos>>,
-        raises:    Option<Vec<ASTNodePos>>,
-        body:      Option<Box<ASTNodePos>>
+        pure:     bool,
+        id:       Box<ASTNodePos>,
+        fun_args: Vec<ASTNodePos>,
+        ret_ty:   Option<Box<ASTNodePos>>,
+        raises:   Option<Vec<ASTNodePos>>,
+        body:     Option<Box<ASTNodePos>>
     },
 
     AnonFun {

@@ -22,16 +22,16 @@ fn quest_or_verify() {
 }
 
 #[test]
-fn stateless_file() {
-    let source = String::from("stateless");
+fn pure_file() {
+    let source = String::from("pure");
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
-    let stateless = match ast_tree.node {
-        ASTNode::File { stateless, .. } => stateless,
+    let pure = match ast_tree.node {
+        ASTNode::File { pure, .. } => pure,
         _ => panic!("ast_tree was not file.")
     };
 
-    assert!(stateless);
+    assert!(pure);
 }
 
 #[test]
