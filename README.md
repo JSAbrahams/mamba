@@ -48,7 +48,7 @@ def factorial(x: Int) => match x with
 def num <- input "Compute factorial: "
 if num.is_digit then
     def result <- factorial int num
-    print "Factorial [num] is: [result]."
+    print "Factorial {num} is: {result}."
 else
     print "Input was not an integer."
 ```
@@ -97,7 +97,7 @@ def my_server <- MyServer(some_ip)
 http_server connect
 if my_server.connected then http_server send "Hello World!"
 
-print "last message sent before disconnect: \"[my_server.last_sent]\"."
+print "last message sent before disconnect: \"{my_server.last_sent}\"."
 my_server.disconnect
 ```
 
@@ -158,13 +158,13 @@ if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
     my_server.send "Hello World!"
 
-print "last message sent before disconnect: \"[my_server.last_sent]\"."
+print "last message sent before disconnect: \"{my_server.last_sent}\"."
 if my_server isa ConnectedMyServer then my_server.disconnect
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 ```mamba
-type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was [self].")
+type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was {self}.")
 
 def factorial (x: PositiveInt) => match x with
     0 => 1
@@ -245,7 +245,7 @@ def my_server <- MyServer(some_ip)
 def message <- "Hello World!"
 my_server.send message handle
     err: ServerErr => 
-        print "Error while sending message: \"[message]\": [err]"
+        print "Error while sending message: \"{message}\": {err}"
         # We must now return to halt execution
         return
 
@@ -263,11 +263,11 @@ This is shown below:
 ```mamba
 def a <- function_may_throw_err() handle
     err : MyErr => 
-        print "We have a problem: [err.message]."
+        print "We have a problem: {err.message}."
         # we return, halting execution
         return
     err : MyOtherErr => 
-        print "We have another problem: [err.message]."
+        print "We have another problem: {err.message}."
         # or if we don't return, return a default value
         0
         
