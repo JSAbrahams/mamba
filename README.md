@@ -24,7 +24,8 @@ In short, Mamba is like Python, but with a few key features:
 -   Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
 -   Null safety features.
 -   More explicit error handling.
--   Clear distinction between state and mutability, and immutability and pureness.
+-   Clear distinction between state and mutability.
+-   Pure, or injective, functions.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
 Mamba code should therefore, in theory, be interoperable with Python code.
