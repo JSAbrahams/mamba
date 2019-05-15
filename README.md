@@ -24,7 +24,7 @@ In short, Mamba is like Python, but with a few key features:
 -   Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
 -   Null safety features.
 -   More explicit error handling.
--   Clear distinction between state and mutability.
+-   Clear distinction between mutability and immutability.
 -   Pure, or injective, functions.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
@@ -201,10 +201,10 @@ def taylor <- 7
 
 # the sinus function is injective, its output depends solely on the input
 def pure sin(x: Int) =>
-    def mut res <- x
+    def mut ans <- x
     for i in 1 ..= taylor step 2 do
-        res <- (x ^ (i + 2)) / (factorial (i + 2))
-    res
+        ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    ans
 ```
 
 We can add `pure` to the top of a file, which ensures all functions in said file are pure.
@@ -212,6 +212,7 @@ This is useful when we want to write multiple pure functions.
 
 ```mamba
 pure
+
 def taylor <- 7
 
 def sin(x: Int): Real =>
