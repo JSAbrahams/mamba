@@ -24,7 +24,7 @@ In short, Mamba is like Python, but with a few key features:
 -   Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
 -   Null safety features.
 -   More explicit error handling.
--   Clear distinction between state and mutability, and immutability and statelessness.
+-   Clear distinction between state and mutability, and immutability and pureness.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
 Mamba code should therefore, in theory, be interoperable with Python code.
@@ -33,7 +33,7 @@ Functions written in Python can be called in Mamba and vice versa.
 ## ⌨️ Code Examples
 
 Below are some code examples to showcase the features of Mamba.
-We highlight how functions work, how de define classes, how types and type refinement features are applied, how Mamba can be used to ensure statelessness, and how error handling works.
+We highlight how functions work, how de define classes, how types and type refinement features are applied, how Mamba can be used to ensure pureness, and how error handling works.
 For more extensive examples and explanations check out the [documentation](https://joelabrahams.nl/mamba_doc).
 
 ### ➕ Functions
@@ -45,7 +45,7 @@ def factorial(x: Int) => match x with
     n => n * factorial (n - 1)
 
 def num <- input "Compute factorial: "
-if num is_digit then
+if num.is_digit then
     def result <- factorial int num
     print "Factorial [num] is: [result]."
 else
@@ -66,17 +66,17 @@ class MyServer(def ip_address: ipaddress.ip_address)
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
-    def last_sent(self) => if last_message /= undefined 
+    def last_sent(self) => if self.last_message /= undefined 
         then message
         else Err("No last message!")
 
-    def connect(mut self) => self is_connected <- true
+    def connect(mut self) => self.is_connected <- true
 
-    def send(mut self, message: String) => if self is_connected 
-        then self last_message <- message
+    def send(mut self, message: String) => if self.is_connected 
+        then self.last_message <- message
         else Err("Not connected!")
 
-    def disconnect(mut self) => self is_connected <- true
+    def disconnect(mut self) => self.is_connected <- true
 ```
 
 Notice how:
@@ -94,10 +94,10 @@ def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
 http_server connect
-if my_server connected then http_server send "Hello World!"
+if my_server.connected then http_server send "Hello World!"
 
 print "last message sent before disconnect: \"[my_server.last_sent]\"."
-my_server disconnect
+my_server.disconnect
 ```
 
 ### 🗃 Types and type refinement
@@ -118,17 +118,17 @@ type Server
 
 type ServerErr(msg: String) isa Err(msg)
 
-stateful MyServer(mut self: DisconnectedMyServer, def ip_address: ipaddress.ip_address) isa Server
+class MyServer(mut self: DisconnectedMyServer, def ip_address: ipaddress.ip_address) isa Server
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
-    def last_sent(self): String => self last_message
+    def last_sent(self): String => self.last_message
 
-    def connect(mut self: DisconnectedMyServer) => self is_connected <- true
+    def connect(mut self: DisconnectedMyServer) => self.is_connected <- true
 
-    def send(mut self: ConnectedMyServer, message: String) => self last_message <- message
+    def send(mut self: ConnectedMyServer, message: String) => self.last_message <- message
 
-    def disconnect(mut self: ConnectedMyServer) => self is_connected <- false
+    def disconnect(mut self: ConnectedMyServer) => self.is_connected <- false
 
 type ConnectedMyServer isa MyServer when
     self is_connected else ServerErr("Not connected.")
@@ -150,15 +150,15 @@ def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
-http_server connect
+http_server.connect
 
 # We check the state
 if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
-    my_server send "Hello World!"
+    my_server.send "Hello World!"
 
 print "last message sent before disconnect: \"[my_server.last_sent]\"."
-if my_server isa ConnectedMyServer then my_server disconnect
+if my_server isa ConnectedMyServer then my_server.disconnect
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
@@ -178,37 +178,39 @@ Type refinement allows us to to some additional things:
     This means that we don't constantly have to check that certain conditions hold.
     We can simply ask whether a given object is a certain state by checking whether it is a certain type.
     
-### 🔒 Stateless
+### 🔒 Pure functions
 
-Mamba has features to ensure that functions are injective, meaning that if `x = y`, for any stateless `f`, `f(x) = f(y)`.
-This is similar to "pure" functional programming languages such as Haskell.
-By default, everything is stateful, such as in Python.
-However, in some cases we may wish to make everything without state, such as when writing helper functions which should only rely on a given input.
-A function that is `stateless` cannot:
+Mamba has features to ensure that functions are injective, meaning that if `x = y`, for any injective `f`, `f(x) = f(y)`.
+Such injective functions are also `pure` functions.
+By default, functions are not pure, and can read any variable they want, such as in Python.
+When we make a function `puer`, it cannot:
 -   Read mutable variables not passed as an argument (with one exception).
 -   Read mutable properties of `self`.
     Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
--   Call non-stateless functions.
+-   Call non-pure functions.
 
-With the above properties, we can ensure that a function is injective.
-`stateless` is similar to `mut`, however, statlessness is more a property concerned with reading variables that might change, whereas mutability is more concerned with writing to variables that shouldn't change.
+With the above properties, we can ensure that a function is pure, or injective.
+`pure` is similar to `mut`.
+When a function is `pure`, we ensure that its output is always the same for a given input.
+Mutability, denoted with `mut`, decides whether we can or can't change a value.
+So, `pure` is a property of functions, and `mut` is a property of variables.
 
 ```mamba
 def taylor <- 7
 
 # the sinus function is injective, its output depends solely on the input
-def stateless sin(x: Int) =>
+def pure sin(x: Int) =>
     def mut res <- x
     for i in 1 ..= taylor step 2 do
         res <- (x ^ (i + 2)) / (factorial (i + 2))
     res
 ```
 
-We can add `stateless` to the top of a file, which ensures all functions in said file must be stateless.
-This is useful when we want to write multiple injective functions.
+We can add `pure` to the top of a file, which ensures all functions in said file are pure.
+This is useful when we want to write multiple pure functions.
 
 ```mamba
-stateless
+pure
 def taylor <- 7
 
 def sin(x: Int): Real =>
@@ -239,18 +241,36 @@ def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
 def message <- "Hello World!"
-my_server send message handle
+my_server.send message handle
     err: ServerErr => 
         print "Error while sending message: \"[message]\": [err]"
+        # We must now return to halt execution
         return
 
-if my_server isa ConnectedMyServer then my_server disconnect
+if my_server isa ConnectedMyServer then my_server.disconnect
 ```
 
 In the above script, we will always print the error since we forgot to actually connect to the server.
-Here we shocase showcase how we try to handle errors on-site instead of in a `try` block.
+Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
 This means that we don't need a `finally` block: We aim to deal with the error where it happens and then continue executing the remaining code.
 This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
+
+`handle` can also be combined with an assign.
+In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
+This is shown below:
+```mamba
+def a <- function_may_throw_err() handle
+    err : MyErr => 
+        print "We have a problem: [err.message]."
+        # we return, halting execution
+        return
+    err : MyOtherErr => 
+        print "We have another problem: [err.message]."
+        # or if we don't return, return a default value
+        0
+        
+print ""
+```
 
 ## 👥 Contributing
 

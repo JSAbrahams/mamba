@@ -12,7 +12,7 @@ pub enum Token {
     From,
     Type,
     Class,
-    Stateless,
+    Pure,
     IsA,
     IsNA,
     Private,
@@ -113,7 +113,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match self.clone() {
             Token::From => String::from("from"),
-            Token::Stateless => String::from("stateless"),
+            Token::Pure => String::from("pure"),
             Token::Type => String::from("type"),
             Token::Class => String::from("class"),
             Token::IsA => String::from("isa"),
