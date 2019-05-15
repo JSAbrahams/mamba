@@ -271,7 +271,7 @@ def a <- function_may_throw_err() handle
         # or if we don't return, return a default value
         0
         
-print "a has value [a]."
+print "a has value {a}."
 ```
 
 ## 👥 Contributing
