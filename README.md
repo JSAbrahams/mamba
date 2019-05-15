@@ -63,7 +63,7 @@ We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
-class MyServer(def ip_address: ipaddress.ip_address)
+class MyServer(def ip_address: IPv4Address)
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
@@ -119,7 +119,7 @@ type Server
 
 type ServerErr(msg: String) isa Err(msg)
 
-class MyServer(mut self: DisconnectedMyServer, def ip_address: ipaddress.ip_address) isa Server
+class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa Server
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
