@@ -263,7 +263,33 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::Step { .. } => panic!("Step cannot be top level."),
         ASTNode::Raises { .. } => Core::Empty,
 
-        ASTNode::Handle { .. } => unimplemented!("Handle has not yet been implemented."),
+        ASTNode::Handle { expr_or_stmt, cases } => Core::TryExcept {
+            _try:   Box::from(desugar_node(expr_or_stmt, ctx, state)),
+            except: {
+                let mut except = Vec::new();
+                for case in cases {
+                    let (cond, body) = match &case.node {
+                        ASTNode::Case { cond, body } => (cond, body),
+                        other => panic!("Expected case but was {:?}", other)
+                    };
+
+                    let (id, class) = match &cond.node {
+                        ASTNode::IdType { id, _type: Some(ty), .. } => match &ty.node {
+                            ASTNode::Type { id: ty, .. } => (id, ty),
+                            other => panic!("Expected type but was {:?}", other)
+                        },
+                        other => panic!("Expected id type but was {:?}", other)
+                    };
+
+                    except.push(Core::Except {
+                        id:    Box::from(desugar_node(id, ctx, state)),
+                        class: Box::from(desugar_node(class, ctx, state)),
+                        body:  Box::from(desugar_node(body, ctx, state))
+                    });
+                }
+                except
+            }
+        },
         ASTNode::Retry { .. } => unimplemented!("Retry has not yet bee implemented.")
     }
 }
