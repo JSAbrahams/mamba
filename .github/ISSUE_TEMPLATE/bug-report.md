@@ -8,15 +8,13 @@ assignees: ''
 ---
 
 ### Description of Bug
-_A clear and concise description of what the bug is._
+
 
 ### How to Reproduce
-_Steps to reproduce the behaviour:_
-1. _Code used to produce the error_
-2. _See an error or erroneous python code_
+_Steps to reproduce the behaviour, with steps and resulting error._
 
 ### Expected behavior
-_A clear and concise description of what you expected to happen._
+
 
 ### Additional context
-_Add any other context about the problem here._
+
