@@ -1,5 +1,5 @@
 ---
-name: Custom issue template
+name: 📋 Custom issue template
 about: An issue that is neither a feature request or bug report.
 title: ''
 labels: ''
