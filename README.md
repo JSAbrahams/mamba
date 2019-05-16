@@ -25,7 +25,7 @@ In short, Mamba is like Python, but with a few key features:
 -   Null safety features.
 -   More explicit error handling.
 -   Clear distinction between mutability and immutability.
--   Pure, or injective, functions.
+-   Pure functions, or, functions without side effects.
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
 Mamba code should therefore, in theory, be interoperable with Python code.
@@ -181,25 +181,24 @@ Type refinement allows us to to some additional things:
     
 ### 🔒 Pure functions
 
-Mamba has features to ensure that functions are injective, meaning that if `x = y`, for any injective `f`, `f(x) = f(y)`.
-Such injective functions are also `pure` functions.
+Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)`.
 By default, functions are not pure, and can read any variable they want, such as in Python.
 When we make a function `puer`, it cannot:
 -   Read mutable variables not passed as an argument (with one exception).
 -   Read mutable properties of `self`.
     Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
--   Call non-pure functions.
+-   Call impure functions.
 
-With the above properties, we can ensure that a function is pure, or injective.
+With the above properties, we can ensure that a function is pure.
 `pure` is similar to `mut`.
-When a function is `pure`, we ensure that its output is always the same for a given input.
-Mutability, denoted with `mut`, decides whether we can or can't change a value.
+When a function is `pure`, its output is always the same for a given input.
+When a variable is immutable, when we omit `mut`, it can never change.
 So, `pure` is a property of functions, and `mut` is a property of variables.
 
 ```mamba
 def taylor <- 7
 
-# the sinus function is injective, its output depends solely on the input
+# the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) =>
     def mut ans <- x
     for i in 1 ..= taylor step 2 do
@@ -225,6 +224,9 @@ def cos(x: Int): Real =>
     for i in 0 .. taylor step 2 do ans <- (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
+
+Generally speaking, global variables can cause a lot of headaches.
+Immutable variables and pure functions make it easy to write declarative programs with no hidden dependencies.
 
 ### ⚠ Error handling
 
