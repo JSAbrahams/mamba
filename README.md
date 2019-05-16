@@ -41,7 +41,7 @@ For more extensive examples and explanations check out the [documentation](https
 
 We can write a simple script that computes the factorial of a value given by the user.
 ```mamba
-def factorial(x: Int) => match x with
+def factorial(x: Int) => x match
     0 => 1
     n => n * factorial (n - 1)
 
@@ -111,7 +111,7 @@ Lets expand our server example from above, and rewrite it slightly:
 import ipaddress
 
 type Server
-    def ip_address: ipaddres.ip_address
+    def ip_address: IPv4Address
 
     def connect:    () -> ()       throws [ServerErr]
     def send:       (String) -> () throws [ServerErr]
@@ -132,10 +132,10 @@ class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa 
     def disconnect(mut self: ConnectedMyServer) => self.is_connected <- false
 
 type ConnectedMyServer isa MyServer when
-    self is_connected else ServerErr("Not connected.")
+    self.is_connected else ServerErr("Not connected.")
 
 type DisconnectedMyServer isa MyServer when
-    not self is_connected else ServerErr("Already connected.")
+    not self.is_connected else ServerErr("Already connected.")
 ```
 
 Notice how above, we define the type of `self`.
@@ -166,7 +166,7 @@ Type refinement also allows us to specify the domain and co-domain of a function
 ```mamba
 type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was {self}.")
 
-def factorial (x: PositiveInt) => match x with
+def factorial (x: PositiveInt) => x match
     0 => 1
     n => n * factorial (n - 1)
 ```
