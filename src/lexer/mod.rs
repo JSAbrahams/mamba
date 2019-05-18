@@ -58,6 +58,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             '{' => create(&mut state, Token::LCBrack),
             '}' => create(&mut state, Token::RCBrack),
             '|' => create(&mut state, Token::Ver),
+            '~' => create(&mut state, Token::BOneCmpl),
             '\n' => create(&mut state, Token::NL),
             '\r' => match it.next() {
                 Some('\n') => create(&mut state, Token::NL),
@@ -71,11 +72,13 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                 _ => create(&mut state, Token::Point)
             },
             '<' => match it.peek() {
+                Some('<') => next_and_create(&mut it, &mut state, Token::BLShift),
                 Some('-') => next_and_create(&mut it, &mut state, Token::Assign),
                 Some('=') => next_and_create(&mut it, &mut state, Token::Leq),
                 _ => create(&mut state, Token::Le)
             },
             '>' => match it.peek() {
+                Some('>') => next_and_create(&mut it, &mut state, Token::BRShift),
                 Some('=') => next_and_create(&mut it, &mut state, Token::Geq),
                 _ => create(&mut state, Token::Ge)
             },
@@ -234,6 +237,10 @@ fn as_op_or_id(string: String) -> Token {
         "while" => Token::While,
         "for" => Token::For,
         "step" => Token::Step,
+
+        "_and_" => Token::BAnd,
+        "_or_" => Token::BOr,
+        "_xor_" => Token::BXOr,
 
         "if" => Token::If,
         "else" => Token::Else,

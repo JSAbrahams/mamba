@@ -208,6 +208,10 @@ pub enum ASTNode {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
     },
+    FDiv {
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
+    },
     Mod {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
@@ -218,6 +222,30 @@ pub enum ASTNode {
     },
     Sqrt {
         expr: Box<ASTNodePos>
+    },
+
+    BAnd {
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
+    },
+    BOr {
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
+    },
+    BXOr {
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
+    },
+    BOneCmpl {
+        expr: Box<ASTNodePos>
+    },
+    BLShift {
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
+    },
+    BRShift {
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
     },
 
     Le {

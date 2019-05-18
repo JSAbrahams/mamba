@@ -129,11 +129,38 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             left:  Box::from(desugar_node(left, ctx, state)),
             right: Box::from(desugar_node(right, ctx, state))
         },
+        ASTNode::FDiv { left, right } => Core::FDiv {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
+        },
         ASTNode::Mod { left, right } => Core::Mod {
             left:  Box::from(desugar_node(left, ctx, state)),
             right: Box::from(desugar_node(right, ctx, state))
         },
         ASTNode::Pow { left, right } => Core::Pow {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
+        },
+
+        ASTNode::BAnd { left, right } => Core::BAnd {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
+        },
+        ASTNode::BOr { left, right } => Core::BOr {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
+        },
+        ASTNode::BXOr { left, right } => Core::BXOr {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
+        },
+        ASTNode::BOneCmpl { expr } =>
+            Core::BOneCmpl { expr: Box::from(desugar_node(expr, ctx, state)) },
+        ASTNode::BLShift { left, right } => Core::BLShift {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
+        },
+        ASTNode::BRShift { left, right } => Core::BRShift {
             left:  Box::from(desugar_node(left, ctx, state)),
             right: Box::from(desugar_node(right, ctx, state))
         },
