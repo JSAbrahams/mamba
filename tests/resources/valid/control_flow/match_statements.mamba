@@ -1,11 +1,11 @@
-match a with
+match a
     b => c
     d => e
 
-match b, bb, bbb with
+match b, bb, bbb
     (a, c) => print "hello world"
 
-match nested with
+match nested
     a => b
     c => match c with
         other => even_other
