@@ -9,6 +9,7 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::TPIterator;
+use crate::parser::_type::parse_type;
 
 macro_rules! get_one_or_more {
     ($it:expr, $msg:expr) => {{
@@ -92,11 +93,35 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
-    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression, "match case");
+    let cond: Box<ASTNodePos> = get_or_err!(it, parse_expression_maybe_type, "match case");
     check_next_is!(it, Token::BTo);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "then");
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::Case { cond, body };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+}
+
+pub fn parse_expression_maybe_type(it: &mut TPIterator) -> ParseResult {
+    let mutable;
+    if it.peek().is_some() && it.peek().unwrap().token == Token::Mut {
+        mutable = true;
+        it.next();
+    } else {
+        mutable = false;
+    }
+
+    let id: Box<ASTNodePos> = get_or_err!(it, parse_expression, "id maybe type");
+    let (en_line, en_pos, _type) = match it.peek() {
+        Some(TokenPos { token: Token::DoublePoint, .. }) => {
+            it.next();
+            let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "id type");
+            (_type.en_line, _type.en_pos, Some(_type))
+        }
+        _ => (id.en_line, id.en_pos, None)
+    };
+
+    let (st_line, st_pos) = (id.st_line, id.st_pos);
+    let node = ASTNode::IdType { id, mutable, _type };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

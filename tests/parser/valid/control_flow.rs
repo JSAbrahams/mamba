@@ -250,7 +250,11 @@ fn match_verify() {
         (
             ASTNodePos { node: ASTNode::Case { cond: cond1, body: expr1 }, .. },
             ASTNodePos { node: ASTNode::Case { cond: cond2, body: expr2 }, .. }
-        ) => (cond1, expr1, cond2, expr2),
+        ) => match (&cond1.node, &cond2.node) {
+            (ASTNode::IdType { id: cond1, .. }, ASTNode::IdType { id: cond2, .. }) =>
+                (cond1, expr1, cond2, expr2),
+            other => panic!("expected id maybe type: {:?}", other)
+        },
         _ => panic!("Cases incorrect.")
     };
 
