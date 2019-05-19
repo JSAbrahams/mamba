@@ -93,7 +93,7 @@ fn from_import_as_verify() {
 
 #[test]
 fn top_level_body_panic_verify() {
-    let var_def = to_pos!(ASTNode::Body { isa: vec![], definitions: vec![] });
+    let var_def = to_pos!(ASTNode::Body { definitions: vec![] });
 
     panic::set_hook(Box::new(|_info| {}));
     let result = std::panic::catch_unwind(|| desugar(&var_def));

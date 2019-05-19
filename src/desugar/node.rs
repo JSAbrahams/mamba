@@ -267,16 +267,19 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             Core::Block { statements }
         }
 
-        ASTNode::Class { _type, body } => match (&_type.deref().node, &body.deref().node) {
-            (ASTNode::Type { id, generics }, ASTNode::Body { isa, definitions }) =>
-                Core::ClassDef {
+        ASTNode::Class { _type, body, parents: _, .. } =>
+            // TODO do something with parents
+            match (&_type.deref().node, &body.deref().node) {
+                (ASTNode::Type { id, generics }, ASTNode::Block { statements }) => Core::ClassDef {
                     name:        Box::from(desugar_node(id, ctx, state)),
                     generics:    desugar_vec(generics, ctx, state),
-                    parents:     desugar_vec(isa, ctx, state),
-                    definitions: desugar_vec(definitions, ctx, state)
+                    parents:     vec![],
+                    definitions: desugar_vec(statements, ctx, state)
                 },
-            other => panic!("desugarer didn't recognize while making class: {:?}.", other)
-        },
+                other => panic!("desugarer didn't recognize while making class: {:?}.", other)
+            },
+        ASTNode::Generic { .. } => Core::Empty,
+        ASTNode::Parent { .. } => panic!("Parent cannot be top-level"),
 
         ASTNode::TypeDef { .. }
         | ASTNode::TypeAlias { .. }

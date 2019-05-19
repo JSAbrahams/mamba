@@ -37,7 +37,7 @@ pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         match t.token {
             Token::RSBrack => break,
             _ => {
-                generics.push(get_or_err_direct!(it, parse_id, "generic parameter"));
+                generics.push(get_or_err_direct!(it, parse_generic, "generic"));
                 if it.peek().is_some() && it.peek().unwrap().token == Token::RSBrack {
                     break;
                 }
@@ -48,6 +48,25 @@ pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
     check_next_is!(it, Token::RSBrack);
     Ok(generics)
+}
+
+fn parse_generic(it: &mut TPIterator) -> ParseResult {
+    let (st_line, st_pos) = start_pos(it);
+    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "generic id");
+    let isa: Option<Box<ASTNodePos>> = if let Some(&TokenPos { token: Token::IsA, .. }) = it.peek()
+    {
+        it.next();
+        Some(get_or_err!(it, parse_id, "generic isa"))
+    } else {
+        None
+    };
+
+    let (en_line, en_pos) = match &isa {
+        Some(ast) => (ast.en_line, ast.en_pos),
+        None => (id.en_line, id.en_pos)
+    };
+    let node = ASTNode::Generic { id, isa };
+    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {

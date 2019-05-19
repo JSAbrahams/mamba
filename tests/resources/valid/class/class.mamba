@@ -19,7 +19,7 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-class MyClass isa MyType
+class MyClass[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def something: MyClass forward method_1, method_2
 
     def private z_modified
