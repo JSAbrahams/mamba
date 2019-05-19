@@ -11,10 +11,10 @@ use crate::parser::block::parse_statements;
 use crate::parser::common::end_pos;
 use crate::parser::common::start_pos;
 use crate::parser::definition::parse_fun_arg;
-use crate::parser::definition::parse_fun_args;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::TPIterator;
+use crate::parser::expression::parse_expression;
 
 pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
@@ -40,11 +40,13 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let mut import = Vec::new();
     while let Some(tp) = it.peek() {
         match tp.token {
-            Token::Comma => continue,
+            Token::Comma => {
+                it.next();
+            }
             Token::Id(_) => {
                 import.push(get_or_err_direct!(it, parse_id, "import id"));
                 if let Some(tp) = it.peek() {
-                    if tp.token != Token::Comma && tp.token != Token::NL {
+                    if tp.token != Token::Comma && tp.token != Token::NL && tp.token != Token::As {
                         return Err(TokenErr { expected: Token::NL, actual: (*tp).clone() });
                     }
                 }
@@ -58,14 +60,16 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         let mut aliases = Vec::new();
         while let Some(tp) = it.peek() {
             match tp.token {
-                Token::Comma => continue,
+                Token::Comma => {
+                    it.next();
+                }
                 Token::Id(_) => {
                     aliases.push(get_or_err_direct!(it, parse_id, "import"));
                     if let Some(tp) = it.peek() {
                         if tp.token != Token::Comma && tp.token != Token::NL {
                             return Err(TokenErr {
                                 expected: Token::RRBrack,
-                                actual:   (*tp).clone()
+                                actual: (*tp).clone(),
                             });
                         }
                     }
@@ -94,7 +98,9 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
         let mut pos = 0;
         while let Some(tp) = it.peek() {
             match tp.token {
-                Token::Comma => continue,
+                Token::Comma => {
+                    it.next();
+                }
                 Token::RRBrack => break,
                 _ => {
                     check_next_is!(it, Token::Def);
@@ -106,7 +112,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
                                 if tp.token != Token::Comma && tp.token != Token::RRBrack {
                                     return Err(TokenErr {
                                         expected: Token::RRBrack,
-                                        actual:   (*tp).clone()
+                                        actual: (*tp).clone(),
                                     });
                                 }
                             }
@@ -156,7 +162,17 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
         vec![]
     };
     let args = if let Some(&TokenPos { token: Token::LRBrack, .. }) = it.peek() {
-        get_or_err_direct!(it, parse_fun_args, "parent arguments")
+        it.next();
+        let mut args = vec![];
+        while let Some(_) = it.peek() {
+            args.push(get_or_err_direct!(it, parse_expression, "parent argument"));
+            match it.peek() {
+                Some(TokenPos { token: Token::Comma, .. }) => { it.next(); }
+                _ => break,
+            }
+        }
+        check_next_is!(it, Token::RRBrack);
+        args
     } else {
         vec![]
     };
@@ -212,10 +228,10 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
                 it.next();
                 modules.push(ASTNodePos {
                     st_line: t.line,
-                    st_pos:  t.pos,
+                    st_pos: t.pos,
                     en_line: t.line,
-                    en_pos:  t.pos + comment.len() as i32,
-                    node:    ASTNode::Comment { comment: comment.clone() }
+                    en_pos: t.pos + comment.len() as i32,
+                    node: ASTNode::Comment { comment: comment.clone() },
                 })
             }
             _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
@@ -263,7 +279,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             st_pos,
             en_line: _type.en_line,
             en_pos: _type.en_pos,
-            node: ASTNode::TypeDef { _type, body: None }
+            node: ASTNode::TypeDef { _type, body: None },
         })
     }
 }

@@ -18,7 +18,6 @@ pub enum Core {
     },
     ClassDef {
         name:        Box<Core>,
-        generics:    Vec<Core>,
         parents:     Vec<Core>,
         definitions: Vec<Core>
     },

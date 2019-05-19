@@ -5,8 +5,14 @@ type MyType
     def fun_a: () -> ()
     def factorial: Int -> Int
 
+class MyClass0
+    def other
+
+class MyClass1 isa MyType("asdf")
+    def other
+
 # This class has no state
-class MyClass[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
+class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def SOME_CONSTANT <- 3.5E20
 
     def constant_func() => 400
@@ -19,7 +25,7 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-class MyClass isa MyType
+class MyClass3 isa MyType
     def something: MyClass forward method_1, method_2
 
     def private z_modified

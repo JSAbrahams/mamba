@@ -92,15 +92,6 @@ fn from_import_as_verify() {
 }
 
 #[test]
-fn top_level_body_panic_verify() {
-    let var_def = to_pos!(ASTNode::Body { definitions: vec![] });
-
-    panic::set_hook(Box::new(|_info| {}));
-    let result = std::panic::catch_unwind(|| desugar(&var_def));
-    assert!(result.is_err());
-}
-
-#[test]
 fn raises_empty_verify() {
     let type_def = to_pos!(ASTNode::Raises {
         expr_or_stmt: Box::from(to_pos!(ASTNode::Id { lit: String::from("a") })),
