@@ -80,12 +80,12 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Geq, .. }) => bin_op!(parse_level_6, Geq, "greater, equal"),
         Some(TokenPos { token: Token::Le, .. }) => bin_op!(parse_level_6, Le, "less"),
         Some(TokenPos { token: Token::Leq, .. }) => bin_op!(parse_level_6, Leq, "less, equal"),
-        Some(TokenPos { token: Token::Eq, .. }) => bin_op!(parse_level_6, Leq, "equal"),
-        Some(TokenPos { token: Token::Neq, .. }) => bin_op!(parse_level_6, Leq, "not equal"),
-        Some(TokenPos { token: Token::Is, .. }) => bin_op!(parse_level_6, Leq, "is"),
-        Some(TokenPos { token: Token::IsN, .. }) => bin_op!(parse_level_6, Leq, "is not"),
-        Some(TokenPos { token: Token::IsA, .. }) => bin_op!(parse_level_6, Leq, "is a"),
-        Some(TokenPos { token: Token::IsNA, .. }) => bin_op!(parse_level_6, Leq, "is not a"),
+        Some(TokenPos { token: Token::Eq, .. }) => bin_op!(parse_level_6, Eq, "equal"),
+        Some(TokenPos { token: Token::Neq, .. }) => bin_op!(parse_level_6, Neq, "not equal"),
+        Some(TokenPos { token: Token::Is, .. }) => bin_op!(parse_level_6, Is, "is"),
+        Some(TokenPos { token: Token::IsN, .. }) => bin_op!(parse_level_6, IsN, "is not"),
+        Some(TokenPos { token: Token::IsA, .. }) => bin_op!(parse_level_6, IsA, "is a"),
+        Some(TokenPos { token: Token::IsNA, .. }) => bin_op!(parse_level_6, IsNA, "is not a"),
         _ => Ok(*arithmetic)
     }
 }
@@ -123,8 +123,8 @@ fn parse_level_4(it: &mut TPIterator) -> ParseResult {
     }
 
     match it.peek() {
-        Some(TokenPos { token: Token::Add, .. }) => bin_op!(parse_level_4, Ge, "add"),
-        Some(TokenPos { token: Token::Sub, .. }) => bin_op!(parse_level_4, Geq, "sub"),
+        Some(TokenPos { token: Token::Add, .. }) => bin_op!(parse_level_4, Add, "add"),
+        Some(TokenPos { token: Token::Sub, .. }) => bin_op!(parse_level_4, Sub, "sub"),
         _ => Ok(*arithmetic)
     }
 }
@@ -150,8 +150,6 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
-    let arithmetic: Box<ASTNodePos> = get_or_err!(it, parse_level_1, "comparison");
-
     macro_rules! un_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
             it.next();
@@ -165,11 +163,11 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
         Some(TokenPos { token: Token::Add, .. }) => un_op!(parse_level_2, AddU, "plus"),
         Some(TokenPos { token: Token::Sub, .. }) => un_op!(parse_level_2, SubU, "subtract"),
-        Some(TokenPos { token: Token::Sqrt, .. }) => un_op!(parse_level_2, Sqrt, "square root"),
-        Some(TokenPos { token: Token::Not, .. }) => un_op!(parse_level_2, Not, "not"),
+        Some(TokenPos { token: Token::Sqrt, .. }) => un_op!(parse_operation, Sqrt, "square root"),
+        Some(TokenPos { token: Token::Not, .. }) => un_op!(parse_operation, Not, "not"),
         Some(TokenPos { token: Token::BOneCmpl, .. }) =>
-            un_op!(parse_level_2, BOneCmpl, "bitwise ones compliment"),
-        _ => Ok(*arithmetic)
+            un_op!(parse_operation, BOneCmpl, "bitwise ones compliment"),
+        _ => parse_level_1(it)
     }
 }
 
