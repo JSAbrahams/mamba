@@ -31,11 +31,12 @@ macro_rules! inner_bin_op {
 /// Precedence is as follows, from top to bottom:
 /// 1. exponent
 /// 2. unary and, unary or, bitwise ones complement
-/// 3. multiplication, division, floor division, modulus
+/// 3. multiplication, division, floor division, modulus, range, range inclusive
 /// 4. addition, subtraction
 /// 5. binary left shift, binary right shift, binary and, binary or, binary xor
 /// 6. greater, greater or equal, less, less or equal, equal, not equal, is, is,
-/// in not, is a, is not a 7. and, or
+/// in not, is a, is not a
+/// 7. and, or
 /// 8. postfix calls
 pub fn parse_operation(it: &mut TPIterator) -> ParseResult { parse_level_8(it) }
 
@@ -144,6 +145,34 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Div, .. }) => bin_op!(parse_level_3, Div, "div"),
         Some(TokenPos { token: Token::FDiv, .. }) => bin_op!(parse_level_3, FDiv, "floor div"),
         Some(TokenPos { token: Token::Mod, .. }) => bin_op!(parse_level_3, Mod, "mod"),
+        Some(TokenPos { token: Token::Range, .. }) => {
+            it.next();
+            let to: Box<ASTNodePos> = get_or_err!(it, parse_operation, "range");
+            let step = if let Some(&TokenPos { token: Token::Step, .. }) = it.peek() {
+                it.next();
+                Some(get_or_err!(it, parse_expression, "step"))
+            } else {
+                None
+            };
+
+            let (en_line, en_pos) = (to.en_line, to.en_pos);
+            let node = ASTNode::Range { from: arithmetic, to, inclusive: false, step };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
+        Some(TokenPos { token: Token::RangeIncl, .. }) => {
+            it.next();
+            let to: Box<ASTNodePos> = get_or_err!(it, parse_operation, "range inclusive");
+            let step = if let Some(&TokenPos { token: Token::Step, .. }) = it.peek() {
+                it.next();
+                Some(get_or_err!(it, parse_expression, "step"))
+            } else {
+                None
+            };
+
+            let (en_line, en_pos) = (to.en_line, to.en_pos);
+            let node = ASTNode::Range { from: arithmetic, to, inclusive: true, step };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
         _ => Ok(*arithmetic)
     }
 }

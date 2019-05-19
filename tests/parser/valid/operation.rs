@@ -210,6 +210,16 @@ fn geq_verify() {
 }
 
 #[test]
+fn in_verify() {
+    let source = String::from("one in my_set");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(In, ast_tree);
+    assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
+    assert_eq!(right.node, ASTNode::Id { lit: String::from("my_set") });
+}
+
+#[test]
 fn and_verify() {
     let source = String::from("one and three");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();

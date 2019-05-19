@@ -110,7 +110,7 @@ fn for_range_incl_verify() {
                     assert_eq!(from.node, ASTNode::Id { lit: String::from("c") });
                     assert_eq!(to.node, ASTNode::Id { lit: String::from("d") });
                     assert!(inclusive);
-                    assert_eq!(step.clone().unwrap().node, ASTNode::Id { lit: String::from("e") });
+                    assert_eq!(*step, None);
                 }
                 _ => panic!("Expected range")
             }
