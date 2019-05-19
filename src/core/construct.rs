@@ -217,10 +217,13 @@ pub enum Core {
         right: Box<Core>
     },
 
+    In {
+        expr:       Box<Core>,
+        collection: Box<Core>
+    },
     For {
-        exprs:      Vec<Core>,
-        collection: Box<Core>,
-        body:       Box<Core>
+        expr: Box<Core>,
+        body: Box<Core>
     },
     Range {
         from: Box<Core>,

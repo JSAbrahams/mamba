@@ -319,9 +319,12 @@ pub enum ASTNode {
         body: Box<ASTNodePos>
     },
     For {
-        expr:       Vec<ASTNodePos>,
-        collection: Box<ASTNodePos>,
-        body:       Box<ASTNodePos>
+        expr: Box<ASTNodePos>,
+        body: Box<ASTNodePos>
+    },
+    In {
+        expr:       Box<ASTNodePos>,
+        collection: Box<ASTNodePos>
     },
     Step {
         amount: Box<ASTNodePos>

@@ -217,6 +217,10 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             body: Box::from(desugar_node(body, ctx, state))
         },
 
+        ASTNode::In { expr, collection } => Core::In {
+            expr:       Box::from(desugar_node(expr, ctx, state)),
+            collection: Box::from(desugar_node(collection, ctx, state))
+        },
         ASTNode::Range { from, to, inclusive, step } => Core::Range {
             from: Box::from(desugar_node(from, ctx, state)),
             to:   Box::from(if *inclusive {

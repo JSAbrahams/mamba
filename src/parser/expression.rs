@@ -69,6 +69,14 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
             let node = ASTNode::QuestOr { _do: Box::new(pre), _default: _def };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
+        Some(TokenPos { token: Token::In, .. }) => {
+            it.next();
+            let collection: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+
+            let (en_line, en_pos) = (collection.en_line, collection.en_pos);
+            let node = ASTNode::In { expr: Box::new(pre), collection };
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+        }
         Some(TokenPos { token: Token::Range, .. }) => {
             it.next();
             let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "..");

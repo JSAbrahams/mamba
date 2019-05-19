@@ -63,14 +63,12 @@ fn parse_for(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
 
     check_next_is!(it, Token::For);
-    let expr: Vec<ASTNodePos> = get_one_or_more!(it, "for expression");
-    check_next_is!(it, Token::In);
-    let collection: Box<ASTNodePos> = get_or_err!(it, parse_expression, "for collection");
+    let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "for expression");
     check_next_is!(it, Token::Do);
     let body: Box<ASTNodePos> = get_or_err!(it, parse_expr_or_stmt, "for body");
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
-    let node = ASTNode::For { expr, collection, body };
+    let node = ASTNode::For { expr, body };
 
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }

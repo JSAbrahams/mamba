@@ -87,21 +87,16 @@ fn match_verify() {
 
 #[test]
 fn for_verify() {
-    let expr_1 = to_pos_unboxed!(ASTNode::Id { lit: String::from("expr_1") });
-    let expr_2 = to_pos_unboxed!(ASTNode::Id { lit: String::from("expr_2") });
-    let collection = to_pos!(ASTNode::Id { lit: String::from("collection") });
+    let expr = to_pos!(ASTNode::Id { lit: String::from("expr_1") });
     let body = to_pos!(ASTNode::Id { lit: String::from("body") });
-    let for_stmt = to_pos!(ASTNode::For { expr: vec![expr_1, expr_2], collection, body });
+    let for_stmt = to_pos!(ASTNode::For { expr, body });
 
-    let (core_exprs, core_collection, core_body) = match desugar(&for_stmt) {
-        Core::For { exprs, collection, body } => (exprs, collection, body),
+    let (core_expr, core_body) = match desugar(&for_stmt) {
+        Core::For { expr, body } => (expr, body),
         other => panic!("Expected for but was {:?}", other)
     };
 
-    assert_eq!(core_exprs.len(), 2);
-    assert_eq!(core_exprs[0], Core::Id { lit: String::from("expr_1") });
-    assert_eq!(core_exprs[1], Core::Id { lit: String::from("expr_2") });
-    assert_eq!(*core_collection, Core::Id { lit: String::from("collection") });
+    assert_eq!(*core_expr, Core::Id { lit: String::from("expr_1") });
     assert_eq!(*core_body, Core::Id { lit: String::from("body") });
 }
 

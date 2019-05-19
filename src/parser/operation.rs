@@ -26,7 +26,6 @@ macro_rules! inner_bin_op {
     }};
 }
 
-// TODO add `in` operator
 /// Parse an operation.
 ///
 /// Precedence is as follows, from top to bottom:
@@ -35,8 +34,8 @@ macro_rules! inner_bin_op {
 /// 3. multiplication, division, floor division, modulus
 /// 4. addition, subtraction
 /// 5. binary left shift, binary right shift, binary and, binary or, binary xor
-/// 6. greater, greater or equal, less, less or equal, equal, not equal, is, is
-/// not, is a, is not a 7. and, or
+/// 6. greater, greater or equal, less, less or equal, equal, not equal, is, is,
+/// in not, is a, is not a 7. and, or
 /// 8. postfix calls
 pub fn parse_operation(it: &mut TPIterator) -> ParseResult { parse_level_8(it) }
 
