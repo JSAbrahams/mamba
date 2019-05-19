@@ -267,15 +267,67 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             Core::Block { statements }
         }
 
-        ASTNode::Class { _type, body, parents: _, .. } =>
-            // TODO do something with parents
+        ASTNode::Class { _type, body, args, parents } =>
             match (&_type.deref().node, &body.deref().node) {
-                (ASTNode::Type { id, generics }, ASTNode::Block { statements }) => Core::ClassDef {
-                    name:        Box::from(desugar_node(id, ctx, state)),
-                    generics:    desugar_vec(generics, ctx, state),
-                    parents:     vec![],
-                    definitions: desugar_vec(statements, ctx, state)
-                },
+                (ASTNode::Type { id, generics }, ASTNode::Block { statements }) => {
+                    let mut parent_ids: Vec<Core> = vec![];
+                    for parent in parents {
+                        match &parent.node {
+                            ASTNode::Parent { ref id, .. } => parent_ids.push({
+                                // TODO add args for super call
+                                desugar_node(id, ctx, state)
+                            }),
+                            other => panic!("Expected parent but got {:?}", other)
+                        }
+                    }
+
+                    let mut definitions: Vec<Core> = desugar_vec(statements, ctx, state);
+
+                    if !args.is_empty() {
+                        let mut args = desugar_vec(args, ctx, state);
+                        let mut assign_statements = vec![];
+
+                        for arg in &args {
+                            match arg {
+                                Core::FunArg { id, .. } => match &id.deref() {
+                                    Core::Id { lit } => {
+                                        definitions.push(Core::Assign {
+                                            left:  id.clone(),
+                                            right: Box::from(Core::None)
+                                        });
+                                        assign_statements.push(Core::Assign {
+                                            left:  Box::from(Core::PropertyCall {
+                                                object:   Box::from(Core::Id {
+                                                    lit: String::from("self")
+                                                }),
+                                                property: lit.clone()
+                                            }),
+                                            right: id.clone()
+                                        });
+                                    }
+                                    other => panic!("Expected id but was {:?}", other)
+                                },
+                                other => panic!("Expected arg but was {:?}", other)
+                            }
+                        }
+
+                        let mut core_args = vec![Core::Id { lit: String::from("self") }];
+                        core_args.append(&mut args);
+                        definitions.push(Core::FunDef {
+                            private: false,
+                            id:      Box::from(Core::Id { lit: String::from("init") }),
+                            args:    core_args,
+                            body:    Box::from(Core::Block { statements: assign_statements })
+                        });
+                    }
+
+                    Core::ClassDef {
+                        name: Box::from(desugar_node(id, ctx, state)),
+                        generics: desugar_vec(generics, ctx, state),
+                        parents: parent_ids,
+                        definitions
+                    }
+                }
                 other => panic!("desugarer didn't recognize while making class: {:?}.", other)
             },
         ASTNode::Generic { .. } => Core::Empty,

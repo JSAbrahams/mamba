@@ -6,7 +6,7 @@ type MyType
     def factorial: Int -> Int
 
 # This class has no state
-class MyClass isa MyType
+class MyClass[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def SOME_CONSTANT <- 3.5E20
 
     def constant_func() => 400
@@ -19,7 +19,7 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-class MyClass[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
+class MyClass isa MyType
     def something: MyClass forward method_1, method_2
 
     def private z_modified
@@ -49,3 +49,9 @@ class MyClass[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
 
     def some_higher_order (self, fun: Int -> Int) => 0
     def fancy(self) => self.some_higher_order(\x => x * 2)
+
+class SimpleClass
+    def something
+
+    def init(self, something: S) =>
+        self.something <- something
