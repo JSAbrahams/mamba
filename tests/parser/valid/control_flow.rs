@@ -20,8 +20,7 @@ fn for_statement_verify() {
         ASTNode::Script { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => match &expr.node {
-                    ASTNode::In { expr, collection } =>
-                        (expr.clone(), collection.clone(), body.clone()),
+                    ASTNode::In { left, right } => (left.clone(), right.clone(), body.clone()),
                     other => panic!("Expected in but was {:?}", other)
                 },
                 _ => panic!("first element script was not for.")
@@ -43,8 +42,7 @@ fn for_tuple_statement_verify() {
         ASTNode::Script { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => match &expr.node {
-                    ASTNode::In { expr, collection } =>
-                        (expr.clone(), collection.clone(), body.clone()),
+                    ASTNode::In { left, right } => (left.clone(), right.clone(), body.clone()),
                     other => panic!("Expected in but was {:?}", other)
                 },
                 _ => panic!("first element script was not for.")
@@ -72,9 +70,9 @@ fn for_range_step_verify() {
     };
 
     match expr.node {
-        ASTNode::In { expr, collection } => {
-            assert_eq!(expr.node, ASTNode::Id { lit: String::from("a") });
-            match &collection.node {
+        ASTNode::In { left, right } => {
+            assert_eq!(left.node, ASTNode::Id { lit: String::from("a") });
+            match &right.node {
                 ASTNode::Range { from, to, inclusive, step } => {
                     assert_eq!(from.node, ASTNode::Id { lit: String::from("c") });
                     assert_eq!(to.node, ASTNode::Id { lit: String::from("d") });
@@ -105,9 +103,9 @@ fn for_range_incl_verify() {
     };
 
     match expr.node {
-        ASTNode::In { expr, collection } => {
-            assert_eq!(expr.node, ASTNode::Id { lit: String::from("a") });
-            match &collection.node {
+        ASTNode::In { left, right } => {
+            assert_eq!(left.node, ASTNode::Id { lit: String::from("a") });
+            match &right.node {
                 ASTNode::Range { from, to, inclusive, step } => {
                     assert_eq!(from.node, ASTNode::Id { lit: String::from("c") });
                     assert_eq!(to.node, ASTNode::Id { lit: String::from("d") });

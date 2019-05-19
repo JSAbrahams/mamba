@@ -218,8 +218,8 @@ pub enum Core {
     },
 
     In {
-        expr:       Box<Core>,
-        collection: Box<Core>
+        left:  Box<Core>,
+        right: Box<Core>
     },
     For {
         expr: Box<Core>,

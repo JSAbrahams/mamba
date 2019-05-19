@@ -74,7 +74,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
             let collection: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
 
             let (en_line, en_pos) = (collection.en_line, collection.en_pos);
-            let node = ASTNode::In { expr: Box::new(pre), collection };
+            let node = ASTNode::In { left: Box::new(pre), right: collection };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
         Some(TokenPos { token: Token::Range, .. }) => {

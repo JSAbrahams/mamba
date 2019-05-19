@@ -323,8 +323,8 @@ pub enum ASTNode {
         body: Box<ASTNodePos>
     },
     In {
-        expr:       Box<ASTNodePos>,
-        collection: Box<ASTNodePos>
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
     },
     Step {
         amount: Box<ASTNodePos>

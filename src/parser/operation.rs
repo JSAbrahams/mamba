@@ -85,6 +85,7 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::IsN, .. }) => bin_op!(parse_level_6, IsN, "is not"),
         Some(TokenPos { token: Token::IsA, .. }) => bin_op!(parse_level_6, IsA, "is a"),
         Some(TokenPos { token: Token::IsNA, .. }) => bin_op!(parse_level_6, IsNA, "is not a"),
+        Some(TokenPos { token: Token::In, .. }) => bin_op!(parse_level_6, In, "in"),
         _ => Ok(*arithmetic)
     }
 }
