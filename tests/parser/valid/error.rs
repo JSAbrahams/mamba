@@ -13,3 +13,9 @@ fn raises_verify() {
     let source = valid_resource_content(&["error"], "raise.mamba");
     assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }
+
+#[test]
+fn with_verify() {
+    let source = valid_resource_content(&["error"], "with.mamba");
+    assert!(parse(&tokenize(&source).unwrap()).is_ok());
+}

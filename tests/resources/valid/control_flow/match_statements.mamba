@@ -7,6 +7,6 @@ match b, bb, bbb
 
 match nested
     a => b
-    c => match c with
+    c => match c
         other => even_other
         other_one => better_one

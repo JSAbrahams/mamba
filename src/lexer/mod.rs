@@ -243,6 +243,7 @@ fn as_op_or_id(string: String) -> Token {
         "return" => Token::Ret,
         "then" => Token::Then,
         "do" => Token::Do,
+        "with" => Token::With,
 
         "in" => Token::In,
 

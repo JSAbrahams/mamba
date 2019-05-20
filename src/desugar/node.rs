@@ -263,6 +263,17 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::Step { .. } => panic!("Step cannot be top level."),
         ASTNode::Raises { .. } => Core::Empty,
 
+        ASTNode::Handle { .. } => unimplemented!("Handle has not yet been implemented."),
+        ASTNode::Retry { .. } => unimplemented!("Retry has not yet bee implemented."),
+        ASTNode::With { resource, _as, expr } => Core::With {
+            resource: Box::from(desugar_node(resource, ctx, state)),
+            _as:      match _as {
+                Some(_as) => Box::from(desugar_node(_as, ctx, state)),
+                _ => Box::from(Core::None)
+            },
+            expr:     Box::from(desugar_node(expr, ctx, state))
+        },
+
         ASTNode::Handle { expr_or_stmt, cases } => Core::TryExcept {
             _try:   Box::from(desugar_node(expr_or_stmt, ctx, state)),
             except: {

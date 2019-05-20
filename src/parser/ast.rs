@@ -75,6 +75,11 @@ pub enum ASTNode {
         cases:        Vec<ASTNodePos>
     },
     Retry,
+    With {
+        resource: Box<ASTNodePos>,
+        _as:      Option<Box<ASTNodePos>>,
+        expr:     Box<ASTNodePos>
+    },
 
     DirectCall {
         name: Box<ASTNodePos>,

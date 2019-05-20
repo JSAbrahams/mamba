@@ -95,6 +95,7 @@ pub enum Token {
     Continue,
     Break,
     Ret,
+    With,
 
     Quest,
     QuestOr,
@@ -193,6 +194,7 @@ impl fmt::Display for Token {
             Token::Break => String::from("break"),
             Token::Ret => String::from("return"),
             Token::Do => String::from("do"),
+            Token::With => String::from("with"),
 
             Token::Quest => String::from("?"),
             Token::QuestOr => String::from("?or"),
