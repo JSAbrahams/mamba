@@ -67,6 +67,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 Core::MulOp => String::from("__mul__"),
                 Core::ModOp => String::from("__mod__"),
                 Core::DivOp => String::from("__truediv__"),
+                Core::FDivOp => String::from("__floordiv__"),
 
                 Core::Id { ref lit } => match lit.as_str() {
                     "size" => String::from("__size__"),
