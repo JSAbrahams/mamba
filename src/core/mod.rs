@@ -217,11 +217,40 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Empty => String::new(),
         Core::Comment { comment } => format!("#{}", comment),
 
+        Core::TryExcept { _try, except } => format!(
+            "try:\n{}{}\n{}",
+            indent(ind + 1),
+            to_py(_try, ind + 1),
+            except_unwrap(except, ind)
+        ),
+
         other => panic!("To python not implemented yet for: {:?}", other)
     }
 }
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
+
+fn except_unwrap(items: &[Core], ind: usize) -> String {
+    let mut result = String::new();
+
+    for item in items {
+        match item {
+            Core::Except { id, class, body } => result.push_str(
+                format!(
+                    "{}except {} as {}: {}\n",
+                    indent(ind),
+                    to_py(class, ind),
+                    to_py(id, ind),
+                    to_py(body, ind + 1)
+                )
+                .as_ref()
+            ),
+            other => panic!("Expected two id's but was: {:?}", other)
+        }
+    }
+
+    result
+}
 
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut result = String::new();
