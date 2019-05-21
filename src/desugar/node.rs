@@ -269,7 +269,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             resource: Box::from(desugar_node(resource, ctx, state)),
             _as:      match _as {
                 Some(_as) => Box::from(desugar_node(_as, ctx, state)),
-                _ => Box::from(Core::None)
+                _ => Box::from(Core::Empty)
             },
             expr:     Box::from(desugar_node(expr, ctx, state))
         },

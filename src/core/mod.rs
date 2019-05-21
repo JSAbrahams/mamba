@@ -220,7 +220,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::With { resource, _as, expr } => format!(
             "with {}{}: {}",
             to_py(resource, ind),
-            if **expr == Core::None {
+            if **expr == Core::Empty {
                 String::new()
             } else {
                 format!(" as {}", to_py(_as, ind + 1))
