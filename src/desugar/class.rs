@@ -18,7 +18,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
         ASTNode::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => {
-                let (parent_ids, parent_args, super_calls) = extract_parents(parents, ctx, state);
+                let (parent_names, parent_args, super_calls) = extract_parents(parents, ctx, state);
                 let core_definitions: Vec<Core> = desugar_vec(statements, ctx, state);
 
                 let inline_args = desugar_vec(args, ctx, state);
@@ -29,15 +29,25 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
                     if found_constructor || (inline_args.is_empty() && parent_args.is_empty()) {
                         augmented_definitions
                     } else {
+                        // We have to create a constructor because there was none present, and we
+                        // need to convert inline args to init call and/or make calls to super
                         let mut final_definitions = augmented_definitions.clone();
-                        let mut args = vec![Core::Id { lit: String::from("init") }];
+
+                        let mut args = vec![Core::Id { lit: String::from("self") }];
                         args.append(&mut inline_args.clone());
-                        for arg in inline_args {
-                            // TODO add check that argument isn't passed to parent
-                            final_definitions.push(Core::Assign {
-                                left:  Box::from(arg.clone()),
-                                right: Box::from(Core::None)
-                            })
+                        for inline_arg in inline_args {
+                            if let Core::FunArg { id, .. } = inline_arg {
+                                if parent_args.contains(&id) {
+                                    continue;
+                                }
+
+                                final_definitions.push(Core::Assign {
+                                    left:  Box::from(id.clone()),
+                                    right: Box::from(Core::None)
+                                })
+                            } else {
+                                panic!("Inline arg was not function argument")
+                            }
                         }
 
                         let id = Box::from(Core::Id { lit: String::from("__init__") });
@@ -50,7 +60,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
 
                 Core::ClassDef {
                     name:        Box::from(desugar_node(id, ctx, state)),
-                    parents:     parent_ids,
+                    parents:     parent_names,
                     definitions: final_definitions
                 }
             }
@@ -110,14 +120,14 @@ fn extract_parents(
     ctx: &Context,
     state: &State
 ) -> (Vec<Core>, Vec<Core>, Vec<Core>) {
-    let mut parent_ids: Vec<Core> = vec![];
+    let mut parent_names: Vec<Core> = vec![];
     let mut parent_args: Vec<Core> = vec![];
     let mut super_calls: Vec<Core> = vec![];
 
     for parent in parents {
         match &parent.node {
             ASTNode::Parent { ref id, args, .. } => {
-                parent_ids.push(desugar_node(id, ctx, state));
+                parent_names.push(desugar_node(id, ctx, state));
 
                 let args = desugar_vec(args, ctx, state);
                 parent_args.append(&mut args.clone());
@@ -136,5 +146,5 @@ fn extract_parents(
         }
     }
 
-    (parent_ids, parent_args, super_calls)
+    (parent_names, parent_args, super_calls)
 }

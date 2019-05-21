@@ -15,7 +15,7 @@ class MyClass1 isa MyType("asdf")
 class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def SOME_CONSTANT <- 3.5E20
 
-    def constant_func() => 400
+    def constant_func(self) => 400
 
 type SomeState isa MyClass when z_modified > 2
 
