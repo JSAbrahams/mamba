@@ -5,6 +5,8 @@
 </p>
 
 <p align="center">
+    <i>Safety first!</i>
+    <br><br>
     <a href="https://travis-ci.org/JSAbrahams/mamba/branches?branch=master"><img src="https://img.shields.io/travis/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=linux" alt="Travis"/></a>
     <a href="https://ci.appveyor.com/project/JSAbrahams/mamba"><img src="https://img.shields.io/appveyor/ci/JSAbrahams/mamba/master.svg?style=for-the-badge&logo=windows" alt="Appveyor"/></a>
     <a href="https://app.codacy.com/project/JSAbrahams/mamba/dashboard"><img src="https://img.shields.io/codacy/grade/74944b486d444bf2b772e7311e9ae2f4.svg?style=for-the-badge" alt="Code Quality"/></a>
@@ -236,7 +238,7 @@ The following is only a brief example.
 Error handling can at times becomes quite verbose, so we do recommend checking out the [docs](https://joelabrahams.nl/mamba_doc/features/safety/error_handling.html) on error handling to get a better feel for error handling.
 
 We can modify the above script such that we don't check whether the server is connected or not.
-In that case, we must handle the case where `http_server` throws a `ServerErr`:
+In that case, we must handle the case where `my_server` throws a `ServerErr`:
 ```mamba
 import ipaddress
 from server import MyServer
@@ -246,10 +248,7 @@ def my_server <- MyServer(some_ip)
 
 def message <- "Hello World!"
 my_server.send message handle
-    err: ServerErr => 
-        print "Error while sending message: \"{message}\": {err}"
-        # We must now return to halt execution
-        return
+    err: ServerErr => print "Error while sending message: \"{message}\": {err}"
 
 if my_server isa ConnectedMyServer then my_server.disconnect
 ```
