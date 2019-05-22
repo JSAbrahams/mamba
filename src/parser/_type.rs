@@ -2,10 +2,8 @@ use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
-use crate::parser::call::parse_call;
 use crate::parser::common::end_pos;
 use crate::parser::common::start_pos;
-use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
@@ -30,29 +28,6 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     };
 
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
-}
-
-pub fn parse_id_maybe_call(it: &mut TPIterator) -> ParseResult {
-    let id = match parse_id(it) {
-        Ok(id) => id,
-        err => return err
-    };
-
-    match it.peek() {
-        Some(TokenPos { token: Token::Point, .. })
-        | Some(TokenPos { token: Token::LRBrack, .. }) => parse_call(id, it),
-        Some(&tp) if is_start_expression_exclude_unary(tp) => parse_call(id, it),
-        Some(TokenPos { token: Token::DoublePoint, .. }) => {
-            it.next();
-            let _type = get_or_err!(it, parse_type, "type");
-            let (st_line, st_pos) = (id.st_line, id.st_pos);
-            let (en_line, en_pos) = (_type.en_line, _type.en_pos);
-            let node =
-                ASTNode::IdType { id: Box::from(id), mutable: false, _type: Some(_type) };
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
-        }
-        _ => Ok(id)
-    }
 }
 
 pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {

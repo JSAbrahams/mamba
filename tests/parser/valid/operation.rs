@@ -90,6 +90,16 @@ fn division_verify() {
 }
 
 #[test]
+fn floor_division_verify() {
+    let source = String::from("10.0 // fgh");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(FDiv, ast_tree);
+    assert_eq!(left.node, ASTNode::Real { lit: String::from("10.0") });
+    assert_eq!(right.node, ASTNode::Id { lit: String::from("fgh") });
+}
+
+#[test]
 fn power_verify() {
     let source = String::from("chopin ^ liszt");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
@@ -235,4 +245,63 @@ fn sqrt_verify() {
 
     let expr = verify_is_un_operation!(Sqrt, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_num") });
+}
+
+#[test]
+fn b_and_verify() {
+    let source = String::from("one _and_ three");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(BAnd, ast_tree);
+    assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
+    assert_eq!(right.node, ASTNode::Id { lit: String::from("three") });
+}
+
+#[test]
+fn b_or_verify() {
+    let source = String::from("one _or_ \"asdf\"");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(BOr, ast_tree);
+    assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
+    assert_eq!(right.node, ASTNode::Str { lit: String::from("asdf") });
+}
+
+#[test]
+fn b_xor_verify() {
+    let source = String::from("one _xor_ \"asdf\"");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(BXOr, ast_tree);
+    assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
+    assert_eq!(right.node, ASTNode::Str { lit: String::from("asdf") });
+}
+
+#[test]
+fn b_ones_complement_verify() {
+    let source = String::from("_not_ \"asdf\"");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let expr = verify_is_un_operation!(BOneCmpl, ast_tree);
+    assert_eq!(expr.node, ASTNode::Str { lit: String::from("asdf") });
+}
+
+#[test]
+fn b_lshift_verify() {
+    let source = String::from("one << \"asdf\"");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(BLShift, ast_tree);
+    assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
+    assert_eq!(right.node, ASTNode::Str { lit: String::from("asdf") });
+}
+
+#[test]
+fn brshift_verify() {
+    let source = String::from("one >> \"asdf\"");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(BRShift, ast_tree);
+    assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
+    assert_eq!(right.node, ASTNode::Str { lit: String::from("asdf") });
 }

@@ -67,6 +67,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 Core::MulOp => String::from("__mul__"),
                 Core::ModOp => String::from("__mod__"),
                 Core::DivOp => String::from("__truediv__"),
+                Core::FDivOp => String::from("__floordiv__"),
 
                 Core::Id { ref lit } => match lit.as_str() {
                     "size" => String::from("__size__"),
@@ -168,10 +169,24 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{} * {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Div { left, right } =>
             format!("{} / {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::FDiv { left, right } =>
+            format!("{} // {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Pow { left, right } =>
             format!("{} ** {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Mod { left, right } =>
             format!("{} % {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+
+        Core::BAnd { left, right } =>
+            format!("{} & {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::BOr { left, right } =>
+            format!("{} | {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::BXOr { left, right } =>
+            format!("{} ^ {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::BOneCmpl { expr } => format!("~{}", to_py(expr, ind)),
+        Core::BLShift { left, right } =>
+            format!("{} << {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::BRShift { left, right } =>
+            format!("{} >> {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
 
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),

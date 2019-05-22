@@ -42,7 +42,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         | Some(TokenPos { token: Token::Sqrt, .. })
         | Some(TokenPos { token: Token::Add, .. })
         | Some(TokenPos { token: Token::Id(_), .. })
-        | Some(TokenPos { token: Token::Sub, .. }) => parse_operation(it),
+        | Some(TokenPos { token: Token::Sub, .. })
+        | Some(TokenPos { token: Token::BOneCmpl, .. }) => parse_operation(it),
 
         Some(TokenPos { token: Token::BSlash, .. }) => parse_anon_fun(it),
 

@@ -71,11 +71,13 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
                 _ => create(&mut state, Token::Point)
             },
             '<' => match it.peek() {
+                Some('<') => next_and_create(&mut it, &mut state, Token::BLShift),
                 Some('-') => next_and_create(&mut it, &mut state, Token::Assign),
                 Some('=') => next_and_create(&mut it, &mut state, Token::Leq),
                 _ => create(&mut state, Token::Le)
             },
             '>' => match it.peek() {
+                Some('>') => next_and_create(&mut it, &mut state, Token::BRShift),
                 Some('=') => next_and_create(&mut it, &mut state, Token::Geq),
                 _ => create(&mut state, Token::Ge)
             },
@@ -86,6 +88,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             },
             '*' => create(&mut state, Token::Mul),
             '/' => match it.peek() {
+                Some('/') => next_and_create(&mut it, &mut state, Token::FDiv),
                 Some('=') => next_and_create(&mut it, &mut state, Token::Neq),
                 _ => create(&mut state, Token::Div)
             },
@@ -234,6 +237,11 @@ fn as_op_or_id(string: String) -> Token {
         "while" => Token::While,
         "for" => Token::For,
         "step" => Token::Step,
+
+        "_and_" => Token::BAnd,
+        "_or_" => Token::BOr,
+        "_xor_" => Token::BXOr,
+        "_not_" => Token::BOneCmpl,
 
         "if" => Token::If,
         "else" => Token::Else,

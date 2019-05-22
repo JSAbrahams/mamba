@@ -184,8 +184,37 @@ pub enum Core {
         left:  Box<Core>,
         right: Box<Core>
     },
+    FDivOp,
+    FDiv {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
     Sqrt {
         expr: Box<Core>
+    },
+
+    BAnd {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
+    BOr {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
+    BXOr {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
+    BOneCmpl {
+        expr: Box<Core>
+    },
+    BLShift {
+        left:  Box<Core>,
+        right: Box<Core>
+    },
+    BRShift {
+        left:  Box<Core>,
+        right: Box<Core>
     },
 
     For {
