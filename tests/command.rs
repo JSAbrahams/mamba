@@ -34,7 +34,7 @@ fn output_class_output_non_existent() {
 #[test]
 fn output_class_output_exists() {
     let source = resource_path(true, &["class"], "class.mamba");
-    let output = resource_path(true, &["class"], "class-already-exists.py");
+    let output = resource_path(true, &["class"], "class_already_exists.py");
 
     let path = &mut Path::new(&source);
     let out_path = &mut Path::new(&output);
@@ -45,7 +45,7 @@ fn output_class_output_exists() {
     };
 
     match mamba_to_python(path, out_path) {
-        Ok(_) => check_exists_and_delete(true, &["class"], "class-already-exists.py"),
+        Ok(_) => check_exists_and_delete(true, &["class"], "class_already_exists.py"),
         Err(err) => panic!("{}", err)
     };
 }
@@ -56,7 +56,7 @@ fn test_empty_file_direct() {
     let path = &mut Path::new(&source);
 
     match mamba_to_python_direct(path) {
-        Ok(_) => check_exists_and_delete(true, &[], "empty_file_check.py"),
+        Ok(_) => check_exists_and_delete(true, &[], "empty_file.py"),
         Err(err) => panic!("{}", err)
     };
 }
