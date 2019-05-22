@@ -141,6 +141,7 @@ pub enum ASTNode {
     SubOp,
     SqrtOp,
     MulOp,
+    FDivOp,
     DivOp,
     PowOp,
     ModOp,
@@ -333,7 +334,7 @@ pub enum ASTNode {
         amount: Box<ASTNodePos>
     },
     While {
-        cond: Vec<ASTNodePos>,
+        cond: Box<ASTNodePos>,
         body: Box<ASTNodePos>
     },
     Break,

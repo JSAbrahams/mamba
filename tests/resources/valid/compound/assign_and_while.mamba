@@ -3,7 +3,7 @@ def b <- 4.6
 def c <- 4.2E2
 
 def d <- 0
-while e < f, b do
+while e < f and b do
     def g <- h * i
     j <- k mod 2 + "300"
 

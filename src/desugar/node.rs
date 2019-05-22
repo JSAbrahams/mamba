@@ -44,6 +44,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::SubOp => Core::SubOp,
         ASTNode::SqrtOp => unimplemented!("sqrt"),
         ASTNode::MulOp => Core::MulOp,
+        ASTNode::FDivOp => Core::FDivOp,
         ASTNode::DivOp => Core::DivOp,
         ASTNode::PowOp => Core::PowOp,
         ASTNode::ModOp => Core::ModOp,
@@ -332,7 +333,6 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
 
         ASTNode::Body { .. } => panic!("Body cannot be top level."),
         ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
-        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level."),
-        ASTNode::Step { .. } => panic!("Step cannot be top level.")
+        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level.")
     }
 }

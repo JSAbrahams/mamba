@@ -8,10 +8,6 @@ for d in e:
 
     print(h)
 
-for aa, ab in bb:
-    print(cc)
-    print(dd)
-
 for i in range(ty, 34, 1):
     print(asdf)
 

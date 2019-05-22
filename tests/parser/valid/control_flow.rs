@@ -194,8 +194,7 @@ fn if_else_verify() {
         _ => panic!("ast_tree was not script.")
     };
 
-    assert_eq!(cond.len(), 1);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(cond.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(then.node, ASTNode::Id { lit: String::from("c") });
     assert_eq!(_else.as_ref().unwrap().node, ASTNode::Id { lit: String::from("d") });
 }
@@ -267,30 +266,6 @@ fn while_verify() {
         _ => panic!("ast_tree was not script.")
     };
 
-    assert_eq!(cond.len(), 1);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
-}
-
-#[test]
-fn while_tuple_verify() {
-    let source = String::from("while a,b do d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let _statements;
-    let (cond, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::While { cond, body } => (cond, body),
-                _ => panic!("first element script was not while.")
-            }
-        }
-        _ => panic!("ast_tree was not script.")
-    };
-
-    assert_eq!(cond.len(), 2);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(cond[1].node, ASTNode::Id { lit: String::from("b") });
+    assert_eq!(cond.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
 }

@@ -16,6 +16,6 @@ fn raises_verify() {
 
 #[test]
 fn with_verify() {
-    let source = valid_resource_content(&["error"], "with.mamba");
+    let source = resource_content(true, &["error"], "with.mamba");
     assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }

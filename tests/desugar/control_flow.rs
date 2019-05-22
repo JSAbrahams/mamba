@@ -37,17 +37,16 @@ fn if_else_verify() {
 
 #[test]
 fn while_verify() {
-    let cond = to_pos_unboxed!(ASTNode::Id { lit: String::from("cond") });
+    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
     let body = to_pos!(ASTNode::ENum { num: String::from("num"), exp: String::from("") });
-    let while_stmt = to_pos!(ASTNode::While { cond: vec![cond], body });
+    let while_stmt = to_pos!(ASTNode::While { cond, body });
 
     let (core_cond, core_body) = match desugar(&while_stmt) {
         Core::While { cond, body } => (cond, body),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(core_cond.len(), 1);
-    assert_eq!(core_cond[0], Core::Id { lit: String::from("cond") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
     assert_eq!(*core_body, Core::ENum { num: String::from("num"), exp: String::from("0") });
 }
 

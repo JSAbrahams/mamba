@@ -248,7 +248,7 @@ pub enum Core {
         body: Box<Core>
     },
     While {
-        cond: Vec<Core>,
+        cond: Box<Core>,
         body: Box<Core>
     },
     Break,

@@ -197,8 +197,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             "for {}:\n{}{}",
             to_py(expr.as_ref(), ind),
             indent(ind + 1),
-            to_py(body.as_ref(), ind + 1))
-        ,
+            to_py(body.as_ref(), ind + 1)
+        ),
         Core::In { left, right } => format! {"{} in {}", to_py(left, ind), to_py(right, ind)},
         Core::Range { from, to, step } => format!(
             "range({}, {}, {})",
@@ -223,7 +223,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::While { cond, body } => format!(
             "while {}:\n{}{}",
-            comma_delimited(cond.as_ref(), ind),
+            to_py(cond.as_ref(), ind),
             indent(ind + 1),
             to_py(body.as_ref(), ind + 1)
         ),
@@ -243,14 +243,15 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Comment { comment } => format!("#{}", comment),
 
         Core::With { resource, _as, expr } => format!(
-            "with {}{}: {}",
+            "with {}{}:\n{}{}",
             to_py(resource, ind),
             if **expr == Core::Empty {
                 String::new()
             } else {
                 format!(" as {}", to_py(_as, ind + 1))
             },
-            to_py(expr, ind)
+            indent(ind + 1),
+            to_py(expr, ind + 1)
         ),
 
         Core::TryExcept { _try, except } => format!(
@@ -274,10 +275,11 @@ fn except_unwrap(items: &[Core], ind: usize) -> String {
         match item {
             Core::Except { id, class, body } => result.push_str(
                 format!(
-                    "{}except {} as {}: {}\n",
+                    "{}except {} as {}:\n{}{}\n",
                     indent(ind),
                     to_py(class, ind),
                     to_py(id, ind),
+                    indent(ind + 1),
                     to_py(body, ind + 1)
                 )
                 .as_ref()

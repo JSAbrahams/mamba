@@ -3,7 +3,7 @@ match a
     d => e
 
 match (b, bb, bbb)
-    (a, c) => print "hello world"
+    (a, c, d) => print "hello world"
 
 match nested
     a => b
