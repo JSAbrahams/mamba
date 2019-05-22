@@ -7,7 +7,7 @@ use mamba::parser::parse_direct;
 
 #[test]
 fn for_statements() {
-    let source = valid_resource_content(&["control_flow"], "for_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "for_statements.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
 
@@ -123,7 +123,7 @@ fn for_range_incl_verify() {
 
 #[test]
 fn if_stmt() {
-    let source = valid_resource_content(&["control_flow"], "if.mamba");
+    let source = resource_content(true, &["control_flow"], "if.mamba");
     assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }
 
@@ -228,7 +228,7 @@ fn if_tuple_verify() {
 
 #[test]
 fn match_statements() {
-    let source = valid_resource_content(&["control_flow"], "match_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "match_statements.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
 
@@ -295,7 +295,7 @@ fn match_tuple_verify() {
 
 #[test]
 fn while_statements() {
-    let source = valid_resource_content(&["control_flow"], "while_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "while_statements.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
 

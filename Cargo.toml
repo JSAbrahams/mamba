@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 assert_cmd = "0.10"
+python-parser = "0.1.0"

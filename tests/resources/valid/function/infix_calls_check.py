@@ -1,0 +1,10 @@
+fun_c(asdf)
+
+object_3.prop
+object_3.met_h(a)
+
+object_4.met_0()
+object_5.met_1(b)
+object_6.met_2(c)
+
+object_7.met_3(object_8.met_4(arg))

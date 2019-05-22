@@ -7,18 +7,18 @@ use mamba::parser::parse;
 #[test]
 #[ignore]
 fn core_function_definitions() {
-    let source = valid_resource_content(&["function"], "definition.mamba");
+    let source = resource_content(true, &["function"], "definition.mamba");
     to_py!(source);
 }
 
 #[test]
 fn core_function_calling() {
-    let source = valid_resource_content(&["function"], "calls.mamba");
+    let source = resource_content(true, &["function"], "calls.mamba");
     to_py!(source);
 }
 
 #[test]
 fn core_infix_function_calling() {
-    let source = valid_resource_content(&["function"], "infix_calls.mamba");
+    let source = resource_content(true, &["function"], "infix_calls.mamba");
     to_py!(source);
 }

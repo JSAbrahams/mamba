@@ -6,12 +6,12 @@ use mamba::parser::parse;
 
 #[test]
 fn core_class() {
-    let source = valid_resource_content(&["class"], "class.mamba");
+    let source = resource_content(true, &["class"], "class.mamba");
     to_py!(source);
 }
 
 #[test]
 fn core_imports() {
-    let source = valid_resource_content(&["class"], "import.mamba");
+    let source = resource_content(true, &["class"], "import.mamba");
     to_py!(source);
 }

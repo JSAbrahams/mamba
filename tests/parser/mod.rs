@@ -7,6 +7,6 @@ pub mod valid;
 
 #[test]
 fn parse_empty_file() {
-    let source = valid_resource_content(&[], "empty_file.mamba");
+    let source = resource_content(true, &[], "empty_file.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
