@@ -274,5 +274,11 @@ pub enum Core {
         id:    Box<Core>,
         class: Box<Core>,
         body:  Box<Core>
+    },
+
+    With {
+        resource: Box<Core>,
+        _as:      Box<Core>,
+        expr:     Box<Core>
     }
 }

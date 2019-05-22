@@ -25,7 +25,8 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         | Some(TokenPos { token: Token::For, .. })
         | Some(TokenPos { token: Token::While, .. })
         | Some(TokenPos { token: Token::Retry, .. })
-        | Some(TokenPos { token: Token::Pass, .. }) => parse_statement(it),
+        | Some(TokenPos { token: Token::Pass, .. })
+        | Some(TokenPos { token: Token::With, .. }) => parse_statement(it),
         _ => parse_expression(it)
     };
 

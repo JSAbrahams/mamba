@@ -246,12 +246,12 @@ fn as_op_or_id(string: String) -> Token {
         "if" => Token::If,
         "else" => Token::Else,
         "match" => Token::Match,
-        "with" => Token::With,
         "continue" => Token::Continue,
         "break" => Token::Break,
         "return" => Token::Ret,
         "then" => Token::Then,
         "do" => Token::Do,
+        "with" => Token::With,
 
         "in" => Token::In,
 

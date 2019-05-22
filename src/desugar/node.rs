@@ -283,13 +283,17 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::Comment { comment } => Core::Comment { comment: comment.clone() },
         ASTNode::Pass => Core::Pass,
 
-        ASTNode::Body { .. } => panic!("Body cannot be top level."),
-        ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
-        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level."),
+        ASTNode::With { resource, _as, expr } => Core::With {
+            resource: Box::from(desugar_node(resource, ctx, state)),
+            _as:      match _as {
+                Some(_as) => Box::from(desugar_node(_as, ctx, state)),
+                _ => Box::from(Core::Empty)
+            },
+            expr:     Box::from(desugar_node(expr, ctx, state))
+        },
 
-        ASTNode::Step { .. } => panic!("Step cannot be top level."),
         ASTNode::Raises { .. } => Core::Empty,
-
+        ASTNode::Retry { .. } => unimplemented!("Retry has not yet been implemented."),
         ASTNode::Handle { expr_or_stmt, cases } => Core::TryExcept {
             _try:   Box::from(desugar_node(expr_or_stmt, ctx, state)),
             except: {
@@ -317,6 +321,10 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
                 except
             }
         },
-        ASTNode::Retry { .. } => unimplemented!("Retry has not yet bee implemented.")
+
+        ASTNode::Body { .. } => panic!("Body cannot be top level."),
+        ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
+        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level."),
+        ASTNode::Step { .. } => panic!("Step cannot be top level.")
     }
 }

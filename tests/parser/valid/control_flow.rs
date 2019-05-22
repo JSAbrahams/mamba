@@ -227,7 +227,7 @@ fn match_statements() {
 
 #[test]
 fn match_verify() {
-    let source = String::from("match a with\n    a => b\n    c => d");
+    let source = String::from("match a\n    a => b\n    c => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
@@ -266,7 +266,7 @@ fn match_verify() {
 
 #[test]
 fn match_tuple_verify() {
-    let source = String::from("match a,b with\n    c => d");
+    let source = String::from("match a,b\n    c => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
