@@ -28,9 +28,9 @@ pub mod construct;
 /// # use mamba::core::construct::Core;
 /// # use mamba::core::to_py_source;
 /// let core_node = Core::IfElse {
-///     cond:  vec![Core::Id { lit: String::from("a") }],
+///     cond:  Box::from(Core::Id { lit: String::from("a") }),
 ///     then:  Box::from(Core::Str { _str: String::from("b") }),
-///     _else: Box::from(Core::Str { _str: Stringc::from("c") })
+///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
 /// assert_eq!(to_py_source(&core_node), "if a:\n    'b'\nelse:\n    'c'\n");
