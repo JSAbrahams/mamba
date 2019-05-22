@@ -269,7 +269,7 @@ fn b_xor_verify() {
 
 #[test]
 fn b_ones_complement_verify() {
-    let source = String::from("~\"asdf\"");
+    let source = String::from("_not_ \"asdf\"");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(BOneCmpl, ast_tree);

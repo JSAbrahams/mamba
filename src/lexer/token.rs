@@ -163,10 +163,10 @@ impl fmt::Display for Token {
             Token::Mod => String::from("mod"),
             Token::Sqrt => String::from("sqrt"),
 
-            Token::BAnd => String::from("&"),
-            Token::BOr => String::from("|"),
-            Token::BXOr => String::from("^"),
-            Token::BOneCmpl => String::from("~"),
+            Token::BAnd => String::from("_and_"),
+            Token::BOr => String::from("_or_"),
+            Token::BXOr => String::from("_xor_"),
+            Token::BOneCmpl => String::from("_not_"),
             Token::BLShift => String::from("<<"),
             Token::BRShift => String::from(">>"),
 

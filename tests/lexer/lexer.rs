@@ -118,3 +118,17 @@ fn pass_undefined_underscore() {
         TokenPos { line: 1, pos: 16, token: Token::Underscore }
     ]);
 }
+
+#[test]
+fn bitwise_operators() {
+    let source = String::from("_and_ _or_ _xor_ _not_ << >>");
+    let tokens = tokenize(&source).unwrap();
+    assert_eq!(tokens, vec![
+        TokenPos { line: 1, pos: 1, token: Token::BAnd },
+        TokenPos { line: 1, pos: 7, token: Token::BOr },
+        TokenPos { line: 1, pos: 12, token: Token::BXOr },
+        TokenPos { line: 1, pos: 18, token: Token::BOneCmpl },
+        TokenPos { line: 1, pos: 24, token: Token::BLShift },
+        TokenPos { line: 1, pos: 27, token: Token::BRShift },
+    ]);
+}

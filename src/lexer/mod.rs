@@ -58,7 +58,6 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             '{' => create(&mut state, Token::LCBrack),
             '}' => create(&mut state, Token::RCBrack),
             '|' => create(&mut state, Token::Ver),
-            '~' => create(&mut state, Token::BOneCmpl),
             '\n' => create(&mut state, Token::NL),
             '\r' => match it.next() {
                 Some('\n') => create(&mut state, Token::NL),
@@ -241,6 +240,7 @@ fn as_op_or_id(string: String) -> Token {
         "_and_" => Token::BAnd,
         "_or_" => Token::BOr,
         "_xor_" => Token::BXOr,
+        "_not_" => Token::BOneCmpl,
 
         "if" => Token::If,
         "else" => Token::Else,
