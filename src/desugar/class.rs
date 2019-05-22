@@ -32,19 +32,17 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
                         // We have to create a constructor because there was none present, and we
                         // need to convert inline args to init call and/or make calls to super
                         let mut final_definitions = augmented_definitions.clone();
-
                         let mut args = vec![Core::Id { lit: String::from("self") }];
-                        args.append(&mut inline_args.clone());
-                        for inline_arg in inline_args {
-                            if let Core::FunArg { id, .. } = inline_arg {
-                                if parent_args.contains(&id) {
-                                    continue;
-                                }
 
-                                final_definitions.push(Core::Assign {
-                                    left:  Box::from(id.clone()),
-                                    right: Box::from(Core::None)
-                                })
+                        for inline_arg in inline_args {
+                            if let Core::FunArg { id, .. } = inline_arg.clone() {
+                                args.push(inline_arg);
+                                if !parent_args.contains(&id) {
+                                    final_definitions.push(Core::Assign {
+                                        left:  id.clone(),
+                                        right: Box::from(Core::None)
+                                    })
+                                }
                             } else {
                                 panic!("Inline arg was not function argument")
                             }
@@ -70,7 +68,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     }
 }
 
-fn augment_constructor(core_definitions: &Vec<Core>, super_calls: &Vec<Core>) -> (bool, Vec<Core>) {
+fn augment_constructor(core_definitions: &[Core], super_calls: &[Core]) -> (bool, Vec<Core>) {
     let mut final_definitions = vec![];
     let mut found_constructor = false;
 
@@ -83,12 +81,12 @@ fn augment_constructor(core_definitions: &Vec<Core>, super_calls: &Vec<Core>) ->
                         let body = match (super_calls.is_empty(), *old_body.clone()) {
                             (true, _) => old_body.clone(),
                             (false, Core::Block { statements: old_statements }) => {
-                                let mut statements = super_calls.clone();
+                                let mut statements = Vec::from(super_calls);
                                 statements.append(&mut old_statements.clone());
                                 Box::from(Core::Block { statements })
                             }
                             (false, core) => {
-                                let mut statements = super_calls.clone();
+                                let mut statements = Vec::from(super_calls);
                                 statements.push(core);
                                 Box::from(Core::Block { statements })
                             }
