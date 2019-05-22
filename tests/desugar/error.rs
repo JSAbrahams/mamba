@@ -5,6 +5,38 @@ use mamba::parser::ast::ASTNodePos;
 use std::panic;
 
 #[test]
+fn with_verify() {
+    let resource = to_pos!(ASTNode::Id { lit: String::from("my_resource") });
+    let _as = Some(to_pos!(ASTNode::Id { lit: String::from("other") }));
+    let expr = to_pos!(ASTNode::Int { lit: String::from("9") });
+    let with = to_pos!(ASTNode::With { resource, _as, expr });
+
+    let (resource, _as, expr) = match desugar(&with) {
+        Core::With { resource, _as, expr } => (resource, _as, expr),
+        other => panic!("Expected reassign but was {:?}", other)
+    };
+
+    assert_eq!(*resource, Core::Id { lit: String::from("my_resource") });
+    assert_eq!(*_as, Core::Id { lit: String::from("other") });
+    assert_eq!(*expr, Core::Int { int: String::from("9") });
+}
+
+#[test]
+fn with_no_as_verify() {
+    let resource = to_pos!(ASTNode::Id { lit: String::from("other") });
+    let expr = to_pos!(ASTNode::Int { lit: String::from("2341") });
+    let with = to_pos!(ASTNode::With { resource, _as: None, expr });
+
+    let (resource, _as, expr) = match desugar(&with) {
+        Core::With { resource, _as, expr } => (resource, _as, expr),
+        other => panic!("Expected reassign but was {:?}", other)
+    };
+
+    assert_eq!(*resource, Core::Id { lit: String::from("other") });
+    assert_eq!(*_as, Core::Empty);
+    assert_eq!(*expr, Core::Int { int: String::from("2341") });
+}
+
 fn handle_empty_verify() {
     let expr_or_stmt = to_pos!(ASTNode::Id { lit: String::from("my_fun") });
     let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![] });

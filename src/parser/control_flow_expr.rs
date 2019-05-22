@@ -57,7 +57,6 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
     check_next_is!(it, Token::Match);
 
     let cond: Vec<ASTNodePos> = get_one_or_more!(it, "match expression");
-    check_next_is!(it, Token::With);
     check_next_is!(it, Token::NL);
     let cases: Vec<ASTNodePos> = get_or_err_direct!(it, parse_match_cases, "match cases");
 

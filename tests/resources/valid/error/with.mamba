@@ -1,0 +1,5 @@
+with my_resource as other
+    do_something()
+
+with my_resource
+    do_something()

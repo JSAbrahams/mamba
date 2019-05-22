@@ -39,7 +39,7 @@ fn if_then_missing_body() {
 
 #[test]
 fn match_missing_condition() {
-    let source = String::from("match with\n    a => b");
+    let source = String::from("match\n    a => b");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
@@ -51,7 +51,7 @@ fn match_missing_arms() {
 
 #[test]
 fn match_missing_arms_no_newline() {
-    let source = String::from("match a with");
+    let source = String::from("match a");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 
