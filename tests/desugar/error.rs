@@ -37,6 +37,7 @@ fn with_no_as_verify() {
     assert_eq!(*expr, Core::Int { int: String::from("2341") });
 }
 
+#[test]
 fn handle_empty_verify() {
     let expr_or_stmt = to_pos!(ASTNode::Id { lit: String::from("my_fun") });
     let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![] });
