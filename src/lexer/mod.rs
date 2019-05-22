@@ -88,6 +88,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             },
             '*' => create(&mut state, Token::Mul),
             '/' => match it.peek() {
+                Some('/') => next_and_create(&mut it, &mut state, Token::FDiv),
                 Some('=') => next_and_create(&mut it, &mut state, Token::Neq),
                 _ => create(&mut state, Token::Div)
             },

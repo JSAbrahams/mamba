@@ -90,6 +90,16 @@ fn division_verify() {
 }
 
 #[test]
+fn floor_division_verify() {
+    let source = String::from("10.0 // fgh");
+    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+    let (left, right) = verify_is_operation!(FDiv, ast_tree);
+    assert_eq!(left.node, ASTNode::Real { lit: String::from("10.0") });
+    assert_eq!(right.node, ASTNode::Id { lit: String::from("fgh") });
+}
+
+#[test]
 fn power_verify() {
     let source = String::from("chopin ^ liszt");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
