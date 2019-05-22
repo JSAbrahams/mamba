@@ -64,6 +64,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
                 Core::AddOp => String::from("__add__"),
                 Core::SubOp => String::from("__sub__"),
+                Core::PowOp => String::from("__pow__"),
                 Core::MulOp => String::from("__mul__"),
                 Core::ModOp => String::from("__mod__"),
                 Core::DivOp => String::from("__truediv__"),
@@ -79,7 +80,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                             String::from(other)
                         },
                 },
-                _ => panic!()
+                other => panic!("Not a valid identifier for a function: {:?}", other)
             };
 
             format!(

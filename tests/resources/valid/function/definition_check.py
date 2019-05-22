@@ -1,18 +1,25 @@
-def fun_a(): print c
+def fun_a(): print(c)
 
-def fun_b(b): print c
+def fun_b(b): print(c)
 
-def fun_c(d): print g
+def fun_c(d): print(g)
 
-def fun_d(h): print l
+def fun_d(h): print(l)
 
-def fun_e(m, o, r): print u
+def fun_e(m, o, r): print(u)
 
-def fun_v(w, y, ab): print u
+def fun_v(w, y, ab): print(u)
 
-def __sub__(self, other): self.a + other.b
-
-def __add__(self, other): self.a + other.b
+def __add__(self, other): a + b
+def __sub__(self, other): a - b
+# for now no square root
+def __mul__(self, other): a * b
+def __truediv__(self, other): a / b
+def __pow__(self, other): a ** b
+def __mod__(self, other): a % b
+def __eq__(self, other): a == b
+def __gt__(self, other): a > b
+def __lt__(self, other): a < b
 
 def factorial(x): x * factorial(x - 1)
 

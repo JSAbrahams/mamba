@@ -91,21 +91,33 @@ fn parse_fun_def(id_type: ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseR
     let (st_line, st_pos) = start_pos(it);
     let fun_args = get_or_err_direct!(it, parse_fun_args, "function arguments");
 
-    let id = match id_type {
+    let id = match &id_type {
         ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, .. } => match (mutable, _type) {
-            (false, None) => id,
+            (false, None) => id.clone(),
             (true, _) =>
                 return Err(InternalErr {
-                    message: String::from("FUnction definition cannot be mutable")
+                    message: String::from("Function definition cannot be mutable")
                 }),
             (_, Some(_)) =>
                 return Err(InternalErr {
                     message: String::from("Function definition given id type with some type.")
                 }),
         },
-        _ =>
+
+        op @ ASTNodePos { node: ASTNode::AddOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::SubOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::SqrtOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::MulOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::DivOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::PowOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::ModOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::EqOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::GeOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::LeOp, .. } => Box::from(op.clone()),
+
+        other =>
             return Err(InternalErr {
-                message: String::from("Function definition not given id type.")
+                message: format!("Function definition not given id or operator: {:?}", other)
             }),
     };
 

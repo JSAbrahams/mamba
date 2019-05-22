@@ -7,6 +7,7 @@ use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
     match File::open(resource_path(valid, subdirs, file)) {
         Ok(mut path) => {
@@ -21,6 +22,7 @@ pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
     }
 }
 
+#[allow(dead_code)]
 pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -35,6 +37,7 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     String::from(source_path.to_string_lossy())
 }
 
+#[allow(dead_code)]
 pub fn check_exists_and_delete(valid: bool, subdirs: &[&str], file: &str) -> bool {
     let resource_path = resource_path(valid, subdirs, file);
     let path = Path::new(&resource_path);
@@ -48,6 +51,7 @@ pub fn check_exists_and_delete(valid: bool, subdirs: &[&str], file: &str) -> boo
     }
 }
 
+#[allow(dead_code)]
 pub fn python_src_to_stmts(python_src: &String) -> Vec<Statement> {
     python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1
 }

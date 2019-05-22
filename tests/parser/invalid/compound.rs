@@ -4,6 +4,6 @@ use mamba::parser::parse;
 
 #[test]
 fn assigns_and_while() {
-    let source = resource_content(true, &["syntax"], "assign_and_while.mamba");
+    let source = resource_content(false, &["syntax"], "assign_and_while.mamba");
     parse(&tokenize(&source).unwrap()).unwrap_err();
 }
