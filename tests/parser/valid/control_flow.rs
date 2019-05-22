@@ -144,8 +144,7 @@ fn if_verify() {
         _ => panic!("ast_tree was not script.")
     };
 
-    assert_eq!(cond.len(), 1);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(cond.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(then.node, ASTNode::Id { lit: String::from("c") });
     assert_eq!(_else.is_none(), true);
 }
@@ -165,8 +164,7 @@ fn if_with_block_verify() {
         _ => panic!("ast_tree was not script.")
     };
 
-    assert_eq!(cond.len(), 1);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(cond.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(_else.is_none(), true);
 
     let block = match then.node {
@@ -203,30 +201,6 @@ fn if_else_verify() {
 }
 
 #[test]
-fn if_tuple_verify() {
-    let source = String::from("if a,b then c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let _statements;
-    let (cond, then, _else) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::IfElse { cond, then, _else } => (cond, then, _else),
-                _ => panic!("first element script was not if.")
-            }
-        }
-        _ => panic!("ast_tree was not script.")
-    };
-
-    assert_eq!(cond.len(), 2);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(cond[1].node, ASTNode::Id { lit: String::from("b") });
-    assert_eq!(then.node, ASTNode::Id { lit: String::from("c") });
-    assert_eq!(_else.is_none(), true);
-}
-
-#[test]
 fn match_statements() {
     let source = resource_content(true, &["control_flow"], "match_statements.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
@@ -249,8 +223,7 @@ fn match_verify() {
         _ => panic!("ast_tree was not script.")
     };
 
-    assert_eq!(cond.len(), 1);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
+    assert_eq!(cond.node, ASTNode::Id { lit: String::from("a") });
 
     assert_eq!(cases.len(), 2);
     let (cond1, expr1, cond2, expr2) = match (&cases[0], &cases[1]) {
@@ -269,28 +242,6 @@ fn match_verify() {
     assert_eq!(expr1.node, ASTNode::Id { lit: String::from("b") });
     assert_eq!(cond2.node, ASTNode::Id { lit: String::from("c") });
     assert_eq!(expr2.node, ASTNode::Id { lit: String::from("d") });
-}
-
-#[test]
-fn match_tuple_verify() {
-    let source = String::from("match a,b\n    c => d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let _statements;
-    let (cond, _) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::Match { cond, cases } => (cond, cases),
-                _ => panic!("first element script was not match.")
-            }
-        }
-        _ => panic!("ast_tree was not script.")
-    };
-
-    assert_eq!(cond.len(), 2);
-    assert_eq!(cond[0].node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(cond[1].node, ASTNode::Id { lit: String::from("b") });
 }
 
 #[test]

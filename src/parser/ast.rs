@@ -309,12 +309,12 @@ pub enum ASTNode {
     },
 
     IfElse {
-        cond:  Vec<ASTNodePos>,
+        cond:  Box<ASTNodePos>,
         then:  Box<ASTNodePos>,
         _else: Option<Box<ASTNodePos>>
     },
     Match {
-        cond:  Vec<ASTNodePos>,
+        cond:  Box<ASTNodePos>,
         cases: Vec<ASTNodePos>
     },
     Case {

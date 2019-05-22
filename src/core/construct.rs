@@ -231,16 +231,16 @@ pub enum Core {
         step: Box<Core>
     },
     If {
-        cond: Vec<Core>,
+        cond: Box<Core>,
         then: Box<Core>
     },
     IfElse {
-        cond:  Vec<Core>,
+        cond:  Box<Core>,
         then:  Box<Core>,
         _else: Box<Core>
     },
     Match {
-        cond:  Vec<Core>,
+        cond:  Box<Core>,
         cases: Vec<Core>
     },
     Case {

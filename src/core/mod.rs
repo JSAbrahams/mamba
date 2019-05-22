@@ -208,13 +208,13 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::If { cond, then } => format!(
             "if {}:\n{}{}",
-            comma_delimited(cond.as_ref(), ind),
+            to_py(cond.as_ref(), ind),
             indent(ind + 1),
             to_py(then.as_ref(), ind + 1)
         ),
         Core::IfElse { cond, then, _else } => format!(
             "if {}:\n{}{}\n{}else:\n{}{}",
-            comma_delimited(cond.as_ref(), ind),
+            to_py(cond.as_ref(), ind),
             indent(ind + 1),
             to_py(then.as_ref(), ind + 1),
             indent(ind),

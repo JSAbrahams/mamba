@@ -5,34 +5,32 @@ use mamba::parser::ast::ASTNodePos;
 
 #[test]
 fn if_verify() {
-    let cond = to_pos_unboxed!(ASTNode::Id { lit: String::from("cond") });
+    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
     let then = to_pos!(ASTNode::Id { lit: String::from("then") });
-    let if_stmt = to_pos!(ASTNode::IfElse { cond: vec![cond], then, _else: None });
+    let if_stmt = to_pos!(ASTNode::IfElse { cond, then, _else: None });
 
     let (core_cond, core_then) = match desugar(&if_stmt) {
         Core::If { cond, then } => (cond, then),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(core_cond.len(), 1);
-    assert_eq!(core_cond[0], Core::Id { lit: String::from("cond") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
     assert_eq!(*core_then, Core::Id { lit: String::from("then") });
 }
 
 #[test]
 fn if_else_verify() {
-    let cond = to_pos_unboxed!(ASTNode::Id { lit: String::from("cond") });
+    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
     let then = to_pos!(ASTNode::Id { lit: String::from("then") });
     let _else = to_pos!(ASTNode::Id { lit: String::from("else") });
-    let if_stmt = to_pos!(ASTNode::IfElse { cond: vec![cond], then, _else: Some(_else) });
+    let if_stmt = to_pos!(ASTNode::IfElse { cond, then, _else: Some(_else) });
 
     let (core_cond, core_then, core_else) = match desugar(&if_stmt) {
         Core::IfElse { cond, then, _else } => (cond, then, _else),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(core_cond.len(), 1);
-    assert_eq!(core_cond[0], Core::Id { lit: String::from("cond") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
     assert_eq!(*core_then, Core::Id { lit: String::from("then") });
     assert_eq!(*core_else, Core::Id { lit: String::from("else") });
 }
@@ -55,13 +53,13 @@ fn while_verify() {
 
 #[test]
 fn match_verify() {
-    let cond = to_pos_unboxed!(ASTNode::Id { lit: String::from("cond") });
+    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
     let case_1_cond = to_pos!(ASTNode::Id { lit: String::from("case_1_cond") });
     let case_1_body = to_pos!(ASTNode::Id { lit: String::from("case_1_body") });
     let case_2_cond = to_pos!(ASTNode::Id { lit: String::from("case_2_cond") });
     let case_2_body = to_pos!(ASTNode::Id { lit: String::from("case_2_body") });
     let match_stmt = to_pos!(ASTNode::Match {
-        cond:  vec![cond],
+        cond,
         cases: vec![
             to_pos_unboxed!(ASTNode::Case { cond: case_1_cond, body: case_1_body }),
             to_pos_unboxed!(ASTNode::Case { cond: case_2_cond, body: case_2_body })
@@ -73,8 +71,7 @@ fn match_verify() {
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(core_cond.len(), 1);
-    assert_eq!(core_cond[0], Core::Id { lit: String::from("cond") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
     assert_eq!(core_cases[0], Core::Case {
         cond: Box::from(Core::Id { lit: String::from("case_1_cond") }),
         body: Box::from(Core::Id { lit: String::from("case_1_body") })

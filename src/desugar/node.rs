@@ -246,12 +246,12 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
                     right:   Box::from(desugar_node(_do, ctx, state))
                 },
                 Core::IfElse {
-                    cond:  vec![Core::Not {
+                    cond:  Box::from(Core::Not {
                         expr: Box::from(Core::Eq {
                             left:  Box::from(Core::Id { lit: String::from("$temp") }),
                             right: Box::from(Core::None)
                         })
-                    }],
+                    }),
                     then:  Box::from(Core::Id { lit: String::from("$temp") }),
                     _else: Box::from(desugar_node(_default, ctx, state))
                 },
