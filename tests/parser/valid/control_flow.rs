@@ -245,7 +245,7 @@ fn match_verify() {
 
 #[test]
 fn while_statements() {
-    let source = resource_content(true, &["control_flow"], "while_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "while.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
 

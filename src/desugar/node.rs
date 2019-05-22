@@ -260,8 +260,9 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         },
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, ctx, state) },
-        ASTNode::File { modules, type_defs, .. } => {
-            let mut statements: Vec<Core> = desugar_vec(type_defs, ctx, state);
+        ASTNode::File { modules, type_defs, imports, .. } => {
+            let mut statements: Vec<Core> = desugar_vec(imports, ctx, state);
+            statements.append(desugar_vec(type_defs, ctx, state).as_mut());
             statements.append(desugar_vec(modules, ctx, state).as_mut());
             Core::Block { statements }
         }

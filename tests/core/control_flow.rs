@@ -25,6 +25,6 @@ fn core_match_statements() {
 
 #[test]
 fn core_while_statements() {
-    let source = resource_content(true, &["control_flow"], "while_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "while.mamba");
     to_py!(source);
 }
