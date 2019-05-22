@@ -30,10 +30,9 @@ pub fn desugar_control_flow(node: &ASTNode, ctx: &Context, state: &State) -> Cor
             cond: desugar_vec(cond, ctx, state),
             body: Box::from(desugar_node(body, ctx, state))
         },
-        ASTNode::For { expr, collection, body } => Core::For {
-            exprs:      desugar_vec(expr, ctx, state),
-            collection: Box::from(desugar_node(collection, ctx, state)),
-            body:       Box::from(desugar_node(body, ctx, state))
+        ASTNode::For { expr, body } => Core::For {
+            expr: Box::from(desugar_node(expr, ctx, state)),
+            body: Box::from(desugar_node(body, ctx, state))
         },
 
         ASTNode::Break => Core::Break,

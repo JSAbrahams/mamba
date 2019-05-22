@@ -69,32 +69,12 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
             let node = ASTNode::QuestOr { _do: Box::new(pre), _default: _def };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
-        Some(TokenPos { token: Token::Range, .. }) => {
+        Some(TokenPos { token: Token::In, .. }) => {
             it.next();
-            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "..");
-            let step = if let Some(&TokenPos { token: Token::Step, .. }) = it.peek() {
-                it.next();
-                Some(get_or_err!(it, parse_expression, "step"))
-            } else {
-                None
-            };
+            let collection: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
 
-            let (en_line, en_pos) = (to.en_line, to.en_pos);
-            let node = ASTNode::Range { from: Box::from(pre), to, inclusive: false, step };
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
-        }
-        Some(TokenPos { token: Token::RangeIncl, .. }) => {
-            it.next();
-            let to: Box<ASTNodePos> = get_or_err!(it, parse_expression, "..=");
-            let step = if let Some(&TokenPos { token: Token::Step, .. }) = it.peek() {
-                it.next();
-                Some(get_or_err!(it, parse_expression, "step"))
-            } else {
-                None
-            };
-
-            let (en_line, en_pos) = (to.en_line, to.en_pos);
-            let node = ASTNode::Range { from: Box::from(pre), to, inclusive: true, step };
+            let (en_line, en_pos) = (collection.en_line, collection.en_pos);
+            let node = ASTNode::In { left: Box::new(pre), right: collection };
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
         }
 

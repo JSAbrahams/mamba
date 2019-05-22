@@ -2,12 +2,6 @@ use mamba::lexer::tokenize;
 use mamba::parser::parse_direct;
 
 #[test]
-fn for_missing_in() {
-    let source = String::from("for a c do d");
-    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
-}
-
-#[test]
 fn for_missing_do() {
     let source = String::from("for a in c d");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
