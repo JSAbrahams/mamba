@@ -185,7 +185,7 @@ Type refinement allows us to to some additional things:
 
 Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)`.
 By default, functions are not pure, and can read any variable they want, such as in Python.
-When we make a function `puer`, it cannot:
+When we make a function `pure`, it cannot:
 -   Read mutable variables not passed as an argument (with one exception).
 -   Read mutable properties of `self`.
     Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
