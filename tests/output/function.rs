@@ -45,7 +45,7 @@ fn definition_ast_verify() {
     let out_ast = python_src_to_stmts(&out_src);
 
     assert_eq!(python_ast, out_ast);
-    check_exists_and_delete(true, &["collection"], "definition.py");
+    check_exists_and_delete(true, &["function"], "definition.py");
 }
 
 // TODO fix infix calls

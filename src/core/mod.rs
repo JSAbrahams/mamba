@@ -30,10 +30,10 @@ pub mod construct;
 /// let core_node = Core::IfElse {
 ///     cond:  vec![Core::Id { lit: String::from("a") }],
 ///     then:  Box::from(Core::Str { _str: String::from("b") }),
-///     _else: Box::from(Core::Str { _str: String::from("c") })
+///     _else: Box::from(Core::Str { _str: Stringc::from("c") })
 /// };
 ///
-/// assert_eq!(to_py_source(&core_node), "if a: 'b'\nelse: 'c'\n");
+/// assert_eq!(to_py_source(&core_node), "if a:\n    'b'\nelse:\n    'c'\n");
 /// ```
 pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -84,9 +84,10 @@ fn to_py(core: &Core, ind: usize) -> String {
             };
 
             format!(
-                "def {}({}): {}",
+                "def {}({}):\n{}{}",
                 name,
                 comma_delimited(args, ind),
+                indent(ind + 1),
                 to_py(body.as_ref(), ind + 1)
             )
         }
@@ -192,8 +193,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, body } =>
-            format!("for {}: {}", to_py(expr.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
+        Core::For { expr, body } => format!(
+            "for {}:\n{}{}",
+            to_py(expr.as_ref(), ind),
+            indent(ind + 1),
+            to_py(body.as_ref(), ind + 1))
+        ,
         Core::In { left, right } => format! {"{} in {}", to_py(left, ind), to_py(right, ind)},
         Core::Range { from, to, step } => format!(
             "range({}, {}, {})",
@@ -201,18 +206,25 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(to.as_ref(), ind),
             to_py(step.as_ref(), ind),
         ),
-        Core::If { cond, then } =>
-            format!("if {}: {}", comma_delimited(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
-        Core::IfElse { cond, then, _else } => format!(
-            "if {}: {}\n{}else: {}",
+        Core::If { cond, then } => format!(
+            "if {}:\n{}{}",
             comma_delimited(cond.as_ref(), ind),
+            indent(ind + 1),
+            to_py(then.as_ref(), ind + 1)
+        ),
+        Core::IfElse { cond, then, _else } => format!(
+            "if {}:\n{}{}\n{}else:\n{}{}",
+            comma_delimited(cond.as_ref(), ind),
+            indent(ind + 1),
             to_py(then.as_ref(), ind + 1),
             indent(ind),
+            indent(ind + 1),
             to_py(_else.as_ref(), ind + 1)
         ),
         Core::While { cond, body } => format!(
-            "while {}: {}",
+            "while {}:\n{}{}",
             comma_delimited(cond.as_ref(), ind),
+            indent(ind + 1),
             to_py(body.as_ref(), ind + 1)
         ),
         Core::Continue => String::from("continue"),
@@ -247,6 +259,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(_try, ind + 1),
             except_unwrap(except, ind)
         ),
+        Core::Raise { error } => format!("raise {}", to_py(error, ind)),
 
         other => panic!("To python not implemented yet for: {:?}", other)
     }

@@ -34,6 +34,12 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             it.next();
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Retry })
         }
+        Some(TokenPos { token: Token::Raise, .. }) => {
+            let (en_line, en_pos) = end_pos(it);
+            it.next();
+            let error = get_or_err!(it, parse_expression, "raise");
+            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Raise { error } })
+        }
 
         Some(TokenPos { token: Token::Def, .. }) => parse_definition(it),
         Some(TokenPos { token: Token::With, .. }) => parse_with(it),

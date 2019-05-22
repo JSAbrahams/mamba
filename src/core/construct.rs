@@ -278,6 +278,9 @@ pub enum Core {
         class: Box<Core>,
         body:  Box<Core>
     },
+    Raise {
+        error: Box<Core>
+    },
 
     With {
         resource: Box<Core>,

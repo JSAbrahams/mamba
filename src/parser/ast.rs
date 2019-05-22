@@ -70,6 +70,9 @@ pub enum ASTNode {
         expr_or_stmt: Box<ASTNodePos>,
         errors:       Vec<ASTNodePos>
     },
+    Raise {
+        error: Box<ASTNodePos>
+    },
     Handle {
         expr_or_stmt: Box<ASTNodePos>,
         cases:        Vec<ASTNodePos>
