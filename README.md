@@ -45,7 +45,7 @@ We can write a simple script that computes the factorial of a value given by the
 ```mamba
 def factorial(x: Int) => x match
     0 => 1
-    n => n * factorial (n - 1)
+    n => n * factorial(n - 1)
 
 def num <- input "Compute factorial: "
 if num.is_digit then
@@ -65,13 +65,15 @@ We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
+class ServerError(def message: String) isa Exception(message)
+
 class MyServer(def ip_address: IPv4Address)
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
-    def last_sent(self) => if self.last_message /= undefined 
+    def last_sent(self) raises [ServerError] => if self.last_message /= undefined 
         then message
-        else Err("No last message!")
+        else raise ServerError("No last message!")
 
     def connect(mut self) => self.is_connected <- true
 
@@ -96,10 +98,12 @@ from server import MyServer
 def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
-http_server connect
+http_server.connect
 if my_server.connected then http_server send "Hello World!"
 
-print "last message sent before disconnect: \"{my_server.last_sent}\"."
+# This statement may raise an error, but for now de simply leave it as-is
+# See the error handling section for more detail
+print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerError]
 my_server.disconnect
 ```
 
@@ -115,17 +119,19 @@ import ipaddress
 type Server
     def ip_address: IPv4Address
 
-    def connect:    () -> ()       throws [ServerErr]
-    def send:       (String) -> () throws [ServerErr]
+    def connect:    () -> ()       raises [ServerErr]
+    def send:       (String) -> () raises [ServerErr]
     def disconnect: () -> ()
 
-type ServerErr(msg: String) isa Err(msg)
+class ServerError(def message: String) isa Exception(message)
 
 class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa Server
     def mut is_connected: Bool           <- false
     def mut private last_message: String <- undefined
 
-    def last_sent(self): String => self.last_message
+    def last_sent(self): String => if self.last_message /= undefined 
+        then message
+        else raise ServerError("No last message!")
 
     def connect(mut self: DisconnectedMyServer) => self.is_connected <- true
 
@@ -134,10 +140,10 @@ class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa 
     def disconnect(mut self: ConnectedMyServer) => self.is_connected <- false
 
 type ConnectedMyServer isa MyServer when
-    self.is_connected else ServerErr("Not connected.")
+    self.is_connected else raise ServerErr("Not connected.")
 
 type DisconnectedMyServer isa MyServer when
-    not self.is_connected else ServerErr("Already connected.")
+    not self.is_connected else raise ServerErr("Already connected.")
 ```
 
 Notice how above, we define the type of `self`.
@@ -160,7 +166,7 @@ if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
     my_server.send "Hello World!"
 
-print "last message sent before disconnect: \"{my_server.last_sent}\"."
+print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerErr]
 if my_server isa ConnectedMyServer then my_server.disconnect
 ```
 
@@ -274,6 +280,9 @@ def a <- function_may_throw_err() handle
         
 print "a has value {a}."
 ```
+
+If we don't want to use a `handle`, we can simply use `raises` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
+See the sections above for examples where we don't handle errors and simply pass them on using `raises`.
 
 ## 👥 Contributing
 
