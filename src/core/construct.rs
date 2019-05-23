@@ -231,16 +231,16 @@ pub enum Core {
         step: Box<Core>
     },
     If {
-        cond: Vec<Core>,
+        cond: Box<Core>,
         then: Box<Core>
     },
     IfElse {
-        cond:  Vec<Core>,
+        cond:  Box<Core>,
         then:  Box<Core>,
         _else: Box<Core>
     },
     Match {
-        cond:  Vec<Core>,
+        cond:  Box<Core>,
         cases: Vec<Core>
     },
     Case {
@@ -248,7 +248,7 @@ pub enum Core {
         body: Box<Core>
     },
     While {
-        cond: Vec<Core>,
+        cond: Box<Core>,
         body: Box<Core>
     },
     Break,
@@ -277,6 +277,9 @@ pub enum Core {
         id:    Box<Core>,
         class: Box<Core>,
         body:  Box<Core>
+    },
+    Raise {
+        error: Box<Core>
     },
 
     With {

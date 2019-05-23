@@ -44,6 +44,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::SubOp => Core::SubOp,
         ASTNode::SqrtOp => unimplemented!("sqrt"),
         ASTNode::MulOp => Core::MulOp,
+        ASTNode::FDivOp => Core::FDivOp,
         ASTNode::DivOp => Core::DivOp,
         ASTNode::PowOp => Core::PowOp,
         ASTNode::ModOp => Core::ModOp,
@@ -246,12 +247,12 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
                     right:   Box::from(desugar_node(_do, ctx, state))
                 },
                 Core::IfElse {
-                    cond:  vec![Core::Not {
+                    cond:  Box::from(Core::Not {
                         expr: Box::from(Core::Eq {
                             left:  Box::from(Core::Id { lit: String::from("$temp") }),
                             right: Box::from(Core::None)
                         })
-                    }],
+                    }),
                     then:  Box::from(Core::Id { lit: String::from("$temp") }),
                     _else: Box::from(desugar_node(_default, ctx, state))
                 },
@@ -259,8 +260,9 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         },
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, ctx, state) },
-        ASTNode::File { modules, type_defs, .. } => {
-            let mut statements: Vec<Core> = desugar_vec(type_defs, ctx, state);
+        ASTNode::File { modules, type_defs, imports, .. } => {
+            let mut statements: Vec<Core> = desugar_vec(imports, ctx, state);
+            statements.append(desugar_vec(type_defs, ctx, state).as_mut());
             statements.append(desugar_vec(modules, ctx, state).as_mut());
             Core::Block { statements }
         }
@@ -296,8 +298,12 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             expr:     Box::from(desugar_node(expr, ctx, state))
         },
 
-        ASTNode::Raises { .. } => Core::Empty,
+        ASTNode::Step { .. } => panic!("Step cannot be top level."),
+        ASTNode::Raises { expr_or_stmt, .. } => desugar_node(expr_or_stmt, ctx, state),
+        ASTNode::Raise { error } =>
+            Core::Raise { error: Box::from(desugar_node(error, ctx, state)) },
         ASTNode::Retry { .. } => unimplemented!("Retry has not yet been implemented."),
+
         ASTNode::Handle { expr_or_stmt, cases } => Core::TryExcept {
             _try:   Box::from(desugar_node(expr_or_stmt, ctx, state)),
             except: {
@@ -328,7 +334,6 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
 
         ASTNode::Body { .. } => panic!("Body cannot be top level."),
         ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
-        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level."),
-        ASTNode::Step { .. } => panic!("Step cannot be top level.")
+        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level.")
     }
 }

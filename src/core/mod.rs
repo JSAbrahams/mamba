@@ -28,12 +28,12 @@ pub mod construct;
 /// # use mamba::core::construct::Core;
 /// # use mamba::core::to_py_source;
 /// let core_node = Core::IfElse {
-///     cond:  vec![Core::Id { lit: String::from("a") }],
+///     cond:  Box::from(Core::Id { lit: String::from("a") }),
 ///     then:  Box::from(Core::Str { _str: String::from("b") }),
 ///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_py_source(&core_node), "if a: 'b'\nelse: 'c'\n");
+/// assert_eq!(to_py_source(&core_node), "if a:\n    'b'\nelse:\n    'c'\n");
 /// ```
 pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -64,6 +64,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
                 Core::AddOp => String::from("__add__"),
                 Core::SubOp => String::from("__sub__"),
+                Core::PowOp => String::from("__pow__"),
                 Core::MulOp => String::from("__mul__"),
                 Core::ModOp => String::from("__mod__"),
                 Core::DivOp => String::from("__truediv__"),
@@ -79,13 +80,14 @@ fn to_py(core: &Core, ind: usize) -> String {
                             String::from(other)
                         },
                 },
-                _ => panic!()
+                other => panic!("Not a valid identifier for a function: {:?}", other)
             };
 
             format!(
-                "def {}({}): {}",
+                "def {}({}):\n{}{}",
                 name,
                 comma_delimited(args, ind),
+                indent(ind + 1),
                 to_py(body.as_ref(), ind + 1)
             )
         }
@@ -191,8 +193,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, body } =>
-            format!("for {}: {}", to_py(expr.as_ref(), ind), to_py(body.as_ref(), ind + 1)),
+        Core::For { expr, body } => format!(
+            "for {}:\n{}{}",
+            to_py(expr.as_ref(), ind),
+            indent(ind + 1),
+            to_py(body.as_ref(), ind + 1)
+        ),
         Core::In { left, right } => format! {"{} in {}", to_py(left, ind), to_py(right, ind)},
         Core::Range { from, to, step } => format!(
             "range({}, {}, {})",
@@ -200,18 +206,25 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(to.as_ref(), ind),
             to_py(step.as_ref(), ind),
         ),
-        Core::If { cond, then } =>
-            format!("if {}: {}", comma_delimited(cond.as_ref(), ind), to_py(then.as_ref(), ind + 1)),
+        Core::If { cond, then } => format!(
+            "if {}:\n{}{}",
+            to_py(cond.as_ref(), ind),
+            indent(ind + 1),
+            to_py(then.as_ref(), ind + 1)
+        ),
         Core::IfElse { cond, then, _else } => format!(
-            "if {}: {}\n{}else: {}",
-            comma_delimited(cond.as_ref(), ind),
+            "if {}:\n{}{}\n{}else:\n{}{}",
+            to_py(cond.as_ref(), ind),
+            indent(ind + 1),
             to_py(then.as_ref(), ind + 1),
             indent(ind),
+            indent(ind + 1),
             to_py(_else.as_ref(), ind + 1)
         ),
         Core::While { cond, body } => format!(
-            "while {}: {}",
-            comma_delimited(cond.as_ref(), ind),
+            "while {}:\n{}{}",
+            to_py(cond.as_ref(), ind),
+            indent(ind + 1),
             to_py(body.as_ref(), ind + 1)
         ),
         Core::Continue => String::from("continue"),
@@ -230,14 +243,15 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Comment { comment } => format!("#{}", comment),
 
         Core::With { resource, _as, expr } => format!(
-            "with {}{}: {}",
+            "with {}{}:\n{}{}",
             to_py(resource, ind),
             if **expr == Core::Empty {
                 String::new()
             } else {
                 format!(" as {}", to_py(_as, ind + 1))
             },
-            to_py(expr, ind)
+            indent(ind + 1),
+            to_py(expr, ind + 1)
         ),
 
         Core::TryExcept { _try, except } => format!(
@@ -246,6 +260,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(_try, ind + 1),
             except_unwrap(except, ind)
         ),
+        Core::Raise { error } => format!("raise {}", to_py(error, ind)),
 
         other => panic!("To python not implemented yet for: {:?}", other)
     }
@@ -260,10 +275,11 @@ fn except_unwrap(items: &[Core], ind: usize) -> String {
         match item {
             Core::Except { id, class, body } => result.push_str(
                 format!(
-                    "{}except {} as {}: {}\n",
+                    "{}except {} as {}:\n{}{}\n",
                     indent(ind),
                     to_py(class, ind),
                     to_py(id, ind),
+                    indent(ind + 1),
                     to_py(body, ind + 1)
                 )
                 .as_ref()

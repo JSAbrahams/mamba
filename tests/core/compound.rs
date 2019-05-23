@@ -6,6 +6,6 @@ use mamba::parser::parse;
 
 #[test]
 fn core_assigns_and_while() {
-    let source = valid_resource_content(&["compound"], "assign_and_while.mamba");
+    let source = resource_content(true, &["compound"], "assign_and_while.mamba");
     to_py!(source);
 }

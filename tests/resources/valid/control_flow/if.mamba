@@ -4,7 +4,7 @@ if a then print "hello world"
 if c then d <- 4 else asdf
 
 # this if doesn't do much yet
-if cond, cond2 then
+if cond then
     other
     print "hello \"world\""
 

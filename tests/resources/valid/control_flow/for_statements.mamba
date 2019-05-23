@@ -7,10 +7,6 @@ for d in e do
 
     print h
 
-for (aa, ab) in bb do
-    print cc
-    print dd
-
 for i in ty .. 34 do
     print asdf
 

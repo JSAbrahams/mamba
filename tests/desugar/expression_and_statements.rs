@@ -103,8 +103,8 @@ fn top_level_body_panic_verify() {
 #[test]
 fn raises_empty_verify() {
     let type_def = to_pos!(ASTNode::Raises {
-        expr_or_stmt: Box::from(to_pos!(ASTNode::Pass)),
+        expr_or_stmt: Box::from(to_pos!(ASTNode::Id { lit: String::from("a") })),
         errors:       vec![]
     });
-    assert_eq!(desugar(&type_def), Core::Empty);
+    assert_eq!(desugar(&type_def), Core::Id { lit: String::from("a") });
 }

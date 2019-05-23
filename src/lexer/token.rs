@@ -88,6 +88,7 @@ pub enum Token {
     Underscore,
 
     Raises,
+    Raise,
     Retry,
     When,
 
@@ -218,6 +219,7 @@ impl fmt::Display for Token {
 
             Token::Handle => String::from("handle"),
             Token::Raises => String::from("raises"),
+            Token::Raise => String::from("raise"),
             Token::Retry => String::from("retry"),
             Token::When => String::from("when"),
 

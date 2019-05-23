@@ -2,8 +2,8 @@ match a
     b => c
     d => e
 
-match b, bb, bbb
-    (a, c) => print "hello world"
+match (b, bb, bbb)
+    (a, c, d) => print "hello world"
 
 match nested
     a => b

@@ -1,5 +1,5 @@
-use crate::common::check_valid_resource_exists_and_delete;
-use crate::common::valid_resource_path;
+use crate::common::check_exists_and_delete;
+use crate::common::resource_path;
 use mamba::command::mamba_to_python;
 use mamba::command::mamba_to_python_direct;
 use std::fs::OpenOptions;
@@ -9,32 +9,32 @@ mod common;
 
 #[test]
 fn output_class_direct_valid_syntax() {
-    let source = valid_resource_path(&["class"], "class.mamba");
+    let source = resource_path(true, &["class"], "class.mamba");
     let path = &mut Path::new(&source);
 
     match mamba_to_python_direct(path) {
-        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class.py"),
+        Ok(_) => check_exists_and_delete(true, &["class"], "class.py"),
         Err(err) => panic!("{}", err)
     };
 }
 
 #[test]
 fn output_class_output_non_existent() {
-    let source = valid_resource_path(&["class"], "class.mamba");
-    let output = valid_resource_path(&["class"], "class-other.py");
+    let source = resource_path(true, &["class"], "class.mamba");
+    let output = resource_path(true, &["class"], "class-other.py");
 
     let path = &mut Path::new(&source);
     let out_path = &mut Path::new(&output);
     match mamba_to_python(path, out_path) {
-        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class-other.py"),
+        Ok(_) => check_exists_and_delete(true, &["class"], "class-other.py"),
         Err(err) => panic!("{}", err)
     };
 }
 
 #[test]
 fn output_class_output_exists() {
-    let source = valid_resource_path(&["class"], "class.mamba");
-    let output = valid_resource_path(&["class"], "class-already-exists.py");
+    let source = resource_path(true, &["class"], "class.mamba");
+    let output = resource_path(true, &["class"], "class_already_exists.py");
 
     let path = &mut Path::new(&source);
     let out_path = &mut Path::new(&output);
@@ -45,18 +45,18 @@ fn output_class_output_exists() {
     };
 
     match mamba_to_python(path, out_path) {
-        Ok(_) => check_valid_resource_exists_and_delete(&["class"], "class-already-exists.py"),
+        Ok(_) => check_exists_and_delete(true, &["class"], "class_already_exists.py"),
         Err(err) => panic!("{}", err)
     };
 }
 
 #[test]
 fn test_empty_file_direct() {
-    let source = valid_resource_path(&[], "empty_file.mamba");
+    let source = resource_path(true, &[], "empty_file.mamba");
     let path = &mut Path::new(&source);
 
     match mamba_to_python_direct(path) {
-        Ok(_) => check_valid_resource_exists_and_delete(&[], "empty_file.py"),
+        Ok(_) => check_exists_and_delete(true, &[], "empty_file.py"),
         Err(err) => panic!("{}", err)
     };
 }

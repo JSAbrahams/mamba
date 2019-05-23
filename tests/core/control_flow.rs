@@ -6,25 +6,25 @@ use mamba::parser::parse;
 
 #[test]
 fn core_for_statements() {
-    let source = valid_resource_content(&["control_flow"], "for_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "for_statements.mamba");
     to_py!(source);
 }
 
 #[test]
 fn core_if() {
-    let source = valid_resource_content(&["control_flow"], "if.mamba");
+    let source = resource_content(true, &["control_flow"], "if.mamba");
     to_py!(source);
 }
 
 #[test]
 #[ignore]
 fn core_match_statements() {
-    let source = valid_resource_content(&["control_flow"], "match_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "match_statements.mamba");
     to_py!(source);
 }
 
 #[test]
 fn core_while_statements() {
-    let source = valid_resource_content(&["control_flow"], "while_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "while.mamba");
     to_py!(source);
 }

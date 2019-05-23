@@ -52,6 +52,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
             Some(TokenPos { token: Token::Sub, .. }) => op!(SubOp),
             Some(TokenPos { token: Token::Sqrt, .. }) => op!(SqrtOp),
             Some(TokenPos { token: Token::Mul, .. }) => op!(MulOp),
+            Some(TokenPos { token: Token::FDiv, .. }) => op!(FDivOp),
             Some(TokenPos { token: Token::Div, .. }) => op!(DivOp),
             Some(TokenPos { token: Token::Pow, .. }) => op!(PowOp),
             Some(TokenPos { token: Token::Mod, .. }) => op!(ModOp),
@@ -91,21 +92,34 @@ fn parse_fun_def(id_type: ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseR
     let (st_line, st_pos) = start_pos(it);
     let fun_args = get_or_err_direct!(it, parse_fun_args, "function arguments");
 
-    let id = match id_type {
+    let id = match &id_type {
         ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, .. } => match (mutable, _type) {
-            (false, None) => id,
+            (false, None) => id.clone(),
             (true, _) =>
                 return Err(InternalErr {
-                    message: String::from("FUnction definition cannot be mutable")
+                    message: String::from("Function definition cannot be mutable")
                 }),
             (_, Some(_)) =>
                 return Err(InternalErr {
                     message: String::from("Function definition given id type with some type.")
                 }),
         },
-        _ =>
+
+        op @ ASTNodePos { node: ASTNode::AddOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::SubOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::SqrtOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::MulOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::DivOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::FDivOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::PowOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::ModOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::EqOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::GeOp, .. } => Box::from(op.clone()),
+        op @ ASTNodePos { node: ASTNode::LeOp, .. } => Box::from(op.clone()),
+
+        other =>
             return Err(InternalErr {
-                message: String::from("Function definition not given id type.")
+                message: format!("Function definition not given id or operator: {:?}", other)
             }),
     };
 

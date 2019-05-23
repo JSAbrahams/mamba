@@ -70,6 +70,9 @@ pub enum ASTNode {
         expr_or_stmt: Box<ASTNodePos>,
         errors:       Vec<ASTNodePos>
     },
+    Raise {
+        error: Box<ASTNodePos>
+    },
     Handle {
         expr_or_stmt: Box<ASTNodePos>,
         cases:        Vec<ASTNodePos>
@@ -138,6 +141,7 @@ pub enum ASTNode {
     SubOp,
     SqrtOp,
     MulOp,
+    FDivOp,
     DivOp,
     PowOp,
     ModOp,
@@ -306,12 +310,12 @@ pub enum ASTNode {
     },
 
     IfElse {
-        cond:  Vec<ASTNodePos>,
+        cond:  Box<ASTNodePos>,
         then:  Box<ASTNodePos>,
         _else: Option<Box<ASTNodePos>>
     },
     Match {
-        cond:  Vec<ASTNodePos>,
+        cond:  Box<ASTNodePos>,
         cases: Vec<ASTNodePos>
     },
     Case {
@@ -330,7 +334,7 @@ pub enum ASTNode {
         amount: Box<ASTNodePos>
     },
     While {
-        cond: Vec<ASTNodePos>,
+        cond: Box<ASTNodePos>,
         body: Box<ASTNodePos>
     },
     Break,
