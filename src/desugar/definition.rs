@@ -15,7 +15,8 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
                         Core::Tuple { elements } => elements.len(),
                         _ => 1
                     },
-                    expect_expr: true
+                    expect_expr: true,
+                    interface:   state.interface
                 };
 
                 let item = Core::VarDef {
@@ -50,17 +51,22 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
                 private: *private,
                 id:      Box::from(desugar_node(&id, ctx, state)),
                 args:    desugar_vec(&fun_args, ctx, state),
-                body:    Box::from(match expression {
-                    Some(expr) => desugar_node(&expr, ctx, &State {
-                        tup:         state.tup,
-                        expect_expr: true
-                    }),
-                    None => Core::Empty
-                })
+                body:    if state.interface {
+                    Box::from(Core::Pass)
+                } else {
+                    Box::from(match expression {
+                        Some(expr) => desugar_node(&expr, ctx, &State {
+                            tup:         state.tup,
+                            expect_expr: true,
+                            interface:   state.interface
+                        }),
+                        None => Core::Empty
+                    })
+                }
             },
             definition => panic!("invalid definition format: {:?}.", definition)
         },
-        other => panic!("Expected control flow but was: {:?}.", other)
+        other => panic!("Expected definition but was: {:?}.", other)
     }
 }
 

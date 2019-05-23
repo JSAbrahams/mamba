@@ -242,14 +242,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Empty => String::new(),
         Core::Comment { comment } => format!("#{}", comment),
 
-        Core::With { resource, _as, expr } => format!(
-            "with {}{}:\n{}{}",
+        Core::With { resource, expr } =>
+            format!("with {}:\n{}{}", to_py(resource, ind), indent(ind + 1), to_py(expr, ind + 1)),
+        Core::WithAs { resource, _as, expr } => format!(
+            "with {} as {}:\n{}{}",
             to_py(resource, ind),
-            if **expr == Core::Empty {
-                String::new()
-            } else {
-                format!(" as {}", to_py(_as, ind + 1))
-            },
+            to_py(_as, ind),
             indent(ind + 1),
             to_py(expr, ind + 1)
         ),

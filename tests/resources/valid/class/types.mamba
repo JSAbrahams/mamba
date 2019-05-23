@@ -1,22 +1,6 @@
 from Math import abs
 import something
 
-type MyType
-    def fun_a: () -> ()
-    def factorial: Int -> Int
-
-class MyClass0
-    def other
-
-class MyClass1 isa MyType("asdf")
-    def other
-
-# This class has no state
-class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
-    def SOME_CONSTANT <- 3.5E20
-
-    def constant_func(self) => 400
-
 type SomeState isa MyClass when z_modified > 2
 
 type OtherState isa MyClass when
@@ -25,14 +9,12 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-class MyClass3 isa MyType
-    def something: MyClass forward method_1, method_2
-
+class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def private z_modified
     def private mut other_field <- 10
 
-    def init(mut self, my_field: Int, z: Int) =>
-        if z > 10 then return Err("Something is wrong!")
+    def init(mut self, other_field: Int, z: Int) raises [Err] =>
+        if z > 10 then raise Err("Something is wrong!")
         self.z_modified <- z * SOME_CONSTANT
         def a <- self.z_modified handle
             err1: MyErr =>
@@ -55,9 +37,3 @@ class MyClass3 isa MyType
 
     def some_higher_order (self, fun: Int -> Int) => 0
     def fancy(self) => self.some_higher_order(\x => x * 2)
-
-class SimpleClass
-    def something
-
-    def init(self, something: S) =>
-        self.something <- something

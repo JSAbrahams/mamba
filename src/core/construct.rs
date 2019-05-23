@@ -74,13 +74,13 @@ pub enum Core {
     BLShift { left: Box<Core>, right: Box<Core> },
     BRShift { left: Box<Core>, right: Box<Core> },
 
-    For { exprs: Vec<Core>, collection: Box<Core>, body: Box<Core> },
+    For { expr: Box<Core>, body: Box<Core> },
     Range { from: Box<Core>, to: Box<Core>, step: Box<Core> },
-    If { cond: Vec<Core>, then: Box<Core> },
-    IfElse { cond: Vec<Core>, then: Box<Core>, _else: Box<Core> },
-    Match { cond: Vec<Core>, cases: Vec<Core> },
+    If { cond: Box<Core>, then: Box<Core> },
+    IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },
+    Match { cond: Box<Core>, cases: Vec<Core> },
     Case { cond: Box<Core>, body: Box<Core> },
-    While { cond: Vec<Core>, body: Box<Core> },
+    While { cond: Box<Core>, body: Box<Core> },
     In { left: Box<Core>, right: Box<Core> },
     Break,
     Continue,
@@ -97,5 +97,7 @@ pub enum Core {
     TryExcept { _try: Box<Core>, except: Vec<Core> },
     Except { id: Box<Core>, class: Box<Core>, body: Box<Core> },
     Raise { error: Box<Core> },
-    With { resource: Box<Core>, _as: Box<Core>, expr: Box<Core> },
+
+    With { resource: Box<Core>, expr: Box<Core> },
+    WithAs { resource: Box<Core>, _as: Box<Core>, expr: Box<Core> }
 }

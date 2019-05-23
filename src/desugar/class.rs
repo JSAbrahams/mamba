@@ -16,6 +16,37 @@ use std::ops::Deref;
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
+        ASTNode::TypeDef { _type, body } =>
+            if let Some(body) = body {
+                match (&_type.node, &body.node) {
+                    (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
+                        name:        Box::from(desugar_node(id, ctx, state)),
+                        parents:     Vec::new(),
+                        definitions: desugar_vec(statements, ctx, &State {
+                            tup:         state.tup,
+                            expect_expr: state.expect_expr,
+                            interface:   true
+                        })
+                    },
+                    other => panic!(
+                        "desugarer didn't recognize while making type definition: {:?}.",
+                        other
+                    )
+                }
+            } else {
+                match &_type.node {
+                    ASTNode::Type { id, .. } => Core::ClassDef {
+                        name:        Box::from(desugar_node(id, ctx, state)),
+                        parents:     Vec::new(),
+                        definitions: Vec::new()
+                    },
+                    other => panic!(
+                        "desugarer didn't recognize while making type definition: {:?}.",
+                        other
+                    )
+                }
+            },
+
         ASTNode::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => {
                 let (parent_names, parent_args, super_calls) = extract_parents(parents, ctx, state);
@@ -31,7 +62,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
                     } else {
                         // We have to create a constructor because there was none present, and we
                         // need to convert inline args to init call and/or make calls to super
-                        let mut final_definitions = augmented_definitions.clone();
+                        let mut final_definitions = vec![];
                         let mut args = vec![Core::Id { lit: String::from("self") }];
 
                         for inline_arg in inline_args {
@@ -52,6 +83,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
                         let body = Box::from(Core::Block { statements: super_calls });
                         let core_init = Core::FunDef { private: false, id, args, body };
                         final_definitions.push(core_init);
+                        final_definitions.append(&mut augmented_definitions.clone());
 
                         final_definitions
                     };
@@ -64,7 +96,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
             }
             other => panic!("desugarer didn't recognize while making class: {:?}.", other)
         },
-        other => panic!("Expected class but was {:?}", other)
+        other => panic!("Expected class or type definition but was {:?}", other)
     }
 }
 
