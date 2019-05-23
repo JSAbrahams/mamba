@@ -119,9 +119,9 @@ import ipaddress
 type Server
     def ip_address: IPv4Address
 
-    def connect:    () -> ()       raises [ServerErr]
-    def send:       (String) -> () raises [ServerErr]
-    def disconnect: () -> ()
+    def connect():     () -> ()       raises [ServerErr]
+    def send(message): (String) -> () raises [ServerErr]
+    def disconnect():  () -> ()
 
 class ServerError(def message: String) isa Exception(message)
 
