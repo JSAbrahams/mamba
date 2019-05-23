@@ -7,9 +7,6 @@ use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use std::ops::Deref;
 
-// TODO add some pre-conditions for expected structure of class, to simplify
-// application logic
-
 /// Desugar a class.
 ///
 /// If a class has inline arguments (arguments next to class), then we create a
@@ -19,79 +16,50 @@ use std::ops::Deref;
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
-        ASTNode::TypeDef { _type, body } =>
-            if let Some(body) = body {
-                match (&_type.node, &body.node) {
-                    (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
-                        name:        Box::from(desugar_node(id, ctx, state)),
-                        parents:     Vec::new(),
-                        definitions: desugar_vec(statements, ctx, &State {
-                            tup:         state.tup,
-                            expect_expr: state.expect_expr,
-                            interface:   true
-                        })
-                    },
-                    other => panic!(
-                        "desugarer didn't recognize while making type definition: {:?}.",
-                        other
-                    )
-                }
-            } else {
-                match &_type.node {
-                    ASTNode::Type { id, .. } => Core::ClassDef {
-                        name:        Box::from(desugar_node(id, ctx, state)),
-                        parents:     Vec::new(),
-                        definitions: Vec::new()
-                    },
-                    other => panic!(
-                        "desugarer didn't recognize while making type definition: {:?}.",
-                        other
-                    )
-                }
+        ASTNode::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
+            (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
+                name:        Box::from(desugar_node(id, ctx, state)),
+                parents:     Vec::new(),
+                definitions: desugar_vec(statements, ctx, &State {
+                    tup:         state.tup,
+                    expect_expr: state.expect_expr,
+                    interface:   true
+                })
             },
+            other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
+        },
+        ASTNode::TypeDef { _type, body: None } => match &_type.node {
+            ASTNode::Type { id, .. } => Core::ClassDef {
+                name:        Box::from(desugar_node(id, ctx, state)),
+                parents:     Vec::new(),
+                definitions: Vec::new()
+            },
+            other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
+        },
 
         ASTNode::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => {
                 let (parent_names, parent_args, super_calls) = extract_parents(parents, ctx, state);
                 let core_definitions: Vec<Core> = desugar_vec(statements, ctx, state);
-
                 let inline_args = desugar_vec(args, ctx, state);
 
-                let final_definitions = if parent_names.is_empty() {
+                let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
                     desugar_vec(statements, ctx, state)
                 } else {
                     let (found_constructor, augmented_definitions) =
-                        augment_constructor(&core_definitions, &parent_args, &super_calls);
+                        add_parent_to_constructor(&core_definitions, &parent_args, &super_calls);
 
-                    if found_constructor && inline_args.is_empty() {
+                    if found_constructor && !args.is_empty() {
+                        panic!("Cannot have explicit constructor and inline arguments.")
+                    } else if found_constructor {
                         augmented_definitions
                     } else {
-                        // We have to create a constructor because there was none present, and we
-                        // need to convert inline args to init call and/or make calls to super
-                        let mut final_definitions = vec![];
-                        let mut args = vec![Core::Id { lit: String::from("self") }];
-
-                        for inline_arg in inline_args {
-                            if let Core::FunArg { id, .. } = inline_arg.clone() {
-                                args.push(inline_arg);
-                                if !parent_args.contains(&id) {
-                                    final_definitions.push(Core::Assign {
-                                        left:  id.clone(),
-                                        right: Box::from(Core::None)
-                                    })
-                                }
-                            } else {
-                                panic!("Inline arg was not function argument")
-                            }
-                        }
-
-                        let id = Box::from(Core::Id { lit: String::from("init") });
-                        let body = Box::from(Core::Block { statements: super_calls });
-                        let core_init = Core::FunDef { private: false, id, args, body };
-                        final_definitions.push(core_init);
-                        final_definitions.append(&mut augmented_definitions.clone());
-
-                        final_definitions
+                        constructor_from_inline(
+                            &inline_args,
+                            &parent_args,
+                            &super_calls,
+                            &augmented_definitions
+                        )
                     }
                 };
 
@@ -107,7 +75,37 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     }
 }
 
-fn augment_constructor(
+fn constructor_from_inline(
+    inline_args: &[Core],
+    parent_args: &[Core],
+    super_calls: &[Core],
+    definitions: &[Core]
+) -> Vec<Core> {
+    let mut final_definitions = vec![];
+    let mut args = vec![Core::Id { lit: String::from("self") }];
+
+    for inline_arg in inline_args {
+        if let Core::FunArg { id, .. } = inline_arg {
+            args.push(inline_arg.clone());
+            if !parent_args.contains(&id) {
+                final_definitions
+                    .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
+            }
+        } else {
+            panic!("Inline arg was not function argument.")
+        }
+    }
+
+    let id = Box::from(Core::Id { lit: String::from("init") });
+    let body = Box::from(Core::Block { statements: Vec::from(super_calls) });
+    let core_init = Core::FunDef { private: false, id, args, body };
+    final_definitions.push(core_init);
+    final_definitions.append(&mut Vec::from(definitions));
+
+    final_definitions
+}
+
+fn add_parent_to_constructor(
     core_definitions: &[Core],
     parent_args: &[Core],
     super_calls: &[Core]
@@ -120,6 +118,10 @@ fn augment_constructor(
             if let Core::FunDef { private, id, args: old_args, body: old_body } = definition {
                 if let Core::Id { lit } = id.clone().deref() {
                     if lit == "init" {
+                        if found_constructor {
+                            panic!("Cannot have more than one constructor.")
+                        }
+
                         found_constructor = true;
                         let body = match (super_calls.is_empty(), *old_body.clone()) {
                             (true, _) => old_body.clone(),
