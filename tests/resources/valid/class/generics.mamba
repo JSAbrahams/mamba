@@ -1,5 +1,29 @@
 # This class has no state
-class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
-    def SOME_CONSTANT <- 3.5E20
+class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
+    def private z_modified
+    def private mut other_field <- 10
 
-    def constant_func(self) => 400
+    def init(mut self, other_field: Int, z: Int) raises [Err] =>
+        if z > 10 then raise Err("Something is wrong!")
+        self.z_modified <- z * SOME_CONSTANT
+        def a <- self.z_modified handle
+            err1: MyErr =>
+                print "hey"
+                print "there"
+            err2: MyErr => print "hoi"
+
+    def connect(mut self: SomeState) => self.other_field <- 200
+
+    def fun_a(self) => print self
+
+    def private fun_b(self) => print "this function is private!"
+
+    def factorial(self, x: Int <- 0) => x * self.factorial (x - 1)
+    def factorial_infinite(self, x: Int) => x * self.factorial x
+
+    def a(self) => self.a self.b
+    def b(self, c) => self.a self.b self.c
+    def c(self, d) => self.a self.b self.c d
+
+    def some_higher_order (self, fun: Int -> Int) => 0
+    def fancy(self) => self.some_higher_order(\x => x * 2)

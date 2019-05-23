@@ -33,7 +33,7 @@ pub mod construct;
 ///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_py_source(&core_node), "if a:\n    'b'\nelse:\n    'c'\n");
+/// assert_eq!(to_py_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
 /// ```
 pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -46,7 +46,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("import {} as {}", comma_delimited(import, ind), comma_delimited(_as, ind)),
 
         Core::Id { lit } => lit.clone(),
-        Core::Str { _str } => format!("\'{}\'", _str),
+        Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } => format!("({} * 10 ** {})", num, exp),
         Core::Float { float } => float.clone(),

@@ -7,6 +7,9 @@ use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use std::ops::Deref;
 
+// TODO add some pre-conditions for expected structure of class, to simplify
+// application logic
+
 /// Desugar a class.
 ///
 /// If a class has inline arguments (arguments next to class), then we create a
@@ -54,10 +57,13 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
 
                 let inline_args = desugar_vec(args, ctx, state);
 
-                let (found_constructor, augmented_definitions) =
-                    augment_constructor(&core_definitions, &super_calls);
-                let final_definitions =
-                    if found_constructor || (inline_args.is_empty() && parent_args.is_empty()) {
+                let final_definitions = if parent_names.is_empty() {
+                    desugar_vec(statements, ctx, state)
+                } else {
+                    let (found_constructor, augmented_definitions) =
+                        augment_constructor(&core_definitions, &parent_args, &super_calls);
+
+                    if found_constructor && inline_args.is_empty() {
                         augmented_definitions
                     } else {
                         // We have to create a constructor because there was none present, and we
@@ -79,14 +85,15 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
                             }
                         }
 
-                        let id = Box::from(Core::Id { lit: String::from("__init__") });
+                        let id = Box::from(Core::Id { lit: String::from("init") });
                         let body = Box::from(Core::Block { statements: super_calls });
                         let core_init = Core::FunDef { private: false, id, args, body };
                         final_definitions.push(core_init);
                         final_definitions.append(&mut augmented_definitions.clone());
 
                         final_definitions
-                    };
+                    }
+                };
 
                 Core::ClassDef {
                     name:        Box::from(desugar_node(id, ctx, state)),
@@ -100,7 +107,11 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     }
 }
 
-fn augment_constructor(core_definitions: &[Core], super_calls: &[Core]) -> (bool, Vec<Core>) {
+fn augment_constructor(
+    core_definitions: &[Core],
+    parent_args: &[Core],
+    super_calls: &[Core]
+) -> (bool, Vec<Core>) {
     let mut final_definitions = vec![];
     let mut found_constructor = false;
 
@@ -108,7 +119,7 @@ fn augment_constructor(core_definitions: &[Core], super_calls: &[Core]) -> (bool
         final_definitions.push(
             if let Core::FunDef { private, id, args: old_args, body: old_body } = definition {
                 if let Core::Id { lit } = id.clone().deref() {
-                    if lit == "__init__" {
+                    if lit == "init" {
                         found_constructor = true;
                         let body = match (super_calls.is_empty(), *old_body.clone()) {
                             (true, _) => old_body.clone(),
@@ -124,12 +135,10 @@ fn augment_constructor(core_definitions: &[Core], super_calls: &[Core]) -> (bool
                             }
                         };
 
-                        Core::FunDef {
-                            private: *private,
-                            id: id.clone(),
-                            args: old_args.clone(),
-                            body
-                        }
+                        let mut args = old_args.clone();
+                        args.append(&mut Vec::from(parent_args));
+
+                        Core::FunDef { private: *private, id: id.clone(), args, body }
                     } else {
                         definition.clone()
                     }
@@ -156,11 +165,12 @@ fn extract_parents(
 
     for parent in parents {
         match &parent.node {
-            ASTNode::Parent { ref id, args, .. } => {
+            ASTNode::Parent { ref id, args: old_args, .. } => {
                 parent_names.push(desugar_node(id, ctx, state));
 
-                let args = desugar_vec(args, ctx, state);
-                parent_args.append(&mut args.clone());
+                let mut args = vec![Core::Id { lit: String::from("self") }];
+                args.append(&mut desugar_vec(old_args, ctx, state));
+                parent_args.append(&mut desugar_vec(old_args, ctx, state));
 
                 super_calls.push(Core::MethodCall {
                     object: Box::from(Core::MethodCall {

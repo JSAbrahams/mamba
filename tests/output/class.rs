@@ -69,9 +69,7 @@ fn parent_ast_verify() {
     check_exists_and_delete(true, &["class"], "parent.py");
 }
 
-// TODO fix augmenting of constructor
 #[test]
-#[ignore]
 fn types_ast_verify() {
     let mamba_path = resource_path(true, &["class"], "types.mamba");
     let out_path = mamba_to_python_direct(Path::new(&mamba_path)).unwrap();

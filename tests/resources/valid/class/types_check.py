@@ -2,23 +2,12 @@ from Math import abs
 import something
 
 class MyClass2(MyType):
-    z_modified = None
-    other_field = 10
 
-    def __init__(self, my_field, other_field, z):
+    def __init__(self, my_field):
         super().__init__(self, my_field)
 
-        if z > 10: raise Err("Something is wrong!")
-        self.z_modified = z * SOME_CONSTANT
-        a = None
-
-        try:
-            a = self.z_modified
-        except MyErr as err1:
-            print("hey")
-            print("there")
-        except MyErr as err2:
-            print("hoi")
+    _z_modified = None
+    _other_field = 10
 
     def connect(self):
         self.other_field = 200
@@ -42,7 +31,7 @@ class MyClass2(MyType):
         self.a(self.b(self.c))
 
     def c(self, d):
-        self.a(self.b(self.c))
+        self.a(self.b(self.c(d)))
 
     def some_higher_order(self, fun):
         0

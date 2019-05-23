@@ -13,15 +13,6 @@ class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def private z_modified
     def private mut other_field <- 10
 
-    def init(mut self, other_field: Int, z: Int) raises [Err] =>
-        if z > 10 then raise Err("Something is wrong!")
-        self.z_modified <- z * SOME_CONSTANT
-        def a <- self.z_modified handle
-            err1: MyErr =>
-                print "hey"
-                print "there"
-            err2: MyErr => print "hoi"
-
     def connect(mut self: SomeState) => self.other_field <- 200
 
     def fun_a(self) => print self
