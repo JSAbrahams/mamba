@@ -45,4 +45,4 @@ class MyClass2(MyType):
         0
 
     def fancy(self):
-        self.some_higher_order(lambda x: x * 2)
+        self.some_higher_order(lambda x: x * 2) or 10

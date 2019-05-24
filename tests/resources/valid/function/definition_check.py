@@ -1,4 +1,7 @@
-def fun_a(): print(c)
+def fun_a():
+    print(c)
+    if a and b: print(c)
+    if c or d: print(e)
 
 def fun_b(b): print(c)
 

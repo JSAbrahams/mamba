@@ -355,8 +355,8 @@ pub enum ASTNode {
     Pass,
 
     QuestOr {
-        _do:      Box<ASTNodePos>,
-        _default: Box<ASTNodePos>
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
     },
 
     Print {

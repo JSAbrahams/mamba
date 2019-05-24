@@ -147,9 +147,9 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::Not { expr } => format!("not {}", to_py(expr.as_ref(), ind)),
         Core::And { left, right } =>
-            format!("{} && {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+            format!("{} and {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Or { left, right } =>
-            format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+            format!("{} or {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Is { left, right } =>
             format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::IsN { left, right } =>

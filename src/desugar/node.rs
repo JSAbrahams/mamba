@@ -240,24 +240,9 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             })
         },
         ASTNode::Underscore => Core::UnderScore,
-        ASTNode::QuestOr { _do, _default } => Core::Block {
-            statements: vec![
-                Core::VarDef {
-                    private: true,
-                    id:      Box::from(Core::Id { lit: String::from("$temp") }),
-                    right:   Box::from(desugar_node(_do, ctx, state))
-                },
-                Core::IfElse {
-                    cond:  Box::from(Core::Not {
-                        expr: Box::from(Core::Eq {
-                            left:  Box::from(Core::Id { lit: String::from("$temp") }),
-                            right: Box::from(Core::None)
-                        })
-                    }),
-                    then:  Box::from(Core::Id { lit: String::from("$temp") }),
-                    _else: Box::from(desugar_node(_default, ctx, state))
-                },
-            ]
+        ASTNode::QuestOr { left, right } => Core::Or {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
         },
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, ctx, state) },
