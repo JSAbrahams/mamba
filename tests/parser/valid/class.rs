@@ -5,7 +5,7 @@ use mamba::parser::parse;
 
 #[test]
 fn parse_class() {
-    let source = resource_content(true, &["class"], "class.mamba");
+    let source = resource_content(true, &["class"], "types.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
 

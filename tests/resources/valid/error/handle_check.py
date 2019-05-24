@@ -1,3 +1,5 @@
+a = None
+
 try:
     a = f(10)
 except MyErr1 as err:

@@ -1,5 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
+use crate::parser::_type::parse_id;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::call::parse_call;
@@ -10,7 +11,6 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::TPIterator;
-use crate::parser::_type::parse_id;
 
 macro_rules! inner_bin_op {
     ($it:expr, $st_line:expr, $st_pos:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
@@ -36,7 +36,7 @@ macro_rules! inner_bin_op {
 /// 5. binary left shift, binary right shift, binary and, binary or, binary xor
 /// 6. greater, greater or equal, less, less or equal, equal, not equal, is, is,
 /// in not, is a, is not a
-/// 7. and, or
+/// 7. and, or, question or
 /// 8. postfix calls
 pub fn parse_operation(it: &mut TPIterator) -> ParseResult { parse_level_8(it) }
 
@@ -61,6 +61,7 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
     match it.peek() {
         Some(TokenPos { token: Token::And, .. }) => bin_op!(parse_level_7, And, "and"),
         Some(TokenPos { token: Token::Or, .. }) => bin_op!(parse_level_7, Or, "or"),
+        Some(TokenPos { token: Token::QuestOr, .. }) => bin_op!(parse_level_7, QuestOr, "?or"),
         _ => Ok(*arithmetic)
     }
 }

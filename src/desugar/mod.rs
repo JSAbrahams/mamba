@@ -5,6 +5,7 @@ use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNodePos;
 
 mod call;
+mod class;
 mod common;
 mod context;
 mod control_flow;

@@ -1,16 +1,6 @@
 from Math import abs
 import something
 
-type MyType
-    def fun_a: () -> ()
-    def factorial: Int -> Int
-
-# This class has no state
-class MyClass isa MyType
-    def SOME_CONSTANT <- 3.5E20
-
-    def constant_func() => 400
-
 type SomeState isa MyClass when z_modified > 2
 
 type OtherState isa MyClass when
@@ -19,20 +9,9 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-class MyClass isa MyType
-    def something: MyClass forward method_1, method_2
-
+class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def private z_modified
     def private mut other_field <- 10
-
-    def init(mut self, my_field: Int, z: Int) =>
-        if z > 10 then return Err("Something is wrong!")
-        self.z_modified <- z * SOME_CONSTANT
-        def a <- self.z_modified handle
-            err1: MyErr =>
-                print "hey"
-                print "there"
-            err2: MyErr => print "hoi"
 
     def connect(mut self: SomeState) => self.other_field <- 200
 

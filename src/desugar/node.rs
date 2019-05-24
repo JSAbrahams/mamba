@@ -1,5 +1,6 @@
 use crate::core::construct::Core;
 use crate::desugar::call::desugar_call;
+use crate::desugar::class::desugar_class;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::context::Context;
 use crate::desugar::context::State;
@@ -239,24 +240,9 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             })
         },
         ASTNode::Underscore => Core::UnderScore,
-        ASTNode::QuestOr { _do, _default } => Core::Block {
-            statements: vec![
-                Core::VarDef {
-                    private: true,
-                    id:      Box::from(Core::Id { lit: String::from("$temp") }),
-                    right:   Box::from(desugar_node(_do, ctx, state))
-                },
-                Core::IfElse {
-                    cond:  Box::from(Core::Not {
-                        expr: Box::from(Core::Eq {
-                            left:  Box::from(Core::Id { lit: String::from("$temp") }),
-                            right: Box::from(Core::None)
-                        })
-                    }),
-                    then:  Box::from(Core::Id { lit: String::from("$temp") }),
-                    _else: Box::from(desugar_node(_default, ctx, state))
-                },
-            ]
+        ASTNode::QuestOr { left, right } => Core::Or {
+            left:  Box::from(desugar_node(left, ctx, state)),
+            right: Box::from(desugar_node(right, ctx, state))
         },
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, ctx, state) },
@@ -267,35 +253,31 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             Core::Block { statements }
         }
 
-        ASTNode::Class { _type, body } => match (&_type.deref().node, &body.deref().node) {
-            (ASTNode::Type { id, generics }, ASTNode::Body { isa, definitions }) =>
-                Core::ClassDef {
-                    name:        Box::from(desugar_node(id, ctx, state)),
-                    generics:    desugar_vec(generics, ctx, state),
-                    parents:     desugar_vec(isa, ctx, state),
-                    definitions: desugar_vec(definitions, ctx, state)
-                },
-            other => panic!("desugarer didn't recognize while making class: {:?}.", other)
-        },
-
-        ASTNode::TypeDef { .. }
-        | ASTNode::TypeAlias { .. }
+        ASTNode::TypeAlias { .. }
         | ASTNode::TypeTup { .. }
         | ASTNode::Type { .. }
         | ASTNode::TypeFun { .. } => Core::Empty,
+
+        type_def @ ASTNode::TypeDef { .. } => desugar_class(type_def, ctx, state),
+        class @ ASTNode::Class { .. } => desugar_class(class, ctx, state),
+        ASTNode::Generic { .. } => Core::Empty,
+        ASTNode::Parent { .. } => panic!("Parent cannot be top-level"),
 
         ASTNode::Condition { .. } => unimplemented!("Condition has not yet been implemented."),
 
         ASTNode::Comment { comment } => Core::Comment { comment: comment.clone() },
         ASTNode::Pass => Core::Pass,
 
-        ASTNode::With { resource, _as, expr } => Core::With {
-            resource: Box::from(desugar_node(resource, ctx, state)),
-            _as:      match _as {
-                Some(_as) => Box::from(desugar_node(_as, ctx, state)),
-                _ => Box::from(Core::Empty)
+        ASTNode::With { resource, _as, expr } => match _as {
+            Some(_as) => Core::WithAs {
+                resource: Box::from(desugar_node(resource, ctx, state)),
+                _as:      Box::from(desugar_node(_as, ctx, state)),
+                expr:     Box::from(desugar_node(expr, ctx, state))
             },
-            expr:     Box::from(desugar_node(expr, ctx, state))
+            None => Core::With {
+                resource: Box::from(desugar_node(resource, ctx, state)),
+                expr:     Box::from(desugar_node(expr, ctx, state))
+            }
         },
 
         ASTNode::Step { .. } => panic!("Step cannot be top level."),
@@ -304,35 +286,48 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             Core::Raise { error: Box::from(desugar_node(error, ctx, state)) },
         ASTNode::Retry { .. } => unimplemented!("Retry has not yet been implemented."),
 
-        ASTNode::Handle { expr_or_stmt, cases } => Core::TryExcept {
-            _try:   Box::from(desugar_node(expr_or_stmt, ctx, state)),
-            except: {
-                let mut except = Vec::new();
-                for case in cases {
-                    let (cond, body) = match &case.node {
-                        ASTNode::Case { cond, body } => (cond, body),
-                        other => panic!("Expected case but was {:?}", other)
-                    };
-
-                    let (id, class) = match &cond.node {
-                        ASTNode::IdType { id, _type: Some(ty), .. } => match &ty.node {
-                            ASTNode::Type { id: ty, .. } => (id, ty),
-                            other => panic!("Expected type but was {:?}", other)
-                        },
-                        other => panic!("Expected id type but was {:?}", other)
-                    };
-
-                    except.push(Core::Except {
-                        id:    Box::from(desugar_node(id, ctx, state)),
-                        class: Box::from(desugar_node(class, ctx, state)),
-                        body:  Box::from(desugar_node(body, ctx, state))
+        ASTNode::Handle { expr_or_stmt, cases } => {
+            let mut statements = vec![];
+            if let ASTNode::Def { definition, .. } = &expr_or_stmt.node {
+                if let ASTNode::VariableDef { id_maybe_type, .. } = &definition.node {
+                    statements.push(Core::Assign {
+                        left:  Box::from(desugar_node(id_maybe_type.as_ref(), ctx, state)),
+                        right: Box::from(Core::None)
                     });
                 }
-                except
-            }
-        },
+            };
 
-        ASTNode::Body { .. } => panic!("Body cannot be top level."),
+            statements.push(Core::TryExcept {
+                _try:   Box::from(desugar_node(&expr_or_stmt.clone(), ctx, state)),
+                except: {
+                    let mut except = Vec::new();
+                    for case in cases {
+                        let (cond, body) = match &case.node {
+                            ASTNode::Case { cond, body } => (cond, body),
+                            other => panic!("Expected case but was {:?}", other)
+                        };
+
+                        let (id, class) = match &cond.node {
+                            ASTNode::IdType { id, _type: Some(ty), .. } => match &ty.node {
+                                ASTNode::Type { id: ty, .. } => (id, ty),
+                                other => panic!("Expected type but was {:?}", other)
+                            },
+                            other => panic!("Expected id type but was {:?}", other)
+                        };
+
+                        except.push(Core::Except {
+                            id:    Box::from(desugar_node(id, ctx, state)),
+                            class: Box::from(desugar_node(class, ctx, state)),
+                            body:  Box::from(desugar_node(body, ctx, state))
+                        });
+                    }
+                    except
+                }
+            });
+
+            Core::Block { statements }
+        }
+
         ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
         ASTNode::FunDef { .. } => panic!("Function definition cannot be top level.")
     }

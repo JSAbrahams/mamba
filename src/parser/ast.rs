@@ -26,15 +26,22 @@ pub enum ASTNode {
         import: Box<ASTNodePos>
     },
     Class {
-        _type: Box<ASTNodePos>,
-        body:  Box<ASTNodePos>
+        _type:   Box<ASTNodePos>,
+        args:    Vec<ASTNodePos>,
+        parents: Vec<ASTNodePos>,
+        body:    Box<ASTNodePos>
+    },
+    Generic {
+        id:  Box<ASTNodePos>,
+        isa: Option<Box<ASTNodePos>>
+    },
+    Parent {
+        id:       Box<ASTNodePos>,
+        generics: Vec<ASTNodePos>,
+        args:     Vec<ASTNodePos>
     },
     Script {
         statements: Vec<ASTNodePos>
-    },
-    Body {
-        isa:         Vec<ASTNodePos>,
-        definitions: Vec<ASTNodePos>
     },
     Init,
 
@@ -348,8 +355,8 @@ pub enum ASTNode {
     Pass,
 
     QuestOr {
-        _do:      Box<ASTNodePos>,
-        _default: Box<ASTNodePos>
+        left:  Box<ASTNodePos>,
+        right: Box<ASTNodePos>
     },
 
     Print {

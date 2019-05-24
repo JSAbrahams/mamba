@@ -33,7 +33,7 @@ pub mod construct;
 ///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_py_source(&core_node), "if a:\n    'b'\nelse:\n    'c'\n");
+/// assert_eq!(to_py_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
 /// ```
 pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -46,7 +46,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("import {} as {}", comma_delimited(import, ind), comma_delimited(_as, ind)),
 
         Core::Id { lit } => lit.clone(),
-        Core::Str { _str } => format!("\'{}\'", _str),
+        Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } => format!("({} * 10 ** {})", num, exp),
         Core::Float { float } => float.clone(),
@@ -147,9 +147,9 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::Not { expr } => format!("not {}", to_py(expr.as_ref(), ind)),
         Core::And { left, right } =>
-            format!("{} && {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+            format!("{} and {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Or { left, right } =>
-            format!("{} || {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+            format!("{} or {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Is { left, right } =>
             format!("{} is {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::IsN { left, right } =>
@@ -230,7 +230,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions, .. } => format!(
+        Core::ClassDef { name, parents, definitions } => format!(
             "class {}({}):\n{}\n",
             to_py(name, ind),
             comma_delimited(parents, ind),
@@ -242,14 +242,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Empty => String::new(),
         Core::Comment { comment } => format!("#{}", comment),
 
-        Core::With { resource, _as, expr } => format!(
-            "with {}{}:\n{}{}",
+        Core::With { resource, expr } =>
+            format!("with {}:\n{}{}", to_py(resource, ind), indent(ind + 1), to_py(expr, ind + 1)),
+        Core::WithAs { resource, _as, expr } => format!(
+            "with {} as {}:\n{}{}",
             to_py(resource, ind),
-            if **expr == Core::Empty {
-                String::new()
-            } else {
-                format!(" as {}", to_py(_as, ind + 1))
-            },
+            to_py(_as, ind),
             indent(ind + 1),
             to_py(expr, ind + 1)
         ),

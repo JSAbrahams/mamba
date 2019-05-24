@@ -48,9 +48,7 @@ fn definition_ast_verify() {
     check_exists_and_delete(true, &["function"], "definition.py");
 }
 
-// TODO fix infix calls
 #[test]
-#[ignore]
 fn infix_calls_ast_verify() {
     let mamba_path = resource_path(true, &["function"], "infix_calls.mamba");
     let out_path = mamba_to_python_direct(Path::new(&mamba_path)).unwrap();

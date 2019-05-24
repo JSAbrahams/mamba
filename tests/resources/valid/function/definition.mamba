@@ -1,4 +1,7 @@
-def fun_a() => print c
+def fun_a() =>
+    print c
+    if a and b then print c
+    if c or d then print e
 
 def fun_b(b: c) => print c
 

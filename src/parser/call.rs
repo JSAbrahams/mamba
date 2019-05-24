@@ -1,6 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
+use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::common::end_pos;
@@ -10,8 +11,6 @@ use crate::parser::expression::parse_expression;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::TPIterator;
-use crate::parser::_type::parse_id_maybe_type;
-use crate::parser::expression::is_start_expression;
 
 pub fn parse_reassignment(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
@@ -88,6 +87,7 @@ fn parse_regular_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (pre.st_line, pre.st_pos);
     it.next();
     let name: Box<ASTNodePos> = get_or_err!(it, parse_id, "call name");
+    let mut method = true;
 
     let args: Vec<ASTNodePos> = match it.peek() {
         Some(TokenPos { token: Token::LRBrack, .. }) => match parse_arguments(it, "arguments") {
@@ -98,24 +98,19 @@ fn parse_regular_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
             Err(err) => return Err(err)
         },
         Some(&tp) if is_start_expression_exclude_unary(tp) =>
-            match parse_expressions(it, "arguments") {
-                Ok(args) => {
-                    if args.len() > 1 {
-                        return Err(InternalErr {
-                            message: format!(
-                                "Postfix notation only possible with 1 argument,but {} were given.",
-                                args.len()
-                            )
-                        });
-                    }
-                    args
-                }
-                Err(err) => return Err(err)
-            },
-        _ => vec![]
+            vec![get_or_err_direct!(it, parse_expression, "postfix arg")],
+        _ => {
+            method = false;
+            vec![]
+        }
     };
 
-    let node = ASTNode::MethodCall { instance: Box::from(pre), name, args };
+    let node = if method {
+        ASTNode::MethodCall { instance: Box::from(pre), name, args }
+    } else {
+        ASTNode::Call { left: Box::from(pre), right: name }
+    };
+
     Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })
 }
 
@@ -166,24 +161,4 @@ fn parse_postfix_call(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     };
 
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
-}
-
-fn parse_expressions(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
-    let mut expressions = Vec::new();
-    let mut pos = 0;
-
-    while let Some(&t) = it.peek() {
-        if is_start_expression(t) {
-            expressions.push(get_or_err_direct!(
-                it,
-                parse_expression,
-                String::from(msg) + " (pos " + &pos.to_string() + ")"
-            ));
-        } else {
-            break;
-        }
-        pos += 1;
-    }
-
-    Ok(expressions)
 }

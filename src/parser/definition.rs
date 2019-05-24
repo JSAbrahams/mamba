@@ -159,7 +159,7 @@ fn parse_fun_def(id_type: ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseR
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
-fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut args = Vec::new();
     let mut pos = 0;
     check_next_is!(it, Token::LRBrack);
@@ -184,7 +184,7 @@ fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     Ok(args)
 }
 
-fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
+pub fn parse_fun_arg(it: &mut TPIterator, pos: i32) -> ParseResult {
     let (st_line, st_pos) = start_pos(it);
     let vararg;
     if let Some(TokenPos { token: Token::Vararg, .. }) = it.peek() {

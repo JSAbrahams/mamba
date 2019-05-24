@@ -12,8 +12,8 @@ fn with_verify() {
     let with = to_pos!(ASTNode::With { resource, _as, expr });
 
     let (resource, _as, expr) = match desugar(&with) {
-        Core::With { resource, _as, expr } => (resource, _as, expr),
-        other => panic!("Expected reassign but was {:?}", other)
+        Core::WithAs { resource, _as, expr } => (resource, _as, expr),
+        other => panic!("Expected with as but was {:?}", other)
     };
 
     assert_eq!(*resource, Core::Id { lit: String::from("my_resource") });
@@ -27,13 +27,12 @@ fn with_no_as_verify() {
     let expr = to_pos!(ASTNode::Int { lit: String::from("2341") });
     let with = to_pos!(ASTNode::With { resource, _as: None, expr });
 
-    let (resource, _as, expr) = match desugar(&with) {
-        Core::With { resource, _as, expr } => (resource, _as, expr),
-        other => panic!("Expected reassign but was {:?}", other)
+    let (resource, expr) = match desugar(&with) {
+        Core::With { resource, expr } => (resource, expr),
+        other => panic!("Expected with but was {:?}", other)
     };
 
     assert_eq!(*resource, Core::Id { lit: String::from("other") });
-    assert_eq!(*_as, Core::Empty);
     assert_eq!(*expr, Core::Int { int: String::from("2341") });
 }
 
@@ -43,8 +42,14 @@ fn handle_empty_verify() {
     let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![] });
 
     let (_try, except) = match desugar(&handle) {
-        Core::TryExcept { _try, except } => (_try, except),
-        other => panic!("Expected reassign but was {:?}", other)
+        Core::Block { statements } => {
+            assert_eq!(statements.len(), 1);
+            match &statements[0] {
+                Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
+                other => panic!("Expected try except but was {:?}", other)
+            }
+        }
+        other => panic!("Expected block but was {:?}", other)
     };
 
     assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
@@ -67,8 +72,14 @@ fn handle_verify() {
     let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![case] });
 
     let (_try, except) = match desugar(&handle) {
-        Core::TryExcept { _try, except } => (_try, except),
-        other => panic!("Expected reassign but was {:?}", other)
+        Core::Block { statements } => {
+            assert_eq!(statements.len(), 1);
+            match &statements[0] {
+                Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
+                other => panic!("Expected try except but was {:?}", other)
+            }
+        }
+        other => panic!("Expected block but was {:?}", other)
     };
 
     assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
