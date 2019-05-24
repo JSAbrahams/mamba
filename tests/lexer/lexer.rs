@@ -7,10 +7,10 @@ fn from() {
     let source = String::from("from i import b");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::From },
-        TokenPos { line: 1, pos: 6, token: Token::Id(String::from("i")) },
-        TokenPos { line: 1, pos: 8, token: Token::Import },
-        TokenPos { line: 1, pos: 15, token: Token::Id(String::from("b")) }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::From },
+        TokenPos { st_line: 1, st_pos: 6, token: Token::Id(String::from("i")) },
+        TokenPos { st_line: 1, st_pos: 8, token: Token::Import },
+        TokenPos { st_line: 1, st_pos: 15, token: Token::Id(String::from("b")) }
     ]);
 }
 
@@ -19,14 +19,14 @@ fn operators() {
     let source = String::from("+ - * / ^ mod sqrt i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::Add },
-        TokenPos { line: 1, pos: 3, token: Token::Sub },
-        TokenPos { line: 1, pos: 5, token: Token::Mul },
-        TokenPos { line: 1, pos: 7, token: Token::Div },
-        TokenPos { line: 1, pos: 9, token: Token::Pow },
-        TokenPos { line: 1, pos: 11, token: Token::Mod },
-        TokenPos { line: 1, pos: 15, token: Token::Sqrt },
-        TokenPos { line: 1, pos: 20, token: Token::Id(String::from("i")) }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Add },
+        TokenPos { st_line: 1, st_pos: 3, token: Token::Sub },
+        TokenPos { st_line: 1, st_pos: 5, token: Token::Mul },
+        TokenPos { st_line: 1, st_pos: 7, token: Token::Div },
+        TokenPos { st_line: 1, st_pos: 9, token: Token::Pow },
+        TokenPos { st_line: 1, st_pos: 11, token: Token::Mod },
+        TokenPos { st_line: 1, st_pos: 15, token: Token::Sqrt },
+        TokenPos { st_line: 1, st_pos: 20, token: Token::Id(String::from("i")) }
     ]);
 }
 
@@ -35,15 +35,15 @@ fn comparison() {
     let source = String::from("< > <= >= = /= is isnt i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::Le },
-        TokenPos { line: 1, pos: 3, token: Token::Ge },
-        TokenPos { line: 1, pos: 5, token: Token::Leq },
-        TokenPos { line: 1, pos: 8, token: Token::Geq },
-        TokenPos { line: 1, pos: 11, token: Token::Eq },
-        TokenPos { line: 1, pos: 13, token: Token::Neq },
-        TokenPos { line: 1, pos: 16, token: Token::Is },
-        TokenPos { line: 1, pos: 19, token: Token::IsN },
-        TokenPos { line: 1, pos: 24, token: Token::Id(String::from("i")) }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Le },
+        TokenPos { st_line: 1, st_pos: 3, token: Token::Ge },
+        TokenPos { st_line: 1, st_pos: 5, token: Token::Leq },
+        TokenPos { st_line: 1, st_pos: 8, token: Token::Geq },
+        TokenPos { st_line: 1, st_pos: 11, token: Token::Eq },
+        TokenPos { st_line: 1, st_pos: 13, token: Token::Neq },
+        TokenPos { st_line: 1, st_pos: 16, token: Token::Is },
+        TokenPos { st_line: 1, st_pos: 19, token: Token::IsN },
+        TokenPos { st_line: 1, st_pos: 24, token: Token::Id(String::from("i")) }
     ]);
 }
 
@@ -52,18 +52,18 @@ fn lex_if() {
     let source = String::from("if a then\n    b\nelse\n    c");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::If },
-        TokenPos { line: 1, pos: 4, token: Token::Id(String::from("a")) },
-        TokenPos { line: 1, pos: 6, token: Token::Then },
-        TokenPos { line: 1, pos: 10, token: Token::NL },
-        TokenPos { line: 2, pos: 5, token: Token::Indent },
-        TokenPos { line: 2, pos: 5, token: Token::Id(String::from("b")) },
-        TokenPos { line: 2, pos: 6, token: Token::NL },
-        TokenPos { line: 3, pos: 1, token: Token::Dedent },
-        TokenPos { line: 3, pos: 1, token: Token::Else },
-        TokenPos { line: 3, pos: 5, token: Token::NL },
-        TokenPos { line: 4, pos: 5, token: Token::Indent },
-        TokenPos { line: 4, pos: 5, token: Token::Id(String::from("c")) }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::If },
+        TokenPos { st_line: 1, st_pos: 4, token: Token::Id(String::from("a")) },
+        TokenPos { st_line: 1, st_pos: 6, token: Token::Then },
+        TokenPos { st_line: 1, st_pos: 10, token: Token::NL },
+        TokenPos { st_line: 2, st_pos: 5, token: Token::Indent },
+        TokenPos { st_line: 2, st_pos: 5, token: Token::Id(String::from("b")) },
+        TokenPos { st_line: 2, st_pos: 6, token: Token::NL },
+        TokenPos { st_line: 3, st_pos: 1, token: Token::Dedent },
+        TokenPos { st_line: 3, st_pos: 1, token: Token::Else },
+        TokenPos { st_line: 3, st_pos: 5, token: Token::NL },
+        TokenPos { st_line: 4, st_pos: 5, token: Token::Indent },
+        TokenPos { st_line: 4, st_pos: 5, token: Token::Id(String::from("c")) }
     ]);
 }
 
@@ -72,15 +72,23 @@ fn numbers_and_strings() {
     let source = String::from("1 2.0 3E10 5E 2 \"hello\" True False i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::Int(String::from("1")) },
-        TokenPos { line: 1, pos: 3, token: Token::Real(String::from("2.0")) },
-        TokenPos { line: 1, pos: 7, token: Token::ENum(String::from("3"), String::from("10")) },
-        TokenPos { line: 1, pos: 12, token: Token::ENum(String::from("5"), String::new()) },
-        TokenPos { line: 1, pos: 15, token: Token::Int(String::from("2")) },
-        TokenPos { line: 1, pos: 17, token: Token::Str(String::from("hello")) },
-        TokenPos { line: 1, pos: 25, token: Token::Bool(true) },
-        TokenPos { line: 1, pos: 30, token: Token::Bool(false) },
-        TokenPos { line: 1, pos: 36, token: Token::Id(String::from("i")) }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Int(String::from("1")) },
+        TokenPos { st_line: 1, st_pos: 3, token: Token::Real(String::from("2.0")) },
+        TokenPos {
+            st_line: 1,
+            st_pos:  7,
+            token:   Token::ENum(String::from("3"), String::from("10"))
+        },
+        TokenPos {
+            st_line: 1,
+            st_pos:  12,
+            token:   Token::ENum(String::from("5"), String::new())
+        },
+        TokenPos { st_line: 1, st_pos: 15, token: Token::Int(String::from("2")) },
+        TokenPos { st_line: 1, st_pos: 17, token: Token::Str(String::from("hello")) },
+        TokenPos { st_line: 1, st_pos: 25, token: Token::Bool(true) },
+        TokenPos { st_line: 1, st_pos: 30, token: Token::Bool(false) },
+        TokenPos { st_line: 1, st_pos: 36, token: Token::Id(String::from("i")) }
     ]);
 }
 
@@ -89,10 +97,10 @@ fn identifiers() {
     let source = String::from("i _i 3a");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::Id(String::from("i")) },
-        TokenPos { line: 1, pos: 3, token: Token::Id(String::from("_i")) },
-        TokenPos { line: 1, pos: 6, token: Token::Int(String::from("3")) },
-        TokenPos { line: 1, pos: 7, token: Token::Id(String::from("a")) },
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Id(String::from("i")) },
+        TokenPos { st_line: 1, st_pos: 3, token: Token::Id(String::from("_i")) },
+        TokenPos { st_line: 1, st_pos: 6, token: Token::Int(String::from("3")) },
+        TokenPos { st_line: 1, st_pos: 7, token: Token::Id(String::from("a")) },
     ]);
 }
 
@@ -101,10 +109,10 @@ fn question() {
     let source = String::from("? ?. ?or i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::Quest },
-        TokenPos { line: 1, pos: 3, token: Token::QuestCall },
-        TokenPos { line: 1, pos: 6, token: Token::QuestOr },
-        TokenPos { line: 1, pos: 10, token: Token::Id(String::from("i")) }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Quest },
+        TokenPos { st_line: 1, st_pos: 3, token: Token::QuestCall },
+        TokenPos { st_line: 1, st_pos: 6, token: Token::QuestOr },
+        TokenPos { st_line: 1, st_pos: 10, token: Token::Id(String::from("i")) }
     ]);
 }
 
@@ -113,9 +121,9 @@ fn pass_undefined_underscore() {
     let source = String::from("pass undefined _");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::Pass },
-        TokenPos { line: 1, pos: 6, token: Token::Undefined },
-        TokenPos { line: 1, pos: 16, token: Token::Underscore }
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Pass },
+        TokenPos { st_line: 1, st_pos: 6, token: Token::Undefined },
+        TokenPos { st_line: 1, st_pos: 16, token: Token::Underscore }
     ]);
 }
 
@@ -124,11 +132,11 @@ fn bitwise_operators() {
     let source = String::from("_and_ _or_ _xor_ _not_ << >>");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { line: 1, pos: 1, token: Token::BAnd },
-        TokenPos { line: 1, pos: 7, token: Token::BOr },
-        TokenPos { line: 1, pos: 12, token: Token::BXOr },
-        TokenPos { line: 1, pos: 18, token: Token::BOneCmpl },
-        TokenPos { line: 1, pos: 24, token: Token::BLShift },
-        TokenPos { line: 1, pos: 27, token: Token::BRShift },
+        TokenPos { st_line: 1, st_pos: 1, token: Token::BAnd },
+        TokenPos { st_line: 1, st_pos: 7, token: Token::BOr },
+        TokenPos { st_line: 1, st_pos: 12, token: Token::BXOr },
+        TokenPos { st_line: 1, st_pos: 18, token: Token::BOneCmpl },
+        TokenPos { st_line: 1, st_pos: 24, token: Token::BLShift },
+        TokenPos { st_line: 1, st_pos: 27, token: Token::BRShift },
     ]);
 }

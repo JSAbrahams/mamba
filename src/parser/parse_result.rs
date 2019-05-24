@@ -9,7 +9,7 @@ pub type ParseResult<T = Box<ASTNodePos>> = std::result::Result<T, ParseErr>;
 #[derive(Debug)]
 pub enum ParseErr {
     UtilBodyErr,
-    ParseErr { parsing: String, cause: Box<ParseErr>, position: Option<TokenPos> },
+    Cause { parsing: String, cause: Box<ParseErr>, position: Option<TokenPos> },
     CustomErr { expected: String, actual: TokenPos },
     InternalErr { message: String },
     TokenErr { expected: Token, actual: TokenPos },
@@ -21,9 +21,10 @@ pub enum ParseErr {
 impl fmt::Display for ParseErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ParseErr::ParseErr { ref parsing, ref cause, ref position } => match cause.fmt(f) {
+            ParseErr::Cause { ref parsing, ref cause, ref position } => match cause.fmt(f) {
                 Ok(_) => match position {
-                    Some(pos) => write!(f, "\nIn <{}> at ({}:{})", parsing, pos.line, pos.pos),
+                    Some(pos) =>
+                        write!(f, "\nIn <{}> at ({}:{})", parsing, pos.st_line, pos.st_pos),
                     None => write!(f, "\nIn <{}>", parsing)
                 },
                 err => err
@@ -34,12 +35,12 @@ impl fmt::Display for ParseErr {
             ParseErr::CustomErr { expected, actual } => write!(
                 f,
                 "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                expected, actual.line, actual.pos, actual.token
+                expected, actual.st_line, actual.st_pos, actual.token
             ),
             ParseErr::TokenErr { expected, actual } => write!(
                 f,
                 "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                expected, actual.line, actual.pos, actual.token
+                expected, actual.st_line, actual.st_pos, actual.token
             ),
             ParseErr::CustomEOFErr { expected } =>
                 write!(f, "\nExpected '{}', but end of file.", expected),
@@ -47,7 +48,7 @@ impl fmt::Display for ParseErr {
                 Some(pos) => write!(
                     f,
                     "\nExpected indentation of {}, but was {}, at ({}:{})(next token: {})",
-                    expected, actual, pos.line, pos.pos, pos.token
+                    expected, actual, pos.st_line, pos.st_pos, pos.token
                 ),
                 None => write!(f, "\nExpected indentation of {}, but was {}.", expected, actual)
             },
@@ -59,7 +60,7 @@ impl fmt::Display for ParseErr {
 impl error::Error for ParseErr {
     fn description(&self) -> &str {
         match self {
-            ParseErr::ParseErr { .. } => "A parsing error occurred",
+            ParseErr::Cause { .. } => "A parsing error occurred",
             ParseErr::UtilBodyErr => "Util module cannot have a body.",
             ParseErr::EOFErr { .. } => "Expected token but end of file.",
             ParseErr::TokenErr { .. } => "Unexpected token encountered.",

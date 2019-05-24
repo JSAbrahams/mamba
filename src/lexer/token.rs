@@ -2,9 +2,9 @@ use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TokenPos {
-    pub line:  i32,
-    pub pos:   i32,
-    pub token: Token
+    pub st_line: i32,
+    pub st_pos:  i32,
+    pub token:   Token
 }
 
 #[derive(PartialEq, Debug, Clone)]
