@@ -41,7 +41,7 @@ mod common;
 /// let result = tokenize(&source);
 /// assert_eq!(result.is_err(), true);
 /// ```
-#[allow(clippy::cyclomatic_complexity, clippy::while_let_on_iterator)]
+#[allow(clippy::cognitive_complexity, clippy::while_let_on_iterator)]
 pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();
