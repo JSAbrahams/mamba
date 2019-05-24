@@ -118,6 +118,21 @@ pub enum Token {
     Comment(String)
 }
 
+impl Token {
+    pub fn len(self) -> i32 {
+        return match self {
+            Token::Id(id) => id.len(),
+            Token::Real(real) => real.len(),
+            Token::Int(int) => int.len(),
+            Token::Bool(true) => 4,
+            Token::Bool(false) => 5,
+            Token::Str(_str) => _str.len(),
+            Token::ENum(num, exp) => num.len() + 1 + exp.len(),
+            other => format!("{}", other).len()
+        } as i32;
+    }
+}
+
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match self.clone() {

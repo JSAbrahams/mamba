@@ -4,18 +4,16 @@ use crate::parser::_type::parse_generics;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::block::parse_block;
-use crate::parser::common::start_pos;
 use crate::parser::control_flow_expr::parse_match_cases;
 use crate::parser::expression::parse_expression;
-use crate::parser::parse_result::ParseErr::*;
+use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::parse_statement;
-use crate::parser::TPIterator;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     if let Some(TokenPos { token: Token::NL, .. }) = it.peek() {
         it.next();
-        return Ok(get_or_err_direct!(it, parse_block, "expression or statement"));
+        return Ok(it.parse(parse_block, "expression or statement"));
     }
 
     let result = match it.peek() {
@@ -39,21 +37,21 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::Raises);
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::Raises);
 
-    let errors: Vec<ASTNodePos> = get_or_err_direct!(it, parse_generics, "raises");
+    let errors: Vec<ASTNodePos> = it.parse(parse_generics, "raises");
 
     let node = ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors };
     Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })
 }
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::Handle);
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::Handle);
 
-    check_next_is!(it, Token::NL);
-    let cases = get_or_err_direct!(it, parse_match_cases, "handle cases");
+    it.eat(Token::NL);
+    let cases = it.parse(parse_match_cases, "handle cases");
 
     let node = ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
     Ok(ASTNodePos { st_line, st_pos, en_line: 0, en_pos: 0, node })

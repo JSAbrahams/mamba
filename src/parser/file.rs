@@ -8,34 +8,32 @@ use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::block::parse_block;
 use crate::parser::block::parse_statements;
-use crate::parser::common::end_pos;
-use crate::parser::common::start_pos;
 use crate::parser::definition::parse_fun_arg;
 use crate::parser::expression::parse_expression;
+use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::TPIterator;
 
 pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::From);
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::From);
 
     let id = Box::from(match it.peek() {
-        Some(TokenPos { token: Token::Id(_), .. }) => get_or_err_direct!(it, parse_id, "from id"),
+        Some(TokenPos { token: Token::Id(_), .. }) => it.parse(parse_id, "from id"),
         Some(&other) =>
             return Err(TokenErr { expected: Token::Id(String::new()), actual: other.clone() }),
         None => return Err(EOFErr { expected: Token::Id(String::new()) })
     });
-    let import = get_or_err!(it, parse_import, "import");
+    let import = it.parse(parse_import, "import");
 
-    let (en_line, en_pos) = end_pos(it);
+    let (en_line, en_pos) = it.end_pos()?;
     let node = ASTNode::FromImport { id, import };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::Import);
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::Import);
 
     let mut import = Vec::new();
     while let Some(tp) = it.peek() {
@@ -44,7 +42,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
                 it.next();
             }
             Token::Id(_) => {
-                import.push(get_or_err_direct!(it, parse_id, "import id"));
+                import.push(it.parse(parse_id, "import id"));
                 if let Some(tp) = it.peek() {
                     if tp.token != Token::Comma && tp.token != Token::NL && tp.token != Token::As {
                         return Err(TokenErr { expected: Token::NL, actual: (*tp).clone() });
@@ -64,7 +62,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
                     it.next();
                 }
                 Token::Id(_) => {
-                    aliases.push(get_or_err_direct!(it, parse_id, "import"));
+                    aliases.push(it.parse(parse_id, "import"));
                     if let Some(tp) = it.peek() {
                         if tp.token != Token::Comma && tp.token != Token::NL {
                             return Err(TokenErr {
@@ -82,15 +80,15 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         vec![]
     };
 
-    let (en_line, en_pos) = end_pos(it);
+    let (en_line, en_pos) = it.end_pos()?;
     let node = ASTNode::Import { import, _as };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_class(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::Class);
-    let _type = get_or_err!(it, parse_type, "name");
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::Class);
+    let _type = it.parse(parse_type, "name");
 
     let args: Vec<ASTNodePos> = if let Some(&TokenPos { token: Token::LRBrack, .. }) = it.peek() {
         it.next();
@@ -103,7 +101,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
                 }
                 Token::RRBrack => break,
                 _ => {
-                    check_next_is!(it, Token::Def);
+                    it.eat(Token::Def);
                     match parse_fun_arg(it, pos) {
                         Ok(arg) => {
                             args.push(arg);
@@ -122,7 +120,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
                 }
             }
         }
-        check_next_is!(it, Token::RRBrack);
+        it.eat(Token::RRBrack);
         args
     } else {
         vec![]
@@ -133,7 +131,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
         let mut parents = vec![];
         while let Some(&tp) = it.peek() {
             match tp.token {
-                Token::Id(_) => parents.push(get_or_err_direct!(it, parse_parent, "parent")),
+                Token::Id(_) => parents.push(it.parse(parse_parent, "parent")),
                 _ => break
             }
         }
@@ -146,18 +144,18 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
         it.next();
     }
 
-    let body = get_or_err!(it, parse_block, "class body");
+    let body = it.parse(parse_block, "class body");
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::Class { _type, args, parents, body };
     Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
 }
 
 pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
+    let (st_line, st_pos) = it.start_pos()?;
 
-    let id: Box<ASTNodePos> = get_or_err!(it, parse_id, "parent id");
+    let id: Box<ASTNodePos> = it.parse(parse_id, "parent id");
     let generics = if let Some(&TokenPos { token: Token::LSBrack, .. }) = it.peek() {
-        get_or_err_direct!(it, parse_generics, "parent generics")
+        it.parse(parse_generics, "parent generics")
     } else {
         vec![]
     };
@@ -165,7 +163,7 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
         it.next();
         let mut args = vec![];
         while let Some(_) = it.peek() {
-            args.push(get_or_err_direct!(it, parse_expression, "parent argument"));
+            args.push(it.parse(parse_expression, "parent argument"));
             match it.peek() {
                 Some(TokenPos { token: Token::Comma, .. }) => {
                     it.next();
@@ -173,7 +171,7 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
                 _ => break
             }
         }
-        check_next_is!(it, Token::RRBrack);
+        it.eat(Token::RRBrack);
         args
     } else {
         vec![]
@@ -189,7 +187,7 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_script(it: &mut TPIterator) -> ParseResult {
-    let statements: Vec<ASTNodePos> = get_or_err_direct!(it, parse_statements, "script");
+    let statements: Vec<ASTNodePos> = it.parse(parse_statements, "script");
 
     let (st_line, st_pos, en_line, en_pos) = match (statements.first(), statements.last()) {
         (Some(first), Some(last)) => (first.st_line, first.st_pos, last.en_line, last.en_pos),
@@ -222,10 +220,9 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Token::NL => {
                 it.next();
             }
-            Token::Import => imports.push(get_or_err_direct!(it, parse_import, "import")),
-            Token::From => imports.push(get_or_err_direct!(it, parse_from_import, "from import")),
-            Token::Type =>
-                type_defs.push(get_or_err_direct!(it, parse_type_def, "type definition")),
+            Token::Import => imports.push(it.parse(parse_import, "import")),
+            Token::From => imports.push(it.parse(parse_from_import, "from import")),
+            Token::Type => type_defs.push(it.parse(parse_type_def, "type definition")),
             Token::Comment(comment) => {
                 it.next();
                 modules.push(ASTNodePos {
@@ -236,7 +233,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
                     node:    ASTNode::Comment { comment: comment.clone() }
                 })
             }
-            _ => modules.push(get_or_err_direct!(it, parse_module, "module"))
+            _ => modules.push(it.parse(parse_module, "module"))
         }
     }
 
@@ -245,19 +242,19 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
+    let (st_line, st_pos) = it.start_pos()?;
 
-    check_next_is!(it, Token::Type);
-    let _type = get_or_err!(it, parse_type, "type definition");
+    it.eat(Token::Type);
+    let _type = it.parse(parse_type, "type definition");
 
     match it.peek() {
         Some(TokenPos { token: Token::IsA, .. }) => {
-            check_next_is!(it, Token::IsA);
-            let _type: Box<ASTNodePos> = get_or_err!(it, parse_type, "type definition");
+            it.eat(Token::IsA);
+            let _type: Box<ASTNodePos> = it.parse(parse_type, "type definition");
 
             let conditions: Option<Vec<ASTNodePos>> = match it.peek() {
                 Some(TokenPos { token: Token::When, .. }) =>
-                    Some(get_or_err_direct!(it, parse_conditions, "type definition")),
+                    Some(it.parse(parse_conditions, "type definition")),
                 _ => None
             };
 
@@ -270,7 +267,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
                 it.next();
             }
 
-            let body: Box<ASTNodePos> = get_or_err!(it, parse_block, "type body");
+            let body: Box<ASTNodePos> = it.parse(parse_block, "type body");
 
             let (en_line, en_pos) = (body.en_line, body.en_pos);
             let node = ASTNode::TypeDef { _type, body: Some(body) };

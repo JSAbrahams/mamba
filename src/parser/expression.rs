@@ -6,16 +6,14 @@ use crate::parser::call::parse_anon_fun;
 use crate::parser::call::parse_call;
 use crate::parser::call::parse_reassignment;
 use crate::parser::collection::parse_collection;
-use crate::parser::common::end_pos;
-use crate::parser::common::start_pos;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
+use crate::parser::iterator::TPIterator;
 use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::TPIterator;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
+    let (st_line, st_pos) = it.start_pos()?;
     let result = match it.peek() {
         Some(TokenPos { token: Token::If, .. }) | Some(TokenPos { token: Token::Match, .. }) =>
             parse_cntrl_flow_expr(it),
@@ -27,7 +25,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
         Some(TokenPos { token: Token::Ret, .. }) => parse_return(it),
 
         Some(TokenPos { token: Token::Underscore, .. }) => {
-            let (en_line, en_pos) = end_pos(it);
+            let (en_line, en_pos) = it.end_pos()?;
             it.next();
             Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore })
         }
@@ -63,7 +61,7 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let result = match it.peek() {
         Some(TokenPos { token: Token::QuestOr, .. }) => {
             it.next();
-            let right: Box<ASTNodePos> = get_or_err!(it, parse_expression, "?or");
+            let right: Box<ASTNodePos> = it.parse(parse_expression, "?or");
 
             let (en_line, en_pos) = (right.en_line, right.en_pos);
             let node = ASTNode::QuestOr { left: Box::new(pre), right };
@@ -87,15 +85,15 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::Ret);
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::Ret);
 
     if let Some(&&TokenPos { token: Token::NL, .. }) = it.peek() {
-        let (en_line, en_pos) = end_pos(it);
+        let (en_line, en_pos) = it.end_pos()?;
         return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::ReturnEmpty });
     }
 
-    let expr: Box<ASTNodePos> = get_or_err!(it, parse_expression, "return");
+    let expr: Box<ASTNodePos> = it.parse(parse_expression, "return");
 
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
     let node = ASTNode::Return { expr };

@@ -1,12 +1,11 @@
 use crate::lexer::token::TokenPos;
+use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::ParseResult;
-use std::iter::Peekable;
-use std::slice::Iter;
 
 pub mod ast;
 
-#[macro_use]
-mod common;
+mod iterator;
+
 pub mod parse_result;
 
 mod _type;
@@ -21,8 +20,6 @@ mod expression;
 mod file;
 mod operation;
 mod statement;
-
-type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 
 /// Parse input, which is a slice of [TokenPos](crate::lexer::token::TokenPos).
 ///
@@ -59,9 +56,11 @@ type TPIterator<'a> = Peekable<Iter<'a, TokenPos>>;
 /// let result = parse(&[def, id, number]);
 /// assert_eq!(result.is_err(), true);
 /// ```
-pub fn parse(input: &[TokenPos]) -> ParseResult { file::parse_file(&mut input.iter().peekable()) }
+pub fn parse(input: &[TokenPos]) -> ParseResult {
+    file::parse_file(&mut TPIterator::new(input.iter().peekable()))
+}
 
 /// Parse input as a script.
 pub fn parse_direct(input: &[TokenPos]) -> ParseResult {
-    file::parse_script(&mut input.iter().peekable())
+    file::parse_script(&mut TPIterator::new(input.iter().peekable()))
 }
