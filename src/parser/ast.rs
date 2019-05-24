@@ -120,7 +120,7 @@ pub enum ASTNode {
     },
     TypeAlias {
         _type:      Box<ASTNodePos>,
-        conditions: Option<Vec<ASTNodePos>>
+        conditions: Vec<ASTNodePos>
     },
     TypeTup {
         types: Vec<ASTNodePos>

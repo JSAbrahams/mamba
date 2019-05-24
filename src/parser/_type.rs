@@ -11,37 +11,22 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     it.next(
         &|token| match token {
             TokenPos { token: Token::_Self, st_line, st_pos } => {
+                let (st_line, st_pos) = (*st_line, *st_pos);
                 let (en_line, en_pos) = it.end_pos()?;
                 let node = ASTNode::_Self;
-                Ok(Box::from(ASTNodePos {
-                    st_line: *st_line,
-                    st_pos: *st_pos,
-                    en_line,
-                    en_pos,
-                    node
-                }))
+                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             TokenPos { token: Token::Init, st_line, st_pos } => {
+                let (st_line, st_pos) = (*st_line, *st_pos);
                 let (en_line, en_pos) = it.end_pos()?;
                 let node = ASTNode::Init;
-                Ok(Box::from(ASTNodePos {
-                    st_line: *st_line,
-                    st_pos: *st_pos,
-                    en_line,
-                    en_pos,
-                    node
-                }))
+                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             TokenPos { token: Token::Id(id), st_line, st_pos } => {
+                let (st_line, st_pos) = (*st_line, *st_pos);
                 let (en_line, en_pos) = it.end_pos()?;
                 let node = ASTNode::Id { lit: id.clone() };
-                Ok(Box::from(ASTNodePos {
-                    st_line: *st_line,
-                    st_pos: *st_pos,
-                    en_line,
-                    en_pos,
-                    node
-                }))
+                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             next => Err(CustomErr { expected: String::from("id"), actual: next.clone() })
         },
@@ -53,7 +38,7 @@ pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.eat(Token::LSBrack);
 
     let mut generics: Vec<ASTNodePos> = Vec::new();
-    it.while_some_and_not(Token::RSBrack, &|| {
+    it.while_some_and_not(Token::RSBrack, &|token_pos| {
         generics.push(*it.parse(&parse_generic, "generic")?);
         it.eat_if(Token::Comma);
         Ok(())
@@ -118,13 +103,13 @@ pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.eat(Token::Indent);
 
     let mut conditions = Vec::new();
-    it.while_some_and_not(Token::Dedent, &|| {
+    it.while_some_and_not(Token::Dedent, &|token_pos| {
         conditions.push(*it.parse(&parse_condition, "condition")?);
         it.eat_if(Token::NL);
         Ok(())
     })?;
 
-    it.if_some_eat(Token::Dedent);
+    it.eat_if(Token::Dedent);
     Ok(conditions)
 }
 
@@ -148,7 +133,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
     it.eat(Token::LRBrack);
 
     let mut types: Vec<ASTNodePos> = Vec::new();
-    it.while_some_and_not(Token::RRBrack, &|| {
+    it.while_some_and_not(Token::RRBrack, &|token_pos| {
         types.push(*it.parse(&parse_type, "type")?);
         Ok(())
     })?;
