@@ -127,7 +127,7 @@ pub fn parse_one_or_more_expr(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos
     let expression = it.parse(&parse_expression, "first expression")?;
     let mut expressions = vec![*expression];
 
-    it.while_some_and_not_fn(&is_start_expression, &|token_pos| {
+    it.while_some_and_not_fn(&is_start_expression, &|_| {
         expressions.push(*it.parse(&parse_expression, "expression")?);
         it.eat_if(Token::Comma);
         Ok(())

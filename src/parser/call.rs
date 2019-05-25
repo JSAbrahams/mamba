@@ -27,7 +27,7 @@ pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
 
     let mut args: Vec<ASTNodePos> = vec![];
     let mut pos = 1;
-    it.while_some_and_not(Token::BTo, &|token_pos| {
+    it.while_some_and_not(Token::BTo, &|_| {
         args.push(*it.parse(
             &parse_id_maybe_type,
             format!("anonymous function arg (pos {})", pos).as_str()
@@ -106,7 +106,7 @@ fn parse_arguments(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.eat(Token::LRBrack);
 
     let mut arguments = Vec::new();
-    it.while_some_and_not(Token::RRBrack, &|token_pos| {
+    it.while_some_and_not(Token::RRBrack, &|_| {
         arguments.push(*it.parse(&parse_expression, "argument")?);
         it.eat_if(Token::Comma);
         Ok(())

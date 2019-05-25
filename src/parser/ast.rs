@@ -64,7 +64,7 @@ pub enum ASTNode {
         id:       Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
         ret_ty:   Option<Box<ASTNodePos>>,
-        raises:   Option<Vec<ASTNodePos>>,
+        raises:   Vec<ASTNodePos>,
         body:     Option<Box<ASTNodePos>>
     },
 

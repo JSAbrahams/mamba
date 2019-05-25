@@ -17,14 +17,6 @@ pub struct TPIterator<'a> {
 impl<'a> TPIterator<'a> {
     pub fn new(it: Peekable<Iter<'a, TokenPos>>) -> TPIterator { TPIterator { it } }
 
-    pub fn peek_is(&mut self, token: Token) -> bool {
-        if let Some(tp) = self.it.peek() {
-            tp.token == token
-        } else {
-            false
-        }
-    }
-
     pub fn if_next(&mut self, fun: &Fn(&TokenPos) -> bool) -> bool {
         if let Some(tp) = self.it.peek() {
             fun(tp)
@@ -36,7 +28,7 @@ impl<'a> TPIterator<'a> {
     pub fn eat(&mut self, token: Token) -> ParseResult<()> {
         match self.it.next() {
             Some(TokenPos { token: actual, .. }) if *actual == token => Ok(()),
-            Some(&tp) => Err(TokenErr { expected: token, actual: tp.clone() }),
+            Some(tp) => Err(TokenErr { expected: token, actual: tp.clone() }),
             None => Err(EOFErr { expected: token })
         }
     }
@@ -114,7 +106,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult {
         match self.start_pos() {
             Err(err) => Err(err),
-            Ok((st_line, st_pos)) => match self.it.next() {
+            Ok(_) => match self.it.next() {
                 Some(token_pos) => match_fun(token_pos),
                 None => Err(none_err)
             }
@@ -128,7 +120,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult {
         match self.start_pos() {
             Err(err) => Err(err),
-            Ok((st_line, st_pos)) => match self.it.peek() {
+            Ok(_) => match self.it.peek() {
                 Some(token_pos) => match_fun(token_pos),
                 None => Err(none_err)
             }
@@ -142,7 +134,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult {
         match self.start_pos() {
             Err(err) => Err(err),
-            Ok((st_line, st_pos)) => match self.it.peek() {
+            Ok(_) => match self.it.peek() {
                 Some(token_pos) => match_fun(token_pos),
                 None => default
             }
@@ -156,25 +148,10 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult<Vec<ASTNodePos>> {
         match self.start_pos() {
             Err(err) => Err(err),
-            Ok((st_line, st_pos)) => match self.it.peek() {
+            Ok(_) => match self.it.peek() {
                 Some(token_pos) => match_fun(token_pos),
                 None => default
             }
-        }
-    }
-
-    pub fn peek_if_or_none(
-        &mut self,
-        token: Token,
-        match_fun: &Fn(&Option<TokenPos>) -> ParseResult
-    ) -> Option<ParseResult> {
-        if self.it.peek().is_some() && self.it.peek().unwrap().token == token {
-            Some(match self.start_pos() {
-                Err(err) => Err(err),
-                Ok((st_line, st_pos)) => match_fun(&self.it.peek().cloned().cloned())
-            })
-        } else {
-            None
         }
     }
 
@@ -184,7 +161,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult {
         match self.start_pos() {
             Err(err) => Err(err),
-            Ok((st_line, st_pos)) => match_fun(&self.it.peek().cloned().cloned())
+            Ok(_) => match_fun(&self.it.peek().cloned().cloned())
         }
     }
 
@@ -228,7 +205,8 @@ impl<'a> TPIterator<'a> {
 
     pub fn end_pos(&mut self) -> ParseResult<(i32, i32)> {
         match self.it.peek() {
-            Some(TokenPos { st_line, st_pos, token }) => Ok((*st_line, *st_pos + token.len())),
+            Some(TokenPos { st_line, st_pos, token }) =>
+                Ok((*st_line, *st_pos + token.clone().len())),
             None => Err(CustomEOFErr { expected: String::from("a token.") })
         }
     }

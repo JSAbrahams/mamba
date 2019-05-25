@@ -12,8 +12,8 @@ use crate::parser::parse_result::ParseResult;
 
 macro_rules! inner_bin_op {
     ($it:expr, $st_line:expr, $st_pos:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
-        $it.next();
-        let right = $it.parse($fun, $msg);
+        $it.eat(Token::$ast);
+        let right = $it.parse(&$fun, $msg)?;
         let node = ASTNode::$ast { left: $left, right };
         Ok(Box::from(ASTNodePos {
             st_line: $st_line,
@@ -40,17 +40,17 @@ macro_rules! inner_bin_op {
 pub fn parse_operation(it: &mut TPIterator) -> ParseResult { parse_level_8(it) }
 
 fn parse_level_8(it: &mut TPIterator) -> ParseResult {
-    let arithmetic = it.parse(&parse_level_7, "comparison");
+    let arithmetic = it.parse(&parse_level_7, "comparison")?;
     if it.if_next(&is_start_expression_exclude_unary) {
-        it.parse(&parse_call, "arithmetic")
+        parse_call(*arithmetic, it)
     } else {
-        arithmetic
+        Ok(arithmetic)
     }
 }
 
 fn parse_level_7(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_level_6, "comparison");
+    let arithmetic = it.parse(&parse_level_6, "comparison")?;
 
     macro_rules! bin_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
@@ -63,15 +63,15 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
             Token::And => bin_op!(parse_level_7, And, "and"),
             Token::Or => bin_op!(parse_level_7, Or, "or"),
             Token::QuestOr => bin_op!(parse_level_7, QuestOr, "question or"),
-            _ => arithmetic
+            _ => Ok(arithmetic)
         },
-        arithmetic
+        Ok(arithmetic)
     )
 }
 
 fn parse_level_6(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_level_5, "comparison");
+    let arithmetic = it.parse(&parse_level_5, "comparison")?;
     macro_rules! bin_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
             inner_bin_op!(it, st_line, st_pos, $fun, $ast, arithmetic, $msg)
@@ -91,15 +91,15 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
             Token::IsA => bin_op!(parse_level_6, IsA, "is a"),
             Token::IsNA => bin_op!(parse_level_6, IsNA, "is not a"),
             Token::In => bin_op!(parse_level_6, In, "in"),
-            _ => arithmetic
+            _ => Ok(arithmetic)
         },
-        arithmetic
+        Ok(arithmetic)
     )
 }
 
 fn parse_level_5(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_level_4, "comparison");
+    let arithmetic = it.parse(&parse_level_4, "comparison")?;
     macro_rules! bin_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
             inner_bin_op!(it, st_line, st_pos, $fun, $ast, arithmetic, $msg)
@@ -113,34 +113,34 @@ fn parse_level_5(it: &mut TPIterator) -> ParseResult {
             Token::BAnd => bin_op!(parse_level_5, BAnd, "bitwise and"),
             Token::BOr => bin_op!(parse_level_5, BOr, "bitwise or"),
             Token::BXOr => bin_op!(parse_level_5, BXOr, "bitwise xor"),
-            _ => arithmetic
+            _ => Ok(arithmetic)
         },
-        arithmetic
+        Ok(arithmetic)
     )
 }
 
 fn parse_level_4(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_level_3, "comparison");
+    let arithmetic = it.parse(&parse_level_3, "comparison")?;
     macro_rules! bin_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
             inner_bin_op!(it, st_line, st_pos, $fun, $ast, arithmetic, $msg)
         }};
     }
 
-    it.peek(
+    it.peek_or(
         &|token_pos| match token_pos.token {
             Token::Add => bin_op!(parse_level_4, Add, "add"),
             Token::Sub => bin_op!(parse_level_4, Sub, "sub"),
-            _ => arithmetic
+            _ => Ok(arithmetic)
         },
-        arithmetic
+        Ok(arithmetic)
     )
 }
 
 fn parse_level_3(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_level_2, "comparison");
+    let arithmetic = it.parse(&parse_level_2, "comparison")?;
     macro_rules! bin_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
             inner_bin_op!(it, st_line, st_pos, $fun, $ast, arithmetic, $msg)
@@ -163,38 +163,39 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
             }
             Token::RangeIncl => {
                 it.eat(Token::RangeIncl);
-                let to = it.parse(parse_operation, "range inclusive")?;
+                let to = it.parse(&parse_operation, "range inclusive")?;
                 let step = it.parse_if(Token::Step, &parse_expression, "step")?;
 
                 let (en_line, en_pos) = (to.en_line, to.en_pos);
                 let node = ASTNode::Range { from: arithmetic, to, inclusive: true, step };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
-            _ => arithmetic
+            _ => Ok(arithmetic)
         },
-        arithmetic
+        Ok(arithmetic)
     )
 }
 
 fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     macro_rules! un_op {
-        ($fun:path, $ast:ident, $msg:expr) => {{
-            it.next();
-            let factor: Box<ASTNodePos> = it.parse($fun, $msg);
+        ($fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
+            it.eat(Token::$tok);
+            let factor: Box<ASTNodePos> = it.parse(&$fun, $msg)?;
             let (en_line, en_pos) = (factor.en_line, factor.en_pos);
             let node = ASTNode::$ast { expr: factor };
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+            Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         }};
     }
 
     it.peek(
         &|token_pos| match token_pos.token {
-            Token::Add => un_op!(parse_level_2, AddU, "plus"),
-            Token::Sub => un_op!(parse_level_2, SubU, "subtract"),
-            Token::Sqrt => un_op!(parse_operation, Sqrt, "square root"),
-            Token::Not => un_op!(parse_operation, Not, "not"),
-            Token::BOneCmpl => un_op!(parse_operation, BOneCmpl, "bitwise ones compliment"),
+            Token::Add => un_op!(parse_level_2, Add, AddU, "plus"),
+            Token::Sub => un_op!(parse_level_2, Sub, SubU, "subtract"),
+            Token::Sqrt => un_op!(parse_operation, Sqrt, Sqrt, "square root"),
+            Token::Not => un_op!(parse_operation, Not, Not, "not"),
+            Token::BOneCmpl =>
+                un_op!(parse_operation, BOneCmpl, BOneCmpl, "bitwise ones compliment"),
             _ => parse_level_1(it)
         },
         CustomEOFErr { expected: String::from("expression after unary operator") }
@@ -203,7 +204,7 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_1(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_factor, "comparison");
+    let arithmetic = it.parse(&parse_factor, "comparison")?;
     macro_rules! bin_op {
         ($fun:path, $ast:ident, $msg:expr) => {{
             inner_bin_op!(it, st_line, st_pos, $fun, $ast, arithmetic, $msg)
@@ -213,9 +214,9 @@ fn parse_level_1(it: &mut TPIterator) -> ParseResult {
     it.peek_or(
         &|token_pos| match token_pos.token {
             Token::Pow => bin_op!(parse_level_1, Pow, "exponent"),
-            _ => Ok(*arithmetic)
+            _ => Ok(arithmetic)
         },
-        arithmetic
+        Ok(arithmetic)
     )
 }
 
@@ -224,7 +225,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
     let (en_line, en_pos) = it.end_pos()?;
     macro_rules! literal {
         ($factor:expr, $ast:ident) => {{
-            it.next();
+            it.eat(Token::$ast($factor.clone()));
             let node = ASTNode::$ast { lit: $factor };
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         }};

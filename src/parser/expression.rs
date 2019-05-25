@@ -13,7 +13,6 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
     let result = it.peek(
         &|token_pos| match token_pos.token {
             Token::If | Token::Match => parse_cntrl_flow_expr(it),
@@ -42,7 +41,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
     );
 
     match result {
-        Ok(res) => parse_post_expr(res, it),
+        Ok(res) => parse_post_expr(*res, it),
         err => err
     }
 }
@@ -58,28 +57,29 @@ fn parse_post_expr(pre: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let result = it.peek_or(
         &|token_pos| match token_pos {
             TokenPos { token: Token::QuestOr, st_line, st_pos } => {
+                let (st_line, st_pos) = (*st_line, *st_pos);
                 it.eat(Token::QuestOr);
-                let right = it.parse(parse_expression, "question or")?;
+                let right = it.parse(&parse_expression, "question or")?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre), right };
-                Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
 
             TokenPos { token: Token::Assign, .. } => parse_reassignment(pre, it),
 
             TokenPos { token: Token::LRBrack, .. } | TokenPos { token: Token::Point, .. } =>
                 parse_call(pre, it),
-            &tp if is_start_expression_exclude_unary(&tp) => parse_call(pre, it),
+            tp if is_start_expression_exclude_unary(&tp) => parse_call(pre, it),
             _ => Err(CustomErr {
                 expected: "post expression".to_string(),
                 actual:   token_pos.clone()
             })
         },
-        pre
+        Ok(Box::from(pre))
     );
 
     match result {
-        Ok(res) => parse_post_expr(res, it),
+        Ok(res) => parse_post_expr(*res, it),
         err => err
     }
 }
@@ -90,12 +90,13 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
 
     if it.eat_if(Token::NL) {
         let (en_line, en_pos) = it.end_pos()?;
-        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::ReturnEmpty });
+        let node = ASTNode::ReturnEmpty;
+        return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let expr = it.parse(&parse_expression, "return expression");
+    let expr = it.parse(&parse_expression, "return expression")?;
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
-    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Return { expr } })
+    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Return { expr } }))
 }
 
 /// Excluding unary addition and subtraction

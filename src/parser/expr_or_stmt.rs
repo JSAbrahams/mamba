@@ -12,7 +12,7 @@ use crate::parser::statement::parse_statement;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     if it.eat_if(Token::NL) {
-        return Ok(it.parse(parse_block, "expression or statement"));
+        return it.parse(&parse_block, "expression or statement");
     }
 
     let result = it.peek(
@@ -33,10 +33,11 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
 
     it.peek_or(
         &|token_pos| match token_pos.token {
-            Token::Raises => parse_raise(result, it),
-            Token::Handle => parse_handle(result, it)
+            Token::Raises => parse_raise(*result, it),
+            Token::Handle => parse_handle(*result, it),
+            _ => Ok(result)
         },
-        result
+        Ok(result)
     )
 }
 
@@ -51,7 +52,7 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
     };
 
     let node = ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors };
-    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
@@ -66,5 +67,5 @@ pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResul
     };
 
     let node = ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
-    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
