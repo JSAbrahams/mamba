@@ -55,9 +55,9 @@ fn parse_underscore(it: &mut TPIterator) -> ParseResult {
 
 fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let result = it.peek(
-        &|it, token_pos| match token_pos {
-            TokenPos { token: Token::QuestOr, st_line, st_pos } => {
-                let (st_line, st_pos) = (*st_line, *st_pos);
+        &|it, token_pos| match token_pos.token {
+            Token::QuestOr => {
+                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat_token(Token::QuestOr)?;
                 let right = it.parse(&parse_expression, "question or")?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
@@ -65,15 +65,14 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
 
-            TokenPos { token: Token::Assign, .. } => parse_reassignment(pre, it),
-
-            TokenPos { token: Token::LRBrack, .. } | TokenPos { token: Token::Point, .. } =>
-                parse_call(pre, it),
-            tp if is_start_expression_exclude_unary(tp) => parse_call(pre, it),
-            _ => Err(CustomErr {
-                expected: "post expression".to_string(),
-                actual:   token_pos.clone()
-            })
+            Token::Assign => parse_reassignment(pre, it),
+            Token::LRBrack | Token::Point => parse_call(pre, it),
+            _ =>
+                if is_start_expression_exclude_unary(token_pos) {
+                    parse_call(pre, it)
+                } else {
+                    Ok(Box::from(pre.clone()))
+                },
         },
         Ok(Box::from(pre.clone()))
     );
@@ -100,26 +99,27 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
 }
 
 /// Excluding unary addition and subtraction
-pub fn is_start_expression_exclude_unary(_tp: &TokenPos) -> bool {
-    unimplemented!()
-    //    it.peak_if_token(Token::If)
-    //        | it.peak_if_token(Token::Match)
-    //        | it.peak_if_token(Token::LRBrack)
-    //        | it.peak_if_token(Token::LSBrack)
-    //        | it.peak_if_token(Token::LCBrack)
-    //        | it.peak_if_token(Token::Underscore)
-    //        | it.peak_if_token(Token::_Self)
-    //        | it.peak_if_token(Token::Real(String::new()))
-    //        | it.peak_if_token(Token::Int(String::new()))
-    //        | it.peak_if_token(Token::ENum(String::new(), String::new()))
-    //        | it.peak_if_token(Token::Str(String::new()))
-    //        | it.peak_if_token(Token::Bool(false))
-    //        | it.peak_if_token(Token::Not)
-    //        | it.peak_if_token(Token::Id(String::new()))
+pub fn is_start_expression_exclude_unary(tp: &TokenPos) -> bool {
+    match tp.token {
+        Token::If
+        | Token::Match
+        | Token::LRBrack
+        | Token::LSBrack
+        | Token::LCBrack
+        | Token::Underscore
+        | Token::_Self
+        | Token::Real(_)
+        | Token::Int(_)
+        | Token::ENum(..)
+        | Token::Str(_)
+        | Token::Bool(_)
+        | Token::Not
+        | Token::Id(_) => true,
+        _ => false
+    }
 }
 
-pub fn is_start_expression(_tp: &TokenPos) -> bool {
-    unimplemented!()
-    //    let start_expr = is_start_expression_exclude_unary(it);
-    //    start_expr || it.peak_if_token(Token::Add) || it.peak_if_token(Token::Sub)
+pub fn is_start_expression(tp: &TokenPos) -> bool {
+    let start_expr = is_start_expression_exclude_unary(tp);
+    start_expr || tp.token == Token::Add || tp.token == Token::Sub
 }

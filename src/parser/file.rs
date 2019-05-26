@@ -42,7 +42,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         import.push(*it.parse(&parse_id, "import id")?);
         it.eat_if_token(Token::Comma);
         Ok(())
-    });
+    })?;
 
     let _as = it.parse_vec_if_token(
         Token::As,
@@ -96,7 +96,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
                     expected: Token::Id(String::new()),
                     actual:   token_pos.clone()
                 })
-            });
+            })?;
             Ok(parents)
         },
         "parents"

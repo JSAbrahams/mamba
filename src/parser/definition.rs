@@ -75,7 +75,17 @@ fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
                 }
                 _ => parse_variable_def_id(id.clone(), it)
             },
-            panic!("Need to refactor var def or function")
+            {
+                let (st_line, st_pos) = (id.st_line, id.st_pos);
+                let (en_line, en_pos) = (id.en_line, id.en_pos);
+                let node = ASTNode::VariableDef {
+                    ofmut:         false,
+                    id_maybe_type: Box::from(id.clone()),
+                    expression:    None,
+                    forward:       vec![]
+                };
+                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+            }
         ),
         ASTNodePos { node, .. } =>
             Err(InternalErr { message: format!("def didn't start with id type: {:?}", node) }),
