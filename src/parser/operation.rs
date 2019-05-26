@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 use crate::parser::_type::parse_id;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
@@ -57,8 +56,7 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::And => bin_op!(it, parse_level_7, And, arithmetic.clone(), "and"),
             Token::Or => bin_op!(it, parse_level_7, Or, arithmetic.clone(), "or"),
-            Token::QuestOr =>
-                bin_op!(it, parse_level_7, QuestOr, arithmetic.clone(), "question or"),
+            Token::QuestOr => bin_op!(it, parse_level_7, QuestOr, arithmetic.clone(), "questionor"),
             _ => Ok(arithmetic.clone())
         },
         Ok(arithmetic.clone())
@@ -179,30 +177,31 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
             $it.eat_token(Token::$tok)?;
-            let factor: Box<ASTNodePos> = $it.parse(&$fun, $msg)?;
+            let factor = $it.parse(&$fun, $msg)?;
             let (en_line, en_pos) = (factor.en_line, factor.en_pos);
             let node = ASTNode::$ast { expr: factor };
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         }};
     }
 
-    it.peek_or_err(
-        &|it, token_pos| match token_pos.token {
-            Token::Add => un_op!(it, parse_level_2, Add, AddU, "plus"),
-            Token::Sub => un_op!(it, parse_level_2, Sub, SubU, "subtract"),
-            Token::Sqrt => un_op!(it, parse_operation, Sqrt, Sqrt, "square root"),
-            Token::Not => un_op!(it, parse_operation, Not, Not, "not"),
-            Token::BOneCmpl =>
-                un_op!(it, parse_operation, BOneCmpl, BOneCmpl, "bitwise ones compliment"),
-            _ => parse_level_1(it)
-        },
-        CustomEOFErr { expected: String::from("expression after unary operator") }
-    )
+    if it.eat_if_token(Token::Add) {
+        un_op!(it, parse_level_2, Add, AddU, "plus")
+    } else if it.eat_if_token(Token::Sub) {
+        un_op!(it, parse_level_2, Sub, SubU, "subtract")
+    } else if it.eat_if_token(Token::Sqrt) {
+        un_op!(it, parse_operation, Sqrt, Sqrt, "square root")
+    } else if it.eat_if_token(Token::Not) {
+        un_op!(it, parse_operation, Not, Not, "not")
+    } else if it.eat_if_token(Token::BOneCmpl) {
+        un_op!(it, parse_operation, BOneCmpl, BOneCmpl, "bitwise ones compliment")
+    } else {
+        parse_level_1(it)
+    }
 }
 
 fn parse_level_1(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let arithmetic = it.parse(&parse_factor, "comparison")?;
+    let arithmetic = it.parse(&parse_factor, "factor")?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
             inner_bin_op!($it, st_line, st_pos, $fun, $ast, $arithmetic, $msg)
@@ -230,16 +229,16 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek_or_err(
-        &|it, token_pos| match token_pos {
-            TokenPos { token: Token::Id(_), .. } => parse_id(it),
-            TokenPos { token: Token::_Self, .. } => parse_id(it),
-            TokenPos { token: Token::Real(real), .. } => literal!(it, real.to_string(), Real),
-            TokenPos { token: Token::Int(int), .. } => literal!(it, int.to_string(), Int),
-            TokenPos { token: Token::Bool(b), .. } => literal!(it, b.clone(), Bool),
-            TokenPos { token: Token::Str(str), .. } => literal!(it, str.to_string(), Str),
-            TokenPos { token: Token::ENum(num, exp), .. } => {
-                it.eat_token(Token::ENum(num.clone(), exp.clone()))?;
+        &|it, token_pos| match &token_pos.token {
+            Token::Id(_) => parse_id(it),
+            Token::_Self => parse_id(it),
+            Token::Real(real) => literal!(it, real.to_string(), Real),
+            Token::Int(int) => literal!(it, int.to_string(), Int),
+            Token::Bool(b) => literal!(it, b.clone(), Bool),
+            Token::Str(str) => literal!(it, str.to_string(), Str),
+            Token::ENum(num, exp) => {
                 let (en_line, en_pos) = it.end_pos()?;
+                it.eat_token(Token::ENum(num.clone(), exp.clone()))?;
                 let node = ASTNode::ENum { num: num.to_string(), exp: exp.to_string() };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }

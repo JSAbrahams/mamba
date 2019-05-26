@@ -12,9 +12,9 @@ fn quest_or_verify() {
         ASTNode::Script { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::QuestOr { left, right } => (left.clone(), right.clone()),
-                _ => panic!("first element script was not list.")
+                other => panic!("first element script was not quest or: {:?}", other)
             },
-        _ => panic!("ast_tree was not script.")
+        other => panic!("ast_tree was not script: {:?}", other)
     };
 
     assert_eq!(_do.node, ASTNode::Id { lit: String::from("a") });

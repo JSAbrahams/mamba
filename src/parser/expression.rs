@@ -54,7 +54,7 @@ fn parse_underscore(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let result = it.peek(
+    it.peek(
         &|it, token_pos| match token_pos.token {
             Token::QuestOr => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
@@ -62,25 +62,28 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                 let right = it.parse(&parse_expression, "question or")?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+                let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
+                parse_post_expr(&res, it)
             }
 
-            Token::Assign => parse_reassignment(pre, it),
-            Token::LRBrack | Token::Point => parse_call(pre, it),
+            Token::Assign => {
+                let res = parse_reassignment(pre, it)?;
+                parse_post_expr(&res, it)
+            }
+            Token::LRBrack | Token::Point => {
+                let res = parse_call(pre, it)?;
+                parse_post_expr(&res, it)
+            }
             _ =>
                 if is_start_expression_exclude_unary(token_pos) {
-                    parse_call(pre, it)
+                    let res = parse_call(pre, it)?;
+                    parse_post_expr(&res, it)
                 } else {
                     Ok(Box::from(pre.clone()))
                 },
         },
         Ok(Box::from(pre.clone()))
-    );
-
-    match result {
-        Ok(res) => parse_post_expr(&res, it),
-        err => err
-    }
+    )
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {

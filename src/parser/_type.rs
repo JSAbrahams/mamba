@@ -8,23 +8,26 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_id(it: &mut TPIterator) -> ParseResult {
-    it.next_or_err(
-        &mut |it, token| match token {
+    it.peek_or_err(
+        &mut |it, token_pos| match token_pos {
             TokenPos { token: Token::_Self, st_line, st_pos } => {
                 let (st_line, st_pos) = (*st_line, *st_pos);
                 let (en_line, en_pos) = it.end_pos()?;
+                it.eat_token(Token::_Self)?;
                 let node = ASTNode::_Self;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             TokenPos { token: Token::Init, st_line, st_pos } => {
                 let (st_line, st_pos) = (*st_line, *st_pos);
                 let (en_line, en_pos) = it.end_pos()?;
+                it.eat_token(Token::Init)?;
                 let node = ASTNode::Init;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             TokenPos { token: Token::Id(id), st_line, st_pos } => {
                 let (st_line, st_pos) = (*st_line, *st_pos);
                 let (en_line, en_pos) = it.end_pos()?;
+                it.eat_token(Token::Id(id.clone()))?;
                 let node = ASTNode::Id { lit: id.clone() };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }

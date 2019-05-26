@@ -63,6 +63,7 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         Ok(())
     })?;
 
+    it.eat_token(Token::Dedent)?;
     Ok(cases)
 }
 
