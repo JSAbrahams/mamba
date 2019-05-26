@@ -11,12 +11,12 @@ use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::parse_statement;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
-    if it.eat_if(Token::NL) {
+    if it.eat_if_token(Token::NL) {
         return it.parse(&parse_block, "expression or statement");
     }
 
-    let result = it.peek(
-        &|token_pos| match token_pos.token {
+    let result = it.peek_or_err(
+        &|it, token_pos| match token_pos.token {
             Token::Def
             | Token::Mut
             | Token::Print
@@ -31,19 +31,19 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         CustomEOFErr { expected: String::from("expression or statement") }
     )?;
 
-    it.peek_or(
-        &|token_pos| match token_pos.token {
-            Token::Raises => parse_raise(*result, it),
-            Token::Handle => parse_handle(*result, it),
-            _ => Ok(result)
+    it.peek(
+        &|it, token_pos| match token_pos.token {
+            Token::Raises => parse_raise(*result.clone(), it),
+            Token::Handle => parse_handle(*result.clone(), it),
+            _ => Ok(result.clone())
         },
-        Ok(result)
+        Ok(result.clone())
     )
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Raises);
+    it.eat_token(Token::Raises);
 
     let errors = it.parse_vec(&parse_generics, "raises")?;
     let (en_line, en_pos) = match errors.last() {
@@ -57,8 +57,8 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Handle);
-    it.eat(Token::NL);
+    it.eat_token(Token::Handle)?;
+    it.eat_token(Token::NL)?;
 
     let cases = it.parse_vec(&parse_match_cases, "handle cases")?;
     let (en_line, en_pos) = match cases.last() {

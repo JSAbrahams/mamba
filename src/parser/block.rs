@@ -8,12 +8,12 @@ use crate::parser::parse_result::ParseResult;
 
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut statements: Vec<ASTNodePos> = Vec::new();
-    it.while_some_and_not(Token::Dedent, &|token_pos| match token_pos {
-        TokenPos { token: Token::NL, .. } => it.eat(Token::NL),
+    it.while_not_token(Token::Dedent, &mut |it, token_pos| match token_pos {
+        TokenPos { token: Token::NL, .. } => it.eat_token(Token::NL),
         TokenPos { token: Token::Comment(comment), st_line, st_pos } => {
             let (st_line, st_pos) = (*st_line, *st_pos);
-            it.eat(Token::Comment(*comment));
-            let (en_line, en_pos) = (st_line, Token::Comment(*comment).len());
+            it.eat_token(Token::Comment(comment.clone()))?;
+            let (en_line, en_pos) = (st_line, Token::Comment(comment.clone()).len());
             let node = ASTNode::Comment { comment: comment.clone() };
             statements.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
             Ok(())
@@ -29,7 +29,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
 pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Indent);
+    it.eat_token(Token::Indent)?;
 
     let statements = it.parse_vec(&parse_statements, "block")?;
     let (en_line, en_pos) = match statements.last() {

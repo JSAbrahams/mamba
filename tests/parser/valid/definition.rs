@@ -209,7 +209,7 @@ fn function_definition_verify() {
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
     assert_eq!(ret_ty, None);
-    assert_eq!(raises, None);
+    assert_eq!(raises, vec![]);
 
     match body {
         Some(body) => assert_eq!(body.node, ASTNode::Id { lit: String::from("d") }),

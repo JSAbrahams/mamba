@@ -12,10 +12,10 @@ use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
-    it.peek(
-        &|token_pos| match token_pos {
+    it.peek_or_err(
+        &|it, token_pos| match token_pos {
             TokenPos { token: Token::Print, st_line, st_pos } => {
-                it.eat(Token::Print);
+                it.eat_token(Token::Print)?;
                 let (st_line, st_pos) = (*st_line, *st_pos);
                 let expr = it.parse(&parse_expression, "print statement")?;
                 let (en_line, en_pos) = (expr.en_line, expr.en_pos);
@@ -25,19 +25,19 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             TokenPos { token: Token::Pass, st_line, st_pos } => {
                 let (en_line, en_pos) = it.end_pos()?;
                 let (st_line, st_pos) = (*st_line, *st_pos);
-                it.eat(Token::Pass);
+                it.eat_token(Token::Pass)?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Pass }))
             }
             TokenPos { token: Token::Retry, st_line, st_pos } => {
                 let (en_line, en_pos) = it.end_pos()?;
                 let (st_line, st_pos) = (*st_line, *st_pos);
-                it.eat(Token::Retry);
+                it.eat_token(Token::Retry)?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Retry }))
             }
             TokenPos { token: Token::Raise, st_line, st_pos } => {
                 let (en_line, en_pos) = it.end_pos()?;
                 let (st_line, st_pos) = (*st_line, *st_pos);
-                it.eat(Token::Raise);
+                it.eat_token(Token::Raise)?;
                 let error = it.parse(&parse_expression, "raise")?;
                 let node = ASTNode::Raise { error };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
@@ -56,9 +56,9 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_with(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::With);
+    it.eat_token(Token::With)?;
     let resource = it.parse(&parse_expression, "with resource")?;
-    let _as = it.parse_if(Token::As, &parse_id_maybe_type, "with id")?;
+    let _as = it.parse_if_token(Token::As, &parse_id_maybe_type, "with id")?;
     let expr = it.parse(&parse_expr_or_stmt, "with body")?;
 
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);

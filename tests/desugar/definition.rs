@@ -198,7 +198,7 @@ fn fun_def_verify() {
             })
         ],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     None
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
@@ -236,7 +236,7 @@ fn fun_def_default_arg_verify() {
             default:       Some(to_pos!(ASTNode::Str { lit: String::from("asdf") }))
         })],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     None
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
@@ -268,7 +268,7 @@ fn fun_def_with_body_verify() {
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
         ],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     Some(to_pos!(ASTNode::Real { lit: String::from("2.4") }))
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
@@ -329,7 +329,7 @@ fn top_level_fun_def_panic_verify() {
         pure:     false,
         fun_args: vec![],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     None
     });
 

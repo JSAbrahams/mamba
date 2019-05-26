@@ -131,6 +131,18 @@ impl Token {
             other => format!("{}", other).len()
         } as i32;
     }
+
+    pub fn same_type(left: Token, right: Token) -> bool {
+        match (left.clone(), right.clone()) {
+            (Token::Id(_), Token::Id(_)) => true,
+            (Token::Real(_), Token::Real(_)) => true,
+            (Token::Int(_), Token::Int(_)) => true,
+            (Token::Bool(_), Token::Bool(_)) => true,
+            (Token::Str(_), Token::Str(_)) => true,
+            (Token::ENum(..), Token::ENum(..)) => true,
+            _ => left == right
+        }
+    }
 }
 
 impl fmt::Display for Token {
