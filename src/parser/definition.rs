@@ -14,15 +14,15 @@ use crate::parser::parse_result::ParseResult;
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::Def)?;
-    let private = it.eat_if_token(Token::Private);
-    let pure = it.eat_if_token(Token::Pure);
+    it.eat(Token::Def)?;
+    let private = it.eat_if(Token::Private);
+    let pure = it.eat_if(Token::Pure);
 
     macro_rules! op {
         ($it:expr, $token:ident, $node:ident) => {{
             let (en_line, en_pos) = $it.end_pos()?;
             let node_pos = ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::$node };
-            $it.eat_token(Token::$token)?;
+            $it.eat(Token::$token)?;
             parse_fun_def(node_pos, pure, $it)
         }};
     };
@@ -127,9 +127,9 @@ fn parse_fun_def(id_type: ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseR
             }),
     };
 
-    let ret_ty = it.parse_if_token(Token::DoublePoint, &parse_type, "function return type")?;
+    let ret_ty = it.parse_if(Token::DoublePoint, &parse_type, "function return type")?;
     let raises = it.parse_vec_if_token(Token::Raises, &parse_generics, "raises")?;
-    let body = it.parse_if_token(Token::BTo, &parse_expr_or_stmt, "function body")?;
+    let body = it.parse_if(Token::BTo, &parse_expr_or_stmt, "function body")?;
 
     let (en_line, en_pos) = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => (b.en_line, b.en_pos),
@@ -143,7 +143,7 @@ fn parse_fun_def(id_type: ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseR
 }
 
 pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat_token(Token::LRBrack)?;
+    it.eat(Token::LRBrack)?;
 
     let mut args = Vec::new();
     it.while_not_token(Token::RRBrack, &mut |it, _| {
@@ -151,16 +151,16 @@ pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         Ok(())
     })?;
 
-    it.eat_token(Token::RRBrack)?;
+    it.eat(Token::RRBrack)?;
     Ok(args)
 }
 
 pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let vararg = it.eat_if_token(Token::Vararg);
+    let vararg = it.eat_if(Token::Vararg);
 
     let id_maybe_type = it.parse(&parse_id_maybe_type, "argument")?;
-    let default = it.parse_if_token(Token::Assign, &parse_expression, "argument default")?;
+    let default = it.parse_if(Token::Assign, &parse_expression, "argument default")?;
 
     let (en_line, en_pos) = it.end_pos()?;
     let node = ASTNode::FunArg { vararg, id_maybe_type, default };
@@ -168,12 +168,12 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat_token(Token::Forward)?;
+    it.eat(Token::Forward)?;
 
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
     it.while_not_token(Token::NL, &mut |it, _| {
         forwarded.push(*it.parse(&parse_id, "forward")?);
-        it.eat_if_token(Token::Comma);
+        it.eat_if(Token::Comma);
         Ok(())
     })?;
 
@@ -182,9 +182,9 @@ pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
 fn parse_variable_def_id(id: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (id.st_line, id.st_pos);
-    let ofmut = it.eat_if_token(Token::OfMut);
+    let ofmut = it.eat_if(Token::OfMut);
 
-    let expression = it.parse_if_token(Token::Assign, &parse_expression, "definition body")?;
+    let expression = it.parse_if(Token::Assign, &parse_expression, "definition body")?;
     let forward = it.parse_vec_if_token(Token::Forward, &parse_forward, "definition raises")?;
 
     let (en_line, en_pos) = match (&expression, &forward.last()) {

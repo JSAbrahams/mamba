@@ -25,7 +25,7 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat_token(&mut self, token: Token) -> ParseResult<()> {
+    pub fn eat(&mut self, token: Token) -> ParseResult<()> {
         match self.it.next() {
             Some(TokenPos { token: actual, .. })
                 if Token::same_type(actual.clone(), token.clone()) =>
@@ -35,7 +35,7 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat_if_token(&mut self, token: Token) -> bool {
+    pub fn eat_if(&mut self, token: Token) -> bool {
         if let Some(TokenPos { token: actual, .. }) = self.it.peek() {
             if Token::same_type(actual.clone(), token) {
                 self.it.next();
@@ -77,7 +77,7 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn parse_if_token(
+    pub fn parse_if(
         &mut self,
         token: Token,
         parse_fun: &Fn(&mut TPIterator) -> ParseResult,
@@ -85,7 +85,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult<Option<Box<ASTNodePos>>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(tp.token.clone(), token.clone()) => {
-                self.eat_token(token)?;
+                self.eat(token)?;
                 Ok(Some(Box::from(self.parse(parse_fun, err_msg)?)))
             }
             _ => Ok(None)
@@ -100,7 +100,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult<Vec<ASTNodePos>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(tp.token.clone(), token.clone()) => {
-                self.eat_token(token)?;
+                self.eat(token)?;
                 Ok(self.parse_vec(parse_fun, err_msg)?)
             }
             _ => Ok(vec![])
@@ -169,7 +169,7 @@ impl<'a> TPIterator<'a> {
     pub fn start_pos(&mut self) -> ParseResult<(i32, i32)> {
         match self.it.peek() {
             Some(TokenPos { st_line, st_pos, .. }) => Ok((*st_line, *st_pos)),
-            None => Err(CustomEOFErr { expected: String::from("a token.") })
+            None => Err(CustomEOFErr { expected: String::from("token.") })
         }
     }
 
@@ -177,7 +177,7 @@ impl<'a> TPIterator<'a> {
         match self.it.peek() {
             Some(TokenPos { st_line, st_pos, token }) =>
                 Ok((*st_line, *st_pos + token.clone().len())),
-            None => Err(CustomEOFErr { expected: String::from("a token.") })
+            None => Err(CustomEOFErr { expected: String::from("token.") })
         }
     }
 }

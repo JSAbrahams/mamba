@@ -11,7 +11,7 @@ use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::parse_statement;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
-    if it.eat_if_token(Token::NL) {
+    if it.eat_if(Token::NL) {
         return it.parse(&parse_block, "expression or statement");
     }
 
@@ -43,7 +43,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::Raises)?;
+    it.eat(Token::Raises)?;
 
     let errors = it.parse_vec(&parse_generics, "raises")?;
     let (en_line, en_pos) = match errors.last() {
@@ -57,8 +57,8 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::Handle)?;
-    it.eat_token(Token::NL)?;
+    it.eat(Token::Handle)?;
+    it.eat(Token::NL)?;
 
     let cases = it.parse_vec(&parse_match_cases, "handle cases")?;
     let (en_line, en_pos) = match cases.last() {

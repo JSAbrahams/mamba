@@ -34,28 +34,6 @@ fn for_statement_verify() {
 }
 
 #[test]
-fn for_tuple_statement_verify() {
-    let source = String::from("for a in c do d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let (expr, collection, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
-            match &statements.first().expect("script empty.").node {
-                ASTNode::For { expr, body } => match &expr.node {
-                    ASTNode::In { left, right } => (left.clone(), right.clone(), body.clone()),
-                    other => panic!("Expected in but was {:?}", other)
-                },
-                _ => panic!("first element script was not for.")
-            },
-        _ => panic!("ast_tree was not script.")
-    };
-
-    assert_eq!(expr.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(collection.node, ASTNode::Id { lit: String::from("c") });
-    assert_eq!(body.node, ASTNode::Id { lit: String::from("d") });
-}
-
-#[test]
 fn for_range_step_verify() {
     let source = String::from("for a in c .. d step e do f");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();

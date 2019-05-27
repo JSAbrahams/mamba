@@ -15,7 +15,7 @@ use crate::parser::parse_result::ParseResult;
 
 pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::From)?;
+    it.eat(Token::From)?;
 
     let id = it.peek_or_err(
         &|it, token_pos| match token_pos.token {
@@ -27,20 +27,20 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
 
     let import = it.parse(&parse_import, "import")?;
 
-    let (en_line, en_pos) = it.end_pos()?;
+    let (en_line, en_pos) = (import.en_line, import.en_pos);
     let node = ASTNode::FromImport { id, import };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::Import)?;
+    it.eat(Token::Import)?;
 
     let mut import = Vec::new();
     // TODO what about newlines?
     it.while_not_token(Token::As, &mut |it, _| {
         import.push(*it.parse(&parse_id, "import id")?);
-        it.eat_if_token(Token::Comma);
+        it.eat_if(Token::Comma);
         Ok(())
     })?;
 
@@ -51,7 +51,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
             it.while_not_token(Token::NL, &mut |it, token_pos| match token_pos.token {
                 Token::Id(_) => {
                     aliases.push(*it.parse(&parse_id, "import")?);
-                    it.eat_if_token(Token::Comma);
+                    it.eat_if(Token::Comma);
                     Ok(())
                 }
                 _ => Err(TokenErr {
@@ -64,14 +64,18 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
         "as imports"
     )?;
 
-    let (en_line, en_pos) = it.end_pos()?;
+    let (en_line, en_pos) = match (import.last(), _as.last()) {
+        (_, Some(token_pos)) => (token_pos.en_line, token_pos.en_pos),
+        (Some(token_pos), _) => (token_pos.en_line, token_pos.en_pos),
+        (..) => (st_line, st_pos + Token::Import.len())
+    };
     let node = ASTNode::Import { import, _as };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
 pub fn parse_class(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::Class)?;
+    it.eat(Token::Class)?;
     let _type = it.parse(&parse_type, "name")?;
 
     let mut args = vec![];
@@ -155,7 +159,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut modules = Vec::new();
     let mut type_defs = Vec::new();
 
-    let pure = it.eat_if_token(Token::Pure);
+    let pure = it.eat_if(Token::Pure);
 
     it.while_fn(&|_| true, &mut |it, token_pos| match &token_pos.token {
         Token::NL => Ok(()),
@@ -191,13 +195,13 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
 
-    it.eat_token(Token::Type)?;
+    it.eat(Token::Type)?;
     let _type = it.parse(&parse_type, "type definition")?;
 
     it.peek(
         &|it, token_pos| match token_pos.token {
             Token::IsA => {
-                it.eat_token(Token::IsA)?;
+                it.eat(Token::IsA)?;
                 let _type = it.parse(&parse_type, "type definition")?;
                 let conditions =
                     it.parse_vec_if_token(Token::When, &parse_conditions, "type definitions")?;

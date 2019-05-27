@@ -25,11 +25,11 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
 fn parse_if(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
 
-    it.eat_token(Token::If)?;
+    it.eat(Token::If)?;
     let cond = it.parse(&parse_expression, "if condition")?;
-    it.eat_token(Token::Then)?;
+    it.eat(Token::Then)?;
     let then = it.parse(&parse_expr_or_stmt, "if then branch")?;
-    let _else = it.parse_if_token(Token::Else, &parse_expr_or_stmt, "if else branch")?;
+    let _else = it.parse_if(Token::Else, &parse_expr_or_stmt, "if else branch")?;
 
     let (en_line, en_pos) = (then.en_line, then.en_pos);
     let node = ASTNode::IfElse { cond, then, _else };
@@ -38,10 +38,10 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
 
 fn parse_match(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat_token(Token::Match)?;
+    it.eat(Token::Match)?;
 
     let cond = it.parse(&parse_expression, "match expression")?;
-    it.eat_token(Token::NL)?;
+    it.eat(Token::NL)?;
     let cases = it.parse_vec(&parse_match_cases, "match cases")?;
 
     let (en_line, en_pos) = match (&cond, cases.last()) {
@@ -54,16 +54,16 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat_token(Token::Indent)?;
+    it.eat(Token::Indent)?;
 
     let mut cases = Vec::new();
     it.while_not_token(Token::Dedent, &mut |it, _| {
         cases.push(*it.parse(&parse_match_case, "match case")?);
-        it.eat_if_token(Token::NL);
+        it.eat_if(Token::NL);
         Ok(())
     })?;
 
-    it.eat_token(Token::Dedent)?;
+    it.eat(Token::Dedent)?;
     Ok(cases)
 }
 
@@ -71,7 +71,7 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
 
     let cond = it.parse(&parse_expression_maybe_type, "match case")?;
-    it.eat_token(Token::BTo)?;
+    it.eat(Token::BTo)?;
     let body = it.parse(&parse_expr_or_stmt, "then")?;
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
@@ -81,10 +81,10 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_expression_maybe_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let mutable = it.eat_if_token(Token::Mut);
+    let mutable = it.eat_if(Token::Mut);
 
     let id = it.parse(&parse_expression, "id maybe type")?;
-    let _type = it.parse_if_token(Token::DoublePoint, &parse_type, "id type")?;
+    let _type = it.parse_if(Token::DoublePoint, &parse_type, "id type")?;
 
     let (en_line, en_pos) = match &_type {
         Some(_type) => (_type.en_line, _type.en_pos),
