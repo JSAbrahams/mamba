@@ -48,8 +48,8 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Underscore)?;
     let (en_line, en_pos) = it.end_pos()?;
+    it.eat(Token::Underscore)?;
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore }))
 }
 

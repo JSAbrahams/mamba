@@ -3,7 +3,6 @@ use mamba::lexer::tokenize;
 use mamba::parser::parse;
 
 #[test]
-#[ignore]
 fn function_definitions() {
     let source = resource_content(true, &["function"], "definition.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();

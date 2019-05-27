@@ -8,25 +8,22 @@ use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::statement::is_start_statement;
 use crate::parser::statement::parse_statement;
 
 pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
-    if it.eat_if(Token::NL) {
-        return it.parse(&parse_block, "expression or statement");
-    }
-
     let result = it.peek_or_err(
-        &|it, token_pos| match token_pos.token {
-            Token::Def
-            | Token::Mut
-            | Token::Print
-            | Token::For
-            | Token::While
-            | Token::Retry
-            | Token::Pass
-            | Token::Raise
-            | Token::With => parse_statement(it),
-            _ => parse_expression(it)
+        &|it, token_pos| match &token_pos.token {
+            Token::NL => {
+                it.eat(Token::NL)?;
+                it.parse(&parse_block, "expression or statement")
+            }
+            token =>
+                if is_start_statement(token) {
+                    parse_statement(it)
+                } else {
+                    parse_expression(it)
+                },
         },
         CustomEOFErr { expected: String::from("expression or statement") }
     )?;

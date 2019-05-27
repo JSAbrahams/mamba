@@ -195,6 +195,7 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
         }
     }
 
+    tokens.append(&mut state.flush_indents());
     Ok(tokens)
 }
 

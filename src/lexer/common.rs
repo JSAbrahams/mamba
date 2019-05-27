@@ -23,6 +23,17 @@ impl State {
         }
     }
 
+    pub fn flush_indents(&mut self) -> Vec<TokenPos> {
+        let dedents =
+            vec![
+                TokenPos { st_line: self.line, st_pos: self.pos, token: Token::Dedent };
+                ((self.current_indent) / 4) as usize
+            ];
+
+        self.current_indent = 1;
+        dedents
+    }
+
     /// Change state depending on given [Token](lexer::token::Token) and return
     /// [TokenPos](lexer::token::TokenPos) with current line and position
     /// (1-indexed).

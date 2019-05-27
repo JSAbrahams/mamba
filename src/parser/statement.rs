@@ -61,3 +61,18 @@ pub fn parse_with(it: &mut TPIterator) -> ParseResult {
     let node = ASTNode::With { resource, _as, expr };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
+
+pub fn is_start_statement(tp: &Token) -> bool {
+    match tp {
+        Token::Def
+        | Token::Mut
+        | Token::Print
+        | Token::For
+        | Token::While
+        | Token::Retry
+        | Token::Pass
+        | Token::Raise
+        | Token::With => true,
+        _ => false
+    }
+}

@@ -180,7 +180,7 @@ fn if_else_verify() {
 #[test]
 fn match_statements() {
     let source = resource_content(true, &["control_flow"], "match_statements.mamba");
-    parse(&tokenize(&source).unwrap()).unwrap();
+    assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }
 
 #[test]
@@ -188,15 +188,12 @@ fn match_verify() {
     let source = String::from("match a\n    a => b\n    c => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let _statements;
     let (cond, cases) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::Match { cond, cases } => (cond, cases),
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::Match { cond, cases } => (cond.clone(), cases.clone()),
                 _ => panic!("first element script was not match.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -232,15 +229,12 @@ fn while_verify() {
     let source = String::from("while a do d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let _statements;
     let (cond, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::While { cond, body } => (cond, body),
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::While { cond, body } => (cond.clone(), body.clone()),
                 _ => panic!("first element script was not while.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 

@@ -176,7 +176,6 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
-            $it.eat(Token::$tok)?;
             let factor = $it.parse(&$fun, $msg)?;
             let (en_line, en_pos) = (factor.en_line, factor.en_pos);
             let node = ASTNode::$ast { expr: factor };

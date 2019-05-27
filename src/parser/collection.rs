@@ -23,7 +23,7 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     it.eat(Token::LRBrack)?;
 
-    let elements = it.parse_vec(&parse_zero_or_more_expr, "tuple")?;
+    let elements = it.parse_vec(&parse_expressions, "tuple")?;
     let (en_line, en_pos) = it.end_pos()?;
     it.eat(Token::RRBrack)?;
 
@@ -130,18 +130,8 @@ fn parse_list(_it: &mut TPIterator) -> ParseResult {
     // elements } })
 }
 
-pub fn parse_zero_or_more_expr(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    if it.peak_if_fn(&|token_pos| is_start_expression(token_pos)) {
-        parse_one_or_more_expr(it)
-    } else {
-        Ok(vec![])
-    }
-}
-
-pub fn parse_one_or_more_expr(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    let expression = it.parse(&parse_expression, "first expression")?;
-    let mut expressions = vec![*expression];
-
+pub fn parse_expressions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let mut expressions = vec![];
     it.while_fn(&is_start_expression, &mut |it, _| {
         expressions.push(*it.parse(&parse_expression, "expression")?);
         it.eat_if(Token::Comma);
