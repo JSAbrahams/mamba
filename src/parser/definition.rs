@@ -15,8 +15,8 @@ use crate::parser::parse_result::ParseResult;
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     it.eat(Token::Def, "definition")?;
-    let private = it.eat_if(Token::Private);
-    let pure = it.eat_if(Token::Pure);
+    let private = it.eat_if(Token::Private).is_some();
+    let pure = it.eat_if(Token::Pure).is_some();
 
     macro_rules! op {
         ($it:expr, $token:ident, $node:ident) => {{
@@ -158,7 +158,7 @@ pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
 pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let vararg = it.eat_if(Token::Vararg);
+    let vararg = it.eat_if(Token::Vararg).is_some();
 
     let id_maybe_type = it.parse(&parse_id_maybe_type, "function arg")?;
     let default = it.parse_if(Token::Assign, &parse_expression, "argument default")?;
@@ -184,7 +184,7 @@ pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
 fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (id.st_line, id.st_pos);
-    let ofmut = it.eat_if(Token::OfMut);
+    let ofmut = it.eat_if(Token::OfMut).is_some();
 
     let expression = it.parse_if(Token::Assign, &parse_expression, "definition body")?;
     let forward = it.parse_vec_if_token(Token::Forward, &parse_forward, "definition raises")?;

@@ -87,9 +87,9 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let (en_line, en_pos) = it.eat(Token::Ret, "return")?;
+    it.eat(Token::Ret, "return")?;
 
-    if it.eat_if(Token::NL) {
+    if let Some((en_line, en_pos)) = it.eat_if(Token::NL) {
         let node = ASTNode::ReturnEmpty;
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }

@@ -38,14 +38,16 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat_if(&mut self, token: Token) -> bool {
+    pub fn eat_if(&mut self, token: Token) -> Option<(i32, i32)> {
         if let Some(TokenPos { token: actual, .. }) = self.it.peek() {
-            if Token::same_type(actual.clone(), token) {
-                self.it.next();
-                return true;
+            if Token::same_type(actual.clone(), token.clone()) {
+                return match self.eat(token, "") {
+                    Ok(pos) => Some(pos),
+                    Err(_) => Some((0, 0))
+                };
             }
         }
-        false
+        None
     }
 
     pub fn parse(

@@ -156,7 +156,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut modules = Vec::new();
     let mut type_defs = Vec::new();
 
-    let pure = it.eat_if(Token::Pure);
+    let pure = it.eat_if(Token::Pure).is_some();
 
     it.peek_while_fn(&|_| true, &mut |it, token_pos, _| match &token_pos.token {
         Token::NL => {

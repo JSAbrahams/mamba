@@ -157,7 +157,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let mutable = it.eat_if(Token::Mut);
+    let mutable = it.eat_if(Token::Mut).is_some();
     let id = it.parse(&parse_id, "id maybe type")?;
     let _type = it.parse_if(Token::DoublePoint, &parse_type, "id maybe type")?;
     let (en_line, en_pos) = match &_type {

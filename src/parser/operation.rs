@@ -187,15 +187,15 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    if it.eat_if(Token::Add) {
+    if it.eat_if(Token::Add).is_some() {
         un_op!(it, parse_level_2, Add, AddU, "plus")
-    } else if it.eat_if(Token::Sub) {
+    } else if it.eat_if(Token::Sub).is_some() {
         un_op!(it, parse_level_2, Sub, SubU, "subtract")
-    } else if it.eat_if(Token::Sqrt) {
+    } else if it.eat_if(Token::Sqrt).is_some() {
         un_op!(it, parse_operation, Sqrt, Sqrt, "square root")
-    } else if it.eat_if(Token::Not) {
+    } else if it.eat_if(Token::Not).is_some() {
         un_op!(it, parse_operation, Not, Not, "not")
-    } else if it.eat_if(Token::BOneCmpl) {
+    } else if it.eat_if(Token::BOneCmpl).is_some() {
         un_op!(it, parse_operation, BOneCmpl, BOneCmpl, "bitwise ones compliment")
     } else {
         parse_level_1(it)

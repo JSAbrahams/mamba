@@ -59,6 +59,12 @@ fn parse_map() {
 }
 
 #[test]
+fn parse_set() {
+    let source = resource_content(true, &["collection"], "set.mamba");
+    assert!(parse(&tokenize(&source).unwrap()).is_ok());
+}
+
+#[test]
 fn set_verify() {
     let source = String::from("{a, b}");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();

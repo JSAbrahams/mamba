@@ -81,7 +81,7 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_expression_maybe_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let mutable = it.eat_if(Token::Mut);
+    let mutable = it.eat_if(Token::Mut).is_some();
 
     let id = it.parse(&parse_expression, "id maybe type")?;
     let _type = it.parse_if(Token::DoublePoint, &parse_type, "id type")?;
