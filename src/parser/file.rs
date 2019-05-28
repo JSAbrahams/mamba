@@ -17,19 +17,8 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     it.eat(Token::From, "from import")?;
 
-    let id = it.peek_or_err(
-        &|it, token_pos| match token_pos.token {
-            Token::Id(_) => it.parse(&parse_id, "from id"),
-            _ => Err(TokenErr {
-                expected: Token::Id(String::new()),
-                actual:   token_pos.clone(),
-                message:  String::from("from import")
-            })
-        },
-        "from import"
-    )?;
-
-    let import = it.parse(&parse_import, "import")?;
+    let id = it.parse(&parse_id, "from import")?;
+    let import = it.parse(&parse_import, "from import")?;
 
     let (en_line, en_pos) = (import.en_line, import.en_pos);
     let node = ASTNode::FromImport { id, import };
@@ -40,34 +29,13 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     it.eat(Token::Import, "import")?;
 
-    let mut import = Vec::new();
-    // TODO what about newlines?
-    it.peek_while_not_token(Token::As, &mut |it, _, no| {
+    let mut import = vec![];
+    it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _, no| {
         import.push(*it.parse(&parse_id, format!("import id {}", no).as_str())?);
         it.eat_if(Token::Comma);
         Ok(())
     })?;
-
-    let _as = it.parse_vec_if_token(
-        Token::As,
-        &|it| {
-            let mut aliases = Vec::new();
-            it.peek_while_not_token(Token::NL, &mut |it, token_pos, no| match token_pos.token {
-                Token::Id(_) => {
-                    aliases.push(*it.parse(&parse_id, format!("import {}", no).as_str())?);
-                    it.eat_if(Token::Comma);
-                    Ok(())
-                }
-                _ => Err(TokenErr {
-                    expected: Token::Id(String::new()),
-                    actual:   token_pos.clone(),
-                    message:  format!("import {}", no)
-                })
-            })?;
-            Ok(aliases)
-        },
-        "as imports"
-    )?;
+    let _as = it.parse_vec_if_token(Token::As, &parse_as, "import")?;
 
     let (en_line, en_pos) = match (import.last(), _as.last()) {
         (_, Some(token_pos)) => (token_pos.en_line, token_pos.en_pos),
@@ -76,6 +44,24 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     };
     let node = ASTNode::Import { import, _as };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+}
+
+fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let mut aliases = vec![];
+    it.peek_while_not_token(Token::NL, &mut |it, token_pos, no| match token_pos.token {
+        Token::Id(_) => {
+            aliases.push(*it.parse(&parse_id, format!("import {}", no).as_str())?);
+            it.eat_if(Token::Comma);
+            Ok(())
+        }
+        _ => Err(TokenErr {
+            expected: Token::Id(String::new()),
+            actual:   token_pos.clone(),
+            message:  format!("import {}", no)
+        })
+    })?;
+
+    Ok(aliases)
 }
 
 pub fn parse_class(it: &mut TPIterator) -> ParseResult {
@@ -87,6 +73,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
     it.peek_while_not_token(Token::LRBrack, &mut |it, token_pos, no| match token_pos.token {
         Token::Def => {
             args.push(*it.parse(&parse_fun_arg, format!("constructor argument {}", no).as_str())?);
+            it.eat_if(Token::Comma);
             Ok(())
         }
         _ => Err(TokenErr {
@@ -103,6 +90,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
             it.peek_while_not_token(Token::NL, &mut |it, token_pos, no| match token_pos.token {
                 Token::Id(_) => {
                     parents.push(*it.parse(&parse_parent, format!("parent {}", no).as_str())?);
+                    it.eat_if(Token::Comma);
                     Ok(())
                 }
                 _ => Err(TokenErr {
@@ -130,6 +118,7 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
     let mut args = vec![];
     it.peek_while_not_token(Token::LRBrack, &mut |it, _, no| {
         args.push(*it.parse(&parse_expression, format!("parent argument {}", no).as_str())?);
+        it.eat_if(Token::Comma);
         Ok(())
     })?;
 
@@ -170,7 +159,10 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let pure = it.eat_if(Token::Pure);
 
     it.peek_while_fn(&|_| true, &mut |it, token_pos, _| match &token_pos.token {
-        Token::NL => Ok(()),
+        Token::NL => {
+            it.eat(Token::NL, "file")?;
+            Ok(())
+        }
         Token::Import => {
             imports.push(*it.parse(&parse_import, "file")?);
             Ok(())
