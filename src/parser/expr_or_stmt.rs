@@ -6,7 +6,6 @@ use crate::parser::block::parse_block;
 use crate::parser::control_flow_expr::parse_match_cases;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::is_start_statement;
 use crate::parser::statement::parse_statement;
@@ -15,7 +14,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
     let result = it.peek_or_err(
         &|it, token_pos| match &token_pos.token {
             Token::NL => {
-                it.eat(Token::NL)?;
+                it.eat(Token::NL, "expression or statement")?;
                 it.parse(&parse_block, "expression or statement")
             }
             token =>
@@ -25,7 +24,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
                     parse_expression(it)
                 },
         },
-        CustomEOFErr { expected: String::from("expression or statement") }
+        "expression or statement"
     )?;
 
     it.peek(
@@ -34,15 +33,16 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
             Token::Handle => parse_handle(*result.clone(), it),
             _ => Ok(result.clone())
         },
-        Ok(result.clone())
+        Ok(result.clone()),
+        "expression or statement"
     )
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Raises)?;
+    it.eat(Token::Raises, "raise")?;
 
-    let errors = it.parse_vec(&parse_generics, "raises")?;
+    let errors = it.parse_vec(&parse_generics, "raise")?;
     let (en_line, en_pos) = match errors.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)
@@ -54,8 +54,8 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Handle)?;
-    it.eat(Token::NL)?;
+    it.eat(Token::Handle, "handle")?;
+    it.eat(Token::NL, "handle")?;
 
     let cases = it.parse_vec(&parse_match_cases, "handle cases")?;
     let (en_line, en_pos) = match cases.last() {

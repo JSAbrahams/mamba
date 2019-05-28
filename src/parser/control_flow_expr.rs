@@ -18,16 +18,16 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
                 actual:   token_pos.clone()
             })
         },
-        CustomEOFErr { expected: "control flow expression".to_string() }
+        "control flow expression"
     )
 }
 
 fn parse_if(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
 
-    it.eat(Token::If)?;
+    it.eat(Token::If, "if")?;
     let cond = it.parse(&parse_expression, "if condition")?;
-    it.eat(Token::Then)?;
+    it.eat(Token::Then, "if")?;
     let then = it.parse(&parse_expr_or_stmt, "if then branch")?;
     let _else = it.parse_if(Token::Else, &parse_expr_or_stmt, "if else branch")?;
 
@@ -38,10 +38,10 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
 
 fn parse_match(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Match)?;
+    it.eat(Token::Match, "match")?;
 
     let cond = it.parse(&parse_expression, "match expression")?;
-    it.eat(Token::NL)?;
+    it.eat(Token::NL, "match")?;
     let cases = it.parse_vec(&parse_match_cases, "match cases")?;
 
     let (en_line, en_pos) = match (&cond, cases.last()) {
@@ -54,16 +54,16 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(Token::Indent)?;
+    it.eat(Token::Indent, "match case")?;
 
     let mut cases = Vec::new();
-    it.while_not_token(Token::Dedent, &mut |it, _| {
-        cases.push(*it.parse(&parse_match_case, "match case")?);
+    it.peek_while_not_token(Token::Dedent, &mut |it, _, no| {
+        cases.push(*it.parse(&parse_match_case, format!("match case {}", no).as_str())?);
         it.eat_if(Token::NL);
         Ok(())
     })?;
 
-    it.eat(Token::Dedent)?;
+    it.eat(Token::Dedent, "match case")?;
     Ok(cases)
 }
 
@@ -71,7 +71,7 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
 
     let cond = it.parse(&parse_expression_maybe_type, "match case")?;
-    it.eat(Token::BTo)?;
+    it.eat(Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "then")?;
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);

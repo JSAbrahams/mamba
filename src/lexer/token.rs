@@ -119,8 +119,8 @@ pub enum Token {
 }
 
 impl Token {
-    pub fn len(self) -> i32 {
-        return match self {
+    pub fn width(self) -> i32 {
+        (match self {
             Token::Id(id) => id.len(),
             Token::Real(real) => real.len(),
             Token::Int(int) => int.len(),
@@ -129,7 +129,7 @@ impl Token {
             Token::Str(_str) => _str.len(),
             Token::ENum(num, exp) => num.len() + 1 + exp.len(),
             other => format!("{}", other).len()
-        } as i32;
+        } as i32)
     }
 
     pub fn same_type(left: Token, right: Token) -> bool {
@@ -163,7 +163,7 @@ impl fmt::Display for Token {
             Token::_Self => String::from("self"),
 
             Token::Point => String::from("."),
-            Token::Comma => String::from("),"),
+            Token::Comma => String::from(")"),
             Token::DoublePoint => String::from(":"),
             Token::Vararg => String::from("vararg"),
             Token::BSlash => String::from("\\"),

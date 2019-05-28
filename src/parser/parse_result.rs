@@ -12,7 +12,7 @@ pub enum ParseErr {
     Cause { parsing: String, cause: Box<ParseErr>, position: Option<TokenPos> },
     CustomErr { expected: String, actual: TokenPos },
     InternalErr { message: String },
-    TokenErr { expected: Token, actual: TokenPos },
+    TokenErr { expected: Token, actual: TokenPos, message: String },
     EOFErr { expected: Token },
     CustomEOFErr { expected: String },
     IndErr { expected: i32, actual: i32, position: Option<TokenPos> }
@@ -34,13 +34,13 @@ impl fmt::Display for ParseErr {
                 write!(f, "\nExpected '{}', but end of file.", expected),
             ParseErr::CustomErr { expected, actual } => write!(
                 f,
-                "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
+                "\nExpected {} at ({}:{}) (line:col), but was '{}'.",
                 expected, actual.st_line, actual.st_pos, actual.token
             ),
-            ParseErr::TokenErr { expected, actual } => write!(
+            ParseErr::TokenErr { expected, actual, message } => write!(
                 f,
-                "\nExpected '{}' at ({}:{}) (line:col), but was '{}'.",
-                expected, actual.st_line, actual.st_pos, actual.token
+                "\nExpected '{}' at ({}:{}) (line:col), but was '{}', in {}.",
+                expected, actual.st_line, actual.st_pos, actual.token, message
             ),
             ParseErr::CustomEOFErr { expected } =>
                 write!(f, "\nExpected '{}', but end of file.", expected),

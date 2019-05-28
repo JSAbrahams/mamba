@@ -37,7 +37,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
             _ => Err(CustomErr { expected: "expression".to_string(), actual: token_pos.clone() })
         },
-        CustomEOFErr { expected: "expression".to_string() }
+        "expression"
     );
 
     match result {
@@ -49,7 +49,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     let (en_line, en_pos) = it.end_pos()?;
-    it.eat(Token::Underscore)?;
+    it.eat(Token::Underscore, "underscore")?;
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore }))
 }
 
@@ -58,14 +58,13 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::QuestOr => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                it.eat(Token::QuestOr)?;
+                it.eat(Token::QuestOr, "postfix expression")?;
                 let right = it.parse(&parse_expression, "question or")?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
                 let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
                 parse_post_expr(&res, it)
             }
-
             Token::Assign => {
                 let res = parse_reassignment(pre, it)?;
                 parse_post_expr(&res, it)
@@ -82,13 +81,14 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                     Ok(Box::from(pre.clone()))
                 },
         },
-        Ok(Box::from(pre.clone()))
+        Ok(Box::from(pre.clone())),
+        "postfix expression"
     )
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Ret)?;
+    it.eat(Token::Ret, "return")?;
 
     if it.eat_if(Token::NL) {
         let (en_line, en_pos) = it.end_pos()?;
