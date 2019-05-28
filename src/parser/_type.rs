@@ -36,16 +36,12 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(Token::LSBrack, "generics")?;
-
     let mut generics: Vec<ASTNodePos> = Vec::new();
     it.peek_while_not_token(Token::RSBrack, &mut |it, _, no| {
         generics.push(*it.parse(&parse_generic, format!("generic {}", no).as_str())?);
         it.eat_if(Token::Comma);
         Ok(())
     })?;
-
-    it.eat(Token::RSBrack, "generics")?;
     Ok(generics)
 }
 
@@ -70,8 +66,8 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos {
             TokenPos { token: Token::Id(_), .. } => {
                 let id = it.parse(&parse_id, "type")?;
-                let generics =
-                    it.parse_vec_if_token(Token::LSBrack, &parse_generics, "type generic")?;
+                let generics = it.parse_vec_if(Token::LSBrack, &parse_generics, "type generic")?;
+                it.eat_if(Token::RSBrack);
 
                 let (en_line, en_pos) = match generics.last() {
                     Some(generic) => (generic.en_line, generic.en_pos),
@@ -109,18 +105,19 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(Token::When, "conditions")?;
-    it.eat(Token::NL, "conditions")?;
-    it.eat(Token::Indent, "conditions")?;
+    let mut conditions = vec![];
+    if it.eat_if(Token::NL).is_some() {
+        it.eat(Token::Indent, "conditions")?;
+        it.peek_while_not_token(Token::Dedent, &mut |it, _, no| {
+            conditions.push(*it.parse(&parse_condition, format!("condition {}", no).as_str())?);
+            it.eat_if(Token::NL);
+            Ok(())
+        })?;
+        it.eat(Token::Dedent, "conditions")?;
+    } else {
+        conditions.push(*it.parse(&parse_condition, format!("condition 1").as_str())?);
+    }
 
-    let mut conditions = Vec::new();
-    it.peek_while_not_token(Token::Dedent, &mut |it, _, no| {
-        conditions.push(*it.parse(&parse_condition, format!("condition {}", no).as_str())?);
-        it.eat_if(Token::NL);
-        Ok(())
-    })?;
-
-    it.eat(Token::Dedent, "conditions")?;
     Ok(conditions)
 }
 

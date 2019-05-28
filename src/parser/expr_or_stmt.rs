@@ -42,7 +42,10 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
     let (st_line, st_pos) = it.start_pos()?;
     it.eat(Token::Raises, "raise")?;
 
-    let errors = it.parse_vec(&parse_generics, "raise")?;
+    it.eat(Token::LSBrack, "raise")?;
+    let errors = it.parse_vec(&parse_generics, "raise generics")?;
+    it.eat(Token::RSBrack, "raise")?;
+    it.eat_if(Token::RSBrack);
     let (en_line, en_pos) = match errors.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)

@@ -97,7 +97,7 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn parse_vec_if_token(
+    pub fn parse_vec_if(
         &mut self,
         token: Token,
         parse_fun: &Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,

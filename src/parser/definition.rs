@@ -128,7 +128,7 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
     };
 
     let ret_ty = it.parse_if(Token::DoublePoint, &parse_type, "function return type")?;
-    let raises = it.parse_vec_if_token(Token::Raises, &parse_generics, "raises")?;
+    let raises = it.parse_vec_if(Token::Raises, &parse_raises, "raises")?;
     let body = it.parse_if(Token::BTo, &parse_expr_or_stmt, "function body")?;
 
     let (en_line, en_pos) = match (&ret_ty, &raises.last(), &body) {
@@ -140,6 +140,13 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
 
     let node = ASTNode::FunDef { id, pure, fun_args, ret_ty, raises, body };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+}
+
+pub fn parse_raises(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    it.eat(Token::LSBrack, "raises")?;
+    let args = it.parse_vec(&parse_generics, "raises generics")?;
+    it.eat(Token::RSBrack, "raises arguments")?;
+    Ok(args)
 }
 
 pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
@@ -187,7 +194,7 @@ fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let ofmut = it.eat_if(Token::OfMut).is_some();
 
     let expression = it.parse_if(Token::Assign, &parse_expression, "definition body")?;
-    let forward = it.parse_vec_if_token(Token::Forward, &parse_forward, "definition raises")?;
+    let forward = it.parse_vec_if(Token::Forward, &parse_forward, "definition raises")?;
 
     let (en_line, en_pos) = match (&expression, &forward.last()) {
         (_, Some(expr)) => (expr.en_line, expr.en_pos),

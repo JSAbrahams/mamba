@@ -11,6 +11,7 @@ pub mod parse_result;
 mod _type;
 mod block;
 mod call;
+mod class;
 mod collection;
 mod control_flow_expr;
 mod control_flow_stmt;
