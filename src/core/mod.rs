@@ -127,6 +127,8 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Block { statements } => format!("\n{}", newline_delimited(statements, ind)),
 
         Core::PropertyCall { object, property } => format!("{}.{}", to_py(object, ind), property),
+        Core::FunctionCall { function, args } =>
+            format!("{}({})", to_py(function, ind), comma_delimited(args, ind)),
         Core::MethodCall { object, method, args } => match object.as_ref() {
             Core::Empty => format!("{}({})", method, comma_delimited(args, ind)),
             other => format!("{}.{}({})", to_py(other, ind), method, comma_delimited(args, ind))

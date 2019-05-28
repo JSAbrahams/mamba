@@ -8,6 +8,5 @@ macro_rules! to_py {
 }
 
 pub mod collection;
-pub mod compound;
 pub mod control_flow;
 pub mod function;
