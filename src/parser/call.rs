@@ -64,8 +64,7 @@ fn parse_direct_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (pre.st_line, pre.st_pos);
     it.eat(Token::LRBrack, "direct call")?;
     let args = it.parse_vec(&parse_arguments, "arguments")?;
-    let (en_line, en_pos) = it.end_pos()?;
-    it.eat(Token::RRBrack, "direct call")?;
+    let (en_line, en_pos) = it.eat(Token::RRBrack, "direct call")?;
 
     let node = ASTNode::DirectCall { name: Box::from(pre.clone()), args };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
@@ -83,8 +82,7 @@ fn parse_regular_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                 TokenPos { token: Token::LRBrack, .. } => {
                     it.eat(Token::LRBrack, "regular call")?;
                     let args = it.parse_vec(&parse_arguments, "arguments")?;
-                    let (en_line, en_pos) = it.end_pos()?;
-                    it.eat(Token::RRBrack, "regular call")?;
+                    let (en_line, en_pos) = it.eat(Token::RRBrack, "regular call")?;
                     let node = ASTNode::MethodCall { instance: Box::from(pre), name, args };
                     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
                 }

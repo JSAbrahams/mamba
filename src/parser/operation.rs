@@ -223,10 +223,9 @@ fn parse_level_1(it: &mut TPIterator) -> ParseResult {
 
 fn parse_factor(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let (en_line, en_pos) = it.end_pos()?;
     macro_rules! literal {
         ($it:expr, $factor:expr, $ast:ident) => {{
-            $it.eat(Token::$ast($factor.clone()), "factor")?;
+            let (en_line, en_pos) = $it.eat(Token::$ast($factor.clone()), "factor")?;
             let node = ASTNode::$ast { lit: $factor };
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         }};
@@ -241,8 +240,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             Token::Bool(b) => literal!(it, *b, Bool),
             Token::Str(str) => literal!(it, str.to_string(), Str),
             Token::ENum(num, exp) => {
-                let (en_line, en_pos) = it.end_pos()?;
-                it.eat(Token::ENum(num.clone(), exp.clone()), "factor")?;
+                let (en_line, en_pos) = it.eat(Token::ENum(num.clone(), exp.clone()), "factor")?;
                 let node = ASTNode::ENum { num: num.to_string(), exp: exp.to_string() };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }

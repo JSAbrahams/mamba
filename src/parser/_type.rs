@@ -12,22 +12,19 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match &token_pos.token {
             Token::_Self => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.end_pos()?;
-                it.eat(Token::_Self, "identifier")?;
+                let (en_line, en_pos) = it.eat(Token::_Self, "identifier")?;
                 let node = ASTNode::_Self;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             Token::Init => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.end_pos()?;
-                it.eat(Token::Init, "identifier")?;
+                let (en_line, en_pos) = it.eat(Token::Init, "identifier")?;
                 let node = ASTNode::Init;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             Token::Id(id) => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.end_pos()?;
-                it.eat(Token::Id(id.clone()), "identifier")?;
+                let (en_line, en_pos) = it.eat(Token::Id(id.clone()), "identifier")?;
                 let node = ASTNode::Id { lit: id.clone() };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
@@ -153,8 +150,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
         Ok(())
     })?;
 
-    let (en_line, en_pos) = it.end_pos()?;
-    it.eat(Token::RRBrack, "type tuple")?;
+    let (en_line, en_pos) = it.eat(Token::RRBrack, "type tuple")?;
     let node = ASTNode::TypeTup { types };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
@@ -164,7 +160,10 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     let mutable = it.eat_if(Token::Mut);
     let id = it.parse(&parse_id, "id maybe type")?;
     let _type = it.parse_if(Token::DoublePoint, &parse_type, "id maybe type")?;
-    let (en_line, en_pos) = it.end_pos()?;
+    let (en_line, en_pos) = match &_type {
+        Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
+        _ => (id.en_line, id.en_pos)
+    };
 
     let node = ASTNode::IdType { id, mutable, _type };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))

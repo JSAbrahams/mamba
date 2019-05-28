@@ -24,12 +24,12 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat(&mut self, token: Token, err_msg: &str) -> ParseResult<()> {
+    pub fn eat(&mut self, token: Token, err_msg: &str) -> ParseResult<(i32, i32)> {
         // println!("eat {}", token);
         match self.it.next() {
-            Some(TokenPos { token: actual, .. })
+            Some(TokenPos { token: actual, st_line, st_pos })
                 if Token::same_type(actual.clone(), token.clone()) =>
-                Ok(()),
+                Ok((*st_line, *st_pos + actual.clone().width())),
             Some(tp) => Err(TokenErr {
                 expected: token.clone(),
                 actual:   tp.clone(),
@@ -180,14 +180,6 @@ impl<'a> TPIterator<'a> {
     pub fn start_pos(&mut self) -> ParseResult<(i32, i32)> {
         match self.it.peek() {
             Some(TokenPos { st_line, st_pos, .. }) => Ok((*st_line, *st_pos)),
-            None => Err(CustomEOFErr { expected: String::from("token.") })
-        }
-    }
-
-    pub fn end_pos(&mut self) -> ParseResult<(i32, i32)> {
-        match self.it.peek() {
-            Some(TokenPos { st_line, st_pos, token }) =>
-                Ok((*st_line, *st_pos + token.clone().width())),
             None => Err(CustomEOFErr { expected: String::from("token.") })
         }
     }

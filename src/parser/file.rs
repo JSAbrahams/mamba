@@ -172,26 +172,26 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     it.peek_while_fn(&|_| true, &mut |it, token_pos, _| match &token_pos.token {
         Token::NL => Ok(()),
         Token::Import => {
-            imports.push(*it.parse(&parse_import, "import")?);
+            imports.push(*it.parse(&parse_import, "file")?);
             Ok(())
         }
         Token::From => {
-            imports.push(*it.parse(&parse_from_import, "from import")?);
+            imports.push(*it.parse(&parse_from_import, "file")?);
             Ok(())
         }
         Token::Type => {
-            type_defs.push(*it.parse(&parse_type_def, "type definition")?);
+            type_defs.push(*it.parse(&parse_type_def, "file")?);
             Ok(())
         }
         Token::Comment(comment) => {
             let (st_line, st_pos) = it.start_pos()?;
-            let (en_line, en_pos) = it.end_pos()?;
+            let (en_line, en_pos) = it.eat(Token::Comment(comment.clone()), "file")?;
             let node = ASTNode::Comment { comment: comment.clone() };
             modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
             Ok(())
         }
         _ => {
-            modules.push(*it.parse(&parse_module, "module")?);
+            modules.push(*it.parse(&parse_module, "file")?);
             Ok(())
         }
     })?;

@@ -24,8 +24,7 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     it.eat(Token::LRBrack, "tuple")?;
 
     let elements = it.parse_vec(&parse_expressions, "tuple")?;
-    let (en_line, en_pos) = it.end_pos()?;
-    it.eat(Token::RRBrack, "tuple")?;
+    let (en_line, en_pos) = it.eat(Token::RRBrack, "tuple")?;
 
     Ok(Box::from(if elements.len() == 1 {
         elements[0].clone()

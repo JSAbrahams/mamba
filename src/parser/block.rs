@@ -10,7 +10,10 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.peek_while_not_token(Token::Dedent, &mut |it, token_pos, _| {
         // println!("{:?}", statements);
         match &token_pos.token {
-            Token::NL => it.eat(Token::NL, "statements"),
+            Token::NL => {
+                it.eat(Token::NL, "statements")?;
+                Ok(())
+            }
             Token::Comment(comment) => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat(Token::Comment(comment.clone()), "statements")?;

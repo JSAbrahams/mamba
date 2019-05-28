@@ -22,22 +22,20 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             Token::Pass => {
-                let (en_line, en_pos) = it.end_pos()?;
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                it.eat(Token::Pass, "statement")?;
+                let (en_line, en_pos) = it.eat(Token::Pass, "statement")?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Pass }))
             }
             Token::Retry => {
-                let (en_line, en_pos) = it.end_pos()?;
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                it.eat(Token::Retry, "statement")?;
+                let (en_line, en_pos) = it.eat(Token::Retry, "statement")?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Retry }))
             }
             Token::Raise => {
-                let (en_line, en_pos) = it.end_pos()?;
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat(Token::Raise, "statement")?;
+                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 let error = it.parse(&parse_expression, "raise")?;
+                let (en_line, en_pos) = (error.en_line, error.en_pos);
                 let node = ASTNode::Raise { error };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }

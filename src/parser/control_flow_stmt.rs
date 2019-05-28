@@ -15,14 +15,12 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
             TokenPos { token: Token::For, .. } => parse_for(it),
             TokenPos { token: Token::Break, st_line, st_pos } => {
                 let (st_line, st_pos) = (*st_line, *st_pos);
-                let (en_line, en_pos) = it.end_pos()?;
-                it.eat(Token::Break, "control flow statement")?;
+                let (en_line, en_pos) = it.eat(Token::Break, "control flow statement")?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Break }))
             }
             TokenPos { token: Token::Continue, st_line, st_pos } => {
                 let (st_line, st_pos) = (*st_line, *st_pos);
-                let (en_line, en_pos) = it.end_pos()?;
-                it.eat(Token::Continue, "control flow statement")?;
+                let (en_line, en_pos) = it.eat(Token::Continue, "control flow statement")?;
                 let node = ASTNode::Continue;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }

@@ -20,9 +20,8 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
 
     macro_rules! op {
         ($it:expr, $token:ident, $node:ident) => {{
-            let (en_line, en_pos) = $it.end_pos()?;
+            let (en_line, en_pos) = $it.eat(Token::$token, "definition")?;
             let node_pos = ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::$node };
-            $it.eat(Token::$token, "definition")?;
             parse_fun_def(&node_pos, pure, $it)
         }};
     };
@@ -164,13 +163,15 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let id_maybe_type = it.parse(&parse_id_maybe_type, "function arg")?;
     let default = it.parse_if(Token::Assign, &parse_expression, "argument default")?;
 
-    let (en_line, en_pos) = it.end_pos()?;
+    let (en_line, en_pos) = match &default {
+        Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
+        _ => (id_maybe_type.en_line, id_maybe_type.en_pos)
+    };
     let node = ASTNode::FunArg { vararg, id_maybe_type, default };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(Token::Forward, "forward")?;
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
     it.peek_while_not_token(Token::NL, &mut |it, _, no| {
         forwarded.push(*it.parse(&parse_id, format!("forward {}", no).as_str())?);
