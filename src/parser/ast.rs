@@ -160,14 +160,14 @@ pub enum ASTNode {
         elements: Vec<ASTNodePos>
     },
     SetBuilder {
-        items:      Box<ASTNodePos>,
+        item:       Box<ASTNodePos>,
         conditions: Vec<ASTNodePos>
     },
     List {
         elements: Vec<ASTNodePos>
     },
     ListBuilder {
-        items:      Box<ASTNodePos>,
+        item:       Box<ASTNodePos>,
         conditions: Vec<ASTNodePos>
     },
     Tuple {

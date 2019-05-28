@@ -1,9 +1,8 @@
 use crate::common::*;
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
-use mamba::parser::parse_direct;
-
 use mamba::parser::parse;
+use mamba::parser::parse_direct;
 
 #[test]
 fn list_expression() {
@@ -37,15 +36,12 @@ fn list_builder_verify() {
     let source = String::from("[a | c, d]");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let _statements;
     let (items, conditions) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::ListBuilder { items, conditions } => (items, conditions),
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
                 _ => panic!("first element script was not list builder.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -88,15 +84,12 @@ fn set_builder_verify() {
     let source = String::from("{a | c, d}");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let _statements;
     let (items, conditions) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                ASTNode::SetBuilder { items, conditions } => (items, conditions),
+        ASTNode::Script { statements, .. } =>
+            match &statements.first().expect("script empty.").node {
+                ASTNode::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
                 _ => panic!("first element script was not set builder.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
