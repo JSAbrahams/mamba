@@ -1,7 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
 <p align="center">
-    <img src="image/logo_text.png" height="250">
+    <img src="image/logo_text.png" height="200">
 </p>
 
 <p align="center">
