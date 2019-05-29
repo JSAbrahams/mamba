@@ -31,17 +31,8 @@ before_script:
   - rustup component add rustfmt --toolchain nightly
   - rustup component add clippy
 
-  # Kcov
-  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-  - tar xzf master.tar.gz
-  - cd kcov-master
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make
-  - sudo make install
-  - cd ../..
-  - rm -rf kcov-master
+  # grcov
+  - curl -L https://github.com/mozilla/grcov/releases/download/v0.4.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
 
 after_success:
   # Coverage report
@@ -57,4 +48,7 @@ script:
   - cargo test --verbose
 
   # Coverage report
-  - kcov target/debug mamba.exe
+  - |
+    zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
+    ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info;
+    bash <(curl -s https://codecov.io/bash) -f lcov.info;
