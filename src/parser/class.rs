@@ -17,42 +17,40 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
     let _type = it.parse(&parse_type, "name")?;
 
     let mut args = vec![];
-    it.eat_if(Token::LRBrack);
-    it.peek_while_not_token(Token::RRBrack, &mut |it, token_pos, no| match token_pos.token {
-        Token::Def => {
-            it.eat(Token::Def, format!("constructor argument {}", no).as_str())?;
-            args.push(*it.parse(&parse_fun_arg, format!("constructor argument {}", no).as_str())?);
-            it.eat_if(Token::Comma);
-            Ok(())
-        }
-        _ => Err(TokenErr {
-            expected: Token::Def,
-            actual:   token_pos.clone(),
-            message:  String::from("class")
-        })
-    })?;
-    it.eat_if(Token::RRBrack);
+    if it.eat_if(Token::LRBrack).is_some() {
+        it.peek_while_not_token(Token::RRBrack, &mut |it, token_pos, no| match token_pos.token {
+            Token::Def => {
+                it.eat(Token::Def, format!("constructor argument {}", no).as_str())?;
+                args.push(
+                    *it.parse(&parse_fun_arg, format!("constructor argument {}", no).as_str())?
+                );
+                it.eat_if(Token::Comma);
+                Ok(())
+            }
+            _ => Err(TokenErr {
+                expected: Token::Def,
+                actual:   token_pos.clone(),
+                message:  String::from("class")
+            })
+        })?;
+        it.eat(Token::RRBrack, "class arguments")?;
+    }
 
-    let parents = it.parse_vec_if(
-        Token::IsA,
-        &|it| {
-            let mut parents = vec![];
-            it.peek_while_not_token(Token::NL, &mut |it, token_pos, no| match token_pos.token {
-                Token::Id(_) => {
-                    parents.push(*it.parse(&parse_parent, format!("parent {}", no).as_str())?);
-                    it.eat_if(Token::Comma);
-                    Ok(())
-                }
-                _ => Err(TokenErr {
-                    expected: Token::Id(String::new()),
-                    actual:   token_pos.clone(),
-                    message:  format!("parent {}", no)
-                })
-            })?;
-            Ok(parents)
-        },
-        "parents"
-    )?;
+    let mut parents = vec![];
+    if it.eat_if(Token::IsA).is_some() {
+        it.peek_while_not_token(Token::NL, &mut |it, token_pos, no| match token_pos.token {
+            Token::Id(_) => {
+                parents.push(*it.parse(&parse_parent, format!("parent {}", no).as_str())?);
+                it.eat_if(Token::Comma);
+                Ok(())
+            }
+            _ => Err(TokenErr {
+                expected: Token::Id(String::new()),
+                actual:   token_pos.clone(),
+                message:  format!("parent {}", no)
+            })
+        })?;
+    }
 
     it.eat(Token::NL, "class")?;
     let body = it.parse(&parse_block, "class body")?;
@@ -68,13 +66,14 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
     let generics = it.parse_vec_if(Token::LSBrack, &parse_generics, "parent generics")?;
     it.eat_if(Token::RSBrack);
     let mut args = vec![];
-    it.eat_if(Token::LRBrack);
-    it.peek_while_not_token(Token::RRBrack, &mut |it, _, no| {
-        args.push(*it.parse(&parse_expression, format!("parent argument {}", no).as_str())?);
-        it.eat_if(Token::Comma);
-        Ok(())
-    })?;
-    it.eat_if(Token::RRBrack);
+    if it.eat_if(Token::LRBrack).is_some() {
+        it.peek_while_not_token(Token::RRBrack, &mut |it, _, no| {
+            args.push(*it.parse(&parse_expression, format!("parent argument {}", no).as_str())?);
+            it.eat_if(Token::Comma);
+            Ok(())
+        })?;
+        it.eat(Token::RRBrack, "parent arguments")?;
+    }
 
     let (en_line, en_pos) = match (generics.last(), args.last()) {
         (_, Some(tp)) => (tp.en_line, tp.en_pos),

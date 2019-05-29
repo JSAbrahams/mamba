@@ -25,9 +25,17 @@ mod common;
 /// let source = "a <- 2";
 /// let tokens = tokenize(&source).unwrap();
 ///
-/// assert_eq!(tokens[0], TokenPos { line: 1, pos: 1, token: Token::Id(String::from("a")) });
-/// assert_eq!(tokens[1], TokenPos { line: 1, pos: 3, token: Token::Assign });
-/// assert_eq!(tokens[2], TokenPos { line: 1, pos: 6, token: Token::Int(String::from("2")) });
+/// assert_eq!(tokens[0], TokenPos {
+///     st_line: 1,
+///     st_pos:  1,
+///     token:   Token::Id(String::from("a"))
+/// });
+/// assert_eq!(tokens[1], TokenPos { st_line: 1, st_pos: 3, token: Token::Assign });
+/// assert_eq!(tokens[2], TokenPos {
+///     st_line: 1,
+///     st_pos:  6,
+///     token:   Token::Int(String::from("2"))
+/// });
 /// ```
 ///
 /// # Failures
@@ -41,7 +49,7 @@ mod common;
 /// let result = tokenize(&source);
 /// assert_eq!(result.is_err(), true);
 /// ```
-#[allow(clippy::cognitive_complexity, clippy::while_let_on_iterator)]
+#[allow(clippy::while_let_on_iterator)]
 pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
     let mut it = input.chars().peekable();
     let mut tokens = Vec::new();

@@ -33,10 +33,10 @@ mod statement;
 /// # use mamba::lexer::token::TokenPos;
 /// # use mamba::parser::parse;
 /// // Assigning 10 to b
-/// let def = TokenPos { line: 0, pos: 0, token: Token::Def };
-/// let id = TokenPos { line: 0, pos: 4, token: Token::Id(String::from("b")) };
-/// let assign = TokenPos { line: 0, pos: 6, token: Token::Assign };
-/// let number = TokenPos { line: 0, pos: 9, token: Token::Int(String::from("9")) };
+/// let def = TokenPos { st_line: 0, st_pos: 0, token: Token::Def };
+/// let id = TokenPos { st_line: 0, st_pos: 4, token: Token::Id(String::from("b")) };
+/// let assign = TokenPos { st_line: 0, st_pos: 6, token: Token::Assign };
+/// let number = TokenPos { st_line: 0, st_pos: 9, token: Token::Int(String::from("9")) };
 ///
 /// let result = parse(&[def, id, assign, number]);
 /// assert_eq!(result.is_ok(), true);
@@ -50,9 +50,9 @@ mod statement;
 /// # use mamba::lexer::token::Token;
 /// # use mamba::lexer::token::TokenPos;
 /// # use mamba::parser::parse;
-/// let def = TokenPos { line: 0, pos: 0, token: Token::Def };
-/// let id = TokenPos { line: 0, pos: 4, token: Token::Id(String::from("b")) };
-/// let number = TokenPos { line: 0, pos: 9, token: Token::Int(String::from("9")) };
+/// let def = TokenPos { st_line: 0, st_pos: 0, token: Token::Def };
+/// let id = TokenPos { st_line: 0, st_pos: 4, token: Token::Id(String::from("b")) };
+/// let number = TokenPos { st_line: 0, st_pos: 9, token: Token::Int(String::from("9")) };
 ///
 /// let result = parse(&[def, id, number]);
 /// assert_eq!(result.is_err(), true);

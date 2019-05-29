@@ -115,7 +115,7 @@ pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         })?;
         it.eat(Token::Dedent, "conditions")?;
     } else {
-        conditions.push(*it.parse(&parse_condition, format!("condition 1").as_str())?);
+        conditions.push(*it.parse(&parse_condition, "condition 1")?);
     }
 
     Ok(conditions)

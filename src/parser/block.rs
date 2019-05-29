@@ -1,4 +1,5 @@
 use crate::lexer::token::Token;
+use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -23,9 +24,10 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         }
         _ => {
             statements.push(*it.parse(&parse_expr_or_stmt, "block")?);
-            if it.peak_if_fn(&|token_pos| {
+            let invalid = |token_pos: &TokenPos| {
                 token_pos.token != Token::NL && token_pos.token != Token::Dedent
-            }) {
+            };
+            if it.peak_if_fn(&invalid) {
                 return Err(CustomErr {
                     expected: String::from("statement or expression"),
                     actual:   token_pos.clone()

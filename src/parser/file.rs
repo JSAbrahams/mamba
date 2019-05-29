@@ -136,12 +136,17 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
                 let _type = it.parse(&parse_type, "type definition")?;
                 let conditions =
                     it.parse_vec_if(Token::When, &parse_conditions, "type definition")?;
+                let (en_line, en_pos) = if let Some(token_pos) = conditions.last() {
+                    (token_pos.en_line, token_pos.en_pos)
+                } else {
+                    (_type.en_line, _type.en_pos)
+                };
 
-                let (en_line, en_pos) = (_type.en_line, _type.en_pos);
                 let node = ASTNode::TypeAlias { _type: _type.clone(), conditions };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             _ => {
+                it.eat_if(Token::NL);
                 let body = it.parse(&parse_block, "type body")?;
                 let (en_line, en_pos) = (body.en_line, body.en_pos);
                 let node = ASTNode::TypeDef { _type: _type.clone(), body: Some(body) };
@@ -149,8 +154,8 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             }
         },
         {
-            let (en_line, en_pos) = (_type.en_line, _type.en_pos);
             let node = ASTNode::TypeDef { _type: _type.clone(), body: None };
+            let (en_line, en_pos) = (_type.en_line, _type.en_pos);
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         },
         "type definition"

@@ -179,7 +179,10 @@ fn extract_parents(
                         function: Box::from(Core::Id { lit: String::from("super") }),
                         args:     vec![]
                     }),
-                    property: Box::from(Core::Id { lit: String::from("__init__") })
+                    property: Box::from(Core::FunctionCall {
+                        function: Box::from(Core::Id { lit: String::from("__init__") }),
+                        args
+                    })
                 });
             }
             other => panic!("Expected parent but got {:?}", other)
