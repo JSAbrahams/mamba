@@ -32,8 +32,8 @@ before_script:
   - sudo apt-get install python3
 
   # Cargo components
-  - if [ dist == "nightly" ]; then rustup component add rustfmt --toolchain nightly fi
-  - if [ dist == "stable" ]; then rustup component add clippy fi
+  - if [ dist == "nightly" ]; then rustup component add rustfmt --toolchain nightly; fi
+  - if [ dist == "stable" ]; then rustup component add clippy; fi
 
 before_install:
   # grcov
@@ -45,15 +45,21 @@ after_success:
 
 script:
   # fail when formatting error encountered
-  - if [ dist == "nightly" ]; then cargo +nightly fmt --all -- --check fi
+  - if [ dist == "nightly" ]; then cargo +nightly fmt --all -- --check; fi
   # fail when encountering clippy warnings
-  - if [ dist == "stable" ]; then cargo clippy -- -D warnings fi
+  - if [ dist == "stable" ]; then cargo clippy -- -D warnings; fi
 
   - export CARGO_INCREMENTAL=0
-  - export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+  - |
+    if [ dist == "nightly" ]; then
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
+    fi
   - cargo build --verbose
   - cargo test --verbose
 
   # Coverage report
-  - zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`
-  - ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
+  - |
+    if [ dist == "nightly" ]; then
+      zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
+      ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info;
+    fi
