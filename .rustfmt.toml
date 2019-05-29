@@ -7,6 +7,7 @@ use_small_heuristics = "Max"
 condense_wildcard_suffixes = true
 fn_single_line = true
 format_strings = true
+
 format_macro_matchers = true
 
 imports_indent = "Visual"
@@ -26,3 +27,4 @@ use_field_init_shorthand = true
 
 format_doc_comments = true
 wrap_comments = true
+use_try_shorthand = true

@@ -5,7 +5,6 @@ use mamba::lexer::tokenize;
 use mamba::parser::parse;
 
 #[test]
-#[ignore]
 fn core_function_definitions() {
     let source = resource_content(true, &["function"], "definition.mamba");
     to_py!(source);

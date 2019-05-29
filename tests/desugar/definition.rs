@@ -111,51 +111,6 @@ fn variable_def_none_verify() {
 }
 
 #[test]
-fn variable_def_forward_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
-        ofmut:         false,
-        id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("object") }),
-        expression:    None,
-        forward:       vec![to_pos_unboxed!(ASTNode::Id { lit: String::from("m1") })]
-    });
-    let def = to_pos!(ASTNode::Def { private: true, definition });
-
-    let (private, id, right, fprivate, fid, fargs, fbody) = match desugar(&def) {
-        Core::Block { statements } => match (statements[0].clone(), statements[1].clone()) {
-            (
-                Core::VarDef { private, id, right },
-                Core::FunDef { private: fprivate, id: fid, args: fargs, body: fbody }
-            ) => (private, id, right, fprivate, fid, fargs, fbody),
-            (other1, other2) =>
-                panic!("Expected vardef and fundef but got: {:?} and {:?}", other1, other2),
-        },
-        other => panic!("Expected block but got: {:?}.", other)
-    };
-
-    assert_eq!(private, true);
-    assert_eq!(*id, Core::Id { lit: String::from("object") });
-    assert_eq!(*right, Core::None);
-
-    assert_eq!(fprivate, false);
-    assert_eq!(*fid, Core::Id { lit: String::from("m1") });
-    assert_eq!(fargs.len(), 1);
-    assert_eq!(fargs[0], Core::FunArg {
-        vararg:  false,
-        id:      Box::from(Core::Id { lit: String::from("self") }),
-        default: Box::from(Core::Empty)
-    });
-
-    assert_eq!(*fbody, Core::MethodCall {
-        object: Box::from(Core::PropertyCall {
-            object:   Box::from(Core::Id { lit: String::from("self") }),
-            property: String::from("object")
-        }),
-        method: String::from("m1"),
-        args:   vec![]
-    });
-}
-
-#[test]
 fn tuple_def_none_verify() {
     let elements = vec![
         to_pos_unboxed!(ASTNode::Id { lit: String::from("a") }),
@@ -198,7 +153,7 @@ fn fun_def_verify() {
             })
         ],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     None
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
@@ -236,7 +191,7 @@ fn fun_def_default_arg_verify() {
             default:       Some(to_pos!(ASTNode::Str { lit: String::from("asdf") }))
         })],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     None
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
@@ -268,7 +223,7 @@ fn fun_def_with_body_verify() {
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
         ],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     Some(to_pos!(ASTNode::Real { lit: String::from("2.4") }))
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
@@ -329,7 +284,7 @@ fn top_level_fun_def_panic_verify() {
         pure:     false,
         fun_args: vec![],
         ret_ty:   None,
-        raises:   None,
+        raises:   vec![],
         body:     None
     });
 

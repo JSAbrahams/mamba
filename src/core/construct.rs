@@ -6,8 +6,8 @@ pub enum Core {
     ImportAs { import: Vec<Core>, _as: Vec<Core> },
     ClassDef { name: Box<Core>, parents: Vec<Core>, definitions: Vec<Core> },
 
-    MethodCall { object: Box<Core>, method: String, args: Vec<Core> },
-    PropertyCall { object: Box<Core>, property: String },
+    FunctionCall { function: Box<Core>, args: Vec<Core> },
+    PropertyCall { object: Box<Core>, property: Box<Core> },
 
     Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },

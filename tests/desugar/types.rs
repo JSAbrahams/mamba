@@ -7,7 +7,7 @@ use mamba::parser::ast::ASTNodePos;
 fn type_alias_empty_verify() {
     let type_def = to_pos!(ASTNode::TypeAlias {
         _type:      Box::from(to_pos!(ASTNode::Pass)),
-        conditions: None
+        conditions: vec![]
     });
     assert_eq!(desugar(&type_def), Core::Empty);
 }

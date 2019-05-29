@@ -64,7 +64,7 @@ pub enum ASTNode {
         id:       Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
         ret_ty:   Option<Box<ASTNodePos>>,
-        raises:   Option<Vec<ASTNodePos>>,
+        raises:   Vec<ASTNodePos>,
         body:     Option<Box<ASTNodePos>>
     },
 
@@ -91,18 +91,13 @@ pub enum ASTNode {
         expr:     Box<ASTNodePos>
     },
 
-    DirectCall {
+    FunctionCall {
         name: Box<ASTNodePos>,
         args: Vec<ASTNodePos>
     },
-    MethodCall {
+    PropertyCall {
         instance: Box<ASTNodePos>,
-        name:     Box<ASTNodePos>,
-        args:     Vec<ASTNodePos>
-    },
-    Call {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        property: Box<ASTNodePos>
     },
 
     Id {
@@ -120,7 +115,7 @@ pub enum ASTNode {
     },
     TypeAlias {
         _type:      Box<ASTNodePos>,
-        conditions: Option<Vec<ASTNodePos>>
+        conditions: Vec<ASTNodePos>
     },
     TypeTup {
         types: Vec<ASTNodePos>
@@ -160,14 +155,14 @@ pub enum ASTNode {
         elements: Vec<ASTNodePos>
     },
     SetBuilder {
-        items:      Box<ASTNodePos>,
+        item:       Box<ASTNodePos>,
         conditions: Vec<ASTNodePos>
     },
     List {
         elements: Vec<ASTNodePos>
     },
     ListBuilder {
-        items:      Box<ASTNodePos>,
+        item:       Box<ASTNodePos>,
         conditions: Vec<ASTNodePos>
     },
     Tuple {

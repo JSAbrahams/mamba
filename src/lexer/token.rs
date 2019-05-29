@@ -2,9 +2,9 @@ use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TokenPos {
-    pub line:  i32,
-    pub pos:   i32,
-    pub token: Token
+    pub st_line: i32,
+    pub st_pos:  i32,
+    pub token:   Token
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -118,6 +118,33 @@ pub enum Token {
     Comment(String)
 }
 
+impl Token {
+    pub fn width(self) -> i32 {
+        (match self {
+            Token::Id(id) => id.len(),
+            Token::Real(real) => real.len(),
+            Token::Int(int) => int.len(),
+            Token::Bool(true) => 4,
+            Token::Bool(false) => 5,
+            Token::Str(_str) => _str.len(),
+            Token::ENum(num, exp) => num.len() + 1 + exp.len(),
+            other => format!("{}", other).len()
+        } as i32)
+    }
+
+    pub fn same_type(left: Token, right: Token) -> bool {
+        match (left.clone(), right.clone()) {
+            (Token::Id(_), Token::Id(_)) => true,
+            (Token::Real(_), Token::Real(_)) => true,
+            (Token::Int(_), Token::Int(_)) => true,
+            (Token::Bool(_), Token::Bool(_)) => true,
+            (Token::Str(_), Token::Str(_)) => true,
+            (Token::ENum(..), Token::ENum(..)) => true,
+            _ => left == right
+        }
+    }
+}
+
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match self.clone() {
@@ -136,7 +163,7 @@ impl fmt::Display for Token {
             Token::_Self => String::from("self"),
 
             Token::Point => String::from("."),
-            Token::Comma => String::from("),"),
+            Token::Comma => String::from(")"),
             Token::DoublePoint => String::from(":"),
             Token::Vararg => String::from("vararg"),
             Token::BSlash => String::from("\\"),

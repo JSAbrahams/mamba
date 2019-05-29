@@ -1,167 +1,97 @@
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
-use crate::parser::common::end_pos;
-use crate::parser::common::start_pos;
 use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
+use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::ParseErr::*;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::TPIterator;
-
-macro_rules! get_zero_or_more {
-    ($it:expr, $msg:expr) => {{
-        match parse_zero_or_more_expr($it, $msg) {
-            Ok(node) => node,
-            Err(err) => return Err(err)
-        }
-    }};
-}
 
 pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
-    match it.peek() {
-        Some(TokenPos { token: Token::LRBrack, .. }) => parse_tuple(it),
-        Some(TokenPos { token: Token::LSBrack, .. }) => parse_list(it),
-        Some(TokenPos { token: Token::LCBrack, .. }) => parse_set(it),
-
-        Some(&next) =>
-            Err(CustomErr { expected: "collection".to_string(), actual: next.clone() }),
-        None => Err(CustomEOFErr { expected: "collection".to_string() })
-    }
+    it.peek_or_err(
+        &|it, token_pos| match token_pos.token {
+            Token::LRBrack => parse_tuple(it),
+            Token::LSBrack => parse_list(it),
+            Token::LCBrack => parse_set(it),
+            _ => Err(CustomErr { expected: "collection".to_string(), actual: token_pos.clone() })
+        },
+        "collection"
+    )
 }
 
 pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::LRBrack);
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::LRBrack, "tuple")?;
 
-    let elements: Vec<ASTNodePos> = get_zero_or_more!(it, "tuple");
-    let (en_line, en_pos) = end_pos(it);
-    check_next_is!(it, Token::RRBrack);
+    let elements = it.parse_vec(&parse_expressions, "tuple")?;
+    let (en_line, en_pos) = it.eat(Token::RRBrack, "tuple")?;
 
-    Ok(if elements.is_empty() || elements.len() >= 2 {
-        ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Tuple { elements } }
-    } else {
+    Ok(Box::from(if elements.len() == 1 {
         elements[0].clone()
-    })
+    } else {
+        ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Tuple { elements } }
+    }))
 }
 
 fn parse_set(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::LCBrack);
-    if let Some(TokenPos { token: Token::RCBrack, .. }) = it.peek() {
-        let (en_line, en_pos) = start_pos(it);
-        it.next();
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::LCBrack, "set")?;
 
+    if let Some((en_line, en_pos)) = it.eat_if(Token::RCBrack) {
         let node = ASTNode::Set { elements: vec![] };
-        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+        return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let head = get_or_err_direct!(it, parse_expression, "set");
-
-    match it.peek() {
-        Some(TokenPos { token: Token::Ver, .. }) => {
-            it.next();
-            let conditions: Vec<ASTNodePos> = get_zero_or_more!(it, "set builder");
-            let (en_line, en_pos) = end_pos(it);
-            check_next_is!(it, Token::RCBrack);
-
-            let node = ASTNode::SetBuilder { items: Box::from(head), conditions };
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
-        }
-        _ => {
-            if let Some(&t) = it.peek() {
-                if t.token == Token::Comma {
-                    it.next();
-                }
-            }
-
-            let mut elements = vec![head];
-            let tail: Vec<ASTNodePos> = get_zero_or_more!(it, "set");
-            elements.extend(tail);
-
-            let (en_line, en_pos) = end_pos(it);
-            check_next_is!(it, Token::RCBrack);
-
-            Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Set { elements } })
-        }
+    let item = it.parse(&parse_expression, "set")?;
+    if it.eat_if(Token::Ver).is_some() {
+        let conditions = it.parse_vec(&parse_expressions, "set conditions")?;
+        let (en_line, en_pos) = it.eat(Token::RCBrack, "set")?;
+        let node = ASTNode::SetBuilder { item, conditions };
+        return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
+
+    let mut elements = vec![*item];
+    it.eat_if(Token::Comma).is_some();
+    elements.append(&mut it.parse_vec(&parse_expressions, "set")?);
+
+    let (en_line, en_pos) = it.eat(Token::RCBrack, "set")?;
+    let node = ASTNode::Set { elements };
+    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
 fn parse_list(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = start_pos(it);
-    check_next_is!(it, Token::LSBrack);
-    if let Some(TokenPos { token: Token::RSBrack, .. }) = it.peek() {
-        let (en_line, en_pos) = start_pos(it);
-        it.next();
+    let (st_line, st_pos) = it.start_pos()?;
+    it.eat(Token::LSBrack, "list")?;
 
+    if let Some((en_line, en_pos)) = it.eat_if(Token::RSBrack) {
         let node = ASTNode::List { elements: vec![] };
-        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+        return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let head = get_or_err_direct!(it, parse_expression, "list");
-
-    if let Some(TokenPos { token: Token::Ver, .. }) = it.peek() {
-        it.next();
-        let conditions: Vec<ASTNodePos> = get_zero_or_more!(it, "list builder");
-        let (en_line, en_pos) = end_pos(it);
-        check_next_is!(it, Token::RSBrack);
-
-        let node = ASTNode::ListBuilder { items: Box::from(head), conditions };
-        return Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+    let item = it.parse(&parse_expression, "list")?;
+    if it.eat_if(Token::Ver).is_some() {
+        let conditions = it.parse_vec(&parse_expressions, "list conditions")?;
+        let (en_line, en_pos) = it.eat(Token::RSBrack, "list")?;
+        let node = ASTNode::ListBuilder { item, conditions };
+        return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    if let Some(&t) = it.peek() {
-        if t.token == Token::Comma {
-            it.next();
-        }
-    }
-    let mut elements = vec![head];
-    let tail: Vec<ASTNodePos> = get_zero_or_more!(it, "list");
-    elements.extend(tail);
+    let mut elements = vec![*item];
+    it.eat_if(Token::Comma);
+    elements.append(&mut it.parse_vec(&parse_expressions, "list")?);
 
-    let (en_line, en_pos) = end_pos(it);
-    check_next_is!(it, Token::RSBrack);
-
-    Ok(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::List { elements } })
+    let (en_line, en_pos) = it.eat(Token::RSBrack, "list")?;
+    let node = ASTNode::List { elements };
+    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
-pub fn parse_one_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
-    let mut expressions = Vec::new();
-    let mut pos = 0;
-
-    if let Some(&t) = it.peek() {
-        if !is_start_expression(t) {
-            return Err(CustomErr { expected: String::from("expression"), actual: t.clone() });
-        }
-    } else {
-        return Err(CustomEOFErr { expected: String::from("expression") });
-    }
-
-    while let Some(&t) = it.peek() {
-        if !is_start_expression(t) {
-            break;
-        }
-        expressions.push(get_or_err_direct!(
-            it,
-            parse_expression,
-            String::from(msg) + " (pos " + &pos.to_string() + ")"
-        ));
-        match it.peek() {
-            Some(TokenPos { token: Token::Comma, .. }) => {
-                it.next();
-            }
-            _ => continue
-        }
-        pos += 1;
-    }
+pub fn parse_expressions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let mut expressions = vec![];
+    it.peek_while_fn(&is_start_expression, &mut |it, _, no| {
+        expressions.push(*it.parse(&parse_expression, format!("expression {}", no).as_str())?);
+        it.eat_if(Token::Comma);
+        Ok(())
+    })?;
 
     Ok(expressions)
-}
-
-pub fn parse_zero_or_more_expr(it: &mut TPIterator, msg: &str) -> ParseResult<Vec<ASTNodePos>> {
-    match it.peek() {
-        Some(&t) if is_start_expression(t) => parse_one_or_more_expr(it, msg),
-        _ => Ok(vec![])
-    }
 }
