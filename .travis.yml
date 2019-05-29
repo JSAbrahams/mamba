@@ -1,4 +1,10 @@
 language: rust
+# cache dependencies
+cache: cargo
+rust:
+  - stable
+  - nightly
+
 dist: xenial
 python:
   - "3.7"
@@ -26,29 +32,28 @@ before_script:
   - sudo apt-get install python3
 
   # Cargo components
-  - rustup install stable
-  - rustup install nightly
-  - rustup component add rustfmt --toolchain nightly
-  - rustup component add clippy
+  - if [ dist == "nightly" ]; then rustup component add rustfmt --toolchain nightly fi
+  - if [ dist == "stable" ]; then rustup component add clippy fi
 
+before_install:
   # grcov
   - curl -L https://github.com/mozilla/grcov/releases/download/v0.4.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
 
 after_success:
   # Coverage report
-  - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash) -f lcov.info
 
 script:
   # fail when formatting error encountered
-  - cargo +nightly fmt --all -- --check
+  - if [ dist == "nightly" ]; then cargo +nightly fmt --all -- --check fi
   # fail when encountering clippy warnings
-  - cargo clippy -- -D warnings
+  - if [ dist == "stable" ]; then cargo clippy -- -D warnings fi
 
+  - export CARGO_INCREMENTAL=0
+  - export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
   - cargo build --verbose
   - cargo test --verbose
 
   # Coverage report
-  - |
-    zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
-    ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info;
-    bash <(curl -s https://codecov.io/bash) -f lcov.info;
+  - zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`
+  - ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info
