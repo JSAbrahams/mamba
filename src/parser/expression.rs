@@ -108,6 +108,7 @@ pub fn is_start_expression_exclude_unary(tp: &TokenPos) -> bool {
         | Token::LSBrack
         | Token::LCBrack
         | Token::Underscore
+        | Token::BSlash
         | Token::_Self
         | Token::Real(_)
         | Token::Int(_)

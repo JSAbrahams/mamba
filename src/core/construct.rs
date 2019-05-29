@@ -7,8 +7,7 @@ pub enum Core {
     ClassDef { name: Box<Core>, parents: Vec<Core>, definitions: Vec<Core> },
 
     FunctionCall { function: Box<Core>, args: Vec<Core> },
-    MethodCall { object: Box<Core>, method: String, args: Vec<Core> },
-    PropertyCall { object: Box<Core>, property: String },
+    PropertyCall { object: Box<Core>, property: Box<Core> },
 
     Id { lit: String },
     Assign { left: Box<Core>, right: Box<Core> },

@@ -8,7 +8,7 @@ use crate::parser::ast::ASTNode;
 pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
         ASTNode::Def { private, definition, .. } => match &definition.node {
-            ASTNode::VariableDef { id_maybe_type, expression, forward, .. } => {
+            ASTNode::VariableDef { id_maybe_type, expression, .. } => {
                 let id = desugar_node(id_maybe_type, ctx, state);
                 let new_state = &State {
                     tup:         match id.clone() {
@@ -19,7 +19,7 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
                     interface:   state.interface
                 };
 
-                let item = Core::VarDef {
+                Core::VarDef {
                     private: *private,
                     id:      Box::from(id.clone()),
                     right:   match (id.clone(), expression) {
@@ -28,23 +28,6 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
                             Box::from(Core::Tuple { elements: vec![Core::None; elements.len()] }),
                         (_, None) => Box::from(Core::None)
                     }
-                };
-
-                if forward.is_empty() {
-                    item
-                } else {
-                    let mut statements = vec![item];
-                    forward.iter().for_each(|node_pos| match (&id, &node_pos.node) {
-                        (Core::Id { lit: item_lit }, ASTNode::Id { lit: method_lit }) =>
-                            statements.push(forward_def(item_lit.clone(), method_lit.clone())),
-                        (Core::Id { .. }, other) =>
-                            panic!("Expected id in forward but was: {:?}", other),
-                        (other, _) => panic!(
-                            "Expected forward on an id, but tried to forward on: {:?}",
-                            other
-                        )
-                    });
-                    Core::Block { statements }
                 }
             }
             ASTNode::FunDef { id, fun_args, body: expression, .. } => Core::FunDef {
@@ -67,25 +50,5 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
             definition => panic!("invalid definition format: {:?}.", definition)
         },
         other => panic!("Expected definition but was: {:?}.", other)
-    }
-}
-
-fn forward_def(id: String, method: String) -> Core {
-    // TODO derive args from object type and method from context
-    let args = vec![Core::FunArg {
-        vararg:  false,
-        id:      Box::from(Core::Id { lit: String::from("self") }),
-        default: Box::from(Core::Empty)
-    }];
-    let object = Box::from(Core::PropertyCall {
-        object:   Box::from(Core::Id { lit: String::from("self") }),
-        property: id
-    });
-
-    Core::FunDef {
-        private: false,
-        id:      Box::from(Core::Id { lit: method.clone() }),
-        args:    args.clone(),
-        body:    Box::from(Core::MethodCall { object, method, args: vec![] })
     }
 }

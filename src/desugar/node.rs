@@ -8,7 +8,6 @@ use crate::desugar::control_flow::desugar_control_flow;
 use crate::desugar::definition::desugar_definition;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
-use std::ops::Deref;
 
 pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core {
     match &node_pos.node {
@@ -197,23 +196,9 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
             }
         },
 
-        call @ ASTNode::Call { .. } => desugar_call(call, ctx, state),
-        ASTNode::DirectCall { name, args } => match &name.deref().node {
-            ASTNode::Id { lit } => Core::MethodCall {
-                object: Box::from(Core::Empty),
-                method: lit.clone(),
-                args:   desugar_vec(args, ctx, state)
-            },
-            call => panic!("invalid function call format: {:?}", call)
-        },
-        ASTNode::MethodCall { instance, name, args } => match &name.deref().node {
-            ASTNode::Id { lit } => Core::MethodCall {
-                object: Box::from(desugar_node(instance, ctx, state)),
-                method: lit.clone(),
-                args:   desugar_vec(args, ctx, state)
-            },
-            call => panic!("invalid function call format: {:?}", call)
-        },
+        call @ ASTNode::FunctionCall { .. } | call @ ASTNode::PropertyCall { .. } =>
+            desugar_call(call, ctx, state),
+
         ASTNode::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, ctx, state),
             body: Box::from(desugar_node(body, ctx, state))

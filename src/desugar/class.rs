@@ -174,14 +174,12 @@ fn extract_parents(
                 args.append(&mut desugar_vec(old_args, ctx, state));
                 parent_args.append(&mut desugar_vec(old_args, ctx, state));
 
-                super_calls.push(Core::MethodCall {
-                    object: Box::from(Core::MethodCall {
-                        object: Box::from(Core::Empty),
-                        method: String::from("super"),
-                        args:   vec![]
+                super_calls.push(Core::PropertyCall {
+                    object:   Box::from(Core::FunctionCall {
+                        function: Box::from(Core::Id { lit: String::from("super") }),
+                        args:     vec![]
                     }),
-                    method: String::from("__init__"),
-                    args
+                    property: Box::from(Core::Id { lit: String::from("__init__") })
                 });
             }
             other => panic!("Expected parent but got {:?}", other)

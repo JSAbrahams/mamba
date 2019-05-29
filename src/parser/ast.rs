@@ -91,18 +91,13 @@ pub enum ASTNode {
         expr:     Box<ASTNodePos>
     },
 
-    DirectCall {
+    FunctionCall {
         name: Box<ASTNodePos>,
         args: Vec<ASTNodePos>
     },
-    MethodCall {
+    PropertyCall {
         instance: Box<ASTNodePos>,
-        name:     Box<ASTNodePos>,
-        args:     Vec<ASTNodePos>
-    },
-    Call {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        property: Box<ASTNodePos>
     },
 
     Id {
