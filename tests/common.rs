@@ -38,7 +38,7 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
 }
 
 #[allow(dead_code)]
-pub fn check_exists_and_delete(valid: bool, subdirs: &[&str], file: &str) -> bool {
+pub fn exists_and_delete(valid: bool, subdirs: &[&str], file: &str) -> bool {
     let resource_path = resource_path(valid, subdirs, file);
     let path = Path::new(&resource_path);
     if !path.exists() {
