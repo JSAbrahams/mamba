@@ -15,4 +15,4 @@ use crate::parser::ast::ASTNodePos;
 /// failure.
 ///
 /// // failure examples here
-pub fn check(input: &ASTNodePos) -> Result<&ASTNodePos, String> { Ok(input) }
+pub fn check(input: &[ASTNodePos]) -> Result<&[ASTNodePos], String> { Ok(input) }

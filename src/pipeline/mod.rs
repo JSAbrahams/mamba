@@ -20,39 +20,37 @@ pub fn mamba_to_python(input: &Path, output: Option<&Path>) -> Result<PathBuf, S
         None => create_output(input)?
     };
 
-    let mut input_file = OpenOptions::new()
-        .read(true)
-        .open(input.clone())
-        .expect(format!("Unable to open input {:#?}", input).as_str());
-    let mut output_file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(output_path.clone())
-        .expect(format!("Unable to open output {:#?}", output_path).as_str());
+    let owned = output_path.to_owned();
+    let mut input_file = OpenOptions::new().read(true).open(input).map_err(|e| e.to_string())?;
+    let mut output_file =
+        OpenOptions::new().write(true).create(true).open(output_path).map_err(|e| e.to_string())?;
 
     let mut input_string = String::new();
     input_file.read_to_string(&mut input_string).expect("Unable to read from input");
-    let output_string = transpile(&input_string)?;
-    output_file.write(output_string.as_ref()).expect("Unable to write to output");
-    Ok(output_path)
+    let input_strings = [input_string];
+    let output_string = pipeline(&input_strings)?;
+    output_file.write_all(output_string[0].as_ref()).expect("Unable to write to output");
+    Ok(owned)
 }
 
 fn create_output(input_path: &Path) -> Result<PathBuf, String> {
-    let out_name = input_path
-        .file_name()
-        .expect(format!("Unable to open {:#?}", input_path.as_os_str()).as_str());
-
-    Ok(input_path
-        .parent()
-        .expect(format!("Unable to get parent {:#?}", input_path.as_os_str()).as_str())
-        .join(out_name)
-        .with_extension("py"))
+    let out_name = input_path.file_name().ok_or("Input has no filename.")?;
+    Ok(input_path.parent().ok_or("Input has no parent.")?.join(out_name).with_extension("py"))
 }
 
-fn transpile(source: &str) -> Result<String, String> {
-    let tokens = tokenize(source)?;
-    let ast_tree = parse(&tokens).map_err(|e| e.to_string())?;
-    let typed_ast_tree = check(&ast_tree)?;
-    let core_tree = desugar(typed_ast_tree);
-    Ok(to_py_source(&core_tree))
+fn pipeline(sources: &[String]) -> Result<Vec<String>, String> {
+    let mut ast_trees = vec![];
+    let mut out_sources = vec![];
+
+    for source in sources {
+        let tokens = tokenize(source.as_ref())?;
+        ast_trees.push(*parse(&tokens).map_err(|e| e.to_string())?);
+    }
+
+    for typed_ast_tree in check(ast_trees.as_slice())? {
+        let core_tree = desugar(typed_ast_tree);
+        out_sources.push(to_py_source(&core_tree));
+    }
+
+    Ok(out_sources)
 }
