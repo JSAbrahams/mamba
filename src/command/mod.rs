@@ -11,67 +11,41 @@ use std::path::PathBuf;
 /// Transpile a `*.mamba` file to a Python source `*.py` file, which has the
 /// same name and is stored in the same directory.
 pub fn mamba_to_python_direct(input_path: &Path) -> Result<PathBuf, String> {
-    let file_path = match input_path.parent() {
-        Some(parent) => parent,
-        None =>
-            return Err(format!("Input was not in a directory: {}", input_path.to_string_lossy())),
-    }
-    .join(match input_path.file_stem() {
-        Some(path) => path,
-        None =>
-            return Err(format!("Input file did not have a name: {}", input_path.to_string_lossy())),
-    });
+    let out_name = input_path
+        .file_name()
+        .expect(format!("Unable to open {:#?}", input_path.as_os_str()).as_str());
+    let output_path = input_path
+        .parent()
+        .expect(format!("Unable to get parent {:#?}", input_path.as_os_str()).as_str())
+        .join(out_name);
+    let output_path = Path::new(output_path.as_path()).with_extension("py");
 
-    let output_path_string = format!("{}.py", file_path.to_string_lossy());
-    let output_path = Path::new(&output_path_string);
-    match mamba_to_python(input_path, output_path) {
-        Ok(output_path) => Ok(output_path),
-        Err(err) => Err(err)
-    }
+    mamba_to_python(input_path, output_path.as_path())
 }
 
 /// Transpile a `*.mamba` file to Python source and store it in the given output
 /// directory.
 pub fn mamba_to_python(input: &Path, output: &Path) -> Result<PathBuf, String> {
-    let res_output = output.to_owned();
-
-    let input_file_option = OpenOptions::new().read(true).open(input);
-    let output_file_options = OpenOptions::new().write(true).create(true).open(output);
-
-    let (mut input_file, mut output_file) = match (input_file_option, output_file_options) {
-        (Ok(input_file), Ok(output_file)) => (input_file, output_file),
-        (Err(err), _) => return Err(err.to_string()),
-        (_, Err(err)) => return Err(err.to_string())
-    };
+    let mut input_file = OpenOptions::new()
+        .read(true)
+        .open(input)
+        .expect(format!("Unable to open input {:#?}", input).as_str());
+    let mut output_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(output)
+        .expect(format!("Unable to open output {:#?}", output).as_str());
 
     let mut input_string = String::new();
-    match input_file.read_to_string(&mut input_string) {
-        Ok(_) => (),
-        Err(err) => return Err(err.to_string())
-    }
-
-    let output_string = match transpile(&input_string) {
-        Ok(python) => python,
-        Err(err) => return Err(err.to_string())
-    };
-
-    match output_file.write(output_string.as_ref()) {
-        Ok(_) => Ok(res_output),
-        Err(err) => Err(format!("{}", err))
-    }
+    input_file.read_to_string(&mut input_string).expect("Unable to read from input");
+    let output_string = transpile(&input_string)?;
+    output_file.write(output_string.as_ref()).expect("Unable to write to output");
+    Ok(output.to_owned())
 }
 
 fn transpile(input: &str) -> Result<String, String> {
-    let tokens = match tokenize(input) {
-        Ok(tokens) => tokens,
-        Err(err) => return Err(err)
-    };
-
-    let ast_tree = match parse(&tokens) {
-        Ok(ast_tree) => ast_tree,
-        Err(err) => return Err(format!("{}", err))
-    };
-
+    let tokens = tokenize(input)?;
+    let ast_tree = parse(&tokens).map_err(|e| e.to_string())?;
     let core_tree = desugar(&ast_tree);
     Ok(to_py_source(&core_tree))
 }

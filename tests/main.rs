@@ -16,20 +16,20 @@ mod parser;
 #[test]
 fn command_line_class() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    cmd.arg("-i").arg(resource_path(true, &["class"], "class"));
+    cmd.arg("-i").arg(resource_path(true, &["class"], "types.mamba"));
 
     cmd.output().unwrap();
-    assert_eq!(check_exists_and_delete(true, &["class"], "class.py"), true);
+    assert_eq!(check_exists_and_delete(true, &["class"], "types.py"), true);
     Ok(())
 }
 
 #[test]
 fn command_line_class_with_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    let output = resource_path(true, &["class"], "class.py");
-    cmd.arg("-i").arg(resource_path(true, &["class"], "class.mamba")).arg("-o").arg(output.clone());
+    let output = resource_path(true, &["class"], "types.py");
+    cmd.arg("-i").arg(resource_path(true, &["class"], "types.mamba")).arg("-o").arg(output.clone());
 
     cmd.output().unwrap();
-    assert_eq!(check_exists_and_delete(true, &["class"], "class.py"), true);
+    assert_eq!(check_exists_and_delete(true, &["class"], "types.py"), true);
     Ok(())
 }
