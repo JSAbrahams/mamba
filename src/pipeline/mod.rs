@@ -48,7 +48,7 @@ fn pipeline(sources: &[String]) -> Result<Vec<String>, String> {
     }
 
     for typed_ast_tree in check(ast_trees.as_slice())? {
-        let core_tree = desugar(typed_ast_tree);
+        let core_tree = desugar(&typed_ast_tree);
         out_sources.push(to_py_source(&core_tree));
     }
 
