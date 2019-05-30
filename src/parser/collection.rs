@@ -51,8 +51,7 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
     }
 
     let mut elements = vec![*item];
-    it.eat_if(Token::Comma).is_some();
-    elements.append(&mut it.parse_vec(&parse_expressions, "set")?);
+    elements.append(&mut it.parse_vec_if(Token::Comma, &parse_expressions, "set")?);
 
     let (en_line, en_pos) = it.eat(Token::RCBrack, "set")?;
     let node = ASTNode::Set { elements };
@@ -77,8 +76,7 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
     }
 
     let mut elements = vec![*item];
-    it.eat_if(Token::Comma);
-    elements.append(&mut it.parse_vec(&parse_expressions, "list")?);
+    elements.append(&mut it.parse_vec_if(Token::Comma, &parse_expressions, "list")?);
 
     let (en_line, en_pos) = it.eat(Token::RSBrack, "list")?;
     let node = ASTNode::List { elements };
