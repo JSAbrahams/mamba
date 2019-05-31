@@ -8,3 +8,4 @@ edition = "2018"
 assert_cmd = "0.10"
 python-parser = "0.1.0"
 clap = {version = "2.33", features = ["yaml"]}
+leg = "0.1.3"

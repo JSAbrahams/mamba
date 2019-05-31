@@ -3,6 +3,7 @@ use crate::desugar::desugar;
 use crate::lexer::tokenize;
 use crate::parser::parse;
 use crate::type_checker::check;
+use leg::*;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
@@ -30,6 +31,21 @@ pub fn mamba_to_python(in_path: &Path, out_path: Option<&Path>) -> Result<PathBu
         None => create_output(in_path)?
     };
 
+    info(
+        format!(
+            "Transpiling {:#?} {:#?}",
+            in_path,
+            if output_path.is_dir() {
+                format!("into directory {:#?}", output_path)
+            } else {
+                format!("as file {:#?}", output_path)
+            }
+        )
+        .as_str(),
+        None,
+        None
+    );
+
     let owned = output_path.to_owned();
     let mut input_file = OpenOptions::new().read(true).open(in_path).map_err(|e| e.to_string())?;
     let mut output_file =
@@ -40,6 +56,22 @@ pub fn mamba_to_python(in_path: &Path, out_path: Option<&Path>) -> Result<PathBu
     let input_strings = [input_string];
     let output_string = pipeline(&input_strings)?;
     output_file.write_all(output_string[0].as_ref()).expect("Unable to write to output");
+
+    success(
+        format!(
+            "Transpiled {:#?} {:#?}",
+            in_path,
+            if owned.clone().is_dir() {
+                format!("into directory {:#?}", owned)
+            } else {
+                format!("as file {:#?}", owned)
+            }
+        )
+        .as_str(),
+        None,
+        None
+    );
+
     Ok(owned)
 }
 
