@@ -11,8 +11,8 @@ use std::process::Command;
 
 #[test]
 fn generics_ast_verify() {
-    let mamba_path = resource_path(true, &["class"], "generics.mamba");
-    let out_path = mamba_to_python(Path::new(&mamba_path), None).unwrap();
+    let mamba_path = Path::new(resource_path(true, &["class"], ""));
+    let out_path = mamba_to_python(mamba_path, Path::new("generics"), None).unwrap();
 
     let cmd = Command::new(PYTHON).arg("-m").arg("py_compile").arg(out_path).output().unwrap();
     if cmd.status.code().unwrap() != 0 {
