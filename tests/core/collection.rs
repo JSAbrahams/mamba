@@ -1,5 +1,5 @@
 use crate::common::*;
-use mamba::core::to_py_source;
+use mamba::core::to_source;
 use mamba::desugar::desugar;
 use mamba::lexer::tokenize;
 use mamba::parser::parse;

@@ -3,7 +3,7 @@ macro_rules! to_py {
         let tokens = tokenize(&$source).unwrap();
         let ast_nodes = parse(&tokens).unwrap();
         let desugared = desugar(&ast_nodes);
-        to_py_source(&desugared)
+        to_source(&desugared)
     }};
 }
 

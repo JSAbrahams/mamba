@@ -1,4 +1,4 @@
-use crate::core::to_py_source;
+use crate::core::to_source;
 use crate::desugar::desugar;
 use crate::lexer::tokenize;
 use crate::parser::parse;
@@ -14,14 +14,24 @@ use std::path::PathBuf;
 ///
 /// If output is None, then output is stored alongside `*.mamba` file as a
 /// `*.py` file.
-pub fn mamba_to_python(input: &Path, output: Option<&Path>) -> Result<PathBuf, String> {
-    let output_path = match output {
-        Some(output) => output.to_path_buf(),
-        None => create_output(input)?
+///
+/// ### Failures
+///
+/// If output is a file and not a directory.
+pub fn mamba_to_python(in_path: &Path, out_path: Option<&Path>) -> Result<PathBuf, String> {
+    let output_path = match out_path {
+        Some(output) => {
+            let out = output.to_path_buf();
+            if !out.is_dir() {
+                return Err(format!("Output is file not directory: {:#?}", out.as_os_str()));
+            }
+            out
+        }
+        None => create_output(in_path)?
     };
 
     let owned = output_path.to_owned();
-    let mut input_file = OpenOptions::new().read(true).open(input).map_err(|e| e.to_string())?;
+    let mut input_file = OpenOptions::new().read(true).open(in_path).map_err(|e| e.to_string())?;
     let mut output_file =
         OpenOptions::new().write(true).create(true).open(output_path).map_err(|e| e.to_string())?;
 
@@ -50,7 +60,7 @@ fn pipeline(sources: &[String]) -> Result<Vec<String>, String> {
     let typed_ast_trees = check(ast_trees.as_slice())?;
     for typed_ast_tree in typed_ast_trees {
         let core_tree = desugar(&typed_ast_tree);
-        out_sources.push(to_py_source(&core_tree));
+        out_sources.push(to_source(&core_tree));
     }
 
     Ok(out_sources)

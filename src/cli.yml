@@ -1,0 +1,18 @@
+name: Mamba
+version: "0.1.0"
+author: Joël Abrahams
+about: Transpiles Mamba code to Python code
+args:
+    - input:
+        short: i
+        long: input
+        value_name: INPUT
+        help: Input file or directory
+        takes_value: true
+        required: true
+    - output:
+        short: o
+        long: output
+        value_name: OUTPUT
+        help: output directory
+        takes_value: true
