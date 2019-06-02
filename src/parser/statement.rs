@@ -14,7 +14,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     it.peek_or_err(
         &|it, token_pos| match token_pos.token {
             Token::Print => {
-                it.eat(Token::Print, "statement")?;
+                it.eat(&Token::Print, "statement")?;
                 let expr = it.parse(&parse_expression, "print statement")?;
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 let (en_line, en_pos) = (expr.en_line, expr.en_pos);
@@ -23,16 +23,16 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             }
             Token::Pass => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.eat(Token::Pass, "statement")?;
+                let (en_line, en_pos) = it.eat(&Token::Pass, "statement")?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Pass }))
             }
             Token::Retry => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.eat(Token::Retry, "statement")?;
+                let (en_line, en_pos) = it.eat(&Token::Retry, "statement")?;
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Retry }))
             }
             Token::Raise => {
-                it.eat(Token::Raise, "statement")?;
+                it.eat(&Token::Raise, "statement")?;
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 let error = it.parse(&parse_expression, "raise")?;
                 let (en_line, en_pos) = (error.en_line, error.en_pos);
@@ -50,9 +50,9 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_with(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::With, "with")?;
+    it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_expression, "with resource")?;
-    let _as = it.parse_if(Token::As, &parse_id_maybe_type, "with id")?;
+    let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id")?;
     let expr = it.parse(&parse_expr_or_stmt, "with body")?;
 
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);

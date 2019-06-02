@@ -24,10 +24,10 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat(&mut self, token: Token, err_msg: &str) -> ParseResult<(i32, i32)> {
+    pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<(i32, i32)> {
         match self.it.next() {
             Some(TokenPos { token: actual, st_line, st_pos })
-                if Token::same_type(actual.clone(), token.clone()) =>
+                if Token::same_type(actual, token) =>
                 Ok((*st_line, *st_pos + actual.clone().width())),
             Some(tp) => Err(TokenErr {
                 expected: token.clone(),
@@ -38,9 +38,9 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat_if(&mut self, token: Token) -> Option<(i32, i32)> {
+    pub fn eat_if(&mut self, token: &Token) -> Option<(i32, i32)> {
         if let Some(TokenPos { token: actual, .. }) = self.it.peek() {
-            if Token::same_type(actual.clone(), token.clone()) {
+            if Token::same_type(actual, token) {
                 return match self.eat(token, "") {
                     Ok(pos) => Some(pos),
                     Err(_) => Some((0, 0))
@@ -84,12 +84,12 @@ impl<'a> TPIterator<'a> {
 
     pub fn parse_if(
         &mut self,
-        token: Token,
+        token: &Token,
         parse_fun: &Fn(&mut TPIterator) -> ParseResult,
         err_msg: &str
     ) -> ParseResult<Option<Box<ASTNodePos>>> {
         match self.it.peek() {
-            Some(tp) if Token::same_type(tp.token.clone(), token.clone()) => {
+            Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;
                 Ok(Some(self.parse(parse_fun, err_msg)?))
             }
@@ -99,12 +99,12 @@ impl<'a> TPIterator<'a> {
 
     pub fn parse_vec_if(
         &mut self,
-        token: Token,
+        token: &Token,
         parse_fun: &Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
         err_msg: &str
     ) -> ParseResult<Vec<ASTNodePos>> {
         match self.it.peek() {
-            Some(tp) if Token::same_type(tp.token.clone(), token.clone()) => {
+            Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;
                 Ok(self.parse_vec(parse_fun, err_msg)?)
             }
@@ -149,10 +149,7 @@ impl<'a> TPIterator<'a> {
     ) -> ParseResult<()> {
         self.peek_while_fn(
             &|token_pos| {
-                tokens
-                    .to_vec()
-                    .into_iter()
-                    .all(|token| !Token::same_type(token_pos.token.clone(), token.clone()))
+                tokens.to_vec().into_iter().all(|token| !Token::same_type(&token_pos.token, &token))
             },
             loop_fn
         )
@@ -160,13 +157,10 @@ impl<'a> TPIterator<'a> {
 
     pub fn peek_while_not_token(
         &mut self,
-        token: Token,
+        token: &Token,
         loop_fn: &mut FnMut(&mut TPIterator, &TokenPos, i32) -> ParseResult<()>
     ) -> ParseResult<()> {
-        self.peek_while_fn(
-            &|token_pos| !Token::same_type(token_pos.token.clone(), token.clone()),
-            loop_fn
-        )
+        self.peek_while_fn(&|token_pos| !Token::same_type(&token_pos.token, token), loop_fn)
     }
 
     pub fn peek_while_fn(

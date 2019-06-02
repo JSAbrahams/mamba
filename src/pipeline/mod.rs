@@ -65,11 +65,11 @@ pub fn mamba_to_python(
 fn relative_paths(in_dir: &Path) -> Result<Vec<OsString>, String> {
     let pattern_path = in_dir.to_owned().join("**").join("*.mamba");
     let pattern = pattern_path.as_os_str().to_string_lossy();
+    let glob =
+        glob(pattern.as_ref()).map_err(|e| format!("Unable to recursively find files: {}", e))?;
 
     let mut relative_paths = vec![];
-    for absolute_result in
-        glob(pattern.as_ref()).map_err(|e| format!("Unable to recursively find files: {}", e))?
-    {
+    for absolute_result in glob {
         let absolute_path = absolute_result.map_err(|e| e.to_string())?;
         let relative_path = diff_paths(absolute_path.as_path(), in_dir).ok_or("")?;
         relative_paths.push(relative_path.into_os_string());
@@ -87,7 +87,7 @@ pub fn pipeline(
     let mut syntax_errors = vec![];
 
     for in_path in relative_file_paths.iter().map(|p| in_dir.join(p)) {
-        match input(in_path) {
+        match input(&in_path) {
             Ok(ast_tree) => ast_trees.push(ast_tree),
             Err(err) => syntax_errors.push(err)
         }
@@ -115,7 +115,7 @@ pub fn pipeline(
     Ok(())
 }
 
-fn input(in_path: PathBuf) -> Result<ASTNodePos, (String, String)> {
+fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
     let mut input_file = OpenOptions::new()
         .read(true)
         .open(in_path.clone())
@@ -143,15 +143,14 @@ fn output(typed_ast_tree: &ASTNodePos, out_path: &Path) -> Result<(), (String, S
         ))
     }?;
 
-    let mut output_file = OpenOptions::new()
+    OpenOptions::new()
         .write(true)
         .create(true)
         .open(out_path)
-        .map_err(|e| (String::from("output"), format!("{}: '{}'", e, out_path.display())))?;
-
-    output_file
+        .map_err(|e| (String::from("output"), format!("{}: '{}'", e, out_path.display())))?
         .write_all(source.as_ref())
-        .map_err(|e| (String::from("output"), format!("{}: {}", e, out_path.display())))?;
+        .map_err(|e| (String::from("output"), format!("{}: `{}`", e, out_path.display())))?;
+
     success(format!("'{}'", out_path.display()).as_str(), Some("output"), None);
     Ok(())
 }

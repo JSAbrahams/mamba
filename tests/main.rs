@@ -26,15 +26,12 @@ fn command_line_class_no_output() -> Result<(), Box<std::error::Error>> {
 }
 
 #[test]
-#[ignore]
-// TODO fix application logic which causes filename to be used as directory
-// under given output
 fn command_line_class_with_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
-    let output = resource_path(true, &["class", "my_target"], "types.py");
+    let output = resource_path(true, &["class"], "my_target");
     cmd.arg("-i").arg(input).arg("-o").arg(output).stderr(Stdio::inherit()).output()?;
 
     Ok(assert!(exists_and_delete(true, &["class", "my_target"], "types.py")))
