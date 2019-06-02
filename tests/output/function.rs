@@ -84,7 +84,7 @@ fn infix_calls_ast_verify() -> Result<(), String> {
     }
 
     let python_src = resource_content(true, &["function"], "infix_calls_check.py");
-    let out_src = resource_content(true, &["function"], "infix_calls.py");
+    let out_src = resource_content(true, &["function", "target"], "infix_calls.py");
 
     let python_ast = python_src_to_stmts(&python_src);
     let out_ast = python_src_to_stmts(&out_src);
