@@ -12,6 +12,7 @@ pub struct ASTNodePos {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum ASTNode {
     File {
+        doc:       Option<String>,
         pure:      bool,
         imports:   Vec<ASTNodePos>,
         modules:   Vec<ASTNodePos>,
@@ -26,6 +27,7 @@ pub enum ASTNode {
         import: Box<ASTNodePos>
     },
     Class {
+        doc:     Option<String>,
         _type:   Box<ASTNodePos>,
         args:    Vec<ASTNodePos>,
         parents: Vec<ASTNodePos>,
@@ -60,6 +62,7 @@ pub enum ASTNode {
         forward:       Vec<ASTNodePos>
     },
     FunDef {
+        doc:      Option<String>,
         pure:     bool,
         id:       Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
@@ -110,6 +113,7 @@ pub enum ASTNode {
         _type:   Option<Box<ASTNodePos>>
     },
     TypeDef {
+        doc:   Option<String>,
         _type: Box<ASTNodePos>,
         body:  Option<Box<ASTNodePos>>
     },

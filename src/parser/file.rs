@@ -83,6 +83,7 @@ pub fn parse_module(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_file(it: &mut TPIterator) -> ParseResult {
+    let mut doc = None;
     let mut imports = Vec::new();
     let mut modules = Vec::new();
     let mut type_defs = Vec::new();
@@ -113,13 +114,23 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
             Ok(())
         }
+        Token::DocString(comment) =>
+            if doc == None {
+                doc = Some(comment.clone());
+                Ok(())
+            } else {
+                Err(CustomErr {
+                    expected: String::from("Class can only have one docstring"),
+                    actual:   token_pos.clone()
+                })
+            },
         _ => {
             modules.push(*it.parse(&parse_module, "file")?);
             Ok(())
         }
     })?;
 
-    let node = ASTNode::File { pure, imports, modules, type_defs };
+    let node = ASTNode::File { doc, pure, imports, modules, type_defs };
     Ok(Box::from(ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node }))
 }
 
@@ -147,14 +158,18 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             }
             _ => {
                 it.eat_if(Token::NL);
+                // TODO add parsing of docs
+                let doc = None;
                 let body = it.parse(&parse_block, "type body")?;
                 let (en_line, en_pos) = (body.en_line, body.en_pos);
-                let node = ASTNode::TypeDef { _type: _type.clone(), body: Some(body) };
+                let node = ASTNode::TypeDef { doc, _type: _type.clone(), body: Some(body) };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
         },
         {
-            let node = ASTNode::TypeDef { _type: _type.clone(), body: None };
+            // TODO add parsing of docs
+            let doc = None;
+            let node = ASTNode::TypeDef { _type: _type.clone(), doc, body: None };
             let (en_line, en_pos) = (_type.en_line, _type.en_pos);
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         },

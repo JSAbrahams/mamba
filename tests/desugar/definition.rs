@@ -138,6 +138,7 @@ fn tuple_def_none_verify() {
 #[test]
 fn fun_def_verify() {
     let definition = to_pos!(ASTNode::FunDef {
+        doc:      None,
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
         fun_args: vec![
@@ -158,14 +159,14 @@ fn fun_def_verify() {
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, args, body) = match desugar(&def) {
-        Core::FunDef { private, id, args, body } => (private, id, args, body),
+    let (private, id, doc, args, body) = match desugar(&def) {
+        Core::FunDef { private, id, doc, args, body } => (private, id, doc, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
     assert_eq!(private, false);
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
-
+    assert_eq!(doc, None);
     assert_eq!(args.len(), 2);
     assert_eq!(args[0], Core::FunArg {
         vararg:  false,
@@ -183,6 +184,7 @@ fn fun_def_verify() {
 #[test]
 fn fun_def_default_arg_verify() {
     let definition = to_pos!(ASTNode::FunDef {
+        doc:      None,
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
         fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
@@ -196,14 +198,14 @@ fn fun_def_default_arg_verify() {
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, args, body) = match desugar(&def) {
-        Core::FunDef { private, id, args, body } => (private, id, args, body),
+    let (private, id, doc, args, body) = match desugar(&def) {
+        Core::FunDef { private, id, doc, args, body } => (private, id, doc, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
     assert_eq!(private, false);
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
-
+    assert_eq!(doc, None);
     assert_eq!(args.len(), 1);
     assert_eq!(args[0], Core::FunArg {
         vararg:  false,
@@ -216,6 +218,7 @@ fn fun_def_default_arg_verify() {
 #[test]
 fn fun_def_with_body_verify() {
     let definition = to_pos!(ASTNode::FunDef {
+        doc:      None,
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
         fun_args: vec![
@@ -228,14 +231,14 @@ fn fun_def_with_body_verify() {
     });
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, args, body) = match desugar(&def) {
-        Core::FunDef { private, id, args, body } => (private, id, args, body),
+    let (private, id, doc, args, body) = match desugar(&def) {
+        Core::FunDef { private, id, doc, args, body } => (private, id, doc, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
     assert_eq!(private, false);
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
-
+    assert_eq!(doc, None);
     assert_eq!(args.len(), 2);
     assert_eq!(args[0], Core::Id { lit: String::from("arg1") });
     assert_eq!(args[1], Core::Id { lit: String::from("arg2") });
@@ -280,6 +283,7 @@ fn top_level_var_def_panic_verify() {
 #[test]
 fn top_level_fun_def_panic_verify() {
     let var_def = to_pos!(ASTNode::FunDef {
+        doc:      None,
         id:       Box::from(to_pos!(ASTNode::Pass)),
         pure:     false,
         fun_args: vec![],

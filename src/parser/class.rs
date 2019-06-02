@@ -53,9 +53,12 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
     }
 
     it.eat(Token::NL, "class")?;
+    // TODO add parsing of docs
+    let doc = None;
+
     let body = it.parse(&parse_block, "class body")?;
     let (en_line, en_pos) = (body.en_line, body.en_pos);
-    let node = ASTNode::Class { _type, args, parents, body };
+    let node = ASTNode::Class { _type, doc, args, parents, body };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 

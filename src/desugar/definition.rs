@@ -30,7 +30,8 @@ pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core 
                     }
                 }
             }
-            ASTNode::FunDef { id, fun_args, body: expression, .. } => Core::FunDef {
+            ASTNode::FunDef { id, doc, fun_args, body: expression, .. } => Core::FunDef {
+                doc:     doc.clone(),
                 private: *private,
                 id:      Box::from(desugar_node(&id, ctx, state)),
                 args:    desugar_vec(&fun_args, ctx, state),

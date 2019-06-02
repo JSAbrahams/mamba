@@ -115,7 +115,8 @@ pub enum Token {
 
     Pass,
     Undefined,
-    Comment(String)
+    Comment(String),
+    DocString(String)
 }
 
 impl Token {
@@ -253,7 +254,8 @@ impl fmt::Display for Token {
             Token::Pass => String::from("pass"),
             Token::Print => String::from("print"),
             Token::Undefined => String::from("undefined"),
-            Token::Comment(string) => format!("{} (comment)", string)
+            Token::Comment(string) => format!("{} (comment)", string),
+            Token::DocString(string) => format!("{} (comment)", string)
         })
     }
 }

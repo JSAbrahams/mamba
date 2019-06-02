@@ -45,6 +45,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::ImportAs { import, _as } =>
             format!("import {} as {}", comma_delimited(import, ind), comma_delimited(_as, ind)),
 
+        Core::File { doc, statements } => format!(
+            "{}{}",
+            doc.clone().map_or(String::from(""), |doc| format!("\"\"\"{}\"\"\"\n", doc)),
+            newline_delimited(statements, ind)
+        ),
+
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
@@ -52,7 +58,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::FunDef { private, id, args, body } => {
+        Core::FunDef { private, id, doc, args, body } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
                 Core::GeqOp => String::from("__ge__"),
@@ -84,9 +90,10 @@ fn to_py(core: &Core, ind: usize) -> String {
             };
 
             format!(
-                "def {}({}):\n{}{}",
+                "def {}({}):\n{}{}{}",
                 name,
                 comma_delimited(args, ind),
+                doc.clone().map_or(String::from(""), |doc| format!("\"\"\"{}\"\"\"\n", doc)),
                 indent(ind + 1),
                 to_py(body.as_ref(), ind + 1)
             )
@@ -229,10 +236,11 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions } => format!(
-            "class {}({}):\n{}\n",
+        Core::ClassDef { name, doc, parents, definitions } => format!(
+            "class {}({}):\n{}{}\n",
             to_py(name, ind),
             comma_delimited(parents, ind),
+            doc.clone().map_or(String::from(""), |doc| format!("\"\"\"{}\"\"\"\n", doc)),
             newline_delimited(definitions, ind + 1)
         ),
 

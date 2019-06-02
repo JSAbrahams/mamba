@@ -16,8 +16,9 @@ use std::ops::Deref;
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
     match node {
-        ASTNode::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
+        ASTNode::TypeDef { _type, doc, body: Some(body) } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
+                doc:         doc.clone(),
                 name:        Box::from(desugar_node(id, ctx, state)),
                 parents:     Vec::new(),
                 definitions: desugar_vec(statements, ctx, &State {
@@ -28,8 +29,9 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
             },
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
-        ASTNode::TypeDef { _type, body: None } => match &_type.node {
+        ASTNode::TypeDef { _type, doc, body: None } => match &_type.node {
             ASTNode::Type { id, .. } => Core::ClassDef {
+                doc:         doc.clone(),
                 name:        Box::from(desugar_node(id, ctx, state)),
                 parents:     Vec::new(),
                 definitions: Vec::new()
@@ -37,7 +39,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
 
-        ASTNode::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
+        ASTNode::Class { doc, _type, body, args, parents } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => {
                 let (parent_names, parent_args, super_calls) = extract_parents(parents, ctx, state);
                 let core_definitions: Vec<Core> = desugar_vec(statements, ctx, state);
@@ -64,6 +66,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
                 };
 
                 Core::ClassDef {
+                    doc:         doc.clone(),
                     name:        Box::from(desugar_node(id, ctx, state)),
                     parents:     parent_names,
                     definitions: final_definitions
@@ -98,7 +101,7 @@ fn constructor_from_inline(
 
     let id = Box::from(Core::Id { lit: String::from("init") });
     let body = Box::from(Core::Block { statements: Vec::from(super_calls) });
-    let core_init = Core::FunDef { private: false, id, args, body };
+    let core_init = Core::FunDef { private: false, doc: None, id, args, body };
     final_definitions.push(core_init);
     final_definitions.append(&mut Vec::from(definitions));
 
@@ -115,7 +118,7 @@ fn add_parent_to_constructor(
 
     for definition in core_definitions {
         final_definitions.push(
-            if let Core::FunDef { private, id, args: old_args, body: old_body } = definition {
+            if let Core::FunDef { private, id, args: old_args, body: old_body, .. } = definition {
                 if let Core::Id { lit } = id.clone().deref() {
                     if lit == "init" {
                         if found_constructor {
@@ -140,7 +143,7 @@ fn add_parent_to_constructor(
                         let mut args = old_args.clone();
                         args.append(&mut Vec::from(parent_args));
 
-                        Core::FunDef { private: *private, id: id.clone(), args, body }
+                        Core::FunDef { private: *private, doc: None, id: id.clone(), args, body }
                     } else {
                         definition.clone()
                     }

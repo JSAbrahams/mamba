@@ -10,6 +10,10 @@ type OtherState isa MyClass when
 
 # This class does have state
 class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
+    """
+    myclass is an interesting class
+    """
+
     def private z_modified
     def private mut other_field <- 10
 

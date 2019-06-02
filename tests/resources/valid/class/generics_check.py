@@ -6,7 +6,7 @@ class MyClass2(MyType):
     def __init__(self, other_field, z):
         super().__init__(self)
         if z > 10: raise Err("Something is wrong!")
-        self.z_modified = z * SOME_CONSTANT
+        self.z_modified = z * SOME_CONSTANT # this is some code
         a = None
 
         try:
