@@ -1,4 +1,10 @@
 language: rust
+# cache dependencies
+cache: cargo
+rust:
+  - stable
+  - nightly
+
 dist: xenial
 python:
   - "3.7"
@@ -26,35 +32,34 @@ before_script:
   - sudo apt-get install python3
 
   # Cargo components
-  - rustup install stable
-  - rustup install nightly
-  - rustup component add rustfmt --toolchain nightly
-  - rustup component add clippy
+  - if [ $TRAVIS_RUST_VERSION == nightly ]; then rustup component add rustfmt --toolchain nightly; fi
+  - if [ $TRAVIS_RUST_VERSION == stable ]; then rustup component add clippy; fi
 
-  # Kcov
-  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-  - tar xzf master.tar.gz
-  - cd kcov-master
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make
-  - sudo make install
-  - cd ../..
-  - rm -rf kcov-master
+before_install:
+  # grcov
+  - curl -L https://github.com/mozilla/grcov/releases/download/v0.4.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
 
 after_success:
   # Coverage report
-  - bash <(curl -s https://codecov.io/bash)
+  - if [ $TRAVIS_RUST_VERSION == nightly ]; then bash <(curl -s https://codecov.io/bash) -f lcov.info; fi
 
 script:
   # fail when formatting error encountered
-  - cargo +nightly fmt --all -- --check
+  - if [ $TRAVIS_RUST_VERSION == nightly ]; then cargo +nightly fmt --all -- --check; fi
   # fail when encountering clippy warnings
-  - cargo clippy -- -D warnings
+  - if [ $TRAVIS_RUST_VERSION == stable ]; then cargo clippy -- -D warnings; fi
 
+  - export CARGO_INCREMENTAL=0
+  - |
+    if [ $TRAVIS_RUST_VERSION == nightly ]; then
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
+    fi
   - cargo build --verbose
   - cargo test --verbose
 
   # Coverage report
-  - for file in target/debug/mamba-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done
+  - |
+    if [ $TRAVIS_RUST_VERSION == nightly ]; then
+      zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
+      ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" lcov.info;
+    fi
