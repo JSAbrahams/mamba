@@ -10,3 +10,4 @@ match nested
     c => match c
         other => even_other
         other_one => better_one
+        _ => default

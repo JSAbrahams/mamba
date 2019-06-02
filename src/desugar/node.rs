@@ -72,11 +72,11 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
 
         control_flow @ ASTNode::IfElse { .. }
         | control_flow @ ASTNode::Match { .. }
-        | control_flow @ ASTNode::Case { .. }
         | control_flow @ ASTNode::While { .. }
         | control_flow @ ASTNode::For { .. }
         | control_flow @ ASTNode::Break
         | control_flow @ ASTNode::Continue => desugar_control_flow(control_flow, ctx, state),
+        ASTNode::Case { .. } => panic!("Case cannot be top-level"),
 
         ASTNode::Not { expr } => Core::Not { expr: Box::from(desugar_node(expr, ctx, state)) },
         ASTNode::And { left, right } => Core::And {

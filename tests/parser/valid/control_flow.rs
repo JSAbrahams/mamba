@@ -179,7 +179,7 @@ fn if_else_verify() {
 
 #[test]
 fn match_statements() {
-    let source = resource_content(true, &["control_flow"], "match_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "match.mamba");
     assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }
 

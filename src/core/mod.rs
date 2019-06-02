@@ -228,6 +228,16 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
+        Core::Dictionary { expr, cases } =>
+            format!("{{\n{}\n}}[{}]", newline_delimited(cases, ind + 1), to_py(expr, ind)),
+        Core::DefaultDictionary { expr, cases, default } => format!(
+            "defaultdict({}, {{\n{}\n{}}})[{}]",
+            to_py(default, ind),
+            newline_delimited(cases, ind + 1),
+            indent(ind),
+            to_py(expr, ind)
+        ),
+        Core::KeyValue { key, value } => format!("{} : {}", to_py(key, ind), to_py(value, ind)),
 
         Core::ClassDef { name, parents, definitions } => format!(
             "class {}({}):\n{}\n",
@@ -259,7 +269,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::Raise { error } => format!("raise {}", to_py(error, ind)),
 
-        other => panic!("To python not implemented yet for: {:?}", other)
+        other => panic!("The following cannot be converted to Python: {:?}", other)
     }
 }
 
