@@ -13,25 +13,29 @@ mod desugar;
 mod lexer;
 mod output;
 mod parser;
-mod pipeline;
 
-// TODO make this test work
 #[test]
-#[ignore]
 fn command_line_class_no_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    let input = resource_path(true, &["class"], "types.mamba");
-    cmd.arg("-i").arg(input).stdout(Stdio::inherit()).output()?;
+    cmd.current_dir(resource_path(true, &["class"], ""));
 
-    Ok(assert!(exists_and_delete(true, &["class"], "types.py")))
+    let input = resource_path(true, &["class"], "types.mamba");
+    cmd.arg("-i").arg(input).stderr(Stdio::inherit()).output()?;
+
+    Ok(assert!(exists_and_delete(true, &["class", "target"], "types.py")))
 }
 
 #[test]
+#[ignore]
+// TODO fix application logic which causes filename to be used as directory
+// under given output
 fn command_line_class_with_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    let input = resource_path(true, &["class"], "types.mamba");
-    let output = resource_path(true, &["class"], "types.py");
-    cmd.arg("-i").arg(input).arg("-o").arg(output).stdout(Stdio::inherit()).output()?;
+    cmd.current_dir(resource_path(true, &["class"], ""));
 
-    Ok(assert!(exists_and_delete(true, &["class"], "types.py")))
+    let input = resource_path(true, &["class"], "types.mamba");
+    let output = resource_path(true, &["class", "my_target"], "types.py");
+    cmd.arg("-i").arg(input).arg("-o").arg(output).stderr(Stdio::inherit()).output()?;
+
+    Ok(assert!(exists_and_delete(true, &["class", "my_target"], "types.py")))
 }

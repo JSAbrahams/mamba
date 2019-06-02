@@ -47,7 +47,7 @@ pub fn exists_and_delete(valid: bool, subdirs: &[&str], file: &str) -> bool {
 
     match fs::remove_file(path) {
         Ok(_) => true,
-        Err(err) => panic!("Error while removing file: {}.", err)
+        Err(err) => panic!("{}: {}", err, path.display())
     }
 }
 

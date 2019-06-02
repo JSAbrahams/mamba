@@ -1,4 +1,5 @@
 extern crate python_parser;
+
 use crate::common::exists_and_delete;
 use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
@@ -9,51 +10,75 @@ use std::path::Path;
 use std::process::Command;
 
 #[test]
-fn call_ast_verify() {
-    let mamba_path = resource_path(true, &["function"], "calls.mamba");
-    let out_path = mamba_to_python(Path::new(&mamba_path), None).unwrap();
+fn call_ast_verify() -> Result<(), String> {
+    mamba_to_python(
+        &Path::new(&resource_path(true, &["function"], "")),
+        Some("calls.mamba"),
+        None
+    )?;
 
-    let cmd = Command::new(PYTHON).arg("-m").arg("py_compile").arg(out_path).output().unwrap();
+    let cmd = Command::new(PYTHON)
+        .arg("-m")
+        .arg("py_compile")
+        .arg(resource_path(true, &["function", "target"], "calls.py"))
+        .output()
+        .unwrap();
     if cmd.status.code().unwrap() != 0 {
         panic!("{}", String::from_utf8(cmd.stderr).unwrap());
     }
 
     let python_src = resource_content(true, &["function"], "calls_check.py");
-    let out_src = resource_content(true, &["function"], "calls.py");
+    let out_src = resource_content(true, &["function", "target"], "calls.py");
 
     let python_ast = python_src_to_stmts(&python_src);
     let out_ast = python_src_to_stmts(&out_src);
 
     assert_eq!(python_ast, out_ast);
-    exists_and_delete(true, &["function"], "calls.py");
+    Ok(assert!(exists_and_delete(true, &["function", "target"], "calls.py")))
 }
 
 #[test]
-fn definition_ast_verify() {
-    let mamba_path = resource_path(true, &["function"], "definition.mamba");
-    let out_path = mamba_to_python(Path::new(&mamba_path), None).unwrap();
+fn definition_ast_verify() -> Result<(), String> {
+    mamba_to_python(
+        &Path::new(&resource_path(true, &["function"], "")),
+        Some("definition.mamba"),
+        None
+    )?;
 
-    let cmd = Command::new(PYTHON).arg("-m").arg("py_compile").arg(out_path).output().unwrap();
+    let cmd = Command::new(PYTHON)
+        .arg("-m")
+        .arg("py_compile")
+        .arg(resource_path(true, &["function", "target"], "definition.py"))
+        .output()
+        .unwrap();
     if cmd.status.code().unwrap() != 0 {
         panic!("{}", String::from_utf8(cmd.stderr).unwrap());
     }
 
     let python_src = resource_content(true, &["function"], "definition_check.py");
-    let out_src = resource_content(true, &["function"], "definition.py");
+    let out_src = resource_content(true, &["function", "target"], "definition.py");
 
     let python_ast = python_src_to_stmts(&python_src);
     let out_ast = python_src_to_stmts(&out_src);
 
     assert_eq!(python_ast, out_ast);
-    exists_and_delete(true, &["function"], "definition.py");
+    Ok(assert!(exists_and_delete(true, &["function", "target"], "definition.py")))
 }
 
 #[test]
-fn infix_calls_ast_verify() {
-    let mamba_path = resource_path(true, &["function"], "infix_calls.mamba");
-    let out_path = mamba_to_python(Path::new(&mamba_path), None).unwrap();
+fn infix_calls_ast_verify() -> Result<(), String> {
+    mamba_to_python(
+        &Path::new(resource_path(true, &["function"], "").as_str()),
+        Some("infix_calls.mamba"),
+        None
+    )?;
 
-    let cmd = Command::new(PYTHON).arg("-m").arg("py_compile").arg(out_path).output().unwrap();
+    let cmd = Command::new(PYTHON)
+        .arg("-m")
+        .arg("py_compile")
+        .arg(resource_path(true, &["function", "target"], "infix_calls.py"))
+        .output()
+        .unwrap();
     if cmd.status.code().unwrap() != 0 {
         panic!("{}", String::from_utf8(cmd.stderr).unwrap());
     }
@@ -65,5 +90,5 @@ fn infix_calls_ast_verify() {
     let out_ast = python_src_to_stmts(&out_src);
 
     assert_eq!(python_ast, out_ast);
-    exists_and_delete(true, &["function"], "infix_calls.py");
+    Ok(assert!(exists_and_delete(true, &["function", "target"], "infix_calls.py")))
 }

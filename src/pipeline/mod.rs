@@ -1,12 +1,14 @@
 use crate::core::to_source;
 use crate::desugar::desugar;
 use crate::lexer::tokenize;
+use crate::parser::ast::ASTNodePos;
 use crate::parser::parse;
 use crate::type_checker::check;
 use glob::glob;
 use leg::*;
 use pathdiff::diff_paths;
 use std::ffi::OsString;
+use std::fs;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
@@ -14,6 +16,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 const OUT_FILE: &str = "target";
+const IN_FILE: &str = "src";
 
 /// Convert `*.mamba` files to `*.py`.
 ///
@@ -29,38 +32,33 @@ const OUT_FILE: &str = "target";
 /// stored here.
 pub fn mamba_to_python(
     current_dir: &Path,
-    in_path: Option<&str>,
-    out_path: Option<&str>
-) -> PathBuf {
-    let out_dir = current_dir.join(out_path.unwrap_or(OUT_FILE));
-    info(format!("Transpiling to {:#?}", out_dir).as_str(), None, None);
+    maybe_in: Option<&str>,
+    maybe_out: Option<&str>
+) -> Result<PathBuf, String> {
+    let in_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
+    let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));
 
-    let relative_file_paths = match in_path {
-        Some(in_path) =>
-            if Path::new(in_path).is_dir() {
-                match relative_paths(current_dir.join(Path::new(in_path)).as_path()) {
-                    Ok(relative) => Ok(relative
-                        .iter()
-                        .map(|p| Path::new(in_path).join(p).into_os_string())
-                        .collect()),
-                    err => err
-                }
-            } else {
-                Ok(vec![OsString::from(in_path)])
-            },
-        None => relative_paths(current_dir)
+    info(format!("Output will be stored in '{}'", out_dir.display()).as_str(), None, None);
+
+    let relative_file_paths = if in_path.is_dir() {
+        relative_paths(in_path.as_path())?
+    } else {
+        let in_file_name = in_path.file_name().unwrap_or_else(|| unreachable!());
+        vec![in_file_name.to_os_string()]
     };
 
-    match relative_file_paths {
-        Ok(relative_file_paths) =>
-            match pipeline(current_dir, out_dir.as_path(), relative_file_paths.as_slice()) {
-                Ok(..) => success(format!("Transpiled to {:#?}", out_dir).as_str(), None, None),
-                Err(err) => error(err.as_str(), None, None)
-            },
-        Err(err) => error(err.as_str(), None, None)
-    };
-
-    out_dir.to_owned()
+    match pipeline(current_dir, out_dir.as_path(), relative_file_paths.as_slice()) {
+        Ok(..) => {
+            success(format!("Output stored in: '{}'", out_dir.display()).as_str(), None, None);
+            Ok(out_dir.to_owned())
+        }
+        Err(errors) => {
+            for (error_type, error_message) in errors {
+                error(error_message.as_str(), Some(error_type.as_str()), None)
+            }
+            Err(String::from("An error occurred"))
+        }
+    }
 }
 
 /// Get all `*.mamba` files paths relative to given directory.
@@ -69,12 +67,12 @@ fn relative_paths(in_dir: &Path) -> Result<Vec<OsString>, String> {
     let pattern = pattern_path.as_os_str().to_string_lossy();
 
     let mut relative_paths = vec![];
-    for absolute_result in glob(pattern.as_ref()).map_err(|e| format!("OH NO {:#?}", e))? {
+    for absolute_result in
+        glob(pattern.as_ref()).map_err(|e| format!("Unable to recursively find files: {}", e))?
+    {
         let absolute_path = absolute_result.map_err(|e| e.to_string())?;
         let relative_path = diff_paths(absolute_path.as_path(), in_dir).ok_or("")?;
         relative_paths.push(relative_path.into_os_string());
-
-        info(format!("{:#?}", absolute_path).as_str(), Some("search"), None);
     }
 
     Ok(relative_paths)
@@ -84,42 +82,76 @@ pub fn pipeline(
     in_dir: &Path,
     out_dir: &Path,
     relative_file_paths: &[OsString]
-) -> Result<(), String> {
+) -> Result<(), Vec<(String, String)>> {
     let mut ast_trees = vec![];
+    let mut syntax_errors = vec![];
+
     for in_path in relative_file_paths.iter().map(|p| in_dir.join(p)) {
-        let mut input_file =
-            OpenOptions::new().read(true).open(in_path).map_err(|e| e.to_string())?;
-
-        let mut source = String::new();
-        input_file.read_to_string(&mut source).map_err(|e| e.to_string())?;
-
-        let tokens = tokenize(source.as_ref())?;
-        ast_trees.push(*parse(&tokens).map_err(|e| e.to_string())?);
+        match input(in_path) {
+            Ok(ast_tree) => ast_trees.push(ast_tree),
+            Err(err) => syntax_errors.push(err)
+        }
     }
 
-    let typed_ast_trees = check(ast_trees.as_slice())?;
+    if !syntax_errors.is_empty() {
+        return Err(syntax_errors);
+    }
+
+    let type_err: fn(Vec<String>) -> Vec<(String, String)> =
+        |e: Vec<String>| e.iter().map(|e| (String::from("typing"), e.clone())).collect();
+    let typed_ast_trees = check(ast_trees.as_slice()).map_err(type_err)?;
     debug_assert_eq!(typed_ast_trees.len(), relative_file_paths.len());
 
     let mut i = 0;
     for typed_ast_tree in typed_ast_trees.iter() {
-        let core_tree = desugar(&typed_ast_tree);
-        let source = to_source(&core_tree);
-
-        let out_path = out_dir.join(&relative_file_paths[i]).with_extension("py");
-
-        wait(format!("Writing {:#?}", out_path).as_str(), Some("out"), None);
-
-        let mut output_file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(out_path.clone())
-            .map_err(|e| e.to_string())?;
-
-        output_file.write_all(source.as_ref()).map_err(|e| e.to_string())?;
-        success(format!("Wrote {:#?} successfully", out_path).as_str(), Some("out"), None);
-
-        i += 1;
+        match output(
+            &typed_ast_tree,
+            out_dir.join(relative_file_paths[i].clone()).with_extension("py").as_path()
+        ) {
+            Ok(..) => i += 1,
+            Err(err) => return Err(vec![err])
+        }
     }
+    Ok(())
+}
 
+fn input(in_path: PathBuf) -> Result<ASTNodePos, (String, String)> {
+    let mut input_file = OpenOptions::new()
+        .read(true)
+        .open(in_path.clone())
+        .map_err(|e| (String::from("input"), format!("{}: '{}'", e, in_path.display())))?;
+    let mut source = String::new();
+    input_file
+        .read_to_string(&mut source)
+        .map_err(|e| (String::from("input"), format!("{}: '{}'", e, in_path.display())))?;
+    success(format!("'{}'", in_path.display()).as_str(), Some("input"), None);
+
+    let tokens = tokenize(source.as_ref()).map_err(|e| (String::from("token"), e.to_string()))?;
+    Ok(*parse(&tokens).map_err(|e| (String::from("syntax"), e.to_string()))?)
+}
+
+fn output(typed_ast_tree: &ASTNodePos, out_path: &Path) -> Result<(), (String, String)> {
+    let core_tree = desugar(&typed_ast_tree);
+    let source = to_source(&core_tree);
+
+    match out_path.parent() {
+        Some(parent) => fs::create_dir_all(parent)
+            .map_err(|e| (String::from("output"), format!("{}: {}", e, out_path.display()))),
+        None => Err((
+            String::from("output"),
+            format!("output had no parent directory: '{}'", out_path.display())
+        ))
+    }?;
+
+    let mut output_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(out_path)
+        .map_err(|e| (String::from("output"), format!("{}: '{}'", e, out_path.display())))?;
+
+    output_file
+        .write_all(source.as_ref())
+        .map_err(|e| (String::from("output"), format!("{}: {}", e, out_path.display())))?;
+    success(format!("'{}'", out_path.display()).as_str(), Some("output"), None);
     Ok(())
 }
