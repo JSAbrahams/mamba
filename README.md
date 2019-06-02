@@ -43,7 +43,7 @@ For more extensive examples and explanations check out the [documentation](https
 
 We can write a simple script that computes the factorial of a value given by the user.
 ```mamba
-def factorial(x: Int) => x match
+def factorial(x: Int) => match x
     0 => 1
     n => n * factorial(n - 1)
 
@@ -174,7 +174,7 @@ Type refinement also allows us to specify the domain and co-domain of a function
 ```mamba
 type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was {self}.")
 
-def factorial (x: PositiveInt) => x match
+def factorial (x: PositiveInt) => match x
     0 => 1
     n => n * factorial (n - 1)
 ```
