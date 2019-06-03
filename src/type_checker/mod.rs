@@ -15,4 +15,4 @@ use crate::parser::ast::ASTNodePos;
 /// failure.
 ///
 /// // failure examples here
-pub fn check(input: ASTNodePos) -> ASTNodePos { input }
+pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> { Ok(input.to_vec()) }

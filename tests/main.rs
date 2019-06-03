@@ -1,8 +1,9 @@
-use crate::common::check_exists_and_delete;
+use crate::common::exists_and_delete;
 use crate::common::resource_path;
 use assert_cmd::prelude::*;
 use std::prelude::v1::Result::Ok;
 use std::process::Command;
+use std::process::Stdio;
 
 #[macro_use]
 mod common;
@@ -14,22 +15,24 @@ mod output;
 mod parser;
 
 #[test]
-fn command_line_class() -> Result<(), Box<std::error::Error>> {
+fn command_line_class_no_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    cmd.arg("-i").arg(resource_path(true, &["class"], "class"));
+    cmd.current_dir(resource_path(true, &["class"], ""));
 
-    cmd.output().unwrap();
-    assert_eq!(check_exists_and_delete(true, &["class"], "class.py"), true);
-    Ok(())
+    let input = resource_path(true, &["class"], "types.mamba");
+    cmd.arg("-i").arg(input).stderr(Stdio::inherit()).output()?;
+
+    Ok(assert!(exists_and_delete(true, &["class", "target"], "types.py")))
 }
 
 #[test]
 fn command_line_class_with_output() -> Result<(), Box<std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    let output = resource_path(true, &["class"], "class.py");
-    cmd.arg("-i").arg(resource_path(true, &["class"], "class.mamba")).arg("-o").arg(output.clone());
+    cmd.current_dir(resource_path(true, &["class"], ""));
 
-    cmd.output().unwrap();
-    assert_eq!(check_exists_and_delete(true, &["class"], "class.py"), true);
-    Ok(())
+    let input = resource_path(true, &["class"], "types.mamba");
+    let output = resource_path(true, &["class"], "my_target");
+    cmd.arg("-i").arg(input).arg("-o").arg(output).stderr(Stdio::inherit()).output()?;
+
+    Ok(assert!(exists_and_delete(true, &["class", "my_target"], "types.py")))
 }

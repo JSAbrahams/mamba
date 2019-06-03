@@ -14,13 +14,13 @@ use crate::parser::parse_result::ParseResult;
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Def, "definition")?;
-    let private = it.eat_if(Token::Private).is_some();
-    let pure = it.eat_if(Token::Pure).is_some();
+    it.eat(&Token::Def, "definition")?;
+    let private = it.eat_if(&Token::Private).is_some();
+    let pure = it.eat_if(&Token::Pure).is_some();
 
     macro_rules! op {
         ($it:expr, $token:ident, $node:ident) => {{
-            let (en_line, en_pos) = $it.eat(Token::$token, "definition")?;
+            let (en_line, en_pos) = $it.eat(&Token::$token, "definition")?;
             let node_pos = ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::$node };
             parse_fun_def(&node_pos, pure, $it)
         }};
@@ -127,9 +127,9 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
             }),
     };
 
-    let ret_ty = it.parse_if(Token::DoublePoint, &parse_type, "function return type")?;
-    let raises = it.parse_vec_if(Token::Raises, &parse_raises, "raises")?;
-    let body = it.parse_if(Token::BTo, &parse_expr_or_stmt, "function body")?;
+    let ret_ty = it.parse_if(&Token::DoublePoint, &parse_type, "function return type")?;
+    let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises")?;
+    let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body")?;
 
     let (en_line, en_pos) = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => (b.en_line, b.en_pos),
@@ -143,32 +143,32 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
 }
 
 pub fn parse_raises(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(Token::LSBrack, "raises")?;
+    it.eat(&Token::LSBrack, "raises")?;
     let args = it.parse_vec(&parse_generics, "raises generics")?;
-    it.eat(Token::RSBrack, "raises arguments")?;
+    it.eat(&Token::RSBrack, "raises arguments")?;
     Ok(args)
 }
 
 pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(Token::LRBrack, "function arguments")?;
+    it.eat(&Token::LRBrack, "function arguments")?;
 
     let mut args = Vec::new();
-    it.peek_while_not_token(Token::RRBrack, &mut |it, _, no| {
+    it.peek_while_not_token(&Token::RRBrack, &mut |it, _, no| {
         args.push(*it.parse(&parse_fun_arg, format!("function arg {}", no).as_str())?);
-        it.eat_if(Token::Comma);
+        it.eat_if(&Token::Comma);
         Ok(())
     })?;
 
-    it.eat(Token::RRBrack, "function arguments")?;
+    it.eat(&Token::RRBrack, "function arguments")?;
     Ok(args)
 }
 
 pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let vararg = it.eat_if(Token::Vararg).is_some();
+    let vararg = it.eat_if(&Token::Vararg).is_some();
 
     let id_maybe_type = it.parse(&parse_id_maybe_type, "function arg")?;
-    let default = it.parse_if(Token::Assign, &parse_expression, "argument default")?;
+    let default = it.parse_if(&Token::Assign, &parse_expression, "argument default")?;
 
     let (en_line, en_pos) = match &default {
         Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
@@ -180,9 +180,9 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
-    it.peek_while_not_token(Token::NL, &mut |it, _, no| {
+    it.peek_while_not_token(&Token::NL, &mut |it, _, no| {
         forwarded.push(*it.parse(&parse_id, format!("forward {}", no).as_str())?);
-        it.eat_if(Token::Comma);
+        it.eat_if(&Token::Comma);
         Ok(())
     })?;
 
@@ -191,10 +191,10 @@ pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
 fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (id.st_line, id.st_pos);
-    let ofmut = it.eat_if(Token::OfMut).is_some();
+    let ofmut = it.eat_if(&Token::OfMut).is_some();
 
-    let expression = it.parse_if(Token::Assign, &parse_expression, "definition body")?;
-    let forward = it.parse_vec_if(Token::Forward, &parse_forward, "definition raises")?;
+    let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body")?;
+    let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises")?;
 
     let (en_line, en_pos) = match (&expression, &forward.last()) {
         (_, Some(expr)) => (expr.en_line, expr.en_pos),

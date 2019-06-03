@@ -15,9 +15,9 @@ pub mod construct;
 ///
 /// ```
 /// # use mamba::core::construct::Core;
-/// # use mamba::core::to_py_source;
+/// # use mamba::core::to_source;
 /// let core_node = Core::Return { expr: Box::from(Core::None) };
-/// let py_source = to_py_source(&core_node);
+/// let py_source = to_source(&core_node);
 ///
 /// assert_eq!(py_source, "return None\n");
 /// ```
@@ -26,16 +26,16 @@ pub mod construct;
 ///
 /// ```
 /// # use mamba::core::construct::Core;
-/// # use mamba::core::to_py_source;
+/// # use mamba::core::to_source;
 /// let core_node = Core::IfElse {
 ///     cond:  Box::from(Core::Id { lit: String::from("a") }),
 ///     then:  Box::from(Core::Str { _str: String::from("b") }),
 ///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_py_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
+/// assert_eq!(to_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
 /// ```
-pub fn to_py_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
+pub fn to_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {

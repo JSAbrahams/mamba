@@ -10,7 +10,7 @@ use crate::parser::parse_result::ParseResult;
 
 macro_rules! inner_bin_op {
     ($it:expr, $st_line:expr, $st_pos:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
-        $it.eat(Token::$ast, "operation")?;
+        $it.eat(&Token::$ast, "operation")?;
         let right = $it.parse(&$fun, $msg)?;
         let (en_line, en_pos) = (right.en_line, right.en_pos);
         let node = ASTNode::$ast { left: $left, right };
@@ -153,17 +153,17 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
             Token::FDiv => bin_op!(it, parse_level_3, FDiv, arithmetic.clone(), "floor div"),
             Token::Mod => bin_op!(it, parse_level_3, Mod, arithmetic.clone(), "mod"),
             Token::Range => {
-                it.eat(Token::Range, "operation")?;
+                it.eat(&Token::Range, "operation")?;
                 let to = it.parse(&parse_operation, "range")?;
-                let step = it.parse_if(Token::Step, &parse_expression, "step")?;
+                let step = it.parse_if(&Token::Step, &parse_expression, "step")?;
                 let (en_line, en_pos) = (to.en_line, to.en_pos);
                 let node = ASTNode::Range { from: arithmetic.clone(), to, inclusive: false, step };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             Token::RangeIncl => {
-                it.eat(Token::RangeIncl, "operation")?;
+                it.eat(&Token::RangeIncl, "operation")?;
                 let to = it.parse(&parse_operation, "range inclusive")?;
-                let step = it.parse_if(Token::Step, &parse_expression, "step")?;
+                let step = it.parse_if(&Token::Step, &parse_expression, "step")?;
 
                 let (en_line, en_pos) = (to.en_line, to.en_pos);
                 let node = ASTNode::Range { from: arithmetic.clone(), to, inclusive: true, step };
@@ -187,15 +187,15 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
         }};
     }
 
-    if it.eat_if(Token::Add).is_some() {
+    if it.eat_if(&Token::Add).is_some() {
         un_op!(it, parse_level_2, Add, AddU, "plus")
-    } else if it.eat_if(Token::Sub).is_some() {
+    } else if it.eat_if(&Token::Sub).is_some() {
         un_op!(it, parse_level_2, Sub, SubU, "subtract")
-    } else if it.eat_if(Token::Sqrt).is_some() {
+    } else if it.eat_if(&Token::Sqrt).is_some() {
         un_op!(it, parse_operation, Sqrt, Sqrt, "square root")
-    } else if it.eat_if(Token::Not).is_some() {
+    } else if it.eat_if(&Token::Not).is_some() {
         un_op!(it, parse_operation, Not, Not, "not")
-    } else if it.eat_if(Token::BOneCmpl).is_some() {
+    } else if it.eat_if(&Token::BOneCmpl).is_some() {
         un_op!(it, parse_operation, BOneCmpl, BOneCmpl, "bitwise ones compliment")
     } else {
         parse_level_1(it)
@@ -225,7 +225,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     macro_rules! literal {
         ($it:expr, $factor:expr, $ast:ident) => {{
-            let (en_line, en_pos) = $it.eat(Token::$ast($factor.clone()), "factor")?;
+            let (en_line, en_pos) = $it.eat(&Token::$ast($factor.clone()), "factor")?;
             let node = ASTNode::$ast { lit: $factor };
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         }};
@@ -240,7 +240,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             Token::Bool(b) => literal!(it, *b, Bool),
             Token::Str(str) => literal!(it, str.to_string(), Str),
             Token::ENum(num, exp) => {
-                let (en_line, en_pos) = it.eat(Token::ENum(num.clone(), exp.clone()), "factor")?;
+                let (en_line, en_pos) = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
                 let node = ASTNode::ENum { num: num.to_string(), exp: exp.to_string() };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }

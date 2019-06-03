@@ -48,7 +48,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let (en_line, en_pos) = it.eat(Token::Underscore, "underscore")?;
+    let (en_line, en_pos) = it.eat(&Token::Underscore, "underscore")?;
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore }))
 }
 
@@ -57,7 +57,7 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::QuestOr => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                it.eat(Token::QuestOr, "postfix expression")?;
+                it.eat(&Token::QuestOr, "postfix expression")?;
                 let right = it.parse(&parse_expression, "question or")?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
@@ -87,9 +87,9 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Ret, "return")?;
+    it.eat(&Token::Ret, "return")?;
 
-    if let Some((en_line, en_pos)) = it.eat_if(Token::NL) {
+    if let Some((en_line, en_pos)) = it.eat_if(&Token::NL) {
         let node = ASTNode::ReturnEmpty;
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }

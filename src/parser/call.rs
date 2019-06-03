@@ -10,7 +10,7 @@ use crate::parser::parse_result::ParseResult;
 
 pub fn parse_reassignment(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Assign, "reassignment")?;
+    it.eat(&Token::Assign, "reassignment")?;
 
     let right = it.parse(&parse_expression, "reassignment")?;
 
@@ -21,20 +21,20 @@ pub fn parse_reassignment(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult 
 
 pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::BSlash, "anonymous function")?;
+    it.eat(&Token::BSlash, "anonymous function")?;
 
     let mut args: Vec<ASTNodePos> = vec![];
-    it.peek_while_not_token(Token::BTo, &mut |it, _, no| {
+    it.peek_while_not_token(&Token::BTo, &mut |it, _, no| {
         args.push(*it.parse(
             &parse_id_maybe_type,
             format!("anonymous function arg (pos {})", no).as_str()
         )?);
 
-        it.eat_if(Token::Comma);
+        it.eat_if(&Token::Comma);
         Ok(())
     })?;
 
-    it.eat(Token::BTo, "anonymous function")?;
+    it.eat(&Token::BTo, "anonymous function")?;
 
     let body = it.parse(&parse_expression, "anonymous function body")?;
     let (en_line, en_pos) = (body.en_line, body.en_pos);
@@ -48,7 +48,7 @@ pub fn parse_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     it.peek_or_err(
         &|it, token_pos| match token_pos.token {
             Token::Point => {
-                it.eat(Token::Point, "call")?;
+                it.eat(&Token::Point, "call")?;
                 let property = it.parse(&parse_expression, "call")?;
                 let (en_line, en_pos) = (property.en_line, property.en_pos);
 
@@ -56,9 +56,9 @@ pub fn parse_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             Token::LRBrack => {
-                it.eat(Token::LRBrack, "direct call")?;
+                it.eat(&Token::LRBrack, "direct call")?;
                 let args = it.parse_vec(&parse_arguments, "arguments")?;
-                let (en_line, en_pos) = it.eat(Token::RRBrack, "direct call")?;
+                let (en_line, en_pos) = it.eat(&Token::RRBrack, "direct call")?;
 
                 let node = ASTNode::FunctionCall { name: Box::from(pre.clone()), args };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
@@ -81,9 +81,9 @@ pub fn parse_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 
 fn parse_arguments(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut arguments = Vec::new();
-    it.peek_while_not_token(Token::RRBrack, &mut |it, _, no| {
+    it.peek_while_not_token(&Token::RRBrack, &mut |it, _, no| {
         arguments.push(*it.parse(&parse_expression, format!("argument {}", no).as_str())?);
-        it.eat_if(Token::Comma);
+        it.eat_if(&Token::Comma);
         Ok(())
     })?;
 

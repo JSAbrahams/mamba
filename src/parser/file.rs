@@ -13,7 +13,7 @@ use crate::parser::parse_result::ParseResult;
 
 pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::From, "from import")?;
+    it.eat(&Token::From, "from import")?;
 
     let id = it.parse(&parse_id, "from import")?;
     let import = it.parse(&parse_import, "from import")?;
@@ -25,15 +25,15 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    it.eat(Token::Import, "import")?;
+    it.eat(&Token::Import, "import")?;
 
     let mut import = vec![];
     it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _, no| {
         import.push(*it.parse(&parse_id, format!("import id {}", no).as_str())?);
-        it.eat_if(Token::Comma);
+        it.eat_if(&Token::Comma);
         Ok(())
     })?;
-    let _as = it.parse_vec_if(Token::As, &parse_as, "import")?;
+    let _as = it.parse_vec_if(&Token::As, &parse_as, "import")?;
 
     let (en_line, en_pos) = match (import.last(), _as.last()) {
         (_, Some(token_pos)) => (token_pos.en_line, token_pos.en_pos),
@@ -46,10 +46,10 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
 
 fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut aliases = vec![];
-    it.peek_while_not_token(Token::NL, &mut |it, token_pos, no| match token_pos.token {
+    it.peek_while_not_token(&Token::NL, &mut |it, token_pos, no| match token_pos.token {
         Token::Id(_) => {
             aliases.push(*it.parse(&parse_id, format!("import {}", no).as_str())?);
-            it.eat_if(Token::Comma);
+            it.eat_if(&Token::Comma);
             Ok(())
         }
         _ => Err(TokenErr {
@@ -87,11 +87,11 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut modules = Vec::new();
     let mut type_defs = Vec::new();
 
-    let pure = it.eat_if(Token::Pure).is_some();
+    let pure = it.eat_if(&Token::Pure).is_some();
 
     it.peek_while_fn(&|_| true, &mut |it, token_pos, _| match &token_pos.token {
         Token::NL => {
-            it.eat(Token::NL, "file")?;
+            it.eat(&Token::NL, "file")?;
             Ok(())
         }
         Token::Import => {
@@ -108,7 +108,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
         }
         Token::Comment(comment) => {
             let (st_line, st_pos) = it.start_pos()?;
-            let (en_line, en_pos) = it.eat(Token::Comment(comment.clone()), "file")?;
+            let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
             let node = ASTNode::Comment { comment: comment.clone() };
             modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
             Ok(())
@@ -126,16 +126,16 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
 
-    it.eat(Token::Type, "type definition")?;
+    it.eat(&Token::Type, "type definition")?;
     let _type = it.parse(&parse_type, "type definition")?;
 
     it.peek(
         &|it, token_pos| match token_pos.token {
             Token::IsA => {
-                it.eat(Token::IsA, "type definition")?;
+                it.eat(&Token::IsA, "type definition")?;
                 let _type = it.parse(&parse_type, "type definition")?;
                 let conditions =
-                    it.parse_vec_if(Token::When, &parse_conditions, "type definition")?;
+                    it.parse_vec_if(&Token::When, &parse_conditions, "type definition")?;
                 let (en_line, en_pos) = if let Some(token_pos) = conditions.last() {
                     (token_pos.en_line, token_pos.en_pos)
                 } else {
@@ -146,7 +146,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
             _ => {
-                it.eat_if(Token::NL);
+                it.eat_if(&Token::NL);
                 let body = it.parse(&parse_block, "type body")?;
                 let (en_line, en_pos) = (body.en_line, body.en_pos);
                 let node = ASTNode::TypeDef { _type: _type.clone(), body: Some(body) };

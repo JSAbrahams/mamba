@@ -1,0 +1,23 @@
+name: Mamba
+author: Joël Abrahams
+about: Transpile Mamba to Python code
+args:
+    - input:
+        short: i
+        long: input
+        value_name: INPUT
+        help: |
+          Input file or directory.
+          If file, file taken as input.
+          If directory, recursively search all sub-directories for mamba files.
+          If no input given, current directory taken is directory.
+        takes_value: true
+    - output:
+        short: o
+        long: output
+        value_name: OUTPUT
+        help: |
+          Output directory to story mamba files.
+          Output directory structure reflects input directory structure.
+          If no output given, target directory created in current directory and output stored here.
+        takes_value: true

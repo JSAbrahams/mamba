@@ -1,41 +1,28 @@
-use std::path::Path;
+#[macro_use]
+extern crate clap;
 
-pub mod command;
-pub mod core;
-pub mod desugar;
-pub mod lexer;
-pub mod parser;
-pub mod type_checker;
+use clap::App;
+use leg::*;
+use mamba::pipeline::mamba_to_python;
+use std::result::Result::Err;
 
-const INPUT_FLAG: &str = "-i";
-const OUTPUT_FLAG: &str = "-o";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn main() -> Result<(), String> {
-    let mut input: Option<String> = None;
-    let mut output: Option<String> = None;
+pub fn main() -> Result<(), String> {
+    head("Mamba", Some("🐍"), Some(VERSION));
 
-    let mut args = std::env::args();
-    args.next(); // skip program name
+    let yaml = load_yaml!("cli.yml");
+    let matches = App::from_yaml(yaml).version(VERSION).get_matches();
+    match std::env::current_dir() {
+        Ok(current_dir) => {
+            let in_path = matches.value_of("input");
+            let out_path = matches.value_of("output");
 
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            INPUT_FLAG => input = Option::from(args.next().expect("Expected input file path.")),
-            OUTPUT_FLAG => output = Option::from(args.next().expect("Expected output file path.")),
-
-            other => return Err(format!("Flag not recognized: {}", other))
+            mamba_to_python(&current_dir, in_path, out_path).map(|_| ())
         }
-    }
-
-    match (input, output) {
-        (Some(input), Some(output)) =>
-            match command::mamba_to_python(Path::new(&input), Path::new(&output)) {
-                Ok(_) => Ok(()),
-                Err(err) => Err(err)
-            },
-        (Some(input), None) => match command::mamba_to_python_direct(Path::new(&input)) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err)
-        },
-        _ => Err(String::from("No input file path given."))
+        e => {
+            error(format!("Error while finding current directory: {:#?}", e).as_str(), None, None);
+            Err(format!("Error while finding current directory: {:#?}", e))
+        }
     }
 }

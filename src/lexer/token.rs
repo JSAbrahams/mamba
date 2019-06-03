@@ -132,7 +132,7 @@ impl Token {
         } as i32)
     }
 
-    pub fn same_type(left: Token, right: Token) -> bool {
+    pub fn same_type(left: &Token, right: &Token) -> bool {
         match (left.clone(), right.clone()) {
             (Token::Id(_), Token::Id(_)) => true,
             (Token::Real(_), Token::Real(_)) => true,
