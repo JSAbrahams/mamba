@@ -32,6 +32,7 @@ class MyClass2(MyType):
     def factorial_infinite(self, x):
         x * self.factorial(x)
 
+    @some_annotation
     def a(self):
         self.a(self.b)
 

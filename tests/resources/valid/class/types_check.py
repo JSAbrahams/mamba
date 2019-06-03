@@ -2,6 +2,9 @@ from Math import abs
 import something
 
 class MyClass2(MyType):
+    """
+    myclass is an interesting class
+    """
 
     def __init__(self, my_field):
         super().__init__(self, my_field)

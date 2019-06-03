@@ -21,6 +21,7 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
     def factorial(self, x: Int <- 0) => x * self.factorial (x - 1)
     def factorial_infinite(self, x: Int) => x * self.factorial x
 
+    @some_annotation
     def a(self) => self.a self.b
     def b(self, c) => self.a self.b self.c
     def c(self, d) => self.a self.b self.c d

@@ -108,13 +108,17 @@ pub fn tokenize(input: &str) -> Result<Vec<TokenPos>, String> {
             },
             '#' => {
                 let mut comment = String::new();
-                while it.peek().is_some()
-                    && *it.peek().unwrap() != '\n'
-                    && *it.peek().unwrap() != '\r'
-                {
+                while it.peek().map_or(false, |&t| t != '\n' && t != '\r') {
                     comment.push(it.next().unwrap());
                 }
                 create(&mut state, Token::Comment(comment))
+            }
+            '@' => {
+                let mut annotation = String::new();
+                while it.peek().map_or(false, |&t| t != '\n' && t != '\r') {
+                    annotation.push(it.next().unwrap());
+                }
+                create(&mut state, Token::Annotation(annotation))
             }
             '?' => match it.peek() {
                 Some('.') => next_and_create(&mut it, &mut state, Token::QuestCall),
