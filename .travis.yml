@@ -3,8 +3,15 @@ os:
   - linux
 
 language: rust
+
 # cache dependencies
-cache: cargo
+before_cache:
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew cleanup; fi
+cache: 
+  - cargo
+  directories:
+  - if [ $TRAVIS_OS_NAME = osx ]; then $HOME/Library/Caches/Homebrew; fi
+
 rust:
   - stable
   - nightly
@@ -46,7 +53,7 @@ before_install:
 
 after_success:
   # Coverage report
-  - if [ $TRAVIS_RUST_VERSION == nightly ]; then bash <(curl -s https://codecov.io/bash) -f lcov.info; fi
+  - if [ $TRAVIS_RUST_VERSION == nightly ]; then bash <(curl -s https://codecov.io/bash); fi
 
 script:
   # fail when formatting error encountered
@@ -59,8 +66,8 @@ script:
     if [ $TRAVIS_RUST_VERSION == nightly ]; then
       export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
     fi
-  - cargo build --verbose
-  - cargo test --verbose
+  - cargo build
+  - cargo test
 
   # Coverage report
   - |
