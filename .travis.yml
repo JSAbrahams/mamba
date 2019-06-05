@@ -40,8 +40,8 @@ branches:
 
 before_script:
   # Python
-  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install python3; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install python3; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get install python3; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then brew install python3; fi
 
   # Cargo components
   - if [ $TRAVIS_RUST_VERSION == nightly ]; then rustup component add rustfmt --toolchain nightly; fi
