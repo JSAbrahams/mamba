@@ -3,6 +3,13 @@ os:
   - linux
 
 language: rust
+rust:
+  - stable
+  - nightly
+
+dist: xenial
+python:
+  - "3.7"
 
 # cache dependencies
 before_cache:
@@ -11,14 +18,6 @@ cache:
   - cargo
   directories:
   - if [ $TRAVIS_OS_NAME = osx ]; then $HOME/Library/Caches/Homebrew; fi
-
-rust:
-  - stable
-  - nightly
-
-dist: xenial
-python:
-  - "3.7"
 
 sudo: true
 before_install:
@@ -53,25 +52,19 @@ before_install:
 
 after_success:
   # Coverage report
-  - if [ $TRAVIS_RUST_VERSION == nightly ]; then bash <(curl -s https://codecov.io/bash); fi
+  - if [ $TRAVIS_RUST_VERSION == nightly && $TRAVIS_OS_NAME == linux ]; then bash <(curl -s https://codecov.io/bash); fi
 
 script:
-  # fail when formatting error encountered
+  - if [ $TRAVIS_RUST_VERSION == stable ]; then then cargo clippy -- -D warnings; fi
   - if [ $TRAVIS_RUST_VERSION == nightly ]; then cargo +nightly fmt --all -- --check; fi
-  # fail when encountering clippy warnings
-  - if [ $TRAVIS_RUST_VERSION == stable ]; then cargo clippy -- -D warnings; fi
 
-  - export CARGO_INCREMENTAL=0
-  - |
-    if [ $TRAVIS_RUST_VERSION == nightly ]; then
-      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
-    fi
   - cargo build
   - cargo test
 
-  # Coverage report
   - |
     if [ $TRAVIS_RUST_VERSION == nightly ]; then
+      export CARGO_INCREMENTAL=0;
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
       zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
       ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" lcov.info;
     fi
