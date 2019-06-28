@@ -132,8 +132,33 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{}({})", to_py(function, ind), comma_delimited(args, ind)),
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
-        Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
+        Core::Set { elements } => format!("set([{}])", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
+        Core::KeyValue { key, value } => format!("{} : {}", to_py(key, ind), to_py(value, ind)),
+        Core::Dictionary { expr, cases } =>
+            format!("{{\n{}\n}}[{}]", comma_delimited(cases, ind + 1), to_py(expr, ind)),
+        Core::DefaultDictionary { expr, cases, default } => format!(
+            "defaultdict({}, {{\n{}\n{}}})[{}]",
+            to_py(default, ind),
+            comma_delimited(cases, ind + 1),
+            indent(ind),
+            to_py(expr, ind)
+        ),
+
+        Core::GeOp => String::from(">"),
+        Core::GeqOp => String::from(">="),
+        Core::LeOp => String::from("<"),
+        Core::LeqOp => String::from("<="),
+        Core::EqOp => String::from("="),
+        Core::NeqOp => String::from("/="),
+        Core::AddOp => String::from("+"),
+        Core::SubOp => String::from("-"),
+        Core::MulOp => String::from("*"),
+        Core::DivOp => String::from("/"),
+        Core::ModOp => String::from("%"),
+        Core::PowOp => String::from("**"),
+        Core::FDivOp => String::from("//"),
+        Core::UnderScore => String::from("_"),
 
         Core::Ge { left, right } =>
             format!("{} > {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
@@ -176,6 +201,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{} ** {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
         Core::Mod { left, right } =>
             format!("{} % {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
+        Core::Sqrt { expr } => format!("math.sqrt({})", to_py(expr.as_ref(), ind)),
 
         Core::BAnd { left, right } =>
             format!("{} & {}", to_py(left.as_ref(), ind), to_py(right.as_ref(), ind)),
@@ -228,16 +254,6 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
-        Core::Dictionary { expr, cases } =>
-            format!("{{\n{}\n}}[{}]", comma_delimited(cases, ind + 1), to_py(expr, ind)),
-        Core::DefaultDictionary { expr, cases, default } => format!(
-            "defaultdict({}, {{\n{}\n{}}})[{}]",
-            to_py(default, ind),
-            comma_delimited(cases, ind + 1),
-            indent(ind),
-            to_py(expr, ind)
-        ),
-        Core::KeyValue { key, value } => format!("{} : {}", to_py(key, ind), to_py(value, ind)),
 
         Core::ClassDef { name, parents, definitions } => format!(
             "class {}({}):\n{}\n",
@@ -265,38 +281,22 @@ fn to_py(core: &Core, ind: usize) -> String {
             "try:\n{}{}\n{}",
             indent(ind + 1),
             to_py(_try, ind + 1),
-            except_unwrap(except, ind)
+            newline_delimited(except, ind)
         ),
-        Core::Raise { error } => format!("raise {}", to_py(error, ind)),
+        Core::Except { id, class, body } => format!(
+            "{}except {} as {}:\n{}{}\n",
+            indent(ind),
+            to_py(class, ind),
+            to_py(id, ind),
+            indent(ind + 1),
+            to_py(body, ind + 1)
+        ),
 
-        other => panic!("The following cannot be converted to Python: {:?}", other)
+        Core::Raise { error } => format!("raise {}", to_py(error, ind))
     }
 }
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
-
-fn except_unwrap(items: &[Core], ind: usize) -> String {
-    let mut result = String::new();
-
-    for item in items {
-        match item {
-            Core::Except { id, class, body } => result.push_str(
-                format!(
-                    "{}except {} as {}:\n{}{}\n",
-                    indent(ind),
-                    to_py(class, ind),
-                    to_py(id, ind),
-                    indent(ind + 1),
-                    to_py(body, ind + 1)
-                )
-                .as_ref()
-            ),
-            other => panic!("Expected two id's but was: {:?}", other)
-        }
-    }
-
-    result
-}
 
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut result = String::new();

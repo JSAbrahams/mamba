@@ -14,7 +14,7 @@ use std::ops::Deref;
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn desugar_class(node: &ASTNode, ctx: &Context, state: &State) -> Core {
+pub fn desugar_class(node: &ASTNode, ctx: &mut Context, state: &State) -> Core {
     match node {
         ASTNode::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
@@ -158,7 +158,7 @@ fn add_parent_to_constructor(
 
 fn extract_parents(
     parents: &[ASTNodePos],
-    ctx: &Context,
+    ctx: &mut Context,
     state: &State
 ) -> (Vec<Core>, Vec<Core>, Vec<Core>) {
     let mut parent_names: Vec<Core> = vec![];

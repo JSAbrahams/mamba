@@ -4,7 +4,7 @@ use crate::desugar::context::State;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNode;
 
-pub fn desugar_control_flow(node: &ASTNode, ctx: &Context, state: &State) -> Core {
+pub fn desugar_control_flow(node: &ASTNode, ctx: &mut Context, state: &State) -> Core {
     match node {
         ASTNode::IfElse { cond, then, _else } => match _else {
             Some(_else) => Core::IfElse {
@@ -46,6 +46,8 @@ pub fn desugar_control_flow(node: &ASTNode, ctx: &Context, state: &State) -> Cor
                     args: vec![],
                     body: Box::from(core_defaults[0].clone())
                 });
+
+                ctx.add_from_import("collections", "defaultdict");
                 Core::DefaultDictionary { expr, cases: core_cases, default }
             } else {
                 Core::Dictionary { expr, cases: core_cases }

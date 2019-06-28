@@ -1,6 +1,5 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Core {
-    Module { id: String, imports: Vec<String>, body: Box<Core> },
     FromImport { from: Box<Core>, import: Box<Core> },
     Import { import: Vec<Core> },
     ImportAs { import: Vec<Core>, _as: Vec<Core> },
@@ -80,12 +79,11 @@ pub enum Core {
     IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },
     Dictionary { expr: Box<Core>, cases: Vec<Core> },
     DefaultDictionary { expr: Box<Core>, cases: Vec<Core>, default: Box<Core> },
-    Case { cond: Box<Core>, body: Box<Core> },
+    KeyValue { key: Box<Core>, value: Box<Core> },
     While { cond: Box<Core>, body: Box<Core> },
     In { left: Box<Core>, right: Box<Core> },
     Break,
     Continue,
-    KeyValue { key: Box<Core>, value: Box<Core> },
 
     Return { expr: Box<Core> },
     Print { expr: Box<Core> },

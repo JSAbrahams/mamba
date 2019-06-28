@@ -1,0 +1,5 @@
+a << b
+c >> d
+e _and_ f
+g _or_ h
+i _xor_ j

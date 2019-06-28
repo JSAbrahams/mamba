@@ -9,7 +9,7 @@ use crate::desugar::definition::desugar_definition;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 
-pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core {
+pub fn desugar_node(node_pos: &ASTNodePos, ctx: &mut Context, state: &State) -> Core {
     match &node_pos.node {
         ASTNode::Import { import, _as } => match _as.len() {
             0 => Core::Import { import: desugar_vec(import, ctx, state) },
@@ -168,7 +168,10 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
 
         ASTNode::AddU { expr } => Core::AddU { expr: Box::from(desugar_node(expr, ctx, state)) },
         ASTNode::SubU { expr } => Core::SubU { expr: Box::from(desugar_node(expr, ctx, state)) },
-        ASTNode::Sqrt { expr } => Core::Sqrt { expr: Box::from(desugar_node(expr, ctx, state)) },
+        ASTNode::Sqrt { expr } => {
+            ctx.add_import("math");
+            Core::Sqrt { expr: Box::from(desugar_node(expr, ctx, state)) }
+        }
 
         ASTNode::Le { left, right } => Core::Le {
             left:  Box::from(desugar_node(left, ctx, state)),
@@ -232,9 +235,14 @@ pub fn desugar_node(node_pos: &ASTNodePos, ctx: &Context, state: &State) -> Core
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, ctx, state) },
         ASTNode::File { modules, type_defs, imports, .. } => {
-            let mut statements: Vec<Core> = desugar_vec(imports, ctx, state);
-            statements.append(desugar_vec(type_defs, ctx, state).as_mut());
-            statements.append(desugar_vec(modules, ctx, state).as_mut());
+            let mut imports = desugar_vec(imports, ctx, state);
+            let mut type_definitions = desugar_vec(type_defs, ctx, state);
+            let mut modules = desugar_vec(modules, ctx, state);
+            imports.append(&mut ctx.imports);
+
+            let mut statements = imports;
+            statements.append(&mut type_definitions);
+            statements.append(&mut modules);
             Core::Block { statements }
         }
 
