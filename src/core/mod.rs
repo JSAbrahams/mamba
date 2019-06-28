@@ -41,9 +41,9 @@ fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::FromImport { from, import } =>
             format!("from {} {}", to_py(from, ind), to_py(import, ind)),
-        Core::Import { import } => format!("import {}", comma_delimited(import, ind)),
-        Core::ImportAs { import, _as } =>
-            format!("import {} as {}", comma_delimited(import, ind), comma_delimited(_as, ind)),
+        Core::Import { imports } => format!("import {}", comma_delimited(imports, ind)),
+        Core::ImportAs { imports, _as } =>
+            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(_as, ind)),
 
         Core::Id { lit } => lit.clone(),
         Core::Str { _str } => format!("\"{}\"", _str),
@@ -284,8 +284,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_delimited(except, ind)
         ),
         Core::Except { id, class, body } => format!(
-            "{}except {} as {}:\n{}{}\n",
-            indent(ind),
+            "except {} as {}:\n{}{}\n",
             to_py(class, ind),
             to_py(id, ind),
             indent(ind + 1),

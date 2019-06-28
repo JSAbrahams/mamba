@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Core {
     FromImport { from: Box<Core>, import: Box<Core> },
-    Import { import: Vec<Core> },
-    ImportAs { import: Vec<Core>, _as: Vec<Core> },
+    Import { imports: Vec<Core> },
+    ImportAs { imports: Vec<Core>, _as: Vec<Core> },
     ClassDef { name: Box<Core>, parents: Vec<Core>, definitions: Vec<Core> },
 
     FunctionCall { function: Box<Core>, args: Vec<Core> },

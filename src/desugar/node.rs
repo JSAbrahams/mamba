@@ -12,10 +12,10 @@ use crate::parser::ast::ASTNodePos;
 pub fn desugar_node(node_pos: &ASTNodePos, ctx: &mut Context, state: &State) -> Core {
     match &node_pos.node {
         ASTNode::Import { import, _as } => match _as.len() {
-            0 => Core::Import { import: desugar_vec(import, ctx, state) },
+            0 => Core::Import { imports: desugar_vec(import, ctx, state) },
             _ => Core::ImportAs {
-                import: desugar_vec(import, ctx, state),
-                _as:    desugar_vec(_as, ctx, state)
+                imports: desugar_vec(import, ctx, state),
+                _as:     desugar_vec(_as, ctx, state)
             }
         },
         ASTNode::FromImport { id, import } => Core::FromImport {
