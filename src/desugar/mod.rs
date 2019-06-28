@@ -56,4 +56,6 @@ mod node;
 /// // should panic since definition is a literal
 /// let core_node = desugar(&ast_definition_node_pos);
 /// ```
-pub fn desugar(input: &ASTNodePos) -> Core { desugar_node(&input, &Context::new(), &State::new()) }
+pub fn desugar(input: &ASTNodePos) -> Core {
+    desugar_node(&input, &mut Context::new(), &State::new())
+}

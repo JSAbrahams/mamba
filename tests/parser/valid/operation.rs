@@ -21,11 +21,12 @@ macro_rules! verify_is_operation {
 macro_rules! verify_is_un_operation {
     ($op:ident, $ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
+            ASTNode::Script { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
                     ASTNode::$op { expr } => expr.clone(),
                     _ => panic!("first element script was not tuple.")
-                },
+                }
+            }
             _ => panic!("ast_tree was not script.")
         }
     }};

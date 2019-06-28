@@ -9,11 +9,12 @@ fn anon_fun_no_args_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (args, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::AnonFun { args, body } => (args.clone(), body.clone()),
                 _ => panic!("first element script was anon fun.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -27,11 +28,12 @@ fn anon_fun_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (args, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::AnonFun { args, body } => (args.clone(), body.clone()),
                 _ => panic!("first element script was anon fun.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -56,11 +58,12 @@ fn direct_call_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (name, args) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::FunctionCall { name, args } => (name.clone(), args.clone()),
                 _ => panic!("first element script was anon fun.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -76,7 +79,7 @@ fn method_call_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (instance, name, args) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::PropertyCall { instance, property } => match &property.node {
                     ASTNode::FunctionCall { name, args } =>
@@ -84,7 +87,8 @@ fn method_call_verify() {
                     other => panic!("not function call in property call {:?}", other)
                 },
                 other => panic!("first element script was property call {:?}", other)
-            },
+            }
+        }
         other => panic!("ast_tree was not script {:?}", other)
     };
 
@@ -103,11 +107,12 @@ fn call_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (name, args) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::FunctionCall { name, args } => (name.clone(), args.clone()),
                 _ => panic!("first element script was anon fun.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -122,7 +127,7 @@ fn call_right_associative_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, middle, right) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::FunctionCall { name, args } => match &args[0].node {
                     ASTNode::FunctionCall { name: middle, args } =>
@@ -130,7 +135,8 @@ fn call_right_associative_verify() {
                     other => panic!("Expected nested call but was {:?}.", other)
                 },
                 _ => panic!("first element script was anon fun.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 

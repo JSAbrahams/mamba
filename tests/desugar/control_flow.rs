@@ -51,37 +51,6 @@ fn while_verify() {
 }
 
 #[test]
-fn match_verify() {
-    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
-    let case_1_cond = to_pos!(ASTNode::Id { lit: String::from("case_1_cond") });
-    let case_1_body = to_pos!(ASTNode::Id { lit: String::from("case_1_body") });
-    let case_2_cond = to_pos!(ASTNode::Id { lit: String::from("case_2_cond") });
-    let case_2_body = to_pos!(ASTNode::Id { lit: String::from("case_2_body") });
-    let match_stmt = to_pos!(ASTNode::Match {
-        cond,
-        cases: vec![
-            to_pos_unboxed!(ASTNode::Case { cond: case_1_cond, body: case_1_body }),
-            to_pos_unboxed!(ASTNode::Case { cond: case_2_cond, body: case_2_body })
-        ]
-    });
-
-    let (core_cond, core_cases) = match desugar(&match_stmt) {
-        Core::Match { cond, cases } => (cond, cases),
-        other => panic!("Expected reassign but was {:?}", other)
-    };
-
-    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
-    assert_eq!(core_cases[0], Core::Case {
-        cond: Box::from(Core::Id { lit: String::from("case_1_cond") }),
-        body: Box::from(Core::Id { lit: String::from("case_1_body") })
-    });
-    assert_eq!(core_cases[1], Core::Case {
-        cond: Box::from(Core::Id { lit: String::from("case_2_cond") }),
-        body: Box::from(Core::Id { lit: String::from("case_2_body") })
-    });
-}
-
-#[test]
 fn for_verify() {
     let expr = to_pos!(ASTNode::Id { lit: String::from("expr_1") });
     let body = to_pos!(ASTNode::Id { lit: String::from("body") });
