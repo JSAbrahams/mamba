@@ -9,11 +9,12 @@ fn quest_or_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (_do, _default) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::QuestOr { left, right } => (left.clone(), right.clone()),
                 other => panic!("first element script was not quest or: {:?}", other)
-            },
+            }
+        }
         other => panic!("ast_tree was not script: {:?}", other)
     };
 
@@ -40,12 +41,13 @@ fn range_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (from, to, inclusive, step) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Range { from, to, inclusive, step } =>
                     (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -61,12 +63,13 @@ fn range_step_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (from, to, inclusive, step) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Range { from, to, inclusive, step } =>
                     (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -82,12 +85,13 @@ fn range_incl_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (from, to, inclusive, step) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Range { from, to, inclusive, step } =>
                     (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range inclusive.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -103,11 +107,12 @@ fn reassign_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Reassign { left, right } => (left.clone(), right.clone()),
                 _ => panic!("first element script was not reassign.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -121,11 +126,12 @@ fn print_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let expr = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Print { expr } => expr.clone(),
                 _ => panic!("first element script was not reassign.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -138,11 +144,12 @@ fn return_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let expr = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Return { expr } => expr.clone(),
                 _ => panic!("first element script was not reassign.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 

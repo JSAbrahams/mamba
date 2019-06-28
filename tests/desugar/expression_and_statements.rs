@@ -67,8 +67,8 @@ fn import_verify() {
     });
 
     assert_eq!(desugar(&_break), Core::ImportAs {
-        import: vec![Core::Id { lit: String::from("a") }],
-        _as:    vec![Core::Id { lit: String::from("b") }]
+        imports: vec![Core::Id { lit: String::from("a") }],
+        _as:     vec![Core::Id { lit: String::from("b") }]
     });
 }
 
@@ -85,8 +85,8 @@ fn from_import_as_verify() {
     assert_eq!(desugar(&_break), Core::FromImport {
         from:   Box::from(Core::Id { lit: String::from("f") }),
         import: Box::from(Core::ImportAs {
-            import: vec![Core::Id { lit: String::from("a") }],
-            _as:    vec![Core::Id { lit: String::from("b") }]
+            imports: vec![Core::Id { lit: String::from("a") }],
+            _as:     vec![Core::Id { lit: String::from("b") }]
         })
     });
 }

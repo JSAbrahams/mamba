@@ -5,7 +5,7 @@ use crate::desugar::context::State;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNode;
 
-pub fn desugar_definition(node: &ASTNode, ctx: &Context, state: &State) -> Core {
+pub fn desugar_definition(node: &ASTNode, ctx: &mut Context, state: &State) -> Core {
     match node {
         ASTNode::Def { private, definition, .. } => match &definition.node {
             ASTNode::VariableDef { id_maybe_type, expression, .. } => {

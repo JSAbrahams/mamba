@@ -99,14 +99,16 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
     let id = match id_type {
         ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, .. } => match (mutable, _type) {
             (false, None) => id.clone(),
-            (true, _) =>
+            (true, _) => {
                 return Err(InternalErr {
                     message: String::from("Function definition cannot be mutable")
-                }),
-            (_, Some(_)) =>
+                });
+            }
+            (_, Some(_)) => {
                 return Err(InternalErr {
                     message: String::from("Function definition given id type with some type.")
-                }),
+                });
+            }
         },
 
         op @ ASTNodePos { node: ASTNode::AddOp, .. } => Box::from(op.clone()),
@@ -121,10 +123,11 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
         op @ ASTNodePos { node: ASTNode::GeOp, .. } => Box::from(op.clone()),
         op @ ASTNodePos { node: ASTNode::LeOp, .. } => Box::from(op.clone()),
 
-        other =>
+        other => {
             return Err(InternalErr {
                 message: format!("Function definition not given id or operator: {:?}", other)
-            }),
+            });
+        }
     };
 
     let ret_ty = it.parse_if(&Token::DoublePoint, &parse_type, "function return type")?;

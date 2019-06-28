@@ -37,11 +37,12 @@ fn list_builder_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (items, conditions) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
                 _ => panic!("first element script was not list builder.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -91,11 +92,12 @@ fn set_builder_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (items, conditions) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
                 _ => panic!("first element script was not set builder.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 

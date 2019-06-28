@@ -1,9 +1,8 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Core {
-    Module { id: String, imports: Vec<String>, body: Box<Core> },
     FromImport { from: Box<Core>, import: Box<Core> },
-    Import { import: Vec<Core> },
-    ImportAs { import: Vec<Core>, _as: Vec<Core> },
+    Import { imports: Vec<Core> },
+    ImportAs { imports: Vec<Core>, _as: Vec<Core> },
     ClassDef { name: Box<Core>, parents: Vec<Core>, definitions: Vec<Core> },
 
     FunctionCall { function: Box<Core>, args: Vec<Core> },
@@ -78,8 +77,9 @@ pub enum Core {
     Range { from: Box<Core>, to: Box<Core>, step: Box<Core> },
     If { cond: Box<Core>, then: Box<Core> },
     IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },
-    Match { cond: Box<Core>, cases: Vec<Core> },
-    Case { cond: Box<Core>, body: Box<Core> },
+    Dictionary { expr: Box<Core>, cases: Vec<Core> },
+    DefaultDictionary { expr: Box<Core>, cases: Vec<Core>, default: Box<Core> },
+    KeyValue { key: Box<Core>, value: Box<Core> },
     While { cond: Box<Core>, body: Box<Core> },
     In { left: Box<Core>, right: Box<Core> },
     Break,

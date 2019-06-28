@@ -17,14 +17,15 @@ fn for_statement_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (expr, collection, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => match &expr.node {
                     ASTNode::In { left, right } => (left.clone(), right.clone(), body.clone()),
                     other => panic!("Expected in but was {:?}", other)
                 },
                 _ => panic!("first element script was not for.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -39,11 +40,12 @@ fn for_range_step_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (expr, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => (expr.clone(), body.clone()),
                 _ => panic!("first element script was not foreach.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -72,11 +74,12 @@ fn for_range_incl_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (expr, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => (expr.clone(), body.clone()),
                 _ => panic!("first element script was not foreach.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -133,12 +136,13 @@ fn if_with_block_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (cond, then, _else) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } =>
                     (cond.clone(), then.clone(), _else.clone()),
                 _ => panic!("first element script was not if.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -179,7 +183,7 @@ fn if_else_verify() {
 
 #[test]
 fn match_statements() {
-    let source = resource_content(true, &["control_flow"], "match_statements.mamba");
+    let source = resource_content(true, &["control_flow"], "match.mamba");
     assert!(parse(&tokenize(&source).unwrap()).is_ok());
 }
 
@@ -189,11 +193,12 @@ fn match_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (cond, cases) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::Match { cond, cases } => (cond.clone(), cases.clone()),
                 _ => panic!("first element script was not match.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
@@ -230,11 +235,12 @@ fn while_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (cond, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } =>
+        ASTNode::Script { statements, .. } => {
             match &statements.first().expect("script empty.").node {
                 ASTNode::While { cond, body } => (cond.clone(), body.clone()),
                 _ => panic!("first element script was not while.")
-            },
+            }
+        }
         _ => panic!("ast_tree was not script.")
     };
 
