@@ -22,9 +22,6 @@ pub fn desugar_control_flow(node: &ASTNode, ctx: &Context, state: &State) -> Cor
             let mut core_cases = vec![];
             let mut core_defaults = vec![];
 
-            println!("cond: {:?}", cond);
-            println!("case: {:?}", cases);
-
             for case in cases {
                 match &case.node {
                     ASTNode::Case { cond, body } => match &cond.node {

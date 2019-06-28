@@ -5,11 +5,12 @@ use mamba::parser::parse_direct;
 macro_rules! unwrap_func_definition {
     ($ast_tree:expr) => {{
         let (private, definition) = match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
+            ASTNode::Script { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
                     ASTNode::Def { private, definition } => (private.clone(), definition.clone()),
                     _ => panic!("first element script was not for.")
-                },
+                }
+            }
             _ => panic!("ast_tree was not script.")
         };
 
@@ -26,11 +27,12 @@ macro_rules! unwrap_func_definition {
 macro_rules! unwrap_definition {
     ($ast_tree:expr) => {{
         let (private, definition) = match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
+            ASTNode::Script { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
                     ASTNode::Def { private, definition } => (private.clone(), definition.clone()),
                     _ => panic!("first element script was not for.")
-                },
+                }
+            }
             _ => panic!("ast_tree was not script.")
         };
 

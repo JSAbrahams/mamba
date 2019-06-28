@@ -1,8 +1,8 @@
 from collections import defaultdict
 
 {
-    b : c
-    d : e
+    "b" : c
+    "d" : e
 }[a]
 
 {
@@ -10,9 +10,9 @@ from collections import defaultdict
 }[(b, bb, bbb)]
 
 {
-    a : b
-    c : defaultdict(lambda : default, {
-        other : even_other
-        other_one : better_one
+    "a" : b
+    "c" : defaultdict(lambda : default, {
+        "other" : even_other
+        "other_one" : better_one
     })[c]
 }[nested]

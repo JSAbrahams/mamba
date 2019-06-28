@@ -1,13 +1,13 @@
 match a
-    b => c
-    d => e
+    "b" => c
+    "d" => e
 
 match (b, bb, bbb)
     (a, c, d) => print "hello world"
 
 match nested
-    a => b
-    c => match c
-        other => even_other
-        other_one => better_one
+    "a" => b
+    "c" => match c
+        "other" => even_other
+        "other_one" => better_one
         _ => default
