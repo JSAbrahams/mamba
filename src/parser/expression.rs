@@ -9,7 +9,7 @@ use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::iterator::TPIterator;
 use crate::parser::operation::parse_operation;
-use crate::parser::parse_result::ParseErr::*;
+use crate::parser::parse_result::expected_construct;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
@@ -35,7 +35,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(CustomErr { expected: "expression".to_string(), actual: token_pos.clone() })
+            _ => Err(expected_construct("expression", token_pos))
         },
         "expression"
     );
@@ -58,7 +58,7 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
             Token::QuestOr => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat(&Token::QuestOr, "postfix expression")?;
-                let right = it.parse(&parse_expression, "question or")?;
+                let right = it.parse(&parse_expression)?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
                 let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
@@ -80,8 +80,7 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                     Ok(Box::from(pre.clone()))
                 },
         },
-        Ok(Box::from(pre.clone())),
-        "postfix expression"
+        Ok(Box::from(pre.clone()))
     )
 }
 
@@ -94,7 +93,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let expr = it.parse(&parse_expression, "return expression")?;
+    let expr = it.parse(&parse_expression)?;
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Return { expr } }))
 }

@@ -9,7 +9,7 @@ use crate::parser::collection::parse_collection;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::ParseErr::*;
+use crate::parser::parse_result::custom;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
@@ -27,7 +27,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     };
 
     let definition = if pure {
-        let id = it.parse(&parse_id_maybe_type, "definition id")?;
+        let id = it.parse(&parse_id_maybe_type)?;
         parse_fun_def(&id, pure, it)
     } else {
         it.peek_or_err(
@@ -57,18 +57,22 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
-    let id = *it.parse(&parse_id_maybe_type, "definition id")?;
+    let id = *it.parse(&parse_id_maybe_type)?;
 
     match id {
         ASTNodePos { node: ASTNode::IdType { _type: Some(_), .. }, .. }
         | ASTNodePos { node: ASTNode::TypeTup { .. }, .. } => parse_variable_def_id(&id, it),
-        ASTNodePos { node: ASTNode::IdType { _type: None, mutable, .. }, .. } => it.peek(
+        ASTNodePos {
+            node: ASTNode::IdType { _type: None, mutable, .. }, st_line, st_pos, ..
+        } => it.peek(
             &|it, token_pos| match token_pos.token {
                 Token::LRBrack => {
                     if mutable {
-                        return Err(InternalErr {
-                            message: String::from("Function definition cannot be mutable.")
-                        });
+                        return Err(custom(
+                            "Function definition cannot be mutable.",
+                            st_line,
+                            st_pos
+                        ));
                     }
                     parse_fun_def(&id, false, it)
                 }
@@ -84,32 +88,32 @@ fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
                     forward:       vec![]
                 };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
-            },
-            "variable or function definition"
+            }
         ),
-        ASTNodePos { node, .. } =>
-            Err(InternalErr { message: format!("def didn't start with id type: {:?}", node) }),
+        ASTNodePos { st_line, st_pos, .. } =>
+            Err(custom("definition must start with id type.", st_line, st_pos)),
     }
 }
 
 fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
-    let fun_args = it.parse_vec(&parse_fun_args, "function arguments")?;
+    let fun_args = it.parse_vec(&parse_fun_args)?;
 
     let id = match id_type {
-        ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, .. } => match (mutable, _type) {
-            (false, None) => id.clone(),
-            (true, _) => {
-                return Err(InternalErr {
-                    message: String::from("Function definition cannot be mutable")
-                });
-            }
-            (_, Some(_)) => {
-                return Err(InternalErr {
-                    message: String::from("Function definition given id type with some type.")
-                });
-            }
-        },
+        ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, st_line, st_pos, .. } =>
+            match (mutable, _type) {
+                (false, None) => id.clone(),
+                (true, _) => {
+                    return Err(custom("Function definition cannot be mutable", *st_line, *st_pos));
+                }
+                (_, Some(_)) => {
+                    return Err(custom(
+                        "Function definition given id type with some type.",
+                        *st_line,
+                        *st_pos
+                    ));
+                }
+            },
 
         op @ ASTNodePos { node: ASTNode::AddOp, .. } => Box::from(op.clone()),
         op @ ASTNodePos { node: ASTNode::SubOp, .. } => Box::from(op.clone()),
@@ -123,10 +127,12 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
         op @ ASTNodePos { node: ASTNode::GeOp, .. } => Box::from(op.clone()),
         op @ ASTNodePos { node: ASTNode::LeOp, .. } => Box::from(op.clone()),
 
-        other => {
-            return Err(InternalErr {
-                message: format!("Function definition not given id or operator: {:?}", other)
-            });
+        ASTNodePos { st_line, st_pos, .. } => {
+            return Err(custom(
+                "Function definition not given id or operator: {:?}",
+                *st_line,
+                *st_pos
+            ));
         }
     };
 
@@ -147,7 +153,7 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
 
 pub fn parse_raises(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.eat(&Token::LSBrack, "raises")?;
-    let args = it.parse_vec(&parse_generics, "raises generics")?;
+    let args = it.parse_vec(&parse_generics)?;
     it.eat(&Token::RSBrack, "raises arguments")?;
     Ok(args)
 }
@@ -156,8 +162,8 @@ pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.eat(&Token::LRBrack, "function arguments")?;
 
     let mut args = Vec::new();
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, _, no| {
-        args.push(*it.parse(&parse_fun_arg, format!("function arg {}", no).as_str())?);
+    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+        args.push(*it.parse(&parse_fun_arg)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -170,7 +176,7 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos()?;
     let vararg = it.eat_if(&Token::Vararg).is_some();
 
-    let id_maybe_type = it.parse(&parse_id_maybe_type, "function arg")?;
+    let id_maybe_type = it.parse(&parse_id_maybe_type)?;
     let default = it.parse_if(&Token::Assign, &parse_expression, "argument default")?;
 
     let (en_line, en_pos) = match &default {
@@ -183,8 +189,8 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
-    it.peek_while_not_token(&Token::NL, &mut |it, _, no| {
-        forwarded.push(*it.parse(&parse_id, format!("forward {}", no).as_str())?);
+    it.peek_while_not_token(&Token::NL, &mut |it, _| {
+        forwarded.push(*it.parse(&parse_id)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -212,9 +218,8 @@ fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
     let id = it.peek_or_err(
         &|it, token_pos| match token_pos.token {
-            Token::LRBrack | Token::LCBrack | Token::LSBrack =>
-                it.parse(&parse_collection, "collection"),
-            _ => it.parse(&parse_id_maybe_type, "variable id")
+            Token::LRBrack | Token::LCBrack | Token::LSBrack => it.parse(&parse_collection),
+            _ => it.parse(&parse_id_maybe_type)
         },
         "variable definition"
     )?;

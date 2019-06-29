@@ -127,7 +127,37 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
     success(format!("'{}'", in_path.display()).as_str(), Some("input"), None);
 
     let tokens = tokenize(source.as_ref()).map_err(|e| (String::from("token"), e.to_string()))?;
-    Ok(*parse(&tokens).map_err(|e| (String::from("syntax"), e.to_string()))?)
+    Ok(*parse(&tokens).map_err(|err| {
+        (String::from("syntax"), match source.lines().nth(err.line as usize - 1) {
+            Some(source_line) => format!(
+                "--> {}:{}:{}
+    |
+{}  |  {}
+    |  {}{} {}
+            ",
+                in_path.display(),
+                err.line,
+                err.pos,
+                err.pos,
+                source_line,
+                String::from_utf8(vec![b' '; err.pos as usize - 1]).unwrap(),
+                String::from_utf8(vec![b'^'; err.width as usize]).unwrap(),
+                err.msg
+            ),
+            None => format!(
+                "--> {}:{}:{}\n|
+{}  |
+    |  {}^ {}
+            ",
+                in_path.display(),
+                err.line,
+                err.pos,
+                err.pos,
+                String::from_utf8(vec![b' '; err.pos as usize]).unwrap(),
+                err.msg
+            )
+        })
+    })?)
 }
 
 fn output(typed_ast_tree: &ASTNodePos, out_path: &Path) -> Result<(), (String, String)> {
