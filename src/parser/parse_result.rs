@@ -17,7 +17,11 @@ pub fn expected_construct(msg: &str, actual: &TokenPos) -> ParseErr {
         line:  actual.st_line,
         pos:   actual.st_pos,
         width: actual.token.clone().width(),
-        msg:   format!("Expected a {}, but found token '{}'", msg, actual.token)
+        msg:   match msg.chars().next() {
+            Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) =>
+                format!("Expected an {}, but found token '{}'", msg, actual.token),
+            _ => format!("Expected a {}, but found token '{}'", msg, actual.token)
+        }
     }
 }
 
@@ -34,11 +38,11 @@ pub fn expected(expected: &Token, actual: &TokenPos, msg: &str) -> ParseErr {
 }
 
 pub fn custom(msg: &str, line: i32, pos: i32) -> ParseErr {
-    ParseErr { line, pos, width: -1, msg: msg.to_string() }
+    ParseErr { line, pos, width: -1, msg: title_case(msg) }
 }
 
 pub fn eof(msg: &str) -> ParseErr {
-    ParseErr { line: -1, pos: -1, width: -1, msg: msg.to_string() }
+    ParseErr { line: -1, pos: -1, width: -1, msg: title_case(msg) }
 }
 
 pub fn eof_expected(token: &Token) -> ParseErr {
@@ -48,4 +52,12 @@ pub fn eof_expected(token: &Token) -> ParseErr {
         width: -1,
         msg:   format!("Expected token '{}', but end of file", token)
     }
+}
+
+fn title_case(s: &str) -> String {
+    let mut tile_case = String::from(s);
+    if let Some(first) = tile_case.get_mut(0..1) {
+        first.make_ascii_uppercase();
+    }
+    tile_case.to_string()
 }

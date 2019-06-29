@@ -132,8 +132,8 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
             Some(source_line) => format!(
                 "--> {}:{}:{}
     |
-{}  |  {}
-    |  {}{} {}
+{}  | {}
+    | {}{} {}
             ",
                 in_path.display(),
                 err.line,
@@ -147,7 +147,7 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
             None => format!(
                 "--> {}:{}:{}\n|
 {}  |
-    |  {}^ {}
+    | {}^ {}
             ",
                 in_path.display(),
                 err.line,
