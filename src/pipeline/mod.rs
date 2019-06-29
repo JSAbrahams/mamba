@@ -138,7 +138,7 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
                 in_path.display(),
                 err.line,
                 err.pos,
-                err.pos,
+                err.line,
                 source_line,
                 String::from_utf8(vec![b' '; err.pos as usize - 1]).unwrap(),
                 String::from_utf8(vec![b'^'; err.width as usize]).unwrap(),
@@ -152,7 +152,7 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
                 in_path.display(),
                 err.line,
                 err.pos,
-                err.pos,
+                err.line,
                 String::from_utf8(vec![b' '; err.pos as usize]).unwrap(),
                 err.msg
             )
