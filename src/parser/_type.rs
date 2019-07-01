@@ -171,10 +171,11 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("id maybe type")?;
+    let (st_line, st_pos) = it.start_pos("identifier maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
-    let id = it.parse(&parse_id, "id maybe type", st_line, st_pos)?;
-    let _type = it.parse_if(&Token::DoublePoint, &parse_type, "id maybe type", st_line, st_pos)?;
+    let id = it.parse(&parse_id, "identifier maybe type", st_line, st_pos)?;
+    let _type =
+        it.parse_if(&Token::DoublePoint, &parse_type, "identifier maybe type", st_line, st_pos)?;
     let (en_line, en_pos) = match &_type {
         Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
         _ => (id.en_line, id.en_pos)
