@@ -17,28 +17,39 @@ fn comma_separated(tokens: &[Token]) -> String {
     String::from(&list[0..if list.len() >= 2 { list.len() - 2 } else { 0 }])
 }
 
-pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, msg: &str) -> ParseErr {
+fn an_or_a(parsing: &str) -> &str {
+    match parsing.chars().next() {
+        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an",
+        _ => "a"
+    }
+}
+
+pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> ParseErr {
     ParseErr {
         line:  actual.st_line,
         pos:   actual.st_pos,
         width: actual.token.clone().width(),
         msg:   format!(
-            "Expected one of [{}] while parsing {}, but found token '{}'",
+            "Expected one of [{}] while parsing {} \"{}\", but found token '{}'",
             comma_separated(tokens),
-            msg,
+            an_or_a(parsing),
+            parsing,
             actual.token
         )
     }
 }
 
-pub fn expected(expected: &Token, actual: &TokenPos, msg: &str) -> ParseErr {
+pub fn expected(expected: &Token, actual: &TokenPos, parsing: &str) -> ParseErr {
     ParseErr {
         line:  actual.st_line,
         pos:   actual.st_pos,
         width: actual.token.clone().width(),
         msg:   format!(
-            "Expected token '{}' while parsing {}, but found token '{}'",
-            expected, msg, actual.token
+            "Expected token '{}' while parsing {} \"{}\", but found token '{}'",
+            expected,
+            an_or_a(parsing),
+            parsing,
+            actual.token
         )
     }
 }
@@ -47,15 +58,16 @@ pub fn custom(msg: &str, line: i32, pos: i32) -> ParseErr {
     ParseErr { line, pos, width: -1, msg: title_case(msg) }
 }
 
-pub fn eof_expected_one_of(tokens: &[Token], msg: &str) -> ParseErr {
+pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
         line:  -1,
         pos:   -1,
         width: -1,
         msg:   format!(
-            "Expected one of {} while parsing {}, but end of file",
+            "Expected one of {} while parsing {} \"{}\", but end of file",
             comma_separated(tokens),
-            msg
+            an_or_a(parsing),
+            parsing
         )
     }
 }
