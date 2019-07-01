@@ -1,7 +1,7 @@
 # This class has no state
 class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
     def private z_modified
-    def private mut <- 10
+    def private mut other_field <- 10
 
     def init(mut self, other_field: Int, z: Int) raises [Err] =>
         if z > 10 then raise Err("Something is wrong!")
