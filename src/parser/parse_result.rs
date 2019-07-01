@@ -10,7 +10,7 @@ pub struct ParseErr {
     pub pos:    i32,
     pub width:  i32,
     pub msg:    String,
-    pub causes: Vec<String>
+    pub causes: Vec<(String, i32, i32)>
 }
 
 impl ParseErr {
@@ -18,7 +18,7 @@ impl ParseErr {
     /// exceeded.
     ///
     /// Else, it is ignored.
-    pub fn clone_with_cause(&self, cause: &str) -> ParseErr {
+    pub fn clone_with_cause(&self, cause: &str, line: i32, pos: i32) -> ParseErr {
         ParseErr {
             line:   self.line,
             pos:    self.pos,
@@ -26,7 +26,7 @@ impl ParseErr {
             msg:    self.msg.clone(),
             causes: {
                 let mut new = self.causes.clone();
-                new.push(format!("in {} \"{}\"", an_or_a(cause), cause));
+                new.push((format!("in \"{}\"", cause), line, pos));
                 new
             }
         }

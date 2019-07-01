@@ -27,7 +27,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     };
 
     let definition = if pure {
-        let id = it.parse(&parse_id_maybe_type, "definition")?;
+        let id = it.parse(&parse_id_maybe_type, "definition", st_line, st_pos)?;
         parse_fun_def(&id, pure, it)
     } else {
         it.peek_or_err(
@@ -74,7 +74,8 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
-    let id = *it.parse(&parse_id_maybe_type, "variable or function definition")?;
+    let (st_line, st_pos) = it.start_pos("function definition")?;
+    let id = *it.parse(&parse_id_maybe_type, "variable or function definition", st_line, st_pos)?;
 
     match id {
         ASTNodePos { node: ASTNode::IdType { _type: Some(_), .. }, .. }
@@ -114,7 +115,7 @@ fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
 
 fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("function definition")?;
-    let fun_args = it.parse_vec(&parse_fun_args, "function definition")?;
+    let fun_args = it.parse_vec(&parse_fun_args, "function definition", st_line, st_pos)?;
 
     let id = match id_type {
         ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, st_line, st_pos, .. } =>
@@ -153,9 +154,10 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
         }
     };
 
-    let ret_ty = it.parse_if(&Token::DoublePoint, &parse_type, "function return type")?;
-    let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises")?;
-    let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body")?;
+    let ret_ty =
+        it.parse_if(&Token::DoublePoint, &parse_type, "function return type", st_line, st_pos)?;
+    let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises", st_line, st_pos)?;
+    let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", st_line, st_pos)?;
 
     let (en_line, en_pos) = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => (b.en_line, b.en_pos),
@@ -169,18 +171,18 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
 }
 
 pub fn parse_raises(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(&Token::LSBrack, "raises")?;
-    let args = it.parse_vec(&parse_generics, "raises")?;
+    let (st_line, st_pos) = it.eat(&Token::LSBrack, "raises")?;
+    let args = it.parse_vec(&parse_generics, "raises", st_line, st_pos)?;
     it.eat(&Token::RSBrack, "raises")?;
     Ok(args)
 }
 
 pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(&Token::LRBrack, "function arguments")?;
+    let (st_line, st_pos) = it.eat(&Token::LRBrack, "function arguments")?;
 
     let mut args = Vec::new();
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-        args.push(*it.parse(&parse_fun_arg, "function arguments")?);
+        args.push(*it.parse(&parse_fun_arg, "function arguments", st_line, st_pos)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -193,8 +195,14 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("function argument")?;
     let vararg = it.eat_if(&Token::Vararg).is_some();
 
-    let id_maybe_type = it.parse(&parse_id_maybe_type, "function argument")?;
-    let default = it.parse_if(&Token::Assign, &parse_expression, "function argument default")?;
+    let id_maybe_type = it.parse(&parse_id_maybe_type, "function argument", st_line, st_pos)?;
+    let default = it.parse_if(
+        &Token::Assign,
+        &parse_expression,
+        "function argument default",
+        st_line,
+        st_pos
+    )?;
 
     let (en_line, en_pos) = match &default {
         Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
@@ -205,9 +213,11 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let (st_line, st_pos) = it.start_pos("forward")?;
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
+
     it.peek_while_not_token(&Token::NL, &mut |it, _| {
-        forwarded.push(*it.parse(&parse_id, "forward")?);
+        forwarded.push(*it.parse(&parse_id, "forward", st_line, st_pos)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -219,8 +229,10 @@ fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = (id.st_line, id.st_pos);
     let ofmut = it.eat_if(&Token::OfMut).is_some();
 
-    let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body")?;
-    let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises")?;
+    let expression =
+        it.parse_if(&Token::Assign, &parse_expression, "definition body", st_line, st_pos)?;
+    let forward =
+        it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", st_line, st_pos)?;
 
     let (en_line, en_pos) = match (&expression, &forward.last()) {
         (_, Some(expr)) => (expr.en_line, expr.en_pos),
@@ -235,9 +247,18 @@ fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
     let id = it.peek_or_err(
         &|it, token_pos| match token_pos.token {
-            Token::LRBrack | Token::LCBrack | Token::LSBrack =>
-                it.parse(&parse_collection, "variable definition"),
-            _ => it.parse(&parse_id_maybe_type, "variable definition")
+            Token::LRBrack | Token::LCBrack | Token::LSBrack => it.parse(
+                &parse_collection,
+                "variable definition",
+                token_pos.st_line,
+                token_pos.st_pos
+            ),
+            _ => it.parse(
+                &parse_id_maybe_type,
+                "variable definition",
+                token_pos.st_line,
+                token_pos.st_pos
+            )
         },
         &[Token::LRBrack, Token::LCBrack, Token::LSBrack],
         "variable definition"

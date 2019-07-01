@@ -105,7 +105,7 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
             Token::QuestOr => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat(&Token::QuestOr, "postfix expression")?;
-                let right = it.parse(&parse_expression, "postfix expression")?;
+                let right = it.parse(&parse_expression, "postfix expression", st_line, st_pos)?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
                 let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
@@ -140,7 +140,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let expr = it.parse(&parse_expression, "return")?;
+    let expr = it.parse(&parse_expression, "return", st_line, st_pos)?;
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Return { expr } }))
 }

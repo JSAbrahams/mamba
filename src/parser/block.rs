@@ -8,7 +8,9 @@ use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let (st_line, st_pos) = it.start_pos("block")?;
     let mut statements: Vec<ASTNodePos> = Vec::new();
+
     it.peek_while_not_token(&Token::Dedent, &mut |it, token_pos| match &token_pos.token {
         Token::NL => {
             it.eat(&Token::NL, "block")?;
@@ -23,7 +25,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
             Ok(())
         }
         _ => {
-            statements.push(*it.parse(&parse_expr_or_stmt, "block")?);
+            statements.push(*it.parse(&parse_expr_or_stmt, "block", st_line, st_pos)?);
             let invalid = |token_pos: &TokenPos| {
                 token_pos.token != Token::NL && token_pos.token != Token::Dedent
             };
@@ -41,7 +43,7 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("block")?;
     it.eat(&Token::Indent, "block")?;
 
-    let statements = it.parse_vec(&parse_statements, "block")?;
+    let statements = it.parse_vec(&parse_statements, "block", st_line, st_pos)?;
     let (en_line, en_pos) = match statements.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)
