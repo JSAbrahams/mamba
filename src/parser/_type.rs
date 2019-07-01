@@ -1,11 +1,9 @@
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_id(it: &mut TPIterator) -> ParseResult {
@@ -29,8 +27,13 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
                 let node = ASTNode::Id { lit: id.clone() };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
-            _ => Err(expected_construct("identifier", token_pos))
+            _ => Err(expected_one_of(
+                &[Token::_Self, Token::Init, Token::Id(String::new())],
+                token_pos,
+                "identifier"
+            ))
         },
+        &[Token::_Self, Token::Init, Token::Id(String::new())],
         "identifier"
     )
 }
@@ -49,7 +52,7 @@ fn parse_generic(it: &mut TPIterator) -> ParseResult {
     let id = it.parse(&parse_id)?;
     let isa = it.parse_if(&Token::IsA, &parse_id, "generic isa")?;
 
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("generic")?;
     let (en_line, en_pos) = match isa.as_ref() {
         Some(ast) => (ast.en_line, ast.en_pos),
         None => (id.en_line, id.en_pos)
@@ -60,11 +63,11 @@ fn parse_generic(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("type")?;
 
     let _type = it.peek_or_err(
-        &|it, token_pos| match token_pos {
-            TokenPos { token: Token::Id(_), .. } => {
+        &|it, token_pos| match token_pos.token {
+            Token::Id(_) => {
                 let id = it.parse(&parse_id)?;
                 let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "type generic")?;
                 it.eat_if(&Token::RSBrack);
@@ -77,9 +80,14 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
                 let node = ASTNode::Type { id, generics };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
-            TokenPos { token: Token::LRBrack, .. } => it.parse(&parse_type_tuple),
-            other => Err(expected(&Token::LRBrack, &other.clone(), "type"))
+            Token::LRBrack => it.parse(&parse_type_tuple),
+            _ => Err(expected_one_of(
+                &[Token::Id(String::new()), Token::LRBrack],
+                &token_pos.clone(),
+                "type"
+            ))
         },
+        &[Token::Id(String::new()), Token::LRBrack],
         "type"
     )?;
 
@@ -118,7 +126,7 @@ pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 }
 
 fn parse_condition(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("condition")?;
     let cond = it.parse(&parse_expression)?;
     let _else = it.parse_if(&Token::Else, &parse_expression, "condition else")?;
 
@@ -133,7 +141,7 @@ fn parse_condition(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("type tuple")?;
     it.eat(&Token::LRBrack, "type tuple")?;
 
     let mut types = vec![];
@@ -149,7 +157,7 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("id maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
     let id = it.parse(&parse_id)?;
     let _type = it.parse_if(&Token::DoublePoint, &parse_type, "id maybe type")?;

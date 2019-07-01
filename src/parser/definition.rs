@@ -13,7 +13,7 @@ use crate::parser::parse_result::custom;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("definition")?;
     it.eat(&Token::Def, "definition")?;
     let private = it.eat_if(&Token::Private).is_some();
     let pure = it.eat_if(&Token::Pure).is_some();
@@ -47,6 +47,23 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
                 Token::Le => op!(it, Le, LeOp),
                 _ => parse_var_or_fun_def(it)
             },
+            &[
+                Token::Id(String::new()),
+                Token::LRBrack,
+                Token::LCBrack,
+                Token::LSBrack,
+                Token::Add,
+                Token::Sub,
+                Token::Sqrt,
+                Token::Mul,
+                Token::FDiv,
+                Token::Div,
+                Token::Pow,
+                Token::Mod,
+                Token::Eq,
+                Token::Ge,
+                Token::Le
+            ],
             "definition"
         )
     }?;
@@ -96,7 +113,7 @@ fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("function definition")?;
     let fun_args = it.parse_vec(&parse_fun_args)?;
 
     let id = match id_type {
@@ -173,11 +190,11 @@ pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 }
 
 pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("function argument")?;
     let vararg = it.eat_if(&Token::Vararg).is_some();
 
     let id_maybe_type = it.parse(&parse_id_maybe_type)?;
-    let default = it.parse_if(&Token::Assign, &parse_expression, "argument default")?;
+    let default = it.parse_if(&Token::Assign, &parse_expression, "function argument default")?;
 
     let (en_line, en_pos) = match &default {
         Some(ast_node_pos) => (ast_node_pos.en_line, ast_node_pos.en_pos),
@@ -221,8 +238,8 @@ fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
             Token::LRBrack | Token::LCBrack | Token::LSBrack => it.parse(&parse_collection),
             _ => it.parse(&parse_id_maybe_type)
         },
+        &[Token::LRBrack, Token::LCBrack, Token::LSBrack],
         "variable definition"
     )?;
-
     parse_variable_def_id(&id, it)
 }

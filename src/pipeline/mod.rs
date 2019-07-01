@@ -3,6 +3,7 @@ use crate::desugar::desugar;
 use crate::lexer::tokenize;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::parse;
+use crate::pipeline::error::syntax_err;
 use crate::type_checker::check;
 use glob::glob;
 use leg::*;
@@ -14,6 +15,8 @@ use std::io::Read;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
+
+mod error;
 
 const OUT_FILE: &str = "target";
 const IN_FILE: &str = "src";
@@ -127,37 +130,9 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
     success(format!("'{}'", in_path.display()).as_str(), Some("input"), None);
 
     let tokens = tokenize(source.as_ref()).map_err(|e| (String::from("token"), e.to_string()))?;
-    Ok(*parse(&tokens).map_err(|err| {
-        (String::from("syntax"), match source.lines().nth(err.line as usize - 1) {
-            Some(source_line) => format!(
-                "--> {}:{}:{}
-    |
-{}  | {}
-    | {}{} {}
-            ",
-                in_path.display(),
-                err.line,
-                err.pos,
-                err.line,
-                source_line,
-                String::from_utf8(vec![b' '; err.pos as usize - 1]).unwrap(),
-                String::from_utf8(vec![b'^'; err.width as usize]).unwrap(),
-                err.msg
-            ),
-            None => format!(
-                "--> {}:{}:{}\n|
-{}  |
-    | {}^ {}
-            ",
-                in_path.display(),
-                err.line,
-                err.pos,
-                err.line,
-                String::from_utf8(vec![b' '; err.pos as usize]).unwrap(),
-                err.msg
-            )
-        })
-    })?)
+    parse(&tokens)
+        .map_err(|err| (String::from("syntax"), syntax_err(&err, &source, in_path)))
+        .map(|ok| *ok)
 }
 
 fn output(typed_ast_tree: &ASTNodePos, out_path: &Path) -> Result<(), (String, String)> {

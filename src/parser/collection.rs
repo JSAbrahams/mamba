@@ -4,7 +4,7 @@ use crate::parser::ast::ASTNodePos;
 use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
@@ -13,14 +13,19 @@ pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
             Token::LRBrack => parse_tuple(it),
             Token::LSBrack => parse_list(it),
             Token::LCBrack => parse_set(it),
-            _ => Err(expected_construct("collection", token_pos))
+            _ => Err(expected_one_of(
+                &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
+                token_pos,
+                "collection"
+            ))
         },
+        &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
         "collection"
     )
 }
 
 pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("tuple")?;
     it.eat(&Token::LRBrack, "tuple")?;
 
     let elements = it.parse_vec(&parse_expressions)?;
@@ -34,7 +39,7 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_set(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("set")?;
     it.eat(&Token::LCBrack, "set")?;
 
     if let Some((en_line, en_pos)) = it.eat_if(&Token::RCBrack) {
@@ -59,7 +64,7 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_list(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("list")?;
     it.eat(&Token::LSBrack, "list")?;
 
     if let Some((en_line, en_pos)) = it.eat_if(&Token::RSBrack) {

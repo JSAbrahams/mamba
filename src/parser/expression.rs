@@ -9,7 +9,7 @@ use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::iterator::TPIterator;
 use crate::parser::operation::parse_operation;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
@@ -35,8 +35,55 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(expected_construct("expression", token_pos))
+            _ => Err(expected_one_of(
+                &[
+                    Token::If,
+                    Token::Match,
+                    Token::LRBrack,
+                    Token::LSBrack,
+                    Token::LCBrack,
+                    Token::Ret,
+                    Token::Underscore,
+                    Token::_Self,
+                    Token::Real(String::new()),
+                    Token::Int(String::new()),
+                    Token::ENum(String::new(), String::new()),
+                    Token::Bool(true),
+                    Token::Bool(false),
+                    Token::Not,
+                    Token::Sqrt,
+                    Token::Add,
+                    Token::Id(String::new()),
+                    Token::Sub,
+                    Token::BOneCmpl,
+                    Token::BSlash
+                ],
+                token_pos,
+                "expression"
+            ))
         },
+        &[
+            Token::If,
+            Token::Match,
+            Token::LRBrack,
+            Token::LSBrack,
+            Token::LCBrack,
+            Token::Ret,
+            Token::Underscore,
+            Token::_Self,
+            Token::Real(String::new()),
+            Token::Int(String::new()),
+            Token::ENum(String::new(), String::new()),
+            Token::Bool(true),
+            Token::Bool(false),
+            Token::Not,
+            Token::Sqrt,
+            Token::Add,
+            Token::Id(String::new()),
+            Token::Sub,
+            Token::BOneCmpl,
+            Token::BSlash
+        ],
         "expression"
     );
 
@@ -47,7 +94,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("underscore")?;
     let (en_line, en_pos) = it.eat(&Token::Underscore, "underscore")?;
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore }))
 }
@@ -85,7 +132,7 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("return")?;
     it.eat(&Token::Ret, "return")?;
 
     if let Some((en_line, en_pos)) = it.eat_if(&Token::NL) {

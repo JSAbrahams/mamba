@@ -4,19 +4,19 @@ use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut statements: Vec<ASTNodePos> = Vec::new();
     it.peek_while_not_token(&Token::Dedent, &mut |it, token_pos| match &token_pos.token {
         Token::NL => {
-            it.eat(&Token::NL, "statements")?;
+            it.eat(&Token::NL, "block")?;
             Ok(())
         }
         Token::Comment(comment) => {
             let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-            it.eat(&Token::Comment(comment.clone()), "statements")?;
+            it.eat(&Token::Comment(comment.clone()), "block")?;
             let (en_line, en_pos) = (st_line, Token::Comment(comment.clone()).width());
             let node = ASTNode::Comment { comment: comment.clone() };
             statements.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
@@ -28,7 +28,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
                 token_pos.token != Token::NL && token_pos.token != Token::Dedent
             };
             if it.peak_if_fn(&invalid) {
-                return Err(expected_construct("statement or expression", &token_pos.clone()));
+                return Err(expected(&Token::NL, &token_pos.clone(), "block"));
             }
             Ok(())
         }
@@ -38,7 +38,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 }
 
 pub fn parse_block(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("block")?;
     it.eat(&Token::Indent, "block")?;
 
     let statements = it.parse_vec(&parse_statements)?;

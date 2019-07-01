@@ -24,6 +24,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
                     parse_expression(it)
                 },
         },
+        &[],
         "expression or statement"
     )?;
 
@@ -38,7 +39,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("raise")?;
     it.eat(&Token::Raises, "raise")?;
 
     it.eat(&Token::LSBrack, "raise")?;
@@ -55,7 +56,7 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
 }
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("handle")?;
     it.eat(&Token::Handle, "handle")?;
     it.eat(&Token::NL, "handle")?;
 

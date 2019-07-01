@@ -1,8 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNodePos;
-use crate::parser::parse_result::eof;
-use crate::parser::parse_result::eof_expected;
+use crate::parser::parse_result::eof_expected_one_of;
 use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 use std::iter::Peekable;
@@ -29,7 +28,7 @@ impl<'a> TPIterator<'a> {
                 if Token::same_type(actual, token) =>
                 Ok((*st_line, *st_pos + actual.clone().width())),
             Some(token_pos) => Err(expected(token, token_pos, err_msg)),
-            None => Err(eof_expected(token))
+            None => Err(eof_expected_one_of(&[token.clone()], err_msg))
         }
     }
 
@@ -92,10 +91,11 @@ impl<'a> TPIterator<'a> {
     pub fn peek_or_err(
         &mut self,
         match_fun: &Fn(&mut TPIterator, &TokenPos) -> ParseResult,
-        err_msg: &str
+        eof_expected: &[Token],
+        eof_err_msg: &str
     ) -> ParseResult {
         match self.it.peek().cloned() {
-            None => Err(eof(err_msg)),
+            None => Err(eof_expected_one_of(eof_expected, eof_err_msg)),
             Some(token_pos) => match_fun(self, token_pos)
         }
     }
@@ -146,10 +146,10 @@ impl<'a> TPIterator<'a> {
         Ok(())
     }
 
-    pub fn start_pos(&mut self) -> ParseResult<(i32, i32)> {
+    pub fn start_pos(&mut self, msg: &str) -> ParseResult<(i32, i32)> {
         match self.it.peek() {
             Some(TokenPos { st_line, st_pos, .. }) => Ok((*st_line, *st_pos)),
-            None => Err(eof("token"))
+            None => Err(eof_expected_one_of(&[], msg))
         }
     }
 }

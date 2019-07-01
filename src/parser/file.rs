@@ -12,7 +12,7 @@ use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("from import")?;
     it.eat(&Token::From, "from import")?;
 
     let id = it.parse(&parse_id)?;
@@ -24,7 +24,7 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("import")?;
     it.eat(&Token::Import, "import")?;
 
     let mut import = vec![];
@@ -103,7 +103,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Ok(())
         }
         Token::Comment(comment) => {
-            let (st_line, st_pos) = it.start_pos()?;
+            let (st_line, st_pos) = it.start_pos("comment")?;
             let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
             let node = ASTNode::Comment { comment: comment.clone() };
             modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
@@ -120,8 +120,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
-
+    let (st_line, st_pos) = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
     let _type = it.parse(&parse_type)?;
 

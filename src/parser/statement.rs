@@ -7,7 +7,7 @@ use crate::parser::definition::parse_definition;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
@@ -42,14 +42,35 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             Token::Def => parse_definition(it),
             Token::With => parse_with(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
-            _ => Err(expected_construct("statement", token_pos))
+            _ => Err(expected_one_of(
+                &[
+                    Token::Print,
+                    Token::Pass,
+                    Token::Raise,
+                    Token::Def,
+                    Token::With,
+                    Token::For,
+                    Token::While
+                ],
+                token_pos,
+                "statement"
+            ))
         },
+        &[
+            Token::Print,
+            Token::Pass,
+            Token::Raise,
+            Token::Def,
+            Token::With,
+            Token::For,
+            Token::While
+        ],
         "statement"
     )
 }
 
 pub fn parse_with(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_expression)?;
     let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id")?;

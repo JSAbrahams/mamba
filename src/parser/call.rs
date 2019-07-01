@@ -5,11 +5,11 @@ use crate::parser::ast::ASTNodePos;
 use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_reassignment(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("reassignment")?;
     it.eat(&Token::Assign, "reassignment")?;
 
     let right = it.parse(&parse_expression)?;
@@ -20,7 +20,7 @@ pub fn parse_reassignment(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult 
 }
 
 pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("anonymous function")?;
     it.eat(&Token::BSlash, "anonymous function")?;
 
     let mut args: Vec<ASTNodePos> = vec![];
@@ -66,8 +66,9 @@ pub fn parse_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                 let node = ASTNode::FunctionCall { name: Box::from(pre.clone()), args: vec![*arg] };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
             }
-            _ => Err(expected_construct("function call", token_pos))
+            _ => Err(expected_one_of(&[Token::Point, Token::LRBrack], token_pos, "function call"))
         },
+        &[Token::Point, Token::LRBrack],
         "function call"
     )
 }

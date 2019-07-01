@@ -5,7 +5,7 @@ use crate::parser::ast::ASTNodePos;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected_construct;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
@@ -13,14 +13,19 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::If => parse_if(it),
             Token::Match => parse_match(it),
-            _ => Err(expected_construct("control flow expression", token_pos))
+            _ => Err(expected_one_of(
+                &[Token::If, Token::Match],
+                token_pos,
+                "control flow expression"
+            ))
         },
+        &[Token::If, Token::Match],
         "control flow expression"
     )
 }
 
 fn parse_if(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("if")?;
 
     it.eat(&Token::If, "if")?;
     let cond = it.parse(&parse_expression)?;
@@ -34,7 +39,7 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_match(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("match")?;
     it.eat(&Token::Match, "match")?;
 
     let cond = it.parse(&parse_expression)?;
@@ -51,7 +56,7 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    it.eat(&Token::Indent, "match case")?;
+    it.eat(&Token::Indent, "match cases")?;
 
     let mut cases = Vec::new();
     it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
@@ -60,12 +65,12 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         Ok(())
     })?;
 
-    it.eat(&Token::Dedent, "match case")?;
+    it.eat(&Token::Dedent, "match cases")?;
     Ok(cases)
 }
 
 fn parse_match_case(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("match case")?;
 
     let cond = it.parse(&parse_expression_maybe_type)?;
     it.eat(&Token::BTo, "match case")?;
@@ -77,7 +82,7 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_expression_maybe_type(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("expression maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
 
     let id = it.parse(&parse_expression)?;

@@ -42,7 +42,7 @@ fn parse_level_8(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_7(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_6)?;
 
     macro_rules! bin_op {
@@ -63,7 +63,7 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_6(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_5)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -91,7 +91,7 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_5(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_4)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -115,7 +115,7 @@ fn parse_level_5(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_4(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_3)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -134,7 +134,7 @@ fn parse_level_4(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_3(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_2)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -172,7 +172,7 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_2(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
             let factor = $it.parse(&$fun)?;
@@ -198,7 +198,7 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_level_1(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_factor)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -216,7 +216,7 @@ fn parse_level_1(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_factor(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("operation")?;
     macro_rules! literal {
         ($it:expr, $factor:expr, $ast:ident) => {{
             let (en_line, en_pos) = $it.eat(&Token::$ast($factor.clone()), "factor")?;
@@ -240,6 +240,17 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             }
             _ => it.parse(&parse_expression)
         },
+        // TODO add system to also allow us to say something should for instance be an expression
+        &[
+            Token::Id(String::new()),
+            Token::_Self,
+            Token::Real(String::new()),
+            Token::Int(String::new()),
+            Token::Bool(true),
+            Token::Bool(false),
+            Token::Str(String::new()),
+            Token::ENum(String::new(), String::new())
+        ],
         "factor"
     )
 }

@@ -12,7 +12,7 @@ use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_class(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("class")?;
     it.eat(&Token::Class, "class")?;
     let _type = it.parse(&parse_type)?;
 
@@ -50,7 +50,7 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("parent")?;
 
     let id = it.parse(&parse_id)?;
     let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "parent generics")?;
