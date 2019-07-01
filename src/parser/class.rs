@@ -14,14 +14,14 @@ use crate::parser::parse_result::ParseResult;
 pub fn parse_class(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("class")?;
     it.eat(&Token::Class, "class")?;
-    let _type = it.parse(&parse_type)?;
+    let _type = it.parse(&parse_type, "class")?;
 
     let mut args = vec![];
     if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, token_pos| match token_pos.token {
             Token::Def => {
                 it.eat(&Token::Def, "constructor argument")?;
-                args.push(*it.parse(&parse_fun_arg)?);
+                args.push(*it.parse(&parse_fun_arg, "constructor argument")?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
@@ -34,16 +34,16 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
     if it.eat_if(&Token::IsA).is_some() {
         it.peek_while_not_token(&Token::NL, &mut |it, token_pos| match token_pos.token {
             Token::Id(_) => {
-                parents.push(*it.parse(&parse_parent)?);
+                parents.push(*it.parse(&parse_parent, "parents")?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
-            _ => Err(expected(&Token::Id(String::new()), &token_pos.clone(), "parent"))
+            _ => Err(expected(&Token::Id(String::new()), &token_pos.clone(), "parents"))
         })?;
     }
 
     it.eat(&Token::NL, "class")?;
-    let body = it.parse(&parse_block)?;
+    let body = it.parse(&parse_block, "class")?;
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::Class { _type, args, parents, body };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
@@ -52,13 +52,13 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
 pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("parent")?;
 
-    let id = it.parse(&parse_id)?;
+    let id = it.parse(&parse_id, "parent")?;
     let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "parent generics")?;
     it.eat_if(&Token::RSBrack);
     let mut args = vec![];
     if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-            args.push(*it.parse(&parse_expression)?);
+            args.push(*it.parse(&parse_expression, "parent")?);
             it.eat_if(&Token::Comma);
             Ok(())
         })?;

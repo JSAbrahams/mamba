@@ -15,7 +15,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::Print => {
                 it.eat(&Token::Print, "statement")?;
-                let expr = it.parse(&parse_expression)?;
+                let expr = it.parse(&parse_expression, "statement")?;
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 let (en_line, en_pos) = (expr.en_line, expr.en_pos);
                 let node = ASTNode::Print { expr };
@@ -34,7 +34,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
             Token::Raise => {
                 it.eat(&Token::Raise, "statement")?;
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let error = it.parse(&parse_expression)?;
+                let error = it.parse(&parse_expression, "statement")?;
                 let (en_line, en_pos) = (error.en_line, error.en_pos);
                 let node = ASTNode::Raise { error };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
@@ -72,9 +72,9 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
 pub fn parse_with(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
-    let resource = it.parse(&parse_expression)?;
+    let resource = it.parse(&parse_expression, "with")?;
     let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id")?;
-    let expr = it.parse(&parse_expr_or_stmt)?;
+    let expr = it.parse(&parse_expr_or_stmt, "with")?;
 
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
     let node = ASTNode::With { resource, _as, expr };

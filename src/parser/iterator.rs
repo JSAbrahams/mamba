@@ -46,16 +46,18 @@ impl<'a> TPIterator<'a> {
 
     pub fn parse(
         &mut self,
-        parse_fun: &Fn(&mut TPIterator) -> ParseResult
+        parse_fun: &Fn(&mut TPIterator) -> ParseResult,
+        cause: &str
     ) -> ParseResult<Box<ASTNodePos>> {
-        parse_fun(self)
+        parse_fun(self).map_err(|err| err.clone_with_cause(cause))
     }
 
     pub fn parse_vec(
         &mut self,
-        parse_fun: &Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>
+        parse_fun: &Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
+        cause: &str
     ) -> ParseResult<Vec<ASTNodePos>> {
-        parse_fun(self)
+        parse_fun(self).map_err(|err| err.clone_with_cause(cause))
     }
 
     pub fn parse_if(
@@ -67,7 +69,7 @@ impl<'a> TPIterator<'a> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;
-                Ok(Some(self.parse(parse_fun)?))
+                Ok(Some(self.parse(parse_fun, err_msg)?))
             }
             _ => Ok(None)
         }
@@ -82,7 +84,7 @@ impl<'a> TPIterator<'a> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;
-                Ok(self.parse_vec(parse_fun)?)
+                Ok(self.parse_vec(parse_fun, err_msg)?)
             }
             _ => Ok(vec![])
         }

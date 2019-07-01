@@ -28,7 +28,7 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("tuple")?;
     it.eat(&Token::LRBrack, "tuple")?;
 
-    let elements = it.parse_vec(&parse_expressions)?;
+    let elements = it.parse_vec(&parse_expressions, "tuple")?;
     let (en_line, en_pos) = it.eat(&Token::RRBrack, "tuple")?;
 
     Ok(Box::from(if elements.len() == 1 {
@@ -47,9 +47,9 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let item = it.parse(&parse_expression)?;
+    let item = it.parse(&parse_expression, "set")?;
     if it.eat_if(&Token::Ver).is_some() {
-        let conditions = it.parse_vec(&parse_expressions)?;
+        let conditions = it.parse_vec(&parse_expressions, "set")?;
         let (en_line, en_pos) = it.eat(&Token::RCBrack, "set")?;
         let node = ASTNode::SetBuilder { item, conditions };
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
@@ -72,9 +72,9 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let item = it.parse(&parse_expression)?;
+    let item = it.parse(&parse_expression, "list")?;
     if it.eat_if(&Token::Ver).is_some() {
-        let conditions = it.parse_vec(&parse_expressions)?;
+        let conditions = it.parse_vec(&parse_expressions, "list")?;
         let (en_line, en_pos) = it.eat(&Token::RSBrack, "list")?;
         let node = ASTNode::ListBuilder { item, conditions };
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
@@ -91,7 +91,7 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
 pub fn parse_expressions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut expressions = vec![];
     it.peek_while_fn(&is_start_expression, &mut |it, _| {
-        expressions.push(*it.parse(&parse_expression)?);
+        expressions.push(*it.parse(&parse_expression, "expressions")?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

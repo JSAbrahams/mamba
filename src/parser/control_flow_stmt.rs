@@ -35,11 +35,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_while(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("while")?;
-    it.eat(&Token::While, "while")?;
-    let cond = it.parse(&parse_expression)?;
+    let (st_line, st_pos) = it.start_pos("while statement")?;
+    it.eat(&Token::While, "while statement")?;
+    let cond = it.parse(&parse_expression, "while statement")?;
     it.eat(&Token::Do, "while")?;
-    let body = it.parse(&parse_expr_or_stmt)?;
+    let body = it.parse(&parse_expr_or_stmt, "while statement")?;
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::While { cond, body };
@@ -47,11 +47,11 @@ fn parse_while(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_for(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("for")?;
-    it.eat(&Token::For, "for")?;
-    let expr = it.parse(&parse_expression)?;
-    it.eat(&Token::Do, "for")?;
-    let body = it.parse(&parse_expr_or_stmt)?;
+    let (st_line, st_pos) = it.start_pos("for statement")?;
+    it.eat(&Token::For, "for statement")?;
+    let expr = it.parse(&parse_expression, "for statement")?;
+    it.eat(&Token::Do, "for statement")?;
+    let body = it.parse(&parse_expr_or_stmt, "for statement")?;
 
     let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::For { expr, body };

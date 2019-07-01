@@ -1,13 +1,27 @@
 use crate::parser::parse_result::ParseErr;
+use std::cmp::min;
 use std::path::PathBuf;
+
+const SYNTAX_ERR_MAX_DEPTH: usize = 2;
 
 pub fn syntax_err(err: &ParseErr, source: &str, in_path: &PathBuf) -> String {
     let source_line = source.lines().nth(err.line as usize - 1);
+
+    let trimmed_causes = &err.causes[0..min(err.causes.len(), SYNTAX_ERR_MAX_DEPTH)];
+    let cause_formatter = trimmed_causes.iter().fold(String::new(), |acc, cause| {
+        acc + &format!(
+            "{}{}{}\n",
+            String::from_utf8(vec![b' '; 5]).unwrap(),
+            String::from_utf8(vec![b' '; err.pos as usize - 1]).unwrap(),
+            cause
+        )
+    });
+
     format!(
         "--> {}:{}:{}
      |
 {:3}  | {}
-     | {}{} {}\n",
+     | {}{} {}\n{}",
         in_path.display(),
         err.line,
         err.pos,
@@ -15,6 +29,7 @@ pub fn syntax_err(err: &ParseErr, source: &str, in_path: &PathBuf) -> String {
         source_line.unwrap_or(""),
         String::from_utf8(vec![b' '; err.pos as usize - 1]).unwrap(),
         String::from_utf8(vec![b'^'; err.width as usize]).unwrap(),
-        err.msg
+        err.msg,
+        cause_formatter
     )
 }

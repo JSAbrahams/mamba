@@ -23,7 +23,7 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
             Ok(())
         }
         _ => {
-            statements.push(*it.parse(&parse_expr_or_stmt)?);
+            statements.push(*it.parse(&parse_expr_or_stmt, "block")?);
             let invalid = |token_pos: &TokenPos| {
                 token_pos.token != Token::NL && token_pos.token != Token::Dedent
             };
@@ -41,7 +41,7 @@ pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("block")?;
     it.eat(&Token::Indent, "block")?;
 
-    let statements = it.parse_vec(&parse_statements)?;
+    let statements = it.parse_vec(&parse_statements, "block")?;
     let (en_line, en_pos) = match statements.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)

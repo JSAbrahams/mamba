@@ -15,8 +15,8 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("from import")?;
     it.eat(&Token::From, "from import")?;
 
-    let id = it.parse(&parse_id)?;
-    let import = it.parse(&parse_import)?;
+    let id = it.parse(&parse_id, "from import")?;
+    let import = it.parse(&parse_import, "from import")?;
 
     let (en_line, en_pos) = (import.en_line, import.en_pos);
     let node = ASTNode::FromImport { id, import };
@@ -29,7 +29,7 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
 
     let mut import = vec![];
     it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _| {
-        import.push(*it.parse(&parse_id)?);
+        import.push(*it.parse(&parse_id, "import")?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -48,18 +48,18 @@ fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut aliases = vec![];
     it.peek_while_not_token(&Token::NL, &mut |it, token_pos| match token_pos.token {
         Token::Id(_) => {
-            aliases.push(*it.parse(&parse_id)?);
+            aliases.push(*it.parse(&parse_id, "as")?);
             it.eat_if(&Token::Comma);
             Ok(())
         }
-        _ => Err(expected(&Token::Id(String::new()), token_pos, "import"))
+        _ => Err(expected(&Token::Id(String::new()), token_pos, "as"))
     })?;
 
     Ok(aliases)
 }
 
 pub fn parse_script(it: &mut TPIterator) -> ParseResult {
-    let statements = it.parse_vec(&parse_statements)?;
+    let statements = it.parse_vec(&parse_statements, "script")?;
 
     let (st_line, st_pos, en_line, en_pos) = match (statements.first(), statements.last()) {
         (Some(first), Some(last)) => (first.st_line, first.st_pos, last.en_line, last.en_pos),
@@ -91,15 +91,15 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Ok(())
         }
         Token::Import => {
-            imports.push(*it.parse(&parse_import)?);
+            imports.push(*it.parse(&parse_import, "file")?);
             Ok(())
         }
         Token::From => {
-            imports.push(*it.parse(&parse_from_import)?);
+            imports.push(*it.parse(&parse_from_import, "file")?);
             Ok(())
         }
         Token::Type => {
-            type_defs.push(*it.parse(&parse_type_def)?);
+            type_defs.push(*it.parse(&parse_type_def, "file")?);
             Ok(())
         }
         Token::Comment(comment) => {
@@ -110,7 +110,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Ok(())
         }
         _ => {
-            modules.push(*it.parse(&parse_module)?);
+            modules.push(*it.parse(&parse_module, "file")?);
             Ok(())
         }
     })?;
@@ -122,13 +122,13 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
-    let _type = it.parse(&parse_type)?;
+    let _type = it.parse(&parse_type, "type definition")?;
 
     it.peek(
         &|it, token_pos| match token_pos.token {
             Token::IsA => {
                 it.eat(&Token::IsA, "type definition")?;
-                let _type = it.parse(&parse_type)?;
+                let _type = it.parse(&parse_type, "type definition")?;
                 let conditions =
                     it.parse_vec_if(&Token::When, &parse_conditions, "type definition")?;
                 let (en_line, en_pos) = if let Some(token_pos) = conditions.last() {
@@ -142,7 +142,7 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
             }
             _ => {
                 it.eat_if(&Token::NL);
-                let body = it.parse(&parse_block)?;
+                let body = it.parse(&parse_block, "type definition")?;
                 let (en_line, en_pos) = (body.en_line, body.en_pos);
                 let node = ASTNode::TypeDef { _type: _type.clone(), body: Some(body) };
                 Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))

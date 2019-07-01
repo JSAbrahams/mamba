@@ -27,7 +27,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
     };
 
     let definition = if pure {
-        let id = it.parse(&parse_id_maybe_type)?;
+        let id = it.parse(&parse_id_maybe_type, "definition")?;
         parse_fun_def(&id, pure, it)
     } else {
         it.peek_or_err(
@@ -74,7 +74,7 @@ pub fn parse_definition(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
-    let id = *it.parse(&parse_id_maybe_type)?;
+    let id = *it.parse(&parse_id_maybe_type, "variable or function definition")?;
 
     match id {
         ASTNodePos { node: ASTNode::IdType { _type: Some(_), .. }, .. }
@@ -114,7 +114,7 @@ fn parse_var_or_fun_def(it: &mut TPIterator) -> ParseResult {
 
 fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("function definition")?;
-    let fun_args = it.parse_vec(&parse_fun_args)?;
+    let fun_args = it.parse_vec(&parse_fun_args, "function definition")?;
 
     let id = match id_type {
         ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, st_line, st_pos, .. } =>
@@ -170,8 +170,8 @@ fn parse_fun_def(id_type: &ASTNodePos, pure: bool, it: &mut TPIterator) -> Parse
 
 pub fn parse_raises(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     it.eat(&Token::LSBrack, "raises")?;
-    let args = it.parse_vec(&parse_generics)?;
-    it.eat(&Token::RSBrack, "raises arguments")?;
+    let args = it.parse_vec(&parse_generics, "raises")?;
+    it.eat(&Token::RSBrack, "raises")?;
     Ok(args)
 }
 
@@ -180,7 +180,7 @@ pub fn parse_fun_args(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 
     let mut args = Vec::new();
     it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-        args.push(*it.parse(&parse_fun_arg)?);
+        args.push(*it.parse(&parse_fun_arg, "function arguments")?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -193,7 +193,7 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("function argument")?;
     let vararg = it.eat_if(&Token::Vararg).is_some();
 
-    let id_maybe_type = it.parse(&parse_id_maybe_type)?;
+    let id_maybe_type = it.parse(&parse_id_maybe_type, "function argument")?;
     let default = it.parse_if(&Token::Assign, &parse_expression, "function argument default")?;
 
     let (en_line, en_pos) = match &default {
@@ -207,7 +207,7 @@ pub fn parse_fun_arg(it: &mut TPIterator) -> ParseResult {
 pub fn parse_forward(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut forwarded: Vec<ASTNodePos> = Vec::new();
     it.peek_while_not_token(&Token::NL, &mut |it, _| {
-        forwarded.push(*it.parse(&parse_id)?);
+        forwarded.push(*it.parse(&parse_id, "forward")?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -235,8 +235,9 @@ fn parse_variable_def_id(id: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 fn parse_variable_def(it: &mut TPIterator) -> ParseResult {
     let id = it.peek_or_err(
         &|it, token_pos| match token_pos.token {
-            Token::LRBrack | Token::LCBrack | Token::LSBrack => it.parse(&parse_collection),
-            _ => it.parse(&parse_id_maybe_type)
+            Token::LRBrack | Token::LCBrack | Token::LSBrack =>
+                it.parse(&parse_collection, "variable definition"),
+            _ => it.parse(&parse_id_maybe_type, "variable definition")
         },
         &[Token::LRBrack, Token::LCBrack, Token::LSBrack],
         "variable definition"

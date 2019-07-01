@@ -15,7 +15,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match &token_pos.token {
             Token::NL => {
                 it.eat(&Token::NL, "expression or statement")?;
-                it.parse(&parse_block)
+                it.parse(&parse_block, "expression or statement")
             }
             token =>
                 if is_start_statement(token) {
@@ -43,7 +43,7 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
     it.eat(&Token::Raises, "raise")?;
 
     it.eat(&Token::LSBrack, "raise")?;
-    let errors = it.parse_vec(&parse_generics)?;
+    let errors = it.parse_vec(&parse_generics, "raise")?;
     it.eat(&Token::RSBrack, "raise")?;
     it.eat_if(&Token::RSBrack);
     let (en_line, en_pos) = match errors.last() {
@@ -60,7 +60,7 @@ pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResul
     it.eat(&Token::Handle, "handle")?;
     it.eat(&Token::NL, "handle")?;
 
-    let cases = it.parse_vec(&parse_match_cases)?;
+    let cases = it.parse_vec(&parse_match_cases, "handle")?;
     let (en_line, en_pos) = match cases.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)
