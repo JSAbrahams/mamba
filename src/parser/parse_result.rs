@@ -10,14 +10,23 @@ pub struct ParseErr {
     pub pos:    i32,
     pub width:  i32,
     pub msg:    String,
-    pub causes: Vec<(String, i32, i32)>
+    pub causes: Vec<Cause>
+}
+
+#[derive(Debug, Clone)]
+pub struct Cause {
+    pub line:  i32,
+    pub pos:   i32,
+    pub cause: String
+}
+
+impl Cause {
+    pub fn new(cause: &str, line: i32, pos: i32) -> Cause {
+        Cause { line, pos, cause: String::from(cause) }
+    }
 }
 
 impl ParseErr {
-    /// Add cause of error to message as long as the maximum depth has not been
-    /// exceeded.
-    ///
-    /// Else, it is ignored.
     pub fn clone_with_cause(&self, cause: &str, line: i32, pos: i32) -> ParseErr {
         ParseErr {
             line:   self.line,
@@ -25,23 +34,11 @@ impl ParseErr {
             width:  self.width,
             msg:    self.msg.clone(),
             causes: {
-                let mut new = self.causes.clone();
-                new.push((format!("in \"{}\"", cause), line, pos));
-                new
+                let mut new_causes = self.causes.clone();
+                new_causes.push(Cause::new(cause, line, pos));
+                new_causes
             }
         }
-    }
-}
-
-fn comma_separated(tokens: &[Token]) -> String {
-    let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", token));
-    String::from(&list[0..if list.len() >= 2 { list.len() - 2 } else { 0 }])
-}
-
-fn an_or_a(parsing: &str) -> &str {
-    match parsing.chars().next() {
-        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an",
-        _ => "a"
     }
 }
 
@@ -93,6 +90,18 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
             parsing
         ),
         causes: vec![]
+    }
+}
+
+fn comma_separated(tokens: &[Token]) -> String {
+    let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", token));
+    String::from(&list[0..if list.len() >= 2 { list.len() - 2 } else { 0 }])
+}
+
+fn an_or_a(parsing: &str) -> &str {
+    match parsing.chars().next() {
+        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an",
+        _ => "a"
     }
 }
 

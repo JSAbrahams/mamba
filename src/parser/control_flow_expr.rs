@@ -61,7 +61,7 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let mut cases = Vec::new();
 
     it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
-        cases.push(*it.parse(&parse_match_case, "match cases", st_line, st_pos)?);
+        cases.push(*it.parse(&parse_match_case, "match case", st_line, st_pos)?);
         it.eat_if(&Token::NL);
         Ok(())
     })?;
