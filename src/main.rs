@@ -13,6 +13,7 @@ pub fn main() -> Result<(), String> {
 
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).version(VERSION).get_matches();
+
     match std::env::current_dir() {
         Ok(current_dir) => {
             let in_path = matches.value_of("input");
