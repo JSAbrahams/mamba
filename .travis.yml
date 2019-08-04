@@ -13,11 +13,11 @@ python:
 
 # cache dependencies
 before_cache:
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew cleanup; fi
+  - if [ $TRAVIS_OS_NAME = 'osx' ]; then brew cleanup; fi
 cache: 
   - cargo
   directories:
-  - if [ $TRAVIS_OS_NAME = osx ]; then $HOME/Library/Caches/Homebrew; fi
+  - if [ $TRAVIS_OS_NAME = 'osx' ]; then $HOME/Library/Caches/Homebrew; fi
 
 sudo: true
 before_install:
@@ -39,12 +39,12 @@ branches:
 
 before_script:
   # Python
-  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get install python3; fi
-  - if [ $TRAVIS_OS_NAME == osx ]; then brew install python3; fi
+  - if [ $TRAVIS_OS_NAME = 'linux' ]; then sudo apt-get install python3; fi
+  - if [ $TRAVIS_OS_NAME = 'osx' ]; then brew install python3; fi
 
   # Cargo components
-  - if [ $TRAVIS_RUST_VERSION == nightly ]; then rustup component add rustfmt --toolchain nightly; fi
-  - if [ $TRAVIS_RUST_VERSION == stable ]; then rustup component add clippy; fi
+  - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add rustfmt --toolchain nightly; fi
+  - if [ $TRAVIS_RUST_VERSION = 'stable' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add clippy; fi
 
 before_install:
   # grcov
@@ -52,17 +52,17 @@ before_install:
 
 after_success:
   # Coverage report
-  - if [ $TRAVIS_RUST_VERSION == nightly && $TRAVIS_OS_NAME == linux ]; then bash <(curl -s https://codecov.io/bash); fi
+  - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then bash <(curl -s https://codecov.io/bash); fi
 
 script:
-  - if [ $TRAVIS_RUST_VERSION == stable ]; then then cargo clippy -- -D warnings; fi
-  - if [ $TRAVIS_RUST_VERSION == nightly ]; then cargo +nightly fmt --all -- --check; fi
+  - if [ $TRAVIS_RUST_VERSION = 'stable' AND $TRAVIS_OS_NAME = 'linux' ]; then then cargo clippy -- -D warnings; fi
+  - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then cargo +nightly fmt --all -- --check; fi
 
   - cargo build
   - cargo test
 
   - |
-    if [ $TRAVIS_RUST_VERSION == nightly ]; then
+    if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then
       export CARGO_INCREMENTAL=0;
       export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
       zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
