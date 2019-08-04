@@ -9,7 +9,7 @@ use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::iterator::TPIterator;
 use crate::parser::operation::parse_operation;
-use crate::parser::parse_result::ParseErr::*;
+use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
@@ -35,8 +35,55 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(CustomErr { expected: "expression".to_string(), actual: token_pos.clone() })
+            _ => Err(expected_one_of(
+                &[
+                    Token::If,
+                    Token::Match,
+                    Token::LRBrack,
+                    Token::LSBrack,
+                    Token::LCBrack,
+                    Token::Ret,
+                    Token::Underscore,
+                    Token::_Self,
+                    Token::Real(String::new()),
+                    Token::Int(String::new()),
+                    Token::ENum(String::new(), String::new()),
+                    Token::Bool(true),
+                    Token::Bool(false),
+                    Token::Not,
+                    Token::Sqrt,
+                    Token::Add,
+                    Token::Id(String::new()),
+                    Token::Sub,
+                    Token::BOneCmpl,
+                    Token::BSlash
+                ],
+                token_pos,
+                "expression"
+            ))
         },
+        &[
+            Token::If,
+            Token::Match,
+            Token::LRBrack,
+            Token::LSBrack,
+            Token::LCBrack,
+            Token::Ret,
+            Token::Underscore,
+            Token::_Self,
+            Token::Real(String::new()),
+            Token::Int(String::new()),
+            Token::ENum(String::new(), String::new()),
+            Token::Bool(true),
+            Token::Bool(false),
+            Token::Not,
+            Token::Sqrt,
+            Token::Add,
+            Token::Id(String::new()),
+            Token::Sub,
+            Token::BOneCmpl,
+            Token::BSlash
+        ],
         "expression"
     );
 
@@ -47,7 +94,7 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("underscore")?;
     let (en_line, en_pos) = it.eat(&Token::Underscore, "underscore")?;
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore }))
 }
@@ -58,7 +105,7 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
             Token::QuestOr => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat(&Token::QuestOr, "postfix expression")?;
-                let right = it.parse(&parse_expression, "question or")?;
+                let right = it.parse(&parse_expression, "postfix expression", st_line, st_pos)?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
                 let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
                 let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
@@ -80,13 +127,12 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
                     Ok(Box::from(pre.clone()))
                 },
         },
-        Ok(Box::from(pre.clone())),
-        "postfix expression"
+        Ok(Box::from(pre.clone()))
     )
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("return")?;
     it.eat(&Token::Ret, "return")?;
 
     if let Some((en_line, en_pos)) = it.eat_if(&Token::NL) {
@@ -94,7 +140,7 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
         return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
     }
 
-    let expr = it.parse(&parse_expression, "return expression")?;
+    let expr = it.parse(&parse_expression, "return", st_line, st_pos)?;
     let (en_line, en_pos) = (expr.en_line, expr.en_pos);
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Return { expr } }))
 }

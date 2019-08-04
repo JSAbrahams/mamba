@@ -1,75 +1,114 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNodePos;
-use std::error;
-use std::fmt;
 
 pub type ParseResult<T = Box<ASTNodePos>> = std::result::Result<T, ParseErr>;
 
 #[derive(Debug)]
-pub enum ParseErr {
-    UtilBodyErr,
-    Cause { parsing: String, cause: Box<ParseErr>, position: Option<TokenPos> },
-    CustomErr { expected: String, actual: TokenPos },
-    InternalErr { message: String },
-    TokenErr { expected: Token, actual: TokenPos, message: String },
-    EOFErr { expected: Token },
-    CustomEOFErr { expected: String },
-    IndErr { expected: i32, actual: i32, position: Option<TokenPos> }
+pub struct ParseErr {
+    pub line:   i32,
+    pub pos:    i32,
+    pub width:  i32,
+    pub msg:    String,
+    pub causes: Vec<Cause>
 }
 
-impl fmt::Display for ParseErr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ParseErr::Cause { ref parsing, ref cause, ref position } => match cause.fmt(f) {
-                Ok(_) => match position {
-                    Some(pos) =>
-                        write!(f, "\nIn <{}> at ({}:{})", parsing, pos.st_line, pos.st_pos),
-                    None => write!(f, "\nIn <{}>", parsing)
-                },
-                err => err
-            },
-            ParseErr::UtilBodyErr => write!(f, "\nUtil module cannot have a body."),
-            ParseErr::EOFErr { expected } =>
-                write!(f, "\nExpected '{}', but end of file.", expected),
-            ParseErr::CustomErr { expected, actual } => write!(
-                f,
-                "\nExpected {} at ({}:{}) (line:col), but was '{}'.",
-                expected, actual.st_line, actual.st_pos, actual.token
-            ),
-            ParseErr::TokenErr { expected, actual, message } => write!(
-                f,
-                "\nExpected '{}' at ({}:{}) (line:col), but was '{}', in {}.",
-                expected, actual.st_line, actual.st_pos, actual.token, message
-            ),
-            ParseErr::CustomEOFErr { expected } =>
-                write!(f, "\nExpected '{}', but end of file.", expected),
-            ParseErr::IndErr { expected, actual, position } => match position {
-                Some(pos) => write!(
-                    f,
-                    "\nExpected indentation of {}, but was {}, at ({}:{})(next token: {})",
-                    expected, actual, pos.st_line, pos.st_pos, pos.token
-                ),
-                None => write!(f, "\nExpected indentation of {}, but was {}.", expected, actual)
-            },
-            ParseErr::InternalErr { message } => write!(f, "{}.", message)
+#[derive(Debug, Clone)]
+pub struct Cause {
+    pub line:  i32,
+    pub pos:   i32,
+    pub cause: String
+}
+
+impl Cause {
+    pub fn new(cause: &str, line: i32, pos: i32) -> Cause {
+        Cause { line, pos, cause: String::from(cause) }
+    }
+}
+
+impl ParseErr {
+    pub fn clone_with_cause(&self, cause: &str, line: i32, pos: i32) -> ParseErr {
+        ParseErr {
+            line:   self.line,
+            pos:    self.pos,
+            width:  self.width,
+            msg:    self.msg.clone(),
+            causes: {
+                let mut new_causes = self.causes.clone();
+                new_causes.push(Cause::new(cause, line, pos));
+                new_causes
+            }
         }
     }
 }
 
-impl error::Error for ParseErr {
-    fn description(&self) -> &str {
-        match self {
-            ParseErr::Cause { .. } => "A parsing error occurred",
-            ParseErr::UtilBodyErr => "Util module cannot have a body.",
-            ParseErr::EOFErr { .. } => "Expected token but end of file.",
-            ParseErr::TokenErr { .. } => "Unexpected token encountered.",
-            ParseErr::CustomErr { .. } => "Expected condition to be met.",
-            ParseErr::CustomEOFErr { .. } => "Expected condition to be met.",
-            ParseErr::IndErr { .. } => "Unexpected indentation.",
-            ParseErr::InternalErr { .. } => "Internal error."
-        }
+pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> ParseErr {
+    ParseErr {
+        line:   actual.st_line,
+        pos:    actual.st_pos,
+        width:  actual.token.clone().width(),
+        msg:    format!(
+            "Expected one of [{}] while parsing {} \"{}\", but found token '{}'",
+            comma_separated(tokens),
+            an_or_a(parsing),
+            parsing,
+            actual.token
+        ),
+        causes: vec![]
     }
+}
 
-    fn source(&self) -> Option<&(error::Error + 'static)> { None }
+pub fn expected(expected: &Token, actual: &TokenPos, parsing: &str) -> ParseErr {
+    ParseErr {
+        line:   actual.st_line,
+        pos:    actual.st_pos,
+        width:  actual.token.clone().width(),
+        msg:    format!(
+            "Expected token '{}' while parsing {} \"{}\", but found token '{}'",
+            expected,
+            an_or_a(parsing),
+            parsing,
+            actual.token
+        ),
+        causes: vec![]
+    }
+}
+
+pub fn custom(msg: &str, line: i32, pos: i32) -> ParseErr {
+    ParseErr { line, pos, width: -1, msg: title_case(msg), causes: vec![] }
+}
+
+pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
+    ParseErr {
+        line:   -1,
+        pos:    -1,
+        width:  -1,
+        msg:    format!(
+            "Expected one of {} while parsing {} \"{}\", but end of file",
+            comma_separated(tokens),
+            an_or_a(parsing),
+            parsing
+        ),
+        causes: vec![]
+    }
+}
+
+fn comma_separated(tokens: &[Token]) -> String {
+    let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", token));
+    String::from(&list[0..if list.len() >= 2 { list.len() - 2 } else { 0 }])
+}
+
+fn an_or_a(parsing: &str) -> &str {
+    match parsing.chars().next() {
+        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an",
+        _ => "a"
+    }
+}
+
+fn title_case(s: &str) -> String {
+    let mut tile_case = String::from(s);
+    if let Some(first) = tile_case.get_mut(0..1) {
+        first.make_ascii_uppercase();
+    }
+    tile_case.to_string()
 }

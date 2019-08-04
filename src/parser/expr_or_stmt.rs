@@ -15,7 +15,12 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match &token_pos.token {
             Token::NL => {
                 it.eat(&Token::NL, "expression or statement")?;
-                it.parse(&parse_block, "expression or statement")
+                it.parse(
+                    &parse_block,
+                    "expression or statement",
+                    token_pos.st_line,
+                    token_pos.st_pos
+                )
             }
             token =>
                 if is_start_statement(token) {
@@ -24,6 +29,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
                     parse_expression(it)
                 },
         },
+        &[],
         "expression or statement"
     )?;
 
@@ -33,17 +39,16 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
             Token::Handle => parse_handle(*result.clone(), it),
             _ => Ok(result.clone())
         },
-        Ok(result.clone()),
-        "expression or statement"
+        Ok(result.clone())
     )
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("raise")?;
     it.eat(&Token::Raises, "raise")?;
 
     it.eat(&Token::LSBrack, "raise")?;
-    let errors = it.parse_vec(&parse_generics, "raise generics")?;
+    let errors = it.parse_vec(&parse_generics, "raise", st_line, st_pos)?;
     it.eat(&Token::RSBrack, "raise")?;
     it.eat_if(&Token::RSBrack);
     let (en_line, en_pos) = match errors.last() {
@@ -56,11 +61,11 @@ pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult
 }
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos()?;
+    let (st_line, st_pos) = it.start_pos("handle")?;
     it.eat(&Token::Handle, "handle")?;
     it.eat(&Token::NL, "handle")?;
 
-    let cases = it.parse_vec(&parse_match_cases, "handle cases")?;
+    let cases = it.parse_vec(&parse_match_cases, "handle", st_line, st_pos)?;
     let (en_line, en_pos) = match cases.last() {
         Some(stmt) => (stmt.en_line, stmt.en_pos),
         None => (st_line, st_pos)
