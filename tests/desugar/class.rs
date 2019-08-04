@@ -69,3 +69,12 @@ fn from_import_verify() {
     assert_eq!(import[0], Core::ENum { num: String::from("a"), exp: String::from("100") });
     assert_eq!(import[1], Core::Float { float: String::from("3000.5") });
 }
+
+#[test]
+fn condition_verify() {
+    let cond = to_pos!(ASTNode::Bool { lit: true });
+    let condition = to_pos!(ASTNode::Condition { cond, _else: None });
+
+    let result = desugar(&condition);
+    assert!(result.is_err());
+}

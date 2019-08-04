@@ -99,3 +99,10 @@ fn raises_empty_verify() {
     });
     assert_eq!(desugar(&type_def).unwrap(), Core::Id { lit: String::from("a") });
 }
+
+#[test]
+fn retry_verify() {
+    let retry = to_pos!(ASTNode::Retry);
+    let result = desugar(&retry);
+    assert!(result.is_err());
+}
