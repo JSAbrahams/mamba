@@ -302,19 +302,22 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
                             other => panic!("Expected case but was {:?}", other)
                         };
 
-                        let (id, class) = match &cond.node {
+                        match &cond.node {
                             ASTNode::IdType { id, _type: Some(ty), .. } => match &ty.node {
-                                ASTNode::Type { id: ty, .. } => (id, ty),
+                                ASTNode::Type { id: ty, .. } => except.push(Core::Except {
+                                    id:    Box::from(desugar_node(id, imp, state)?),
+                                    class: Box::from(desugar_node(ty, imp, state)?),
+                                    body:  Box::from(desugar_node(body, imp, state)?)
+                                }),
                                 other => panic!("Expected type but was {:?}", other)
                             },
+                            ASTNode::IdType { id, _type: None, .. } =>
+                                except.push(Core::ExceptNoClass {
+                                    id:   Box::from(desugar_node(id, imp, state)?),
+                                    body: Box::from(desugar_node(body, imp, state)?)
+                                }),
                             other => panic!("Expected id type but was {:?}", other)
                         };
-
-                        except.push(Core::Except {
-                            id:    Box::from(desugar_node(id, imp, state)?),
-                            class: Box::from(desugar_node(class, imp, state)?),
-                            body:  Box::from(desugar_node(body, imp, state)?)
-                        });
                     }
                     except
                 }

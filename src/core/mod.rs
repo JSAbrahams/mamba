@@ -135,8 +135,13 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Set { elements } => format!("set([{}])", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
         Core::KeyValue { key, value } => format!("{} : {}", to_py(key, ind), to_py(value, ind)),
-        Core::Dictionary { expr, cases } =>
-            format!("{{\n{}\n}}[{}]", comma_delimited(cases, ind + 1), to_py(expr, ind)),
+        Core::Dictionary { expr, cases } => format!(
+            "{{\n{}{}\n{}}}[{}]",
+            indent(ind + 1),
+            comma_delimited(cases, ind + 1),
+            indent(ind),
+            to_py(expr, ind)
+        ),
         Core::DefaultDictionary { expr, cases, default } => format!(
             "defaultdict({}, {{\n{}\n{}}})[{}]",
             to_py(default, ind),
@@ -286,6 +291,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Except { id, class, body } => format!(
             "except {} as {}:\n{}{}\n",
             to_py(class, ind),
+            to_py(id, ind),
+            indent(ind + 1),
+            to_py(body, ind + 1)
+        ),
+        Core::ExceptNoClass { id, body } => format!(
+            "except Exception as {}:\n{}{}\n",
             to_py(id, ind),
             indent(ind + 1),
             to_py(body, ind + 1)

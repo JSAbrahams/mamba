@@ -2,6 +2,7 @@ use crate::core::construct::Core;
 use crate::desugar::context::Imports;
 use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
+use crate::desugar::desugar_result::UnimplementedErr;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
@@ -39,7 +40,11 @@ pub fn desugar_control_flow(
                                 value: Box::from(desugar_node(body.as_ref(), imp, state)?)
                             })
                         },
-                        other => panic!("Expected id type as cond but was {:?}", other)
+                        _ =>
+                            return Err(UnimplementedErr::new(
+                                node_pos,
+                                "match case expression as condition (pattern matching)"
+                            )),
                     },
                     other => panic!("Expected case but was {:?}", other)
                 }

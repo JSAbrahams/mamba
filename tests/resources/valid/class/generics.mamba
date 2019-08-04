@@ -6,8 +6,13 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
     def init(mut self, other_field: Int, z: Int) raises [Err] =>
         if z > 10 then raise Err("Something is wrong!")
         self.z_modified <- z * SOME_CONSTANT
+
+        def something <- match c
+            b => d
+            other: Thing => a
+
         def a <- self.z_modified handle
-            err1: MyErr =>
+            err1 =>
                 print "hey"
                 print "there"
             err2: MyErr => print "hoi"

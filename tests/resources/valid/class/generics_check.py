@@ -7,11 +7,15 @@ class MyClass2(MyType):
         super().__init__(self)
         if z > 10: raise Err("Something is wrong!")
         self.z_modified = z * SOME_CONSTANT
-        a = None
 
+        something = {
+            b : d, other : a
+        }[c]
+
+        a = None
         try:
             a = self.z_modified
-        except MyErr as err1:
+        except Exception as err1:
             print("hey")
             print("there")
         except MyErr as err2:
