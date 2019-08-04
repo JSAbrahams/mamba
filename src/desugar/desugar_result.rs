@@ -1,4 +1,5 @@
 use crate::core::construct::Core;
+use crate::parser::ast::ASTNodePos;
 
 pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
 
@@ -12,11 +13,11 @@ pub struct UnimplementedErr {
 }
 
 impl UnimplementedErr {
-    pub fn new(msg: &str) -> UnimplementedErr {
+    pub fn new(node_pos: &ASTNodePos, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            line: 0,
-            pos:  0,
-            msg:  format!("The {} construct has not yet been implemented as of v{}", msg, VERSION)
+            line: node_pos.st_line,
+            pos:  node_pos.st_pos,
+            msg:  format!("The {} construct has not yet been implemented as of v{}.", msg, VERSION)
         }
     }
 }

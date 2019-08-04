@@ -1,6 +1,6 @@
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::context::Context;
+use crate::desugar::context::Imports;
 use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
@@ -15,13 +15,13 @@ use std::ops::Deref;
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn desugar_class(node: &ASTNode, ctx: &mut Context, state: &State) -> DesugarResult {
-    Ok(match node {
+pub fn desugar_class(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> DesugarResult {
+    Ok(match &node_pos.node {
         ASTNode::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
-                name:        Box::from(desugar_node(id, ctx, state)?),
+                name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     Vec::new(),
-                definitions: desugar_vec(statements, ctx, &State {
+                definitions: desugar_vec(statements, imp, &State {
                     tup:         state.tup,
                     expect_expr: state.expect_expr,
                     interface:   true
@@ -31,7 +31,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &mut Context, state: &State) -> Desuga
         },
         ASTNode::TypeDef { _type, body: None } => match &_type.node {
             ASTNode::Type { id, .. } => Core::ClassDef {
-                name:        Box::from(desugar_node(id, ctx, state)?),
+                name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     vec![],
                 definitions: vec![]
             },
@@ -41,12 +41,12 @@ pub fn desugar_class(node: &ASTNode, ctx: &mut Context, state: &State) -> Desuga
         ASTNode::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
             (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => {
                 let (parent_names, parent_args, super_calls) =
-                    extract_parents(parents, ctx, state)?;
-                let core_definitions: Vec<Core> = desugar_vec(statements, ctx, state)?;
-                let inline_args = desugar_vec(args, ctx, state)?;
+                    extract_parents(parents, imp, state)?;
+                let core_definitions: Vec<Core> = desugar_vec(statements, imp, state)?;
+                let inline_args = desugar_vec(args, imp, state)?;
 
                 let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
-                    desugar_vec(statements, ctx, state)?
+                    desugar_vec(statements, imp, state)?
                 } else {
                     let (found_constructor, augmented_definitions) =
                         add_parent_to_constructor(&core_definitions, &parent_args, &super_calls)?;
@@ -66,7 +66,7 @@ pub fn desugar_class(node: &ASTNode, ctx: &mut Context, state: &State) -> Desuga
                 };
 
                 Core::ClassDef {
-                    name:        Box::from(desugar_node(id, ctx, state)?),
+                    name:        Box::from(desugar_node(id, imp, state)?),
                     parents:     parent_names,
                     definitions: final_definitions
                 }
@@ -160,7 +160,7 @@ fn add_parent_to_constructor(
 
 fn extract_parents(
     parents: &[ASTNodePos],
-    ctx: &mut Context,
+    ctx: &mut Imports,
     state: &State
 ) -> DesugarResult<(Vec<Core>, Vec<Core>, Vec<Core>)> {
     let mut parent_names: Vec<Core> = vec![];
