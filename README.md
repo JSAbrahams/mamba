@@ -284,6 +284,26 @@ print "a has value {a}."
 If we don't want to use a `handle`, we can simply use `raises` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
 See the sections above for examples where we don't handle errors and simply pass them on using `raises`.
 
+## 💻 Using the Command Line Interface
+
+### Usage
+```
+mamba [OPTIONS]
+```
+
+### Options
+```
+-i, --input <INPUT>      Input file or directory.
+                         If file, file taken as input.
+                         If directory, recursively search all sub-directories for *.mamba files.
+                         If no input given, current directory used as input directory.
+-o, --output <OUTPUT>    Output directory to store mamba files.
+                         Output directory structure reflects input directory structure.
+                         If no output given, 'target' directory created in current directory and is used as ouput.
+```
+
+You can type `mamba -help` for a message containing roughly the above information.
+
 ## 👥 Contributing
 
 Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
