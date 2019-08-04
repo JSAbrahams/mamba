@@ -96,6 +96,7 @@ pub enum Core {
 
     TryExcept { _try: Box<Core>, except: Vec<Core> },
     Except { id: Box<Core>, class: Box<Core>, body: Box<Core> },
+    ExceptNoClass { id: Box<Core>, body: Box<Core> },
     Raise { error: Box<Core> },
 
     With { resource: Box<Core>, expr: Box<Core> },

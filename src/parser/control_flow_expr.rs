@@ -73,7 +73,7 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("match case")?;
 
-    let cond = it.parse(&parse_expression_maybe_type, "match case", st_line, st_pos)?;
+    let cond = it.parse(&parse_id_maybe_type, "match case", st_line, st_pos)?;
     it.eat(&Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "match case", st_line, st_pos)?;
 
@@ -82,7 +82,7 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 
-pub fn parse_expression_maybe_type(it: &mut TPIterator) -> ParseResult {
+pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     let (st_line, st_pos) = it.start_pos("expression maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
 
