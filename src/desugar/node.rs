@@ -44,7 +44,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
 
         ASTNode::AddOp => Core::AddOp,
         ASTNode::SubOp => Core::SubOp,
-        ASTNode::SqrtOp => unimplemented!("sqrt"),
+        ASTNode::SqrtOp => return Err(UnimplementedErr::new(node_pos, "square root")),
         ASTNode::MulOp => Core::MulOp,
         ASTNode::FDivOp => Core::FDivOp,
         ASTNode::DivOp => Core::DivOp,
@@ -64,8 +64,8 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
         ASTNode::List { elements } => Core::List { elements: desugar_vec(elements, imp, state)? },
         ASTNode::Set { elements } => Core::Set { elements: desugar_vec(elements, imp, state)? },
 
-        ASTNode::ListBuilder { .. } => unimplemented!("list builder"),
-        ASTNode::SetBuilder { .. } => unimplemented!("set builder"),
+        ASTNode::ListBuilder { .. } => return Err(UnimplementedErr::new(node_pos, "list builder")),
+        ASTNode::SetBuilder { .. } => return Err(UnimplementedErr::new(node_pos, "set builder")),
 
         ASTNode::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         ASTNode::Return { expr } =>
@@ -279,7 +279,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
         ASTNode::Raises { expr_or_stmt, .. } => desugar_node(expr_or_stmt, imp, state)?,
         ASTNode::Raise { error } =>
             Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
-        ASTNode::Retry { .. } => unimplemented!("Retry has not yet been implemented."),
+        ASTNode::Retry { .. } => return Err(UnimplementedErr::new(node_pos, "retry")),
 
         ASTNode::Handle { expr_or_stmt, cases } => {
             let mut statements = vec![];
