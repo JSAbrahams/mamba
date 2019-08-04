@@ -65,13 +65,21 @@ fn list_verify() {
 }
 
 #[test]
-#[ignore]
 fn set_builder_verify() {
-    unimplemented!();
+    let item = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let conditions = vec![];
+    let list_builder = to_pos!(ASTNode::SetBuilder { item, conditions });
+
+    let desugar_result = desugar(&list_builder);
+    assert!(desugar_result.is_err());
 }
 
 #[test]
-#[ignore]
 fn list_builder_verify() {
-    unimplemented!();
+    let item = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let conditions = vec![];
+    let list_builder = to_pos!(ASTNode::ListBuilder { item, conditions });
+
+    let desugar_result = desugar(&list_builder);
+    assert!(desugar_result.is_err());
 }

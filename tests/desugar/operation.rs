@@ -142,9 +142,10 @@ fn sub_op_verify() {
 }
 
 #[test]
-#[ignore]
 fn sqrt_op_verify() {
-    unimplemented!();
+    let sqrt_node = to_pos!(ASTNode::SqrtOp);
+    let result = desugar(&sqrt_node);
+    assert!(result.is_err());
 }
 
 #[test]
