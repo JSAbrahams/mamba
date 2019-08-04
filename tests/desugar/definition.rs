@@ -11,7 +11,7 @@ fn reassign_verify() {
     let reassign = to_pos!(ASTNode::Reassign { left, right });
 
     let (left, right) = match desugar(&reassign) {
-        Core::Assign { left, right } => (left, right),
+        Ok(Core::Assign { left, right }) => (left, right),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
@@ -30,7 +30,7 @@ fn variable_private_def_verify() {
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
     let (private, id, right) = match desugar(&def) {
-        Core::VarDef { private, id, right } => (private, id, right),
+        Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
@@ -50,7 +50,7 @@ fn variable_def_verify() {
     let def = to_pos!(ASTNode::Def { private: true, definition });
 
     let (private, id, right) = match desugar(&def) {
-        Core::VarDef { private, id, right } => (private, id, right),
+        Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
@@ -78,7 +78,7 @@ fn tuple_def_verify() {
     let def = to_pos!(ASTNode::Def { private: true, definition });
 
     let (private, id, right) = match desugar(&def) {
-        Core::VarDef { private, id, right } => (private, id, right),
+        Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
@@ -101,7 +101,7 @@ fn variable_def_none_verify() {
     let def = to_pos!(ASTNode::Def { private: true, definition });
 
     let (private, id, right) = match desugar(&def) {
-        Core::VarDef { private, id, right } => (private, id, right),
+        Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
@@ -125,7 +125,7 @@ fn tuple_def_none_verify() {
 
     let def = to_pos!(ASTNode::Def { private: true, definition });
     let (private, id, right) = match desugar(&def) {
-        Core::VarDef { private, id, right } => (private, id, right),
+        Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
@@ -159,7 +159,7 @@ fn fun_def_verify() {
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
     let (private, id, args, body) = match desugar(&def) {
-        Core::FunDef { private, id, args, body } => (private, id, args, body),
+        Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -197,7 +197,7 @@ fn fun_def_default_arg_verify() {
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
     let (private, id, args, body) = match desugar(&def) {
-        Core::FunDef { private, id, args, body } => (private, id, args, body),
+        Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -229,7 +229,7 @@ fn fun_def_with_body_verify() {
     let def = to_pos!(ASTNode::Def { private: false, definition });
 
     let (private, id, args, body) = match desugar(&def) {
-        Core::FunDef { private, id, args, body } => (private, id, args, body),
+        Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -253,7 +253,7 @@ fn anon_fun_verify() {
     });
 
     let (args, body) = match desugar(&anon_fun) {
-        Core::AnonFun { args, body } => (args, body),
+        Ok(Core::AnonFun { args, body }) => (args, body),
         other => panic!("Expected anon fun but got: {:?}.", other)
     };
 

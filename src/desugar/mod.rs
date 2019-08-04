@@ -1,6 +1,6 @@
-use crate::core::construct::Core;
 use crate::desugar::context::Context;
 use crate::desugar::context::State;
+use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNodePos;
 
@@ -12,6 +12,8 @@ mod control_flow;
 mod definition;
 mod node;
 
+pub mod desugar_result;
+
 /// Consumes the given [ASTNodePos](crate::parser::ast::ASTNodePos) and produces
 /// a [Core](crate::core::construct::Core) node.
 ///
@@ -19,8 +21,6 @@ mod node;
 /// correctly formed. Therefore, malformed
 /// [ASTNodePos](crate::parser::ast::ASTNodePos)'s should be caught by either
 /// the parser or the type checker.
-///
-/// The desugar stage itself should never throw an error.
 ///
 /// # Examples
 ///
@@ -31,15 +31,35 @@ mod node;
 /// # use mamba::core::construct::Core;
 /// let node = ASTNode::ReturnEmpty;
 /// let ast_node_pos = ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node };
-/// let core_node = desugar(&ast_node_pos);
+/// let core_result = desugar(&ast_node_pos).unwrap();
 ///
-/// assert_eq!(core_node, Core::Return { expr: Box::from(Core::None) });
+/// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
+/// ```
+///
+/// # Failures
+///
+/// Fails if desugaring a construct which has not been implemented yet.
+///
+/// ```rust
+/// # use mamba::parser::ast::ASTNode;
+/// # use mamba::parser::ast::ASTNodePos;
+/// # use mamba::desugar::desugar;
+/// # use mamba::core::construct::Core;
+/// let cond_node = ASTNode::Int { lit: String::from("56") };
+/// let cond_pos =
+///     ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node: cond_node };
+/// let node = ASTNode::Condition { cond: Box::from(cond_pos), _else: None };
+/// let ast_node_pos = ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node };
+/// let core_result = desugar(&ast_node_pos);
+///
+/// assert!(core_result.is_err());
 /// ```
 ///
 /// # Panics
 ///
-/// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) would for instance
-/// be a definition which does not contain a definition.
+/// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) causes this stage
+/// to panic. A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) would for
+/// instance be a definition which does not contain a definition.
 ///
 /// ```rust,should_panic
 /// # use mamba::parser::ast::ASTNode;
@@ -56,6 +76,6 @@ mod node;
 /// // should panic since definition is a literal
 /// let core_node = desugar(&ast_definition_node_pos);
 /// ```
-pub fn desugar(input: &ASTNodePos) -> Core {
+pub fn desugar(input: &ASTNodePos) -> DesugarResult {
     desugar_node(&input, &mut Context::new(), &State::new())
 }

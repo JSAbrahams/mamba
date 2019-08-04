@@ -136,7 +136,7 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
 }
 
 fn output(typed_ast_tree: &ASTNodePos, out_path: &Path) -> Result<(), (String, String)> {
-    let core_tree = desugar(&typed_ast_tree);
+    let core_tree = desugar(&typed_ast_tree).unwrap();
     let source = to_source(&core_tree);
 
     match out_path.parent() {

@@ -6,7 +6,7 @@ use mamba::parser::ast::ASTNodePos;
 macro_rules! verify_op {
     ($op:ident) => {{
         let add_op = to_pos!(ASTNode::$op);
-        let core = desugar(&add_op);
+        let core = desugar(&add_op).unwrap();
         assert_eq!(core, Core::$op);
     }};
 }
@@ -18,8 +18,8 @@ macro_rules! verify {
         let add_node = to_pos!(ASTNode::$ast { left: to_pos!(left), right: to_pos!(right) });
 
         let (left, right) = match desugar(&add_node) {
-            Core::$ast { left, right } => (left, right),
-            other => panic!("Expected mul but was {:?}", other)
+            Ok(Core::$ast { left, right }) => (left, right),
+            other => panic!("Expected binary operation but was {:?}", other)
         };
 
         assert_eq!(*left, Core::Id { lit: String::from("left") });
@@ -33,8 +33,8 @@ macro_rules! verify_unary {
         let add_node = to_pos!(ASTNode::$ast { expr });
 
         let expr_des = match desugar(&add_node) {
-            Core::$ast { expr } => expr,
-            other => panic!("Expected mul but was {:?}", other)
+            Ok(Core::$ast { expr }) => expr,
+            other => panic!("Expected unary operation but was {:?}", other)
         };
 
         assert_eq!(*expr_des, Core::Id { lit: String::from("expression") });

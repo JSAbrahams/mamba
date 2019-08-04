@@ -13,7 +13,7 @@ fn tuple_verify() {
     let core = desugar(&tuple);
 
     let core_elements = match core {
-        Core::Tuple { elements } => elements,
+        Ok(Core::Tuple { elements }) => elements,
         other => panic!("Expected tuple but got {:?}", other)
     };
 
@@ -38,7 +38,7 @@ fn set_verify() {
     let core = desugar(&tuple);
 
     let core_elements = match core {
-        Core::Set { elements } => elements,
+        Ok(Core::Set { elements }) => elements,
         other => panic!("Expected tuple but got {:?}", other)
     };
 
@@ -56,7 +56,7 @@ fn list_verify() {
     let core = desugar(&tuple);
 
     let core_elements = match core {
-        Core::List { elements } => elements,
+        Ok(Core::List { elements }) => elements,
         other => panic!("Expected tuple but got {:?}", other)
     };
 

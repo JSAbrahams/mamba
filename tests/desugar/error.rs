@@ -12,7 +12,7 @@ fn with_verify() {
     let with = to_pos!(ASTNode::With { resource, _as, expr });
 
     let (resource, _as, expr) = match desugar(&with) {
-        Core::WithAs { resource, _as, expr } => (resource, _as, expr),
+        Ok(Core::WithAs { resource, _as, expr }) => (resource, _as, expr),
         other => panic!("Expected with as but was {:?}", other)
     };
 
@@ -28,7 +28,7 @@ fn with_no_as_verify() {
     let with = to_pos!(ASTNode::With { resource, _as: None, expr });
 
     let (resource, expr) = match desugar(&with) {
-        Core::With { resource, expr } => (resource, expr),
+        Ok(Core::With { resource, expr }) => (resource, expr),
         other => panic!("Expected with but was {:?}", other)
     };
 
@@ -42,7 +42,7 @@ fn handle_empty_verify() {
     let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![] });
 
     let (_try, except) = match desugar(&handle) {
-        Core::Block { statements } => {
+        Ok(Core::Block { statements }) => {
             assert_eq!(statements.len(), 1);
             match &statements[0] {
                 Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
@@ -72,7 +72,7 @@ fn handle_verify() {
     let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![case] });
 
     let (_try, except) = match desugar(&handle) {
-        Core::Block { statements } => {
+        Ok(Core::Block { statements }) => {
             assert_eq!(statements.len(), 1);
             match &statements[0] {
                 Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
