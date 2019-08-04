@@ -16,7 +16,6 @@ before_cache:
   - if [ $TRAVIS_OS_NAME = 'osx' ]; then brew cleanup; fi
 
 cache:
-  - cargo
   directories:
     - if [ $TRAVIS_OS_NAME = 'osx' ]; then $HOME/Library/Caches/Homebrew; fi
 
