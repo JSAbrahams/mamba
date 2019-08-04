@@ -10,7 +10,7 @@ fn if_verify() {
     let if_stmt = to_pos!(ASTNode::IfElse { cond, then, _else: None });
 
     let (core_cond, core_then) = match desugar(&if_stmt) {
-        Core::If { cond, then } => (cond, then),
+        Ok(Core::If { cond, then }) => (cond, then),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
@@ -26,7 +26,7 @@ fn if_else_verify() {
     let if_stmt = to_pos!(ASTNode::IfElse { cond, then, _else: Some(_else) });
 
     let (core_cond, core_then, core_else) = match desugar(&if_stmt) {
-        Core::IfElse { cond, then, _else } => (cond, then, _else),
+        Ok(Core::IfElse { cond, then, _else }) => (cond, then, _else),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
@@ -42,7 +42,7 @@ fn while_verify() {
     let while_stmt = to_pos!(ASTNode::While { cond, body });
 
     let (core_cond, core_body) = match desugar(&while_stmt) {
-        Core::While { cond, body } => (cond, body),
+        Ok(Core::While { cond, body }) => (cond, body),
         other => panic!("Expected reassign but was {:?}", other)
     };
 
@@ -57,7 +57,7 @@ fn for_verify() {
     let for_stmt = to_pos!(ASTNode::For { expr, body });
 
     let (core_expr, core_body) = match desugar(&for_stmt) {
-        Core::For { expr, body } => (expr, body),
+        Ok(Core::For { expr, body }) => (expr, body),
         other => panic!("Expected for but was {:?}", other)
     };
 
@@ -72,7 +72,7 @@ fn range_verify() {
     let range = to_pos!(ASTNode::Range { from, to, inclusive: false, step: None });
 
     let (from, to, step) = match desugar(&range) {
-        Core::Range { from, to, step } => (from, to, step),
+        Ok(Core::Range { from, to, step }) => (from, to, step),
         other => panic!("Expected range but was {:?}", other)
     };
 
@@ -88,7 +88,7 @@ fn range_incl_verify() {
     let range = to_pos!(ASTNode::Range { from, to, inclusive: true, step: None });
 
     let (from, to, step) = match desugar(&range) {
-        Core::Range { from, to, step } => (from, to, step),
+        Ok(Core::Range { from, to, step }) => (from, to, step),
         other => panic!("Expected range but was {:?}", other)
     };
 
@@ -108,7 +108,7 @@ fn range_step_verify() {
     let range = to_pos!(ASTNode::Range { from, to, inclusive: false, step });
 
     let (from, to, step) = match desugar(&range) {
-        Core::Range { from, to, step } => (from, to, step),
+        Ok(Core::Range { from, to, step }) => (from, to, step),
         other => panic!("Expected range but was {:?}", other)
     };
 

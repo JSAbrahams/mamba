@@ -1,5 +1,7 @@
+use crate::desugar::desugar_result::UnimplementedErr;
 use crate::parser::parse_result::ParseErr;
 use std::cmp::min;
+use std::path::Path;
 use std::path::PathBuf;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 2;
@@ -31,6 +33,23 @@ pub fn syntax_err(err: &ParseErr, source: &str, in_path: &PathBuf) -> String {
         err.pos,
         err.msg,
         cause_formatter,
+        err.line,
+        source.lines().nth(err.line as usize - 1).unwrap_or(""),
+        String::from_utf8(vec![b' '; err.pos as usize]).unwrap(),
+        String::from_utf8(vec![b'^'; err.width as usize]).unwrap()
+    )
+}
+
+pub fn unimplemented_err(err: &UnimplementedErr, source: &str, in_path: &Path) -> String {
+    format!(
+        "--> {}:{}:{}
+     | {}
+{:3}  |- {}
+     | {}{}",
+        in_path.display(),
+        err.line,
+        err.pos,
+        err.msg,
         err.line,
         source.lines().nth(err.line as usize - 1).unwrap_or(""),
         String::from_utf8(vec![b' '; err.pos as usize]).unwrap(),

@@ -9,13 +9,13 @@ fn type_alias_empty_verify() {
         _type:      Box::from(to_pos!(ASTNode::Pass)),
         conditions: vec![]
     });
-    assert_eq!(desugar(&type_def), Core::Empty);
+    assert_eq!(desugar(&type_def).unwrap(), Core::Empty);
 }
 
 #[test]
 fn type_tup_empty_verify() {
     let type_def = to_pos!(ASTNode::TypeTup { types: vec![] });
-    assert_eq!(desugar(&type_def), Core::Empty);
+    assert_eq!(desugar(&type_def).unwrap(), Core::Empty);
 }
 
 #[test]
@@ -24,5 +24,5 @@ fn type_fun_empty_verify() {
         _type: Box::from(to_pos!(ASTNode::Pass)),
         body:  Box::from(to_pos!(ASTNode::Pass))
     });
-    assert_eq!(desugar(&type_def), Core::Empty);
+    assert_eq!(desugar(&type_def).unwrap(), Core::Empty);
 }

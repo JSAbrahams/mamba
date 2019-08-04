@@ -13,7 +13,7 @@ fn tuple_verify() {
     let core = desugar(&tuple);
 
     let core_elements = match core {
-        Core::Tuple { elements } => elements,
+        Ok(Core::Tuple { elements }) => elements,
         other => panic!("Expected tuple but got {:?}", other)
     };
 
@@ -38,7 +38,7 @@ fn set_verify() {
     let core = desugar(&tuple);
 
     let core_elements = match core {
-        Core::Set { elements } => elements,
+        Ok(Core::Set { elements }) => elements,
         other => panic!("Expected tuple but got {:?}", other)
     };
 
@@ -56,7 +56,7 @@ fn list_verify() {
     let core = desugar(&tuple);
 
     let core_elements = match core {
-        Core::List { elements } => elements,
+        Ok(Core::List { elements }) => elements,
         other => panic!("Expected tuple but got {:?}", other)
     };
 
@@ -65,13 +65,21 @@ fn list_verify() {
 }
 
 #[test]
-#[ignore]
 fn set_builder_verify() {
-    unimplemented!();
+    let item = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let conditions = vec![];
+    let list_builder = to_pos!(ASTNode::SetBuilder { item, conditions });
+
+    let desugar_result = desugar(&list_builder);
+    assert!(desugar_result.is_err());
 }
 
 #[test]
-#[ignore]
 fn list_builder_verify() {
-    unimplemented!();
+    let item = to_pos!(ASTNode::Id { lit: String::from("a") });
+    let conditions = vec![];
+    let list_builder = to_pos!(ASTNode::ListBuilder { item, conditions });
+
+    let desugar_result = desugar(&list_builder);
+    assert!(desugar_result.is_err());
 }

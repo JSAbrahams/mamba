@@ -14,7 +14,7 @@ fn import_verify() {
     let import = to_pos!(ASTNode::Import { import, _as });
 
     let core_import = match desugar(&import) {
-        Core::Import { imports } => imports,
+        Ok(Core::Import { imports }) => imports,
         other => panic!("Expected tuple but got {:?}", other)
     };
 
@@ -33,7 +33,7 @@ fn import_as_verify() {
     let import = to_pos!(ASTNode::Import { import, _as });
 
     let (core_import, core_as) = match desugar(&import) {
-        Core::ImportAs { imports, _as } => (imports, _as),
+        Ok(Core::ImportAs { imports, _as }) => (imports, _as),
         other => panic!("Expected import but got {:?}", other)
     };
 
@@ -57,7 +57,7 @@ fn from_import_verify() {
     });
 
     let (from, import) = match desugar(&import) {
-        Core::FromImport { from, import } => match &import.deref() {
+        Ok(Core::FromImport { from, import }) => match &import.deref() {
             Core::Import { imports } => (from.clone(), imports.clone()),
             other => panic!("Expected import but got {:?}", other)
         },
@@ -68,4 +68,13 @@ fn from_import_verify() {
     assert_eq!(import.len(), 2);
     assert_eq!(import[0], Core::ENum { num: String::from("a"), exp: String::from("100") });
     assert_eq!(import[1], Core::Float { float: String::from("3000.5") });
+}
+
+#[test]
+fn condition_verify() {
+    let cond = to_pos!(ASTNode::Bool { lit: true });
+    let condition = to_pos!(ASTNode::Condition { cond, _else: None });
+
+    let result = desugar(&condition);
+    assert!(result.is_err());
 }

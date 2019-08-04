@@ -10,12 +10,12 @@ impl State {
     pub fn new() -> State { State { tup: 1, expect_expr: false, interface: false } }
 }
 
-pub struct Context {
+pub struct Imports {
     pub imports: Vec<Core>
 }
 
-impl Context {
-    pub fn new() -> Context { Context { imports: vec![] } }
+impl Imports {
+    pub fn new() -> Imports { Imports { imports: vec![] } }
 
     pub fn add_import(&mut self, import: &str) {
         self.imports.push(Core::Import { imports: vec![Core::Id { lit: String::from(import) }] });

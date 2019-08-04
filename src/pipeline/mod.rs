@@ -4,6 +4,7 @@ use crate::lexer::tokenize;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::parse;
 use crate::pipeline::error::syntax_err;
+use crate::pipeline::error::unimplemented_err;
 use crate::type_checker::check;
 use glob::glob;
 use leg::*;
@@ -86,12 +87,12 @@ pub fn pipeline(
     out_dir: &Path,
     relative_file_paths: &[OsString]
 ) -> Result<(), Vec<(String, String)>> {
-    let mut ast_trees = vec![];
+    let mut trees = vec![];
     let mut syntax_errors = vec![];
 
     for in_path in relative_file_paths.iter().map(|p| in_dir.join(p)) {
         match input(&in_path) {
-            Ok(ast_tree) => ast_trees.push(ast_tree),
+            Ok(ast_tree) => trees.push(ast_tree),
             Err(err) => syntax_errors.push(err)
         }
     }
@@ -102,13 +103,19 @@ pub fn pipeline(
 
     let type_err: fn(Vec<String>) -> Vec<(String, String)> =
         |e: Vec<String>| e.iter().map(|e| (String::from("typing"), e.clone())).collect();
-    let typed_ast_trees = check(ast_trees.as_slice()).map_err(type_err)?;
-    debug_assert_eq!(typed_ast_trees.len(), relative_file_paths.len());
+
+    {
+        let ast_trees: Vec<ASTNodePos> = trees.iter().map(|(tree, ..)| tree.clone()).collect();
+        let typed_ast_trees = check(ast_trees.as_slice()).map_err(type_err)?;
+        debug_assert_eq!(typed_ast_trees.len(), relative_file_paths.len());
+    }
 
     let mut i = 0;
-    for typed_ast_tree in typed_ast_trees.iter() {
+    for (typed_ast_tree, source, in_path) in trees {
         match output(
             &typed_ast_tree,
+            &source,
+            &in_path,
             out_dir.join(relative_file_paths[i].clone()).with_extension("py").as_path()
         ) {
             Ok(..) => i += 1,
@@ -118,7 +125,7 @@ pub fn pipeline(
     Ok(())
 }
 
-fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
+fn input(in_path: &PathBuf) -> Result<(ASTNodePos, String, PathBuf), (String, String)> {
     let mut input_file = OpenOptions::new()
         .read(true)
         .open(in_path.clone())
@@ -132,11 +139,18 @@ fn input(in_path: &PathBuf) -> Result<ASTNodePos, (String, String)> {
     let tokens = tokenize(source.as_ref()).map_err(|e| (String::from("token"), e.to_string()))?;
     parse(&tokens)
         .map_err(|err| (String::from("syntax"), syntax_err(&err, &source, in_path)))
-        .map(|ok| *ok)
+        .map(|ok| (*ok, source, in_path.clone()))
 }
 
-fn output(typed_ast_tree: &ASTNodePos, out_path: &Path) -> Result<(), (String, String)> {
-    let core_tree = desugar(&typed_ast_tree);
+fn output(
+    typed_ast_tree: &ASTNodePos,
+    source: &str,
+    in_path: &Path,
+    out_path: &Path
+) -> Result<(), (String, String)> {
+    let core_tree = desugar(&typed_ast_tree).map_err(|err| {
+        (String::from("unimplemented"), unimplemented_err(&err, &source, in_path))
+    })?;
     let source = to_source(&core_tree);
 
     match out_path.parent() {
