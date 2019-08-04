@@ -1,6 +1,8 @@
+os:
+  - osx
+  - linux
+
 language: rust
-# cache dependencies
-cache: cargo
 rust:
   - stable
   - nightly
@@ -8,6 +10,14 @@ rust:
 dist: xenial
 python:
   - "3.7"
+
+# cache dependencies
+before_cache:
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew cleanup; fi
+cache: 
+  - cargo
+  directories:
+  - if [ $TRAVIS_OS_NAME = osx ]; then $HOME/Library/Caches/Homebrew; fi
 
 sudo: true
 before_install:
@@ -29,7 +39,8 @@ branches:
 
 before_script:
   # Python
-  - sudo apt-get install python3
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get install python3; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then brew install python3; fi
 
   # Cargo components
   - if [ $TRAVIS_RUST_VERSION == nightly ]; then rustup component add rustfmt --toolchain nightly; fi
@@ -41,25 +52,19 @@ before_install:
 
 after_success:
   # Coverage report
-  - if [ $TRAVIS_RUST_VERSION == nightly ]; then bash <(curl -s https://codecov.io/bash) -f lcov.info; fi
+  - if [ $TRAVIS_RUST_VERSION == nightly && $TRAVIS_OS_NAME == linux ]; then bash <(curl -s https://codecov.io/bash); fi
 
 script:
-  # fail when formatting error encountered
+  - if [ $TRAVIS_RUST_VERSION == stable ]; then then cargo clippy -- -D warnings; fi
   - if [ $TRAVIS_RUST_VERSION == nightly ]; then cargo +nightly fmt --all -- --check; fi
-  # fail when encountering clippy warnings
-  - if [ $TRAVIS_RUST_VERSION == stable ]; then cargo clippy -- -D warnings; fi
 
-  - export CARGO_INCREMENTAL=0
+  - cargo build
+  - cargo test
+
   - |
     if [ $TRAVIS_RUST_VERSION == nightly ]; then
+      export CARGO_INCREMENTAL=0;
       export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
-    fi
-  - cargo build --verbose
-  - cargo test --verbose
-
-  # Coverage report
-  - |
-    if [ $TRAVIS_RUST_VERSION == nightly ]; then
       zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
       ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" lcov.info;
     fi

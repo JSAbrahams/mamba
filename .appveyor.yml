@@ -36,10 +36,9 @@ install:
 # cargo does this for us
 build: false
 test_script:
-  # fail when formatting error encountered
   - if %channel% == "nightly" cargo +nightly fmt --all -- --check
-  # fail when encountering clippy warnings
   - if %channel% == "stable" cargo clippy -- -D warnings
+
   - cargo test --verbose
 
 # Skip commits
