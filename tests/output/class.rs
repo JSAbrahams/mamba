@@ -5,13 +5,13 @@ use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
 use crate::common::resource_path;
 use crate::output::common::PYTHON;
-use mamba::pipeline::mamba_to_python;
+use mamba::pipeline::transpile_directory;
 use std::path::Path;
 use std::process::Command;
 
 #[test]
-fn generics_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn generics_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["class"], "")),
         Some("generics.mamba"),
         None
@@ -37,8 +37,8 @@ fn generics_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn import_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn import_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(resource_path(true, &["class"], "").as_str()),
         Some("import.mamba"),
         None
@@ -65,8 +65,8 @@ fn import_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn parent_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn parent_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(resource_path(true, &["class"], "").as_str()),
         Some("parent.mamba"),
         None
@@ -93,8 +93,8 @@ fn parent_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn types_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn types_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(resource_path(true, &["class"], "").as_str()),
         Some("types.mamba"),
         None

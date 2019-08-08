@@ -5,13 +5,13 @@ use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
 use crate::common::resource_path;
 use crate::output::common::PYTHON;
-use mamba::pipeline::mamba_to_python;
+use mamba::pipeline::transpile_directory;
 use std::path::Path;
 use std::process::Command;
 
 #[test]
-fn arithmetic_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn arithmetic_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["operation"], "")),
         Some("arithmetic.mamba"),
         None
@@ -38,8 +38,8 @@ fn arithmetic_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn bitwise_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn bitwise_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["operation"], "")),
         Some("bitwise.mamba"),
         None
@@ -66,8 +66,8 @@ fn bitwise_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn boolean_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn boolean_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["operation"], "")),
         Some("boolean.mamba"),
         None

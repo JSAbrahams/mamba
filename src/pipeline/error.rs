@@ -1,12 +1,11 @@
 use crate::desugar::desugar_result::UnimplementedErr;
 use crate::parser::parse_result::ParseErr;
 use std::cmp::min;
-use std::path::Path;
 use std::path::PathBuf;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 2;
 
-pub fn syntax_err(err: &ParseErr, source: &str, in_path: &PathBuf) -> String {
+pub fn syntax_err(err: &ParseErr, source: &str, in_path: &Option<PathBuf>) -> String {
     let cause_formatter = &err.causes[0..min(err.causes.len(), SYNTAX_ERR_MAX_DEPTH)]
         .iter()
         .rev()
@@ -23,12 +22,12 @@ pub fn syntax_err(err: &ParseErr, source: &str, in_path: &PathBuf) -> String {
         });
 
     format!(
-        "--> {}:{}:{}
+        "--> {:#?}:{}:{}
      | {}
 {}
 {:3}  |- {}
      | {}{}",
-        in_path.display(),
+        in_path,
         err.line,
         err.pos,
         err.msg,
@@ -40,13 +39,17 @@ pub fn syntax_err(err: &ParseErr, source: &str, in_path: &PathBuf) -> String {
     )
 }
 
-pub fn unimplemented_err(err: &UnimplementedErr, source: &str, in_path: &Path) -> String {
+pub fn unimplemented_err(
+    err: &UnimplementedErr,
+    source: &str,
+    in_path: &Option<PathBuf>
+) -> String {
     format!(
-        "--> {}:{}:{}
+        "--> {:#?}:{}:{}
      | {}
 {:3}  |- {}
      | {}{}",
-        in_path.display(),
+        in_path,
         err.line,
         err.pos,
         err.msg,

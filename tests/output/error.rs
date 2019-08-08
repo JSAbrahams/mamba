@@ -5,13 +5,17 @@ use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
 use crate::common::resource_path;
 use crate::output::common::PYTHON;
-use mamba::pipeline::mamba_to_python;
+use mamba::pipeline::transpile_directory;
 use std::path::Path;
 use std::process::Command;
 
 #[test]
-fn handle_ast_verify() -> Result<(), String> {
-    mamba_to_python(&Path::new(&resource_path(true, &["error"], "")), Some("handle.mamba"), None)?;
+fn handle_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
+        &Path::new(&resource_path(true, &["error"], "")),
+        Some("handle.mamba"),
+        None
+    )?;
 
     let cmd = Command::new(PYTHON)
         .arg("-m")
@@ -34,8 +38,12 @@ fn handle_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn raise_ast_verify() -> Result<(), String> {
-    mamba_to_python(&Path::new(&resource_path(true, &["error"], "")), Some("raise.mamba"), None)?;
+fn raise_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
+        &Path::new(&resource_path(true, &["error"], "")),
+        Some("raise.mamba"),
+        None
+    )?;
 
     let cmd = Command::new(PYTHON)
         .arg("-m")
