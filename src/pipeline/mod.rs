@@ -1,11 +1,7 @@
-use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
 
 use leg::*;
-use pathdiff::diff_paths;
-
-use glob::glob;
 
 use crate::core::to_source;
 use crate::desugar::desugar;
@@ -38,12 +34,12 @@ pub fn transpile_directory(
     current_dir: &Path,
     maybe_in: Option<&str>,
     maybe_out: Option<&str>
-) -> Result<(), Vec<(String, String)>> {
+) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
     let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));
     info(format!("Output will be stored in '{}'", out_dir.display()).as_str(), None, None);
 
-    let relative_paths = relative_files(src_path.as_path()).map_err(|error| vec![error])?;
+    let relative_paths = io::relative_files(src_path.as_path()).map_err(|error| vec![error])?;
     let in_absolute_paths = if src_path.is_dir() {
         relative_paths.iter().map(|os_string| src_path.join(os_string)).collect()
     } else {
@@ -67,7 +63,8 @@ pub fn transpile_directory(
         let out_path = out_path.with_extension("py");
         io::write_source(source, &out_path).map_err(|error| vec![error])?;
     }
-    Ok(())
+
+    Ok(out_dir)
 }
 
 /// Convert mamba source to python source.
@@ -134,30 +131,4 @@ fn ast_to_py(
         (String::from("unimplemented"), unimplemented_err(&err, source, source_path))
     })?;
     Ok(to_source(&desugared))
-}
-
-/// Get all `*.mamba` files paths relative to given path.
-///
-/// If path is file, return file name.
-/// If directory, return all `*.mamba` files as relative paths to given path.
-fn relative_files(in_path: &Path) -> Result<Vec<OsString>, (String, String)> {
-    if in_path.is_file() {
-        let in_file_name = in_path.file_name().unwrap_or_else(|| unreachable!());
-        return Ok(vec![in_file_name.to_os_string()]);
-    }
-
-    let pattern_path = in_path.to_owned().join("**").join("*.mamba");
-    let pattern = pattern_path.as_os_str().to_string_lossy();
-    let glob = glob(pattern.as_ref())
-        .map_err(|e| (String::from("file"), format!("Unable to recursively find files: {}", e)))?;
-
-    let mut relative_paths = vec![];
-    for absolute_result in glob {
-        let absolute_path = absolute_result.map_err(|e| (String::from("file"), e.to_string()))?;
-        let relative_path = diff_paths(absolute_path.as_path(), in_path)
-            .ok_or((String::from("file"), String::from("Unable to create relative path")))?;
-        relative_paths.push(relative_path.into_os_string());
-    }
-
-    Ok(relative_paths)
 }
