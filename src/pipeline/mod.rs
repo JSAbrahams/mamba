@@ -98,7 +98,7 @@ pub fn mamba_to_python(
     })?;
 
     // In future, desugaring stage should take in a vector and return a vector for
-    // more complex desugaring.
+    // more complex desugaring rules.
     let mut python_sources = vec![];
     let mut type_errors = vec![];
     for (ast_node_pos, source, source_path) in ast_node_pairs {

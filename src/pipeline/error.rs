@@ -27,7 +27,7 @@ pub fn syntax_err(err: &ParseErr, source: &str, in_path: &Option<PathBuf>) -> St
 {}
 {:3}  |- {}
      | {}{}",
-        in_path,
+        in_path.clone().unwrap_or_default(),
         err.line,
         err.pos,
         err.msg,
@@ -49,7 +49,7 @@ pub fn unimplemented_err(
      | {}
 {:3}  |- {}
      | {}{}",
-        in_path,
+        in_path.clone().unwrap_or_default(),
         err.line,
         err.pos,
         err.msg,
