@@ -14,10 +14,10 @@ python:
 # cache dependencies
 before_cache:
   - if [ $TRAVIS_OS_NAME = 'osx' ]; then brew cleanup; fi
-cache: 
-  - cargo
+
+cache:
   directories:
-  - if [ $TRAVIS_OS_NAME = 'osx' ]; then $HOME/Library/Caches/Homebrew; fi
+    - if [ $TRAVIS_OS_NAME = 'osx' ]; then $HOME/Library/Caches/Homebrew; fi
 
 sudo: true
 before_install:
@@ -40,7 +40,6 @@ branches:
 before_script:
   # Python
   - if [ $TRAVIS_OS_NAME = 'linux' ]; then sudo apt-get install python3; fi
-  - if [ $TRAVIS_OS_NAME = 'osx' ]; then brew install python3; fi
 
   # Cargo components
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add rustfmt --toolchain nightly; fi
@@ -55,7 +54,7 @@ after_success:
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then bash <(curl -s https://codecov.io/bash); fi
 
 script:
-  - if [ $TRAVIS_RUST_VERSION = 'stable' AND $TRAVIS_OS_NAME = 'linux' ]; then then cargo clippy -- -D warnings; fi
+  - if [ $TRAVIS_RUST_VERSION = 'stable' AND $TRAVIS_OS_NAME = 'linux' ]; then cargo clippy -- -D warnings; fi
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then cargo +nightly fmt --all -- --check; fi
 
   - cargo build
