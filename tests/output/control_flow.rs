@@ -5,13 +5,13 @@ use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
 use crate::common::resource_path;
 use crate::output::common::PYTHON;
-use mamba::pipeline::mamba_to_python;
+use mamba::pipeline::transpile_directory;
 use std::path::Path;
 use std::process::Command;
 
 #[test]
-fn for_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn for_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["control_flow"], "")),
         Some("for_statements.mamba"),
         None
@@ -38,8 +38,8 @@ fn for_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn if_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn if_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["control_flow"], "")),
         Some("if.mamba"),
         None
@@ -66,8 +66,8 @@ fn if_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn while_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn while_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["control_flow"], "")),
         Some("while.mamba"),
         None
@@ -94,8 +94,8 @@ fn while_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn match_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn match_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["control_flow"], "")),
         Some("match.mamba"),
         None

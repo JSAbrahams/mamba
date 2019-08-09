@@ -5,13 +5,13 @@ use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
 use crate::common::resource_path;
 use crate::output::common::PYTHON;
-use mamba::pipeline::mamba_to_python;
+use mamba::pipeline::transpile_directory;
 use std::path::Path;
 use std::process::Command;
 
 #[test]
-fn call_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn call_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["function"], "")),
         Some("calls.mamba"),
         None
@@ -38,8 +38,8 @@ fn call_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn definition_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn definition_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(&resource_path(true, &["function"], "")),
         Some("definition.mamba"),
         None
@@ -66,8 +66,8 @@ fn definition_ast_verify() -> Result<(), String> {
 }
 
 #[test]
-fn infix_calls_ast_verify() -> Result<(), String> {
-    mamba_to_python(
+fn infix_calls_ast_verify() -> Result<(), Vec<(String, String)>> {
+    transpile_directory(
         &Path::new(resource_path(true, &["function"], "").as_str()),
         Some("infix_calls.mamba"),
         None
