@@ -3,6 +3,7 @@ name = "mamba"
 version = "0.1.0"
 authors = ["Joel Abrahams <abrahamsjo@gmail.com>"]
 edition = "2018"
+license-file = "LICENSE"
 
 readme = "README.md"
 documentation = "http://joelabrahams.nl/mamba_doc/"
