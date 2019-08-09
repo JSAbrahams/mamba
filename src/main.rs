@@ -22,9 +22,9 @@ pub fn main() -> Result<(), String> {
     transpile_directory(&current_dir, in_path, out_path)
         .map_err(|errors| {
             errors.iter().for_each(|(ty, msg)| error(msg, Some(ty), None));
-            match errors.last() {
+            match errors.first() {
                 Some((ty, msg)) => format!(
-                    "{} {} type  error occurred: {}",
+                    "{} {} type error occurred: {}",
                     match ty.chars().next() {
                         Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) =>
                             "An",
