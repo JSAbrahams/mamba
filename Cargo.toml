@@ -4,6 +4,16 @@ version = "0.1.0"
 authors = ["Joel Abrahams <abrahamsjo@gmail.com>"]
 edition = "2018"
 
+readme = "README.md"
+documentation = "http://joelabrahams.nl/mamba_doc/"
+repository = "https://github.com/JSAbrahams/mamba"
+keywords = [ "python", "transpiler", "compiler"]
+categories = [ "parsing" ]
+
+[badges]
+appveyor = { repository = "JSAbrahams/mamba", branch = "master", service = "github" }
+travis-ci = { repository = "JSAbrahams/mamba", branch = "master" }
+
 [dependencies]
 assert_cmd = "0.10"
 python-parser = "0.1.0"
