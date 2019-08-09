@@ -2,7 +2,20 @@
 name = "mamba"
 version = "0.1.0"
 authors = ["Joel Abrahams <abrahamsjo@gmail.com>"]
+description = "A transpiler which translates Mamba to Python 3 files"
 edition = "2018"
+license = "MIT"
+license-file = "LICENSE"
+
+readme = "README.md"
+documentation = "http://joelabrahams.nl/mamba_doc/"
+repository = "https://github.com/JSAbrahams/mamba"
+keywords = [ "python", "transpiler", "compiler"]
+categories = [ "parsing" ]
+
+[badges]
+appveyor = { repository = "JSAbrahams/mamba", branch = "master", service = "github" }
+travis-ci = { repository = "JSAbrahams/mamba", branch = "master" }
 
 [dependencies]
 assert_cmd = "0.10"
