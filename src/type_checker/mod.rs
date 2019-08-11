@@ -139,7 +139,7 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
         }
 
         ASTNode::Raises { .. } => Ok(Type::NA),
-        ASTNode::Raise { .. } => Ok(Type::NA),
+        ASTNode::Raise { .. } => Ok(Type::Any),
         ASTNode::Handle { .. } => Ok(Type::NA),
         ASTNode::Retry => Ok(Type::NA),
         ASTNode::With { .. } => Ok(Type::NA),
