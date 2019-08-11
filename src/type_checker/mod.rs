@@ -1,8 +1,7 @@
-use std::clone::Clone;
-
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::node_type::Type;
 use crate::type_checker::type_result::TypeResult;
+use std::clone::Clone;
 
 pub mod node_type;
 pub mod type_result;
@@ -25,6 +24,7 @@ pub mod type_result;
 pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> {
     let (_, errors): (Vec<_>, Vec<_>) =
         input.iter().map(|node_pos| get_type(node_pos.clone())).partition(Result::is_ok);
+
     if errors.is_empty() {
         Ok(input.to_vec())
     } else {
@@ -32,24 +32,41 @@ pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> {
     }
 }
 
-fn get_type_expect(ast_node_pos: ASTNodePos, expected: &Type) -> Result<Type, String> {
-    let node_type = get_type(ast_node_pos)?;
+fn get_type_expect(node_pos: ASTNodePos, expected: &Type) -> Result<Type, String> {
+    let node_type = get_type(node_pos.clone())?;
     if node_type == *expected {
         Ok(node_type)
     } else {
-        Err(String::from(""))
+        Err(format!("Expected {:?}, but was {:?} ({:?})", expected, node_type, node_pos))
     }
 }
 
-fn get_type(ast_node_pos: ASTNodePos) -> TypeResult<Type> {
-    match ast_node_pos.node {
-        ASTNode::File { .. } => Ok(Type::NA),
+fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
+    match node_pos.node {
+        ASTNode::File { modules, type_defs, .. } => {
+            for module in modules {
+                get_type(module)?;
+            }
+            for type_def in type_defs {
+                get_type(type_def)?;
+            }
+            Ok(Type::NA)
+        }
         ASTNode::Import { .. } => Ok(Type::NA),
         ASTNode::FromImport { .. } => Ok(Type::NA),
-        ASTNode::Class { .. } => Ok(Type::NA),
+        ASTNode::Class { body, .. } => {
+            get_type(*body)?;
+            Ok(Type::NA)
+        }
         ASTNode::Generic { .. } => Ok(Type::NA),
         ASTNode::Parent { .. } => Ok(Type::NA),
-        ASTNode::Script { .. } => Ok(Type::NA),
+        ASTNode::Script { statements } => {
+            let mut last_type = Type::Empty;
+            for statement in statements {
+                last_type = get_type(statement)?;
+            }
+            Ok(last_type)
+        }
         ASTNode::Init => Ok(Type::NA),
 
         ASTNode::Reassign { left, right } => {
@@ -80,10 +97,8 @@ fn get_type(ast_node_pos: ASTNodePos) -> TypeResult<Type> {
                     ASTNode::FunArg { id_maybe_type, default, .. } => {
                         // TODO do something with vararg
                         let id_type = match id_maybe_type.node {
-                            ASTNode::IdType { _type, .. } => match _type {
-                                Some(_type) => get_type(*_type)?,
-                                None => Type::Any
-                            },
+                            ASTNode::IdType { _type: Some(_type), .. } => get_type(*_type)?,
+                            ASTNode::IdType { .. } => Type::Any,
                             _ => return Err(String::from("Expected id type"))
                         };
 
@@ -129,18 +144,19 @@ fn get_type(ast_node_pos: ASTNodePos) -> TypeResult<Type> {
         ASTNode::Retry => Ok(Type::NA),
         ASTNode::With { .. } => Ok(Type::NA),
 
-        ASTNode::FunctionCall { .. } => unimplemented!("class analysis"),
-        ASTNode::PropertyCall { .. } => unimplemented!("class analysis"),
-        ASTNode::Id { .. } => unimplemented!("class analysis"),
+        ASTNode::FunctionCall { .. } => Ok(Type::Any),
+        ASTNode::PropertyCall { .. } => Ok(Type::Any),
+        ASTNode::Id { .. } => Ok(Type::Any),
 
-        ASTNode::IdType { .. } => Ok(Type::NA),
-        ASTNode::TypeDef { .. } => Ok(Type::NA),
-        ASTNode::TypeAlias { .. } => Ok(Type::NA),
-        ASTNode::TypeTup { .. } => Ok(Type::NA),
-        ASTNode::Type { .. } => Ok(Type::NA),
-        ASTNode::TypeFun { .. } => Ok(Type::NA),
+        // TODO implement
+        ASTNode::IdType { .. } => Ok(Type::Any),
         ASTNode::Condition { .. } => Ok(Type::NA),
         ASTNode::FunArg { .. } => Err(String::from("fun arg cannot be top level")),
+        ASTNode::TypeDef { .. } => Type::try_from_node(node_pos.node),
+        ASTNode::TypeAlias { .. } => Type::try_from_node(node_pos.node),
+        ASTNode::TypeTup { .. } => Type::try_from_node(node_pos.node),
+        ASTNode::Type { .. } => Type::try_from_node(node_pos.node),
+        ASTNode::TypeFun { .. } => Type::try_from_node(node_pos.node),
 
         ASTNode::_Self => Ok(Type::NA),
         ASTNode::AddOp => Ok(Type::NA),
@@ -338,7 +354,7 @@ fn get_type(ast_node_pos: ASTNodePos) -> TypeResult<Type> {
                             )?;
                         }
                     }
-                    _ => return Err(String::from(""))
+                    _ => return Err(String::from("expected case"))
                 }
             }
             match body_type.clone() {
@@ -347,11 +363,18 @@ fn get_type(ast_node_pos: ASTNodePos) -> TypeResult<Type> {
             }
         }
         ASTNode::Case { .. } => Err(String::from("case cannot be top level")),
-        ASTNode::For { expr, body } => {
-            get_type_expect(*expr, &Type::Range { ty: Box::from(Type::Any) })?;
-            get_type(*body)?;
-            Ok(Type::NA)
-        }
+        ASTNode::For { expr, body } => match expr.node {
+            ASTNode::In { left, right } => {
+                match get_type(*right)? {
+                    Type::Range { ty } | Type::Set { ty } | Type::List { ty } =>
+                        get_type_expect(*left, ty.as_ref()),
+                    _ => get_type(*left)
+                }?;
+                get_type(*body)?;
+                Ok(Type::NA)
+            }
+            _ => Err(String::from("for must have in statement"))
+        },
         ASTNode::In { left, right } => {
             get_type(*left)?;
             get_type(*right)?;
