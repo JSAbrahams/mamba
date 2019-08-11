@@ -35,21 +35,21 @@ fn test_eq_set() {
 
 #[test]
 fn test_eq_tuple() {
-    assert_eq!(Type::Tuple { ty: vec![Type::Int, Type::Float] }, Type::Tuple {
-        ty: vec![Type::Int, Type::Float]
+    assert_eq!(Type::Tuple { tys: vec![Type::Int, Type::Float] }, Type::Tuple {
+        tys: vec![Type::Int, Type::Float]
     })
 }
 
 #[test]
 fn test_neq_tuple_different_size() {
-    assert_ne!(Type::Tuple { ty: vec![Type::Int] }, Type::Tuple {
-        ty: vec![Type::Int, Type::Float]
+    assert_ne!(Type::Tuple { tys: vec![Type::Int] }, Type::Tuple {
+        tys: vec![Type::Int, Type::Float]
     })
 }
 
 #[test]
 fn test_neq_tuple() {
-    assert_ne!(Type::Tuple { ty: vec![Type::Float, Type::Int] }, Type::Tuple {
-        ty: vec![Type::Int, Type::Float]
+    assert_ne!(Type::Tuple { tys: vec![Type::Float, Type::Int] }, Type::Tuple {
+        tys: vec![Type::Int, Type::Float]
     })
 }
