@@ -1,10 +1,10 @@
 use crate::parser::ast::ASTNodePos;
-use crate::type_checker::context::Context;
-use crate::type_checker::type_check::type_check;
+use crate::type_checker::stage_1::Context;
+use crate::type_checker::stage_2::type_check;
 use std::clone::Clone;
 
-mod context;
-mod type_check;
+mod stage_1;
+mod stage_2;
 
 pub mod type_node;
 pub mod type_result;

@@ -1,8 +1,8 @@
 use crate::parser::ast::{ASTNode, ASTNodePos};
-use crate::type_checker::context::class::{Class, Interface};
-use crate::type_checker::context::field::Field;
-use crate::type_checker::context::function::Function;
-use crate::type_checker::context::Context;
+use crate::type_checker::stage_1::class::{Class, Interface};
+use crate::type_checker::stage_1::field::Field;
+use crate::type_checker::stage_1::function::Function;
+use crate::type_checker::stage_1::Context;
 
 macro_rules! is {
     ($node_pos:expr, $ast:ident) => {{

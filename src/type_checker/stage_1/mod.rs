@@ -1,6 +1,6 @@
-use crate::type_checker::context::class::{Class, Interface};
-use crate::type_checker::context::field::Field;
-use crate::type_checker::context::function::Function;
+use crate::type_checker::stage_1::class::{Class, Interface};
+use crate::type_checker::stage_1::field::Field;
+use crate::type_checker::stage_1::function::Function;
 
 pub mod class;
 pub mod context;

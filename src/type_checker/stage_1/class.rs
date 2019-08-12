@@ -1,6 +1,7 @@
 use crate::parser::ast::{ASTNode, ASTNodePos};
-use crate::type_checker::context::field::Field;
-use crate::type_checker::context::function::Function;
+use crate::type_checker::stage_1::field::Field;
+use crate::type_checker::stage_1::function::Function;
+use crate::type_checker::type_node::Ty;
 use crate::type_checker::type_node::Type;
 
 #[derive(Debug)]
@@ -14,6 +15,7 @@ pub struct Interface {
 #[derive(Debug)]
 pub struct Class {
     id:         Type,
+    private:    bool,
     location:   Vec<String>,
     init:       Option<Function>,
     implements: Vec<Interface>,
@@ -27,7 +29,7 @@ impl Interface {
             ASTNode::TypeAlias { _type, conditions: _conditions } => {
                 // TODO do something with conditions
                 let id = match &_type.node {
-                    ASTNode::Type { .. } => Type::try_from_node(_type.clone().node),
+                    ASTNode::Type { .. } => Type::try_from_type(_type.clone().node),
                     other => return Err(format!("Expected type but got {:?}", other))
                 };
 
@@ -40,7 +42,7 @@ impl Interface {
             }
             ASTNode::TypeDef { _type, body } => {
                 let id = match &_type.node {
-                    ASTNode::Type { .. } => Type::try_from_node(_type.clone().node),
+                    ASTNode::Type { .. } => Type::try_from_type(_type.clone().node),
                     other => return Err(format!("Expected type but got {:?}", other))
                 };
 
@@ -69,7 +71,7 @@ impl Interface {
 
                 Ok(Interface { id: id?, location: vec![], fields, functions })
             }
-            other => return Err(format!("Expected type def but got {:?}", other))
+            other => Err(format!("Expected type def but got {:?}", other))
         }
     }
 }
@@ -77,15 +79,16 @@ impl Interface {
 impl Class {
     pub fn new(node_pos: &ASTNodePos) -> Result<Class, String> {
         match &node_pos.node {
-            ASTNode::Class { _type, args, parents, body } => Ok(Class {
-                id:         Type::Empty,
+            ASTNode::Class { .. } => Ok(Class {
+                id:         Type::new(&Ty::Empty),
+                private:    false,
                 location:   vec![],
                 init:       None,
                 implements: vec![],
                 fields:     vec![],
                 functions:  vec![]
             }),
-            other => return Err(format!("Expected class but got {:?}", other))
+            other => Err(format!("Expected class but got {:?}", other))
         }
     }
 }
