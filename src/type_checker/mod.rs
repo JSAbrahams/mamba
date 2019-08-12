@@ -393,7 +393,7 @@ fn type_check(node_pos: ASTNodePos) -> TypeResult<Type> {
 
         ASTNode::Return { expr } => type_check(*expr),
         ASTNode::ReturnEmpty => Ok(Type::Empty),
-        ASTNode::Underscore => Ok(Type::NA),
+        ASTNode::Underscore => Ok(Type::Any),
         ASTNode::Pass => Ok(Type::NA),
 
         ASTNode::QuestOr { left, right } => {
