@@ -138,7 +138,7 @@ fn tuple_def_none_verify() {
 #[test]
 fn fun_def_verify() {
     let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        id_type:  to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
         private:  false,
         fun_args: vec![
@@ -183,7 +183,7 @@ fn fun_def_verify() {
 #[test]
 fn fun_def_default_arg_verify() {
     let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        id_type:  to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
         private:  false,
         fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
@@ -216,7 +216,7 @@ fn fun_def_default_arg_verify() {
 #[test]
 fn fun_def_with_body_verify() {
     let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+        id_type:  to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
         private:  false,
         fun_args: vec![

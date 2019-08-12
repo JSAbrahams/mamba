@@ -1,6 +1,6 @@
 type MyType
     def fun_a(self): () -> ()
-    def factorial(self,x): Int -> Int
+    def factorial(self,x: String): Int -> Int
 
 class MyClass1 isa MyType("asdf")
     def other

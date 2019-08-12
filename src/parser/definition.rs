@@ -120,7 +120,7 @@ fn parse_fun_def(
     let (st_line, st_pos) = it.start_pos("function definition")?;
     let fun_args = it.parse_vec(&parse_fun_args, "function definition", st_line, st_pos)?;
 
-    let id = match id_type {
+    let id_type = match id_type {
         ASTNodePos { node: ASTNode::IdType { id, mutable, _type }, st_line, st_pos, .. } =>
             match (mutable, _type) {
                 (false, None) => id.clone(),
@@ -169,7 +169,7 @@ fn parse_fun_def(
         _ => (id_type.en_line, id_type.en_pos)
     };
 
-    let node = ASTNode::FunDef { id, private, pure, fun_args, ret_ty, raises, body };
+    let node = ASTNode::FunDef { id_type, private, pure, fun_args, ret_ty, raises, body };
     Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
 }
 

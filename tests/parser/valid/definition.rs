@@ -7,10 +7,10 @@ macro_rules! unwrap_func_definition {
         match $ast_tree.node {
             ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::FunDef { id, private, pure, fun_args, ret_ty, raises, body } => (
+                    ASTNode::FunDef { id_type, private, pure, fun_args, ret_ty, raises, body } => (
                         private.clone(),
                         pure.clone(),
-                        id.clone(),
+                        id_type.clone(),
                         fun_args.clone(),
                         ret_ty.clone(),
                         raises.clone(),

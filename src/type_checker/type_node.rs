@@ -1,6 +1,7 @@
-use crate::parser::ast::ASTNode;
 use std::fmt;
 use std::fmt::Display;
+
+use crate::parser::ast::ASTNode;
 
 #[derive(Debug, Clone)]
 pub enum Type {
@@ -19,10 +20,16 @@ pub enum Type {
     AnonFun { args: Vec<Type>, out: Box<Type> },
 
     Custom { lit: String, gens: Vec<Type> },
+
     Maybe { ty: Box<Type> },
+    Mutable { ty: Box<Type> },
 
     NA,
     Any
+}
+
+impl Type {
+    fn copy_as_mutable(ty: &Type) -> Type { Type::Mutable { ty: Box::from(ty.clone()) } }
 }
 
 impl Display for Type {
@@ -43,6 +50,7 @@ impl Display for Type {
 
             Type::Custom { lit, gens } => format!("{}<{}>", lit, comma_separated(gens)),
             Type::Maybe { ty } => format!("{}?", ty),
+            Type::Mutable { ty } => format!("mut {}", ty),
 
             Type::NA => String::new(),
             Type::Any => String::from("Any")
@@ -145,7 +153,9 @@ impl PartialEq for Type {
                 Type::Custom { lit: lit_self, gens: gens_self },
                 Type::Custom { lit: lit_other, gens: gens_other }
             ) => lit_self == lit_other && gens_self == gens_other,
+
             (Type::Maybe { ty: ty_self }, Type::Maybe { ty: ty_other }) => ty_self == ty_other,
+            (Type::Mutable { ty: ty_self }, Type::Mutable { ty: ty_other }) => ty_self == ty_other,
 
             _ => false
         }

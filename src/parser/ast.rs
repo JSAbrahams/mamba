@@ -59,7 +59,7 @@ pub enum ASTNode {
     FunDef {
         pure:     bool,
         private:  bool,
-        id:       Box<ASTNodePos>,
+        id_type:  Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
         ret_ty:   Option<Box<ASTNodePos>>,
         raises:   Vec<ASTNodePos>,

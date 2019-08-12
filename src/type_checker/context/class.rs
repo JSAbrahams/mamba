@@ -27,7 +27,7 @@ impl Interface {
             ASTNode::TypeAlias { _type, conditions: _conditions } => {
                 // TODO do something with conditions
                 let id = match &_type.node {
-                    ASTNode::Type { id, generics } => Type::try_from_node(_type.clone().node),
+                    ASTNode::Type { .. } => Type::try_from_node(_type.clone().node),
                     other => return Err(format!("Expected type but got {:?}", other))
                 };
 
@@ -40,7 +40,7 @@ impl Interface {
             }
             ASTNode::TypeDef { _type, body } => {
                 let id = match &_type.node {
-                    ASTNode::Type { id, generics } => Type::try_from_node(_type.clone().node),
+                    ASTNode::Type { .. } => Type::try_from_node(_type.clone().node),
                     other => return Err(format!("Expected type but got {:?}", other))
                 };
 
@@ -76,13 +76,16 @@ impl Interface {
 
 impl Class {
     pub fn new(node_pos: &ASTNodePos) -> Result<Class, String> {
-        Ok(Class {
-            id:         Type::Empty,
-            location:   vec![],
-            init:       None,
-            implements: vec![],
-            fields:     vec![],
-            functions:  vec![]
-        })
+        match &node_pos.node {
+            ASTNode::Class { _type, args, parents, body } => Ok(Class {
+                id:         Type::Empty,
+                location:   vec![],
+                init:       None,
+                implements: vec![],
+                fields:     vec![],
+                functions:  vec![]
+            }),
+            other => return Err(format!("Expected class but got {:?}", other))
+        }
     }
 }

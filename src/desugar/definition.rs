@@ -35,9 +35,9 @@ pub fn desugar_definition(
                 }
             }
         }
-        ASTNode::FunDef { private, id, fun_args, body: expression, .. } => Core::FunDef {
+        ASTNode::FunDef { private, id_type, fun_args, body: expression, .. } => Core::FunDef {
             private: *private,
-            id:      Box::from(desugar_node(&id, imp, state)?),
+            id:      Box::from(desugar_node(&id_type, imp, state)?),
             args:    desugar_vec(&fun_args, imp, state)?,
             body:    if state.interface {
                 Box::from(Core::Pass)

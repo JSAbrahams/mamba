@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use crate::lexer::token::Token;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_id;
