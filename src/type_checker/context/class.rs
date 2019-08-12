@@ -5,10 +5,10 @@ use crate::type_checker::type_node::Type;
 
 #[derive(Debug)]
 pub struct Interface {
-    id:        Type,
-    location:  Vec<String>,
-    fields:    Vec<Field>,
-    functions: Vec<Function>
+    pub id:        Type,
+    pub location:  Vec<String>,
+    pub fields:    Vec<Field>,
+    pub functions: Vec<Function>
 }
 
 #[derive(Debug)]

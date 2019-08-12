@@ -9,7 +9,7 @@ pub struct Function {
     public:   bool,
     args:     Vec<FunctionArg>,
     ret:      Type,
-    raises:   Interface
+    raises:   Vec<Interface>
 }
 
 #[derive(Debug)]
@@ -26,7 +26,12 @@ impl Function {
             public:   false,
             args:     vec![],
             ret:      Type::Empty,
-            raises:   Interface::new(node_pos)?
+            raises:   vec![Interface {
+                id:        Type::Empty,
+                location:  vec![],
+                fields:    vec![],
+                functions: vec![]
+            }]
         })
     }
 }

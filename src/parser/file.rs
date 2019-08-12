@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use crate::lexer::token::Token;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_id;
@@ -87,34 +89,22 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
 
     let pure = it.eat_if(&Token::Pure).is_some();
 
-    it.peek_while_fn(&|_| true, &mut |it, token_pos| match &token_pos.token {
-        Token::NL => {
-            it.eat(&Token::NL, "file")?;
-            Ok(())
-        }
-        Token::Import => {
-            imports.push(*it.parse(&parse_import, "file", 1, 1)?);
-            Ok(())
-        }
-        Token::From => {
-            imports.push(*it.parse(&parse_from_import, "file", 1, 1)?);
-            Ok(())
-        }
-        Token::Type => {
-            type_defs.push(*it.parse(&parse_type_def, "file", 1, 1)?);
-            Ok(())
-        }
-        Token::Comment(comment) => {
-            let (st_line, st_pos) = it.start_pos("comment")?;
-            let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
-            let node = ASTNode::Comment { comment: comment.clone() };
-            modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
-            Ok(())
-        }
-        _ => {
-            modules.push(*it.parse(&parse_module, "file", 1, 1)?);
-            Ok(())
-        }
+    it.peek_while_fn(&|_| true, &mut |it, token_pos| {
+        Ok(match &token_pos.token {
+            Token::NL => {
+                it.eat(&Token::NL, "file")?;
+            }
+            Token::Import => imports.push(*it.parse(&parse_import, "file", 1, 1)?),
+            Token::From => imports.push(*it.parse(&parse_from_import, "file", 1, 1)?),
+            Token::Type => type_defs.push(*it.parse(&parse_type_def, "file", 1, 1)?),
+            Token::Comment(comment) => {
+                let (st_line, st_pos) = it.start_pos("comment")?;
+                let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
+                let node = ASTNode::Comment { comment: comment.clone() };
+                modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+            }
+            _ => modules.push(*it.parse(&parse_module, "file", 1, 1)?)
+        })
     })?;
 
     let node = ASTNode::File { pure, imports, modules, type_defs };
