@@ -1,5 +1,5 @@
 use crate::parser::ast::{ASTNode, ASTNodePos};
-use crate::type_checker::context::context::Context;
+use crate::type_checker::context::Context;
 use crate::type_checker::type_node::Type;
 use crate::type_checker::type_result::TypeResult;
 

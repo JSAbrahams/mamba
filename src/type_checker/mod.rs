@@ -1,5 +1,5 @@
 use crate::parser::ast::ASTNodePos;
-use crate::type_checker::context::context::Context;
+use crate::type_checker::context::Context;
 use crate::type_checker::type_check::type_check;
 use std::clone::Clone;
 
@@ -25,7 +25,7 @@ pub mod type_result;
 ///
 /// // failure examples here
 pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> {
-    let context = Context::new(input);
+    let context = Context::new(input)?;
     let (_, errors): (Vec<_>, Vec<_>) = input
         .iter()
         .map(|node_pos| type_check(&context, node_pos.clone()))
