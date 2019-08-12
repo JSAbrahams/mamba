@@ -1,9 +1,9 @@
 use crate::parser::ast::{ASTNode, ASTNodePos};
-use crate::type_checker::node_type::Type;
+use crate::type_checker::type_node::Type;
 use crate::type_checker::type_result::TypeResult;
 use std::clone::Clone;
 
-pub mod node_type;
+pub mod type_node;
 pub mod type_result;
 
 /// Checks whether a given [ASTNodePos](crate::parser::ast::ASTNodePos) is well
@@ -23,7 +23,7 @@ pub mod type_result;
 /// // failure examples here
 pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> {
     let (_, errors): (Vec<_>, Vec<_>) =
-        input.iter().map(|node_pos| get_type(node_pos.clone())).partition(Result::is_ok);
+        input.iter().map(|node_pos| type_check(node_pos.clone())).partition(Result::is_ok);
 
     if errors.is_empty() {
         Ok(input.to_vec())
@@ -32,8 +32,8 @@ pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> {
     }
 }
 
-fn get_type_expect(node_pos: &ASTNodePos, expected: &Type) -> Result<Type, String> {
-    let node_type = get_type(node_pos.clone())?;
+fn type_check_expect(node_pos: &ASTNodePos, expected: &Type) -> Result<Type, String> {
+    let node_type = type_check(node_pos.clone())?;
     if node_type == *expected {
         Ok(node_type)
     } else {
@@ -41,21 +41,21 @@ fn get_type_expect(node_pos: &ASTNodePos, expected: &Type) -> Result<Type, Strin
     }
 }
 
-fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
+fn type_check(node_pos: ASTNodePos) -> TypeResult<Type> {
     match node_pos.node {
         ASTNode::File { modules, type_defs, .. } => {
             for module in modules {
-                get_type(module)?;
+                type_check(module)?;
             }
             for type_def in type_defs {
-                get_type(type_def)?;
+                type_check(type_def)?;
             }
             Ok(Type::NA)
         }
         ASTNode::Import { .. } => Ok(Type::NA),
         ASTNode::FromImport { .. } => Ok(Type::NA),
         ASTNode::Class { body, .. } => {
-            get_type(*body)?;
+            type_check(*body)?;
             Ok(Type::NA)
         }
         ASTNode::Generic { .. } => Ok(Type::NA),
@@ -63,28 +63,28 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
         ASTNode::Script { statements } => {
             let mut last_type = Type::Empty;
             for statement in statements {
-                last_type = get_type(statement)?;
+                last_type = type_check(statement)?;
             }
             Ok(last_type)
         }
         ASTNode::Init => Ok(Type::NA),
 
         ASTNode::Reassign { left, right } => {
-            let left_type = get_type(*left)?;
-            get_type_expect(&*right, &left_type)?;
+            let left_type = type_check(*left)?;
+            type_check_expect(&*right, &left_type)?;
             Ok(Type::NA)
         }
-        ASTNode::Def { definition, .. } => get_type(*definition),
+        ASTNode::Def { definition, .. } => type_check(*definition),
         ASTNode::VariableDef { id_maybe_type, expression, .. } => {
             let id_type = match id_maybe_type.node {
-                ASTNode::IdType { _type: Some(_type), .. } => get_type(*_type)?,
+                ASTNode::IdType { _type: Some(_type), .. } => type_check(*_type)?,
                 ASTNode::IdType { .. } => Type::Any,
                 _ => return Err(String::from("expected id type"))
             };
 
             if expression.is_some() {
                 let expression = expression.unwrap_or_else(|| unreachable!());
-                get_type_expect(&*expression, &id_type)
+                type_check_expect(&*expression, &id_type)
             } else {
                 Ok(id_type)
             }
@@ -97,13 +97,16 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
                     ASTNode::FunArg { id_maybe_type, default, .. } => {
                         // TODO do something with vararg
                         let id_type = match id_maybe_type.node {
-                            ASTNode::IdType { _type: Some(_type), .. } => get_type(*_type)?,
+                            ASTNode::IdType { _type: Some(_type), .. } => type_check(*_type)?,
                             ASTNode::IdType { .. } => Type::Any,
                             _ => return Err(String::from("Expected id type"))
                         };
 
                         if default.is_some() {
-                            get_type_expect(&*default.unwrap_or_else(|| unreachable!()), &id_type)?;
+                            type_check_expect(
+                                &*default.unwrap_or_else(|| unreachable!()),
+                                &id_type
+                            )?;
                         }
                     }
                     _ => return Err(String::from("Expected fun arg"))
@@ -117,10 +120,10 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
             };
 
             // TODO add fun args to context when checking body
-            let body_type = get_type(*body)?;
+            let body_type = type_check(*body)?;
             if ret_ty.is_some() {
                 let ret_ty = ret_ty.unwrap_or_else(|| unreachable!());
-                let function_return_type = get_type(*ret_ty)?;
+                let function_return_type = type_check(*ret_ty)?;
                 if body_type == function_return_type {
                     Ok(function_return_type)
                 } else {
@@ -133,8 +136,8 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
 
         ASTNode::AnonFun { args, body } => {
             let arg_types: TypeResult<Vec<Type>> =
-                args.iter().map(|arg| get_type(arg.clone())).collect();
-            let body_type = get_type(*body)?;
+                args.iter().map(|arg| type_check(arg.clone())).collect();
+            let body_type = type_check(*body)?;
             Ok(Type::AnonFun { args: arg_types?, out: Box::new(body_type) })
         }
 
@@ -174,7 +177,7 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
         ASTNode::Set { elements } => {
             let mut ty = Type::Any;
             for element in elements {
-                ty = get_type_expect(&element, &ty)?;
+                ty = type_check_expect(&element, &ty)?;
             }
             Ok(Type::Set { ty: Box::from(ty) })
         }
@@ -182,28 +185,28 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
         ASTNode::List { elements } => {
             let mut ty = Type::Any;
             for element in elements {
-                ty = get_type_expect(&element, &ty)?;
+                ty = type_check_expect(&element, &ty)?;
             }
             Ok(Type::List { ty: Box::from(ty) })
         }
         ASTNode::ListBuilder { .. } => unimplemented!(),
         ASTNode::Tuple { elements } => {
             let types: TypeResult<Vec<Type>> =
-                elements.iter().map(|node_pos| get_type(node_pos.clone())).collect();
+                elements.iter().map(|node_pos| type_check(node_pos.clone())).collect();
             Ok(Type::Tuple { tys: types? })
         }
 
         ASTNode::Range { from, to, .. } => {
             // TODO do something with step
-            let from_type = get_type(*from)?;
-            get_type_expect(&*to, &from_type)?;
+            let from_type = type_check(*from)?;
+            type_check_expect(&*to, &from_type)?;
             Ok(Type::Range { ty: Box::from(from_type) })
         }
 
         ASTNode::Block { statements } => {
             let mut last_type = Type::Empty;
             for statement in statements {
-                last_type = get_type(statement)?
+                last_type = type_check(statement)?
             }
             Ok(last_type)
         }
@@ -216,44 +219,44 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
 
         ASTNode::Add { left, right } => {
             // TODO check if types overwrite add function
-            get_type(*left)?;
-            get_type(*right)
+            type_check(*left)?;
+            type_check(*right)
         }
-        ASTNode::AddU { expr } => get_type(*expr),
+        ASTNode::AddU { expr } => type_check(*expr),
         ASTNode::Sub { left, right } => {
             // TODO check if types overwrite sub function
-            get_type(*left)?;
-            get_type(*right)
+            type_check(*left)?;
+            type_check(*right)
         }
-        ASTNode::SubU { expr } => get_type(*expr),
+        ASTNode::SubU { expr } => type_check(*expr),
         ASTNode::Mul { left, right } => {
             // TODO check if types overwrite mul function
-            get_type(*left)?;
-            get_type(*right)
+            type_check(*left)?;
+            type_check(*right)
         }
         ASTNode::Div { left, right } => {
             // TODO check if types overwrite div function
-            get_type(*left)?;
-            get_type(*right)
+            type_check(*left)?;
+            type_check(*right)
         }
         ASTNode::FDiv { left, right } => {
             // TODO check if types overwrite fdiv function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Int)
         }
         ASTNode::Mod { left, right } => {
             // TODO check if types overwrite mod function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Int)
         }
         ASTNode::Pow { left, right } => {
             // TODO check if types overwrite pow function
-            get_type(*left)?;
-            get_type(*right)
+            type_check(*left)?;
+            type_check(*right)
         }
-        ASTNode::Sqrt { expr } => get_type(*expr),
+        ASTNode::Sqrt { expr } => type_check(*expr),
 
         ASTNode::BAnd { .. } => Ok(Type::Int),
         ASTNode::BOr { .. } => Ok(Type::Int),
@@ -264,91 +267,91 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
 
         ASTNode::Le { left, right } => {
             // TODO check if types overwrite le function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::Ge { left, right } => {
             // TODO check if types overwrite ge function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::Leq { left, right } => {
             // TODO check if types overwrite leq function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::Geq { left, right } => {
             // TODO check if types overwrite geq function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::Is { left, right } => {
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::IsN { left, right } => {
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::Eq { left, right } => {
             // TODO check if types overwrite eq function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::Neq { left, right } => {
             // TODO check if types overwrite eq function
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::IsA { left, right } => {
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
         ASTNode::IsNA { left, right } => {
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
 
-        ASTNode::Not { expr } => get_type_expect(&*expr, &Type::Bool),
+        ASTNode::Not { expr } => type_check_expect(&*expr, &Type::Bool),
         ASTNode::And { left, right } => {
-            get_type_expect(&*left, &Type::Bool)?;
-            get_type_expect(&*right, &Type::Bool)
+            type_check_expect(&*left, &Type::Bool)?;
+            type_check_expect(&*right, &Type::Bool)
         }
 
         ASTNode::Or { left, right } => {
-            get_type_expect(&*left, &Type::Bool)?;
-            get_type_expect(&*right, &Type::Bool)
+            type_check_expect(&*left, &Type::Bool)?;
+            type_check_expect(&*right, &Type::Bool)
         }
 
         ASTNode::IfElse { cond, then, _else } => {
-            get_type_expect(&*cond, &Type::Bool)?;
+            type_check_expect(&*cond, &Type::Bool)?;
             match _else {
-                Some(_else) => get_type_expect(&*_else, &get_type(*then)?),
-                None => get_type(*then)
+                Some(_else) => type_check_expect(&*_else, &type_check(*then)?),
+                None => type_check(*then)
             }
         }
         ASTNode::Match { cond, cases } => {
             // TODO check type of cond and cross reference this with types of conditions
-            let cond_type = get_type(*cond)?;
+            let cond_type = type_check(*cond)?;
             let mut body_type = None;
             for case in cases.iter().map(|node_pos| node_pos.node.clone()) {
                 match case {
                     ASTNode::Case { cond, body } => {
-                        get_type_expect(&*cond, &cond_type)?;
+                        type_check_expect(&*cond, &cond_type)?;
                         if body_type.is_none() {
-                            body_type = Some(get_type(*body)?)
+                            body_type = Some(type_check(*body)?)
                         } else {
-                            get_type_expect(
+                            type_check_expect(
                                 &*body,
                                 &body_type.clone().unwrap_or_else(|| unreachable!())
                             )?;
@@ -365,40 +368,40 @@ fn get_type(node_pos: ASTNodePos) -> TypeResult<Type> {
         ASTNode::Case { .. } => Err(String::from("case cannot be top level")),
         ASTNode::For { expr, body } => match expr.node {
             ASTNode::In { left, right } => {
-                match get_type(*right)? {
+                match type_check(*right)? {
                     Type::Range { ty } | Type::Set { ty } | Type::List { ty } =>
-                        get_type_expect(&*left, ty.as_ref()),
-                    _ => get_type(*left)
+                        type_check_expect(&*left, ty.as_ref()),
+                    _ => type_check(*left)
                 }?;
-                get_type(*body)?;
+                type_check(*body)?;
                 Ok(Type::NA)
             }
             _ => Err(String::from("for must have in statement"))
         },
         ASTNode::In { left, right } => {
-            get_type(*left)?;
-            get_type(*right)?;
+            type_check(*left)?;
+            type_check(*right)?;
             Ok(Type::Bool)
         }
-        ASTNode::Step { amount } => get_type_expect(&*amount, &Type::Int),
+        ASTNode::Step { amount } => type_check_expect(&*amount, &Type::Int),
         ASTNode::While { cond, body } => {
-            get_type_expect(&*cond, &Type::Bool)?;
-            get_type(*body)
+            type_check_expect(&*cond, &Type::Bool)?;
+            type_check(*body)
         }
         ASTNode::Break => Ok(Type::NA),
         ASTNode::Continue => Ok(Type::NA),
 
-        ASTNode::Return { expr } => get_type(*expr),
+        ASTNode::Return { expr } => type_check(*expr),
         ASTNode::ReturnEmpty => Ok(Type::Empty),
         ASTNode::Underscore => Ok(Type::NA),
         ASTNode::Pass => Ok(Type::NA),
 
         ASTNode::QuestOr { left, right } => {
-            let type_left = get_type(*left)?;
-            let maybe = get_type_expect(&*right, &type_left)?;
+            let type_left = type_check(*left)?;
+            let maybe = type_check_expect(&*right, &type_left)?;
             Ok(Type::Maybe { ty: Box::from(maybe) })
         }
-        ASTNode::Print { expr } => get_type(*expr),
+        ASTNode::Print { expr } => type_check(*expr),
         ASTNode::Comment { .. } => Ok(Type::NA)
     }
 }

@@ -1,4 +1,4 @@
-use mamba::type_checker::node_type::Type;
+use mamba::type_checker::type_node::Type;
 
 #[test]
 fn test_eq_type_all() {
