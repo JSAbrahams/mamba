@@ -4,49 +4,47 @@ use mamba::parser::parse_direct;
 
 macro_rules! unwrap_func_definition {
     ($ast_tree:expr) => {{
-        let (private, definition) = match $ast_tree.node {
-            ASTNode::Script { statements, .. } => {
+        match $ast_tree.node {
+            ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::Def { private, definition } => (private.clone(), definition.clone()),
-                    _ => panic!("first element script was not for.")
-                }
-            }
+                    ASTNode::FunDef { id, private, pure, fun_args, ret_ty, raises, body } => (
+                        private.clone(),
+                        pure.clone(),
+                        id.clone(),
+                        fun_args.clone(),
+                        ret_ty.clone(),
+                        raises.clone(),
+                        body.clone()
+                    ),
+                    other => panic!("Expected variabledef but was {:?}.", other)
+                },
             _ => panic!("ast_tree was not script.")
-        };
-
-        let (id, pure, fun_args, ret_ty, raises, body) = match definition.node {
-            ASTNode::FunDef { id, pure, fun_args, ret_ty, raises, body } =>
-                (id, pure, fun_args, ret_ty, raises, body),
-            other => panic!("Expected variabledef but was {:?}.", other)
-        };
-
-        (private, pure, id, fun_args, ret_ty, raises, body)
+        }
     }};
 }
 
 macro_rules! unwrap_definition {
     ($ast_tree:expr) => {{
-        let (private, definition) = match $ast_tree.node {
-            ASTNode::Script { statements, .. } => {
+        match $ast_tree.node {
+            ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::Def { private, definition } => (private.clone(), definition.clone()),
-                    _ => panic!("first element script was not for.")
-                }
-            }
-            _ => panic!("ast_tree was not script.")
-        };
-
-        let (mutable, ofmut, id, _type, expression, forward) = match definition.node {
-            ASTNode::VariableDef { ofmut, id_maybe_type, expression, forward } =>
-                match id_maybe_type.node {
-                    ASTNode::IdType { id, mutable, _type } =>
-                        (mutable, ofmut, id, _type, expression, forward),
-                    other => panic!("Expected id type in variable def but was {:?}.", other)
+                    ASTNode::VariableDef { ofmut, private, id_maybe_type, expression, forward } =>
+                        match &id_maybe_type.node {
+                            ASTNode::IdType { id, mutable, _type } => (
+                                private.clone(),
+                                mutable.clone(),
+                                ofmut.clone(),
+                                id.clone(),
+                                _type.clone(),
+                                expression.clone(),
+                                forward.clone()
+                            ),
+                            other => panic!("Expected id type in variable def but was {:?}.", other)
+                        },
+                    other => panic!("Expected variable def but was {:?}.", other)
                 },
-            other => panic!("Expected variabledef but was {:?}.", other)
-        };
-
-        (private, mutable, ofmut, id, _type, expression, forward)
+            _ => panic!("ast_tree was not script.")
+        }
     }};
 }
 
@@ -56,13 +54,13 @@ fn empty_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
+    assert!(!private);
+    assert!(!mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
-    assert_eq!(expression, None);
-    assert_eq!(forward, vec![]);
+    assert!(_type.is_none());
+    assert!(expression.is_none());
+    assert!(forward.is_empty());
 }
 
 #[test]
@@ -71,12 +69,12 @@ fn definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
+    assert!(!private);
+    assert!(!mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
-    assert_eq!(forward, vec![]);
+    assert!(_type.is_none());
+    assert!(forward.is_empty());
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -90,12 +88,12 @@ fn mutable_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, true);
-    assert_eq!(ofmut, false);
+    assert!(!private);
+    assert!(mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
-    assert_eq!(forward, vec![]);
+    assert!(_type.is_none());
+    assert!(forward.is_empty());
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -109,12 +107,12 @@ fn ofmut_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, true);
+    assert!(!private);
+    assert!(!mutable);
+    assert!(ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
-    assert_eq!(forward, vec![]);
+    assert!(_type.is_none());
+    assert!(forward.is_empty());
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -128,12 +126,12 @@ fn private_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, true);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
+    assert!(private);
+    assert!(!mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
-    assert_eq!(forward, vec![]);
+    assert!(_type.is_none());
+    assert!(forward.is_empty());
 
     match expression {
         Some(expr_pos) => assert_eq!(expr_pos.node, ASTNode::Int { lit: String::from("10") }),
@@ -159,11 +157,11 @@ fn typed_definition_verify() {
         other => panic!("Unexpected expression: {:?}", other)
     };
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
+    assert!(!private);
+    assert!(!mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(forward, vec![]);
+    assert!(forward.is_empty());
     assert_eq!(expr.node, ASTNode::Int { lit: String::from("10") });
     assert_eq!(type_id.node, ASTNode::Id { lit: String::from("Object") });
 }
@@ -174,11 +172,11 @@ fn forward_empty_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
+    assert!(!private);
+    assert!(!mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(expression, None);
+    assert!(expression.is_none());
     assert_eq!(forward.len(), 2);
     assert_eq!(forward[0].node, ASTNode::Id { lit: String::from("b") });
     assert_eq!(forward[1].node, ASTNode::Id { lit: String::from("c") });
@@ -190,9 +188,9 @@ fn forward_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
+    assert!(!private);
+    assert!(!mutable);
+    assert!(!ofmut);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("a") });
     assert_eq!(expression.unwrap().node, ASTNode::Id { lit: String::from("MyClass") });
     assert_eq!(forward.len(), 2);
@@ -206,12 +204,12 @@ fn function_definition_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
 
-    assert_eq!(private, false);
+    assert!(!private);
     assert!(!pure);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
-    assert_eq!(ret_ty, None);
-    assert_eq!(raises, vec![]);
+    assert!(ret_ty.is_none());
+    assert!(raises.is_empty());
 
     match body {
         Some(body) => assert_eq!(body.node, ASTNode::Id { lit: String::from("d") }),
@@ -262,7 +260,7 @@ fn function_no_args_definition_verify() {
     assert!(!pure);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 0);
-    assert_eq!(ret_ty, None);
+    assert!(ret_ty.is_none());
 
     match body {
         Some(body) => assert_eq!(body.node, ASTNode::Id { lit: String::from("d") }),
@@ -280,7 +278,7 @@ fn function_pure_definition_verify() {
     assert!(pure);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 0);
-    assert_eq!(ret_ty, None);
+    assert!(ret_ty.is_none());
 
     match body {
         Some(body) => assert_eq!(body.node, ASTNode::Id { lit: String::from("d") }),
@@ -298,7 +296,7 @@ fn function_definition_with_literal_verify() {
     assert!(!pure);
     assert_eq!(id.node, ASTNode::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
-    assert_eq!(ret_ty, None);
+    assert!(ret_ty.is_none());
 
     match body {
         Some(body) => assert_eq!(body.node, ASTNode::Id { lit: String::from("d") }),

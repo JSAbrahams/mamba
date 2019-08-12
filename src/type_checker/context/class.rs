@@ -56,17 +56,13 @@ impl Interface {
 
                     for statement in statements {
                         match &statement.node {
-                            ASTNode::Def { private, definition } => match &definition.node {
-                                ASTNode::FunDef { .. } =>
-                                    functions.push(Function::new(&statement)?),
-                                ASTNode::VariableDef { .. } => fields.push(Field::new(&statement)?),
-                                other =>
-                                    return Err(format!(
-                                        "Expected fun or variable definition but got {:?}",
-                                        other
-                                    )),
-                            },
-                            other => return Err(format!("Expected definition but got {:?}", other))
+                            ASTNode::FunDef { .. } => functions.push(Function::new(&statement)?),
+                            ASTNode::VariableDef { .. } => fields.push(Field::new(&statement)?),
+                            other =>
+                                return Err(format!(
+                                    "Expected fun or variable definition but got {:?}",
+                                    other
+                                )),
                         }
                     }
                 }

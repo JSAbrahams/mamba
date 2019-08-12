@@ -49,7 +49,6 @@ pub fn type_check(context: &Context, node_pos: ASTNodePos) -> TypeResult<Type> {
             type_check_expect(context, &*right, &left_type)?;
             Ok(Type::NA)
         }
-        ASTNode::Def { definition, .. } => type_check(context, *definition),
         ASTNode::VariableDef { id_maybe_type, expression, .. } => {
             let id_type = match id_maybe_type.node {
                 ASTNode::IdType { _type: Some(_type), .. } => type_check(context, *_type)?,
