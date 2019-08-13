@@ -10,10 +10,10 @@ type OtherState isa MyClass when
 
 # This class does have state
 class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
-    def private z_modified
-    def private mut other_field <- 10
+    def private z_modified: String
+    def private mut other_field: Int <- 10
 
-    def connect(mut self: SomeState) => self.other_field <- 200
+    def connect(mut self) => self.other_field <- 200
 
     def fun_a(self) => print self
 
@@ -23,8 +23,8 @@ class MyClass2[C, A isa MyGeneric](def my_field: Int) isa MyType[A, C](my_field)
     def factorial_infinite(self, x: Int) => x * self.factorial x
 
     def a(self) => self.a self.b
-    def b(self, c) => self.a self.b self.c
-    def c(self, d) => self.a self.b self.c d
+    def b(self, c: Int) => self.a self.b self.c
+    def c(self, d: Int) => self.a self.b self.c d
 
     def some_higher_order (self, fun: Int -> Int) => 0
     def fancy(self) => self.some_higher_order(\x => x * 2)

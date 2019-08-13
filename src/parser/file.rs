@@ -88,7 +88,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let pure = it.eat_if(&Token::Pure).is_some();
 
     it.peek_while_fn(&|_| true, &mut |it, token_pos| {
-        Ok(match &token_pos.token {
+        match &token_pos.token {
             Token::NL => {
                 it.eat(&Token::NL, "file")?;
             }
@@ -102,7 +102,8 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
                 modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
             }
             _ => modules.push(*it.parse(&parse_module, "file", 1, 1)?)
-        })
+        }
+        Ok(())
     })?;
 
     let node = ASTNode::File { pure, imports, modules, type_defs };

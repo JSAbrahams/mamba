@@ -107,7 +107,7 @@ impl Class {
                             match function.id.as_ref() {
                                 "init" if args.is_empty() => init = Some(function),
                                 "init" =>
-                                    return Err(format!(
+                                    return Err(String::from(
                                         "Cannot have explicit init function in class with \
                                          arguments"
                                     )),

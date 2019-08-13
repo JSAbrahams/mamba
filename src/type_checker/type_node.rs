@@ -91,7 +91,7 @@ impl Display for Ty {
             Ty::Empty => String::from("Empty"),
             Ty::Any => String::from("Any"),
 
-            Ty::Custom { lit } => format!("{}", lit),
+            Ty::Custom { lit } => lit.clone(),
 
             Ty::Int => String::from("Int"),
             Ty::Float => String::from("Float"),

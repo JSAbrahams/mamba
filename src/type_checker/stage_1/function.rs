@@ -42,13 +42,11 @@ impl Function {
                     other => return Err(format!("Expected id but got {:?}", other.clone()))
                 };
                 let args: Result<Vec<_>, String> = fun_args
-                    .into_iter()
+                    .iter()
                     .map(|fun_arg| FunctionArg::new(class_id.clone(), &fun_arg))
                     .collect();
-                let raises: Result<Vec<_>, String> = raises
-                    .into_iter()
-                    .map(|raise| Type::try_from_type(raise.clone().node))
-                    .collect();
+                let raises: Result<Vec<_>, String> =
+                    raises.iter().map(|raise| Type::try_from_type(raise.clone().node)).collect();
 
                 Ok(Function {
                     id,
@@ -70,7 +68,7 @@ impl Function {
         }
     }
 
-    pub fn new_init(class_id: &Type, args: &Vec<ASTNodePos>) -> Result<Function, String> {
+    pub fn new_init(class_id: &Type, args: &[ASTNodePos]) -> Result<Function, String> {
         // TODO get location
         let location = vec![];
         let args: Result<Vec<_>, String> = args
@@ -99,7 +97,7 @@ impl FunctionArg {
                     let id = match &id.node {
                         ASTNode::Id { lit } => lit.clone(),
                         ASTNode::_Self if default.is_some() =>
-                            return Err(format!("Self argument cannot have default")),
+                            return Err(String::from("Self argument cannot have default")),
                         ASTNode::_Self => String::from("self"),
                         other => return Err(format!("Expected id but got {:?}", other.clone()))
                     };
@@ -111,11 +109,13 @@ impl FunctionArg {
                                 ty
                             )),
                         (None, "self", _) =>
-                            return Err(format!("Cannot have self argument outside of a class")),
+                            return Err(String::from(
+                                "Cannot have self argument outside of a class"
+                            )),
                         (Some(_type), "self", None) => Some(_type),
-
                         (_, _, Some(ty)) => Some(Type::try_from_type(ty.clone().node)?),
-                        (_, _, None) => return Err(format!("Function argument must have type"))
+                        (_, other, None) =>
+                            return Err(format!("Function argument must have type {:?}", other)),
                     };
 
                     Ok(FunctionArg {

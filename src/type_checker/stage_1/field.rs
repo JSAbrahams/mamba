@@ -30,7 +30,9 @@ impl Field {
                             ty
                         }),
                         (ASTNode::Id { .. }, None) =>
-                            return Err(format!("Currently cannot inference type of class fields")),
+                            return Err(String::from(
+                                "Currently cannot inference type of class fields"
+                            )),
                         (other, _) => return Err(format!("Expected id {:?}", other))
                     },
                     other => return Err(format!("Expected id type {:?}", other))
