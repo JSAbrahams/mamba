@@ -5,16 +5,51 @@ use crate::parser::ast::ASTNode;
 
 #[derive(Debug, Clone)]
 pub struct Type {
-    pub optional: bool,
-    pub mutable:  bool,
-    pub ty:       Ty
+    optional:  bool,
+    mutable:   bool,
+    ofmutable: bool,
+    pub ty:    Ty
 }
 
 impl Type {
-    pub fn new(ty: &Ty) -> Type { Type { optional: false, mutable: false, ty: ty.clone() } }
+    pub fn new(ty: &Ty) -> Type {
+        Type { optional: false, mutable: false, ofmutable: false, ty: ty.clone() }
+    }
 
     pub fn try_from_type(node: ASTNode) -> Result<Self, String> {
-        Ok(Type { optional: false, mutable: false, ty: Ty::try_from_type(node)? })
+        Ok(Type {
+            optional:  false,
+            mutable:   false,
+            ofmutable: false,
+            ty:        Ty::try_from_ty_ast(node)?
+        })
+    }
+
+    pub fn into_mutable(self) -> Type {
+        Type {
+            optional:  self.optional,
+            mutable:   true,
+            ofmutable: self.ofmutable,
+            ty:        self.ty
+        }
+    }
+
+    pub fn into_optional(self) -> Type {
+        Type {
+            optional:  true,
+            mutable:   self.mutable,
+            ofmutable: self.ofmutable,
+            ty:        self.ty
+        }
+    }
+
+    pub fn into_of_mutable(self) -> Type {
+        Type {
+            optional:  self.optional,
+            mutable:   self.mutable,
+            ofmutable: true,
+            ty:        self.ty
+        }
     }
 }
 
@@ -90,7 +125,7 @@ fn comma_separated(types: Vec<Type>) -> String {
 }
 
 impl Ty {
-    pub fn try_from_type(node: ASTNode) -> Result<Self, String> {
+    pub fn try_from_ty_ast(node: ASTNode) -> Result<Self, String> {
         match node {
             ASTNode::TypeDef { .. } | ASTNode::TypeAlias { .. } => Ok(Ty::NA),
             ASTNode::TypeTup { types } => {

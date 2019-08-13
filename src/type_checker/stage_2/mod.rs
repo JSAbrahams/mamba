@@ -376,8 +376,7 @@ pub fn type_check(context: &Context, node_pos: ASTNodePos) -> TypeResult<Type> {
 
         ASTNode::QuestOr { left, right } => {
             let type_left = type_check(context, *left)?;
-            let maybe = type_check_expect(context, &*right, &type_left)?;
-            Ok(Type { optional: true, mutable: maybe.mutable, ty: maybe.ty })
+            Ok(type_check_expect(context, &*right, &type_left)?.into_optional())
         }
         ASTNode::Print { expr } => type_check(context, *expr),
         ASTNode::Comment { .. } => Ok(Type::new(&Ty::NA))

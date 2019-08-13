@@ -48,7 +48,7 @@ impl Context {
             .clone()
             .into_iter()
             .filter(|node_pos| is!(node_pos, FunDef))
-            .map(|node_pos| Function::new(&node_pos))
+            .map(|node_pos| Function::new(None, &node_pos))
             .partition(Result::is_ok);
 
         if !interface_errors.is_empty()
