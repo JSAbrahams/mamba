@@ -68,7 +68,7 @@ pub enum Ty {
     Empty,
     Any,
 
-    Custom { lit: String, gens: Vec<Type> },
+    Custom { lit: String },
 
     Int,
     Float,
@@ -91,7 +91,7 @@ impl Display for Ty {
             Ty::Empty => String::from("Empty"),
             Ty::Any => String::from("Any"),
 
-            Ty::Custom { lit, gens } => format!("{}<{}>", lit, comma_separated(gens)),
+            Ty::Custom { lit } => format!("{}", lit),
 
             Ty::Int => String::from("Int"),
             Ty::Float => String::from("Float"),
@@ -135,25 +135,22 @@ impl Ty {
                     .collect();
                 Ok(Ty::Tuple { tys: types? })
             }
-            ASTNode::Type { id, generics } => {
+            // TODO handle generics
+            ASTNode::Type { id, .. } => {
                 let id: Result<Type, String> = from_id(id.node);
-                let generics: Result<Vec<Type>, String> =
-                    generics.iter().map(|node_pos| from_id(node_pos.clone().node)).collect();
 
-                match (id?.ty, generics.clone()?.first()) {
-                    (Ty::String, None) => Ok(Ty::String),
-                    (Ty::Int, None) => Ok(Ty::Int),
-                    (Ty::Float, None) => Ok(Ty::Float),
-                    (Ty::Bool, None) => Ok(Ty::Bool),
-                    (Ty::Any, None) => Ok(Ty::Any),
-                    (Ty::Custom { lit, .. }, first) => match (lit.as_ref(), first) {
-                        ("List", Some(ty)) => Ok(Ty::List { ty: Box::from(ty.clone()) }),
-                        ("Set", Some(ty)) => Ok(Ty::Set { ty: Box::from(ty.clone()) }),
-                        ("List", None) => Err(String::from("List cannot have more than one type")),
-                        ("Set", None) => Err(String::from("Set cannot have more than one type")),
-                        _ => Ok(Ty::Custom { lit, gens: generics? })
+                match id?.ty {
+                    Ty::String => Ok(Ty::String),
+                    Ty::Int => Ok(Ty::Int),
+                    Ty::Float => Ok(Ty::Float),
+                    Ty::Bool => Ok(Ty::Bool),
+                    Ty::Any => Ok(Ty::Any),
+                    Ty::Custom { lit, .. } => match lit.as_ref() {
+                        "List" => Ok(Ty::List { ty: Box::from(Type::new(&Ty::Any)) }),
+                        "Set" => Ok(Ty::Set { ty: Box::from(Type::new(&Ty::Any)) }),
+                        _ => Ok(Ty::Custom { lit })
                     },
-                    (other, _) => Err(format!("Type {} cannot have generics", other))
+                    other => Ok(other)
                 }
             }
             _ => Ok(Ty::NA)
@@ -169,7 +166,7 @@ fn from_id(node: ASTNode) -> Result<Type, String> {
             "Float" => Type::new(&Ty::Float),
             "Bool" => Type::new(&Ty::Bool),
             "Any" => Type::new(&Ty::Any),
-            other => Type::new(&Ty::Custom { lit: String::from(other), gens: vec![] })
+            other => Type::new(&Ty::Custom { lit: String::from(other) })
         }),
         other => Err(format!("Expected type but got {:?}", other))
     }
@@ -202,11 +199,7 @@ impl PartialEq for Ty {
                     && arg_self.len() == arg_other.len()
                     && arg_self.iter().zip(arg_other).all(|(left, right)| left == right),
 
-            (
-                Ty::Custom { lit: lit_self, gens: gens_self },
-                Ty::Custom { lit: lit_other, gens: gens_other }
-            ) => lit_self == lit_other && gens_self == gens_other,
-
+            (Ty::Custom { lit: lit_self }, Ty::Custom { lit: lit_other }) => lit_self == lit_other,
             _ => false
         }
     }

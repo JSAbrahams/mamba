@@ -78,21 +78,13 @@ impl Class {
                     .iter()
                     .map(|parent| match &parent.node {
                         // TODO check that arguments passed to parent are correct type
-                        ASTNode::Parent { id, generics, .. } => {
+                        ASTNode::Parent { id, .. } => {
+                            // TODO handle generics
                             let lit = match &id.node {
                                 ASTNode::Id { lit } => lit.clone(),
                                 other => return Err(format!("Expected id {:?}", other))
                             };
-                            let gens: Result<Vec<Type>, String> = generics
-                                .into_iter()
-                                .map(|generic| match &generic.node {
-                                    // TODO do something with isa
-                                    ASTNode::Generic { id, .. } =>
-                                        Type::try_from_type(id.clone().node),
-                                    other => Err(format!("Expected generic {:?}", other))
-                                })
-                                .collect();
-                            Ok(Type::new(&Ty::Custom { lit, gens: gens? }))
+                            Ok(Type::new(&Ty::Custom { lit }))
                         }
                         other => Err(format!("Expected parent {:?}", other))
                     })
