@@ -100,22 +100,17 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
         "type"
     )?;
 
-    let res = it.parse_if(
-        &Token::To,
-        &|it| {
-            let body = it.parse(&parse_type, "type", st_line, st_pos)?;
-            let (en_line, en_pos) = (body.en_line, body.en_pos);
-            let node = ASTNode::TypeFun { _type: _type.clone(), body };
-            Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
-        },
-        "function type",
-        st_line,
-        st_pos
-    )?;
-
-    match res {
-        Some(ast_node_pos) => Ok(ast_node_pos),
-        None => Ok(_type.clone())
+    if it.eat_if(&Token::To).is_some() {
+        let args = match &_type.node {
+            ASTNode::TypeTup { types } => types.clone(),
+            _ => vec![*_type]
+        };
+        let out = it.parse(&parse_type, "type", st_line, st_pos)?;
+        let (en_line, en_pos) = (out.en_line, out.en_pos);
+        let node = ASTNode::TypeFun { args, out };
+        Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    } else {
+        Ok(_type)
     }
 }
 

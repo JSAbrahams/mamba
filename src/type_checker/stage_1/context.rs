@@ -16,13 +16,17 @@ macro_rules! is {
 impl Context {
     pub fn new(node_pos: &[ASTNodePos]) -> Result<Context, Vec<String>> {
         // TODO use file location for import analysis
-        let (all_modules, all_type_defs) = node_pos.iter().try_fold(
-            (vec![], vec![]),
-            |(mut all_modules, mut all_type_defs), node_pos| match &node_pos.node {
-                ASTNode::File { modules, type_defs, .. } => {
-                    all_modules.extend(modules);
+        let (all_classes, all_type_defs, all_statements) = node_pos.iter().try_fold(
+            (vec![], vec![], vec![]),
+            |(mut all_classes, mut all_type_defs, mut all_statements), node_pos| match &node_pos
+                .node
+            {
+                // TODO pass pure to function definitions
+                ASTNode::File { classes, type_defs, statements, .. } => {
+                    all_classes.extend(classes);
                     all_type_defs.extend(type_defs);
-                    Ok((all_modules, all_type_defs))
+                    all_statements.extend(statements);
+                    Ok((all_classes, all_type_defs, all_statements))
                 }
                 other => Err(vec![format!("Expected file but got {:?}", other)])
             }
@@ -32,17 +36,17 @@ impl Context {
             .into_iter()
             .map(|node_pos| Interface::new(&node_pos))
             .partition(Result::is_ok);
-        let (classes, class_errs): (Vec<_>, Vec<_>) = all_modules
+        let (classes, class_errs): (Vec<_>, Vec<_>) = all_classes
             .iter()
             .filter(|node_pos| is!(node_pos, Class))
             .map(|node_pos| Class::new(&node_pos))
             .partition(Result::is_ok);
-        let (fields, field_errs): (Vec<_>, Vec<_>) = all_modules
+        let (fields, field_errs): (Vec<_>, Vec<_>) = all_statements
             .iter()
             .filter(|node_pos| is!(node_pos, VarDef))
             .map(|node_pos| Field::new(&node_pos))
             .partition(Result::is_ok);
-        let (functions, function_errs): (Vec<_>, Vec<_>) = all_modules
+        let (functions, function_errs): (Vec<_>, Vec<_>) = all_statements
             .iter()
             .filter(|node_pos| is!(node_pos, FunDef))
             .map(|node_pos| Function::new(None, &node_pos))

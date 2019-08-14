@@ -39,6 +39,16 @@ impl Function {
                     }
                     ASTNode::Id { lit } => lit.clone(),
                     ASTNode::Init => String::from("init"),
+                    ASTNode::GeOp => String::from("__gt__"),
+                    ASTNode::LeOp => String::from("__lt__"),
+                    ASTNode::EqOp => String::from("__eq__"),
+                    ASTNode::AddOp => String::from("__add__"),
+                    ASTNode::SubOp => String::from("__sub__"),
+                    ASTNode::PowOp => String::from("__pow__"),
+                    ASTNode::MulOp => String::from("__mul__"),
+                    ASTNode::ModOp => String::from("__mod__"),
+                    ASTNode::DivOp => String::from("__truediv__"),
+                    ASTNode::FDivOp => String::from("__floordiv__"),
                     other => return Err(format!("Expected id but got {:?}", other.clone()))
                 };
                 let args: Result<Vec<_>, String> = fun_args

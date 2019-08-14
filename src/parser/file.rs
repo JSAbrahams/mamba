@@ -5,8 +5,8 @@ use crate::parser::_type::parse_type;
 use crate::parser::ast::ASTNode;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::block::parse_block;
-use crate::parser::block::parse_statements;
 use crate::parser::class::parse_class;
+use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
@@ -60,30 +60,11 @@ fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     Ok(aliases)
 }
 
-pub fn parse_script(it: &mut TPIterator) -> ParseResult {
-    let statements = it.parse_vec(&parse_statements, "script", 0, 0)?;
-
-    let (st_line, st_pos, en_line, en_pos) = match (statements.first(), statements.last()) {
-        (Some(first), Some(last)) => (first.st_line, first.st_pos, last.en_line, last.en_pos),
-        (..) => (0, 0, 0, 0)
-    };
-
-    let node = ASTNode::Script { statements };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
-}
-
-pub fn parse_module(it: &mut TPIterator) -> ParseResult {
-    if it.peak_if_fn(&|token_pos| token_pos.token == Token::Class) {
-        parse_class(it)
-    } else {
-        parse_script(it)
-    }
-}
-
 pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut imports = Vec::new();
-    let mut modules = Vec::new();
+    let mut classes = Vec::new();
     let mut type_defs = Vec::new();
+    let mut statements = Vec::new();
 
     let pure = it.eat_if(&Token::Pure).is_some();
 
@@ -99,15 +80,21 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
                 let (st_line, st_pos) = it.start_pos("comment")?;
                 let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
                 let node = ASTNode::Comment { comment: comment.clone() };
-                modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+                classes.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
             }
-            _ => modules.push(*it.parse(&parse_module, "file", 1, 1)?)
+            Token::Class => classes.push(*it.parse(&parse_class, "file", 1, 1)?),
+            _ => {
+                statements.push(*it.parse(&parse_expr_or_stmt, "file", 1, 1)?);
+                if it.peak_if_fn(&|token_pos| token_pos.token != Token::NL) {
+                    return Err(expected(&Token::NL, &token_pos.clone(), "file"));
+                }
+            }
         }
         Ok(())
     })?;
 
-    let node = ASTNode::File { pure, imports, modules, type_defs };
-    Ok(Box::from(ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node }))
+    let node = ASTNode::File { pure, imports, classes, type_defs, statements };
+    Ok(Box::from(ASTNodePos { st_line: 1, st_pos: 1, en_line: 1, en_pos: 1, node }))
 }
 
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {

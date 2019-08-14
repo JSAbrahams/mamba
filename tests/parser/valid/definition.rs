@@ -1,11 +1,11 @@
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
-use mamba::parser::parse_direct;
+use mamba::parser::parse;
 
 macro_rules! unwrap_func_definition {
     ($ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
+            ASTNode::File { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
                     ASTNode::FunDef { id_type, private, pure, fun_args, ret_ty, raises, body } => (
                         private.clone(),
@@ -26,7 +26,7 @@ macro_rules! unwrap_func_definition {
 macro_rules! unwrap_definition {
     ($ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
+            ASTNode::File { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
                     ASTNode::VarDef { ofmut, private, id_maybe_type, expression, forward } =>
                         match &id_maybe_type.node {
@@ -51,7 +51,7 @@ macro_rules! unwrap_definition {
 #[test]
 fn empty_definition_verify() {
     let source = String::from("def a");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(!private);
@@ -66,7 +66,7 @@ fn empty_definition_verify() {
 #[test]
 fn definition_verify() {
     let source = String::from("def a <- 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(!private);
@@ -85,7 +85,7 @@ fn definition_verify() {
 #[test]
 fn mutable_definition_verify() {
     let source = String::from("def mut a <- 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(!private);
@@ -104,7 +104,7 @@ fn mutable_definition_verify() {
 #[test]
 fn ofmut_definition_verify() {
     let source = String::from("def a ofmut <- 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(!private);
@@ -123,7 +123,7 @@ fn ofmut_definition_verify() {
 #[test]
 fn private_definition_verify() {
     let source = String::from("def private a <- 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(private);
@@ -142,7 +142,7 @@ fn private_definition_verify() {
 #[test]
 fn typed_definition_verify() {
     let source = String::from("def a: Object <- 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     let type_id = match _type {
@@ -169,7 +169,7 @@ fn typed_definition_verify() {
 #[test]
 fn forward_empty_definition_verify() {
     let source = String::from("def a forward b, c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(!private);
@@ -185,7 +185,7 @@ fn forward_empty_definition_verify() {
 #[test]
 fn forward_definition_verify() {
     let source = String::from("def a <- MyClass forward b, c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert!(!private);
@@ -201,7 +201,7 @@ fn forward_definition_verify() {
 #[test]
 fn function_definition_verify() {
     let source = String::from("def f(b: Something, vararg c) => d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast_tree);
 
     assert!(!private);
@@ -253,7 +253,7 @@ fn function_definition_verify() {
 #[test]
 fn function_no_args_definition_verify() {
     let source = String::from("def f() => d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
@@ -271,7 +271,7 @@ fn function_no_args_definition_verify() {
 #[test]
 fn function_pure_definition_verify() {
     let source = String::from("def pure f() => d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);
@@ -289,7 +289,7 @@ fn function_pure_definition_verify() {
 #[test]
 fn function_definition_with_literal_verify() {
     let source = String::from("def f(x, vararg b: Something) => d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
     assert_eq!(private, false);

@@ -61,7 +61,7 @@ fn if_ast_verify() -> Result<(), Vec<(String, String)>> {
     let python_ast = python_src_to_stmts(&python_src);
     let out_ast = python_src_to_stmts(&out_src);
 
-    assert_eq!(python_ast, out_ast);
+    assert_eq!(out_ast, python_ast);
     Ok(assert!(exists_and_delete(true, &["control_flow", "target"], "if.py")))
 }
 

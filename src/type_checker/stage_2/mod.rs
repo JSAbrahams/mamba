@@ -19,9 +19,9 @@ pub fn type_check_expect(
 
 pub fn type_check(context: &Context, node_pos: ASTNodePos) -> TypeResult<Type> {
     match node_pos.node {
-        ASTNode::File { modules, type_defs, .. } => {
-            for module in modules {
-                type_check(context, module)?;
+        ASTNode::File { classes, type_defs, .. } => {
+            for class in classes {
+                type_check(context, class)?;
             }
             for type_def in type_defs {
                 type_check(context, type_def)?;

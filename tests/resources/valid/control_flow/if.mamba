@@ -1,4 +1,4 @@
-def b <- 40
+def b: Int <- 40
 
 if a then print "hello world"
 if c then d <- 4 else asdf

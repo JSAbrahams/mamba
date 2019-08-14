@@ -1,0 +1,11 @@
+def +(self, other: Int): Int => a + b
+def -(self, other: Int): Any => a - b
+# for now no square root
+def *(self, other: Int): Any => a * b
+def /(self, other: Int): Any => a / b
+def //(self, other: Int): Any => a // b
+def ^(self, other: Int): Any => a ^ b
+def mod(self, other: Int): Any => a mod b
+def =(self, other: Int): Any => a = b
+def >(self, other: Int): Any => a > b
+def <(self, other: Int): Any => a < b

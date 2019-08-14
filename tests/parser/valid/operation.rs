@@ -1,12 +1,12 @@
 use mamba::lexer::token::Token::*;
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
-use mamba::parser::parse_direct;
+use mamba::parser::parse;
 
 macro_rules! verify_is_operation {
     ($op:ident, $ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } => {
+            ASTNode::File { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
                     ASTNode::$op { left, right } => (left.clone(), right.clone()),
                     other =>
@@ -21,7 +21,7 @@ macro_rules! verify_is_operation {
 macro_rules! verify_is_un_operation {
     ($op:ident, $ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } => {
+            ASTNode::File { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
                     ASTNode::$op { expr } => expr.clone(),
                     _ => panic!("first element script was not tuple.")
@@ -35,7 +35,7 @@ macro_rules! verify_is_un_operation {
 #[test]
 fn addition_verify() {
     let source = String::from("a + b");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Add, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("a") });
@@ -45,7 +45,7 @@ fn addition_verify() {
 #[test]
 fn addition_unary_verify() {
     let source = String::from("+ b");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(AddU, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("b") });
@@ -54,7 +54,7 @@ fn addition_unary_verify() {
 #[test]
 fn subtraction_verify() {
     let source = String::from("a - False");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Sub, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("a") });
@@ -64,7 +64,7 @@ fn subtraction_verify() {
 #[test]
 fn subtraction_unary_verify() {
     let source = String::from("- c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(SubU, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("c") });
@@ -73,7 +73,7 @@ fn subtraction_unary_verify() {
 #[test]
 fn multiplication_verify() {
     let source = String::from("True * b");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Mul, ast_tree);
     assert_eq!(left.node, ASTNode::Bool { lit: true });
@@ -83,7 +83,7 @@ fn multiplication_verify() {
 #[test]
 fn division_verify() {
     let source = String::from("10.0 / fgh");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Div, ast_tree);
     assert_eq!(left.node, ASTNode::Real { lit: String::from("10.0") });
@@ -93,7 +93,7 @@ fn division_verify() {
 #[test]
 fn floor_division_verify() {
     let source = String::from("10.0 // fgh");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(FDiv, ast_tree);
     assert_eq!(left.node, ASTNode::Real { lit: String::from("10.0") });
@@ -103,7 +103,7 @@ fn floor_division_verify() {
 #[test]
 fn power_verify() {
     let source = String::from("chopin ^ liszt");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Pow, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("chopin") });
@@ -113,7 +113,7 @@ fn power_verify() {
 #[test]
 fn mod_verify() {
     let source = String::from("chopin mod 3E10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Mod, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("chopin") });
@@ -123,7 +123,7 @@ fn mod_verify() {
 #[test]
 fn is_verify() {
     let source = String::from("p is q");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Is, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("p") });
@@ -133,7 +133,7 @@ fn is_verify() {
 #[test]
 fn isnt_verify() {
     let source = String::from("p isnt q");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(IsN, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("p") });
@@ -143,7 +143,7 @@ fn isnt_verify() {
 #[test]
 fn isa_verify() {
     let source = String::from("lizard isa animal");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(IsA, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("lizard") });
@@ -153,7 +153,7 @@ fn isa_verify() {
 #[test]
 fn isnta_verify() {
     let source = String::from("i isnta natural");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(IsNA, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("i") });
@@ -163,7 +163,7 @@ fn isnta_verify() {
 #[test]
 fn equality_verify() {
     let source = String::from("i = s");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Eq, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("i") });
@@ -173,7 +173,7 @@ fn equality_verify() {
 #[test]
 fn le_verify() {
     let source = String::from("one < two");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Le, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -183,7 +183,7 @@ fn le_verify() {
 #[test]
 fn leq_verify() {
     let source = String::from("two_hundred <= three");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Leq, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("two_hundred") });
@@ -193,7 +193,7 @@ fn leq_verify() {
 #[test]
 fn ge_verify() {
     let source = String::from("r > 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Ge, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("r") });
@@ -203,7 +203,7 @@ fn ge_verify() {
 #[test]
 fn geq_verify() {
     let source = String::from("4 >= 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Geq, ast_tree);
     assert_eq!(left.node, ASTNode::Int { lit: String::from("4") });
@@ -213,7 +213,7 @@ fn geq_verify() {
 #[test]
 fn in_verify() {
     let source = String::from("one in my_set");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(In, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -223,7 +223,7 @@ fn in_verify() {
 #[test]
 fn and_verify() {
     let source = String::from("one and three");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(And, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -233,7 +233,7 @@ fn and_verify() {
 #[test]
 fn or_verify() {
     let source = String::from("one or \"asdf\"");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(Or, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -243,7 +243,7 @@ fn or_verify() {
 #[test]
 fn not_verify() {
     let source = String::from("not some_cond");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(Not, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_cond") });
@@ -252,7 +252,7 @@ fn not_verify() {
 #[test]
 fn sqrt_verify() {
     let source = String::from("sqrt some_num");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(Sqrt, ast_tree);
     assert_eq!(expr.node, ASTNode::Id { lit: String::from("some_num") });
@@ -261,7 +261,7 @@ fn sqrt_verify() {
 #[test]
 fn b_and_verify() {
     let source = String::from("one _and_ three");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(BAnd, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -271,7 +271,7 @@ fn b_and_verify() {
 #[test]
 fn b_or_verify() {
     let source = String::from("one _or_ \"asdf\"");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(BOr, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -281,7 +281,7 @@ fn b_or_verify() {
 #[test]
 fn b_xor_verify() {
     let source = String::from("one _xor_ \"asdf\"");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(BXOr, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -291,7 +291,7 @@ fn b_xor_verify() {
 #[test]
 fn b_ones_complement_verify() {
     let source = String::from("_not_ \"asdf\"");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(BOneCmpl, ast_tree);
     assert_eq!(expr.node, ASTNode::Str { lit: String::from("asdf") });
@@ -300,7 +300,7 @@ fn b_ones_complement_verify() {
 #[test]
 fn b_lshift_verify() {
     let source = String::from("one << \"asdf\"");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(BLShift, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });
@@ -310,7 +310,7 @@ fn b_lshift_verify() {
 #[test]
 fn brshift_verify() {
     let source = String::from("one >> \"asdf\"");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = verify_is_operation!(BRShift, ast_tree);
     assert_eq!(left.node, ASTNode::Id { lit: String::from("one") });

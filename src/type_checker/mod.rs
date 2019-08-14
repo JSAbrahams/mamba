@@ -3,8 +3,9 @@ use crate::type_checker::stage_1::Context;
 use crate::type_checker::stage_2::type_check;
 use std::clone::Clone;
 
-mod stage_1;
-mod stage_2;
+pub mod stage_1;
+pub mod stage_2;
+
 mod util;
 
 pub mod type_node;

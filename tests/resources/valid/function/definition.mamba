@@ -3,6 +3,19 @@ def fun_a() =>
     if a and b then print c
     if c or d then print e
 
+class Something
+    def +(self, other: Int): Int => a + b
+    def -(self, other: Int): Any => a - b
+    # for now no square root
+    def *(self, other: Int): Any => a * b
+    def /(self, other: Int): Any => a / b
+    def //(self, other: Int): Any => a // b
+    def ^(self, other: Int): Any => a ^ b
+    def mod(self, other: Int): Any => a mod b
+    def =(self, other: Int): Any => a = b
+    def >(self, other: Int): Any => a > b
+    def <(self, other: Int): Any => a < b
+
 def fun_b(b: c) => print c
 
 def fun_c(d: (e, f)) => print g
@@ -11,18 +24,6 @@ def fun_d(h: (i, j) -> k) => print l
 def fun_e(m: n, o: (p, q), r: (s) -> t) => print u
 
 def fun_v(w: x, y: (z, aa), ab: (ac) -> (ad)): ae -> af => print u
-
-def +(self, other: Int): Int => a + b
-def -(self: Something, other: Int): Any => a - b
-# for now no square root
-def *(self: Something, other: Int): Any => a * b
-def /(self: Something, other: Int): Any => a / b
-def //(self: Something, other: Int): Any => a // b
-def ^(self: Something, other: Int): Any => a ^ b
-def mod(self: Something, other: Int): Any => a mod b
-def =(self: Something, other: Int): Any => a = b
-def >(self: Something, other: Int): Any => a > b
-def <(self: Something, other: Int): Any => a < b
 
 def factorial(x: Int) => x * (factorial (x - 1))
 

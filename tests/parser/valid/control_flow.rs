@@ -3,7 +3,6 @@ use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
 use mamba::parser::ast::ASTNodePos;
 use mamba::parser::parse;
-use mamba::parser::parse_direct;
 
 #[test]
 fn for_statements() {
@@ -14,18 +13,17 @@ fn for_statements() {
 #[test]
 fn for_statement_verify() {
     let source = String::from("for a in c do d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (expr, collection, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => match &expr.node {
                     ASTNode::In { left, right } => (left.clone(), right.clone(), body.clone()),
                     other => panic!("Expected in but was {:?}", other)
                 },
                 _ => panic!("first element script was not for.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -37,15 +35,14 @@ fn for_statement_verify() {
 #[test]
 fn for_range_step_verify() {
     let source = String::from("for a in c .. d step e do f");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (expr, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => (expr.clone(), body.clone()),
                 _ => panic!("first element script was not foreach.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -71,15 +68,14 @@ fn for_range_step_verify() {
 #[test]
 fn for_range_incl_verify() {
     let source = String::from("for a in c ..= d do f");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (expr, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::For { expr, body } => (expr.clone(), body.clone()),
                 _ => panic!("first element script was not foreach.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -111,11 +107,11 @@ fn if_stmt() {
 #[test]
 fn if_verify() {
     let source = String::from("if a then c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let (cond, then, _else) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } => (cond, then, _else),
@@ -133,16 +129,15 @@ fn if_verify() {
 #[test]
 fn if_with_block_verify() {
     let source = String::from("if a then\n    c\n    d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (cond, then, _else) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } =>
                     (cond.clone(), then.clone(), _else.clone()),
                 _ => panic!("first element script was not if.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -162,11 +157,11 @@ fn if_with_block_verify() {
 #[test]
 fn if_else_verify() {
     let source = String::from("if a then c else d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let (cond, then, _else) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::IfElse { cond, then, _else } => (cond, then, _else),
@@ -190,15 +185,14 @@ fn match_statements() {
 #[test]
 fn match_verify() {
     let source = String::from("match a\n    a => b\n    c => d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (cond, cases) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Match { cond, cases } => (cond.clone(), cases.clone()),
                 _ => panic!("first element script was not match.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -232,15 +226,14 @@ fn while_statements() {
 #[test]
 fn while_verify() {
     let source = String::from("while a do d");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (cond, body) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::While { cond, body } => (cond.clone(), body.clone()),
                 _ => panic!("first element script was not while.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 

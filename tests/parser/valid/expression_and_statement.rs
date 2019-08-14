@@ -1,20 +1,18 @@
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
 use mamba::parser::parse;
-use mamba::parser::parse_direct;
 
 #[test]
 fn quest_or_verify() {
     let source = String::from("a ?or b");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (_do, _default) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::QuestOr { left, right } => (left.clone(), right.clone()),
                 other => panic!("first element script was not quest or: {:?}", other)
-            }
-        }
+            },
         other => panic!("ast_tree was not script: {:?}", other)
     };
 
@@ -38,16 +36,15 @@ fn pure_file() {
 #[test]
 fn range_verify() {
     let source = String::from("hello .. world");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (from, to, inclusive, step) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Range { from, to, inclusive, step } =>
                     (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -60,16 +57,15 @@ fn range_verify() {
 #[test]
 fn range_step_verify() {
     let source = String::from("hello .. world step 2");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (from, to, inclusive, step) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Range { from, to, inclusive, step } =>
                     (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -82,16 +78,15 @@ fn range_step_verify() {
 #[test]
 fn range_incl_verify() {
     let source = String::from("foo ..= bar");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (from, to, inclusive, step) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Range { from, to, inclusive, step } =>
                     (from.clone(), to.clone(), inclusive.clone(), step.clone()),
                 _ => panic!("first element script was not range inclusive.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -104,15 +99,14 @@ fn range_incl_verify() {
 #[test]
 fn reassign_verify() {
     let source = String::from("id <- new_value");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Reassign { left, right } => (left.clone(), right.clone()),
                 _ => panic!("first element script was not reassign.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -123,15 +117,14 @@ fn reassign_verify() {
 #[test]
 fn print_verify() {
     let source = String::from("print some_value");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Print { expr } => expr.clone(),
                 _ => panic!("first element script was not reassign.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -141,15 +134,14 @@ fn print_verify() {
 #[test]
 fn return_verify() {
     let source = String::from("return some_value");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let expr = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::Return { expr } => expr.clone(),
                 _ => panic!("first element script was not reassign.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -159,10 +151,10 @@ fn return_verify() {
 #[test]
 fn retry_verify() {
     let source = String::from("retry");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let node_pos = match ast_tree.node {
-        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        ASTNode::File { statements, .. } => statements.first().expect("script empty.").clone(),
         _ => panic!("ast_tree was not script.")
     };
 
@@ -172,10 +164,10 @@ fn retry_verify() {
 #[test]
 fn underscore_verify() {
     let source = String::from("_");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let node_pos = match ast_tree.node {
-        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        ASTNode::File { statements, .. } => statements.first().expect("script empty.").clone(),
         _ => panic!("ast_tree was not script.")
     };
 
@@ -185,10 +177,10 @@ fn underscore_verify() {
 #[test]
 fn pass_verify() {
     let source = String::from("pass");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let node_pos = match ast_tree.node {
-        ASTNode::Script { statements, .. } => statements.first().expect("script empty.").clone(),
+        ASTNode::File { statements, .. } => statements.first().expect("script empty.").clone(),
         _ => panic!("ast_tree was not script.")
     };
 

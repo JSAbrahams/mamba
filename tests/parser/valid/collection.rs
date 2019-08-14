@@ -2,7 +2,6 @@ use crate::common::*;
 use mamba::lexer::tokenize;
 use mamba::parser::ast::ASTNode;
 use mamba::parser::parse;
-use mamba::parser::parse_direct;
 
 #[test]
 fn list_expression() {
@@ -13,11 +12,11 @@ fn list_expression() {
 #[test]
 fn list_verify() {
     let source = String::from("[a, b]");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let elements = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::List { elements } => elements,
@@ -34,15 +33,14 @@ fn list_verify() {
 #[test]
 fn list_builder_verify() {
     let source = String::from("[a | c, d]");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (items, conditions) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
                 _ => panic!("first element script was not list builder.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -68,11 +66,11 @@ fn parse_set() {
 #[test]
 fn set_verify() {
     let source = String::from("{a, b}");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let elements = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::Set { elements } => elements,
@@ -89,15 +87,14 @@ fn set_verify() {
 #[test]
 fn set_builder_verify() {
     let source = String::from("{a | c, d}");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (items, conditions) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } =>
             match &statements.first().expect("script empty.").node {
                 ASTNode::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
                 _ => panic!("first element script was not set builder.")
-            }
-        }
+            },
         _ => panic!("ast_tree was not script.")
     };
 
@@ -117,11 +114,11 @@ fn parse_tuple() {
 #[test]
 fn tuple_empty_verify() {
     let source = String::from("()");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let elements = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::Tuple { elements } => elements,
@@ -137,11 +134,11 @@ fn tuple_empty_verify() {
 #[test]
 fn tuple_single_is_expr_verify() {
     let source = String::from("(a)");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let lit = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::Id { lit } => lit,
@@ -157,11 +154,11 @@ fn tuple_single_is_expr_verify() {
 #[test]
 fn tuple_multiple_verify() {
     let source = String::from("(d, c)");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
     let elements = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
+        ASTNode::File { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
                 ASTNode::Tuple { elements } => elements,

@@ -235,16 +235,12 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
         },
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, imp, state)? },
-        ASTNode::File { modules, type_defs, imports, .. } => {
-            let mut imports = desugar_vec(imports, imp, state)?;
-            let mut type_definitions = desugar_vec(type_defs, imp, state)?;
-            let mut modules = desugar_vec(modules, imp, state)?;
-            imports.append(&mut imp.imports);
-
-            let mut statements = imports;
-            statements.append(&mut type_definitions);
-            statements.append(&mut modules);
-            Core::Block { statements }
+        ASTNode::File { classes, type_defs, imports, statements, .. } => {
+            let statements = desugar_vec(statements, imp, state)?;
+            let imports = [desugar_vec(imports, imp, state)?, imp.imports.clone()].concat();
+            let type_definitions = desugar_vec(type_defs, imp, state)?;
+            let modules = desugar_vec(classes, imp, state)?;
+            Core::Block { statements: [imports, type_definitions, modules, statements].concat() }
         }
 
         ASTNode::TypeAlias { .. }

@@ -1,0 +1,2 @@
+class Something
+    def +(self:Something, other: Int): Int => a + b

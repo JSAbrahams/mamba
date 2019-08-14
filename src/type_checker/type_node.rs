@@ -127,6 +127,15 @@ fn comma_separated(types: Vec<Type>) -> String {
 impl Ty {
     pub fn try_from_ty_ast(node: ASTNode) -> Result<Self, String> {
         match node {
+            ASTNode::TypeFun { args, out } =>
+            // TODO rewrite AnonFun such that args are a vector
+                Ok(Ty::AnonFun {
+                    args: args
+                        .iter()
+                        .map(|node_pos| Type::try_from_type(node_pos.clone().node))
+                        .collect::<Result<_, _>>()?,
+                    out:  Box::from(Type::try_from_type(out.node)?)
+                }),
             ASTNode::TypeDef { .. } | ASTNode::TypeAlias { .. } => Ok(Ty::NA),
             ASTNode::TypeTup { types } => {
                 let types: Result<Vec<Type>, String> = types
