@@ -80,7 +80,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
                 let (st_line, st_pos) = it.start_pos("comment")?;
                 let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
                 let node = ASTNode::Comment { comment: comment.clone() };
-                classes.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
+                statements.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node })
             }
             Token::Class => classes.push(*it.parse(&parse_class, "file", 1, 1)?),
             _ => {

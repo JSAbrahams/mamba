@@ -127,6 +127,7 @@ fn comma_separated(types: Vec<Type>) -> String {
 impl Ty {
     pub fn try_from_ty_ast(node: ASTNode) -> Result<Self, String> {
         match node {
+            // TODO create system for type aliases with conditionals
             ASTNode::TypeFun { args, out } =>
             // TODO rewrite AnonFun such that args are a vector
                 Ok(Ty::AnonFun {
