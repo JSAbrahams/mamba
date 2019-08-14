@@ -1,4 +1,6 @@
 type MyType
+    def my_field: Int
+
     def fun_a(self): () -> ()
     def factorial(self,x: String): Int -> Int
 

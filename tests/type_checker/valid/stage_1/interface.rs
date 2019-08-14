@@ -19,7 +19,7 @@ fn interface_and_type_alias() -> Result<(), Vec<String>> {
 }
 
 #[test]
-fn interface() -> Result<(), Vec<String>> {
+fn interface_functions() -> Result<(), Vec<String>> {
     let source = resource_content(true, &["class"], "parent.mamba");
     let ast_node = *parse(&tokenize(&source).unwrap()).unwrap();
 
@@ -57,6 +57,44 @@ fn interface() -> Result<(), Vec<String>> {
     let arg_2 = &function_2.args[1];
     assert_eq!(arg_2.id, "x");
     assert_eq!(arg_2.ty.clone().unwrap().ty, Ty::String);
+
+    Ok(())
+}
+
+#[test]
+fn interface_fields() -> Result<(), Vec<String>> {
+    let source = resource_content(true, &["class"], "parent.mamba");
+    let ast_node = *parse(&tokenize(&source).unwrap()).unwrap();
+
+    let context = Context::new(&[ast_node])?;
+    assert!(context.fields.is_empty());
+    assert_eq!(context.classes.len(), 1);
+    assert_eq!(context.interfaces.len(), 1);
+    let interface = &context.interfaces[0];
+    assert_eq!(interface.fields.len(), 1);
+    let field = &interface.fields[0];
+
+    assert_eq!(field.id, String::from("my_field"));
+    assert_eq!(field.ty.ty, Ty::Int);
+
+    Ok(())
+}
+
+#[test]
+fn class_fields() -> Result<(), Vec<String>> {
+    let source = resource_content(true, &["class"], "parent.mamba");
+    let ast_node = *parse(&tokenize(&source).unwrap()).unwrap();
+
+    let context = Context::new(&[ast_node])?;
+    assert!(context.fields.is_empty());
+    assert_eq!(context.classes.len(), 1);
+    assert_eq!(context.interfaces.len(), 1);
+    let class = &context.classes[0];
+    assert_eq!(class.fields.len(), 1);
+    let field = &class.fields[0];
+
+    assert_eq!(field.id, String::from("other"));
+    assert_eq!(field.ty.ty, Ty::String);
 
     Ok(())
 }

@@ -1,4 +1,5 @@
 class MyType():
+    my_field = None
     def fun_a(self): pass
     def factorial(self, x): pass
 
