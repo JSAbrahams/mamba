@@ -21,7 +21,7 @@ fn reassign_verify() {
 
 #[test]
 fn variable_private_def_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(ASTNode::VarDef {
         ofmut:         false,
         private:       false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
@@ -41,7 +41,7 @@ fn variable_private_def_verify() {
 
 #[test]
 fn variable_def_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(ASTNode::VarDef {
         ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
@@ -69,7 +69,7 @@ fn tuple_def_verify() {
         to_pos_unboxed!(ASTNode::Id { lit: String::from("c") }),
         to_pos_unboxed!(ASTNode::Id { lit: String::from("d") }),
     ];
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(ASTNode::VarDef {
         ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
@@ -92,7 +92,7 @@ fn tuple_def_verify() {
 
 #[test]
 fn variable_def_none_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(ASTNode::VarDef {
         ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
@@ -116,7 +116,7 @@ fn tuple_def_none_verify() {
         to_pos_unboxed!(ASTNode::Id { lit: String::from("a") }),
         to_pos_unboxed!(ASTNode::Id { lit: String::from("b") }),
     ];
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(ASTNode::VarDef {
         ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(ASTNode::Tuple { elements }),

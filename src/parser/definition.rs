@@ -96,7 +96,7 @@ fn parse_var_or_fun_def(private: bool, it: &mut TPIterator) -> ParseResult {
             {
                 let (st_line, st_pos) = (id.st_line, id.st_pos);
                 let (en_line, en_pos) = (id.en_line, id.en_pos);
-                let node = ASTNode::VariableDef {
+                let node = ASTNode::VarDef {
                     ofmut: false,
                     private,
                     id_maybe_type: Box::from(id.clone()),
@@ -242,7 +242,7 @@ fn parse_variable_def_id(private: bool, id: &ASTNodePos, it: &mut TPIterator) ->
         (Some(expr), _) => (expr.en_line, expr.en_pos),
         _ => (id.en_line, id.en_pos)
     };
-    let node = ASTNode::VariableDef {
+    let node = ASTNode::VarDef {
         ofmut,
         private,
         id_maybe_type: Box::from(id.clone()),

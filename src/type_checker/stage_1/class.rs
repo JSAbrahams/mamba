@@ -2,6 +2,7 @@ use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::stage_1::field::Field;
 use crate::type_checker::stage_1::function::Function;
 use crate::type_checker::type_node::{Ty, Type};
+use crate::type_checker::util::ExtractStmtExt;
 
 #[derive(Debug)]
 pub struct Interface {
@@ -24,6 +25,7 @@ pub struct Class {
 
 impl Interface {
     pub fn new(node_pos: &ASTNodePos) -> Result<Interface, String> {
+        // TODO get location
         match &node_pos.node {
             ASTNode::TypeAlias { _type, conditions: _conditions } => {
                 // TODO handle conditions
@@ -46,21 +48,20 @@ impl Interface {
         class_id: &Type,
         body: &ASTNodePos
     ) -> Result<(Vec<Field>, Vec<Function>), String> {
-        let statements = match &body.node {
-            ASTNode::Block { statements } => statements,
-            other => return Err(format!("Expected block but got {:?}", other))
-        };
-
-        let (mut fields, mut functions) = (vec![], vec![]);
-        for statement in statements {
-            match &statement.node {
-                ASTNode::FunDef { .. } =>
-                    functions.push(Function::new(Some(class_id.clone()), &statement)?),
-                ASTNode::VariableDef { .. } => fields.push(Field::new(&statement)?),
-                other => return Err(format!("Expected fun or var definition but got {:?}", other))
+        body.statements()?.iter().try_fold(
+            (vec![], vec![]),
+            |(mut fields, mut functions), node_pos| match &node_pos.node {
+                ASTNode::FunDef { .. } => {
+                    functions.push(Function::new(Some(class_id.clone()), node_pos)?);
+                    Ok((fields, functions))
+                }
+                ASTNode::VarDef { .. } => {
+                    fields.push(Field::new(node_pos)?);
+                    Ok((fields, functions))
+                }
+                other => Err(format!("Expected fun or var definition but got {:?}", other))
             }
-        }
-        Ok((fields, functions))
+        )
     }
 }
 
@@ -74,53 +75,46 @@ impl Class {
                 let private = false;
                 let location = vec![];
 
-                let implements: Result<Vec<_>, String> = parents
+                let implements = parents
                     .iter()
                     .map(|parent| match &parent.node {
                         // TODO check that arguments passed to parent are correct type
                         ASTNode::Parent { id, .. } => {
                             // TODO handle generics
-                            let lit = match &id.node {
-                                ASTNode::Id { lit } => lit.clone(),
-                                other => return Err(format!("Expected id {:?}", other))
-                            };
-                            Ok(Type::new(&Ty::Custom { lit }))
+                            Ok(Type::new(&Ty::Custom {
+                                lit: match &id.node {
+                                    ASTNode::Id { lit } => lit.clone(),
+                                    other => return Err(format!("Expected id {:?}", other))
+                                }
+                            }))
                         }
                         other => Err(format!("Expected parent {:?}", other))
                     })
-                    .collect();
-                let implements = implements?;
+                    .collect::<Result<Vec<Type>, String>>()?;
 
                 let mut init = None;
-                let mut fields = vec![];
-                let mut functions = vec![];
-                let statements = match &body.node {
-                    ASTNode::Block { statements } => statements.clone(),
-                    other => return Err(format!("Expected block {:?}", other))
-                };
-
-                for statement in statements {
-                    match &statement.node {
-                        ASTNode::VariableDef { .. } => fields.push(Field::new(&statement)?),
+                let (fields, functions) = body.statements()?.iter().try_fold(
+                    (vec![], vec![]),
+                    |(mut fields, mut funcs), node_pos| match &node_pos.node {
+                        ASTNode::VarDef { .. } => {
+                            fields.push(Field::new(node_pos)?);
+                            Ok((fields, funcs))
+                        }
                         ASTNode::FunDef { .. } => {
-                            let function = Function::new(Some(id.clone()), &statement)?;
+                            let function = Function::new(Some(id.clone()), node_pos)?;
                             match function.id.as_ref() {
                                 "init" if args.is_empty() => init = Some(function),
                                 "init" =>
                                     return Err(String::from(
-                                        "Cannot have explicit init function in class with \
-                                         arguments"
+                                        "Explicit init function in class with arguments"
                                     )),
-                                _ => functions.push(function)
+                                _ => funcs.push(function)
                             }
+                            Ok((fields, funcs))
                         }
-                        other =>
-                            return Err(format!(
-                                "Expected var or fun def in class body {:?}",
-                                other
-                            )),
+                        other => Err(format!("Expected var or fun def in class body {:?}", other))
                     }
-                }
+                )?;
 
                 if !args.is_empty() {
                     init = Some(Function::new_init(&id, args)?)

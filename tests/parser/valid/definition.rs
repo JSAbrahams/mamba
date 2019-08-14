@@ -16,7 +16,7 @@ macro_rules! unwrap_func_definition {
                         raises.clone(),
                         body.clone()
                     ),
-                    other => panic!("Expected variabledef but was {:?}.", other)
+                    other => panic!("Expected variable definition but was {:?}.", other)
                 },
             _ => panic!("ast_tree was not script.")
         }
@@ -28,7 +28,7 @@ macro_rules! unwrap_definition {
         match $ast_tree.node {
             ASTNode::Script { statements, .. } =>
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::VariableDef { ofmut, private, id_maybe_type, expression, forward } =>
+                    ASTNode::VarDef { ofmut, private, id_maybe_type, expression, forward } =>
                         match &id_maybe_type.node {
                             ASTNode::IdType { id, mutable, _type } => (
                                 private.clone(),

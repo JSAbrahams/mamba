@@ -13,7 +13,7 @@ pub fn desugar_definition(
     state: &State
 ) -> DesugarResult {
     Ok(match &node_pos.node {
-        ASTNode::VariableDef { private, id_maybe_type, expression, .. } => {
+        ASTNode::VarDef { private, id_maybe_type, expression, .. } => {
             let id = desugar_node(id_maybe_type, imp, state)?;
             let new_state = &State {
                 tup:         match id.clone() {

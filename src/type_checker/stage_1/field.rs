@@ -11,7 +11,7 @@ pub struct Field {
 impl Field {
     pub fn new(node_pos: &ASTNodePos) -> Result<Field, String> {
         match &node_pos.node {
-            ASTNode::VariableDef { ofmut, id_maybe_type, .. } => {
+            ASTNode::VarDef { ofmut, id_maybe_type, .. } => {
                 // TODO get location of field
                 // TODO something with private
                 let location = vec![];

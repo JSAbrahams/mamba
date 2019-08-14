@@ -16,66 +16,55 @@ macro_rules! is {
 impl Context {
     pub fn new(node_pos: &[ASTNodePos]) -> Result<Context, Vec<String>> {
         // TODO use file location for import analysis
-        let mut all_modules = vec![];
-        let mut all_type_defs = vec![];
-        for np in node_pos {
-            match &np.node {
+        let (all_modules, all_type_defs) = node_pos.iter().try_fold(
+            (vec![], vec![]),
+            |(mut all_modules, mut all_type_defs), node_pos| match &node_pos.node {
                 ASTNode::File { modules, type_defs, .. } => {
-                    all_modules.append(&mut modules.clone());
-                    all_type_defs.append(&mut type_defs.clone());
+                    all_modules.extend(modules);
+                    all_type_defs.extend(type_defs);
+                    Ok((all_modules, all_type_defs))
                 }
-                other => return Err(vec![format!("Expected file but got {:?}", other)])
+                other => Err(vec![format!("Expected file but got {:?}", other)])
             }
-        }
+        )?;
 
-        let (interfaces, interface_errors): (Vec<_>, Vec<_>) = all_type_defs
+        let (interfaces, interface_errs): (Vec<_>, Vec<_>) = all_type_defs
             .into_iter()
             .map(|node_pos| Interface::new(&node_pos))
             .partition(Result::is_ok);
-        let (classes, class_errors): (Vec<_>, Vec<_>) = all_modules
-            .clone()
-            .into_iter()
+        let (classes, class_errs): (Vec<_>, Vec<_>) = all_modules
+            .iter()
             .filter(|node_pos| is!(node_pos, Class))
             .map(|node_pos| Class::new(&node_pos))
             .partition(Result::is_ok);
-        let (fields, field_errors): (Vec<_>, Vec<_>) = all_modules
-            .clone()
-            .into_iter()
-            .filter(|node_pos| is!(node_pos, VariableDef))
+        let (fields, field_errs): (Vec<_>, Vec<_>) = all_modules
+            .iter()
+            .filter(|node_pos| is!(node_pos, VarDef))
             .map(|node_pos| Field::new(&node_pos))
             .partition(Result::is_ok);
-        let (functions, function_errors): (Vec<_>, Vec<_>) = all_modules
-            .clone()
-            .into_iter()
+        let (functions, function_errs): (Vec<_>, Vec<_>) = all_modules
+            .iter()
             .filter(|node_pos| is!(node_pos, FunDef))
             .map(|node_pos| Function::new(None, &node_pos))
             .partition(Result::is_ok);
 
-        if !interface_errors.is_empty()
-            || !class_errors.is_empty()
-            || !field_errors.is_empty()
-            || !function_errors.is_empty()
-        {
-            let mut interface_errors: Vec<String> =
-                interface_errors.into_iter().map(Result::unwrap_err).collect();
-            let mut class_errors: Vec<String> =
-                class_errors.into_iter().map(Result::unwrap_err).collect();
-            let mut field_errors: Vec<String> =
-                field_errors.into_iter().map(Result::unwrap_err).collect();
-            let mut function_errors: Vec<String> =
-                function_errors.into_iter().map(Result::unwrap_err).collect();
+        let all_errs = [
+            interface_errs.into_iter().map(Result::unwrap_err).collect::<Vec<_>>(),
+            class_errs.into_iter().map(Result::unwrap_err).collect::<Vec<_>>(),
+            field_errs.into_iter().map(Result::unwrap_err).collect::<Vec<_>>(),
+            function_errs.into_iter().map(Result::unwrap_err).collect::<Vec<_>>()
+        ]
+        .concat();
 
-            interface_errors.append(&mut class_errors);
-            interface_errors.append(&mut field_errors);
-            interface_errors.append(&mut function_errors);
-            return Err(interface_errors);
+        if all_errs.is_empty() {
+            Ok(Context {
+                interfaces: interfaces.into_iter().map(Result::unwrap).collect(),
+                classes:    classes.into_iter().map(Result::unwrap).collect(),
+                fields:     fields.into_iter().map(Result::unwrap).collect(),
+                functions:  functions.into_iter().map(Result::unwrap).collect()
+            })
+        } else {
+            Err(all_errs)
         }
-
-        let interfaces = interfaces.into_iter().map(Result::unwrap).collect();
-        let classes = classes.into_iter().map(Result::unwrap).collect();
-        let fields = fields.into_iter().map(Result::unwrap).collect();
-        let functions = functions.into_iter().map(Result::unwrap).collect();
-
-        Ok(Context { interfaces, classes, fields, functions })
     }
 }

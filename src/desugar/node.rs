@@ -282,7 +282,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
 
         ASTNode::Handle { expr_or_stmt, cases } => {
             let mut statements = vec![];
-            if let ASTNode::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
+            if let ASTNode::VarDef { id_maybe_type, .. } = &expr_or_stmt.node {
                 statements.push(Core::Assign {
                     left:  Box::from(desugar_node(id_maybe_type.as_ref(), imp, state)?),
                     right: Box::from(Core::None)
@@ -323,7 +323,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
             Core::Block { statements }
         }
 
-        ASTNode::VariableDef { .. } => desugar_definition(node_pos, imp, state)?,
+        ASTNode::VarDef { .. } => desugar_definition(node_pos, imp, state)?,
         ASTNode::FunDef { .. } => desugar_definition(node_pos, imp, state)?
     })
 }

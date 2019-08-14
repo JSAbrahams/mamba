@@ -49,7 +49,7 @@ pub enum ASTNode {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
     },
-    VariableDef {
+    VarDef {
         ofmut:         bool,
         private:       bool,
         id_maybe_type: Box<ASTNodePos>,

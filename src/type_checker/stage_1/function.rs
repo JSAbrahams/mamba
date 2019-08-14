@@ -29,7 +29,7 @@ impl Function {
                             return Err(String::from("Function definition cannot be mutable"));
                         }
                         if _type.is_some() {
-                            return Err(String::from("Function name cannot have type"));
+                            return Err(String::from("Function name cannot have a type"));
                         }
 
                         match &id.node {
@@ -76,10 +76,11 @@ impl Function {
             .map(|node_pos| FunctionArg::new(Some(class_id.clone()), node_pos))
             .collect();
 
+        // TODO can a constructor be pure?
         Ok(Function {
             id: String::from("init"),
             location,
-            pure: true,
+            pure: false,
             private: false,
             args: args?,
             ret: class_id.clone(),
@@ -116,12 +117,10 @@ impl FunctionArg {
                         (_, _, Some(ty)) => Some(Type::try_from_type(ty.clone().node)?),
                         (_, other, None) =>
                             return Err(format!("Function argument must have type {:?}", other)),
-                    };
+                    }
+                    .map(|ty| if *mutable { ty.into_mutable() } else { ty });
 
-                    Ok(FunctionArg {
-                        id,
-                        ty: ty.map(|ty| if *mutable { ty.into_mutable() } else { ty })
-                    })
+                    Ok(FunctionArg { id, ty })
                 }
                 other => Err(format!("Expected id type but got {:?}", other))
             },
