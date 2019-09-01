@@ -349,7 +349,7 @@ pub enum ASTNode {
     Underscore,
     Pass,
 
-    QuestOr {
+    Question {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
     },

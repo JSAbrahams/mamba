@@ -3,6 +3,7 @@ use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNodePos;
+use std::path::PathBuf;
 
 mod call;
 mod class;
@@ -78,4 +79,12 @@ pub mod desugar_result;
 /// ```
 pub fn desugar(input: &ASTNodePos) -> DesugarResult {
     desugar_node(&input, &mut Imports::new(), &State::new())
+}
+
+pub fn desugar_all(inputs: &[(ASTNodePos, Option<String>, Option<PathBuf>)]) -> Vec<DesugarResult> {
+    inputs
+        .iter()
+        .map(|(node_pos, source, path)| (desugar(node_pos), source, path))
+        .map(|(result, source, path)| result.map_err(|err| err.into_with_source(source, path)))
+        .collect()
 }

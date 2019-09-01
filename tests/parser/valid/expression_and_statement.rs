@@ -4,25 +4,6 @@ use mamba::parser::parse;
 use mamba::parser::parse_direct;
 
 #[test]
-fn quest_or_verify() {
-    let source = String::from("a ?or b");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let (_do, _default) = match ast_tree.node {
-        ASTNode::Script { statements, .. } => {
-            match &statements.first().expect("script empty.").node {
-                ASTNode::QuestOr { left, right } => (left.clone(), right.clone()),
-                other => panic!("first element script was not quest or: {:?}", other)
-            }
-        }
-        other => panic!("ast_tree was not script: {:?}", other)
-    };
-
-    assert_eq!(_do.node, ASTNode::Id { lit: String::from("a") });
-    assert_eq!(_default.node, ASTNode::Id { lit: String::from("b") });
-}
-
-#[test]
 fn pure_file() {
     let source = String::from("pure");
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();

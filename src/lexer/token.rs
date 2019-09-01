@@ -106,8 +106,7 @@ pub enum Token {
     Ret,
     With,
 
-    Quest,
-    QuestOr,
+    Question,
     QuestCall,
     Handle,
 
@@ -252,8 +251,7 @@ impl fmt::Display for Token {
             Token::Do => String::from("do"),
             Token::With => String::from("with"),
 
-            Token::Quest => String::from("?"),
-            Token::QuestOr => String::from("?or"),
+            Token::Question => String::from("?"),
             Token::QuestCall => String::from("?."),
 
             Token::Handle => String::from("handle"),

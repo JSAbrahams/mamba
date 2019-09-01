@@ -102,12 +102,12 @@ fn parse_underscore(it: &mut TPIterator) -> ParseResult {
 fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     it.peek(
         &|it, token_pos| match token_pos.token {
-            Token::QuestOr => {
+            Token::Question => {
                 let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                it.eat(&Token::QuestOr, "postfix expression")?;
+                it.eat(&Token::Question, "postfix expression")?;
                 let right = it.parse(&parse_expression, "postfix expression", st_line, st_pos)?;
                 let (en_line, en_pos) = (right.en_line, right.en_pos);
-                let node = ASTNode::QuestOr { left: Box::new(pre.clone()), right };
+                let node = ASTNode::Question { left: Box::new(pre.clone()), right };
                 let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
                 parse_post_expr(&res, it)
             }
