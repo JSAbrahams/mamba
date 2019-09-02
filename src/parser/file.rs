@@ -82,8 +82,8 @@ pub fn parse_module(it: &mut TPIterator) -> ParseResult {
 
 pub fn parse_file(it: &mut TPIterator) -> ParseResult {
     let mut imports = Vec::new();
+    let mut comments = Vec::new();
     let mut modules = Vec::new();
-    let mut type_defs = Vec::new();
 
     let pure = it.eat_if(&Token::Pure).is_some();
 
@@ -100,15 +100,15 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             imports.push(*it.parse(&parse_from_import, "file", 1, 1)?);
             Ok(())
         }
-        Token::Type => {
-            type_defs.push(*it.parse(&parse_type_def, "file", 1, 1)?);
-            Ok(())
-        }
         Token::Comment(comment) => {
             let (st_line, st_pos) = it.start_pos("comment")?;
             let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
             let node = ASTNode::Comment { comment: comment.clone() };
-            modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+            comments.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+            Ok(())
+        }
+        Token::Type => {
+            modules.push(*it.parse(&parse_type_def, "file", 1, 1)?);
             Ok(())
         }
         _ => {
@@ -117,7 +117,7 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
         }
     })?;
 
-    let node = ASTNode::File { pure, imports, modules, type_defs };
+    let node = ASTNode::File { pure, comments, imports, modules };
     Ok(Box::from(ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node }))
 }
 

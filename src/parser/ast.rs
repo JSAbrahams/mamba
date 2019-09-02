@@ -12,10 +12,10 @@ pub struct ASTNodePos {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum ASTNode {
     File {
-        pure:      bool,
-        imports:   Vec<ASTNodePos>,
-        modules:   Vec<ASTNodePos>,
-        type_defs: Vec<ASTNodePos>
+        pure:     bool,
+        comments: Vec<ASTNodePos>,
+        imports:  Vec<ASTNodePos>,
+        modules:  Vec<ASTNodePos>
     },
     Import {
         import: Vec<ASTNodePos>,

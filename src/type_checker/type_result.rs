@@ -3,8 +3,9 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::parser::ast::ASTNodePos;
+use crate::type_checker::type_node::Type;
 
-pub type TypeResult<T = ASTNodePos> = std::result::Result<T, Vec<TypeErr>>;
+pub type TypeResult<T = Type> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults =
     std::result::Result<Vec<(ASTNodePos, Option<String>, Option<PathBuf>)>, Vec<TypeErr>>;
 
