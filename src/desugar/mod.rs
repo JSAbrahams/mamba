@@ -1,6 +1,6 @@
 use crate::desugar::context::Imports;
 use crate::desugar::context::State;
-use crate::desugar::desugar_result::DesugarResult;
+use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNodePos;
 use std::path::PathBuf;
@@ -14,6 +14,8 @@ mod definition;
 mod node;
 
 pub mod desugar_result;
+
+pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 
 /// Consumes the given [ASTNodePos](crate::parser::ast::ASTNodePos) and produces
 /// a [Core](crate::core::construct::Core) node.
@@ -81,10 +83,22 @@ pub fn desugar(input: &ASTNodePos) -> DesugarResult {
     desugar_node(&input, &mut Imports::new(), &State::new())
 }
 
-pub fn desugar_all(inputs: &[(ASTNodePos, Option<String>, Option<PathBuf>)]) -> Vec<DesugarResult> {
-    inputs
+pub fn desugar_all(inputs: &[DesugarInput]) -> DesugarResults {
+    let inputs: Vec<_> = inputs
         .iter()
         .map(|(node_pos, source, path)| (desugar(node_pos), source, path))
-        .map(|(result, source, path)| result.map_err(|err| err.into_with_source(source, path)))
-        .collect()
+        .map(|(result, source, path)| {
+            (result.map_err(|err| err.into_with_source(source, path)), source.clone(), path.clone())
+        })
+        .collect();
+
+    let (oks, errs): (Vec<_>, Vec<_>) = inputs.iter().partition(|(res, ..)| res.is_ok());
+    if errs.is_empty() {
+        Ok(oks
+            .iter()
+            .map(|(res, src, path)| (res.as_ref().unwrap().clone(), src.clone(), path.clone()))
+            .collect())
+    } else {
+        Err(errs.iter().map(|(res, ..)| res.as_ref().unwrap_err().clone()).collect())
+    }
 }

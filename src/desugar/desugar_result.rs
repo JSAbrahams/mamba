@@ -6,10 +6,12 @@ use crate::core::construct::Core;
 use crate::parser::ast::ASTNodePos;
 
 pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
+pub type DesugarResults =
+    std::result::Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnimplementedErr {
     pub line:        i32,
     pub pos:         i32,

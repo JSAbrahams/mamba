@@ -10,8 +10,10 @@ use crate::parser::ast::ASTNodePos;
 const SYNTAX_ERR_MAX_DEPTH: usize = 2;
 
 pub type ParseResult<T = Box<ASTNodePos>> = std::result::Result<T, ParseErr>;
+pub type ParseResults =
+    std::result::Result<Vec<(ASTNodePos, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseErr {
     pub line:   i32,
     pub pos:    i32,

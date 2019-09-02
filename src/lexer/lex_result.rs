@@ -5,8 +5,10 @@ use std::path::PathBuf;
 use crate::lexer::token::TokenPos;
 
 pub type LexResult<T = Vec<TokenPos>> = std::result::Result<T, LexErr>;
+pub type LexResults =
+    std::result::Result<Vec<(Vec<TokenPos>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LexErr {
     pub line:        i32,
     pub pos:         i32,

@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use crate::parser::ast::ASTNodePos;
 
 pub type TypeResult<T = ASTNodePos> = std::result::Result<T, Vec<TypeErr>>;
+pub type TypeResults =
+    std::result::Result<Vec<(ASTNodePos, Option<String>, Option<PathBuf>)>, Vec<TypeErr>>;
 
 #[derive(Debug)]
 pub struct TypeErr {

@@ -1,7 +1,8 @@
-use crate::lexer::common::State;
-use crate::lexer::lex_result::LexResult;
-use crate::lexer::tokenize::into_tokens;
 use std::path::PathBuf;
+
+use crate::lexer::common::State;
+use crate::lexer::lex_result::{LexResult, LexResults};
+use crate::lexer::tokenize::into_tokens;
 
 pub mod lex_result;
 pub mod token;
@@ -9,6 +10,8 @@ pub mod token;
 #[macro_use]
 mod common;
 mod tokenize;
+
+pub type TokenizeInput = (String, Option<PathBuf>);
 
 /// Convert a given string to a sequence of
 /// [TokenPos](crate::lexer::token::TokenPos), each containing a
@@ -64,10 +67,26 @@ pub fn tokenize(input: &str) -> LexResult {
     Ok(tokens)
 }
 
-pub fn tokenize_all(inputs: &[(String, Option<String>, Option<PathBuf>)]) -> Vec<LexResult> {
-    inputs
+pub fn tokenize_all(inputs: &[TokenizeInput]) -> LexResults {
+    let inputs: Vec<_> = inputs
         .iter()
-        .map(|(node_pos, source, path)| (tokenize(node_pos), source, path))
-        .map(|(result, source, path)| result.map_err(|err| err.into_with_source(source, path)))
-        .collect()
+        .map(|(source, path)| (tokenize(source), source, path))
+        .map(|(result, source, path)| {
+            (
+                result.map_err(|err| err.into_with_source(&Some(source.clone()), path)),
+                Some(source.clone()),
+                path.clone()
+            )
+        })
+        .collect();
+
+    let (oks, errs): (Vec<_>, Vec<_>) = inputs.iter().partition(|(res, ..)| res.is_ok());
+    if errs.is_empty() {
+        Ok(oks
+            .iter()
+            .map(|(res, src, path)| (res.as_ref().unwrap().clone(), src.clone(), path.clone()))
+            .collect())
+    } else {
+        Err(errs.iter().map(|(res, ..)| res.as_ref().unwrap_err().clone()).collect())
+    }
 }

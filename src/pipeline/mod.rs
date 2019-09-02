@@ -3,6 +3,12 @@ use std::path::PathBuf;
 
 use leg::*;
 
+use crate::core::to_source;
+use crate::desugar::desugar_all;
+use crate::lexer::tokenize_all;
+use crate::parser::parse_all;
+use crate::type_checker::check_all;
+
 mod io;
 
 const OUT_FILE: &str = "target";
@@ -76,5 +82,29 @@ pub fn transpile_directory(
 pub fn mamba_to_python(
     _source: &[(String, Option<PathBuf>)]
 ) -> Result<Vec<String>, Vec<(String, String)>> {
-    unimplemented!()
+    let tokens = tokenize_all(_source).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("token"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
+    })?;
+
+    let ast_trees = parse_all(tokens.as_slice()).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("syntax"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
+    })?;
+
+    check_all(ast_trees.as_slice()).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("type"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
+    })?;
+
+    let core_tree = desugar_all(ast_trees.as_slice()).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("unimplemented"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
+    })?;
+
+    Ok(core_tree.iter().map(|(core, ..)| to_source(core)).collect())
 }
