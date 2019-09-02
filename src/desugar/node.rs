@@ -230,7 +230,7 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
             })
         },
         ASTNode::Underscore => Core::UnderScore,
-        ASTNode::QuestOr { left, right } => Core::Or {
+        ASTNode::Question { left, right } => Core::Or {
             left:  Box::from(desugar_node(left, imp, state)?),
             right: Box::from(desugar_node(right, imp, state)?)
         },

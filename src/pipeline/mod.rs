@@ -4,15 +4,11 @@ use std::path::PathBuf;
 use leg::*;
 
 use crate::core::to_source;
-use crate::desugar::desugar;
-use crate::lexer::tokenize;
-use crate::parser::ast::ASTNodePos;
-use crate::parser::parse;
-use crate::pipeline::error::syntax_err;
-use crate::pipeline::error::unimplemented_err;
-use crate::type_checker::check;
+use crate::desugar::desugar_all;
+use crate::lexer::tokenize_all;
+use crate::parser::parse_all;
+use crate::type_checker::check_all;
 
-mod error;
 mod io;
 
 const OUT_FILE: &str = "target";
@@ -84,63 +80,31 @@ pub fn transpile_directory(
 /// For each mamba source, a path can optionally be given for display in error
 /// messages. This path is not necessary however.
 pub fn mamba_to_python(
-    source: &[(String, Option<PathBuf>)]
+    _source: &[(String, Option<PathBuf>)]
 ) -> Result<Vec<String>, Vec<(String, String)>> {
-    let mut ast_node_pairs = vec![];
-    let mut syntax_errors = vec![];
-
-    for (source, source_path) in source {
-        match source_to_ast(source, source_path) {
-            Ok(ast_node_pos) => ast_node_pairs.push((ast_node_pos, source, source_path)),
-            Err(error) => syntax_errors.push(error)
-        }
-    }
-    if !syntax_errors.is_empty() {
-        return Err(syntax_errors);
-    }
-
-    let ast_nodes: Vec<_> = ast_node_pairs.iter().map(|(ast_node, ..)| ast_node.clone()).collect();
-    check(ast_nodes.as_slice()).map_err(|errors| {
-        let errors: Vec<(String, String)> =
-            errors.iter().map(|error| (String::from("type"), error.clone())).collect();
-        errors
+    let tokens = tokenize_all(_source).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("token"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
     })?;
 
-    // In future, desugaring stage should take in a vector and return a vector for
-    // more complex desugaring rules.
-    let mut python_sources = vec![];
-    let mut type_errors = vec![];
-    for (ast_node_pos, source, source_path) in ast_node_pairs {
-        match ast_to_py(&ast_node_pos, source, source_path) {
-            Ok(python_source) => python_sources.push(python_source),
-            Err(error) => type_errors.push(error)
-        }
-    }
-
-    if !type_errors.is_empty() {
-        return Err(type_errors);
-    }
-
-    Ok(python_sources)
-}
-
-fn source_to_ast(
-    source: &str,
-    source_path: &Option<PathBuf>
-) -> Result<ASTNodePos, (String, String)> {
-    let tokens = tokenize(source).map_err(|err| (String::from("token"), err))?;
-    parse(tokens.as_ref())
-        .map_err(|err| (String::from("syntax"), syntax_err(&err, source, source_path)))
-        .map(|ok| *ok)
-}
-
-fn ast_to_py(
-    ast_node_pos: &ASTNodePos,
-    source: &str,
-    source_path: &Option<PathBuf>
-) -> Result<String, (String, String)> {
-    let desugared = desugar(ast_node_pos).map_err(|err| {
-        (String::from("unimplemented"), unimplemented_err(&err, source, source_path))
+    let ast_trees = parse_all(tokens.as_slice()).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("syntax"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
     })?;
-    Ok(to_source(&desugared))
+
+    check_all(ast_trees.as_slice()).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("type"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
+    })?;
+
+    let core_tree = desugar_all(ast_trees.as_slice()).map_err(|errs| {
+        errs.iter()
+            .map(|err| (String::from("unimplemented"), format!("{}", err)))
+            .collect::<Vec<(String, String)>>()
+    })?;
+
+    Ok(core_tree.iter().map(|(core, ..)| to_source(core)).collect())
 }

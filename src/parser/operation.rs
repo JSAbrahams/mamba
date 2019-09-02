@@ -56,7 +56,7 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::And => bin_op!(it, parse_level_7, And, arithmetic.clone(), "and"),
             Token::Or => bin_op!(it, parse_level_7, Or, arithmetic.clone(), "or"),
-            Token::QuestOr => bin_op!(it, parse_level_7, QuestOr, arithmetic.clone(), "questionor"),
+            Token::Question => bin_op!(it, parse_level_7, Question, arithmetic.clone(), "question"),
             _ => Ok(arithmetic.clone())
         },
         Ok(arithmetic.clone())

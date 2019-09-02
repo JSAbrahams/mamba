@@ -2,17 +2,14 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::core::construct::Core;
-use crate::parser::ast::ASTNodePos;
+use crate::lexer::token::TokenPos;
 
-pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
-pub type DesugarResults =
-    std::result::Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub type LexResult<T = Vec<TokenPos>> = std::result::Result<T, LexErr>;
+pub type LexResults =
+    std::result::Result<Vec<(Vec<TokenPos>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
 
 #[derive(Debug, Clone)]
-pub struct UnimplementedErr {
+pub struct LexErr {
     pub line:        i32,
     pub pos:         i32,
     pub width:       i32,
@@ -21,27 +18,13 @@ pub struct UnimplementedErr {
     pub path:        Option<PathBuf>
 }
 
-impl UnimplementedErr {
-    pub fn new(node_pos: &ASTNodePos, msg: &str) -> UnimplementedErr {
-        UnimplementedErr {
-            line:        node_pos.st_line,
-            pos:         node_pos.st_pos,
-            width:       node_pos.en_pos - node_pos.st_pos,
-            msg:         format!(
-                "The {} construct has not yet been implemented as of v{}.",
-                msg, VERSION
-            ),
-            source_line: None,
-            path:        None
-        }
+impl LexErr {
+    pub fn new(line: i32, pos: i32, width: i32, msg: &str) -> LexErr {
+        LexErr { line, pos, width, msg: String::from(msg), source_line: None, path: None }
     }
 
-    pub fn into_with_source(
-        self,
-        source: &Option<String>,
-        path: &Option<PathBuf>
-    ) -> UnimplementedErr {
-        UnimplementedErr {
+    pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
+        LexErr {
             line:        self.line,
             pos:         self.pos,
             width:       self.pos,
@@ -57,11 +40,11 @@ impl UnimplementedErr {
     }
 }
 
-impl Display for UnimplementedErr {
+impl Display for LexErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "--> {}:{}:{}
+            "--> {:#?}:{}:{}
      | {}
 {:3}  |- {}
      | {}{}",

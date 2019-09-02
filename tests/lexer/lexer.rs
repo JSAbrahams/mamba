@@ -107,13 +107,12 @@ fn identifiers() {
 
 #[test]
 fn question() {
-    let source = String::from("? ?. ?or i");
+    let source = String::from("? ?. i");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![
-        TokenPos { st_line: 1, st_pos: 1, token: Token::Quest },
+        TokenPos { st_line: 1, st_pos: 1, token: Token::Question },
         TokenPos { st_line: 1, st_pos: 3, token: Token::QuestCall },
-        TokenPos { st_line: 1, st_pos: 6, token: Token::QuestOr },
-        TokenPos { st_line: 1, st_pos: 10, token: Token::Id(String::from("i")) }
+        TokenPos { st_line: 1, st_pos: 6, token: Token::Id(String::from("i")) }
     ]);
 }
 

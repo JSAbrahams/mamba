@@ -2,51 +2,30 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::core::construct::Core;
 use crate::parser::ast::ASTNodePos;
 
-pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
-pub type DesugarResults =
-    std::result::Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
+pub type TypeResult<T = ASTNodePos> = std::result::Result<T, Vec<TypeErr>>;
+pub type TypeResults =
+    std::result::Result<Vec<(ASTNodePos, Option<String>, Option<PathBuf>)>, Vec<TypeErr>>;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-#[derive(Debug, Clone)]
-pub struct UnimplementedErr {
+#[derive(Debug)]
+pub struct TypeErr {
     pub line:        i32,
     pub pos:         i32,
     pub width:       i32,
     pub msg:         String,
-    pub source_line: Option<String>,
-    pub path:        Option<PathBuf>
+    pub path:        Option<PathBuf>,
+    pub source_line: Option<String>
 }
 
-impl UnimplementedErr {
-    pub fn new(node_pos: &ASTNodePos, msg: &str) -> UnimplementedErr {
-        UnimplementedErr {
-            line:        node_pos.st_line,
-            pos:         node_pos.st_pos,
-            width:       node_pos.en_pos - node_pos.st_pos,
-            msg:         format!(
-                "The {} construct has not yet been implemented as of v{}.",
-                msg, VERSION
-            ),
-            source_line: None,
-            path:        None
-        }
-    }
-
-    pub fn into_with_source(
-        self,
-        source: &Option<String>,
-        path: &Option<PathBuf>
-    ) -> UnimplementedErr {
-        UnimplementedErr {
+impl TypeErr {
+    pub fn into_with_source(self, source: Option<String>, path: &Option<PathBuf>) -> TypeErr {
+        TypeErr {
             line:        self.line,
             pos:         self.pos,
             width:       self.pos,
             msg:         self.msg.clone(),
-            source_line: source.clone().map(|source| {
+            source_line: source.map(|source| {
                 source
                     .lines()
                     .nth(self.line as usize - 1)
@@ -57,11 +36,11 @@ impl UnimplementedErr {
     }
 }
 
-impl Display for UnimplementedErr {
+impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "--> {}:{}:{}
+            "--> {:#?}:{}:{}
      | {}
 {:3}  |- {}
      | {}{}",
