@@ -2,6 +2,8 @@ use crate::parser::ast::ASTNodePos;
 use crate::type_checker::type_result::TypeResults;
 use std::path::PathBuf;
 
+mod context;
+
 pub mod type_node;
 pub mod type_result;
 
