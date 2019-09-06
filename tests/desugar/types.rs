@@ -21,8 +21,8 @@ fn type_tup_empty_verify() {
 #[test]
 fn type_fun_empty_verify() {
     let type_def = to_pos!(ASTNode::TypeFun {
-        _type: Box::from(to_pos!(ASTNode::Pass)),
-        body:  Box::from(to_pos!(ASTNode::Pass))
+        args:   vec![to_pos_unboxed!(ASTNode::Pass)],
+        ret_ty: Box::from(to_pos!(ASTNode::Pass))
     });
     assert_eq!(desugar(&type_def).unwrap(), Core::Empty);
 }

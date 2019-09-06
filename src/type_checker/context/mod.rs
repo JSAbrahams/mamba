@@ -1,13 +1,15 @@
 use crate::parser::ast::ASTNodePos;
-use crate::type_checker::context::class::get_type;
-use crate::type_checker::context::field::{get_fields, Field};
-use crate::type_checker::context::function::{get_functions, Function};
+use crate::type_checker::context::field::Field;
+use crate::type_checker::context::function::Function;
 use crate::type_checker::type_node::Type;
 use crate::type_checker::type_result::TypeResult;
 
 pub mod class;
 pub mod field;
 pub mod function;
+pub mod type_name;
+
+mod common;
 
 /// A context stores all information of all identified types of the current
 /// application.
@@ -21,16 +23,10 @@ pub struct Context {
     fields:    Vec<Field>
 }
 
-pub fn build_context(ast_trees: &[ASTNodePos]) -> TypeResult<Context> {
-    let mut types = vec![];
-    let mut functions = vec![];
-    let mut fields = vec![];
-
-    for ast_tree_file in ast_trees {
-        types.append(&mut get_type(ast_tree_file)?);
-        functions.append(&mut get_functions(ast_tree_file)?);
-        fields.append(&mut get_fields(ast_tree_file)?);
-    }
+pub fn build_context(_: &[ASTNodePos]) -> TypeResult<Context> {
+    let types = vec![];
+    let functions = vec![];
+    let fields = vec![];
 
     Ok(Context { types, functions, fields })
 }

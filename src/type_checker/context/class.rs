@@ -1,8 +1,9 @@
+use crate::common::position::Position;
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::type_node::Type;
-use crate::type_checker::type_result::TypeResult;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-pub fn get_type(ast_tree: &ASTNodePos) -> TypeResult<Vec<Type>> {
+pub fn get_types(ast_tree: &ASTNodePos) -> TypeResult<Vec<Type>> {
     let modules = match &ast_tree.node {
         ASTNode::File { modules, .. } => modules,
         _ => panic!()
@@ -13,7 +14,7 @@ pub fn get_type(ast_tree: &ASTNodePos) -> TypeResult<Vec<Type>> {
         .map(|module| match &module.node {
             ASTNode::Class { .. } => get_class(module),
             ASTNode::TypeDef { .. } => get_type_def(module),
-            _ => panic!()
+            _ => Err(vec![TypeErr::new(Position::from(module), "Expected either class or typedef")])
         })
         .partition(Result::is_ok);
 
@@ -33,7 +34,7 @@ fn get_class(class: &ASTNodePos) -> TypeResult {
 
 fn get_type_def(type_def: &ASTNodePos) -> TypeResult {
     match &type_def.node {
-        ASTNode::TypeDef { _type, body } => unimplemented!(),
+        ASTNode::TypeDef { .. } => unimplemented!(),
         _ => panic!()
     }
 }

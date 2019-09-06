@@ -125,8 +125,8 @@ pub enum ASTNode {
         generics: Vec<ASTNodePos>
     },
     TypeFun {
-        _type: Box<ASTNodePos>,
-        body:  Box<ASTNodePos>
+        args:   Vec<ASTNodePos>,
+        ret_ty: Box<ASTNodePos>
     },
     Condition {
         cond:  Box<ASTNodePos>,

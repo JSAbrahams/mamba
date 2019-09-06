@@ -5,6 +5,7 @@ use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use std::ops::Deref;
 
 pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     it.peek_or_err(
@@ -103,9 +104,14 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
     let res = it.parse_if(
         &Token::To,
         &|it| {
-            let body = it.parse(&parse_type, "type", st_line, st_pos)?;
-            let (en_line, en_pos) = (body.en_line, body.en_pos);
-            let node = ASTNode::TypeFun { _type: _type.clone(), body };
+            let ret_ty = it.parse(&parse_type, "type", st_line, st_pos)?;
+            let (en_line, en_pos) = (ret_ty.en_line, ret_ty.en_pos);
+            let args = match &_type.node {
+                ASTNode::TypeTup { types } => types.clone(),
+                _ => vec![_type.deref().clone()]
+            };
+
+            let node = ASTNode::TypeFun { args, ret_ty };
             Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
         },
         "function type",

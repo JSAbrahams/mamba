@@ -1,7 +1,7 @@
 use crate::type_checker::context::field::Field;
 use crate::type_checker::context::function::Function;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Type {
     name:      String,
     generics:  Vec<Type>,
