@@ -1,21 +1,14 @@
 use crate::type_checker::context::field::Field;
-use crate::type_checker::context::function::Function;
+use crate::type_checker::context::function::{Function, FunctionArg};
+use crate::type_checker::context::type_name::TypeName;
 
 #[derive(Debug, Clone)]
 pub struct Type {
-    name:      String,
-    generics:  Vec<Type>,
-    fields:    Vec<Field>,
-    functions: Vec<Function>
-}
-
-impl Type {
-    pub fn new(ty: &str) -> Type {
-        Type {
-            name:      String::from(ty),
-            generics:  vec![],
-            fields:    vec![],
-            functions: vec![]
-        }
-    }
+    pub name:      String,
+    pub args:      Vec<FunctionArg>,
+    pub generics:  Vec<TypeName>,
+    pub concrete:  bool,
+    pub fields:    Vec<Field>,
+    pub functions: Vec<Function>,
+    pub parents:   Vec<TypeName>
 }

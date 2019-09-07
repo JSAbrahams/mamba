@@ -3,7 +3,7 @@ use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::type_result::TypeErr;
 use std::ops::Deref;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeName {
     Single { lit: String, generics: Vec<TypeName> },
     Fun { args: Vec<TypeName>, ret_ty: Box<TypeName> },
