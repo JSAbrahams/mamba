@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{ASTNode, ASTNodePos};
+use crate::type_checker::context::class::Generic;
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::ReturnType;
@@ -11,9 +12,10 @@ use crate::type_checker::type_result::TypeErr;
 pub struct Function {
     pub name:      String,
     pub pure:      bool,
+    pub private:   bool,
     pub position:  Position,
     pub arguments: Vec<FunctionArg>,
-    pub raises:    Vec<TypeName>,
+    pub raises:    Vec<Generic>,
     ret_ty:        Option<TypeName>
 }
 
@@ -39,9 +41,10 @@ impl Function {
         match &node_pos.node {
             // TODO Add type inference of body
             // TODO analyse raises/exceptions
-            ASTNode::FunDef { pure, id, fun_args, ret_ty, raises, .. } => Ok(Function {
+            ASTNode::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } => Ok(Function {
                 name:      try_from_id(id)?,
                 pure:      *pure || all_pure,
+                private:   *private,
                 position:  Position::from(node_pos),
                 arguments: fun_args
                     .iter()
@@ -53,8 +56,8 @@ impl Function {
                 },
                 raises:    raises
                     .iter()
-                    .map(|raise| TypeName::try_from_node_pos(raise))
-                    .collect::<Result<Vec<TypeName>, TypeErr>>()?
+                    .map(|raise| Generic::try_from_node_pos(raise))
+                    .collect::<Result<Vec<Generic>, TypeErr>>()?
             }),
             _ => Err(TypeErr::new(Position::from(node_pos), "Expected function definition"))
         }
@@ -66,7 +69,14 @@ impl FunctionArg {
         match &node_pos.node {
             ASTNode::FunArg { vararg, id_maybe_type, .. } => match &id_maybe_type.node {
                 ASTNode::IdType { id, mutable, _type } => Ok(FunctionArg {
-                    name:     try_from_id(id.deref())?,
+                    name:     match &id.node {
+                        ASTNode::Init =>
+                            return Err(TypeErr::new(
+                                Position::from(id.deref()),
+                                "Init cannot be a function"
+                            )),
+                        _ => try_from_id(id.deref())?
+                    },
                     vararg:   *vararg,
                     mutable:  *mutable,
                     position: Position::from(node_pos),
@@ -116,6 +126,7 @@ impl ReturnType for Function {
             Ok(Function {
                 name:      self.name,
                 pure:      self.pure,
+                private:   self.private,
                 position:  self.position.clone(),
                 arguments: self.arguments,
                 ret_ty:    Some(ty),

@@ -11,6 +11,7 @@ use crate::type_checker::type_result::TypeErr;
 pub struct Field {
     pub name:     String,
     pub mutable:  bool,
+    pub private:  bool,
     pub position: Position,
     ty:           Option<TypeName>
 }
@@ -18,10 +19,11 @@ pub struct Field {
 impl Field {
     pub fn try_from_node_pos(field: &ASTNodePos) -> Result<Field, TypeErr> {
         match &field.node {
-            ASTNode::VariableDef { id_maybe_type, .. } => match &id_maybe_type.node {
+            ASTNode::VariableDef { id_maybe_type, private, .. } => match &id_maybe_type.node {
                 ASTNode::IdType { id, mutable, _type } => Ok(Field {
                     name:     try_from_id(id)?,
                     mutable:  *mutable,
+                    private:  *private,
                     position: Position::from(field),
                     ty:       match _type {
                         Some(ty) => Some(TypeName::try_from_node_pos(ty.as_ref())?),
@@ -45,6 +47,7 @@ impl ReturnType for Field {
         } else {
             Ok(Field {
                 name:     self.name,
+                private:  self.private,
                 mutable:  self.mutable,
                 position: self.position.clone(),
                 ty:       Some(ty)

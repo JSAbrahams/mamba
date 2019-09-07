@@ -49,18 +49,16 @@ pub enum ASTNode {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
     },
-    Def {
-        private:    bool,
-        definition: Box<ASTNodePos>
-    },
     VariableDef {
         ofmut:         bool,
+        private:       bool,
         id_maybe_type: Box<ASTNodePos>,
         expression:    Option<Box<ASTNodePos>>,
         forward:       Vec<ASTNodePos>
     },
     FunDef {
         pure:     bool,
+        private:  bool,
         id:       Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
         ret_ty:   Option<Box<ASTNodePos>>,

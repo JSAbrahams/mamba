@@ -43,10 +43,10 @@ impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "--> {:#?}:{}:{}
+            "--> {}:{}:{}
      | {}
 {:3}  |- {}
-     | {}{}",
+     |  {}{}",
             self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
             self.position.line,
             self.position.pos,
