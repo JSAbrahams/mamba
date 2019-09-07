@@ -1,10 +1,10 @@
 use crate::parser::ast::ASTNodePos;
+use crate::type_checker::context::build_context;
 use crate::type_checker::type_result::TypeResults;
 use std::path::PathBuf;
 
 mod context;
 
-pub mod type_node;
 pub mod type_result;
 
 pub type CheckInput = (ASTNodePos, Option<String>, Option<PathBuf>);
@@ -25,6 +25,9 @@ pub type CheckInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 ///
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
+    // TODO use context during type checking and type inference stage
+    build_context(&inputs)?;
+
     Ok(inputs
         .iter()
         .map(|(node_pos, source, path)| (node_pos.clone(), source.clone(), path.clone()))

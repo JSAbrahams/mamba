@@ -5,7 +5,7 @@ use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::ReturnType;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::type_result::TypeErr;
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -35,13 +35,13 @@ impl Function {
     /// If [ASTNodePos](crate::parser::ast::ASTNodePos)'s node is not the
     /// [FunDef](crate::parser::ast::ASTNode::FunDef) variant of the
     /// [ASTNode](crate::parser::ast::ASTNode).
-    pub fn try_from_node_pos(node_pos: &ASTNodePos) -> Result<Function, TypeErr> {
+    pub fn try_from_node_pos(node_pos: &ASTNodePos, all_pure: bool) -> Result<Function, TypeErr> {
         match &node_pos.node {
             // TODO Add type inference of body
             // TODO analyse raises/exceptions
             ASTNode::FunDef { pure, id, fun_args, ret_ty, raises, .. } => Ok(Function {
                 name:      try_from_id(id)?,
-                pure:      *pure,
+                pure:      *pure || all_pure,
                 position:  Position::from(node_pos),
                 arguments: fun_args
                     .iter()
@@ -131,5 +131,3 @@ impl ReturnType for Function {
         }
     }
 }
-
-pub fn get_functions(_: &ASTNodePos) -> TypeResult<Vec<Function>> { Ok(vec![]) }

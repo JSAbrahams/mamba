@@ -80,7 +80,7 @@ fn boolean_ast_verify() -> Result<(), Vec<(String, String)>> {
         .output()
         .unwrap();
     if cmd.status.code().unwrap() != 0 {
-        panic!("{}", String::from_utf8(cmd.stderr).unwrap());
+        panic!("{:#?}", String::from_utf8(cmd.stderr).unwrap());
     }
 
     let python_src = resource_content(true, &["operation"], "boolean_check.py");

@@ -4,7 +4,8 @@ use std::path::PathBuf;
 
 use crate::common::position::Position;
 use crate::parser::ast::ASTNodePos;
-use crate::type_checker::type_node::Type;
+use crate::type_checker::context::class::Type;
+use std::cmp::max;
 
 pub type TypeResult<T = Type> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults =
@@ -55,7 +56,7 @@ impl Display for TypeErr {
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
             String::from_utf8(vec![b' '; self.position.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.position.width as usize]).unwrap()
+            String::from_utf8(vec![b'^'; max(self.position.width, 1) as usize]).unwrap()
         )
     }
 }
