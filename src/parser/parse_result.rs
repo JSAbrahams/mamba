@@ -3,6 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
+use crate::common::position::Position;
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNodePos;
@@ -15,13 +16,11 @@ pub type ParseResults =
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {
-    pub line:   i32,
-    pub pos:    i32,
-    pub width:  i32,
-    pub msg:    String,
-    pub source: Option<String>,
-    pub path:   Option<PathBuf>,
-    pub causes: Vec<Cause>
+    pub position: Position,
+    pub msg:      String,
+    pub source:   Option<String>,
+    pub path:     Option<PathBuf>,
+    pub causes:   Vec<Cause>
 }
 
 #[derive(Debug, Clone)]
@@ -40,29 +39,25 @@ impl Cause {
 impl ParseErr {
     pub fn clone_with_cause(&self, cause: &str, line: i32, pos: i32) -> ParseErr {
         ParseErr {
-            line:   self.line,
-            pos:    self.pos,
-            width:  self.width,
-            msg:    self.msg.clone(),
-            causes: {
+            position: self.position,
+            msg:      self.msg.clone(),
+            causes:   {
                 let mut new_causes = self.causes.clone();
                 new_causes.push(Cause::new(cause, line, pos));
                 new_causes
             },
-            source: self.source.clone(),
-            path:   self.path.clone()
+            source:   self.source.clone(),
+            path:     self.path.clone()
         }
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
         ParseErr {
-            line:   self.line,
-            pos:    self.pos,
-            width:  self.pos,
-            msg:    self.msg,
-            causes: self.causes,
-            source: source.clone(),
-            path:   path.clone()
+            position: self.position,
+            msg:      self.msg,
+            causes:   self.causes,
+            source:   source.clone(),
+            path:     path.clone()
         }
     }
 }

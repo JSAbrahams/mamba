@@ -1,10 +1,16 @@
+use crate::common::position::EndPoint;
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TokenPos {
-    pub st_line: i32,
-    pub st_pos:  i32,
-    pub token:   Token
+    pub start: EndPoint,
+    pub token: Token
+}
+
+impl TokenPos {
+    pub fn new(line: i32, pos: i32, token: Token) -> Self {
+        TokenPos { start: EndPoint { line, pos }, token }
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]

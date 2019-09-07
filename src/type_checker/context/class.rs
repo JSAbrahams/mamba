@@ -1,4 +1,3 @@
-use crate::common::position::Position;
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::field::Field;
@@ -37,11 +36,7 @@ impl Type {
                 let (name, generics) = get_name_and_generics(_type)?;
                 let statements = match &body.node {
                     ASTNode::Block { statements } => statements,
-                    _ =>
-                        return Err(vec![TypeErr::new(
-                            Position::from(class),
-                            "Expected block in class"
-                        )]),
+                    _ => return Err(vec![TypeErr::new(class.position, "Expected block in class")])
                 };
 
                 let (args, argument_errs): (Vec<_>, Vec<_>) = args
@@ -50,7 +45,7 @@ impl Type {
                         let argument = FunctionArg::try_from_node_pos(arg)?;
                         if argument.vararg {
                             Err(TypeErr::new(
-                                Position::from(arg),
+                                arg.position,
                                 "Vararg currently not supported for class arguments"
                             ))
                         } else {
@@ -84,7 +79,7 @@ impl Type {
                         ASTNode::Block { statements } => statements.clone(),
                         _ =>
                             return Err(vec![TypeErr::new(
-                                Position::from(class),
+                                class.position,
                                 "Expected block in class"
                             )]),
                     }
@@ -105,7 +100,7 @@ impl Type {
                     parents
                 })
             }
-            _ => Err(vec![TypeErr::new(Position::from(class), "Expected class or type definition")])
+            _ => Err(vec![TypeErr::new(class.position, "Expected class or type definition")])
         }
     }
 }
@@ -120,7 +115,7 @@ impl Generic {
                     None => None
                 }
             }),
-            _ => Err(TypeErr::new(Position::from(generic), "Expected generic"))
+            _ => Err(TypeErr::new(generic.position, "Expected generic"))
         }
     }
 }
@@ -135,7 +130,7 @@ impl Parent {
                     .map(|generic| Generic::try_from_node_pos(generic))
                     .collect::<Result<Vec<Generic>, TypeErr>>()?
             }),
-            _ => Err(TypeErr::new(Position::from(generic), "Expected generic"))
+            _ => Err(TypeErr::new(generic.position, "Expected generic"))
         }
     }
 }
@@ -156,7 +151,7 @@ fn get_name_and_generics(_type: &ASTNodePos) -> Result<(String, Vec<Generic>), V
                 generics.into_iter().map(Result::unwrap).collect::<Vec<Generic>>()
             ))
         }
-        _ => Err(vec![TypeErr::new(Position::from(_type), "Expected class name")])
+        _ => Err(vec![TypeErr::new(_type.position, "Expected class name")])
     }
 }
 
@@ -168,10 +163,7 @@ fn get_fields_and_functions(
     statements.iter().for_each(|statement| match &statement.node {
         ASTNode::FunDef { .. } => fun_res.push(Function::try_from_node_pos(statement, all_pure)),
         ASTNode::VariableDef { .. } => field_res.push(Field::try_from_node_pos(statement)),
-        _ => errs.push(TypeErr::new(
-            Position::from(statement),
-            "Expected function or variable definition"
-        ))
+        _ => errs.push(TypeErr::new(statement.position, "Expected function or variable definition"))
     });
 
     let (fields, field_errs): (Vec<_>, Vec<_>) = field_res.into_iter().partition(Result::is_ok);

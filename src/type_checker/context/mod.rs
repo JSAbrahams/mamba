@@ -1,4 +1,3 @@
-use crate::common::position::Position;
 use crate::parser::ast::ASTNode;
 use crate::type_checker::context::class::Type;
 use crate::type_checker::context::field::Field;
@@ -77,7 +76,7 @@ pub fn build_context(files: &[CheckInput]) -> TypeResult<Context> {
                 ),
                 _ => {}
             }),
-        _ => errs.push(TypeErr::new(Position::from(file), "Expected file"))
+        _ => errs.push(TypeErr::new(file.position, "Expected file"))
     });
 
     let (types, type_errs): (Vec<_>, Vec<_>) = type_res.into_iter().partition(Result::is_ok);

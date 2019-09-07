@@ -24,11 +24,10 @@ impl State {
     }
 
     pub fn flush_indents(&mut self) -> Vec<TokenPos> {
-        let dedents =
-            vec![
-                TokenPos { st_line: self.line, st_pos: self.pos, token: Token::Dedent };
-                ((self.current_indent) / 4) as usize
-            ];
+        let dedents = vec![
+            TokenPos::new(self.line, self.pos, Token::Dedent);
+            ((self.current_indent) / 4) as usize
+        ];
 
         self.current_indent = 1;
         dedents
@@ -58,12 +57,12 @@ impl State {
 
         res.append(&mut if self.line_indent >= self.current_indent {
             vec![
-                TokenPos { st_line: self.line, st_pos: self.pos, token: Token::Indent };
+                TokenPos::new(self.line, self.pos, Token::Indent);
                 ((self.line_indent - self.current_indent) / 4) as usize
             ]
         } else {
             vec![
-                TokenPos { st_line: self.line, st_pos: self.pos, token: Token::Dedent };
+                TokenPos::new(self.line, self.pos, Token::Dedent);
                 ((self.current_indent - self.line_indent) / 4) as usize
             ]
         });
@@ -73,7 +72,7 @@ impl State {
             res.push(nl_token_pos);
         }
 
-        res.push(TokenPos { st_line: self.line, st_pos: self.pos, token: token.clone() });
+        res.push(TokenPos::new(self.line, self.pos, token.clone()));
 
         self.current_indent = self.line_indent;
         self.pos += match token {
@@ -91,7 +90,7 @@ impl State {
     }
 
     fn newline(&mut self) -> Vec<TokenPos> {
-        self.newlines.push(TokenPos { st_line: self.line, st_pos: self.pos, token: Token::NL });
+        self.newlines.push(TokenPos::new(self.line, self.pos, Token::NL));
         self.hit_token_this_line = false;
         self.line_indent = 1;
         self.pos = 1;

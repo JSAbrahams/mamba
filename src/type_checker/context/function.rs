@@ -45,7 +45,7 @@ impl Function {
                 name:      try_from_id(id)?,
                 pure:      *pure || all_pure,
                 private:   *private,
-                position:  Position::from(node_pos),
+                position:  node_pos.position,
                 arguments: fun_args
                     .iter()
                     .map(|arg| FunctionArg::try_from_node_pos(arg))
@@ -59,7 +59,7 @@ impl Function {
                     .map(|raise| Generic::try_from_node_pos(raise))
                     .collect::<Result<Vec<Generic>, TypeErr>>()?
             }),
-            _ => Err(TypeErr::new(Position::from(node_pos), "Expected function definition"))
+            _ => Err(TypeErr::new(node_pos.position, "Expected function definition"))
         }
     }
 }
@@ -71,26 +71,23 @@ impl FunctionArg {
                 ASTNode::IdType { id, mutable, _type } => Ok(FunctionArg {
                     name:     match &id.node {
                         ASTNode::Init =>
-                            return Err(TypeErr::new(
-                                Position::from(id.deref()),
-                                "Init cannot be a function"
-                            )),
+                            return Err(TypeErr::new(id.position, "Init cannot be a function")),
                         _ => try_from_id(id.deref())?
                     },
                     vararg:   *vararg,
                     mutable:  *mutable,
-                    position: Position::from(node_pos),
+                    position: node_pos.position,
                     ty:       match _type {
                         Some(_type) => Some(TypeName::try_from_node_pos(_type.deref())?),
                         None => None
                     }
                 }),
                 _ => Err(TypeErr::new(
-                    Position::from(id_maybe_type.deref()),
+                    id_maybe_type.position,
                     "Expected function argument identifier (and type)"
                 ))
             },
-            _ => Err(TypeErr::new(Position::from(node_pos), "Expected function argument"))
+            _ => Err(TypeErr::new(node_pos.position, "Expected function argument"))
         }
     }
 }

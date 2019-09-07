@@ -94,21 +94,19 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("underscore")?;
-    let (en_line, en_pos) = it.eat(&Token::Underscore, "underscore")?;
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Underscore }))
+    let start = it.start_pos("underscore")?;
+    let end = it.eat(&Token::Underscore, "underscore")?;
+    Ok(Box::from(ASTNodePos::new(start, end, ASTNode::Underscore)))
 }
 
 fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
     it.peek(
         &|it, token_pos| match token_pos.token {
             Token::Question => {
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
                 it.eat(&Token::Question, "postfix expression")?;
-                let right = it.parse(&parse_expression, "postfix expression", st_line, st_pos)?;
-                let (en_line, en_pos) = (right.en_line, right.en_pos);
+                let right = it.parse(&parse_expression, "postfix expression", token_pos.start)?;
                 let node = ASTNode::Question { left: Box::new(pre.clone()), right };
-                let res = ASTNodePos { st_line, st_pos, en_line, en_pos, node };
+                let res = ASTNodePos::new(token_pos.start, right.position.end, node);
                 parse_post_expr(&res, it)
             }
             Token::Assign => {
@@ -132,17 +130,16 @@ fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_return(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("return")?;
+    let start = it.start_pos("return")?;
     it.eat(&Token::Ret, "return")?;
 
-    if let Some((en_line, en_pos)) = it.eat_if(&Token::NL) {
+    if let Some(end) = it.eat_if(&Token::NL) {
         let node = ASTNode::ReturnEmpty;
-        return Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }));
+        return Ok(Box::from(ASTNodePos::new(start, end, node)));
     }
 
-    let expr = it.parse(&parse_expression, "return", st_line, st_pos)?;
-    let (en_line, en_pos) = (expr.en_line, expr.en_pos);
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Return { expr } }))
+    let expr = it.parse(&parse_expression, "return", start)?;
+    Ok(Box::from(ASTNodePos::new(start, expr.position.end, ASTNode::Return { expr })))
 }
 
 /// Excluding unary addition and subtraction

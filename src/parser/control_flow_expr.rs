@@ -25,43 +25,36 @@ pub fn parse_cntrl_flow_expr(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_if(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("if expression")?;
-
+    let start = it.start_pos("if expression")?;
     it.eat(&Token::If, "if expressions")?;
-    let cond = it.parse(&parse_expression, "if expression", st_line, st_pos)?;
+    let cond = it.parse(&parse_expression, "if expression", start)?;
     it.eat(&Token::Then, "if expression")?;
-    let then = it.parse(&parse_expr_or_stmt, "if expression", st_line, st_pos)?;
-    let _else =
-        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", st_line, st_pos)?;
+    let then = it.parse(&parse_expr_or_stmt, "if expression", start)?;
+    let _else = it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", start)?;
 
-    let (en_line, en_pos) = (then.en_line, then.en_pos);
     let node = ASTNode::IfElse { cond, then, _else };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    Ok(Box::from(ASTNodePos::new(start, then.position.end, node)))
 }
 
 fn parse_match(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("match")?;
+    let start = it.start_pos("match")?;
     it.eat(&Token::Match, "match")?;
-
-    let cond = it.parse(&parse_expression, "match", st_line, st_pos)?;
+    let cond = it.parse(&parse_expression, "match", start)?;
     it.eat(&Token::NL, "match")?;
-    let cases = it.parse_vec(&parse_match_cases, "match", st_line, st_pos)?;
-
-    let (en_line, en_pos) = match (&cond, cases.last()) {
-        (_, Some(ast_node_pos)) => (ast_node_pos.en_line, ast_node_pos.en_pos),
-        (cond, _) => (cond.en_line, cond.en_pos)
+    let cases = it.parse_vec(&parse_match_cases, "match", start)?;
+    let end = match (&cond, cases.last()) {
+        (_, Some(last_case)) => last_case.position.end,
+        (cond, _) => cond.position.end
     };
 
     let node = ASTNode::Match { cond, cases };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    Ok(Box::from(ASTNodePos::new(start, end, node)))
 }
 
 pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    let (st_line, st_pos) = it.eat(&Token::Indent, "match cases")?;
-    let mut cases = Vec::new();
-
-    it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
-        cases.push(*it.parse(&parse_match_case, "match case", st_line, st_pos)?);
+    let mut cases = vec![];
+    it.peek_while_not_token(&Token::Dedent, &mut |it, token_pos| {
+        cases.push(*it.parse(&parse_match_case, "match case", token_pos.start)?);
         it.eat_if(&Token::NL);
         Ok(())
     })?;
@@ -71,28 +64,23 @@ pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 }
 
 fn parse_match_case(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("match case")?;
-
-    let cond = it.parse(&parse_id_maybe_type, "match case", st_line, st_pos)?;
+    let start = it.start_pos("match case")?;
+    let cond = it.parse(&parse_id_maybe_type, "match case", start)?;
     it.eat(&Token::BTo, "match case")?;
-    let body = it.parse(&parse_expr_or_stmt, "match case", st_line, st_pos)?;
+    let body = it.parse(&parse_expr_or_stmt, "match case", start)?;
 
-    let (en_line, en_pos) = (body.en_line, body.en_pos);
     let node = ASTNode::Case { cond, body };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    Ok(Box::from(ASTNodePos::new(start, body.position.end, node)))
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("expression maybe type")?;
+    let start = it.start_pos("expression maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
 
-    let id = it.parse(&parse_expression, "expression maybe type", st_line, st_pos)?;
-    let _type = it.parse_if(&Token::DoublePoint, &parse_type, "id type", st_line, st_pos)?;
+    let id = it.parse(&parse_expression, "expression maybe type", start)?;
+    let _type = it.parse_if(&Token::DoublePoint, &parse_type, "id type", start)?;
 
-    let (en_line, en_pos) = match &_type {
-        Some(_type) => (_type.en_line, _type.en_pos),
-        _ => (id.en_line, id.en_pos)
-    };
+    let end = if _type.is_some() { _type.unwrap().position.end } else { id.position.end };
     let node = ASTNode::IdType { id, mutable, _type };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    Ok(Box::from(ASTNodePos::new(start, end, node)))
 }

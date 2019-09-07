@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::common::position::Position;
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::context::common::try_from_id;
@@ -24,18 +22,15 @@ impl Field {
                     name:     try_from_id(id)?,
                     mutable:  *mutable,
                     private:  *private,
-                    position: Position::from(field),
+                    position: field.position,
                     ty:       match _type {
                         Some(ty) => Some(TypeName::try_from_node_pos(ty.as_ref())?),
                         None => None
                     }
                 }),
-                _ => Err(TypeErr::new(
-                    Position::from(id_maybe_type.deref()),
-                    "Expected identifier and type"
-                ))
+                _ => Err(TypeErr::new(id_maybe_type.position, "Expected identifier and type"))
             },
-            _ => Err(TypeErr::new(Position::from(field), "Expected field"))
+            _ => Err(TypeErr::new(field.position, "Expected field"))
         }
     }
 }

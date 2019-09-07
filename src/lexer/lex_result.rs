@@ -1,8 +1,8 @@
+use crate::common::position::EndPoint;
+use crate::lexer::token::TokenPos;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-
-use crate::lexer::token::TokenPos;
 
 pub type LexResult<T = Vec<TokenPos>> = std::result::Result<T, LexErr>;
 pub type LexResults =
@@ -10,8 +10,7 @@ pub type LexResults =
 
 #[derive(Debug, Clone)]
 pub struct LexErr {
-    pub line:        i32,
-    pub pos:         i32,
+    pub start:       EndPoint,
     pub width:       i32,
     pub msg:         String,
     pub source_line: Option<String>,
@@ -20,13 +19,18 @@ pub struct LexErr {
 
 impl LexErr {
     pub fn new(line: i32, pos: i32, width: i32, msg: &str) -> LexErr {
-        LexErr { line, pos, width, msg: String::from(msg), source_line: None, path: None }
+        LexErr {
+            start: EndPoint { line, pos },
+            width,
+            msg: String::from(msg),
+            source_line: None,
+            path: None
+        }
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
         LexErr {
-            line:        self.line,
-            pos:         self.pos,
+            start:       self.start,
             width:       self.pos,
             msg:         self.msg.clone(),
             source_line: source.clone().map(|source| {
@@ -56,7 +60,7 @@ impl Display for LexErr {
             self.source_line
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
-            String::from_utf8(vec![b' '; self.pos as usize]).unwrap(),
+            String::from_utf8(vec![b' '; self.start.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.width as usize]).unwrap()
         )
     }

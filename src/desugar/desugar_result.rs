@@ -2,6 +2,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
+use crate::common::position::Position;
 use crate::core::construct::Core;
 use crate::parser::ast::ASTNodePos;
 
@@ -13,9 +14,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone)]
 pub struct UnimplementedErr {
-    pub line:        i32,
-    pub pos:         i32,
-    pub width:       i32,
+    pub position:    Position,
     pub msg:         String,
     pub source_line: Option<String>,
     pub path:        Option<PathBuf>
@@ -24,9 +23,7 @@ pub struct UnimplementedErr {
 impl UnimplementedErr {
     pub fn new(node_pos: &ASTNodePos, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            line:        node_pos.st_line,
-            pos:         node_pos.st_pos,
-            width:       node_pos.en_pos - node_pos.st_pos,
+            position:    node_pos.position,
             msg:         format!(
                 "The {} construct has not yet been implemented as of v{}.",
                 msg, VERSION
@@ -42,14 +39,12 @@ impl UnimplementedErr {
         path: &Option<PathBuf>
     ) -> UnimplementedErr {
         UnimplementedErr {
-            line:        self.line,
-            pos:         self.pos,
-            width:       self.pos,
+            position:    self.position,
             msg:         self.msg.clone(),
             source_line: source.clone().map(|source| {
                 source
                     .lines()
-                    .nth(self.line as usize - 1)
+                    .nth(self.position.start.line as usize - 1)
                     .map_or(String::from("unknown"), String::from)
             }),
             path:        path.clone()
@@ -66,15 +61,15 @@ impl Display for UnimplementedErr {
 {:3}  |- {}
      | {}{}",
             self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
-            self.line,
-            self.pos,
+            self.position.start.line,
+            self.position.start.pos,
             self.msg,
-            self.line,
+            self.position.start.line,
             self.source_line
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
-            String::from_utf8(vec![b' '; self.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.width as usize]).unwrap()
+            String::from_utf8(vec![b' '; self.position.end.pos as usize]).unwrap(),
+            String::from_utf8(vec![b'^'; self.position.width() as usize]).unwrap()
         )
     }
 }

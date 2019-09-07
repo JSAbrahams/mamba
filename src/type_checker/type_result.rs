@@ -40,6 +40,7 @@ impl TypeErr {
 }
 
 impl Display for TypeErr {
+    // Deal with Positions that cover multiple lines
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
@@ -55,8 +56,8 @@ impl Display for TypeErr {
             self.source_line
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
-            String::from_utf8(vec![b' '; self.position.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; max(self.position.width, 1) as usize]).unwrap()
+            String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
+            String::from_utf8(vec![b'^'; max(self.position.get_width(), 1) as usize]).unwrap()
         )
     }
 }

@@ -1,12 +1,18 @@
+use crate::common::position::EndPoint;
+use crate::common::position::Position;
+
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
 pub struct ASTNodePos {
-    pub st_line: i32,
-    pub st_pos:  i32,
-    pub en_line: i32,
-    pub en_pos:  i32,
-    pub node:    ASTNode
+    pub position: Position,
+    pub node:     ASTNode
+}
+
+impl ASTNodePos {
+    pub fn new(start: EndPoint, end: EndPoint, node: ASTNode) -> ASTNodePos {
+        ASTNodePos { position: Position { start, end }, node }
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
