@@ -26,8 +26,8 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("import")?;
     let end = it.eat(&Token::Import, "import")?;
     let mut import = vec![];
-    it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, token_pos| {
-        import.push(*it.parse(&parse_id, "import", &token_pos.start)?);
+    it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _| {
+        import.push(*it.parse(&parse_id, "import", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -87,11 +87,11 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Ok(())
         }
         Token::Import => {
-            imports.push(*it.parse(&parse_import, "file", &token_pos.start)?);
+            imports.push(*it.parse(&parse_import, "file", &start)?);
             Ok(())
         }
         Token::From => {
-            imports.push(*it.parse(&parse_from_import, "file", &token_pos.start)?);
+            imports.push(*it.parse(&parse_from_import, "file", &start)?);
             Ok(())
         }
         Token::Comment(comment) => {
@@ -102,11 +102,11 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
             Ok(())
         }
         Token::Type => {
-            modules.push(*it.parse(&parse_type_def, "file", &token_pos.start)?);
+            modules.push(*it.parse(&parse_type_def, "file", &start)?);
             Ok(())
         }
         _ => {
-            modules.push(*it.parse(&parse_module, "file", &token_pos.start)?);
+            modules.push(*it.parse(&parse_module, "file", &start)?);
             Ok(())
         }
     })?;

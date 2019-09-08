@@ -22,8 +22,8 @@ pub fn parse_anon_fun(it: &mut TPIterator) -> ParseResult {
     it.eat(&Token::BSlash, "anonymous function")?;
 
     let mut args: Vec<ASTNodePos> = vec![];
-    it.peek_while_not_token(&Token::BTo, &mut |it, token_pos| {
-        args.push(*it.parse(&parse_id_maybe_type, "anonymous function", &token_pos.start)?);
+    it.peek_while_not_token(&Token::BTo, &mut |it, _| {
+        args.push(*it.parse(&parse_id_maybe_type, "anonymous function", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
@@ -70,9 +70,10 @@ pub fn parse_call(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_arguments(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let start = it.start_pos("arguments")?;
     let mut arguments = vec![];
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, token_pos| {
-        arguments.push(*it.parse(&parse_expression, "arguments", &token_pos.start)?);
+    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+        arguments.push(*it.parse(&parse_expression, "arguments", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

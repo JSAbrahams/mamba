@@ -142,8 +142,8 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
     it.eat(&Token::LRBrack, "type tuple")?;
 
     let mut types = vec![];
-    it.peek_while_not_token(&Token::RRBrack, &mut |it, token_pos| {
-        types.push(*it.parse(&parse_type, "type tuple", &token_pos.start)?);
+    it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+        types.push(*it.parse(&parse_type, "type tuple", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

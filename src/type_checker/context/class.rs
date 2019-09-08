@@ -91,15 +91,8 @@ impl Type {
                 let (fields, functions) = get_fields_and_functions(&statements, all_pure)?;
                 // TODO add parents to type definitions
                 let parents = vec![];
-                Ok(Type {
-                    name,
-                    args: vec![],
-                    concrete: false,
-                    generics,
-                    fields,
-                    functions,
-                    parents
-                })
+                let args = vec![];
+                Ok(Type { name, args, concrete: false, generics, fields, functions, parents })
             }
             _ => Err(vec![TypeErr::new(&class.position, "Expected class or type definition")])
         }

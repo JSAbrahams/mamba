@@ -88,9 +88,10 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_expressions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+    let start = it.start_pos("expression")?;
     let mut expressions = vec![];
-    it.peek_while_fn(&is_start_expression, &mut |it, token_pos| {
-        expressions.push(*it.parse(&parse_expression, "expressions", &token_pos.start)?);
+    it.peek_while_fn(&is_start_expression, &mut |it, _| {
+        expressions.push(*it.parse(&parse_expression, "expressions", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
