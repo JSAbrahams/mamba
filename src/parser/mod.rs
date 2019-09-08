@@ -37,10 +37,10 @@ pub type ParseInput = (Vec<TokenPos>, Option<String>, Option<PathBuf>);
 /// # use mamba::lexer::token::TokenPos;
 /// # use mamba::parser::parse;
 /// // Assigning 10 to b
-/// let def = TokenPos::new(0, 0, token: Token::Def);
-/// let id = TokenPos::new(0, 0, Token::Id(String::from("b")));
-/// let assign = TokenPos::new(0, 0, Token::Assign);
-/// let number = TokenPos::new(0, 0, Token::Int(String::from("9")));
+/// let def = TokenPos::new(1, 1, Token::Def);
+/// let id = TokenPos::new(1, 4, Token::Id(String::from("b")));
+/// let assign = TokenPos::new(1, 6, Token::Assign);
+/// let number = TokenPos::new(1, 9, Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, assign, number]);
 /// assert_eq!(result.is_ok(), true);

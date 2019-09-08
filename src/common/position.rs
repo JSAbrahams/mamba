@@ -28,6 +28,9 @@ impl Position {
 }
 
 impl EndPoint {
+    /// Create new endpoint with given line and position.
+    pub fn new(line: i32, pos: i32) -> EndPoint { EndPoint { line, pos } }
+
     /// Create new [EndPoint] which is offset in the vertical direction by the
     /// given amount.
     pub fn offset_line(self, offset: i32) -> EndPoint {

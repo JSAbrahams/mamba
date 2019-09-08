@@ -74,7 +74,7 @@ pub fn parse_module(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_file(it: &mut TPIterator) -> ParseResult {
-    let start = EndPoint { line: 1, pos : 1 };
+    let start = EndPoint { line: 1, pos: 1 };
     let mut imports = Vec::new();
     let mut comments = Vec::new();
     let mut modules = Vec::new();
@@ -144,6 +144,6 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
         {
             let node = ASTNode::TypeDef { _type: _type.clone(), body: None };
             Ok(Box::from(ASTNodePos::new(&start, &_type.position.end, node)))
-        },
+        }
     )
 }

@@ -1,9 +1,10 @@
+use std::path::PathBuf;
+
 use crate::desugar::context::Imports;
 use crate::desugar::context::State;
 use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::ASTNodePos;
-use std::path::PathBuf;
 
 mod call;
 mod class;
@@ -32,8 +33,9 @@ pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 /// # use mamba::parser::ast::ASTNodePos;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
+/// # use mamba::common::position::EndPoint;
 /// let node = ASTNode::ReturnEmpty;
-/// let ast_node_pos = ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node };
+/// let ast_node_pos = ASTNodePos::new(&EndPoint::new(1, 1), &EndPoint::new(1, 5), node);
 /// let core_result = desugar(&ast_node_pos).unwrap();
 ///
 /// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
@@ -48,11 +50,11 @@ pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 /// # use mamba::parser::ast::ASTNodePos;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
+/// use mamba::common::position::EndPoint;
 /// let cond_node = ASTNode::Int { lit: String::from("56") };
-/// let cond_pos =
-///     ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node: cond_node };
+/// let cond_pos = ASTNodePos::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5), cond_node);
 /// let node = ASTNode::Condition { cond: Box::from(cond_pos), _else: None };
-/// let ast_node_pos = ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 5, node };
+/// let ast_node_pos = ASTNodePos::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5), node);
 /// let core_result = desugar(&ast_node_pos);
 ///
 /// assert!(core_result.is_err());
@@ -61,24 +63,7 @@ pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 /// # Panics
 ///
 /// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) causes this stage
-/// to panic. A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) would for
-/// instance be a definition which does not contain a definition.
-///
-/// ```rust,should_panic
-/// # use mamba::parser::ast::ASTNode;
-/// # use mamba::parser::ast::ASTNodePos;
-/// # use mamba::desugar::desugar;
-/// let ast_literal_node_pos = Box::from(ASTNodePos {
-///     st_line: 0, st_pos: 4, en_line: 0, en_pos: 6, node: ASTNode::Int { lit: String::from("10") }
-/// });
-/// let ast_definition_node_pos = Box::from(ASTNodePos {
-///     st_line: 0, st_pos: 0, en_line: 0, en_pos: 6,
-///     node: ASTNode::Def { private: false, definition: ast_literal_node_pos }
-/// });
-///
-/// // should panic since definition is a literal
-/// let core_node = desugar(&ast_definition_node_pos);
-/// ```
+/// to panic.
 pub fn desugar(input: &ASTNodePos) -> DesugarResult {
     desugar_node(&input, &mut Imports::new(), &State::new())
 }
