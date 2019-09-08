@@ -1,0 +1,1 @@
+def f(self) => print("cannot have self outside class")

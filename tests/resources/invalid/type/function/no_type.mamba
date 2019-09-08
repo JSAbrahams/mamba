@@ -1,0 +1,1 @@
+def g(self, a) => print("all non-self arguments should have type")

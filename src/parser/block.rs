@@ -7,30 +7,33 @@ use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
+// TODO look at whether we can handle class and type tokens more elegantly
 pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
     let start = it.start_pos("block")?;
     let mut statements: Vec<ASTNodePos> = Vec::new();
 
-    it.peek_while_not_token(&Token::Dedent, &mut |it, token_pos| match &token_pos.token {
-        Token::NL => {
-            it.eat(&Token::NL, "block")?;
-            Ok(())
-        }
-        Token::Comment(comment) => {
-            let end = it.eat(&Token::Comment(comment.clone()), "block")?;
-            let node = ASTNode::Comment { comment: comment.clone() };
-            statements.push(ASTNodePos::new(&token_pos.start, &end, node));
-            Ok(())
-        }
-        _ => {
-            statements.push(*it.parse(&parse_expr_or_stmt, "block", &start)?);
-            let invalid = |token_pos: &TokenPos| {
-                token_pos.token != Token::NL && token_pos.token != Token::Dedent
-            };
-            if it.peak_if_fn(&invalid) {
-                return Err(expected(&Token::NL, &token_pos.clone(), "block"));
+    it.peek_while_not_tokens(&[Token::Dedent, Token::Class, Token::Type], &mut |it, token_pos| {
+        match &token_pos.token {
+            Token::NL => {
+                it.eat(&Token::NL, "block")?;
+                Ok(())
             }
-            Ok(())
+            Token::Comment(comment) => {
+                let end = it.eat(&Token::Comment(comment.clone()), "block")?;
+                let node = ASTNode::Comment { comment: comment.clone() };
+                statements.push(ASTNodePos::new(&token_pos.start, &end, node));
+                Ok(())
+            }
+            _ => {
+                statements.push(*it.parse(&parse_expr_or_stmt, "block", &start)?);
+                let invalid = |token_pos: &TokenPos| {
+                    token_pos.token != Token::NL && token_pos.token != Token::Dedent
+                };
+                if it.peak_if_fn(&invalid) {
+                    return Err(expected(&Token::NL, &token_pos.clone(), "block"));
+                }
+                Ok(())
+            }
         }
     })?;
 

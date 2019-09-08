@@ -43,7 +43,7 @@ impl Type {
                 let (args, argument_errs): (Vec<_>, Vec<_>) = args
                     .iter()
                     .map(|arg| {
-                        let argument = FunctionArg::try_from_node_pos(arg)?;
+                        let argument = FunctionArg::try_from_node_pos(arg, true)?;
                         if argument.vararg {
                             Err(TypeErr::new(
                                 &arg.position,
@@ -155,8 +155,9 @@ fn get_fields_and_functions(
 ) -> Result<(Vec<Field>, Vec<Function>), Vec<TypeErr>> {
     let (mut field_res, mut fun_res, mut errs) = (vec![], vec![], vec![]);
     statements.iter().for_each(|statement| match &statement.node {
-        ASTNode::FunDef { .. } => fun_res.push(Function::try_from_node_pos(statement, all_pure)),
+        ASTNode::FunDef { .. } => fun_res.push(Function::try_from_node_pos(statement, all_pure, true)),
         ASTNode::VariableDef { .. } => field_res.push(Field::try_from_node_pos(statement)),
+        ASTNode::Comment {.. } => {},
         _ => errs.push(TypeErr::new(&statement.position, "Expected function or variable definition"))
     });
 

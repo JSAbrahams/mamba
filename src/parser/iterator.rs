@@ -16,7 +16,7 @@ pub struct TPIterator<'a> {
 impl<'a> TPIterator<'a> {
     pub fn new(it: Peekable<Iter<'a, TokenPos>>) -> TPIterator { TPIterator { it } }
 
-    pub fn peak_if_fn(&mut self, fun: &Fn(&TokenPos) -> bool) -> bool {
+    pub fn peak_if_fn(&mut self, fun: &dyn Fn(&TokenPos) -> bool) -> bool {
         if let Some(tp) = self.it.peek() {
             fun(tp)
         } else {

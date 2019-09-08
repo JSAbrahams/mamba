@@ -37,7 +37,11 @@ impl Function {
     /// If [ASTNodePos](crate::parser::ast::ASTNodePos)'s node is not the
     /// [FunDef](crate::parser::ast::ASTNode::FunDef) variant of the
     /// [ASTNode](crate::parser::ast::ASTNode).
-    pub fn try_from_node_pos(node_pos: &ASTNodePos, all_pure: bool) -> Result<Function, TypeErr> {
+    pub fn try_from_node_pos(
+        node_pos: &ASTNodePos,
+        all_pure: bool,
+        in_class: bool
+    ) -> Result<Function, TypeErr> {
         match &node_pos.node {
             // TODO Add type inference of body
             // TODO analyse raises/exceptions
@@ -48,7 +52,7 @@ impl Function {
                 position:  node_pos.position.clone(),
                 arguments: fun_args
                     .iter()
-                    .map(|arg| FunctionArg::try_from_node_pos(arg))
+                    .map(|arg| FunctionArg::try_from_node_pos(arg, in_class))
                     .collect::<Result<Vec<FunctionArg>, TypeErr>>()?,
                 ret_ty:    match ret_ty {
                     Some(ty) => Some(TypeName::try_from_node_pos(ty.as_ref())?),
@@ -65,11 +69,21 @@ impl Function {
 }
 
 impl FunctionArg {
-    pub fn try_from_node_pos(node_pos: &ASTNodePos) -> Result<FunctionArg, TypeErr> {
+    pub fn try_from_node_pos(
+        node_pos: &ASTNodePos,
+        in_class: bool
+    ) -> Result<FunctionArg, TypeErr> {
         match &node_pos.node {
             ASTNode::FunArg { vararg, id_maybe_type, .. } => match &id_maybe_type.node {
                 ASTNode::IdType { id, mutable, _type } => {
                     let name = try_from_id(id.deref())?;
+                    if !in_class && name.as_str() == "self" {
+                        return Err(TypeErr::new(
+                            &node_pos.position,
+                            "Cannot have self argument outside class"
+                        ));
+                    }
+
                     Ok(FunctionArg {
                         name:     name.clone(),
                         vararg:   *vararg,

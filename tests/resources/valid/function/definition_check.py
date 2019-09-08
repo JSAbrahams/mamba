@@ -13,17 +13,18 @@ def fun_e(m, o, r): print(u)
 
 def fun_v(w, y, ab): print(u)
 
-def __add__(self, other): a + b
-def __sub__(self, other): a - b
-# for now no square root
-def __mul__(self, other): a * b
-def __truediv__(self, other): a/b
-def __floordiv__(self, other): a // b
-def __pow__(self, other): a ** b
-def __mod__(self, other): a % b
-def __eq__(self, other): a == b
-def __gt__(self, other): a > b
-def __lt__(self, other): a < b
+class MyClass:
+    def __add__(self, other): a + b
+    def __sub__(self, other): a - b
+    # for now no square root
+    def __mul__(self, other): a * b
+    def __truediv__(self, other): a/b
+    def __floordiv__(self, other): a // b
+    def __pow__(self, other): a ** b
+    def __mod__(self, other): a % b
+    def __eq__(self, other): a == b
+    def __gt__(self, other): a > b
+    def __lt__(self, other): a < b
 
 def factorial(x): x * factorial(x - 1)
 

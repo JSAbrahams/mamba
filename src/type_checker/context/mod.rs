@@ -1,10 +1,10 @@
 use crate::parser::ast::ASTNode;
+use crate::type_checker::CheckInput;
 use crate::type_checker::context::class::Type;
 use crate::type_checker::context::field::Field;
 use crate::type_checker::context::function::Function;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use crate::type_checker::CheckInput;
 
 pub mod class;
 pub mod field;
@@ -20,9 +20,9 @@ mod common;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug)]
 pub struct Context {
-    types:     Vec<Type>,
+    types: Vec<Type>,
     functions: Vec<Function>,
-    fields:    Vec<Field>
+    fields: Vec<Field>,
 }
 
 pub trait ReturnType {
@@ -36,8 +36,8 @@ pub trait ReturnType {
     /// to said type, a [TypeErr](crate::type_checker::type_result::TypeErr)
     /// is returned.
     fn with_return_type_name(self, ty: TypeName) -> Result<Self, TypeErr>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 
     /// Get return type.
     ///
@@ -66,15 +66,19 @@ pub fn build_context(files: &[CheckInput]) -> TypeResult<Context> {
                             .map(|err| err.into_with_source(source.clone(), path))
                             .collect()
                     })),
-                ASTNode::FunDef { .. } => fun_res.push(
-                    Function::try_from_node_pos(module, *pure)
-                        .map_err(|err| err.into_with_source(source.clone(), path))
-                ),
-                ASTNode::VariableDef { .. } => field_res.push(
-                    Field::try_from_node_pos(module)
-                        .map_err(|err| err.into_with_source(source.clone(), path))
-                ),
-                _ => {}
+                other => if let ASTNode::Script { statements } = other {
+                    statements.iter().for_each(|statement| match &statement.node {
+                        ASTNode::FunDef { .. } => fun_res.push(
+                            Function::try_from_node_pos(statement, *pure, false)
+                                .map_err(|err| err.into_with_source(source.clone(), path))
+                        ),
+                        ASTNode::VariableDef { .. } => field_res.push(
+                            Field::try_from_node_pos(statement)
+                                .map_err(|err| err.into_with_source(source.clone(), path))
+                        ),
+                        _ => {}
+                    })
+                } else { {} }
             }),
         _ => errs.push(TypeErr::new(&file.position, "Expected file"))
     });
@@ -90,9 +94,9 @@ pub fn build_context(files: &[CheckInput]) -> TypeResult<Context> {
         Err(errs)
     } else {
         Ok(Context {
-            types:     types.into_iter().map(Result::unwrap).collect(),
+            types: types.into_iter().map(Result::unwrap).collect(),
             functions: functions.into_iter().map(Result::unwrap).collect(),
-            fields:    fields.into_iter().map(Result::unwrap).collect()
+            fields: fields.into_iter().map(Result::unwrap).collect(),
         })
     }
 }

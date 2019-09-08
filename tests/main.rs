@@ -8,6 +8,7 @@ use std::process::Stdio;
 #[macro_use]
 mod common;
 
+mod checker;
 mod core;
 mod desugar;
 mod lexer;
