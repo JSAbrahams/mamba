@@ -45,7 +45,7 @@ impl Function {
                 name:      try_from_id(id)?,
                 pure:      *pure || all_pure,
                 private:   *private,
-                position:  node_pos.position,
+                position:  node_pos.position.clone(),
                 arguments: fun_args
                     .iter()
                     .map(|arg| FunctionArg::try_from_node_pos(arg))
@@ -59,7 +59,7 @@ impl Function {
                     .map(|raise| Generic::try_from_node_pos(raise))
                     .collect::<Result<Vec<Generic>, TypeErr>>()?
             }),
-            _ => Err(TypeErr::new(node_pos.position, "Expected function definition"))
+            _ => Err(TypeErr::new(&node_pos.position, "Expected function definition"))
         }
     }
 }
@@ -71,23 +71,23 @@ impl FunctionArg {
                 ASTNode::IdType { id, mutable, _type } => Ok(FunctionArg {
                     name:     match &id.node {
                         ASTNode::Init =>
-                            return Err(TypeErr::new(id.position, "Init cannot be a function")),
+                            return Err(TypeErr::new(&id.position, "Init cannot be a function")),
                         _ => try_from_id(id.deref())?
                     },
                     vararg:   *vararg,
                     mutable:  *mutable,
-                    position: node_pos.position,
+                    position: node_pos.position.clone(),
                     ty:       match _type {
                         Some(_type) => Some(TypeName::try_from_node_pos(_type.deref())?),
                         None => None
                     }
                 }),
                 _ => Err(TypeErr::new(
-                    id_maybe_type.position,
+                    &id_maybe_type.position,
                     "Expected function argument identifier (and type)"
                 ))
             },
-            _ => Err(TypeErr::new(node_pos.position, "Expected function argument"))
+            _ => Err(TypeErr::new(&node_pos.position, "Expected function argument"))
         }
     }
 }
@@ -95,7 +95,7 @@ impl FunctionArg {
 impl ReturnType for FunctionArg {
     fn with_return_type_name(self, ty: TypeName) -> Result<Self, TypeErr> {
         if self.ty.is_some() && self.ty.unwrap() != ty {
-            Err(TypeErr::new(self.position, "Cannot infer function argument type"))
+            Err(TypeErr::new(&self.position, "Cannot infer function argument type"))
         } else {
             Ok(FunctionArg {
                 name:     self.name,
@@ -110,7 +110,7 @@ impl ReturnType for FunctionArg {
     fn get_return_type_name(&self) -> Result<TypeName, TypeErr> {
         match &self.ty {
             Some(ty) => Ok(ty.clone()),
-            None => Err(TypeErr::new(self.position.clone(), "Cannot infer function argument type"))
+            None => Err(TypeErr::new(&self.position, "Cannot infer function argument type"))
         }
     }
 }
@@ -118,7 +118,7 @@ impl ReturnType for FunctionArg {
 impl ReturnType for Function {
     fn with_return_type_name(self, ty: TypeName) -> Result<Self, TypeErr> {
         if self.ret_ty.is_some() && self.ret_ty.unwrap() != ty {
-            Err(TypeErr::new(self.position, "Inferred type not equal to signature"))
+            Err(TypeErr::new(&self.position, "Inferred type not equal to signature"))
         } else {
             Ok(Function {
                 name:      self.name,
@@ -135,7 +135,7 @@ impl ReturnType for Function {
     fn get_return_type_name(&self) -> Result<TypeName, TypeErr> {
         match &self.ret_ty {
             Some(type_name) => Ok(type_name.clone()),
-            None => Err(TypeErr::new(self.clone().position, "Cannot infer function return type"))
+            None => Err(TypeErr::new(&self.position, "Cannot infer function return type"))
         }
     }
 }

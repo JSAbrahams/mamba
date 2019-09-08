@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use crate::common::position::Position;
 use crate::parser::ast::ASTNodePos;
 use crate::type_checker::context::class::Type;
-use std::cmp::max;
 
 pub type TypeResult<T = Type> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults =
@@ -20,8 +19,13 @@ pub struct TypeErr {
 }
 
 impl TypeErr {
-    pub fn new(position: Position, msg: &str) -> TypeErr {
-        TypeErr { position, msg: String::from(msg), path: None, source_line: None }
+    pub fn new(position: &Position, msg: &str) -> TypeErr {
+        TypeErr {
+            position:    position.clone(),
+            msg:         String::from(msg),
+            path:        None,
+            source_line: None
+        }
     }
 
     pub fn into_with_source(self, source: Option<String>, path: &Option<PathBuf>) -> TypeErr {
@@ -31,7 +35,7 @@ impl TypeErr {
             source_line: source.map(|source| {
                 source
                     .lines()
-                    .nth(self.position.line as usize - 1)
+                    .nth(self.position.start.line as usize - 1)
                     .map_or(String::from("unknown"), String::from)
             }),
             path:        path.clone()
@@ -49,15 +53,15 @@ impl Display for TypeErr {
 {:3}  |- {}
      |  {}{}",
             self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
-            self.position.line,
-            self.position.pos,
+            self.position.start.line,
+            self.position.start.pos,
             self.msg,
-            self.position.line,
+            self.position.start.line,
             self.source_line
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
             String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; max(self.position.get_width(), 1) as usize]).unwrap()
+            String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
         )
     }
 }

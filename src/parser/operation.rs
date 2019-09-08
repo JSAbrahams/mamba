@@ -12,8 +12,8 @@ macro_rules! inner_bin_op {
     ($it:expr, $start:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
         $it.eat(&Token::$ast, "operation")?;
         let right = $it.parse(&$fun, $msg, $start)?;
-        let node = ASTNode::$ast { left: $left, right };
-        Ok(Box::from(ASTNodePos::new($start, right.position.end, node)))
+        let node = ASTNode::$ast { left: $left, right: right.clone() };
+        Ok(Box::from(ASTNodePos::new($start, &right.position.end, node)))
     }};
 }
 
@@ -33,7 +33,7 @@ pub fn parse_operation(it: &mut TPIterator) -> ParseResult { parse_level_8(it) }
 
 fn parse_level_8(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_7, "operation", start)?;
+    let arithmetic = it.parse(&parse_level_7, "operation", &start)?;
     if it.peak_if_fn(&is_start_expression_exclude_unary) {
         parse_call(&arithmetic, it)
     } else {
@@ -43,10 +43,10 @@ fn parse_level_8(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_7(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_6, "operation", start)?;
+    let arithmetic = it.parse(&parse_level_6, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
+            inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
         }};
     }
 
@@ -63,10 +63,10 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_6(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_5, "operation", start)?;
+    let arithmetic = it.parse(&parse_level_5, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
+            inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
         }};
     }
 
@@ -91,10 +91,10 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_5(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_4, "operation", start)?;
+    let arithmetic = it.parse(&parse_level_4, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
+            inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
         }};
     }
 
@@ -115,10 +115,10 @@ fn parse_level_5(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_4(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_3, "operation", start)?;
+    let arithmetic = it.parse(&parse_level_3, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
+            inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
         }};
     }
 
@@ -134,10 +134,10 @@ fn parse_level_4(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_3(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_2, "operation", start)?;
+    let arithmetic = it.parse(&parse_level_2, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
+            inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
         }};
     }
 
@@ -149,17 +149,27 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
             Token::Mod => bin_op!(it, parse_level_3, Mod, arithmetic.clone(), "mod"),
             Token::Range => {
                 it.eat(&Token::Range, "operation")?;
-                let to = it.parse(&parse_operation, "operation", start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", start)?;
-                let node = ASTNode::Range { from: arithmetic.clone(), to, inclusive: false, step };
-                Ok(Box::from(ASTNodePos::new(start, to.position.end, node)))
+                let to = it.parse(&parse_operation, "operation", &start)?;
+                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
+                let node = ASTNode::Range {
+                    from: arithmetic.clone(),
+                    to: to.clone(),
+                    inclusive: false,
+                    step
+                };
+                Ok(Box::from(ASTNodePos::new(&start, &to.position.end, node)))
             }
             Token::RangeIncl => {
                 it.eat(&Token::RangeIncl, "operation")?;
-                let to = it.parse(&parse_operation, "operation", start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", start)?;
-                let node = ASTNode::Range { from: arithmetic.clone(), to, inclusive: true, step };
-                Ok(Box::from(ASTNodePos::new(start, to.position.end, node)))
+                let to = it.parse(&parse_operation, "operation", &start)?;
+                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
+                let node = ASTNode::Range {
+                    from: arithmetic.clone(),
+                    to: to.clone(),
+                    inclusive: true,
+                    step
+                };
+                Ok(Box::from(ASTNodePos::new(&start, &to.position.end, node)))
             }
             _ => Ok(arithmetic.clone())
         },
@@ -171,9 +181,9 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
-            let factor = $it.parse(&$fun, $msg, start)?;
-            let node = ASTNode::$ast { expr: factor };
-            Ok(Box::from(ASTNodePos::new(start, factor.position.end, node)))
+            let factor = $it.parse(&$fun, $msg, &start)?;
+            let node = ASTNode::$ast { expr: factor.clone() };
+            Ok(Box::from(ASTNodePos::new(&start, &factor.position.end, node)))
         }};
     }
 
@@ -194,10 +204,10 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
 
 fn parse_level_1(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_factor, "operation", start)?;
+    let arithmetic = it.parse(&parse_factor, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
-            inner_bin_op!($it, start, $fun, $ast, $arithmetic, $msg)
+            inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
         }};
     }
 
@@ -216,7 +226,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
         ($it:expr, $factor:expr, $ast:ident) => {{
             let end = $it.eat(&Token::$ast($factor.clone()), "factor")?;
             let node = ASTNode::$ast { lit: $factor };
-            Ok(Box::from(ASTNodePos::new(start, end, node)))
+            Ok(Box::from(ASTNodePos::new(&start, &end, node)))
         }};
     }
 
@@ -231,9 +241,9 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             Token::ENum(num, exp) => {
                 let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
                 let node = ASTNode::ENum { num: num.to_string(), exp: exp.to_string() };
-                Ok(Box::from(ASTNodePos::new(start, end, node)))
+                Ok(Box::from(ASTNodePos::new(&start, &end, node)))
             }
-            _ => it.parse(&parse_expression, "operation", start)
+            _ => it.parse(&parse_expression, "operation", &start)
         },
         // TODO add system to also allow us to say something should for instance be an expression
         &[

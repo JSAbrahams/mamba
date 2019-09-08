@@ -22,7 +22,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             _ => Err(LexErr::new(
                 state.line,
                 state.pos,
-                1,
+                None,
                 "return carriage not followed by newline"
             ))
         },
@@ -146,7 +146,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         other => Err(LexErr::new(
             state.line,
             state.pos,
-            1,
+            None,
             format!("unrecognized character: {}", other).as_ref()
         ))
     }

@@ -76,7 +76,7 @@ pub fn build_context(files: &[CheckInput]) -> TypeResult<Context> {
                 ),
                 _ => {}
             }),
-        _ => errs.push(TypeErr::new(file.position, "Expected file"))
+        _ => errs.push(TypeErr::new(&file.position, "Expected file"))
     });
 
     let (types, type_errs): (Vec<_>, Vec<_>) = type_res.into_iter().partition(Result::is_ok);

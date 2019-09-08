@@ -14,12 +14,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
             Token::For => parse_for(it),
             Token::Break => {
                 let end = it.eat(&Token::Break, "control flow statement")?;
-                Ok(Box::from(ASTNodePos::new(token_pos.start, end, ASTNode::Break)))
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Break)))
             }
             Token::Continue => {
                 let end = it.eat(&Token::Continue, "control flow statement")?;
-                let node = ASTNode::Continue;
-                Ok(Box::from(ASTNodePos::new(token_pos.start, end, ASTNode::Continue)))
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Continue)))
             }
             _ => Err(expected_one_of(
                 &[Token::While, Token::For, Token::Break, Token::Continue],
@@ -35,21 +34,21 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
 fn parse_while(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("while statement")?;
     it.eat(&Token::While, "while statement")?;
-    let cond = it.parse(&parse_expression, "while statement", start)?;
+    let cond = it.parse(&parse_expression, "while statement", &start)?;
     it.eat(&Token::Do, "while")?;
-    let body = it.parse(&parse_expr_or_stmt, "while statement", start)?;
+    let body = it.parse(&parse_expr_or_stmt, "while statement", &start)?;
 
-    let node = ASTNode::While { cond, body };
-    Ok(Box::from(ASTNodePos::new(start, body.position.end, node)))
+    let node = ASTNode::While { cond, body: body.clone() };
+    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
 }
 
 fn parse_for(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("for statement")?;
     it.eat(&Token::For, "for statement")?;
-    let expr = it.parse(&parse_expression, "for statement", start)?;
+    let expr = it.parse(&parse_expression, "for statement", &start)?;
     it.eat(&Token::Do, "for statement")?;
-    let body = it.parse(&parse_expr_or_stmt, "for statement", start)?;
+    let body = it.parse(&parse_expr_or_stmt, "for statement", &start)?;
 
-    let node = ASTNode::For { expr, body };
-    Ok(Box::from(ASTNodePos::new(start, body.position.end, node)))
+    let node = ASTNode::For { expr, body: body.clone() };
+    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
 }

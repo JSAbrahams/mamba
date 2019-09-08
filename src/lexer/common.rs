@@ -95,7 +95,7 @@ impl State {
         self.line_indent = 1;
         self.pos = 1;
         self.line += 1;
-        return vec![];
+        vec![]
     }
 
     pub fn space(&mut self) {

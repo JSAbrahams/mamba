@@ -1,7 +1,5 @@
-use crate::common::position::Position;
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::type_result::TypeErr;
-use std::ops::Deref;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeName {
@@ -22,7 +20,7 @@ impl TypeName {
                         .map(|generic| TypeName::try_from_node_pos(generic))
                         .collect::<Result<Vec<TypeName>, TypeErr>>()?
                 }),
-                _ => Err(TypeErr::new(Position::from(id.deref()), "Expected identifier"))
+                _ => Err(TypeErr::new(&id.position, "Expected identifier"))
             },
             ASTNode::TypeTup { types } => Ok(TypeName::Tuple {
                 type_names: types
@@ -37,7 +35,7 @@ impl TypeName {
                     .collect::<Result<Vec<TypeName>, TypeErr>>()?,
                 ret_ty: Box::from(TypeName::try_from_node_pos(ret_ty)?)
             }),
-            _ => Err(TypeErr::new(Position::from(node_pos), "Expected type variant"))
+            _ => Err(TypeErr::new(&node_pos.position, "Expected type variant"))
         }
     }
 }

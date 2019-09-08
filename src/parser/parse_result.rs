@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::common::position::Position;
+use crate::common::position::{EndPoint, Position};
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNodePos;
@@ -25,25 +25,24 @@ pub struct ParseErr {
 
 #[derive(Debug, Clone)]
 pub struct Cause {
-    pub line:  i32,
-    pub pos:   i32,
-    pub cause: String
+    pub position: Position,
+    pub cause:    String
 }
 
 impl Cause {
-    pub fn new(cause: &str, line: i32, pos: i32) -> Cause {
-        Cause { line, pos, cause: String::from(cause) }
+    pub fn new(cause: &str, position: Position) -> Cause {
+        Cause { position, cause: String::from(cause) }
     }
 }
 
 impl ParseErr {
-    pub fn clone_with_cause(&self, cause: &str, line: i32, pos: i32) -> ParseErr {
+    pub fn clone_with_cause(&self, cause: &str, position: Position) -> ParseErr {
         ParseErr {
-            position: self.position,
+            position: self.position.clone(),
             msg:      self.msg.clone(),
             causes:   {
                 let mut new_causes = self.causes.clone();
-                new_causes.push(Cause::new(cause, line, pos));
+                new_causes.push(Cause::new(cause, position));
                 new_causes
             },
             source:   self.source.clone(),
@@ -64,66 +63,61 @@ impl ParseErr {
 
 pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> ParseErr {
     ParseErr {
-        line:   actual.st_line,
-        pos:    actual.st_pos,
-        width:  actual.token.clone().width(),
-        msg:    format!(
+        position: Position::from(actual),
+        msg:      format!(
             "Expected one of [{}] while parsing {} \"{}\", but found token '{}'",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing,
             actual.token
         ),
-        source: None,
-        path:   None,
-        causes: vec![]
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
 pub fn expected(expected: &Token, actual: &TokenPos, parsing: &str) -> ParseErr {
     ParseErr {
-        line:   actual.st_line,
-        pos:    actual.st_pos,
-        width:  actual.token.clone().width(),
-        msg:    format!(
+        position: Position::from(actual),
+        msg:      format!(
             "Expected token '{}' while parsing {} \"{}\", but found token '{}'",
             expected,
             an_or_a(parsing),
             parsing,
             actual.token
         ),
-        source: None,
-        path:   None,
-        causes: vec![]
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
-pub fn custom(msg: &str, line: i32, pos: i32) -> ParseErr {
+pub fn custom(msg: &str, position: &Position) -> ParseErr {
     ParseErr {
-        line,
-        pos,
-        width: -1,
-        msg: title_case(msg),
-        source: None,
-        path: None,
-        causes: vec![]
+        position: position.clone(),
+        msg:      title_case(msg),
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
-        line:   -1,
-        pos:    -1,
-        width:  -1,
-        msg:    format!(
+        position: Position {
+            start: EndPoint { line: 0, pos: 0 },
+            end:   EndPoint { line: 0, pos: 0 }
+        },
+        msg:      format!(
             "Expected one of {} while parsing {} \"{}\", but end of file",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing
         ),
-        source: None,
-        path:   None,
-        causes: vec![]
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
@@ -154,24 +148,27 @@ impl Display for ParseErr {
             .rev()
             .fold(String::new(), |acc, cause| {
                 let source_line = match &self.source {
-                    Some(source) =>
-                        source.lines().nth(cause.line as usize - 1).unwrap_or("<unknown>"),
+                    Some(source) => source
+                        .lines()
+                        .nth(cause.position.start.line as usize - 1)
+                        .unwrap_or("<unknown>"),
                     None => "<unknown>"
                 };
 
                 acc + &format!(
                     "{:3}  |- {}\n     | {}^ in {} ({}:{})\n",
-                    cause.line,
+                    cause.position.start.line,
                     source_line,
-                    String::from_utf8(vec![b' '; cause.pos as usize]).unwrap(),
+                    String::from_utf8(vec![b' '; cause.position.start.pos as usize]).unwrap(),
                     cause.cause,
-                    cause.line,
-                    cause.pos,
+                    cause.position.start.line,
+                    cause.position.start.pos,
                 )
             });
 
         let source_line = match &self.source {
-            Some(source) => source.lines().nth(self.line as usize - 1).unwrap_or("<unknown>"),
+            Some(source) =>
+                source.lines().nth(self.position.start.line as usize - 1).unwrap_or("<unknown>"),
             None => "<unknown>"
         };
 
@@ -183,14 +180,14 @@ impl Display for ParseErr {
 {:3}  |- {}
      | {}{}",
             self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
-            self.line,
-            self.pos,
+            self.position.start.line,
+            self.position.start.pos,
             self.msg,
             cause_formatter,
-            self.line,
+            self.position.start.line,
             source_line,
-            String::from_utf8(vec![b' '; self.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.width as usize]).unwrap()
+            String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
+            String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
         )
     }
 }

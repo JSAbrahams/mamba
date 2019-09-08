@@ -22,15 +22,15 @@ impl Field {
                     name:     try_from_id(id)?,
                     mutable:  *mutable,
                     private:  *private,
-                    position: field.position,
+                    position: field.position.clone(),
                     ty:       match _type {
                         Some(ty) => Some(TypeName::try_from_node_pos(ty.as_ref())?),
                         None => None
                     }
                 }),
-                _ => Err(TypeErr::new(id_maybe_type.position, "Expected identifier and type"))
+                _ => Err(TypeErr::new(&id_maybe_type.position, "Expected identifier and type"))
             },
-            _ => Err(TypeErr::new(field.position, "Expected field"))
+            _ => Err(TypeErr::new(&field.position, "Expected field"))
         }
     }
 }
@@ -38,7 +38,7 @@ impl Field {
 impl ReturnType for Field {
     fn with_return_type_name(self, ty: TypeName) -> Result<Self, TypeErr> {
         if self.ty.is_some() && self.ty.unwrap() != ty {
-            Err(TypeErr::new(self.position, "Inferred type not equal to signature"))
+            Err(TypeErr::new(&self.position, "Inferred type not equal to signature"))
         } else {
             Ok(Field {
                 name:     self.name,
@@ -53,7 +53,7 @@ impl ReturnType for Field {
     fn get_return_type_name(&self) -> Result<TypeName, TypeErr> {
         match &self.ty {
             Some(ty) => Ok(ty.clone()),
-            None => Err(TypeErr::new(self.position.clone(), "Type cannot be inferred"))
+            None => Err(TypeErr::new(&self.position, "Type cannot be inferred"))
         }
     }
 }

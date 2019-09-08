@@ -15,7 +15,7 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match &token_pos.token {
             Token::NL => {
                 it.eat(&Token::NL, "expression or statement")?;
-                it.parse(&parse_block, "expression or statement", token_pos.start)
+                it.parse(&parse_block, "expression or statement", &token_pos.start)
             }
             token =>
                 if is_start_statement(token) {
@@ -39,33 +39,29 @@ pub fn parse_expr_or_stmt(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_raise(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let start = it.start_pos("raise")?;
+    let start = &it.start_pos("raise")?;
     it.eat(&Token::Raises, "raise")?;
 
     it.eat(&Token::LSBrack, "raise")?;
     let errors = it.parse_vec(&parse_generics, "raise", start)?;
     it.eat(&Token::RSBrack, "raise")?;
     it.eat_if(&Token::RSBrack);
-    let end = match errors.last() {
-        Some(stmt) => stmt.position.end,
-        None => start.clone()
-    };
+    let end = errors.last().map_or(start, |stmt| &stmt.position.end);
 
-    let node = ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors };
+    let node =
+        ASTNode::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors: errors.clone() };
     Ok(Box::from(ASTNodePos::new(start, end, node)))
 }
 
 pub fn parse_handle(expr_or_stmt: ASTNodePos, it: &mut TPIterator) -> ParseResult {
-    let start = it.start_pos("handle")?;
+    let start = &it.start_pos("handle")?;
     it.eat(&Token::Handle, "handle")?;
     it.eat(&Token::NL, "handle")?;
 
     let cases = it.parse_vec(&parse_match_cases, "handle", start)?;
-    let end = match cases.last() {
-        Some(stmt) => stmt.position.end,
-        None => start.clone()
-    };
+    let end = cases.last().map_or(start, |stmt| &stmt.position.end);
 
-    let node = ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
-    Ok(Box::from(ASTNodePos::new(start, end, node)))
+    let node =
+        ASTNode::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases: cases.clone() };
+    Ok(Box::from(ASTNodePos::new(&start, end, node)))
 }

@@ -23,7 +23,7 @@ pub struct UnimplementedErr {
 impl UnimplementedErr {
     pub fn new(node_pos: &ASTNodePos, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            position:    node_pos.position,
+            position:    node_pos.position.clone(),
             msg:         format!(
                 "The {} construct has not yet been implemented as of v{}.",
                 msg, VERSION
@@ -39,7 +39,7 @@ impl UnimplementedErr {
         path: &Option<PathBuf>
     ) -> UnimplementedErr {
         UnimplementedErr {
-            position:    self.position,
+            position:    self.position.clone(),
             msg:         self.msg.clone(),
             source_line: source.clone().map(|source| {
                 source
@@ -53,6 +53,7 @@ impl UnimplementedErr {
 }
 
 impl Display for UnimplementedErr {
+    // TODO handle multi-line errors
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
@@ -69,7 +70,7 @@ impl Display for UnimplementedErr {
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
             String::from_utf8(vec![b' '; self.position.end.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.position.width() as usize]).unwrap()
+            String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
         )
     }
 }

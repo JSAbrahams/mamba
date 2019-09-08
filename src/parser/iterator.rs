@@ -1,12 +1,13 @@
-use crate::common::position::EndPoint;
+use std::iter::Peekable;
+use std::slice::Iter;
+
+use crate::common::position::{EndPoint, Position};
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
 use crate::parser::ast::ASTNodePos;
 use crate::parser::parse_result::eof_expected_one_of;
 use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
-use std::iter::Peekable;
-use std::slice::Iter;
 
 pub struct TPIterator<'a> {
     it: Peekable<Iter<'a, TokenPos>>
@@ -26,7 +27,7 @@ impl<'a> TPIterator<'a> {
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<EndPoint> {
         match self.it.next() {
             Some(TokenPos { token: actual, start }) if Token::same_type(actual, token) =>
-                Ok(start.offset_pos(token.width())),
+                Ok(start.clone().offset_pos(token.clone().width())),
             Some(token_pos) => Err(expected(token, token_pos, err_msg)),
             None => Err(eof_expected_one_of(&[token.clone()], err_msg))
         }
@@ -46,28 +47,32 @@ impl<'a> TPIterator<'a> {
 
     pub fn parse(
         &mut self,
-        parse_fun: &Fn(&mut TPIterator) -> ParseResult,
+        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult,
         cause: &str,
-        start: EndPoint
+        start: &EndPoint
     ) -> ParseResult<Box<ASTNodePos>> {
-        parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
+        parse_fun(self).map_err(|err| {
+            err.clone_with_cause(cause, Position { start: start.clone(), end: start.clone() })
+        })
     }
 
     pub fn parse_vec(
         &mut self,
-        parse_fun: &Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
+        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
         cause: &str,
-        start: EndPoint
+        start: &EndPoint
     ) -> ParseResult<Vec<ASTNodePos>> {
-        parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
+        parse_fun(self).map_err(|err| {
+            err.clone_with_cause(cause, Position { start: start.clone(), end: start.clone() })
+        })
     }
 
     pub fn parse_if(
         &mut self,
         token: &Token,
-        parse_fun: &Fn(&mut TPIterator) -> ParseResult,
+        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult,
         err_msg: &str,
-        start: EndPoint
+        start: &EndPoint
     ) -> ParseResult<Option<Box<ASTNodePos>>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -81,9 +86,9 @@ impl<'a> TPIterator<'a> {
     pub fn parse_vec_if(
         &mut self,
         token: &Token,
-        parse_fun: &Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
+        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
         err_msg: &str,
-        start: EndPoint
+        start: &EndPoint
     ) -> ParseResult<Vec<ASTNodePos>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -96,7 +101,7 @@ impl<'a> TPIterator<'a> {
 
     pub fn peek_or_err(
         &mut self,
-        match_fun: &Fn(&mut TPIterator, &TokenPos) -> ParseResult,
+        match_fun: &dyn Fn(&mut TPIterator, &TokenPos) -> ParseResult,
         eof_expected: &[Token],
         eof_err_msg: &str
     ) -> ParseResult {
@@ -108,7 +113,7 @@ impl<'a> TPIterator<'a> {
 
     pub fn peek(
         &mut self,
-        match_fun: &Fn(&mut TPIterator, &TokenPos) -> ParseResult,
+        match_fun: &dyn Fn(&mut TPIterator, &TokenPos) -> ParseResult,
         default: ParseResult
     ) -> ParseResult {
         match self.it.peek().cloned() {
@@ -120,7 +125,7 @@ impl<'a> TPIterator<'a> {
     pub fn peek_while_not_tokens(
         &mut self,
         tokens: &[Token],
-        loop_fn: &mut FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
+        loop_fn: &mut dyn FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
     ) -> ParseResult<()> {
         self.peek_while_fn(
             &|token_pos| {
@@ -133,15 +138,15 @@ impl<'a> TPIterator<'a> {
     pub fn peek_while_not_token(
         &mut self,
         token: &Token,
-        loop_fn: &mut FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
+        loop_fn: &mut dyn FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
     ) -> ParseResult<()> {
         self.peek_while_fn(&|token_pos| !Token::same_type(&token_pos.token, token), loop_fn)
     }
 
     pub fn peek_while_fn(
         &mut self,
-        check_fn: &Fn(&TokenPos) -> bool,
-        loop_fn: &mut FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
+        check_fn: &dyn Fn(&TokenPos) -> bool,
+        loop_fn: &mut dyn FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
     ) -> ParseResult<()> {
         while let Some(&token_pos) = self.it.peek() {
             if !check_fn(token_pos) {
@@ -154,7 +159,7 @@ impl<'a> TPIterator<'a> {
 
     pub fn start_pos(&mut self, msg: &str) -> ParseResult<EndPoint> {
         match self.it.peek() {
-            Some(TokenPos { st_line, st_pos, .. }) => Ok((*st_line, *st_pos)),
+            Some(TokenPos { start, .. }) => Ok(start.clone()),
             None => Err(eof_expected_one_of(&[], msg))
         }
     }

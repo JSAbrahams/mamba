@@ -19,11 +19,11 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
         Token::Comment(comment) => {
             let end = it.eat(&Token::Comment(comment.clone()), "block")?;
             let node = ASTNode::Comment { comment: comment.clone() };
-            statements.push(ASTNodePos::new(token_pos.start, end, node));
+            statements.push(ASTNodePos::new(&token_pos.start, &end, node));
             Ok(())
         }
         _ => {
-            statements.push(*it.parse(&parse_expr_or_stmt, "block", start)?);
+            statements.push(*it.parse(&parse_expr_or_stmt, "block", &start)?);
             let invalid = |token_pos: &TokenPos| {
                 token_pos.token != Token::NL && token_pos.token != Token::Dedent
             };
@@ -40,12 +40,9 @@ pub fn parse_statements(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 pub fn parse_block(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("block")?;
     it.eat(&Token::Indent, "block")?;
-    let statements = it.parse_vec(&parse_statements, "block", start)?;
-    let end = match statements.last() {
-        Some(stmt) => stmt.position.end,
-        None => start.clone()
-    };
+    let statements = it.parse_vec(&parse_statements, "block", &start)?;
+    let end = statements.last().cloned().map_or(start.clone(), |stmt| stmt.position.end);
 
     it.eat(&Token::Dedent, "block")?;
-    Ok(Box::from(ASTNodePos::new(start, end, ASTNode::Block { statements })))
+    Ok(Box::from(ASTNodePos::new(&start, &end, ASTNode::Block { statements })))
 }

@@ -1,4 +1,4 @@
-use crate::common::position::EndPoint;
+use crate::common::position::{EndPoint, Position};
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -271,5 +271,17 @@ impl fmt::Display for Token {
             Token::Undefined => String::from("undefined"),
             Token::Comment(string) => format!("{} (comment)", string)
         })
+    }
+}
+
+impl From<&TokenPos> for Position {
+    fn from(token_pos: &TokenPos) -> Self {
+        Position {
+            start: token_pos.start.clone(),
+            end:   EndPoint {
+                line: token_pos.start.line,
+                pos:  token_pos.start.pos + token_pos.token.clone().width()
+            }
+        }
     }
 }

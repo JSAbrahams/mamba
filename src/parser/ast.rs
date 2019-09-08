@@ -10,8 +10,8 @@ pub struct ASTNodePos {
 }
 
 impl ASTNodePos {
-    pub fn new(start: EndPoint, end: EndPoint, node: ASTNode) -> ASTNodePos {
-        ASTNodePos { position: Position { start, end }, node }
+    pub fn new(start: &EndPoint, end: &EndPoint, node: ASTNode) -> ASTNodePos {
+        ASTNodePos { position: Position { start: start.clone(), end: end.clone() }, node }
     }
 }
 
