@@ -68,20 +68,24 @@ impl FunctionArg {
     pub fn try_from_node_pos(node_pos: &ASTNodePos) -> Result<FunctionArg, TypeErr> {
         match &node_pos.node {
             ASTNode::FunArg { vararg, id_maybe_type, .. } => match &id_maybe_type.node {
-                ASTNode::IdType { id, mutable, _type } => Ok(FunctionArg {
-                    name:     match &id.node {
-                        ASTNode::Init =>
-                            return Err(TypeErr::new(&id.position, "Init cannot be a function")),
-                        _ => try_from_id(id.deref())?
-                    },
-                    vararg:   *vararg,
-                    mutable:  *mutable,
-                    position: node_pos.position.clone(),
-                    ty:       match _type {
-                        Some(_type) => Some(TypeName::try_from_node_pos(_type.deref())?),
-                        None => None
-                    }
-                }),
+                ASTNode::IdType { id, mutable, _type } => {
+                    let name = try_from_id(id.deref())?;
+                    Ok(FunctionArg {
+                        name:     name.clone(),
+                        vararg:   *vararg,
+                        mutable:  *mutable,
+                        position: node_pos.position.clone(),
+                        ty:       match _type {
+                            Some(_type) => Some(TypeName::try_from_node_pos(_type.deref())?),
+                            None if name.as_str() == "self" => None,
+                            None =>
+                                return Err(TypeErr::new(
+                                    &node_pos.position,
+                                    "Non self arguments must have type"
+                                )),
+                        }
+                    })
+                }
                 _ => Err(TypeErr::new(
                     &id_maybe_type.position,
                     "Expected function argument identifier (and type)"
