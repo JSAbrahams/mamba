@@ -25,7 +25,8 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
             import: Box::from(desugar_node(import, imp, state)?)
         },
 
-        ASTNode::Def { .. } => desugar_definition(node_pos, imp, state)?,
+        ASTNode::VariableDef { .. } | ASTNode::FunDef { .. } =>
+            desugar_definition(node_pos, imp, state)?,
         ASTNode::Reassign { left, right } => Core::Assign {
             left:  Box::from(desugar_node(left, imp, state)?),
             right: Box::from(desugar_node(right, imp, state)?)
@@ -236,14 +237,12 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
         },
         ASTNode::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, imp, state)? },
-        ASTNode::File { modules, type_defs, imports, .. } => {
+        ASTNode::File { modules, imports, .. } => {
             let mut imports = desugar_vec(imports, imp, state)?;
-            let mut type_definitions = desugar_vec(type_defs, imp, state)?;
             let mut modules = desugar_vec(modules, imp, state)?;
             imports.append(&mut imp.imports);
 
             let mut statements = imports;
-            statements.append(&mut type_definitions);
             statements.append(&mut modules);
             Core::Block { statements }
         }
@@ -283,13 +282,11 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
 
         ASTNode::Handle { expr_or_stmt, cases } => {
             let mut statements = vec![];
-            if let ASTNode::Def { definition, .. } = &expr_or_stmt.node {
-                if let ASTNode::VariableDef { id_maybe_type, .. } = &definition.node {
-                    statements.push(Core::Assign {
-                        left:  Box::from(desugar_node(id_maybe_type.as_ref(), imp, state)?),
-                        right: Box::from(Core::None)
-                    });
-                }
+            if let ASTNode::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
+                statements.push(Core::Assign {
+                    left:  Box::from(desugar_node(id_maybe_type.as_ref(), imp, state)?),
+                    right: Box::from(Core::None)
+                });
             };
 
             statements.push(Core::TryExcept {
@@ -325,8 +322,5 @@ pub fn desugar_node(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> 
 
             Core::Block { statements }
         }
-
-        ASTNode::VariableDef { .. } => panic!("Variable definition cannot be top level."),
-        ASTNode::FunDef { .. } => panic!("Function definition cannot be top level.")
     })
 }

@@ -1,21 +1,27 @@
+use crate::common::position::EndPoint;
+use crate::common::position::Position;
+
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
 pub struct ASTNodePos {
-    pub st_line: i32,
-    pub st_pos:  i32,
-    pub en_line: i32,
-    pub en_pos:  i32,
-    pub node:    ASTNode
+    pub position: Position,
+    pub node:     ASTNode
+}
+
+impl ASTNodePos {
+    pub fn new(start: &EndPoint, end: &EndPoint, node: ASTNode) -> ASTNodePos {
+        ASTNodePos { position: Position { start: start.clone(), end: end.clone() }, node }
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum ASTNode {
     File {
-        pure:      bool,
-        imports:   Vec<ASTNodePos>,
-        modules:   Vec<ASTNodePos>,
-        type_defs: Vec<ASTNodePos>
+        pure:     bool,
+        comments: Vec<ASTNodePos>,
+        imports:  Vec<ASTNodePos>,
+        modules:  Vec<ASTNodePos>
     },
     Import {
         import: Vec<ASTNodePos>,
@@ -49,18 +55,16 @@ pub enum ASTNode {
         left:  Box<ASTNodePos>,
         right: Box<ASTNodePos>
     },
-    Def {
-        private:    bool,
-        definition: Box<ASTNodePos>
-    },
     VariableDef {
         ofmut:         bool,
+        private:       bool,
         id_maybe_type: Box<ASTNodePos>,
         expression:    Option<Box<ASTNodePos>>,
         forward:       Vec<ASTNodePos>
     },
     FunDef {
         pure:     bool,
+        private:  bool,
         id:       Box<ASTNodePos>,
         fun_args: Vec<ASTNodePos>,
         ret_ty:   Option<Box<ASTNodePos>>,
@@ -125,8 +129,8 @@ pub enum ASTNode {
         generics: Vec<ASTNodePos>
     },
     TypeFun {
-        _type: Box<ASTNodePos>,
-        body:  Box<ASTNodePos>
+        args:   Vec<ASTNodePos>,
+        ret_ty: Box<ASTNodePos>
     },
     Condition {
         cond:  Box<ASTNodePos>,

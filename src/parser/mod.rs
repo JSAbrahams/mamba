@@ -37,10 +37,10 @@ pub type ParseInput = (Vec<TokenPos>, Option<String>, Option<PathBuf>);
 /// # use mamba::lexer::token::TokenPos;
 /// # use mamba::parser::parse;
 /// // Assigning 10 to b
-/// let def = TokenPos { st_line: 0, st_pos: 0, token: Token::Def };
-/// let id = TokenPos { st_line: 0, st_pos: 4, token: Token::Id(String::from("b")) };
-/// let assign = TokenPos { st_line: 0, st_pos: 6, token: Token::Assign };
-/// let number = TokenPos { st_line: 0, st_pos: 9, token: Token::Int(String::from("9")) };
+/// let def = TokenPos::new(1, 1, Token::Def);
+/// let id = TokenPos::new(1, 4, Token::Id(String::from("b")));
+/// let assign = TokenPos::new(1, 6, Token::Assign);
+/// let number = TokenPos::new(1, 9, Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, assign, number]);
 /// assert_eq!(result.is_ok(), true);
@@ -54,9 +54,9 @@ pub type ParseInput = (Vec<TokenPos>, Option<String>, Option<PathBuf>);
 /// # use mamba::lexer::token::Token;
 /// # use mamba::lexer::token::TokenPos;
 /// # use mamba::parser::parse;
-/// let def = TokenPos { st_line: 0, st_pos: 0, token: Token::Def };
-/// let id = TokenPos { st_line: 0, st_pos: 4, token: Token::Id(String::from("b")) };
-/// let number = TokenPos { st_line: 0, st_pos: 9, token: Token::Int(String::from("9")) };
+/// let def = TokenPos::new(0, 0, Token::Def);
+/// let id = TokenPos::new(0, 0, Token::Id(String::from("b")));
+/// let number = TokenPos::new(0, 0, Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, number]);
 /// assert_eq!(result.is_err(), true);

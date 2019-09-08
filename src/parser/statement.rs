@@ -15,30 +15,23 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match token_pos.token {
             Token::Print => {
                 it.eat(&Token::Print, "statement")?;
-                let expr =
-                    it.parse(&parse_expression, "statement", token_pos.st_line, token_pos.st_pos)?;
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = (expr.en_line, expr.en_pos);
-                let node = ASTNode::Print { expr };
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+                let expr = it.parse(&parse_expression, "statement", &token_pos.start)?;
+                let node = ASTNode::Print { expr: expr.clone() };
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &expr.position.end.clone(), node)))
             }
             Token::Pass => {
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.eat(&Token::Pass, "statement")?;
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Pass }))
+                let end = it.eat(&Token::Pass, "statement")?;
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Pass)))
             }
             Token::Retry => {
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.eat(&Token::Retry, "statement")?;
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Retry }))
+                let end = it.eat(&Token::Retry, "statement")?;
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Retry)))
             }
             Token::Raise => {
                 it.eat(&Token::Raise, "statement")?;
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let error = it.parse(&parse_expression, "statement", st_line, st_pos)?;
-                let (en_line, en_pos) = (error.en_line, error.en_pos);
-                let node = ASTNode::Raise { error };
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+                let error = it.parse(&parse_expression, "statement", &token_pos.start)?;
+                let node = ASTNode::Raise { error: error.clone() };
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &error.position.end, node)))
             }
             Token::Def => parse_definition(it),
             Token::With => parse_with(it),
@@ -71,15 +64,14 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
 }
 
 pub fn parse_with(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("with")?;
+    let start = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
-    let resource = it.parse(&parse_expression, "with", st_line, st_pos)?;
-    let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id", st_line, st_pos)?;
-    let expr = it.parse(&parse_expr_or_stmt, "with", st_line, st_pos)?;
+    let resource = it.parse(&parse_expression, "with", &start)?;
+    let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id", &start)?;
+    let expr = it.parse(&parse_expr_or_stmt, "with", &start)?;
 
-    let (en_line, en_pos) = (expr.en_line, expr.en_pos);
-    let node = ASTNode::With { resource, _as, expr };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    let node = ASTNode::With { resource, _as, expr: expr.clone() };
+    Ok(Box::from(ASTNodePos::new(&start, &expr.position.end, node)))
 }
 
 pub fn is_start_statement(tp: &Token) -> bool {

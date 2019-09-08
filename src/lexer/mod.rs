@@ -26,19 +26,15 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 /// # use mamba::lexer::tokenize;
 /// # use mamba::lexer::token::Token;
 /// # use mamba::lexer::token::TokenPos;
+/// # use mamba::common::position::EndPoint;
 /// let source = "a <- 2";
 /// let tokens = tokenize(&source).unwrap();
 ///
-/// assert_eq!(tokens[0], TokenPos {
-///     st_line: 1,
-///     st_pos:  1,
-///     token:   Token::Id(String::from("a"))
-/// });
-/// assert_eq!(tokens[1], TokenPos { st_line: 1, st_pos: 3, token: Token::Assign });
+/// assert_eq!(tokens[0].clone(), TokenPos::new(1, 1, Token::Id(String::from("a"))));
+/// assert_eq!(tokens[1], TokenPos { start: EndPoint::new(1, 3), token: Token::Assign });
 /// assert_eq!(tokens[2], TokenPos {
-///     st_line: 1,
-///     st_pos:  6,
-///     token:   Token::Int(String::from("2"))
+///     start: EndPoint::new(1, 6),
+///     token: Token::Int(String::from("2"))
 /// });
 /// ```
 ///

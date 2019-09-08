@@ -1,3 +1,5 @@
+pub mod common;
+
 pub mod core;
 pub mod desugar;
 pub mod lexer;

@@ -1,10 +1,16 @@
+use crate::common::position::{EndPoint, Position};
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TokenPos {
-    pub st_line: i32,
-    pub st_pos:  i32,
-    pub token:   Token
+    pub start: EndPoint,
+    pub token: Token
+}
+
+impl TokenPos {
+    pub fn new(line: i32, pos: i32, token: Token) -> Self {
+        TokenPos { start: EndPoint { line, pos }, token }
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -265,5 +271,17 @@ impl fmt::Display for Token {
             Token::Undefined => String::from("undefined"),
             Token::Comment(string) => format!("{} (comment)", string)
         })
+    }
+}
+
+impl From<&TokenPos> for Position {
+    fn from(token_pos: &TokenPos) -> Self {
+        Position {
+            start: token_pos.start.clone(),
+            end:   EndPoint {
+                line: token_pos.start.line,
+                pos:  token_pos.start.pos + token_pos.token.clone().width()
+            }
+        }
     }
 }

@@ -1,3 +1,5 @@
+use mamba::common::position::EndPoint;
+use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
 use mamba::parser::ast::ASTNode;
@@ -23,13 +25,13 @@ fn reassign_verify() {
 fn variable_private_def_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
+        private:       false,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
         forward:       vec![]
     });
-    let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, right) = match desugar(&def) {
+    let (private, id, right) = match desugar(&definition) {
         Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
@@ -43,13 +45,13 @@ fn variable_private_def_verify() {
 fn variable_def_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
+        private:       true,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
         forward:       vec![]
     });
-    let def = to_pos!(ASTNode::Def { private: true, definition });
 
-    let (private, id, right) = match desugar(&def) {
+    let (private, id, right) = match desugar(&definition) {
         Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
@@ -71,13 +73,13 @@ fn tuple_def_verify() {
     ];
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
+        private:       true,
         id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
         expression:    Some(to_pos!(ASTNode::Tuple { elements: expressions })),
         forward:       vec![]
     });
-    let def = to_pos!(ASTNode::Def { private: true, definition });
 
-    let (private, id, right) = match desugar(&def) {
+    let (private, id, right) = match desugar(&definition) {
         Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
@@ -94,13 +96,13 @@ fn tuple_def_verify() {
 fn variable_def_none_verify() {
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
+        private:       true,
         id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
         expression:    None,
         forward:       vec![]
     });
-    let def = to_pos!(ASTNode::Def { private: true, definition });
 
-    let (private, id, right) = match desugar(&def) {
+    let (private, id, right) = match desugar(&definition) {
         Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
@@ -118,13 +120,13 @@ fn tuple_def_none_verify() {
     ];
     let definition = to_pos!(ASTNode::VariableDef {
         ofmut:         false,
+        private:       true,
         id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
         expression:    None,
         forward:       vec![]
     });
 
-    let def = to_pos!(ASTNode::Def { private: true, definition });
-    let (private, id, right) = match desugar(&def) {
+    let (private, id, right) = match desugar(&definition) {
         Ok(Core::VarDef { private, id, right }) => (private, id, right),
         other => panic!("Expected var def but got: {:?}.", other)
     };
@@ -140,6 +142,7 @@ fn fun_def_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
+        private:  false,
         fun_args: vec![
             to_pos_unboxed!(ASTNode::FunArg {
                 vararg:        false,
@@ -156,9 +159,8 @@ fn fun_def_verify() {
         raises:   vec![],
         body:     None
     });
-    let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, args, body) = match desugar(&def) {
+    let (private, id, args, body) = match desugar(&definition) {
         Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
@@ -185,6 +187,7 @@ fn fun_def_default_arg_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
+        private:  false,
         fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
             vararg:        false,
             id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
@@ -194,9 +197,8 @@ fn fun_def_default_arg_verify() {
         raises:   vec![],
         body:     None
     });
-    let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, args, body) = match desugar(&def) {
+    let (private, id, args, body) = match desugar(&definition) {
         Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
@@ -218,6 +220,7 @@ fn fun_def_with_body_verify() {
     let definition = to_pos!(ASTNode::FunDef {
         id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
         pure:     false,
+        private:  false,
         fun_args: vec![
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg1") }),
             to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
@@ -226,9 +229,8 @@ fn fun_def_with_body_verify() {
         raises:   vec![],
         body:     Some(to_pos!(ASTNode::Real { lit: String::from("2.4") }))
     });
-    let def = to_pos!(ASTNode::Def { private: false, definition });
 
-    let (private, id, args, body) = match desugar(&def) {
+    let (private, id, args, body) = match desugar(&definition) {
         Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
@@ -261,34 +263,4 @@ fn anon_fun_verify() {
     assert_eq!(args[0], Core::Id { lit: String::from("first") });
     assert_eq!(args[1], Core::Id { lit: String::from("second") });
     assert_eq!(*body, Core::Str { _str: String::from("this_string") });
-}
-
-#[test]
-fn top_level_var_def_panic_verify() {
-    let var_def = to_pos!(ASTNode::VariableDef {
-        ofmut:         false,
-        id_maybe_type: to_pos!(ASTNode::Pass),
-        expression:    None,
-        forward:       vec![]
-    });
-
-    panic::set_hook(Box::new(|_info| {}));
-    let result = std::panic::catch_unwind(|| desugar(&var_def));
-    assert!(result.is_err());
-}
-
-#[test]
-fn top_level_fun_def_panic_verify() {
-    let var_def = to_pos!(ASTNode::FunDef {
-        id:       Box::from(to_pos!(ASTNode::Pass)),
-        pure:     false,
-        fun_args: vec![],
-        ret_ty:   None,
-        raises:   vec![],
-        body:     None
-    });
-
-    panic::set_hook(Box::new(|_info| {}));
-    let result = std::panic::catch_unwind(|| desugar(&var_def));
-    assert!(result.is_err());
 }

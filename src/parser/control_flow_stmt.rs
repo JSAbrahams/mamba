@@ -13,15 +13,12 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
             Token::While => parse_while(it),
             Token::For => parse_for(it),
             Token::Break => {
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.eat(&Token::Break, "control flow statement")?;
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node: ASTNode::Break }))
+                let end = it.eat(&Token::Break, "control flow statement")?;
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Break)))
             }
             Token::Continue => {
-                let (st_line, st_pos) = (token_pos.st_line, token_pos.st_pos);
-                let (en_line, en_pos) = it.eat(&Token::Continue, "control flow statement")?;
-                let node = ASTNode::Continue;
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+                let end = it.eat(&Token::Continue, "control flow statement")?;
+                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Continue)))
             }
             _ => Err(expected_one_of(
                 &[Token::While, Token::For, Token::Break, Token::Continue],
@@ -35,25 +32,23 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
 }
 
 fn parse_while(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("while statement")?;
+    let start = it.start_pos("while statement")?;
     it.eat(&Token::While, "while statement")?;
-    let cond = it.parse(&parse_expression, "while statement", st_line, st_pos)?;
+    let cond = it.parse(&parse_expression, "while statement", &start)?;
     it.eat(&Token::Do, "while")?;
-    let body = it.parse(&parse_expr_or_stmt, "while statement", st_line, st_pos)?;
+    let body = it.parse(&parse_expr_or_stmt, "while statement", &start)?;
 
-    let (en_line, en_pos) = (body.en_line, body.en_pos);
-    let node = ASTNode::While { cond, body };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    let node = ASTNode::While { cond, body: body.clone() };
+    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
 }
 
 fn parse_for(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("for statement")?;
+    let start = it.start_pos("for statement")?;
     it.eat(&Token::For, "for statement")?;
-    let expr = it.parse(&parse_expression, "for statement", st_line, st_pos)?;
+    let expr = it.parse(&parse_expression, "for statement", &start)?;
     it.eat(&Token::Do, "for statement")?;
-    let body = it.parse(&parse_expr_or_stmt, "for statement", st_line, st_pos)?;
+    let body = it.parse(&parse_expr_or_stmt, "for statement", &start)?;
 
-    let (en_line, en_pos) = (body.en_line, body.en_pos);
-    let node = ASTNode::For { expr, body };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    let node = ASTNode::For { expr, body: body.clone() };
+    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
 }
