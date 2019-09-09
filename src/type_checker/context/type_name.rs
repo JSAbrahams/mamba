@@ -1,5 +1,7 @@
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeName {
@@ -8,16 +10,18 @@ pub enum TypeName {
     Tuple { type_names: Vec<TypeName> }
 }
 
-impl TypeName {
-    pub fn try_from_node_pos(node_pos: &ASTNodePos) -> Result<Self, TypeErr> {
+impl TryFrom<&ASTNodePos> for TypeName {
+    type Error = TypeErr;
+
+    fn try_from(node_pos: &ASTNodePos) -> Result<Self, Self::Error> {
         match &node_pos.node {
-            // TODO implement generics
+            ASTNode::Generic { id, .. } => TypeName::try_from(id.deref()),
             ASTNode::Type { id, generics } => match &id.node {
                 ASTNode::Id { lit } => Ok(TypeName::Single {
                     lit:      lit.clone(),
                     generics: generics
                         .iter()
-                        .map(|generic| TypeName::try_from_node_pos(generic))
+                        .map(TypeName::try_from)
                         .collect::<Result<Vec<TypeName>, TypeErr>>()?
                 }),
                 _ => Err(TypeErr::new(&id.position, "Expected identifier"))
@@ -25,15 +29,15 @@ impl TypeName {
             ASTNode::TypeTup { types } => Ok(TypeName::Tuple {
                 type_names: types
                     .iter()
-                    .map(|node_pos| TypeName::try_from_node_pos(node_pos))
+                    .map(TypeName::try_from)
                     .collect::<Result<Vec<TypeName>, TypeErr>>()?
             }),
             ASTNode::TypeFun { args, ret_ty } => Ok(TypeName::Fun {
                 args:   args
                     .iter()
-                    .map(|node_pos| TypeName::try_from_node_pos(node_pos))
+                    .map(TypeName::try_from)
                     .collect::<Result<Vec<TypeName>, TypeErr>>()?,
-                ret_ty: Box::from(TypeName::try_from_node_pos(ret_ty)?)
+                ret_ty: Box::from(TypeName::try_from(ret_ty.deref())?)
             }),
             _ => Err(TypeErr::new(&node_pos.position, "Expected type variant"))
         }

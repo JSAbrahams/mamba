@@ -40,7 +40,7 @@ impl TryFrom<&ASTNodePos> for FunctionArg {
                         mutable:  *mutable,
                         position: node_pos.position.clone(),
                         ty:       match _type {
-                            Some(_type) => Some(TypeName::try_from_node_pos(_type.deref())?),
+                            Some(_type) => Some(TypeName::try_from(_type.deref())?),
                             None if name.as_str() == "self" => None,
                             None =>
                                 return Err(TypeErr::new(

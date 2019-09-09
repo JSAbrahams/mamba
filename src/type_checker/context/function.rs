@@ -77,7 +77,7 @@ impl TryFrom<&ASTNodePos> for Function {
                     .map(FunctionArg::try_from)
                     .collect::<Result<Vec<FunctionArg>, TypeErr>>()?,
                 ret_ty:    match ret_ty {
-                    Some(ty) => Some(TypeName::try_from_node_pos(ty.as_ref())?),
+                    Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                     None => None
                 },
                 raises:    raises

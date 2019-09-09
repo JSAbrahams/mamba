@@ -27,7 +27,7 @@ impl TryFrom<&ASTNodePos> for Field {
                     private:  *private,
                     position: field.position.clone(),
                     ty:       match _type {
-                        Some(ty) => Some(TypeName::try_from_node_pos(ty.as_ref())?),
+                        Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                         None => None
                     }
                 }),
