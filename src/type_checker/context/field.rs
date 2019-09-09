@@ -4,6 +4,7 @@ use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::ReturnType;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct Field {
@@ -14,8 +15,10 @@ pub struct Field {
     ty:           Option<TypeName>
 }
 
-impl Field {
-    pub fn try_from_node_pos(field: &ASTNodePos) -> Result<Field, TypeErr> {
+impl TryFrom<&ASTNodePos> for Field {
+    type Error = TypeErr;
+
+    fn try_from(field: &ASTNodePos) -> Result<Self, Self::Error> {
         match &field.node {
             ASTNode::VariableDef { id_maybe_type, private, .. } => match &id_maybe_type.node {
                 ASTNode::IdType { id, mutable, _type } => Ok(Field {

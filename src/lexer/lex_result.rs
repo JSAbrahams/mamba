@@ -61,11 +61,8 @@ impl Display for LexErr {
                 .clone()
                 .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
             String::from_utf8(vec![b' '; self.start.pos as usize]).unwrap(),
-            String::from_utf8(vec![
-                b'^';
-                self.token.clone().map_or(1, |token| token.width()) as usize
-            ])
-            .unwrap()
+            String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width) as usize])
+                .unwrap()
         )
     }
 }

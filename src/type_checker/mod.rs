@@ -1,9 +1,14 @@
-use crate::parser::ast::ASTNodePos;
-use crate::type_checker::context::build_context;
-use crate::type_checker::type_result::TypeResults;
+use std::convert::TryFrom;
 use std::path::PathBuf;
 
+use crate::parser::ast::ASTNodePos;
+use crate::type_checker::context::environment::Environment;
+use crate::type_checker::context::Context;
+use crate::type_checker::infer::infer;
+use crate::type_checker::type_result::TypeResults;
+
 mod context;
+mod infer;
 
 pub mod type_result;
 
@@ -26,7 +31,10 @@ pub type CheckInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
     // TODO use context during type checking and type inference stage
-    build_context(&inputs)?;
+    Context::try_from(inputs)?;
+    Environment::try_from(inputs)?;
+
+    infer(inputs)?;
 
     Ok(inputs
         .iter()

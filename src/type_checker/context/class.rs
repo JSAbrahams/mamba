@@ -1,9 +1,11 @@
+use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{ASTNode, ASTNodePos};
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::field::Field;
-use crate::type_checker::context::function::{Function, FunctionArg};
+use crate::type_checker::context::function::Function;
+use crate::type_checker::context::function_arg::FunctionArg;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone)]
@@ -30,7 +32,23 @@ pub struct Parent {
 }
 
 impl Type {
-    pub fn try_from_node_pos(class: &ASTNodePos, all_pure: bool) -> TypeResult {
+    pub fn all_pure(self, all_pure: bool) -> Type {
+        Type {
+            name:      self.name,
+            args:      self.args,
+            generics:  self.generics,
+            concrete:  self.concrete,
+            fields:    self.fields,
+            functions: self.functions.into_iter().map(|function| function.pure(all_pure)).collect(),
+            parents:   self.parents
+        }
+    }
+}
+
+impl TryFrom<&ASTNodePos> for Type {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(class: &ASTNodePos) -> TypeResult {
         match &class.node {
             // TODO add pure classes
             ASTNode::Class { _type, args, parents, body } => {
@@ -43,7 +61,7 @@ impl Type {
                 let (args, argument_errs): (Vec<_>, Vec<_>) = args
                     .iter()
                     .map(|arg| {
-                        let argument = FunctionArg::try_from_node_pos(arg, true)?;
+                        let argument = FunctionArg::try_from(arg)?;
                         if argument.vararg {
                             Err(TypeErr::new(
                                 &arg.position,
@@ -60,12 +78,10 @@ impl Type {
                 }
                 let args: Vec<_> = args.into_iter().map(Result::unwrap).collect();
 
-                let (fields, functions) = get_fields_and_functions(statements, all_pure)?;
+                let (fields, functions) = get_fields_and_functions(statements)?;
 
-                let (parents, parent_errs): (Vec<_>, Vec<_>) = parents
-                    .iter()
-                    .map(|parent| Parent::try_from_node_pos(parent))
-                    .partition(Result::is_ok);
+                let (parents, parent_errs): (Vec<_>, Vec<_>) =
+                    parents.iter().map(Parent::try_from).partition(Result::is_ok);
                 if !parent_errs.is_empty() {
                     return Err(parent_errs.into_iter().map(Result::unwrap_err).collect());
                 }
@@ -88,7 +104,7 @@ impl Type {
                     vec![]
                 };
 
-                let (fields, functions) = get_fields_and_functions(&statements, all_pure)?;
+                let (fields, functions) = get_fields_and_functions(&statements)?;
                 // TODO add parents to type definitions
                 let parents = vec![];
                 let args = vec![];
@@ -99,8 +115,10 @@ impl Type {
     }
 }
 
-impl Generic {
-    pub fn try_from_node_pos(generic: &ASTNodePos) -> Result<Generic, TypeErr> {
+impl TryFrom<&ASTNodePos> for Generic {
+    type Error = TypeErr;
+
+    fn try_from(generic: &ASTNodePos) -> Result<Self, Self::Error> {
         match &generic.node {
             ASTNode::Generic { id, isa } => Ok(Generic {
                 name:   try_from_id(id)?,
@@ -114,14 +132,16 @@ impl Generic {
     }
 }
 
-impl Parent {
-    pub fn try_from_node_pos(generic: &ASTNodePos) -> Result<Parent, TypeErr> {
+impl TryFrom<&ASTNodePos> for Parent {
+    type Error = TypeErr;
+
+    fn try_from(generic: &ASTNodePos) -> Result<Self, Self::Error> {
         match &generic.node {
             ASTNode::Parent { id, generics, .. } => Ok(Parent {
                 name:     try_from_id(id)?,
                 generics: generics
                     .iter()
-                    .map(|generic| Generic::try_from_node_pos(generic))
+                    .map(Generic::try_from)
                     .collect::<Result<Vec<Generic>, TypeErr>>()?
             }),
             _ => Err(TypeErr::new(&generic.position, "Expected generic"))
@@ -132,10 +152,8 @@ impl Parent {
 fn get_name_and_generics(_type: &ASTNodePos) -> Result<(String, Vec<Generic>), Vec<TypeErr>> {
     match &_type.node {
         ASTNode::Type { id, generics } => {
-            let (generics, generic_errs): (Vec<_>, Vec<_>) = generics
-                .iter()
-                .map(|generic| Generic::try_from_node_pos(generic))
-                .partition(Result::is_ok);
+            let (generics, generic_errs): (Vec<_>, Vec<_>) =
+                generics.iter().map(Generic::try_from).partition(Result::is_ok);
             if !generic_errs.is_empty() {
                 return Err(generic_errs.into_iter().map(Result::unwrap_err).collect());
             }
@@ -150,14 +168,15 @@ fn get_name_and_generics(_type: &ASTNodePos) -> Result<(String, Vec<Generic>), V
 }
 
 fn get_fields_and_functions(
-    statements: &[ASTNodePos],
-    all_pure: bool
+    statements: &[ASTNodePos]
 ) -> Result<(Vec<Field>, Vec<Function>), Vec<TypeErr>> {
-    let (mut field_res, mut fun_res, mut errs) = (vec![], vec![], vec![]);
+    let mut field_res = vec![];
+    let mut fun_res = vec![];
+    let mut errs = vec![];
     statements.iter().for_each(|statement| match &statement.node {
-        ASTNode::FunDef { .. } => fun_res.push(Function::try_from_node_pos(statement, all_pure, true)),
-        ASTNode::VariableDef { .. } => field_res.push(Field::try_from_node_pos(statement)),
-        ASTNode::Comment {.. } => {},
+        ASTNode::FunDef { .. } => fun_res.push(Function::try_from(statement).and_then(|f| f.in_class(true))),
+        ASTNode::VariableDef { .. } => field_res.push(Field::try_from(statement)),
+        ASTNode::Comment { .. } => {}
         _ => errs.push(TypeErr::new(&statement.position, "Expected function or variable definition"))
     });
 
