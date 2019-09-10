@@ -1,6 +1,6 @@
 use crate::lexer::token::Token;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
@@ -14,11 +14,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut TPIterator) -> ParseResult {
             Token::For => parse_for(it),
             Token::Break => {
                 let end = it.eat(&Token::Break, "control flow statement")?;
-                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Break)))
+                Ok(Box::from(AST::new(&token_pos.start, &end, Node::Break)))
             }
             Token::Continue => {
                 let end = it.eat(&Token::Continue, "control flow statement")?;
-                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Continue)))
+                Ok(Box::from(AST::new(&token_pos.start, &end, Node::Continue)))
             }
             _ => Err(expected_one_of(
                 &[Token::While, Token::For, Token::Break, Token::Continue],
@@ -38,8 +38,8 @@ fn parse_while(it: &mut TPIterator) -> ParseResult {
     it.eat(&Token::Do, "while")?;
     let body = it.parse(&parse_expr_or_stmt, "while statement", &start)?;
 
-    let node = ASTNode::While { cond, body: body.clone() };
-    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
+    let node = Node::While { cond, body: body.clone() };
+    Ok(Box::from(AST::new(&start, &body.pos.end, node)))
 }
 
 fn parse_for(it: &mut TPIterator) -> ParseResult {
@@ -49,6 +49,6 @@ fn parse_for(it: &mut TPIterator) -> ParseResult {
     it.eat(&Token::Do, "for statement")?;
     let body = it.parse(&parse_expr_or_stmt, "for statement", &start)?;
 
-    let node = ASTNode::For { expr, body: body.clone() };
-    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
+    let node = Node::For { expr, body: body.clone() };
+    Ok(Box::from(AST::new(&start, &body.pos.end, node)))
 }

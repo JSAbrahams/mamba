@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::common::position::Position;
-use crate::parser::ast::ASTNode;
+use crate::parser::ast::Node;
 use crate::type_checker::context::field::Field;
 use crate::type_checker::context::function::Function;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -21,18 +21,18 @@ impl TryFrom<&[CheckInput]> for Environment {
         let mut field_res: Vec<Result<Field, TypeErr>> = vec![];
 
         files.iter().for_each(|(file, source, path)| match &file.node {
-            ASTNode::File { pure, modules, .. } => modules.iter().for_each(|module| {
-                if let ASTNode::Script { statements } = &module.node {
+            Node::File { pure, modules, .. } => modules.iter().for_each(|module| {
+                if let Node::Script { statements } = &module.node {
                     statements.iter().for_each(|statement| match &statement.node {
-                        ASTNode::FunDef { .. } => fun_res.push(
+                        Node::FunDef { .. } => fun_res.push(
                             Function::try_from(statement)
                                 .map(|function| function.pure(*pure))
                                 .and_then(|function| function.in_class(false))
-                                .map_err(|err| err.into_with_source(source.clone(), path))
+                                .map_err(|err| err.into_with_source(source, path))
                         ),
-                        ASTNode::VariableDef { .. } => field_res.push(
+                        Node::VariableDef { .. } => field_res.push(
                             Field::try_from(statement)
-                                .map_err(|err| err.into_with_source(source.clone(), path))
+                                .map_err(|err| err.into_with_source(source, path))
                         ),
                         _ => {}
                     })
@@ -40,7 +40,7 @@ impl TryFrom<&[CheckInput]> for Environment {
                     {}
                 }
             }),
-            _ => errs.push(TypeErr::new(&file.position, "Expected file"))
+            _ => errs.push(TypeErr::new(&file.pos, "Expected file"))
         });
 
         let (functions, fun_errs): (Vec<_>, Vec<_>) = fun_res.into_iter().partition(Result::is_ok);

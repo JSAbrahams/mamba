@@ -1,6 +1,6 @@
 use crate::lexer::token::Token;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
 use crate::parser::parse_result::expected_one_of;
@@ -12,17 +12,15 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
         &|it, token_pos| match &token_pos.token {
             Token::_Self => {
                 let end = it.eat(&Token::_Self, "identifier")?;
-                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::_Self)))
+                Ok(Box::from(AST::new(&token_pos.start, &end, Node::_Self)))
             }
             Token::Init => {
                 let end = it.eat(&Token::Init, "identifier")?;
-                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Init)))
+                Ok(Box::from(AST::new(&token_pos.start, &end, Node::Init)))
             }
             Token::Id(id) => {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
-                Ok(Box::from(ASTNodePos::new(&token_pos.start, &end, ASTNode::Id {
-                    lit: id.clone()
-                })))
+                Ok(Box::from(AST::new(&token_pos.start, &end, Node::Id { lit: id.clone() })))
             }
             _ => Err(expected_one_of(
                 &[Token::_Self, Token::Init, Token::Id(String::new())],
@@ -35,9 +33,9 @@ pub fn parse_id(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_generics(it: &mut TPIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("generics")?;
-    let mut generics: Vec<ASTNodePos> = Vec::new();
+    let mut generics: Vec<AST> = Vec::new();
 
     it.peek_while_not_token(&Token::RSBrack, &mut |it, _| {
         generics.push(*it.parse(&parse_generic, "generics", &start)?);
@@ -51,10 +49,10 @@ fn parse_generic(it: &mut TPIterator) -> ParseResult {
     let start = &it.start_pos("generic")?;
     let id = it.parse(&parse_id, "generic", start)?;
     let isa = it.parse_if(&Token::IsA, &parse_id, "generic", start)?;
-    let end = isa.clone().map_or(id.position.end.clone(), |isa| isa.position.end);
+    let end = isa.clone().map_or(id.pos.end.clone(), |isa| isa.pos.end);
 
-    let node = ASTNode::Generic { id, isa };
-    Ok(Box::from(ASTNodePos::new(start, &end, node)))
+    let node = Node::Generic { id, isa };
+    Ok(Box::from(AST::new(start, &end, node)))
 }
 
 pub fn parse_type(it: &mut TPIterator) -> ParseResult {
@@ -67,12 +65,12 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
                     it.parse_vec_if(&Token::LSBrack, &parse_generics, "type generic", start)?;
                 let end = match (it.eat_if(&Token::RSBrack), generics.last()) {
                     (Some(end), _) => end.clone(),
-                    (_, Some(generic)) => generic.position.end.clone(),
-                    _ => id.position.end.clone()
+                    (_, Some(generic)) => generic.pos.end.clone(),
+                    _ => id.pos.end.clone()
                 };
 
-                let node = ASTNode::Type { id, generics };
-                Ok(Box::from(ASTNodePos::new(start, &end, node)))
+                let node = Node::Type { id, generics };
+                Ok(Box::from(AST::new(start, &end, node)))
             }
             Token::LRBrack => it.parse(&parse_type_tuple, "type", start),
             _ => Err(expected_one_of(
@@ -90,12 +88,12 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
         &|it| {
             let ret_ty = it.parse(&parse_type, "type", start)?;
             let args = match &_type.node {
-                ASTNode::TypeTup { types } => types.clone(),
+                Node::TypeTup { types } => types.clone(),
                 _ => vec![_type.deref().clone()]
             };
 
-            let node = ASTNode::TypeFun { args, ret_ty: ret_ty.clone() };
-            Ok(Box::from(ASTNodePos::new(&start, &ret_ty.position.end, node)))
+            let node = Node::TypeFun { args, ret_ty: ret_ty.clone() };
+            Ok(Box::from(AST::new(&start, &ret_ty.pos.end, node)))
         },
         "function type",
         start
@@ -107,7 +105,7 @@ pub fn parse_type(it: &mut TPIterator) -> ParseResult {
     }
 }
 
-pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_conditions(it: &mut TPIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("conditions")?;
     let mut conditions = vec![];
 
@@ -131,10 +129,10 @@ fn parse_condition(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("condition")?;
     let cond = it.parse(&parse_expression, "condition", &start)?;
     let _else = it.parse_if(&Token::Else, &parse_expression, "condition else", &start)?;
-    let end = _else.clone().map_or(cond.position.end.clone(), |e| e.position.end);
+    let end = _else.clone().map_or(cond.pos.end.clone(), |e| e.pos.end);
 
-    let node = ASTNode::Condition { cond, _else };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let node = Node::Condition { cond, _else };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }
 
 pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
@@ -149,8 +147,8 @@ pub fn parse_type_tuple(it: &mut TPIterator) -> ParseResult {
     })?;
 
     let end = it.eat(&Token::RRBrack, "type tuple")?;
-    let node = ASTNode::TypeTup { types };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let node = Node::TypeTup { types };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
@@ -158,8 +156,8 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     let mutable = it.eat_if(&Token::Mut).is_some();
     let id = it.parse(&parse_id, "identifier maybe type", &start)?;
     let _type = it.parse_if(&Token::DoublePoint, &parse_type, "identifier maybe type", &start)?;
-    let end = _type.clone().map_or(id.position.end.clone(), |t| t.position.end);
+    let end = _type.clone().map_or(id.pos.end.clone(), |t| t.pos.end);
 
-    let node = ASTNode::IdType { id, mutable, _type };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let node = Node::IdType { id, mutable, _type };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }

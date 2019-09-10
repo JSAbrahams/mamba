@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::parser::ast::{ASTNode, ASTNodePos};
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::field::Field;
 use crate::type_checker::context::function::Function;
@@ -46,20 +46,20 @@ impl Type {
         }
     }
 
-    pub fn overrides_op(&self, op: &ASTNode) -> bool { unimplemented!() }
+    pub fn overrides_op(&self, op: &Node) -> bool { unimplemented!() }
 }
 
-impl TryFrom<&ASTNodePos> for Type {
+impl TryFrom<&AST> for Type {
     type Error = Vec<TypeErr>;
 
-    fn try_from(class: &ASTNodePos) -> TypeResult {
+    fn try_from(class: &AST) -> TypeResult {
         match &class.node {
             // TODO add pure classes
-            ASTNode::Class { _type, args, parents, body } => {
+            Node::Class { _type, args, parents, body } => {
                 let (name, generics) = get_name_and_generics(_type)?;
                 let statements = match &body.node {
-                    ASTNode::Block { statements } => statements,
-                    _ => return Err(vec![TypeErr::new(&class.position, "Expected block in class")])
+                    Node::Block { statements } => statements,
+                    _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")])
                 };
 
                 let (args, argument_errs): (Vec<_>, Vec<_>) = args
@@ -68,7 +68,7 @@ impl TryFrom<&ASTNodePos> for Type {
                         let argument = FunctionArg::try_from(arg)?;
                         if argument.vararg {
                             Err(TypeErr::new(
-                                &arg.position,
+                                &arg.pos,
                                 "Vararg currently not supported for class arguments"
                             ))
                         } else {
@@ -93,16 +93,12 @@ impl TryFrom<&ASTNodePos> for Type {
 
                 Ok(Type { name, args, generics, concrete: true, fields, functions, parents })
             }
-            ASTNode::TypeDef { _type, body } => {
+            Node::TypeDef { _type, body } => {
                 let (name, generics) = get_name_and_generics(_type)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
-                        ASTNode::Block { statements } => statements.clone(),
-                        _ =>
-                            return Err(vec![TypeErr::new(
-                                &class.position,
-                                "Expected block in class"
-                            )]),
+                        Node::Block { statements } => statements.clone(),
+                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")])
                     }
                 } else {
                     vec![]
@@ -114,50 +110,48 @@ impl TryFrom<&ASTNodePos> for Type {
                 let args = vec![];
                 Ok(Type { name, args, concrete: false, generics, fields, functions, parents })
             }
-            _ => Err(vec![TypeErr::new(&class.position, "Expected class or type definition")])
+            _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")])
         }
     }
 }
 
-impl TryFrom<&ASTNodePos> for GenericParameter {
+impl TryFrom<&AST> for GenericParameter {
     type Error = TypeErr;
 
-    fn try_from(generic: &ASTNodePos) -> Result<Self, Self::Error> {
+    fn try_from(generic: &AST) -> Result<Self, Self::Error> {
         match &generic.node {
-            ASTNode::Generic { id, isa } => Ok(GenericParameter {
+            Node::Generic { id, isa } => Ok(GenericParameter {
                 name:   try_from_id(id)?,
                 parent: match isa {
                     Some(isa) => Some(try_from_id(isa)?),
                     None => None
                 }
             }),
-            _ => Err(TypeErr::new(&generic.position, "Expected generic"))
+            _ => Err(TypeErr::new(&generic.pos, "Expected generic"))
         }
     }
 }
 
-impl TryFrom<&ASTNodePos> for Parent {
+impl TryFrom<&AST> for Parent {
     type Error = TypeErr;
 
-    fn try_from(generic: &ASTNodePos) -> Result<Self, Self::Error> {
+    fn try_from(generic: &AST) -> Result<Self, Self::Error> {
         match &generic.node {
-            ASTNode::Parent { id, generics, .. } => Ok(Parent {
+            Node::Parent { id, generics, .. } => Ok(Parent {
                 name:     try_from_id(id)?,
                 generics: generics
                     .iter()
                     .map(GenericParameter::try_from)
                     .collect::<Result<Vec<GenericParameter>, TypeErr>>()?
             }),
-            _ => Err(TypeErr::new(&generic.position, "Expected generic"))
+            _ => Err(TypeErr::new(&generic.pos, "Expected generic"))
         }
     }
 }
 
-fn get_name_and_generics(
-    _type: &ASTNodePos
-) -> Result<(String, Vec<GenericParameter>), Vec<TypeErr>> {
+fn get_name_and_generics(_type: &AST) -> Result<(String, Vec<GenericParameter>), Vec<TypeErr>> {
     match &_type.node {
-        ASTNode::Type { id, generics } => {
+        Node::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
                 generics.iter().map(GenericParameter::try_from).partition(Result::is_ok);
             if !generic_errs.is_empty() {
@@ -169,21 +163,22 @@ fn get_name_and_generics(
                 generics.into_iter().map(Result::unwrap).collect::<Vec<GenericParameter>>()
             ))
         }
-        _ => Err(vec![TypeErr::new(&_type.position, "Expected class name")])
+        _ => Err(vec![TypeErr::new(&_type.pos, "Expected class name")])
     }
 }
 
 fn get_fields_and_functions(
-    statements: &[ASTNodePos]
+    statements: &[AST]
 ) -> Result<(Vec<Field>, Vec<Function>), Vec<TypeErr>> {
     let mut field_res = vec![];
     let mut fun_res = vec![];
     let mut errs = vec![];
     statements.iter().for_each(|statement| match &statement.node {
-        ASTNode::FunDef { .. } => fun_res.push(Function::try_from(statement).and_then(|f| f.in_class(true))),
-        ASTNode::VariableDef { .. } => field_res.push(Field::try_from(statement)),
-        ASTNode::Comment { .. } => {}
-        _ => errs.push(TypeErr::new(&statement.position, "Expected function or variable definition"))
+        Node::FunDef { .. } =>
+            fun_res.push(Function::try_from(statement).and_then(|f| f.in_class(true))),
+        Node::VariableDef { .. } => field_res.push(Field::try_from(statement)),
+        Node::Comment { .. } => {}
+        _ => errs.push(TypeErr::new(&statement.pos, "Expected function or variable definition"))
     });
 
     let (fields, field_errs): (Vec<_>, Vec<_>) = field_res.into_iter().partition(Result::is_ok);

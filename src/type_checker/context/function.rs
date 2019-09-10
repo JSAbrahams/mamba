@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::common::position::Position;
-use crate::parser::ast::{ASTNode, ASTNodePos};
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::class::GenericParameter;
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::function_arg::FunctionArg;
@@ -52,7 +52,7 @@ impl Function {
     }
 }
 
-impl TryFrom<&ASTNodePos> for Function {
+impl TryFrom<&AST> for Function {
     type Error = TypeErr;
 
     /// Build a function signature from a
@@ -63,15 +63,15 @@ impl TryFrom<&ASTNodePos> for Function {
     /// If [ASTNodePos](crate::parser::ast::ASTNodePos)'s node is not the
     /// [FunDef](crate::parser::ast::ASTNode::FunDef) variant of the
     /// [ASTNode](crate::parser::ast::ASTNode).
-    fn try_from(node_pos: &ASTNodePos) -> Result<Self, Self::Error> {
+    fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
         match &node_pos.node {
             // TODO Add type inference of body
             // TODO analyse raises/exceptions
-            ASTNode::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } => Ok(Function {
+            Node::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } => Ok(Function {
                 name:      try_from_id(id)?,
                 pure:      *pure,
                 private:   *private,
-                position:  node_pos.position.clone(),
+                position:  node_pos.pos.clone(),
                 arguments: fun_args
                     .iter()
                     .map(FunctionArg::try_from)
@@ -85,7 +85,7 @@ impl TryFrom<&ASTNodePos> for Function {
                     .map(GenericParameter::try_from)
                     .collect::<Result<Vec<GenericParameter>, TypeErr>>()?
             }),
-            _ => Err(TypeErr::new(&node_pos.position, "Expected function definition"))
+            _ => Err(TypeErr::new(&node_pos.pos, "Expected function definition"))
         }
     }
 }

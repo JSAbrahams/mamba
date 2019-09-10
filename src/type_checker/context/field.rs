@@ -1,5 +1,5 @@
 use crate::common::position::Position;
-use crate::parser::ast::{ASTNode, ASTNodePos};
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::ReturnType;
@@ -15,25 +15,25 @@ pub struct Field {
     ty:           Option<TypeName>
 }
 
-impl TryFrom<&ASTNodePos> for Field {
+impl TryFrom<&AST> for Field {
     type Error = TypeErr;
 
-    fn try_from(field: &ASTNodePos) -> Result<Self, Self::Error> {
+    fn try_from(field: &AST) -> Result<Self, Self::Error> {
         match &field.node {
-            ASTNode::VariableDef { id_maybe_type, private, .. } => match &id_maybe_type.node {
-                ASTNode::IdType { id, mutable, _type } => Ok(Field {
+            Node::VariableDef { id_maybe_type, private, .. } => match &id_maybe_type.node {
+                Node::IdType { id, mutable, _type } => Ok(Field {
                     name:     try_from_id(id)?,
                     mutable:  *mutable,
                     private:  *private,
-                    position: field.position.clone(),
+                    position: field.pos.clone(),
                     ty:       match _type {
                         Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                         None => None
                     }
                 }),
-                _ => Err(TypeErr::new(&id_maybe_type.position, "Expected identifier and type"))
+                _ => Err(TypeErr::new(&id_maybe_type.pos, "Expected identifier and type"))
             },
-            _ => Err(TypeErr::new(&field.position, "Expected field"))
+            _ => Err(TypeErr::new(&field.pos, "Expected field"))
         }
     }
 }

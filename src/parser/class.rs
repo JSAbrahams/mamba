@@ -2,8 +2,8 @@ use crate::lexer::token::Token;
 use crate::parser::_type::parse_generics;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_type;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
 use crate::parser::definition::parse_fun_arg;
 use crate::parser::expression::parse_expression;
@@ -44,8 +44,8 @@ pub fn parse_class(it: &mut TPIterator) -> ParseResult {
 
     it.eat(&Token::NL, "class")?;
     let body = it.parse(&parse_block, "class", &start)?;
-    let node = ASTNode::Class { _type, args, parents, body: body.clone() };
-    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
+    let node = Node::Class { _type, args, parents, body: body.clone() };
+    Ok(Box::from(AST::new(&start, &body.pos.end, node)))
 }
 
 pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
@@ -66,10 +66,10 @@ pub fn parse_parent(it: &mut TPIterator) -> ParseResult {
     }
 
     let end = match (generics.last(), args.last()) {
-        (_, Some(node_pos)) => node_pos.position.end.clone(),
-        (Some(node_pos), _) => node_pos.position.end.clone(),
-        _ => id.position.end.clone()
+        (_, Some(node_pos)) => node_pos.pos.end.clone(),
+        (Some(node_pos), _) => node_pos.pos.end.clone(),
+        _ => id.pos.end.clone()
     };
-    let node = ASTNode::Parent { id, generics, args };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let node = Node::Parent { id, generics, args };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }

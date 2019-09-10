@@ -27,7 +27,7 @@ impl TypeErr {
         }
     }
 
-    pub fn into_with_source(self, source: Option<String>, path: &Option<PathBuf>) -> TypeErr {
+    pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
         TypeErr {
             position:    self.position.clone(),
             msg:         self.msg.clone(),

@@ -4,8 +4,8 @@ use crate::desugar::context::Imports;
 use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use std::ops::Deref;
 
 /// Desugar a class.
@@ -15,10 +15,10 @@ use std::ops::Deref;
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn desugar_class(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) -> DesugarResult {
+pub fn desugar_class(node_pos: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &node_pos.node {
-        ASTNode::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
-            (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => Core::ClassDef {
+        Node::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
+            (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     Vec::new(),
                 definitions: desugar_vec(statements, imp, &State {
@@ -29,8 +29,8 @@ pub fn desugar_class(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) ->
             },
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
-        ASTNode::TypeDef { _type, body: None } => match &_type.node {
-            ASTNode::Type { id, .. } => Core::ClassDef {
+        Node::TypeDef { _type, body: None } => match &_type.node {
+            Node::Type { id, .. } => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     vec![],
                 definitions: vec![]
@@ -38,8 +38,8 @@ pub fn desugar_class(node_pos: &ASTNodePos, imp: &mut Imports, state: &State) ->
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
 
-        ASTNode::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
-            (ASTNode::Type { id, .. }, ASTNode::Block { statements }) => {
+        Node::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
+            (Node::Type { id, .. }, Node::Block { statements }) => {
                 let (parent_names, parent_args, super_calls) =
                     extract_parents(parents, imp, state)?;
                 let core_definitions: Vec<Core> = desugar_vec(statements, imp, state)?;
@@ -159,7 +159,7 @@ fn add_parent_to_constructor(
 }
 
 fn extract_parents(
-    parents: &[ASTNodePos],
+    parents: &[AST],
     ctx: &mut Imports,
     state: &State
 ) -> DesugarResult<(Vec<Core>, Vec<Core>, Vec<Core>)> {
@@ -169,7 +169,7 @@ fn extract_parents(
 
     for parent in parents {
         match &parent.node {
-            ASTNode::Parent { ref id, args: old_args, .. } => {
+            Node::Parent { ref id, args: old_args, .. } => {
                 parent_names.push(desugar_node(id, ctx, state)?);
 
                 let mut args = vec![Core::Id { lit: String::from("self") }];

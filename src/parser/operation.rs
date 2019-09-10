@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::parser::_type::parse_id;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::call::parse_call;
 use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
@@ -12,8 +12,8 @@ macro_rules! inner_bin_op {
     ($it:expr, $start:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{
         $it.eat(&Token::$ast, "operation")?;
         let right = $it.parse(&$fun, $msg, $start)?;
-        let node = ASTNode::$ast { left: $left, right: right.clone() };
-        Ok(Box::from(ASTNodePos::new($start, &right.position.end, node)))
+        let node = Node::$ast { left: $left, right: right.clone() };
+        Ok(Box::from(AST::new($start, &right.pos.end, node)))
     }};
 }
 
@@ -151,25 +151,21 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
                 it.eat(&Token::Range, "operation")?;
                 let to = it.parse(&parse_operation, "operation", &start)?;
                 let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
-                let node = ASTNode::Range {
+                let node = Node::Range {
                     from: arithmetic.clone(),
                     to: to.clone(),
                     inclusive: false,
                     step
                 };
-                Ok(Box::from(ASTNodePos::new(&start, &to.position.end, node)))
+                Ok(Box::from(AST::new(&start, &to.pos.end, node)))
             }
             Token::RangeIncl => {
                 it.eat(&Token::RangeIncl, "operation")?;
                 let to = it.parse(&parse_operation, "operation", &start)?;
                 let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
-                let node = ASTNode::Range {
-                    from: arithmetic.clone(),
-                    to: to.clone(),
-                    inclusive: true,
-                    step
-                };
-                Ok(Box::from(ASTNodePos::new(&start, &to.position.end, node)))
+                let node =
+                    Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
+                Ok(Box::from(AST::new(&start, &to.pos.end, node)))
             }
             _ => Ok(arithmetic.clone())
         },
@@ -182,8 +178,8 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
             let factor = $it.parse(&$fun, $msg, &start)?;
-            let node = ASTNode::$ast { expr: factor.clone() };
-            Ok(Box::from(ASTNodePos::new(&start, &factor.position.end, node)))
+            let node = Node::$ast { expr: factor.clone() };
+            Ok(Box::from(AST::new(&start, &factor.pos.end, node)))
         }};
     }
 
@@ -225,8 +221,8 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
     macro_rules! literal {
         ($it:expr, $factor:expr, $ast:ident) => {{
             let end = $it.eat(&Token::$ast($factor.clone()), "factor")?;
-            let node = ASTNode::$ast { lit: $factor };
-            Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+            let node = Node::$ast { lit: $factor };
+            Ok(Box::from(AST::new(&start, &end, node)))
         }};
     }
 
@@ -240,8 +236,8 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             Token::Str(str) => literal!(it, str.to_string(), Str),
             Token::ENum(num, exp) => {
                 let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
-                let node = ASTNode::ENum { num: num.to_string(), exp: exp.to_string() };
-                Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+                let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
+                Ok(Box::from(AST::new(&start, &end, node)))
             }
             _ => it.parse(&parse_expression, "operation", &start)
         },

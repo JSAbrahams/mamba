@@ -2,8 +2,8 @@ use mamba::common::position::EndPoint;
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::ASTNode;
-use mamba::parser::ast::ASTNodePos;
+use mamba::parser::ast::Node;
+use mamba::parser::ast::AST;
 
 #[test]
 fn type_alias_empty_verify() {

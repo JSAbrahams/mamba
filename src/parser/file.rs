@@ -3,8 +3,8 @@ use crate::lexer::token::Token;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_type;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
 use crate::parser::block::parse_statements;
 use crate::parser::class::parse_class;
@@ -18,8 +18,8 @@ pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
     let id = it.parse(&parse_id, "from import", &start)?;
     let import = it.parse(&parse_import, "from import", &start)?;
 
-    let node = ASTNode::FromImport { id, import: import.clone() };
-    Ok(Box::from(ASTNodePos::new(&start, &import.position.end, node)))
+    let node = Node::FromImport { id, import: import.clone() };
+    Ok(Box::from(AST::new(&start, &import.pos.end, node)))
 }
 
 pub fn parse_import(it: &mut TPIterator) -> ParseResult {
@@ -34,14 +34,14 @@ pub fn parse_import(it: &mut TPIterator) -> ParseResult {
     let _as = it.parse_vec_if(&Token::As, &parse_as, "import", &start)?;
 
     let end = match (import.last(), _as.last()) {
-        (_, Some(token_pos)) => token_pos.position.end.clone(),
-        (Some(token_pos), _) => token_pos.position.end.clone(),
+        (_, Some(token_pos)) => token_pos.pos.end.clone(),
+        (Some(token_pos), _) => token_pos.pos.end.clone(),
         (..) => end
     };
-    Ok(Box::from(ASTNodePos::new(&start, &end, ASTNode::Import { import, _as })))
+    Ok(Box::from(AST::new(&start, &end, Node::Import { import, _as })))
 }
 
-fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("as")?;
     let mut aliases = vec![];
     it.peek_while_not_token(&Token::NL, &mut |it, token_pos| match token_pos.token {
@@ -59,10 +59,10 @@ fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
 pub fn parse_script(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("script")?;
     let statements = it.parse_vec(&parse_statements, "script", &start)?;
-    let end = statements.last().map_or(start.clone(), |last| last.position.end.clone());
+    let end = statements.last().map_or(start.clone(), |last| last.pos.end.clone());
 
-    let node = ASTNode::Script { statements };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let node = Node::Script { statements };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }
 
 pub fn parse_module(it: &mut TPIterator) -> ParseResult {
@@ -97,8 +97,8 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
         Token::Comment(comment) => {
             let start = it.start_pos("comment")?;
             let end = it.eat(&Token::Comment(comment.clone()), "file")?;
-            let node = ASTNode::Comment { comment: comment.clone() };
-            comments.push(ASTNodePos::new(&start, &end, node));
+            let node = Node::Comment { comment: comment.clone() };
+            comments.push(AST::new(&start, &end, node));
             Ok(())
         }
         Token::Type => {
@@ -111,8 +111,8 @@ pub fn parse_file(it: &mut TPIterator) -> ParseResult {
         }
     })?;
 
-    let node = ASTNode::File { pure, comments, imports, modules };
-    Ok(Box::from(ASTNodePos::new(&start, &start.clone(), node)))
+    let node = Node::File { pure, comments, imports, modules };
+    Ok(Box::from(AST::new(&start, &start.clone(), node)))
 }
 
 pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
@@ -127,23 +127,22 @@ pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
                 let _type = it.parse(&parse_type, "type definition", &start)?;
                 let conditions =
                     it.parse_vec_if(&Token::When, &parse_conditions, "type definition", &start)?;
-                let end = conditions
-                    .last()
-                    .map_or(_type.position.end.clone(), |cond| cond.position.end.clone());
+                let end =
+                    conditions.last().map_or(_type.pos.end.clone(), |cond| cond.pos.end.clone());
 
-                let node = ASTNode::TypeAlias { _type, conditions };
-                Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+                let node = Node::TypeAlias { _type, conditions };
+                Ok(Box::from(AST::new(&start, &end, node)))
             }
             _ => {
                 it.eat_if(&Token::NL);
                 let body = it.parse(&parse_block, "type definition", &start)?;
-                let node = ASTNode::TypeDef { _type: _type.clone(), body: Some(body.clone()) };
-                Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
+                let node = Node::TypeDef { _type: _type.clone(), body: Some(body.clone()) };
+                Ok(Box::from(AST::new(&start, &body.pos.end, node)))
             }
         },
         {
-            let node = ASTNode::TypeDef { _type: _type.clone(), body: None };
-            Ok(Box::from(ASTNodePos::new(&start, &_type.position.end, node)))
+            let node = Node::TypeDef { _type: _type.clone(), body: None };
+            Ok(Box::from(AST::new(&start, &_type.pos.end, node)))
         }
     )
 }

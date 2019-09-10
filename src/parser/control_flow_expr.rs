@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::parser::_type::parse_type;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::TPIterator;
@@ -32,8 +32,8 @@ fn parse_if(it: &mut TPIterator) -> ParseResult {
     let then = it.parse(&parse_expr_or_stmt, "if expression", &start)?;
     let _else = it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
 
-    let node = ASTNode::IfElse { cond, then: then.clone(), _else };
-    Ok(Box::from(ASTNodePos::new(&start, &then.position.end, node)))
+    let node = Node::IfElse { cond, then: then.clone(), _else };
+    Ok(Box::from(AST::new(&start, &then.pos.end, node)))
 }
 
 fn parse_match(it: &mut TPIterator) -> ParseResult {
@@ -42,13 +42,13 @@ fn parse_match(it: &mut TPIterator) -> ParseResult {
     let cond = it.parse(&parse_expression, "match", &start)?;
     it.eat(&Token::NL, "match")?;
     let cases = it.parse_vec(&parse_match_cases, "match", &start)?;
-    let end = cases.last().cloned().map_or(cond.position.end.clone(), |case| case.position.end);
+    let end = cases.last().cloned().map_or(cond.pos.end.clone(), |case| case.pos.end);
 
-    let node = ASTNode::Match { cond, cases };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let node = Node::Match { cond, cases };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }
 
-pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
+pub fn parse_match_cases(it: &mut TPIterator) -> ParseResult<Vec<AST>> {
     let start = it.eat(&Token::Indent, "match cases")?;
     let mut cases = vec![];
     it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
@@ -67,8 +67,8 @@ fn parse_match_case(it: &mut TPIterator) -> ParseResult {
     it.eat(&Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "match case", &start)?;
 
-    let node = ASTNode::Case { cond, body: body.clone() };
-    Ok(Box::from(ASTNodePos::new(&start, &body.position.end, node)))
+    let node = Node::Case { cond, body: body.clone() };
+    Ok(Box::from(AST::new(&start, &body.pos.end, node)))
 }
 
 pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
@@ -78,7 +78,7 @@ pub fn parse_id_maybe_type(it: &mut TPIterator) -> ParseResult {
     let id = it.parse(&parse_expression, "expression maybe type", &start)?;
     let _type = it.parse_if(&Token::DoublePoint, &parse_type, "id type", &start)?;
 
-    let end = _type.clone().map_or(id.position.end.clone(), |t| t.position.end);
-    let node = ASTNode::IdType { id, mutable, _type };
-    Ok(Box::from(ASTNodePos::new(&start, &end, node)))
+    let end = _type.clone().map_or(id.pos.end.clone(), |t| t.pos.end);
+    let node = Node::IdType { id, mutable, _type };
+    Ok(Box::from(AST::new(&start, &end, node)))
 }

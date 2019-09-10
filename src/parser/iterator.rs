@@ -4,7 +4,7 @@ use std::slice::Iter;
 use crate::common::position::{EndPoint, Position};
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::AST;
 use crate::parser::parse_result::eof_expected_one_of;
 use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
@@ -50,7 +50,7 @@ impl<'a> TPIterator<'a> {
         parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult,
         cause: &str,
         start: &EndPoint
-    ) -> ParseResult<Box<ASTNodePos>> {
+    ) -> ParseResult<Box<AST>> {
         parse_fun(self).map_err(|err| {
             err.clone_with_cause(cause, Position { start: start.clone(), end: start.clone() })
         })
@@ -58,10 +58,10 @@ impl<'a> TPIterator<'a> {
 
     pub fn parse_vec(
         &mut self,
-        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
+        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<AST>>,
         cause: &str,
         start: &EndPoint
-    ) -> ParseResult<Vec<ASTNodePos>> {
+    ) -> ParseResult<Vec<AST>> {
         parse_fun(self).map_err(|err| {
             err.clone_with_cause(cause, Position { start: start.clone(), end: start.clone() })
         })
@@ -73,7 +73,7 @@ impl<'a> TPIterator<'a> {
         parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult,
         err_msg: &str,
         start: &EndPoint
-    ) -> ParseResult<Option<Box<ASTNodePos>>> {
+    ) -> ParseResult<Option<Box<AST>>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;
@@ -86,10 +86,10 @@ impl<'a> TPIterator<'a> {
     pub fn parse_vec_if(
         &mut self,
         token: &Token,
-        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<ASTNodePos>>,
+        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<AST>>,
         err_msg: &str,
         start: &EndPoint
-    ) -> ParseResult<Vec<ASTNodePos>> {
+    ) -> ParseResult<Vec<AST>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;

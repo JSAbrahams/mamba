@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use crate::parser::ast::ASTNode;
+use crate::parser::ast::Node;
 use crate::type_checker::context::class::Type;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -62,15 +62,15 @@ impl TryFrom<&[CheckInput]> for Context {
     fn try_from(files: &[CheckInput]) -> Result<Self, Self::Error> {
         let mut results = vec![];
         files.iter().for_each(|(file, ..)| match &file.node {
-            ASTNode::File { pure, modules, .. } => modules
+            Node::File { pure, modules, .. } => modules
                 .iter()
                 .map(|module| match &module.node {
-                    ASTNode::Class { .. } | ASTNode::TypeDef { .. } =>
+                    Node::Class { .. } | Node::TypeDef { .. } =>
                         results.push(Type::try_from(module).map(|ty| ty.all_pure(*pure))),
                     _ => {}
                 })
                 .collect(),
-            _ => results.push(Err(vec![TypeErr::new(&file.position, "Expected file")]))
+            _ => results.push(Err(vec![TypeErr::new(&file.pos, "Expected file")]))
         });
 
         let (types, type_errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);

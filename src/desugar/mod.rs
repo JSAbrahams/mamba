@@ -4,7 +4,7 @@ use crate::desugar::context::Imports;
 use crate::desugar::context::State;
 use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::AST;
 
 mod call;
 mod class;
@@ -16,7 +16,7 @@ mod node;
 
 pub mod desugar_result;
 
-pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
+pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 
 /// Consumes the given [ASTNodePos](crate::parser::ast::ASTNodePos) and produces
 /// a [Core](crate::core::construct::Core) node.
@@ -29,13 +29,13 @@ pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 /// # Examples
 ///
 /// ```
-/// # use mamba::parser::ast::ASTNode;
-/// # use mamba::parser::ast::ASTNodePos;
+/// # use mamba::parser::ast::Node;
+/// # use mamba::parser::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
 /// # use mamba::common::position::EndPoint;
-/// let node = ASTNode::ReturnEmpty;
-/// let ast_node_pos = ASTNodePos::new(&EndPoint::new(1, 1), &EndPoint::new(1, 5), node);
+/// let node = Node::ReturnEmpty;
+/// let ast_node_pos = AST::new(&EndPoint::new(1, 1), &EndPoint::new(1, 5), node);
 /// let core_result = desugar(&ast_node_pos).unwrap();
 ///
 /// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
@@ -46,15 +46,15 @@ pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 /// Fails if desugaring a construct which has not been implemented yet.
 ///
 /// ```rust
-/// # use mamba::parser::ast::ASTNode;
-/// # use mamba::parser::ast::ASTNodePos;
+/// # use mamba::parser::ast::Node;
+/// # use mamba::parser::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
 /// use mamba::common::position::EndPoint;
-/// let cond_node = ASTNode::Int { lit: String::from("56") };
-/// let cond_pos = ASTNodePos::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5), cond_node);
-/// let node = ASTNode::Condition { cond: Box::from(cond_pos), _else: None };
-/// let ast_node_pos = ASTNodePos::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5), node);
+/// let cond_node = Node::Int { lit: String::from("56") };
+/// let cond_pos = AST::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5), cond_node);
+/// let node = Node::Condition { cond: Box::from(cond_pos), _else: None };
+/// let ast_node_pos = AST::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5), node);
 /// let core_result = desugar(&ast_node_pos);
 ///
 /// assert!(core_result.is_err());
@@ -64,7 +64,7 @@ pub type DesugarInput = (ASTNodePos, Option<String>, Option<PathBuf>);
 ///
 /// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) causes this stage
 /// to panic.
-pub fn desugar(input: &ASTNodePos) -> DesugarResult {
+pub fn desugar(input: &AST) -> DesugarResult {
     desugar_node(&input, &mut Imports::new(), &State::new())
 }
 

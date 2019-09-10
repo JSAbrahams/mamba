@@ -4,104 +4,104 @@ use crate::common::position::Position;
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 /// Wrapper of ASTNode, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
-pub struct ASTNodePos {
-    pub position: Position,
-    pub node:     ASTNode
+pub struct AST {
+    pub pos:  Position,
+    pub node: Node
 }
 
-impl ASTNodePos {
-    pub fn new(start: &EndPoint, end: &EndPoint, node: ASTNode) -> ASTNodePos {
-        ASTNodePos { position: Position { start: start.clone(), end: end.clone() }, node }
+impl AST {
+    pub fn new(start: &EndPoint, end: &EndPoint, node: Node) -> AST {
+        AST { pos: Position { start: start.clone(), end: end.clone() }, node }
     }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
-pub enum ASTNode {
+pub enum Node {
     File {
         pure:     bool,
-        comments: Vec<ASTNodePos>,
-        imports:  Vec<ASTNodePos>,
-        modules:  Vec<ASTNodePos>
+        comments: Vec<AST>,
+        imports:  Vec<AST>,
+        modules:  Vec<AST>
     },
     Import {
-        import: Vec<ASTNodePos>,
-        _as:    Vec<ASTNodePos>
+        import: Vec<AST>,
+        _as:    Vec<AST>
     },
     FromImport {
-        id:     Box<ASTNodePos>,
-        import: Box<ASTNodePos>
+        id:     Box<AST>,
+        import: Box<AST>
     },
     Class {
-        _type:   Box<ASTNodePos>,
-        args:    Vec<ASTNodePos>,
-        parents: Vec<ASTNodePos>,
-        body:    Box<ASTNodePos>
+        _type:   Box<AST>,
+        args:    Vec<AST>,
+        parents: Vec<AST>,
+        body:    Box<AST>
     },
     Generic {
-        id:  Box<ASTNodePos>,
-        isa: Option<Box<ASTNodePos>>
+        id:  Box<AST>,
+        isa: Option<Box<AST>>
     },
     Parent {
-        id:       Box<ASTNodePos>,
-        generics: Vec<ASTNodePos>,
-        args:     Vec<ASTNodePos>
+        id:       Box<AST>,
+        generics: Vec<AST>,
+        args:     Vec<AST>
     },
     Script {
-        statements: Vec<ASTNodePos>
+        statements: Vec<AST>
     },
     Init,
 
     Reassign {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     VariableDef {
         ofmut:         bool,
         private:       bool,
-        id_maybe_type: Box<ASTNodePos>,
-        expression:    Option<Box<ASTNodePos>>,
-        forward:       Vec<ASTNodePos>
+        id_maybe_type: Box<AST>,
+        expression:    Option<Box<AST>>,
+        forward:       Vec<AST>
     },
     FunDef {
         pure:     bool,
         private:  bool,
-        id:       Box<ASTNodePos>,
-        fun_args: Vec<ASTNodePos>,
-        ret_ty:   Option<Box<ASTNodePos>>,
-        raises:   Vec<ASTNodePos>,
-        body:     Option<Box<ASTNodePos>>
+        id:       Box<AST>,
+        fun_args: Vec<AST>,
+        ret_ty:   Option<Box<AST>>,
+        raises:   Vec<AST>,
+        body:     Option<Box<AST>>
     },
 
     AnonFun {
-        args: Vec<ASTNodePos>,
-        body: Box<ASTNodePos>
+        args: Vec<AST>,
+        body: Box<AST>
     },
 
     Raises {
-        expr_or_stmt: Box<ASTNodePos>,
-        errors:       Vec<ASTNodePos>
+        expr_or_stmt: Box<AST>,
+        errors:       Vec<AST>
     },
     Raise {
-        error: Box<ASTNodePos>
+        error: Box<AST>
     },
     Handle {
-        expr_or_stmt: Box<ASTNodePos>,
-        cases:        Vec<ASTNodePos>
+        expr_or_stmt: Box<AST>,
+        cases:        Vec<AST>
     },
     Retry,
     With {
-        resource: Box<ASTNodePos>,
-        _as:      Option<Box<ASTNodePos>>,
-        expr:     Box<ASTNodePos>
+        resource: Box<AST>,
+        _as:      Option<Box<AST>>,
+        expr:     Box<AST>
     },
 
     FunctionCall {
-        name: Box<ASTNodePos>,
-        args: Vec<ASTNodePos>
+        name: Box<AST>,
+        args: Vec<AST>
     },
     PropertyCall {
-        instance: Box<ASTNodePos>,
-        property: Box<ASTNodePos>
+        instance: Box<AST>,
+        property: Box<AST>
     },
 
     Id {
@@ -109,37 +109,37 @@ pub enum ASTNode {
     },
 
     IdType {
-        id:      Box<ASTNodePos>,
+        id:      Box<AST>,
         mutable: bool,
-        _type:   Option<Box<ASTNodePos>>
+        _type:   Option<Box<AST>>
     },
     TypeDef {
-        _type: Box<ASTNodePos>,
-        body:  Option<Box<ASTNodePos>>
+        _type: Box<AST>,
+        body:  Option<Box<AST>>
     },
     TypeAlias {
-        _type:      Box<ASTNodePos>,
-        conditions: Vec<ASTNodePos>
+        _type:      Box<AST>,
+        conditions: Vec<AST>
     },
     TypeTup {
-        types: Vec<ASTNodePos>
+        types: Vec<AST>
     },
     Type {
-        id:       Box<ASTNodePos>,
-        generics: Vec<ASTNodePos>
+        id:       Box<AST>,
+        generics: Vec<AST>
     },
     TypeFun {
-        args:   Vec<ASTNodePos>,
-        ret_ty: Box<ASTNodePos>
+        args:   Vec<AST>,
+        ret_ty: Box<AST>
     },
     Condition {
-        cond:  Box<ASTNodePos>,
-        _else: Option<Box<ASTNodePos>>
+        cond:  Box<AST>,
+        _else: Option<Box<AST>>
     },
     FunArg {
         vararg:        bool,
-        id_maybe_type: Box<ASTNodePos>,
-        default:       Option<Box<ASTNodePos>>
+        id_maybe_type: Box<AST>,
+        default:       Option<Box<AST>>
     },
 
     _Self,
@@ -156,32 +156,32 @@ pub enum ASTNode {
     GeOp,
 
     Set {
-        elements: Vec<ASTNodePos>
+        elements: Vec<AST>
     },
     SetBuilder {
-        item:       Box<ASTNodePos>,
-        conditions: Vec<ASTNodePos>
+        item:       Box<AST>,
+        conditions: Vec<AST>
     },
     List {
-        elements: Vec<ASTNodePos>
+        elements: Vec<AST>
     },
     ListBuilder {
-        item:       Box<ASTNodePos>,
-        conditions: Vec<ASTNodePos>
+        item:       Box<AST>,
+        conditions: Vec<AST>
     },
     Tuple {
-        elements: Vec<ASTNodePos>
+        elements: Vec<AST>
     },
 
     Range {
-        from:      Box<ASTNodePos>,
-        to:        Box<ASTNodePos>,
+        from:      Box<AST>,
+        to:        Box<AST>,
         inclusive: bool,
-        step:      Option<Box<ASTNodePos>>
+        step:      Option<Box<AST>>
     },
 
     Block {
-        statements: Vec<ASTNodePos>
+        statements: Vec<AST>
     },
 
     Real {
@@ -202,164 +202,164 @@ pub enum ASTNode {
     },
 
     Add {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     AddU {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
     Sub {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     SubU {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
     Mul {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Div {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     FDiv {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Mod {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Pow {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Sqrt {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
 
     BAnd {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     BOr {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     BXOr {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     BOneCmpl {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
     BLShift {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     BRShift {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
 
     Le {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Ge {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Leq {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Geq {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Is {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     IsN {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Eq {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Neq {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     IsA {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     IsNA {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Not {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
     And {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Or {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
 
     IfElse {
-        cond:  Box<ASTNodePos>,
-        then:  Box<ASTNodePos>,
-        _else: Option<Box<ASTNodePos>>
+        cond:  Box<AST>,
+        then:  Box<AST>,
+        _else: Option<Box<AST>>
     },
     Match {
-        cond:  Box<ASTNodePos>,
-        cases: Vec<ASTNodePos>
+        cond:  Box<AST>,
+        cases: Vec<AST>
     },
     Case {
-        cond: Box<ASTNodePos>,
-        body: Box<ASTNodePos>
+        cond: Box<AST>,
+        body: Box<AST>
     },
     For {
-        expr: Box<ASTNodePos>,
-        body: Box<ASTNodePos>
+        expr: Box<AST>,
+        body: Box<AST>
     },
     In {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
     Step {
-        amount: Box<ASTNodePos>
+        amount: Box<AST>
     },
     While {
-        cond: Box<ASTNodePos>,
-        body: Box<ASTNodePos>
+        cond: Box<AST>,
+        body: Box<AST>
     },
     Break,
     Continue,
 
     Return {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
     ReturnEmpty,
     Underscore,
     Pass,
 
     Question {
-        left:  Box<ASTNodePos>,
-        right: Box<ASTNodePos>
+        left:  Box<AST>,
+        right: Box<AST>
     },
 
     Print {
-        expr: Box<ASTNodePos>
+        expr: Box<AST>
     },
     Comment {
         comment: String
