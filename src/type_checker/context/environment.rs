@@ -61,7 +61,7 @@ impl TryFrom<&[CheckInput]> for Environment {
 
 impl Environment {
     // TODO implement
-    pub fn union(&self, env: &Environment) -> Environment {
+    pub fn union(&self, _: &Environment) -> Environment {
         Environment { functions: self.functions.clone(), fields: self.fields.clone() }
     }
 
@@ -72,7 +72,8 @@ impl Environment {
     /// # Failure
     ///
     /// If shadowing field with a different type.
-    pub fn add(&self, variable: &Field, position: &Position) -> TypeResult<Environment> {
+    pub fn add(&self, _: &Field, _: &Position) -> TypeResult<Environment> {
+        // TODO implement
         unimplemented!()
     }
 
@@ -81,11 +82,8 @@ impl Environment {
     /// # Failure
     ///
     /// If attempting to shadow a function.
-    pub fn add_function(
-        &self,
-        function: &Function,
-        position: &Position
-    ) -> TypeResult<Environment> {
+    pub fn add_function(&self, _: &Function, _: &Position) -> TypeResult<Environment> {
+        // TODO implement
         unimplemented!()
     }
 

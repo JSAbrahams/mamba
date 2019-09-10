@@ -53,7 +53,7 @@ pub trait ReturnType {
 }
 
 impl Context {
-    pub fn lookup(type_name: &TypeName) -> TypeResult { unimplemented!() }
+    pub fn lookup(&self, _: &TypeName) -> TypeResult { unimplemented!() }
 }
 
 impl TryFrom<&[CheckInput]> for Context {

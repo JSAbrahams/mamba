@@ -3,6 +3,8 @@ use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::type_result::TypeErr;
+use std::fmt;
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeName {
@@ -13,6 +15,34 @@ pub enum TypeName {
 
 impl From<&String> for TypeName {
     fn from(name: &String) -> Self { TypeName::Single { lit: name.clone(), generics: vec![] } }
+}
+
+impl Display for TypeName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TypeName::Single { lit, generics } if generics.is_empty() => write!(f, "{}", lit),
+            TypeName::Single { lit, generics } =>
+                write!(f, "{}<{}>", lit, comma_delimited(generics)?),
+            TypeName::Fun { args, ret_ty } =>
+                write!(f, "({}) -> {}", comma_delimited(args)?, ret_ty),
+            TypeName::Tuple { type_names } => write!(f, "({})", comma_delimited(type_names)?)
+        }
+    }
+}
+
+fn comma_delimited(types: &[TypeName]) -> Result<String, fmt::Error> {
+    let mut res = String::new();
+    for ty in types {
+        res.push_str(format!("{}", ty).as_str());
+        res.push(',');
+        res.push(' ');
+    }
+
+    if res.len() > 1 {
+        res.remove(res.len() - 1);
+        res.remove(res.len() - 1);
+    }
+    Ok(res)
 }
 
 impl TryFrom<&AST> for TypeName {

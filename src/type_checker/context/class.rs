@@ -46,7 +46,7 @@ impl Type {
         }
     }
 
-    pub fn overrides_op(&self, op: &Node) -> bool { unimplemented!() }
+    pub fn overrides_op(&self, _: &Node) -> bool { unimplemented!() }
 }
 
 impl TryFrom<&AST> for Type {

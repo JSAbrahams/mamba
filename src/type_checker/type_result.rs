@@ -17,6 +17,10 @@ pub struct TypeErr {
     pub source_line: Option<String>
 }
 
+impl From<TypeErr> for Vec<TypeErr> {
+    fn from(type_err: TypeErr) -> Self { vec![type_err] }
+}
+
 impl TypeErr {
     pub fn new(position: &Position, msg: &str) -> TypeErr {
         TypeErr {
@@ -31,7 +35,7 @@ impl TypeErr {
         TypeErr {
             position:    self.position.clone(),
             msg:         self.msg.clone(),
-            source_line: source.map(|source| {
+            source_line: source.clone().map(|source| {
                 source
                     .lines()
                     .nth(self.position.start.line as usize - 1)
