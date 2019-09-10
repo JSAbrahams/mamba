@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::common::position::Position;
 use crate::parser::ast::{ASTNode, ASTNodePos};
-use crate::type_checker::context::class::Generic;
+use crate::type_checker::context::class::GenericParameter;
 use crate::type_checker::context::common::try_from_id;
 use crate::type_checker::context::function_arg::FunctionArg;
 use crate::type_checker::context::type_name::TypeName;
@@ -16,7 +16,7 @@ pub struct Function {
     pub private:   bool,
     pub position:  Position,
     pub arguments: Vec<FunctionArg>,
-    pub raises:    Vec<Generic>,
+    pub raises:    Vec<GenericParameter>,
     ret_ty:        Option<TypeName>
 }
 
@@ -82,8 +82,8 @@ impl TryFrom<&ASTNodePos> for Function {
                 },
                 raises:    raises
                     .iter()
-                    .map(Generic::try_from)
-                    .collect::<Result<Vec<Generic>, TypeErr>>()?
+                    .map(GenericParameter::try_from)
+                    .collect::<Result<Vec<GenericParameter>, TypeErr>>()?
             }),
             _ => Err(TypeErr::new(&node_pos.position, "Expected function definition"))
         }

@@ -8,11 +8,13 @@ use crate::type_checker::context::function::Function;
 use crate::type_checker::context::function_arg::FunctionArg;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
+// TODO differentiate between class and type, a class has generic parameters, a
+// type has generics
 #[derive(Debug, Clone)]
 pub struct Type {
     pub name:      String,
     pub args:      Vec<FunctionArg>,
-    pub generics:  Vec<Generic>,
+    pub generics:  Vec<GenericParameter>,
     pub concrete:  bool,
     pub fields:    Vec<Field>,
     pub functions: Vec<Function>,
@@ -20,7 +22,7 @@ pub struct Type {
 }
 
 #[derive(Debug, Clone)]
-pub struct Generic {
+pub struct GenericParameter {
     pub name:   String,
     pub parent: Option<String>
 }
@@ -28,7 +30,7 @@ pub struct Generic {
 #[derive(Debug, Clone)]
 pub struct Parent {
     pub name:     String,
-    pub generics: Vec<Generic>
+    pub generics: Vec<GenericParameter>
 }
 
 impl Type {
@@ -43,6 +45,8 @@ impl Type {
             parents:   self.parents
         }
     }
+
+    pub fn overrides_op(&self, op: &ASTNode) -> bool { unimplemented!() }
 }
 
 impl TryFrom<&ASTNodePos> for Type {
@@ -115,12 +119,12 @@ impl TryFrom<&ASTNodePos> for Type {
     }
 }
 
-impl TryFrom<&ASTNodePos> for Generic {
+impl TryFrom<&ASTNodePos> for GenericParameter {
     type Error = TypeErr;
 
     fn try_from(generic: &ASTNodePos) -> Result<Self, Self::Error> {
         match &generic.node {
-            ASTNode::Generic { id, isa } => Ok(Generic {
+            ASTNode::Generic { id, isa } => Ok(GenericParameter {
                 name:   try_from_id(id)?,
                 parent: match isa {
                     Some(isa) => Some(try_from_id(isa)?),
@@ -141,26 +145,28 @@ impl TryFrom<&ASTNodePos> for Parent {
                 name:     try_from_id(id)?,
                 generics: generics
                     .iter()
-                    .map(Generic::try_from)
-                    .collect::<Result<Vec<Generic>, TypeErr>>()?
+                    .map(GenericParameter::try_from)
+                    .collect::<Result<Vec<GenericParameter>, TypeErr>>()?
             }),
             _ => Err(TypeErr::new(&generic.position, "Expected generic"))
         }
     }
 }
 
-fn get_name_and_generics(_type: &ASTNodePos) -> Result<(String, Vec<Generic>), Vec<TypeErr>> {
+fn get_name_and_generics(
+    _type: &ASTNodePos
+) -> Result<(String, Vec<GenericParameter>), Vec<TypeErr>> {
     match &_type.node {
         ASTNode::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
-                generics.iter().map(Generic::try_from).partition(Result::is_ok);
+                generics.iter().map(GenericParameter::try_from).partition(Result::is_ok);
             if !generic_errs.is_empty() {
                 return Err(generic_errs.into_iter().map(Result::unwrap_err).collect());
             }
 
             Ok((
                 try_from_id(id.deref()).map_err(|err| vec![err])?,
-                generics.into_iter().map(Result::unwrap).collect::<Vec<Generic>>()
+                generics.into_iter().map(Result::unwrap).collect::<Vec<GenericParameter>>()
             ))
         }
         _ => Err(vec![TypeErr::new(&_type.position, "Expected class name")])

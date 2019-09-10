@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use crate::parser::ast::ASTNode;
 use crate::type_checker::context::class::Type;
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
 
 pub mod class;
@@ -50,6 +50,10 @@ pub trait ReturnType {
     /// return type in the signature, or the return type was not set during
     /// the type inference stage (unable to derive return type).
     fn get_return_type_name(&self) -> Result<TypeName, TypeErr>;
+}
+
+impl Context {
+    pub fn lookup(type_name: &TypeName) -> TypeResult { unimplemented!() }
 }
 
 impl TryFrom<&[CheckInput]> for Context {

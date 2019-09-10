@@ -1,13 +1,18 @@
-use crate::parser::ast::{ASTNode, ASTNodePos};
-use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
+
+use crate::parser::ast::{ASTNode, ASTNodePos};
+use crate::type_checker::type_result::TypeErr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeName {
     Single { lit: String, generics: Vec<TypeName> },
     Fun { args: Vec<TypeName>, ret_ty: Box<TypeName> },
     Tuple { type_names: Vec<TypeName> }
+}
+
+impl From<&String> for TypeName {
+    fn from(name: &String) -> Self { TypeName { lit: name.clone(), generics: vec![] } }
 }
 
 impl TryFrom<&ASTNodePos> for TypeName {

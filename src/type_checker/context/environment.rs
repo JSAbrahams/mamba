@@ -1,9 +1,10 @@
 use std::convert::TryFrom;
 
+use crate::common::position::Position;
 use crate::parser::ast::ASTNode;
 use crate::type_checker::context::field::Field;
 use crate::type_checker::context::function::Function;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
 
 pub struct Environment {
@@ -56,4 +57,37 @@ impl TryFrom<&[CheckInput]> for Environment {
             })
         }
     }
+}
+
+impl Environment {
+    // TODO implement
+    pub fn union(&self, env: &Environment) -> Environment {
+        Environment { functions: self.functions.clone(), fields: self.fields.clone() }
+    }
+
+    /// Add field to environment.
+    ///
+    /// Shadows current field.
+    ///
+    /// # Failure
+    ///
+    /// If shadowing field with a different type.
+    pub fn add(&self, variable: &Field, position: &Position) -> TypeResult<Environment> {
+        unimplemented!()
+    }
+
+    /// Add function to environment.
+    ///
+    /// # Failure
+    ///
+    /// If attempting to shadow a function.
+    pub fn add_function(
+        &self,
+        function: &Function,
+        position: &Position
+    ) -> TypeResult<Environment> {
+        unimplemented!()
+    }
+
+    pub fn lookup(&self, variable: &String) -> Option<Field> { unimplemented!() }
 }
