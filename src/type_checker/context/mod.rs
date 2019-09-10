@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
-
 use crate::parser::ast::Node;
 use crate::type_checker::context::class::Type;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
+use std::convert::TryFrom;
 
 pub mod class;
 pub mod field;
@@ -62,14 +61,12 @@ impl TryFrom<&[CheckInput]> for Context {
     fn try_from(files: &[CheckInput]) -> Result<Self, Self::Error> {
         let mut results = vec![];
         files.iter().for_each(|(file, ..)| match &file.node {
-            Node::File { pure, modules, .. } => modules
-                .iter()
-                .map(|module| match &module.node {
+            Node::File { pure, modules, .. } =>
+                modules.iter().for_each(|module| match &module.node {
                     Node::Class { .. } | Node::TypeDef { .. } =>
                         results.push(Type::try_from(module).map(|ty| ty.all_pure(*pure))),
                     _ => {}
-                })
-                .collect(),
+                }),
             _ => results.push(Err(vec![TypeErr::new(&file.pos, "Expected file")]))
         });
 

@@ -72,10 +72,7 @@ impl TryFrom<&AST> for Function {
                 pure:      *pure,
                 private:   *private,
                 position:  node_pos.pos.clone(),
-                arguments: fun_args
-                    .iter()
-                    .map(FunctionArg::try_from)
-                    .collect::<Result<Vec<FunctionArg>, TypeErr>>()?,
+                arguments: fun_args.iter().map(FunctionArg::try_from).collect::<Result<_, _>>()?,
                 ret_ty:    match ret_ty {
                     Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                     None => None
@@ -83,7 +80,7 @@ impl TryFrom<&AST> for Function {
                 raises:    raises
                     .iter()
                     .map(GenericParameter::try_from)
-                    .collect::<Result<Vec<GenericParameter>, TypeErr>>()?
+                    .collect::<Result<_, _>>()?
             }),
             _ => Err(TypeErr::new(&node_pos.pos, "Expected function definition"))
         }

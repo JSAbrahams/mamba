@@ -54,24 +54,15 @@ impl TryFrom<&AST> for TypeName {
             Node::Type { id, generics } => match &id.node {
                 Node::Id { lit } => Ok(TypeName::Single {
                     lit:      lit.clone(),
-                    generics: generics
-                        .iter()
-                        .map(TypeName::try_from)
-                        .collect::<Result<Vec<TypeName>, TypeErr>>()?
+                    generics: generics.iter().map(TypeName::try_from).collect::<Result<_, _>>()?
                 }),
                 _ => Err(TypeErr::new(&id.pos, "Expected identifier"))
             },
             Node::TypeTup { types } => Ok(TypeName::Tuple {
-                type_names: types
-                    .iter()
-                    .map(TypeName::try_from)
-                    .collect::<Result<Vec<TypeName>, TypeErr>>()?
+                type_names: types.iter().map(TypeName::try_from).collect::<Result<_, _>>()?
             }),
             Node::TypeFun { args, ret_ty } => Ok(TypeName::Fun {
-                args:   args
-                    .iter()
-                    .map(TypeName::try_from)
-                    .collect::<Result<Vec<TypeName>, TypeErr>>()?,
+                args:   args.iter().map(TypeName::try_from).collect::<Result<_, _>>()?,
                 ret_ty: Box::from(TypeName::try_from(ret_ty.deref())?)
             }),
             _ => Err(TypeErr::new(&node_pos.pos, "Expected type variant"))

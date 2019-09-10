@@ -34,7 +34,7 @@ pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
     // TODO use context during type checking and type inference stage
     let ctx = Context::try_from(inputs)?;
     let env = Environment::try_from(inputs)?;
-    check(inputs, env, &ctx)?;
+    check(inputs, &env, &ctx)?;
 
     Ok(inputs
         .iter()

@@ -1,15 +1,17 @@
-use std::convert::TryFrom;
-
 use crate::common::position::Position;
 use crate::parser::ast::Node;
 use crate::type_checker::context::field::Field;
 use crate::type_checker::context::function::Function;
+use crate::type_checker::context::ReturnType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
+use std::collections::HashMap;
+use std::convert::TryFrom;
 
+#[derive(Clone)]
 pub struct Environment {
-    pub functions: Vec<Function>,
-    pub fields:    Vec<Field>
+    functions: HashMap<String, Function>,
+    fields:    HashMap<String, Field>
 }
 
 impl TryFrom<&[CheckInput]> for Environment {
@@ -51,15 +53,22 @@ impl TryFrom<&[CheckInput]> for Environment {
             errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
             Err(errs)
         } else {
-            Ok(Environment {
-                functions: functions.into_iter().map(Result::unwrap).collect(),
-                fields:    fields.into_iter().map(Result::unwrap).collect()
-            })
+            Ok(Environment::new(
+                functions.into_iter().map(Result::unwrap).collect(),
+                fields.into_iter().map(Result::unwrap).collect()
+            ))
         }
     }
 }
 
 impl Environment {
+    pub fn new(functions: Vec<Function>, fields: Vec<Field>) -> Environment {
+        Environment {
+            functions: functions.iter().map(|f| (f.name.clone(), f)).collect(),
+            fields:    fields.iter().map(|f| (f.name.clone(), f)).collect()
+        }
+    }
+
     // TODO implement
     pub fn union(&self, _: &Environment) -> Environment {
         Environment { functions: self.functions.clone(), fields: self.fields.clone() }
@@ -67,25 +76,37 @@ impl Environment {
 
     /// Add field to environment.
     ///
-    /// Shadows current field.
-    ///
     /// # Failure
     ///
-    /// If shadowing field with a different type.
-    pub fn add(&self, _: &Field, _: &Position) -> TypeResult<Environment> {
-        // TODO implement
-        unimplemented!()
+    /// If attempting to shadow field with a different type.
+    pub fn add_field(&mut self, field: &Field, pos: &Position) -> TypeResult<()> {
+        match self.fields.get(field.name.as_str()) {
+            Some(self_field)
+                if self_field.get_return_type_name() != field.get_return_type_name() =>
+                return Err(TypeErr::new(pos, "Cannot shadow if type is different")),
+        }
+
+        self.fields.insert(field.name, field.clone())
     }
 
     /// Add function to environment.
     ///
     /// # Failure
     ///
-    /// If attempting to shadow a function.
-    pub fn add_function(&self, _: &Function, _: &Position) -> TypeResult<Environment> {
-        // TODO implement
-        unimplemented!()
+    /// If attempting to shadow function that is already in scope.
+    pub fn add_function(&mut self, function: &Function, pos: &Position) -> TypeResult<()> {
+        if self.functions.contains_key(function.name.as_str()) {
+            return Err(TypeErr::new(pos, "Function is already in scope"));
+        }
+
+        self.functions.insert(function.name, function.clone())
     }
 
-    pub fn lookup(&self, variable: &String) -> Option<Field> { unimplemented!() }
+    pub fn lookup_field(&self, field: &String) -> Option<Field> {
+        self.fields.get(field.as_str()).cloned()
+    }
+
+    pub fn lookup_function(&self, function: String) -> Option<Function> {
+        self.functions.get(function.as_str()).cloned()
+    }
 }
