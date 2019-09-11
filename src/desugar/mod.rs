@@ -18,12 +18,12 @@ pub mod desugar_result;
 
 pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 
-/// Consumes the given [ASTNodePos](crate::parser::ast::ASTNodePos) and produces
+/// Consumes the given [AST](crate::parser::ast::AST) and produces
 /// a [Core](crate::core::construct::Core) node.
 ///
-/// Note that the given [ASTNodePos](crate::parser::ast::ASTNodePos) must be
+/// Note that the given [AST](crate::parser::ast::AST) must be
 /// correctly formed. Therefore, malformed
-/// [ASTNodePos](crate::parser::ast::ASTNodePos)'s should be caught by either
+/// [AST](crate::parser::ast::AST)'s should be caught by either
 /// the parser or the type checker.
 ///
 /// # Examples
@@ -62,7 +62,7 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 ///
 /// # Panics
 ///
-/// A malformed [ASTNodePos](crate::parser::ast::ASTNodePos) causes this stage
+/// A malformed [AST](crate::parser::ast::AST) causes this stage
 /// to panic.
 pub fn desugar(input: &AST) -> DesugarResult {
     desugar_node(&input, &mut Imports::new(), &State::new())

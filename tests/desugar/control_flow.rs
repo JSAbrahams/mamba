@@ -7,9 +7,9 @@ use mamba::parser::ast::AST;
 
 #[test]
 fn if_verify() {
-    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
-    let then = to_pos!(ASTNode::Id { lit: String::from("then") });
-    let if_stmt = to_pos!(ASTNode::IfElse { cond, then, _else: None });
+    let cond = to_pos!(Node::Id { lit: String::from("cond") });
+    let then = to_pos!(Node::Id { lit: String::from("then") });
+    let if_stmt = to_pos!(Node::IfElse { cond, then, _else: None });
 
     let (core_cond, core_then) = match desugar(&if_stmt) {
         Ok(Core::If { cond, then }) => (cond, then),
@@ -22,10 +22,10 @@ fn if_verify() {
 
 #[test]
 fn if_else_verify() {
-    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
-    let then = to_pos!(ASTNode::Id { lit: String::from("then") });
-    let _else = to_pos!(ASTNode::Id { lit: String::from("else") });
-    let if_stmt = to_pos!(ASTNode::IfElse { cond, then, _else: Some(_else) });
+    let cond = to_pos!(Node::Id { lit: String::from("cond") });
+    let then = to_pos!(Node::Id { lit: String::from("then") });
+    let _else = to_pos!(Node::Id { lit: String::from("else") });
+    let if_stmt = to_pos!(Node::IfElse { cond, then, _else: Some(_else) });
 
     let (core_cond, core_then, core_else) = match desugar(&if_stmt) {
         Ok(Core::IfElse { cond, then, _else }) => (cond, then, _else),
@@ -39,9 +39,9 @@ fn if_else_verify() {
 
 #[test]
 fn while_verify() {
-    let cond = to_pos!(ASTNode::Id { lit: String::from("cond") });
-    let body = to_pos!(ASTNode::ENum { num: String::from("num"), exp: String::from("") });
-    let while_stmt = to_pos!(ASTNode::While { cond, body });
+    let cond = to_pos!(Node::Id { lit: String::from("cond") });
+    let body = to_pos!(Node::ENum { num: String::from("num"), exp: String::from("") });
+    let while_stmt = to_pos!(Node::While { cond, body });
 
     let (core_cond, core_body) = match desugar(&while_stmt) {
         Ok(Core::While { cond, body }) => (cond, body),
@@ -54,9 +54,9 @@ fn while_verify() {
 
 #[test]
 fn for_verify() {
-    let expr = to_pos!(ASTNode::Id { lit: String::from("expr_1") });
-    let body = to_pos!(ASTNode::Id { lit: String::from("body") });
-    let for_stmt = to_pos!(ASTNode::For { expr, body });
+    let expr = to_pos!(Node::Id { lit: String::from("expr_1") });
+    let body = to_pos!(Node::Id { lit: String::from("body") });
+    let for_stmt = to_pos!(Node::For { expr, body });
 
     let (core_expr, core_body) = match desugar(&for_stmt) {
         Ok(Core::For { expr, body }) => (expr, body),
@@ -69,9 +69,9 @@ fn for_verify() {
 
 #[test]
 fn range_verify() {
-    let from = to_pos!(ASTNode::Id { lit: String::from("a") });
-    let to = to_pos!(ASTNode::Id { lit: String::from("b") });
-    let range = to_pos!(ASTNode::Range { from, to, inclusive: false, step: None });
+    let from = to_pos!(Node::Id { lit: String::from("a") });
+    let to = to_pos!(Node::Id { lit: String::from("b") });
+    let range = to_pos!(Node::Range { from, to, inclusive: false, step: None });
 
     let (from, to, step) = match desugar(&range) {
         Ok(Core::Range { from, to, step }) => (from, to, step),
@@ -85,9 +85,9 @@ fn range_verify() {
 
 #[test]
 fn range_incl_verify() {
-    let from = to_pos!(ASTNode::Id { lit: String::from("a") });
-    let to = to_pos!(ASTNode::Id { lit: String::from("b") });
-    let range = to_pos!(ASTNode::Range { from, to, inclusive: true, step: None });
+    let from = to_pos!(Node::Id { lit: String::from("a") });
+    let to = to_pos!(Node::Id { lit: String::from("b") });
+    let range = to_pos!(Node::Range { from, to, inclusive: true, step: None });
 
     let (from, to, step) = match desugar(&range) {
         Ok(Core::Range { from, to, step }) => (from, to, step),
@@ -104,10 +104,10 @@ fn range_incl_verify() {
 
 #[test]
 fn range_step_verify() {
-    let from = to_pos!(ASTNode::Id { lit: String::from("a") });
-    let to = to_pos!(ASTNode::Id { lit: String::from("b") });
-    let step = Some(to_pos!(ASTNode::Id { lit: String::from("c") }));
-    let range = to_pos!(ASTNode::Range { from, to, inclusive: false, step });
+    let from = to_pos!(Node::Id { lit: String::from("a") });
+    let to = to_pos!(Node::Id { lit: String::from("b") });
+    let step = Some(to_pos!(Node::Id { lit: String::from("c") }));
+    let range = to_pos!(Node::Range { from, to, inclusive: false, step });
 
     let (from, to, step) = match desugar(&range) {
         Ok(Core::Range { from, to, step }) => (from, to, step),

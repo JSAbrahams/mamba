@@ -2,20 +2,18 @@ use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use crate::parser::ast::AST;
-use crate::type_checker::context::environment::Environment;
 use crate::type_checker::context::Context;
-use crate::type_checker::infer::check;
 use crate::type_checker::type_result::TypeResults;
 
 mod context;
+mod environment;
 mod infer;
-mod types;
 
 pub mod type_result;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 
-/// Checks whether a given [ASTNodePos](crate::parser::ast::ASTNodePos) is well
+/// Checks whether a given [AST](crate::parser::ast::AST) is well
 /// typed according to the specification of the language.
 ///
 /// Should never panic.
@@ -26,15 +24,12 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 ///
 /// # Failures
 ///
-/// Any ill-typed [ASTNodePos](crate::parser::ast::ASTNodePos) results in a
+/// Any ill-typed [AST](crate::parser::ast::AST) results in a
 /// failure.
 ///
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
-    // TODO use context during type checking and type inference stage
-    let ctx = Context::try_from(inputs)?;
-    let env = Environment::try_from(inputs)?;
-    check(inputs, &env, &ctx)?;
+    Context::try_from(inputs)?;
 
     Ok(inputs
         .iter()

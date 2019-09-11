@@ -7,7 +7,7 @@ use mamba::parser::ast::AST;
 
 macro_rules! verify_op {
     ($op:ident) => {{
-        let add_op = to_pos!(ASTNode::$op);
+        let add_op = to_pos!(Node::$op);
         let core = desugar(&add_op).unwrap();
         assert_eq!(core, Core::$op);
     }};
@@ -15,9 +15,9 @@ macro_rules! verify_op {
 
 macro_rules! verify {
     ($ast:ident) => {{
-        let left = ASTNode::Id { lit: String::from("left") };
-        let right = ASTNode::Id { lit: String::from("right") };
-        let add_node = to_pos!(ASTNode::$ast { left: to_pos!(left), right: to_pos!(right) });
+        let left = Node::Id { lit: String::from("left") };
+        let right = Node::Id { lit: String::from("right") };
+        let add_node = to_pos!(Node::$ast { left: to_pos!(left), right: to_pos!(right) });
 
         let (left, right) = match desugar(&add_node) {
             Ok(Core::$ast { left, right }) => (left, right),
@@ -31,8 +31,8 @@ macro_rules! verify {
 
 macro_rules! verify_unary {
     ($ast:ident) => {{
-        let expr = to_pos!(ASTNode::Id { lit: String::from("expression") });
-        let add_node = to_pos!(ASTNode::$ast { expr });
+        let expr = to_pos!(Node::Id { lit: String::from("expression") });
+        let add_node = to_pos!(Node::$ast { expr });
 
         let expr_des = match desugar(&add_node) {
             Ok(Core::$ast { expr }) => expr,
@@ -145,7 +145,7 @@ fn sub_op_verify() {
 
 #[test]
 fn sqrt_op_verify() {
-    let sqrt_node = to_pos!(ASTNode::SqrtOp);
+    let sqrt_node = to_pos!(Node::SqrtOp);
     let result = desugar(&sqrt_node);
     assert!(result.is_err());
 }

@@ -3,10 +3,10 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::type_checker::context::class::Type;
+use crate::type_checker::context::generic_type::GenericType;
 use crate::type_checker::CheckInput;
 
-pub type TypeResult<T = Type> = std::result::Result<T, Vec<TypeErr>>;
+pub type TypeResult<T = GenericType> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
 
 #[derive(Debug)]

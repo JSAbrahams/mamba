@@ -2,7 +2,7 @@ use crate::common::position::EndPoint;
 use crate::common::position::Position;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
-/// Wrapper of ASTNode, and its start end end position in the source code.
+/// Wrapper of Node, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
 pub struct AST {
     pub pos:  Position,

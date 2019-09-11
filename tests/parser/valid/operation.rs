@@ -6,9 +6,9 @@ use mamba::parser::parse_direct;
 macro_rules! verify_is_operation {
     ($op:ident, $ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } => {
+            Node::Script { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::$op { left, right } => (left.clone(), right.clone()),
+                    Node::$op { left, right } => (left.clone(), right.clone()),
                     other =>
                         panic!("first element script was not op: {}, but was: {:?}", $op, other),
                 }
@@ -21,9 +21,9 @@ macro_rules! verify_is_operation {
 macro_rules! verify_is_un_operation {
     ($op:ident, $ast_tree:expr) => {{
         match $ast_tree.node {
-            ASTNode::Script { statements, .. } => {
+            Node::Script { statements, .. } => {
                 match &statements.first().expect("script empty.").node {
-                    ASTNode::$op { expr } => expr.clone(),
+                    Node::$op { expr } => expr.clone(),
                     _ => panic!("first element script was not tuple.")
                 }
             }

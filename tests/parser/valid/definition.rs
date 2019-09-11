@@ -5,13 +5,12 @@ use mamba::parser::parse_direct;
 macro_rules! unwrap_func_definition {
     ($ast_tree:expr) => {{
         let definition = match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
-                statements.first().expect("script empty.").clone(),
+            Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
             _ => panic!("ast_tree was not script.")
         };
 
         match definition.node {
-            ASTNode::FunDef { id, private, pure, fun_args, ret_ty, raises, body } =>
+            Node::FunDef { id, private, pure, fun_args, ret_ty, raises, body } =>
                 (private, pure, id, fun_args, ret_ty, raises, body),
             other => panic!("Expected variabledef but was {:?}.", other)
         }
@@ -21,15 +20,14 @@ macro_rules! unwrap_func_definition {
 macro_rules! unwrap_definition {
     ($ast_tree:expr) => {{
         let definition = match $ast_tree.node {
-            ASTNode::Script { statements, .. } =>
-                statements.first().expect("script empty.").clone(),
+            Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
             _ => panic!("ast_tree was not script.")
         };
 
         match definition.node {
-            ASTNode::VariableDef { ofmut, private, id_maybe_type, expression, forward } =>
+            Node::VariableDef { ofmut, private, id_maybe_type, expression, forward } =>
                 match id_maybe_type.node {
-                    ASTNode::IdType { id, mutable, _type } =>
+                    Node::IdType { id, mutable, _type } =>
                         (private, mutable, ofmut, id, _type, expression, forward),
                     other => panic!("Expected id type in variable def but was {:?}.", other)
                 },
