@@ -14,39 +14,49 @@ pub enum TypeName {
 }
 
 impl TypeName {
+    /// Insert generics into the [`GenericTypeName`] to produce actual types.
+    ///
+    /// Traverses [GenericTypeName]'s until we find a
+    /// [`Single`] variant. If its literal is present in the [`HashMap`] of
+    /// generics, which maps the substitute's name to a generic argument, it
+    /// may be substituted. The rules of substitution are as follows:
+    ///
+    /// - If the current [`GenericTypeName`] has no generics, it is a trivial
+    ///   substitution, and we recursively traverse the generics of the
+    ///   resulting value if relevant.
+    /// - If the current [`GenericTypeName`] has generics, and the substitute
+    ///   does not, meaning that is is a [`Single`] wit no generics, we copy the
+    ///   literal and retain our own generics, and recursively transverse those.
+    ///
+    /// # Failure
+    ///
+    /// - In all other cases, we give an error, as this would result in a
+    ///   nonsensical generic.
+    ///
+    /// [`GenericTypeName`]:
+    /// type_checker.context.generic_type_name.GenericTypeName.html
+    /// [`Single`]:
+    /// type_checker.context.generic_type_name.GenericTypeName.Single.html
+    /// [`HashMap`]: std.collections.HashMap.html
     pub fn try_from(
         gen_type_name: &GenericTypeName,
         generics: &HashMap<String, GenericTypeName>,
         pos: &Position
     ) -> Result<TypeName, TypeErr> {
         match gen_type_name {
-            GenericTypeName::Single { lit, generics: this_gens } => generics.get(lit).map_or(
-                Ok(TypeName::Single {
-                    lit:      lit.clone(),
-                    generics: this_gens
-                        .iter()
-                        .map(|g| TypeName::try_from(g, generics, pos))
-                        .collect::<Result<_, _>>()?
-                }),
-                |generic_type_name| match generic_type_name {
-                    GenericTypeName::Single { lit, generics: other_gens } =>
-                        if other_gens.len() == this_gens.len() {
-                            Ok(TypeName::Single {
-                                lit:      lit.clone(),
-                                generics: this_gens
-                                    .iter()
-                                    .map(|g| TypeName::try_from(g, generics, pos))
-                                    .collect::<Result<_, _>>()?
-                            })
-                        } else {
-                            Err(TypeErr::new(
-                                pos,
-                                "Trying to insert generic with unequal amount of generic arguments"
-                            ))
-                        },
-                    _ => Err(TypeErr::new(pos, "Unable to insert generic"))
+            GenericTypeName::Single { lit, generics: this_gens } => {
+                if let Some(subst) = generics.get(lit) {
+                    substitute(gen_type_name, subst, generics, pos)
+                } else {
+                    Ok(TypeName::Single {
+                        lit:      lit.clone(),
+                        generics: this_gens
+                            .iter()
+                            .map(|g| TypeName::try_from(g, generics, pos))
+                            .collect::<Result<_, _>>()?
+                    })
                 }
-            ),
+            }
             GenericTypeName::Fun { args, ret_ty } => Ok(TypeName::Fun {
                 args:   args
                     .iter()
@@ -61,6 +71,41 @@ impl TypeName {
                     .collect::<Result<_, _>>()?
             })
         }
+    }
+}
+
+fn substitute(
+    this: &GenericTypeName,
+    substitute: &GenericTypeName,
+    generics: &HashMap<String, GenericTypeName>,
+    pos: &Position
+) -> Result<TypeName, TypeErr> {
+    match (this, substitute) {
+        (
+            GenericTypeName::Single { lit: this_lit, generics: this_generics },
+            GenericTypeName::Single { lit: that_lit, generics: that_generics }
+        ) => Ok(TypeName::Single {
+            lit:      that_lit.clone(),
+            generics: if this_generics.is_empty() && that_generics.is_empty() {
+                vec![]
+            } else if this_generics.is_empty() {
+                that_generics
+                    .iter()
+                    .map(|a| TypeName::try_from(a, generics, pos))
+                    .collect::<Result<_, _>>()?
+            } else if that_generics.is_empty() {
+                this_generics
+                    .iter()
+                    .map(|a| TypeName::try_from(a, generics, pos))
+                    .collect::<Result<_, _>>()?
+            } else {
+                return Err(TypeErr::new(pos, "Unable to insert generic"));
+            }
+        }),
+        (GenericTypeName::Single { lit, generics: this_generics }, substitute)
+            if this_generics.is_empty() =>
+            TypeName::try_from(substitute, generics, pos),
+        _ => Err(TypeErr::new(pos, "Unable to insert generic"))
     }
 }
 

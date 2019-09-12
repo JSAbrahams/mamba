@@ -54,7 +54,9 @@ impl GenericFunction {
 
     // TODO derive return type during type inference stage
     pub fn ty(&self) -> Result<GenericTypeName, TypeErr> {
-        self.ret_ty.clone().ok_or(TypeErr::new(&self.pos.clone(), "Function return type not given"))
+        self.ret_ty
+            .clone()
+            .ok_or_else(|| TypeErr::new(&self.pos.clone(), "Function return type not given"))
     }
 }
 

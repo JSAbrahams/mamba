@@ -33,7 +33,9 @@ impl GenericFunctionArg {
     }
 
     pub fn ty(&self) -> Result<GenericTypeName, TypeErr> {
-        self.ty.clone().ok_or(TypeErr::new(&self.pos.clone(), "Function argument type not given"))
+        self.ty
+            .clone()
+            .ok_or_else(|| TypeErr::new(&self.pos.clone(), "Function argument type not given"))
     }
 }
 

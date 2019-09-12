@@ -140,8 +140,8 @@ fn get_name_and_generics(_type: &AST) -> Result<(String, Vec<GenericParameter>),
 }
 
 fn get_fields_and_functions(
-    name: &String,
-    generics: &Vec<GenericParameter>,
+    name: &str,
+    generics: &[GenericParameter],
     statements: &[AST]
 ) -> Result<(Vec<GenericField>, Vec<GenericFunction>), Vec<TypeErr>> {
     let mut field_res = vec![];
@@ -151,7 +151,7 @@ fn get_fields_and_functions(
         Node::FunDef { .. } => {
             let function = GenericFunction::try_from(statement).and_then(|f| {
                 f.in_class(Some(GenericTypeName::Single {
-                    lit:      name.clone(),
+                    lit:      String::from(name),
                     generics: generics
                         .iter()
                         .map(|g| GenericTypeName::Single {

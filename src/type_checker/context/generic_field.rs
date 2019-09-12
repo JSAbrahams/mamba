@@ -18,7 +18,7 @@ pub struct GenericField {
 impl GenericField {
     // TODO add type inference for fields
     pub fn ty(&self) -> Result<GenericTypeName, TypeErr> {
-        self.ty.clone().ok_or(TypeErr::new(&self.pos.clone(), "Cannot infer type of field"))
+        self.ty.clone().ok_or_else(|| TypeErr::new(&self.pos.clone(), "Cannot infer type of field"))
     }
 }
 

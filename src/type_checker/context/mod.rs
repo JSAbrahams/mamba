@@ -45,7 +45,7 @@ impl Context {
         self.types
             .iter()
             .find(|ty| ty.name.as_str() == type_name)
-            .ok_or(TypeErr::new(pos, "Type not recognized"))
+            .ok_or_else(|| TypeErr::new(pos, "Type not recognized"))
             .map(|generic| Type::try_from(generic, &generics, pos))?
     }
 }
