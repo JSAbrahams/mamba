@@ -8,7 +8,6 @@ use crate::type_checker::type_result::TypeResults;
 mod context;
 mod environment;
 mod infer;
-mod ty;
 
 pub mod type_result;
 

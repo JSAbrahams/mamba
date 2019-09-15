@@ -9,6 +9,8 @@ pub mod function_arg;
 pub mod ty;
 pub mod type_name;
 
+// TODO change to be mappings from names to ExpressionTypes (Function and Field are not relevant here)
+
 #[derive(Clone)]
 pub struct Environment {
     functions: HashMap<String, Function>,

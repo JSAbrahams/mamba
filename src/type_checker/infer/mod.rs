@@ -6,22 +6,29 @@ use crate::type_checker::environment::function::Function;
 use crate::type_checker::environment::ty::Type;
 use crate::type_checker::environment::type_name::TypeName;
 use crate::type_checker::environment::Environment;
+use crate::type_checker::infer::expression_type::ExpressionType;
 use crate::type_checker::infer::state::State;
 use crate::type_checker::infer::state::StateType::InLoop;
-use crate::type_checker::ty::ExpressionType;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::CheckInput;
 
+mod expression_type;
 mod state;
 
-pub type InferResult<T = Option<ExpressionType>> =
-    std::result::Result<(T, Environment, State), Vec<TypeErr>>;
+pub type Inferred<T> = (T, Environment, State);
+pub type InferResult<T = Option<ExpressionType>> = std::result::Result<Inferred<T>, Vec<TypeErr>>;
 
 pub fn check(inputs: &[CheckInput], env: &Environment, ctx: &Context) -> Result<(), Vec<TypeErr>> {
-    for (input, ..) in inputs {
-        check_direct(&Box::from(input.clone()), &env.clone(), ctx, &State::new())?;
+    let (_, errs): (Vec<_>, Vec<_>) = inputs
+        .iter()
+        .map(|input| check_direct(&Box::from(input.clone()), &env.clone(), ctx, &State::new()))
+        .partition(Result::is_ok);
+
+    if errs.is_empty() {
+        Ok(())
+    } else {
+        Err(errs.iter().map(Result::unwrap).flatten().collect())
     }
-    Ok(())
 }
 
 fn check_direct(ast: &Box<AST>, env: &Environment, ctx: &Context, state: &State) -> InferResult {
@@ -58,7 +65,21 @@ fn check_direct(ast: &Box<AST>, env: &Environment, ctx: &Context, state: &State)
         ),
         Node::Init => Ok((None, env.clone(), state.clone())),
 
-        Node::Reassign { .. } => unimplemented!(),
+        Node::Reassign { left, right } =>
+            if let (Some(left_ty), left_env) = check_direct(left, env, ctx, state)? {
+                if !left_ty.mutable {
+                    return Err(vec![TypeErr::new(&left.pos, "Cannot be assigned to")]);
+                }
+
+                if let (Some(right_ty), right_env) = check_direct(right, &left_env, ctx, state)? {
+                    // TODO override type of identifier in environment if some
+                    unimplemented!()
+                } else {
+                    Err(vec![TypeErr::new(&right.pos, "Must be expression")])
+                }
+            } else {
+                Err(vec![TypeErr::new(&left.pos, "Must be expression")])
+            },
         // TODO use forward and private, and get rid of ofmut
         Node::VariableDef { id_maybe_type, expression, .. } => match id_maybe_type.node {
             Node::IdType { mutable, _type, .. } => match (_type, expression) {
@@ -124,13 +145,15 @@ fn check_direct(ast: &Box<AST>, env: &Environment, ctx: &Context, state: &State)
             let mut state = state;
             for statement in statements {
                 let (statement_type, new_env, new_state) =
-                    check_direct(&Box::from(statement.clone()), env, ctx, state);
-                types.push(statement_type);
-                env = new_env;
-                state = new_state;
+                    check_direct(&Box::from(statement.clone()), env, ctx, state)?;
+                types.push((statement_type, statement.pos));
+                env = &new_env.clone();
+                state = &new_state.clone();
             }
 
-            Ok((types.last(), env.clone()))
+            // TODO check if all type inferred
+
+            Ok((types.last().and_then(|(expr_ty, _)| expr_ty.clone()), env.clone(), state.clone()))
         }
 
         Node::Real { .. } => Ok((Some(ExpressionType::FLOAT), env.clone(), state.clone())),
