@@ -6,7 +6,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TypeName {
     Single { lit: String, generics: Vec<TypeName> },
     Fun { args: Vec<TypeName>, ret_ty: Box<TypeName> },
@@ -14,11 +14,6 @@ pub enum TypeName {
 }
 
 impl TypeName {
-    pub const BOOL: TypeName = TypeName { lit: String::from("bool"), generics: vec![] };
-    pub const FLOAT: TypeName = TypeName { lit: String::from("float"), generics: vec![] };
-    pub const INT: TypeName = TypeName { lit: String::from("int"), generics: vec![] };
-    pub const STRING: TypeName = TypeName { lit: String::from("string"), generics: vec![] };
-
     /// Insert generics into the [`GenericTypeName`] to produce actual types.
     ///
     /// Traverses [GenericTypeName]'s until we find a
@@ -78,8 +73,8 @@ impl TypeName {
         }
     }
 
-    pub fn single(lit: &str, generics: &Vec<TypeName>) -> TypeName {
-        TypeName::Single { lit: String::from(lit), generics: generics.clone() }
+    pub fn single(lit: &str, generics: &[TypeName]) -> TypeName {
+        TypeName::Single { lit: String::from(lit), generics: Vec::from(generics) }
     }
 }
 

@@ -1,30 +1,26 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::concrete::function::Function;
 use crate::type_checker::context::Context;
-use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
+use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 
-pub fn infer_operation(
-    ast: &Box<AST>,
-    env: &Environment,
-    ctx: &Context,
-    state: &State
-) -> InferResult {
+pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
-        Node::_Self => Ok((None, env.clone(), state.clone())),
-        Node::AddOp => Ok((None, env.clone(), state.clone())),
-        Node::SubOp => Ok((None, env.clone(), state.clone())),
-        Node::SqrtOp => Ok((None, env.clone(), state.clone())),
-        Node::MulOp => Ok((None, env.clone(), state.clone())),
-        Node::FDivOp => Ok((None, env.clone(), state.clone())),
-        Node::DivOp => Ok((None, env.clone(), state.clone())),
-        Node::PowOp => Ok((None, env.clone(), state.clone())),
-        Node::ModOp => Ok((None, env.clone(), state.clone())),
-        Node::EqOp => Ok((None, env.clone(), state.clone())),
-        Node::LeOp => Ok((None, env.clone(), state.clone())),
-        Node::GeOp => Ok((None, env.clone(), state.clone())),
+        Node::_Self => Ok((InferType::new(None), env.clone())),
+        Node::AddOp => Ok((InferType::new(None), env.clone())),
+        Node::SubOp => Ok((InferType::new(None), env.clone())),
+        Node::SqrtOp => Ok((InferType::new(None), env.clone())),
+        Node::MulOp => Ok((InferType::new(None), env.clone())),
+        Node::FDivOp => Ok((InferType::new(None), env.clone())),
+        Node::DivOp => Ok((InferType::new(None), env.clone())),
+        Node::PowOp => Ok((InferType::new(None), env.clone())),
+        Node::ModOp => Ok((InferType::new(None), env.clone())),
+        Node::EqOp => Ok((InferType::new(None), env.clone())),
+        Node::LeOp => Ok((InferType::new(None), env.clone())),
+        Node::GeOp => Ok((InferType::new(None), env.clone())),
 
         Node::Add { left, right } => overrides(left, right, env, ctx, state, Function::ADD),
         Node::AddU { expr } => unimplemented!(),
@@ -41,34 +37,38 @@ pub fn infer_operation(
         Node::Leq { left, right } => overrides(left, right, env, ctx, state, Function::LEQ),
         Node::Geq { left, right } => overrides(left, right, env, ctx, state, Function::GEQ),
         Node::Eq { left, right } => overrides(left, right, env, ctx, state, Function::LE),
+        Node::Neq { left, right } => overrides(left, right, env, ctx, state, Function::NEQ),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected operation")])
     }
 }
 
 fn overrides(
-    left: &Box<AST>,
-    right: &Box<AST>,
+    left: &AST,
+    right: &AST,
     env: &Environment,
     ctx: &Context,
     state: &State,
     overrides: &str
 ) -> InferResult {
     let (left_expr_ty, left_env) = infer(left, env, ctx, state)?;
-    let (right_expr_ty, right_env) = infer(right, &left_env, ctx, state)?;
+    let (right_expr_ty, right_env) = infer(right, &left_env, ctx, &state)?;
 
     if left_expr_ty == right_expr_ty {
-        if let Some(type_name) = left_expr_ty.ty {
-            let ty = ctx.lookup(&type_name, &left.pos)?;
-            if ty.overrides_function(Function::Le) {
-                Ok((Some(ExpressionType::new(&Some(type_name))), env.clone(), state.clone()))
+        if let Some(type_name) = left_expr_ty.expr_type {
+            if type_name.types.len() > 1 {
+                Err(vec![TypeErr::new(&left.pos, "Tuple cannot override operator")])
+            } else if let Some(ty) = type_name.types.get(0) {
+                // TODO check if type overrides operator
+                unimplemented!()
             } else {
-                Err(vec![TypeErr::new(&left.pos, "Type does not define operator")])
+                // This should, in theory, never be returned
+                Err(vec![TypeErr::new(&left.pos, "Must be expression")])
             }
         } else {
-            Err(vec![TypeErr::new(&left.pos, "Must have type")])
+            Err(vec![TypeErr::new(&left.pos, "Must be expression")])
         }
     } else {
-        Err(vec![TypeErr::new(&ast.pos, "Types must be equal")])
+        Err(vec![TypeErr::new(&left.pos.union(&right.pos), "Types must be equal")])
     }
 }

@@ -1,4 +1,4 @@
-use std::cmp::max;
+use std::cmp::{max, min};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// A position represents a rectangle in the source code.
@@ -24,6 +24,19 @@ impl Position {
     /// Width is always 1 or greater.
     pub fn get_width(&self) -> i32 {
         max(1, max(self.end.pos - self.start.pos, self.start.pos - self.end.pos))
+    }
+
+    pub fn union(&self, other: &Position) -> Position {
+        Position {
+            start: EndPoint {
+                line: min(self.start.line, other.start.line),
+                pos:  min(self.start.pos, other.start.pos)
+            },
+            end:   EndPoint {
+                line: max(self.end.line, other.end.line),
+                pos:  max(self.end.pos, other.end.pos)
+            }
+        }
     }
 }
 

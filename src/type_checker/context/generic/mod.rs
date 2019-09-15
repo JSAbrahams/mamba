@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::field::GenericField;
@@ -7,7 +9,6 @@ use crate::type_checker::context::generic::generic_parent::GenericParent;
 use crate::type_checker::context::generic::parameter::GenericParameter;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::convert::TryFrom;
 
 pub mod field;
 pub mod function;
@@ -46,7 +47,7 @@ impl GenericType {
 impl TryFrom<&AST> for GenericType {
     type Error = Vec<TypeErr>;
 
-    fn try_from(class: &AST) -> TypeResult {
+    fn try_from(class: &AST) -> TypeResult<GenericType> {
         match &class.node {
             // TODO add pure classes
             Node::Class { _type, args, parents, body } => {

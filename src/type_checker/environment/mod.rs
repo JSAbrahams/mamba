@@ -4,7 +4,7 @@ use std::collections::HashMap;
 pub mod expression_type;
 pub mod state;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Environment {
     variables: HashMap<String, ExpressionType>
 }

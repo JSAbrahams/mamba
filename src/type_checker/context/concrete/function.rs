@@ -6,7 +6,7 @@ use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Function {
     pub name:      String,
     pub pure:      bool,
@@ -26,6 +26,7 @@ impl Function {
     pub const LEQ: &'static str = GenericFunction::LEQ;
     pub const MOD: &'static str = GenericFunction::MOD;
     pub const MUL: &'static str = GenericFunction::MUL;
+    pub const NEQ: &'static str = GenericFunction::NEQ;
     pub const POW: &'static str = GenericFunction::POW;
     pub const SUB: &'static str = GenericFunction::SUB;
 

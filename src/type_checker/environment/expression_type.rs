@@ -1,41 +1,41 @@
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::concrete::Type;
 use crate::type_checker::type_result::TypeErr;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct ExpressionType {
     pub nullable: bool,
     pub mutable:  bool,
-    pub raises:   Vec<Type>,
-    pub ty:       Option<Type>
+    pub types:    Vec<Type>
 }
 
 impl Display for ExpressionType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let nullable = if self.nullable { "?" } else { "" };
         let mutable = if self.mutable { "mut " } else { "" };
-        let raises = if self.raises.is_empty() { "" } else { format!(" raises [{}] ", raises) };
-        let ty = if self.ty.is_some() { format!("{}", ty) } else { String::from("<unknown>") };
+        let ty = if self.types.is_empty() {
+            String::from("<unknown>")
+        } else {
+            format!("({:#?})", self.types)
+        };
 
-        write!(f, "{}{}{}{}", mutable, ty, nullable, raises)
+        write!(f, "{}{}{}", mutable, ty, nullable)
     }
 }
 
 impl ExpressionType {
-    pub fn new(ty: &Option<Type>) -> ExpressionType {
-        ExpressionType { nullable: false, mutable: false, raises: vec![], ty: ty.clone() }
+    pub fn new(types: &[Type]) -> ExpressionType {
+        ExpressionType { nullable: false, mutable: false, types: Vec::from(types) }
     }
 
-    pub fn set_type(&self, ty: &Type, pos: &Position) -> Result<ExpressionType, TypeErr> {
-        if self.ty.map_or(self.ty.is_none(), |self_ty| self_ty == ty) {
+    pub fn set_type(&self, types: &[Type], pos: &Position) -> Result<ExpressionType, TypeErr> {
+        if self.types.as_slice() == types {
             Ok(ExpressionType {
                 nullable: self.nullable,
                 mutable:  self.mutable,
-                raises:   self.raises.clone(),
-                ty:       Some(ty.clone())
+                types:    self.types.clone()
             })
         } else {
             Err(TypeErr::new(pos, "Types differ"))
@@ -43,14 +43,10 @@ impl ExpressionType {
     }
 
     pub fn mutable(self, mutable: bool) -> ExpressionType {
-        ExpressionType { nullable: self.nullable, mutable, raises: self.raises, ty: self.ty }
-    }
-
-    pub fn raises(self, raises: Vec<Type>) -> ExpressionType {
-        ExpressionType { nullable: self.nullable, mutable: self.mutable, raises, ty: self.ty }
+        ExpressionType { nullable: self.nullable, mutable, types: self.types }
     }
 
     pub fn nullable(self, nullable: bool) -> ExpressionType {
-        ExpressionType { nullable, mutable: self.mutable, raises: self.raises, ty: self.ty }
+        ExpressionType { nullable, mutable: self.mutable, types: self.types }
     }
 }

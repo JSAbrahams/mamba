@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::common::position::Position;
@@ -28,7 +27,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> Result<Type, TypeErr> {
+    pub fn lookup(&self, type_name: &[TypeName], pos: &Position) -> Result<Vec<Type>, TypeErr> {
         unimplemented!()
     }
 }

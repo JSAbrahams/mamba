@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use crate::parser::ast::AST;
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeResults;
 
 mod context;
@@ -29,6 +30,7 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
     Context::try_from(inputs)?;
+    Environment::new();
 
     Ok(inputs
         .iter()

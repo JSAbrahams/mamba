@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::common::position::Position;
 use crate::type_checker::CheckInput;
 
-pub type TypeResult<T = GenericType> = std::result::Result<T, Vec<TypeErr>>;
+pub type TypeResult<T> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
 
 #[derive(Debug)]

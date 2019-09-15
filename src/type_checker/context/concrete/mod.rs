@@ -5,20 +5,28 @@ use crate::type_checker::context::concrete::field::Field;
 use crate::type_checker::context::concrete::function::Function;
 use crate::type_checker::context::concrete::function_arg::FunctionArg;
 use crate::type_checker::context::concrete::type_name::TypeName;
+use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::GenericType;
+use crate::type_checker::type_result::TypeErr;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
-mod field;
-mod function;
-mod function_arg;
-
+pub mod field;
+pub mod function;
+pub mod function_arg;
 pub mod type_name;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Type {
     pub name:      TypeName,
     pub concrete:  bool,
     pub args:      Vec<FunctionArg>,
     pub fields:    Vec<Field>,
     pub functions: Vec<Function>
+}
+
+impl Display for Type {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
 impl Type {
@@ -56,6 +64,6 @@ impl Type {
     }
 
     pub fn overrides_function(&self, fun_name: &str) -> bool {
-        self.functions.iter().find(|function| function.name.as_str() == fun_name).is_some()
+        self.functions.iter().any(|function| function.name.as_str() == fun_name)
     }
 }

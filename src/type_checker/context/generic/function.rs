@@ -30,6 +30,7 @@ impl GenericFunction {
     pub const LEQ: &'static str = "<=";
     pub const MOD: &'static str = "mod";
     pub const MUL: &'static str = "*";
+    pub const NEQ: &'static str = "/=";
     pub const POW: &'static str = "^";
     pub const SUB: &'static str = "-";
 
