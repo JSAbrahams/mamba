@@ -9,6 +9,12 @@ use crate::type_checker::environment::function_arg::FunctionArg;
 use crate::type_checker::environment::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
+mod field;
+mod function;
+mod function_arg;
+
+pub mod type_name;
+
 #[derive(Debug, Clone)]
 pub struct Type {
     pub name:      TypeName,

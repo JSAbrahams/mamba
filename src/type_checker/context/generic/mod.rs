@@ -1,3 +1,10 @@
+pub mod field;
+pub mod function;
+pub mod function_arg;
+pub mod generic_parent;
+pub mod parameter;
+pub mod type_name;
+
 use std::convert::TryFrom;
 
 use crate::common::position::Position;

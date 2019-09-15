@@ -3,22 +3,17 @@ use std::convert::TryFrom;
 
 use crate::common::position::Position;
 use crate::parser::ast::Node;
-use crate::type_checker::context::generic_field::GenericField;
-use crate::type_checker::context::generic_function::GenericFunction;
-use crate::type_checker::context::generic_type::GenericType;
-use crate::type_checker::environment::ty::Type;
-use crate::type_checker::environment::type_name::TypeName;
+use crate::type_checker::context::concrete::type_name::TypeName;
+use crate::type_checker::context::concrete::Type;
+use crate::type_checker::context::generic::field::GenericField;
+use crate::type_checker::context::generic::function::GenericFunction;
+use crate::type_checker::context::generic::GenericType;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::CheckInput;
 
-pub mod generic_field;
-pub mod generic_function;
-pub mod generic_function_arg;
-pub mod generic_parameter;
-pub mod generic_parent;
-pub mod generic_type;
+mod generic;
 
-pub mod generic_type_name;
+pub mod concrete;
 
 /// A context stores all information of all identified types of the current
 /// application.

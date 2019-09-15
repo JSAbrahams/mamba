@@ -2,15 +2,16 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
-use crate::type_checker::environment::type_name::TypeName;
+use crate::type_checker::context::concrete::Type;
+use crate::type_checker::ty::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Clone)]
 pub struct ExpressionType {
     pub nullable: bool,
     pub mutable:  bool,
-    pub raises:   Vec<TypeName>,
-    pub ty:       Option<TypeName>
+    pub raises:   Vec<Type>,
+    pub ty:       Option<Type>
 }
 
 impl ExpressionType {

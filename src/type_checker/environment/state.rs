@@ -1,10 +1,11 @@
+use crate::type_checker::context::concrete::Type;
 use crate::type_checker::environment::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Clone)]
 pub struct State {
     pub in_loop:   bool,
-    pub unhandled: Vec<TypeName>
+    pub unhandled: Vec<Type>
 }
 
 pub enum StateType {
