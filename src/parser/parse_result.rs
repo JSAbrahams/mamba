@@ -6,13 +6,13 @@ use std::path::PathBuf;
 use crate::common::position::{EndPoint, Position};
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::AST;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 2;
 
-pub type ParseResult<T = Box<ASTNodePos>> = std::result::Result<T, ParseErr>;
+pub type ParseResult<T = Box<AST>> = std::result::Result<T, ParseErr>;
 pub type ParseResults =
-    std::result::Result<Vec<(ASTNodePos, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
+    std::result::Result<Vec<(AST, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {

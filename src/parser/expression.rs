@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenPos;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::call::parse_anon_fun;
 use crate::parser::call::parse_call;
 use crate::parser::call::parse_reassignment;
@@ -96,17 +96,17 @@ pub fn parse_expression(it: &mut TPIterator) -> ParseResult {
 fn parse_underscore(it: &mut TPIterator) -> ParseResult {
     let start = it.start_pos("underscore")?;
     let end = it.eat(&Token::Underscore, "underscore")?;
-    Ok(Box::from(ASTNodePos::new(&start, &end, ASTNode::Underscore)))
+    Ok(Box::from(AST::new(&start, &end, Node::Underscore)))
 }
 
-fn parse_post_expr(pre: &ASTNodePos, it: &mut TPIterator) -> ParseResult {
+fn parse_post_expr(pre: &AST, it: &mut TPIterator) -> ParseResult {
     it.peek(
         &|it, token_pos| match token_pos.token {
             Token::Question => {
                 it.eat(&Token::Question, "postfix expression")?;
                 let right = it.parse(&parse_expression, "postfix expression", &token_pos.start)?;
-                let node = ASTNode::Question { left: Box::new(pre.clone()), right: right.clone() };
-                let res = ASTNodePos::new(&token_pos.start, &right.position.end, node);
+                let node = Node::Question { left: Box::new(pre.clone()), right: right.clone() };
+                let res = AST::new(&token_pos.start, &right.pos.end, node);
                 parse_post_expr(&res, it)
             }
             Token::Assign => {
@@ -134,12 +134,12 @@ fn parse_return(it: &mut TPIterator) -> ParseResult {
     it.eat(&Token::Ret, "return")?;
 
     if let Some(end) = it.eat_if(&Token::NL) {
-        let node = ASTNode::ReturnEmpty;
-        return Ok(Box::from(ASTNodePos::new(&start, &end, node)));
+        let node = Node::ReturnEmpty;
+        return Ok(Box::from(AST::new(&start, &end, node)));
     }
 
     let expr = it.parse(&parse_expression, "return", &start)?;
-    Ok(Box::from(ASTNodePos::new(&start, &expr.position.end.clone(), ASTNode::Return { expr })))
+    Ok(Box::from(AST::new(&start, &expr.pos.end.clone(), Node::Return { expr })))
 }
 
 /// Excluding unary addition and subtraction

@@ -2,15 +2,15 @@ use mamba::common::position::EndPoint;
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::ASTNode;
-use mamba::parser::ast::ASTNodePos;
+use mamba::parser::ast::Node;
+use mamba::parser::ast::AST;
 use std::panic;
 
 #[test]
 fn reassign_verify() {
-    let left = to_pos!(ASTNode::Id { lit: String::from("something") });
-    let right = to_pos!(ASTNode::Id { lit: String::from("other") });
-    let reassign = to_pos!(ASTNode::Reassign { left, right });
+    let left = to_pos!(Node::Id { lit: String::from("something") });
+    let right = to_pos!(Node::Id { lit: String::from("other") });
+    let reassign = to_pos!(Node::Reassign { left, right });
 
     let (left, right) = match desugar(&reassign) {
         Ok(Core::Assign { left, right }) => (left, right),
@@ -23,11 +23,11 @@ fn reassign_verify() {
 
 #[test]
 fn variable_private_def_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(Node::VariableDef {
         ofmut:         false,
         private:       false,
-        id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
-        expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
+        id_maybe_type: to_pos!(Node::Id { lit: String::from("d") }),
+        expression:    Some(to_pos!(Node::Int { lit: String::from("98") })),
         forward:       vec![]
     });
 
@@ -43,11 +43,11 @@ fn variable_private_def_verify() {
 
 #[test]
 fn variable_def_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(Node::VariableDef {
         ofmut:         false,
         private:       true,
-        id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
-        expression:    Some(to_pos!(ASTNode::Int { lit: String::from("98") })),
+        id_maybe_type: to_pos!(Node::Id { lit: String::from("d") }),
+        expression:    Some(to_pos!(Node::Int { lit: String::from("98") })),
         forward:       vec![]
     });
 
@@ -64,18 +64,18 @@ fn variable_def_verify() {
 #[test]
 fn tuple_def_verify() {
     let elements = vec![
-        to_pos_unboxed!(ASTNode::Id { lit: String::from("a") }),
-        to_pos_unboxed!(ASTNode::Id { lit: String::from("b") }),
+        to_pos_unboxed!(Node::Id { lit: String::from("a") }),
+        to_pos_unboxed!(Node::Id { lit: String::from("b") }),
     ];
     let expressions = vec![
-        to_pos_unboxed!(ASTNode::Id { lit: String::from("c") }),
-        to_pos_unboxed!(ASTNode::Id { lit: String::from("d") }),
+        to_pos_unboxed!(Node::Id { lit: String::from("c") }),
+        to_pos_unboxed!(Node::Id { lit: String::from("d") }),
     ];
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(Node::VariableDef {
         ofmut:         false,
         private:       true,
-        id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
-        expression:    Some(to_pos!(ASTNode::Tuple { elements: expressions })),
+        id_maybe_type: to_pos!(Node::Tuple { elements }),
+        expression:    Some(to_pos!(Node::Tuple { elements: expressions })),
         forward:       vec![]
     });
 
@@ -94,10 +94,10 @@ fn tuple_def_verify() {
 
 #[test]
 fn variable_def_none_verify() {
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(Node::VariableDef {
         ofmut:         false,
         private:       true,
-        id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("d") }),
+        id_maybe_type: to_pos!(Node::Id { lit: String::from("d") }),
         expression:    None,
         forward:       vec![]
     });
@@ -115,13 +115,13 @@ fn variable_def_none_verify() {
 #[test]
 fn tuple_def_none_verify() {
     let elements = vec![
-        to_pos_unboxed!(ASTNode::Id { lit: String::from("a") }),
-        to_pos_unboxed!(ASTNode::Id { lit: String::from("b") }),
+        to_pos_unboxed!(Node::Id { lit: String::from("a") }),
+        to_pos_unboxed!(Node::Id { lit: String::from("b") }),
     ];
-    let definition = to_pos!(ASTNode::VariableDef {
+    let definition = to_pos!(Node::VariableDef {
         ofmut:         false,
         private:       true,
-        id_maybe_type: to_pos!(ASTNode::Tuple { elements }),
+        id_maybe_type: to_pos!(Node::Tuple { elements }),
         expression:    None,
         forward:       vec![]
     });
@@ -139,19 +139,19 @@ fn tuple_def_none_verify() {
 
 #[test]
 fn fun_def_verify() {
-    let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+    let definition = to_pos!(Node::FunDef {
+        id:       to_pos!(Node::Id { lit: String::from("fun") }),
         pure:     false,
         private:  false,
         fun_args: vec![
-            to_pos_unboxed!(ASTNode::FunArg {
+            to_pos_unboxed!(Node::FunArg {
                 vararg:        false,
-                id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
+                id_maybe_type: to_pos!(Node::Id { lit: String::from("arg1") }),
                 default:       None
             }),
-            to_pos_unboxed!(ASTNode::FunArg {
+            to_pos_unboxed!(Node::FunArg {
                 vararg:        true,
-                id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg2") }),
+                id_maybe_type: to_pos!(Node::Id { lit: String::from("arg2") }),
                 default:       None
             })
         ],
@@ -184,14 +184,14 @@ fn fun_def_verify() {
 
 #[test]
 fn fun_def_default_arg_verify() {
-    let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+    let definition = to_pos!(Node::FunDef {
+        id:       to_pos!(Node::Id { lit: String::from("fun") }),
         pure:     false,
         private:  false,
-        fun_args: vec![to_pos_unboxed!(ASTNode::FunArg {
+        fun_args: vec![to_pos_unboxed!(Node::FunArg {
             vararg:        false,
-            id_maybe_type: to_pos!(ASTNode::Id { lit: String::from("arg1") }),
-            default:       Some(to_pos!(ASTNode::Str { lit: String::from("asdf") }))
+            id_maybe_type: to_pos!(Node::Id { lit: String::from("arg1") }),
+            default:       Some(to_pos!(Node::Str { lit: String::from("asdf") }))
         })],
         ret_ty:   None,
         raises:   vec![],
@@ -217,17 +217,17 @@ fn fun_def_default_arg_verify() {
 
 #[test]
 fn fun_def_with_body_verify() {
-    let definition = to_pos!(ASTNode::FunDef {
-        id:       to_pos!(ASTNode::Id { lit: String::from("fun") }),
+    let definition = to_pos!(Node::FunDef {
+        id:       to_pos!(Node::Id { lit: String::from("fun") }),
         pure:     false,
         private:  false,
         fun_args: vec![
-            to_pos_unboxed!(ASTNode::Id { lit: String::from("arg1") }),
-            to_pos_unboxed!(ASTNode::Id { lit: String::from("arg2") })
+            to_pos_unboxed!(Node::Id { lit: String::from("arg1") }),
+            to_pos_unboxed!(Node::Id { lit: String::from("arg2") })
         ],
         ret_ty:   None,
         raises:   vec![],
-        body:     Some(to_pos!(ASTNode::Real { lit: String::from("2.4") }))
+        body:     Some(to_pos!(Node::Real { lit: String::from("2.4") }))
     });
 
     let (private, id, args, body) = match desugar(&definition) {
@@ -246,12 +246,12 @@ fn fun_def_with_body_verify() {
 
 #[test]
 fn anon_fun_verify() {
-    let anon_fun = to_pos!(ASTNode::AnonFun {
+    let anon_fun = to_pos!(Node::AnonFun {
         args: vec![
-            to_pos_unboxed!(ASTNode::Id { lit: String::from("first") }),
-            to_pos_unboxed!(ASTNode::Id { lit: String::from("second") })
+            to_pos_unboxed!(Node::Id { lit: String::from("first") }),
+            to_pos_unboxed!(Node::Id { lit: String::from("second") })
         ],
-        body: to_pos!(ASTNode::Str { lit: String::from("this_string") })
+        body: to_pos!(Node::Str { lit: String::from("this_string") })
     });
 
     let (args, body) = match desugar(&anon_fun) {

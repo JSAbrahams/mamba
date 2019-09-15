@@ -4,16 +4,12 @@ use crate::desugar::context::Imports;
 use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 
-pub fn desugar_definition(
-    node_pos: &ASTNodePos,
-    imp: &mut Imports,
-    state: &State
-) -> DesugarResult {
+pub fn desugar_definition(node_pos: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &node_pos.node {
-        ASTNode::VariableDef { id_maybe_type, expression, private, .. } => {
+        Node::VariableDef { id_maybe_type, expression, private, .. } => {
             let id = desugar_node(id_maybe_type, imp, state)?;
             let new_state = &State {
                 tup:         match id.clone() {
@@ -35,7 +31,7 @@ pub fn desugar_definition(
                 }
             }
         }
-        ASTNode::FunDef { id, fun_args, body: expression, private, .. } => Core::FunDef {
+        Node::FunDef { id, fun_args, body: expression, private, .. } => Core::FunDef {
             private: *private,
             id:      Box::from(desugar_node(&id, imp, state)?),
             args:    desugar_vec(&fun_args, imp, state)?,

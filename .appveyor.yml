@@ -9,10 +9,6 @@ branches:
 
 environment:
   matrix:
-  # Stable 64-bit MSVC
-    - channel: stable
-      PYTHON: "C:\\Python37"
-      target: x86_64-pc-windows-msvc
   # Nightly 64-bit MSVC
     - channel: nightly
       PYTHON: "C:\\Python37"

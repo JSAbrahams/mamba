@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::common::position::Position;
 use crate::core::construct::Core;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::AST;
 
 pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
 pub type DesugarResults =
@@ -21,9 +21,9 @@ pub struct UnimplementedErr {
 }
 
 impl UnimplementedErr {
-    pub fn new(node_pos: &ASTNodePos, msg: &str) -> UnimplementedErr {
+    pub fn new(node_pos: &AST, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            position:    node_pos.position.clone(),
+            position:    node_pos.pos.clone(),
             msg:         format!(
                 "The {} construct has not yet been implemented as of v{}.",
                 msg, VERSION

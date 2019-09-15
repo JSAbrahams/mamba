@@ -3,10 +3,10 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::type_checker::context::class::Type;
+use crate::type_checker::context::generic_type::GenericType;
 use crate::type_checker::CheckInput;
 
-pub type TypeResult<T = Type> = std::result::Result<T, Vec<TypeErr>>;
+pub type TypeResult<T = GenericType> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
 
 #[derive(Debug)]
@@ -15,6 +15,10 @@ pub struct TypeErr {
     pub msg:         String,
     pub path:        Option<PathBuf>,
     pub source_line: Option<String>
+}
+
+impl From<TypeErr> for Vec<TypeErr> {
+    fn from(type_err: TypeErr) -> Self { vec![type_err] }
 }
 
 impl TypeErr {
@@ -27,11 +31,11 @@ impl TypeErr {
         }
     }
 
-    pub fn into_with_source(self, source: Option<String>, path: &Option<PathBuf>) -> TypeErr {
+    pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
         TypeErr {
             position:    self.position.clone(),
             msg:         self.msg.clone(),
-            source_line: source.map(|source| {
+            source_line: source.clone().map(|source| {
                 source
                     .lines()
                     .nth(self.position.start.line as usize - 1)
