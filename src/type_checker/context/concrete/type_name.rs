@@ -3,8 +3,7 @@ use std::fmt;
 use std::fmt::Display;
 
 use crate::common::position::Position;
-use crate::lexer::token::Token::Type;
-use crate::type_checker::context::generic_type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Debug, Clone, PartialEq)]

@@ -1,12 +1,11 @@
-use std::convert::TryFrom;
-use std::ops::Deref;
-
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic_function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic_parameter::GenericParameter;
-use crate::type_checker::context::generic_type_name::GenericTypeName;
+use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
+use crate::type_checker::context::generic::parameter::GenericParameter;
+use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 #[derive(Debug, Clone)]
 pub struct GenericFunction {

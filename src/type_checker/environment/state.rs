@@ -1,5 +1,5 @@
+use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::concrete::Type;
-use crate::type_checker::environment::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Clone)]

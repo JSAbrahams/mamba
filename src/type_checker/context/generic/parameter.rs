@@ -1,9 +1,8 @@
+use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
-
-use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic_type_name::GenericTypeName;
-use crate::type_checker::type_result::TypeErr;
 
 #[derive(Debug, Clone)]
 pub struct GenericParameter {

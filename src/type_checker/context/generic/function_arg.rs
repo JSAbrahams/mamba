@@ -1,7 +1,6 @@
 use crate::common::position::Position;
-use crate::lexer::token::Token;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic_type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -81,7 +80,7 @@ impl TryFrom<&AST> for GenericFunctionArg {
 fn argument_name(ast: &AST) -> Result<String, TypeErr> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
-        Node::_Self => Ok(Token::_Self.to_string()),
+        Node::_Self => Ok(String::from("self")),
         _ => Err(TypeErr::new(&ast.pos, "Expected identifier"))
     }
 }

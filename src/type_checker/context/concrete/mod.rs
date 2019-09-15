@@ -1,13 +1,10 @@
 use std::collections::HashMap;
 
 use crate::common::position::Position;
-use crate::type_checker::context::generic_type::GenericType;
-use crate::type_checker::context::generic_type_name::GenericTypeName;
-use crate::type_checker::environment::field::Field;
-use crate::type_checker::environment::function::Function;
-use crate::type_checker::environment::function_arg::FunctionArg;
-use crate::type_checker::environment::type_name::TypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::context::concrete::field::Field;
+use crate::type_checker::context::concrete::function::Function;
+use crate::type_checker::context::concrete::function_arg::FunctionArg;
+use crate::type_checker::context::concrete::type_name::TypeName;
 
 mod field;
 mod function;

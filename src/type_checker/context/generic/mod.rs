@@ -1,21 +1,20 @@
+use crate::common::position::Position;
+use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::generic::field::GenericField;
+use crate::type_checker::context::generic::function::GenericFunction;
+use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
+use crate::type_checker::context::generic::generic_parent::GenericParent;
+use crate::type_checker::context::generic::parameter::GenericParameter;
+use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::convert::TryFrom;
+
 pub mod field;
 pub mod function;
 pub mod function_arg;
 pub mod generic_parent;
 pub mod parameter;
 pub mod type_name;
-
-use std::convert::TryFrom;
-
-use crate::common::position::Position;
-use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic_field::GenericField;
-use crate::type_checker::context::generic_function::GenericFunction;
-use crate::type_checker::context::generic_function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic_parameter::GenericParameter;
-use crate::type_checker::context::generic_parent::GenericParent;
-use crate::type_checker::context::generic_type_name::GenericTypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone)]
 pub struct GenericType {

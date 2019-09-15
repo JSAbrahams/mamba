@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::type_checker::context::generic_type::GenericType;
 use crate::type_checker::CheckInput;
 
 pub type TypeResult<T = GenericType> = std::result::Result<T, Vec<TypeErr>>;
