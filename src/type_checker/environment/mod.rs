@@ -20,7 +20,16 @@ impl Environment {
         Environment { functions: HashMap::new(), fields: HashMap::new() }
     }
 
-    pub fn union(&self, env: &Environment) -> Environment {
+    pub fn add_field(&self) -> Environment {
+        let new_field = Field { name: "".to_string(), ty: None };
+
+        let mut fields = self.fields.clone();
+        fields.insert(new_field.name, new_field.clone());
+
+        Environment { functions: self.functions.clone(), fields }
+    }
+
+    pub fn union(&self, env: Environment) -> Environment {
         let mut functions = self.functions.clone();
         let mut fields = self.fields.clone();
 
@@ -33,4 +42,6 @@ impl Environment {
 
         Environment { functions, fields }
     }
+
+    pub fn intersection(&self, env: Environment) -> Environment { unimplemented!() }
 }

@@ -33,20 +33,8 @@ pub struct Context {
 }
 
 impl Context {
-    // TODO do something with generics
-    pub fn lookup(
-        &self,
-        type_name: &str,
-        _: Vec<TypeName>,
-        pos: &Position
-    ) -> Result<Type, TypeErr> {
-        let generics = HashMap::new();
-
-        self.types
-            .iter()
-            .find(|ty| ty.name.as_str() == type_name)
-            .ok_or_else(|| TypeErr::new(pos, "Type not recognized"))
-            .map(|generic| Type::try_from(generic, &generics, pos))?
+    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> Result<Type, TypeErr> {
+        unimplemented!()
     }
 }
 

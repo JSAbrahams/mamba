@@ -51,4 +51,8 @@ impl Type {
                 .collect::<Result<_, _>>()?
         })
     }
+
+    pub fn overrides_function(&self, fun_name: &str) -> bool {
+        self.functions.iter().find(|function| function.name.as_str() == fun_name).is_some()
+    }
 }

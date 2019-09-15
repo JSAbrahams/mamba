@@ -3,6 +3,7 @@ use std::fmt;
 use std::fmt::Display;
 
 use crate::common::position::Position;
+use crate::lexer::token::Token::Type;
 use crate::type_checker::context::generic_type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 
@@ -14,6 +15,11 @@ pub enum TypeName {
 }
 
 impl TypeName {
+    pub const BOOL: TypeName = TypeName { lit: String::from("bool"), generics: vec![] };
+    pub const FLOAT: TypeName = TypeName { lit: String::from("float"), generics: vec![] };
+    pub const INT: TypeName = TypeName { lit: String::from("int"), generics: vec![] };
+    pub const STRING: TypeName = TypeName { lit: String::from("string"), generics: vec![] };
+
     /// Insert generics into the [`GenericTypeName`] to produce actual types.
     ///
     /// Traverses [GenericTypeName]'s until we find a
@@ -71,6 +77,10 @@ impl TypeName {
                     .collect::<Result<_, _>>()?
             })
         }
+    }
+
+    pub fn single(lit: &str, generics: &Vec<TypeName>) -> TypeName {
+        TypeName::Single { lit: String::from(lit), generics: generics.clone() }
     }
 }
 

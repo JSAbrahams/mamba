@@ -2,7 +2,6 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::common::position::Position;
-use crate::lexer::token::Token;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic_function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic_parameter::GenericParameter;
@@ -22,6 +21,19 @@ pub struct GenericFunction {
 }
 
 impl GenericFunction {
+    pub const ADD: &'static str = "+";
+    pub const DIV: &'static str = "/";
+    pub const EQ: &'static str = "=";
+    pub const FDIV: &'static str = "//";
+    pub const GE: &'static str = ">";
+    pub const GEQ: &'static str = ">=";
+    pub const LE: &'static str = "<";
+    pub const LEQ: &'static str = "<=";
+    pub const MOD: &'static str = "mod";
+    pub const MUL: &'static str = "*";
+    pub const POW: &'static str = "^";
+    pub const SUB: &'static str = "-";
+
     pub fn pure(self, pure: bool) -> Self {
         GenericFunction {
             name:      self.name,
@@ -102,18 +114,18 @@ impl TryFrom<&AST> for GenericFunction {
 fn function_name(ast: &AST) -> Result<String, TypeErr> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
-        Node::Init => Ok(Token::Init.to_string()),
+        Node::Init => Ok(String::from("init")),
 
-        Node::GeOp => Ok(Token::Ge.to_string()),
-        Node::LeOp => Ok(Token::Le.to_string()),
-        Node::EqOp => Ok(Token::Eq.to_string()),
-        Node::AddOp => Ok(Token::Add.to_string()),
-        Node::SubOp => Ok(Token::Sub.to_string()),
-        Node::PowOp => Ok(Token::Pow.to_string()),
-        Node::MulOp => Ok(Token::Mul.to_string()),
-        Node::ModOp => Ok(Token::Mod.to_string()),
-        Node::DivOp => Ok(Token::Div.to_string()),
-        Node::FDivOp => Ok(Token::FDiv.to_string()),
+        Node::GeOp => Ok(String::from(GenericFunction::GE)),
+        Node::LeOp => Ok(String::from(GenericFunction::LE)),
+        Node::EqOp => Ok(String::from(GenericFunction::EQ)),
+        Node::AddOp => Ok(String::from(GenericFunction::ADD)),
+        Node::SubOp => Ok(String::from(GenericFunction::SUB)),
+        Node::PowOp => Ok(String::from(GenericFunction::POW)),
+        Node::MulOp => Ok(String::from(GenericFunction::MUL)),
+        Node::ModOp => Ok(String::from(GenericFunction::MOD)),
+        Node::DivOp => Ok(String::from(GenericFunction::DIV)),
+        Node::FDivOp => Ok(String::from(GenericFunction::FDIV)),
 
         _ => Err(TypeErr::new(&ast.pos, "Expected valid function name"))
     }
