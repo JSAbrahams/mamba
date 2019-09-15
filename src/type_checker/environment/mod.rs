@@ -1,6 +1,7 @@
 use crate::type_checker::environment::expression_type::ExpressionType;
 use std::collections::HashMap;
 
+pub mod actual_type;
 pub mod expression_type;
 pub mod state;
 

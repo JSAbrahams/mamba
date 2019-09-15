@@ -56,15 +56,7 @@ fn overrides(
 
     if left_expr_ty == right_expr_ty {
         if let Some(type_name) = left_expr_ty.expr_type {
-            if type_name.types.len() > 1 {
-                Err(vec![TypeErr::new(&left.pos, "Tuple cannot override operator")])
-            } else if let Some(ty) = type_name.types.get(0) {
-                // TODO check if type overrides operator
-                unimplemented!()
-            } else {
-                // This should, in theory, never be returned
-                Err(vec![TypeErr::new(&left.pos, "Must be expression")])
-            }
+            unimplemented!()
         } else {
             Err(vec![TypeErr::new(&left.pos, "Must be expression")])
         }

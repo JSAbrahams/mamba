@@ -18,7 +18,7 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             infer(&ast, env, ctx, state)
         }
         Node::Block { statements } => {
-            let mut expr_type = None;
+            let mut last_stmt_type = None;
             let mut raises = HashSet::new();
             let mut block_env = env.clone();
 
@@ -28,11 +28,11 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
                 statement_type.raises.iter().for_each(|err| {
                     raises.insert(err.clone());
                 });
-                expr_type = statement_type.expr_type;
+                last_stmt_type = Some(statement_type);
                 block_env = new_env.clone();
             }
 
-            let infer_type = InferType::new(expr_type.and_then(|expr_type| Some(expr_type.types)));
+            let infer_type = last_stmt_type.unwrap_or_else(|| InferType::new(None));
             Ok((infer_type.raises(raises), env.clone()))
         }
 
