@@ -22,45 +22,36 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> I
         Node::LeOp => Ok((InferType::new(None), env.clone())),
         Node::GeOp => Ok((InferType::new(None), env.clone())),
 
-        Node::Add { left, right } => overrides(left, right, env, ctx, state, Function::ADD),
         Node::AddU { expr } => unimplemented!(),
-        Node::Sub { left, right } => overrides(left, right, env, ctx, state, Function::SUB),
         Node::SubU { .. } => unimplemented!(),
-        Node::Mul { left, right } => overrides(left, right, env, ctx, state, Function::MUL),
-        Node::Div { left, right } => overrides(left, right, env, ctx, state, Function::DIV),
-        Node::FDiv { left, right } => overrides(left, right, env, ctx, state, Function::FDIV),
-        Node::Mod { left, right } => overrides(left, right, env, ctx, state, Function::MOD),
-        Node::Pow { left, right } => overrides(left, right, env, ctx, state, Function::POW),
         Node::Sqrt { .. } => unimplemented!(),
-        Node::Le { left, right } => overrides(left, right, env, ctx, state, Function::LE),
-        Node::Ge { left, right } => overrides(left, right, env, ctx, state, Function::GE),
-        Node::Leq { left, right } => overrides(left, right, env, ctx, state, Function::LEQ),
-        Node::Geq { left, right } => overrides(left, right, env, ctx, state, Function::GEQ),
-        Node::Eq { left, right } => overrides(left, right, env, ctx, state, Function::LE),
-        Node::Neq { left, right } => overrides(left, right, env, ctx, state, Function::NEQ),
+        Node::Add { left, right }
+        | Node::Sub { left, right }
+        | Node::Mul { left, right }
+        | Node::Div { left, right }
+        | Node::FDiv { left, right }
+        | Node::Mod { left, right }
+        | Node::Pow { left, right }
+        | Node::Le { left, right }
+        | Node::Ge { left, right }
+        | Node::Leq { left, right }
+        | Node::Geq { left, right }
+        | Node::Eq { left, right }
+        | Node::Neq { left, right } => {
+            let (left_expr_ty, left_env) = infer(left, env, ctx, state)?;
+            let (right_expr_ty, right_env) = infer(right, &left_env, ctx, &state)?;
+
+            if left_expr_ty == right_expr_ty {
+                if let Some(type_name) = left_expr_ty.expr_type {
+                    unimplemented!()
+                } else {
+                    Err(vec![TypeErr::new(&left.pos, "Must be expression")])
+                }
+            } else {
+                Err(vec![TypeErr::new(&left.pos.union(&right.pos), "Types must be equal")])
+            }
+        }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected operation")])
-    }
-}
-
-fn overrides(
-    left: &AST,
-    right: &AST,
-    env: &Environment,
-    ctx: &Context,
-    state: &State,
-    overrides: &str
-) -> InferResult {
-    let (left_expr_ty, left_env) = infer(left, env, ctx, state)?;
-    let (right_expr_ty, right_env) = infer(right, &left_env, ctx, &state)?;
-
-    if left_expr_ty == right_expr_ty {
-        if let Some(type_name) = left_expr_ty.expr_type {
-            unimplemented!()
-        } else {
-            Err(vec![TypeErr::new(&left.pos, "Must be expression")])
-        }
-    } else {
-        Err(vec![TypeErr::new(&left.pos.union(&right.pos), "Types must be equal")])
     }
 }

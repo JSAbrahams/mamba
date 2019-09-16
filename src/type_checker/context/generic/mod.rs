@@ -17,6 +17,8 @@ pub mod generic_parent;
 pub mod parameter;
 pub mod type_name;
 
+// TODO add check that there are no duplicate function names within type
+
 #[derive(Debug, Clone)]
 pub struct GenericType {
     pub name:      String,
