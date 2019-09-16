@@ -8,6 +8,9 @@ use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
+// TODO make ret_ty private again
+// TODO use builder pattern for constructor of GenericFunction
+
 #[derive(Debug, Clone)]
 pub struct GenericFunction {
     pub name:      String,
@@ -17,7 +20,7 @@ pub struct GenericFunction {
     pub generics:  Vec<GenericParameter>,
     pub arguments: Vec<GenericFunctionArg>,
     pub raises:    Vec<GenericTypeName>,
-    ret_ty:        Option<GenericTypeName>
+    pub ret_ty:        Option<GenericTypeName>
 }
 
 impl GenericFunction {
