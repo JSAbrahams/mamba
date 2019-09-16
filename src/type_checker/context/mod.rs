@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::path::PathBuf;
 
 use crate::common::position::Position;
 use crate::parser::ast::Node;
@@ -9,8 +10,10 @@ use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::GenericType;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::CheckInput;
+use std::fs;
 
 mod generic;
+mod python;
 
 pub mod concrete;
 
@@ -63,6 +66,30 @@ impl TryFrom<&[CheckInput]> for Context {
                 }),
             _ => results.push(Err(vec![TypeErr::new(&file.pos, "Expected file")]))
         });
+
+        let python_primitives = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("type_checker")
+            .join("resources")
+            .join("primitives");
+        let entries = fs::read_dir(python_primitives)
+            .map_err(|io_err| TypeErr::new_no_pos(io_err.to_string().as_str()))?;
+        for entry in entries {
+            let path = entry.map_err(|err| TypeErr::new_no_pos(err.to_string().as_str()))?.path();
+
+            let python_src = path
+                .as_os_str()
+                .to_str()
+                .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for primitive"))?;
+            let statements =
+                python_parser::file_input(python_parser::make_strspan(python_src.as_ref()))
+                    .unwrap()
+                    .1;
+
+            for statement in statements {
+                results.push(GenericType::try_from(&statement));
+            }
+        }
 
         let (types, type_errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
         let (functions, fun_errs): (Vec<_>, Vec<_>) = fun_res.into_iter().partition(Result::is_ok);

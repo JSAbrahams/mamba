@@ -3,6 +3,7 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic::parameter::GenericParameter;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::python as py;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -20,20 +21,6 @@ pub struct GenericFunction {
 }
 
 impl GenericFunction {
-    pub const ADD: &'static str = "+";
-    pub const DIV: &'static str = "/";
-    pub const EQ: &'static str = "=";
-    pub const FDIV: &'static str = "//";
-    pub const GE: &'static str = ">";
-    pub const GEQ: &'static str = ">=";
-    pub const LE: &'static str = "<";
-    pub const LEQ: &'static str = "<=";
-    pub const MOD: &'static str = "mod";
-    pub const MUL: &'static str = "*";
-    pub const NEQ: &'static str = "/=";
-    pub const POW: &'static str = "^";
-    pub const SUB: &'static str = "-";
-
     pub fn pure(self, pure: bool) -> Self {
         GenericFunction {
             name:      self.name,
@@ -116,16 +103,16 @@ fn function_name(ast: &AST) -> Result<String, TypeErr> {
         Node::Id { lit } => Ok(lit.clone()),
         Node::Init => Ok(String::from("init")),
 
-        Node::GeOp => Ok(String::from(GenericFunction::GE)),
-        Node::LeOp => Ok(String::from(GenericFunction::LE)),
-        Node::EqOp => Ok(String::from(GenericFunction::EQ)),
-        Node::AddOp => Ok(String::from(GenericFunction::ADD)),
-        Node::SubOp => Ok(String::from(GenericFunction::SUB)),
-        Node::PowOp => Ok(String::from(GenericFunction::POW)),
-        Node::MulOp => Ok(String::from(GenericFunction::MUL)),
-        Node::ModOp => Ok(String::from(GenericFunction::MOD)),
-        Node::DivOp => Ok(String::from(GenericFunction::DIV)),
-        Node::FDivOp => Ok(String::from(GenericFunction::FDIV)),
+        Node::GeOp => Ok(String::from(py::function::GE)),
+        Node::LeOp => Ok(String::from(py::function::LE)),
+        Node::EqOp => Ok(String::from(py::function::EQ)),
+        Node::AddOp => Ok(String::from(py::function::ADD)),
+        Node::SubOp => Ok(String::from(py::function::SUB)),
+        Node::PowOp => Ok(String::from(py::function::POW)),
+        Node::MulOp => Ok(String::from(py::function::MUL)),
+        Node::ModOp => Ok(String::from(py::function::MOD)),
+        Node::DivOp => Ok(String::from(py::function::DIV)),
+        Node::FDivOp => Ok(String::from(py::function::FDIV)),
 
         _ => Err(TypeErr::new(&ast.pos, "Expected valid function name"))
     }

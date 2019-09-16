@@ -1,5 +1,4 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::concrete::function::Function;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;

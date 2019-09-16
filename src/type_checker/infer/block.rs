@@ -23,7 +23,7 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             let mut block_env = env.clone();
 
             for statement in statements {
-                let (mut statement_type, new_env) =
+                let (statement_type, new_env) =
                     infer(&Box::from(statement.clone()), &block_env, ctx, state)?;
                 statement_type.raises.iter().for_each(|err| {
                     raises.insert(err.clone());

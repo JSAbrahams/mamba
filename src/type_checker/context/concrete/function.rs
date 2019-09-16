@@ -16,20 +16,6 @@ pub struct Function {
 }
 
 impl Function {
-    pub const ADD: &'static str = GenericFunction::ADD;
-    pub const DIV: &'static str = GenericFunction::DIV;
-    pub const EQ: &'static str = GenericFunction::EQ;
-    pub const FDIV: &'static str = GenericFunction::FDIV;
-    pub const GE: &'static str = GenericFunction::GE;
-    pub const GEQ: &'static str = GenericFunction::GEQ;
-    pub const LE: &'static str = GenericFunction::LE;
-    pub const LEQ: &'static str = GenericFunction::LEQ;
-    pub const MOD: &'static str = GenericFunction::MOD;
-    pub const MUL: &'static str = GenericFunction::MUL;
-    pub const NEQ: &'static str = GenericFunction::NEQ;
-    pub const POW: &'static str = GenericFunction::POW;
-    pub const SUB: &'static str = GenericFunction::SUB;
-
     pub fn try_from(
         generic_fun: &GenericFunction,
         generics: &HashMap<String, GenericTypeName>,

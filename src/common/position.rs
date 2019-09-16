@@ -56,3 +56,11 @@ impl EndPoint {
         EndPoint { line: self.line, pos: self.pos + offset }
     }
 }
+
+impl Default for Position {
+    fn default() -> Self { Position { start: EndPoint::default(), end: EndPoint::default() } }
+}
+
+impl Default for EndPoint {
+    fn default() -> Self { EndPoint { line: 0, pos: 0 } }
+}
