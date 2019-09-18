@@ -1,5 +1,6 @@
 use crate::common::position::Position;
 use crate::type_checker::context::generic::function::GenericFunction;
+use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use python_parser::ast::Funcdef;
@@ -29,7 +30,12 @@ impl TryFrom<&Funcdef> for GenericFunction {
             private:   false,
             pos:       Position::default(),
             generics:  vec![],
-            arguments: unimplemented!(),
+            arguments: func_def
+                .parameters
+                .positional_args
+                .iter()
+                .map(|(name, ty, expr)| GenericFunctionArg::try_from((name, ty, expr)))
+                .collect::<Result<Vec<GenericFunctionArg>, TypeErr>>()?,
             raises:    vec![],
             ret_ty:    match &func_def.return_type {
                 Some(ret_ty) => Some(GenericTypeName::try_from(ret_ty)?),

@@ -11,12 +11,12 @@ pub struct GenericFunctionArg {
     pub pos:     Position,
     pub vararg:  bool,
     pub mutable: bool,
-    ty:          Option<GenericTypeName>
+    pub ty:      Option<GenericTypeName>
 }
 
 impl GenericFunctionArg {
     pub fn in_class(self, class: Option<GenericTypeName>) -> Result<Self, TypeErr> {
-        if class.is_some() && self.name.as_str() == "self" {
+        if class.is_none() && self.name.as_str() == "self" {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == "self" && self.ty.is_none() {
             Ok(GenericFunctionArg {
@@ -52,11 +52,6 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         mutable: *mutable,
                         pos:     node_pos.pos.clone(),
                         ty:      match _type {
-                            Some(_) if name.as_str() == "self" =>
-                                return Err(TypeErr::new(
-                                    &node_pos.pos,
-                                    "Currently self cannot have an explicit type"
-                                )),
                             Some(_type) => Some(GenericTypeName::try_from(_type.deref())?),
                             None if name.as_str() == "self" => None,
                             None =>

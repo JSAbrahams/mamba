@@ -20,7 +20,7 @@ pub struct GenericFunction {
     pub generics:  Vec<GenericParameter>,
     pub arguments: Vec<GenericFunctionArg>,
     pub raises:    Vec<GenericTypeName>,
-    pub ret_ty:        Option<GenericTypeName>
+    pub ret_ty:    Option<GenericTypeName>
 }
 
 impl GenericFunction {

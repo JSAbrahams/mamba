@@ -1,7 +1,9 @@
 use std::convert::TryFrom;
+use std::fs;
 use std::ops::Deref;
+use std::path::PathBuf;
 
-use python_parser::ast::{CompoundStatement, Statement};
+use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
 use crate::common::position::Position;
 use crate::type_checker::context::generic::field::GenericField;
@@ -17,46 +19,93 @@ mod function_arg;
 mod parent;
 mod type_name;
 
-impl TryFrom<&Statement> for GenericType {
+pub fn python_files() -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<GenericFunction>)> {
+    let mut types = vec![];
+    let mut fields = vec![];
+    let mut functions = vec![];
+
+    let python_primitives = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("type_checker")
+        .join("resources")
+        .join("primitives");
+    let entries = fs::read_dir(python_primitives)
+        .map_err(|io_err| TypeErr::new_no_pos(io_err.to_string().as_str()))?;
+
+    for entry in entries {
+        let path = entry.map_err(|err| TypeErr::new_no_pos(err.to_string().as_str()))?.path();
+
+        let python_src = path
+            .as_os_str()
+            .to_str()
+            .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for primitive"))?;
+        let statements =
+            python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1;
+
+        for statement in statements {
+            match &statement {
+                Statement::Assignment(left, right) =>
+                    fields.push(GenericField::try_from((left, right))),
+                Statement::TypedAssignment(left, ty, right) =>
+                    fields.push(GenericField::try_from((left, ty, right))),
+                Statement::Compound(compound_stmt) => match compound_stmt.deref() {
+                    CompoundStatement::Funcdef(func_def) =>
+                        functions.push(GenericFunction::try_from(func_def)),
+                    CompoundStatement::Classdef(class_def) =>
+                        types.push(GenericType::try_from(class_def)),
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+    }
+
+    let (types, ty_errs): (Vec<_>, Vec<_>) = types.into_iter().partition(Result::is_ok);
+    let (fields, field_errs): (Vec<_>, Vec<_>) = fields.into_iter().partition(Result::is_ok);
+    let (functions, fun_errs): (Vec<_>, Vec<_>) = functions.into_iter().partition(Result::is_ok);
+
+    if ty_errs.is_empty() && fun_errs.is_empty() && fun_errs.is_empty() {
+        Ok((
+            types.into_iter().map(Result::unwrap).collect(),
+            fields.into_iter().map(Result::unwrap).collect(),
+            functions.into_iter().map(Result::unwrap).collect()
+        ))
+    } else {
+        let ty_errs: Vec<_> = ty_errs.into_iter().map(Result::unwrap_err).collect();
+        let field_errs: Vec<_> = field_errs.into_iter().map(Result::unwrap_err).collect();
+        let fun_errs: Vec<_> = fun_errs.into_iter().map(Result::unwrap_err).collect();
+        Err(vec![ty_errs, field_errs, fun_errs].into_iter().flatten().flatten().collect())
+    }
+}
+
+impl TryFrom<&Classdef> for GenericType {
     type Error = Vec<TypeErr>;
 
-    fn try_from(statement: &Statement) -> TypeResult<GenericType> {
+    fn try_from(class_def: &Classdef) -> TypeResult<GenericType> {
         let mut name = String::new();
-        let mut parents: Vec<Result<_, Vec<TypeErr>>> = vec![];
-        let mut functions: Vec<Result<_, Vec<TypeErr>>> = vec![];
-        let mut fields: Vec<Result<_, Vec<TypeErr>>> = vec![];
+        let mut parents: Vec<Result<GenericParent, Vec<TypeErr>>> = vec![];
+        let mut functions: Vec<Result<GenericFunction, Vec<TypeErr>>> = vec![];
+        let mut fields: Vec<Result<GenericField, Vec<TypeErr>>> = vec![];
 
-        match statement {
-            Statement::Compound(compound_stmt) => match compound_stmt.deref() {
-                CompoundStatement::Classdef(class_def) => {
-                    name = class_def.name.clone();
+        name = class_def.name.clone();
 
-                    for decorator in &class_def.decorators {
-                        parents.push(GenericParent::try_from(decorator))
-                    }
+        for argument in &class_def.arguments {
+            parents.push(GenericParent::try_from(argument))
+        }
 
-                    for statement in &class_def.code {
-                        match statement {
-                            Statement::Assignment(variables, expressions) =>
-                                for (var, expr) in variables.iter().zip(expressions) {
-                                    fields.push(GenericField::try_from(&(var, expr)))
-                                },
-                            Statement::TypedAssignment(variables, ty, expressions) =>
-                                for (var, expr) in variables.iter().zip(expressions) {
-                                    fields.push(GenericField::try_from(&(var, ty, expr)))
-                                },
-                            Statement::Compound(compound) => match compound.deref() {
-                                CompoundStatement::Funcdef(func_def) =>
-                                    functions.push(GenericFunction::try_from(func_def)),
-                                _ => unimplemented!()
-                            },
-                            _ => unimplemented!()
-                        }
-                    }
-                }
-                _ => unimplemented!()
-            },
-            _ => unimplemented!()
+        for statement in &class_def.code {
+            match statement {
+                Statement::Assignment(variables, expressions) =>
+                    fields.push(GenericField::try_from((variables, expressions))),
+                Statement::TypedAssignment(variables, ty, expressions) =>
+                    fields.push(GenericField::try_from((variables, ty, expressions))),
+                Statement::Compound(compound) => match compound.deref() {
+                    CompoundStatement::Funcdef(func_def) =>
+                        functions.push(GenericFunction::try_from(func_def)),
+                    _ => {}
+                },
+                _ => {}
+            }
         }
 
         let (fields, field_errs): (Vec<_>, Vec<_>) = fields.into_iter().partition(Result::is_ok);

@@ -11,7 +11,7 @@ pub struct GenericField {
     pub pos:     Position,
     pub private: bool,
     pub mutable: bool,
-    ty:          Option<GenericTypeName>
+    pub ty:      Option<GenericTypeName>
 }
 
 impl GenericField {

@@ -3,20 +3,34 @@ use crate::type_checker::type_result::TypeErr;
 use python_parser::ast::Expression;
 use std::convert::TryFrom;
 
-impl TryFrom<&(&Expression, &Vec<Expression>)> for GenericField {
-    type Error = Vec<TypeErr>;
-
-    fn try_from((id, values): &(&Expression, &Vec<Expression>)) -> Result<Self, Self::Error> {
-        unimplemented!()
-    }
-}
-
-impl TryFrom<&(&Expression, &Expression, &Expression)> for GenericField {
+impl TryFrom<(&Vec<Expression>, &Vec<Vec<Expression>>)> for GenericField {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (id, ty, values): &(&Expression, &Expression, &Expression)
+        (id, values): (&Vec<Expression>, &Vec<Vec<Expression>>)
     ) -> Result<Self, Self::Error> {
-        unimplemented!()
+        Ok(GenericField {
+            name:    "".to_string(),
+            pos:     Default::default(),
+            private: false,
+            mutable: false,
+            ty:      None
+        })
+    }
+}
+
+impl TryFrom<(&Vec<Expression>, &Expression, &Vec<Expression>)> for GenericField {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(
+        (id, ty, values): (&Vec<Expression>, &Expression, &Vec<Expression>)
+    ) -> Result<Self, Self::Error> {
+        Ok(GenericField {
+            name:    "".to_string(),
+            pos:     Default::default(),
+            private: false,
+            mutable: false,
+            ty:      None
+        })
     }
 }

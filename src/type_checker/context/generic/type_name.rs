@@ -1,10 +1,10 @@
 use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::Display;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::type_result::TypeErr;
-use std::fmt;
-use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GenericTypeName {
@@ -47,6 +47,8 @@ impl TryFrom<&AST> for GenericTypeName {
 
     fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
         match &node_pos.node {
+            Node::Id { lit } =>
+                Ok(GenericTypeName::Single { lit: lit.clone(), generics: vec![] }),
             Node::Generic { id, .. } => GenericTypeName::try_from(id.deref()),
             Node::Type { id, generics } => match &id.node {
                 Node::Id { lit } => Ok(GenericTypeName::Single {
