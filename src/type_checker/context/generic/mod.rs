@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::common::position::Position;
-use crate::parser::ast::{AST, Node};
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::function_arg::{GenericFunctionArg,
@@ -23,28 +23,28 @@ pub mod type_name;
 #[derive(Debug, Clone)]
 pub struct GenericType {
     pub is_py_type: bool,
-    pub name: String,
-    pub pos: Position,
-    pub concrete: bool,
-    pub args: Vec<GenericFunctionArg>,
-    pub generics: Vec<GenericParameter>,
-    pub fields: Vec<GenericField>,
-    pub functions: Vec<GenericFunction>,
-    pub parents: Vec<GenericParent>,
+    pub name:       String,
+    pub pos:        Position,
+    pub concrete:   bool,
+    pub args:       Vec<GenericFunctionArg>,
+    pub generics:   Vec<GenericParameter>,
+    pub fields:     Vec<GenericField>,
+    pub functions:  Vec<GenericFunction>,
+    pub parents:    Vec<GenericParent>
 }
 
 impl GenericType {
     pub fn all_pure(self, pure: bool) -> Result<Self, TypeErr> {
         Ok(GenericType {
             is_py_type: self.is_py_type,
-            name: self.name,
-            pos: self.pos,
-            concrete: self.concrete,
-            args: self.args,
-            generics: self.generics,
-            fields: self.fields,
-            functions: self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
-            parents: self.parents,
+            name:       self.name,
+            pos:        self.pos,
+            concrete:   self.concrete,
+            args:       self.args,
+            generics:   self.generics,
+            fields:     self.fields,
+            functions:  self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
+            parents:    self.parents
         })
     }
 }
@@ -99,7 +99,7 @@ impl TryFrom<&AST> for GenericType {
                     concrete: true,
                     fields: class_fields,
                     functions,
-                    parents: parents.into_iter().map(Result::unwrap).collect(),
+                    parents: parents.into_iter().map(Result::unwrap).collect()
                 })
             }
             Node::TypeDef { _type, body } => {
@@ -126,7 +126,7 @@ impl TryFrom<&AST> for GenericType {
                     generics,
                     fields,
                     functions,
-                    parents,
+                    parents
                 })
             }
             _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")])
@@ -157,7 +157,7 @@ fn get_name_and_generics(_type: &AST) -> Result<(String, Vec<GenericParameter>),
 fn get_fields_and_functions(
     name: &str,
     generics: &[GenericParameter],
-    statements: &[AST],
+    statements: &[AST]
 ) -> Result<(Vec<GenericField>, Vec<GenericFunction>), Vec<TypeErr>> {
     let mut field_res = vec![];
     let mut fun_res = vec![];
@@ -166,14 +166,14 @@ fn get_fields_and_functions(
         Node::FunDef { .. } => {
             let function = GenericFunction::try_from(statement).and_then(|f| {
                 f.in_class(Some(GenericTypeName::Single {
-                    lit: String::from(name),
+                    lit:      String::from(name),
                     generics: generics
                         .iter()
                         .map(|g| GenericTypeName::Single {
-                            lit: g.name.clone(),
-                            generics: vec![],
+                            lit:      g.name.clone(),
+                            generics: vec![]
                         })
-                        .collect(),
+                        .collect()
                 }))
             });
 

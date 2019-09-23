@@ -95,8 +95,7 @@ impl TryFrom<&AST> for GenericFunctionArg {
                     "Expected function argument identifier (and type)"
                 ))
             },
-            _ => panic!("{:?}", node_pos.node) /* Err(TypeErr::new(&node_pos.pos, "Expected
-                                                * function argument")) */
+            _ => Err(TypeErr::new(&node_pos.pos, "Expected function argument"))
         }
     }
 }

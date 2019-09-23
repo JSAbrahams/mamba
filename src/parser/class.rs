@@ -5,11 +5,11 @@ use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
-use crate::parser::definition::{parse_definition, parse_fun_arg, parse_fun_args};
-use crate::parser::expression::parse_expression;
+use crate::parser::definition::{parse_definition, parse_fun_arg};
 use crate::parser::iterator::LexIterator;
-use crate::parser::parse_result::expected;
+use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::{expected, expected_one_of};
 
 pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("class")?;
@@ -58,7 +58,36 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "parent generics", &start)?;
     it.eat_if(&Token::RSBrack);
 
-    let mut args = it.parse_vec(&parse_fun_args, "parent", &start)?;
+    let mut args = vec![];
+    if it.eat_if(&Token::LRBrack).is_some() {
+        it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match &lex.token {
+            Token::Id { .. } => {
+                args.push(*it.parse(&parse_id, "parent arguments", &start)?);
+                it.eat_if(&Token::Comma);
+                Ok(())
+            }
+            Token::Str { .. } => {
+                args.push(*it.parse(&parse_operation, "parent arguments", &start)?);
+                it.eat_if(&Token::Comma);
+                Ok(())
+            }
+            _ => Err(expected_one_of(
+                &[
+                    Token::Id(String::new()),
+                    Token::Str(String::new()),
+                    Token::Int(String::new()),
+                    Token::Real(String::new()),
+                    Token::ENum(String::new(), String::new()),
+                    Token::Bool(true),
+                    Token::Bool(false)
+                ],
+                lex,
+                "parent arguments"
+            ))
+        })?;
+        it.eat(&Token::RRBrack, "parent arguments")?;
+    }
+
     let end = match (generics.last(), args.last()) {
         (_, Some(node_pos)) => node_pos.pos.clone(),
         (Some(node_pos), _) => node_pos.pos.clone(),

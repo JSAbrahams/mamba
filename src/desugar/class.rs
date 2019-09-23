@@ -92,7 +92,7 @@ fn constructor_from_inline(
         match inline_arg {
             Core::FunArg { id, .. } => {
                 args.push(inline_arg.clone());
-                if !parent_args.contains(inline_arg) {
+                if !parent_args.contains(&id) {
                     final_definitions
                         .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
                 }

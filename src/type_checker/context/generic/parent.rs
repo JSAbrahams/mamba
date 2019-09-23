@@ -5,6 +5,8 @@ use crate::type_checker::context::generic::parameter::GenericParameter;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 
+// TODO args should be literals or identifiers
+
 #[derive(Debug, Clone)]
 pub struct GenericParent {
     pub name:     String,

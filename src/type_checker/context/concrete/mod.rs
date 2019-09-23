@@ -16,6 +16,8 @@ pub mod function;
 pub mod function_arg;
 pub mod type_name;
 
+// TODO add parents
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Type {
     pub is_py_type: bool,
