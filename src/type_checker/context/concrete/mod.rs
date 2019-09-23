@@ -18,11 +18,12 @@ pub mod type_name;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Type {
-    pub name:      TypeName,
-    pub concrete:  bool,
-    pub args:      Vec<FunctionArg>,
-    pub fields:    Vec<Field>,
-    pub functions: Vec<Function>
+    pub is_py_type: bool,
+    pub name:       TypeName,
+    pub concrete:   bool,
+    pub args:       Vec<FunctionArg>,
+    pub fields:     Vec<Field>,
+    pub functions:  Vec<Function>
 }
 
 impl Display for Type {
@@ -36,7 +37,8 @@ impl Type {
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(Type {
-            name:      TypeName::Single {
+            is_py_type: generic_type.is_py_type,
+            name:       TypeName::Single {
                 lit:      generic_type.name.clone(),
                 generics: generic_type
                     .generics
@@ -44,18 +46,18 @@ impl Type {
                     .map(|g| TypeName::Single { lit: g.name.clone(), generics: vec![] })
                     .collect()
             },
-            concrete:  generic_type.concrete,
-            args:      generic_type
+            concrete:   generic_type.concrete,
+            args:       generic_type
                 .args
                 .iter()
                 .map(|a| FunctionArg::try_from(a, generics, pos))
                 .collect::<Result<_, _>>()?,
-            fields:    generic_type
+            fields:     generic_type
                 .fields
                 .iter()
                 .map(|f| Field::try_from(f, generics, pos))
                 .collect::<Result<_, _>>()?,
-            functions: generic_type
+            functions:  generic_type
                 .functions
                 .iter()
                 .map(|f| Function::try_from(f, generics, pos))

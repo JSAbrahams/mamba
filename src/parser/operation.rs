@@ -5,7 +5,7 @@ use crate::parser::ast::AST;
 use crate::parser::call::parse_call;
 use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
-use crate::parser::iterator::TPIterator;
+use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::ParseResult;
 
 macro_rules! inner_bin_op {
@@ -13,7 +13,7 @@ macro_rules! inner_bin_op {
         $it.eat(&Token::$ast, "operation")?;
         let right = $it.parse(&$fun, $msg, $start)?;
         let node = Node::$ast { left: $left, right: right.clone() };
-        Ok(Box::from(AST::new($start, &right.pos.end, node)))
+        Ok(Box::from(AST::new(&$start.union(&right.pos), node)))
     }};
 }
 
@@ -29,9 +29,9 @@ macro_rules! inner_bin_op {
 /// in not, is a, is not a
 /// 7. and, or, question or
 /// 8. postfix calls
-pub fn parse_operation(it: &mut TPIterator) -> ParseResult { parse_level_8(it) }
+pub fn parse_operation(it: &mut LexIterator) -> ParseResult { parse_level_8(it) }
 
-fn parse_level_8(it: &mut TPIterator) -> ParseResult {
+fn parse_level_8(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_7, "operation", &start)?;
     if it.peak_if_fn(&is_start_expression_exclude_unary) {
@@ -41,7 +41,7 @@ fn parse_level_8(it: &mut TPIterator) -> ParseResult {
     }
 }
 
-fn parse_level_7(it: &mut TPIterator) -> ParseResult {
+fn parse_level_7(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_6, "operation", &start)?;
     macro_rules! bin_op {
@@ -51,7 +51,7 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::And => bin_op!(it, parse_level_7, And, arithmetic.clone(), "and"),
             Token::Or => bin_op!(it, parse_level_7, Or, arithmetic.clone(), "or"),
             Token::Question => bin_op!(it, parse_level_7, Question, arithmetic.clone(), "question"),
@@ -61,7 +61,7 @@ fn parse_level_7(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-fn parse_level_6(it: &mut TPIterator) -> ParseResult {
+fn parse_level_6(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_5, "operation", &start)?;
     macro_rules! bin_op {
@@ -71,7 +71,7 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::Ge => bin_op!(it, parse_level_6, Ge, arithmetic.clone(), "greater"),
             Token::Geq => bin_op!(it, parse_level_6, Geq, arithmetic.clone(), "greater, equal"),
             Token::Le => bin_op!(it, parse_level_6, Le, arithmetic.clone(), "less"),
@@ -89,7 +89,7 @@ fn parse_level_6(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-fn parse_level_5(it: &mut TPIterator) -> ParseResult {
+fn parse_level_5(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_4, "operation", &start)?;
     macro_rules! bin_op {
@@ -99,7 +99,7 @@ fn parse_level_5(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::BLShift =>
                 bin_op!(it, parse_level_5, BLShift, arithmetic.clone(), "bitwise left shift"),
             Token::BRShift =>
@@ -113,7 +113,7 @@ fn parse_level_5(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-fn parse_level_4(it: &mut TPIterator) -> ParseResult {
+fn parse_level_4(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_3, "operation", &start)?;
     macro_rules! bin_op {
@@ -123,7 +123,7 @@ fn parse_level_4(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::Add => bin_op!(it, parse_level_4, Add, arithmetic.clone(), "add"),
             Token::Sub => bin_op!(it, parse_level_4, Sub, arithmetic.clone(), "sub"),
             _ => Ok(arithmetic.clone())
@@ -132,7 +132,7 @@ fn parse_level_4(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-fn parse_level_3(it: &mut TPIterator) -> ParseResult {
+fn parse_level_3(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_level_2, "operation", &start)?;
     macro_rules! bin_op {
@@ -142,7 +142,7 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::Mul => bin_op!(it, parse_level_3, Mul, arithmetic.clone(), "mul"),
             Token::Div => bin_op!(it, parse_level_3, Div, arithmetic.clone(), "div"),
             Token::FDiv => bin_op!(it, parse_level_3, FDiv, arithmetic.clone(), "floor div"),
@@ -157,7 +157,7 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
                     inclusive: false,
                     step
                 };
-                Ok(Box::from(AST::new(&start, &to.pos.end, node)))
+                Ok(Box::from(AST::new(&start.union(&to.pos), node)))
             }
             Token::RangeIncl => {
                 it.eat(&Token::RangeIncl, "operation")?;
@@ -165,7 +165,7 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
                 let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
                 let node =
                     Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
-                Ok(Box::from(AST::new(&start, &to.pos.end, node)))
+                Ok(Box::from(AST::new(&start.union(&to.pos), node)))
             }
             _ => Ok(arithmetic.clone())
         },
@@ -173,13 +173,13 @@ fn parse_level_3(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-fn parse_level_2(it: &mut TPIterator) -> ParseResult {
+fn parse_level_2(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
             let factor = $it.parse(&$fun, $msg, &start)?;
             let node = Node::$ast { expr: factor.clone() };
-            Ok(Box::from(AST::new(&start, &factor.pos.end, node)))
+            Ok(Box::from(AST::new(&start.union(&factor.pos), node)))
         }};
     }
 
@@ -198,7 +198,7 @@ fn parse_level_2(it: &mut TPIterator) -> ParseResult {
     }
 }
 
-fn parse_level_1(it: &mut TPIterator) -> ParseResult {
+fn parse_level_1(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     let arithmetic = it.parse(&parse_factor, "operation", &start)?;
     macro_rules! bin_op {
@@ -208,7 +208,7 @@ fn parse_level_1(it: &mut TPIterator) -> ParseResult {
     }
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::Pow => bin_op!(it, parse_level_1, Pow, arithmetic.clone(), "exponent"),
             _ => Ok(arithmetic.clone())
         },
@@ -216,18 +216,18 @@ fn parse_level_1(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-fn parse_factor(it: &mut TPIterator) -> ParseResult {
+fn parse_factor(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
     macro_rules! literal {
         ($it:expr, $factor:expr, $ast:ident) => {{
             let end = $it.eat(&Token::$ast($factor.clone()), "factor")?;
             let node = Node::$ast { lit: $factor };
-            Ok(Box::from(AST::new(&start, &end, node)))
+            Ok(Box::from(AST::new(&start.union(&end), node)))
         }};
     }
 
     it.peek_or_err(
-        &|it, token_pos| match &token_pos.token {
+        &|it, lex| match &lex.token {
             Token::Id(_) => parse_id(it),
             Token::_Self => parse_id(it),
             Token::Real(real) => literal!(it, real.to_string(), Real),
@@ -237,7 +237,7 @@ fn parse_factor(it: &mut TPIterator) -> ParseResult {
             Token::ENum(num, exp) => {
                 let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
                 let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
-                Ok(Box::from(AST::new(&start, &end, node)))
+                Ok(Box::from(AST::new(&start.union(&end), node)))
             }
             _ => it.parse(&parse_expression, "operation", &start)
         },

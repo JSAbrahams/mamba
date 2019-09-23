@@ -1,22 +1,22 @@
 use std::iter::Peekable;
 use std::slice::Iter;
 
-use crate::common::position::{EndPoint, Position};
+use crate::common::position::Position;
+use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 use crate::parser::ast::AST;
 use crate::parser::parse_result::eof_expected_one_of;
 use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
-pub struct TPIterator<'a> {
-    it: Peekable<Iter<'a, TokenPos>>
+pub struct LexIterator<'a> {
+    it: Peekable<Iter<'a, Lex>>
 }
 
-impl<'a> TPIterator<'a> {
-    pub fn new(it: Peekable<Iter<'a, TokenPos>>) -> TPIterator { TPIterator { it } }
+impl<'a> LexIterator<'a> {
+    pub fn new(it: Peekable<Iter<'a, Lex>>) -> LexIterator { LexIterator { it } }
 
-    pub fn peak_if_fn(&mut self, fun: &dyn Fn(&TokenPos) -> bool) -> bool {
+    pub fn peak_if_fn(&mut self, fun: &dyn Fn(&Lex) -> bool) -> bool {
         if let Some(tp) = self.it.peek() {
             fun(tp)
         } else {
@@ -24,17 +24,16 @@ impl<'a> TPIterator<'a> {
         }
     }
 
-    pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<EndPoint> {
+    pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
         match self.it.next() {
-            Some(TokenPos { token: actual, start }) if Token::same_type(actual, token) =>
-                Ok(start.clone().offset_pos(token.clone().width())),
-            Some(token_pos) => Err(expected(token, token_pos, err_msg)),
+            Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(pos.clone()),
+            Some(lex) => Err(expected(token, lex, err_msg)),
             None => Err(eof_expected_one_of(&[token.clone()], err_msg))
         }
     }
 
-    pub fn eat_if(&mut self, token: &Token) -> Option<EndPoint> {
-        if let Some(TokenPos { token: actual, .. }) = self.it.peek() {
+    pub fn eat_if(&mut self, token: &Token) -> Option<Position> {
+        if let Some(Lex { token: actual, .. }) = self.it.peek() {
             if Token::same_type(actual, token) {
                 return match self.eat(token, "") {
                     Ok(pos) => Some(pos),
@@ -47,32 +46,28 @@ impl<'a> TPIterator<'a> {
 
     pub fn parse(
         &mut self,
-        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
         cause: &str,
-        start: &EndPoint
+        start: &Position
     ) -> ParseResult<Box<AST>> {
-        parse_fun(self).map_err(|err| {
-            err.clone_with_cause(cause, Position { start: start.clone(), end: start.clone() })
-        })
+        parse_fun(self).map_err(|err| err.clone_with_cause(cause, start.clone()))
     }
 
     pub fn parse_vec(
         &mut self,
-        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<AST>>,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
         cause: &str,
-        start: &EndPoint
+        start: &Position
     ) -> ParseResult<Vec<AST>> {
-        parse_fun(self).map_err(|err| {
-            err.clone_with_cause(cause, Position { start: start.clone(), end: start.clone() })
-        })
+        parse_fun(self).map_err(|err| err.clone_with_cause(cause, start.clone()))
     }
 
     pub fn parse_if(
         &mut self,
         token: &Token,
-        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
         err_msg: &str,
-        start: &EndPoint
+        start: &Position
     ) -> ParseResult<Option<Box<AST>>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -86,9 +81,9 @@ impl<'a> TPIterator<'a> {
     pub fn parse_vec_if(
         &mut self,
         token: &Token,
-        parse_fun: &dyn Fn(&mut TPIterator) -> ParseResult<Vec<AST>>,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
         err_msg: &str,
-        start: &EndPoint
+        start: &Position
     ) -> ParseResult<Vec<AST>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -101,36 +96,34 @@ impl<'a> TPIterator<'a> {
 
     pub fn peek_or_err(
         &mut self,
-        match_fun: &dyn Fn(&mut TPIterator, &TokenPos) -> ParseResult,
+        match_fun: &dyn Fn(&mut LexIterator, &Lex) -> ParseResult,
         eof_expected: &[Token],
         eof_err_msg: &str
     ) -> ParseResult {
         match self.it.peek().cloned() {
             None => Err(eof_expected_one_of(eof_expected, eof_err_msg)),
-            Some(token_pos) => match_fun(self, token_pos)
+            Some(lex) => match_fun(self, lex)
         }
     }
 
     pub fn peek(
         &mut self,
-        match_fun: &dyn Fn(&mut TPIterator, &TokenPos) -> ParseResult,
+        match_fun: &dyn Fn(&mut LexIterator, &Lex) -> ParseResult,
         default: ParseResult
     ) -> ParseResult {
         match self.it.peek().cloned() {
             None => default,
-            Some(token_pos) => match_fun(self, &token_pos.clone())
+            Some(lex) => match_fun(self, &lex.clone())
         }
     }
 
     pub fn peek_while_not_tokens(
         &mut self,
         tokens: &[Token],
-        loop_fn: &mut dyn FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
+        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>
     ) -> ParseResult<()> {
         self.peek_while_fn(
-            &|token_pos| {
-                tokens.to_vec().into_iter().all(|token| !Token::same_type(&token_pos.token, &token))
-            },
+            &|lex| tokens.to_vec().into_iter().all(|token| !Token::same_type(&lex.token, &token)),
             loop_fn
         )
     }
@@ -138,28 +131,28 @@ impl<'a> TPIterator<'a> {
     pub fn peek_while_not_token(
         &mut self,
         token: &Token,
-        loop_fn: &mut dyn FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
+        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>
     ) -> ParseResult<()> {
-        self.peek_while_fn(&|token_pos| !Token::same_type(&token_pos.token, token), loop_fn)
+        self.peek_while_fn(&|lex| !Token::same_type(&lex.token, token), loop_fn)
     }
 
     pub fn peek_while_fn(
         &mut self,
-        check_fn: &dyn Fn(&TokenPos) -> bool,
-        loop_fn: &mut dyn FnMut(&mut TPIterator, &TokenPos) -> ParseResult<()>
+        check_fn: &dyn Fn(&Lex) -> bool,
+        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>
     ) -> ParseResult<()> {
-        while let Some(&token_pos) = self.it.peek() {
-            if !check_fn(token_pos) {
+        while let Some(&lex) = self.it.peek() {
+            if !check_fn(lex) {
                 break;
             }
-            loop_fn(self, token_pos)?;
+            loop_fn(self, lex)?;
         }
         Ok(())
     }
 
-    pub fn start_pos(&mut self, msg: &str) -> ParseResult<EndPoint> {
+    pub fn start_pos(&mut self, msg: &str) -> ParseResult<Position> {
         match self.it.peek() {
-            Some(TokenPos { start, .. }) => Ok(start.clone()),
+            Some(Lex { pos, .. }) => Ok(pos.clone()),
             None => Err(eof_expected_one_of(&[], msg))
         }
     }

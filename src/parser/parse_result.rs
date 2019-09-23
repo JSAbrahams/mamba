@@ -4,8 +4,8 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::{EndPoint, Position};
+use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 use crate::parser::ast::AST;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 2;
@@ -61,9 +61,9 @@ impl ParseErr {
     }
 }
 
-pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> ParseErr {
+pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
-        position: Position::from(actual),
+        position: actual.pos.clone(),
         msg:      format!(
             "Expected one of [{}] while parsing {} \"{}\", but found token '{}'",
             comma_separated(tokens),
@@ -77,9 +77,9 @@ pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> Pa
     }
 }
 
-pub fn expected(expected: &Token, actual: &TokenPos, parsing: &str) -> ParseErr {
+pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
-        position: Position::from(actual),
+        position: actual.pos.clone(),
         msg:      format!(
             "Expected token '{}' while parsing {} \"{}\", but found token '{}'",
             expected,

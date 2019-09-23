@@ -1,36 +1,82 @@
+use python_parser::ast::{Expression, SetItem};
+
 use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::type_result::TypeErr;
-use python_parser::ast::Expression;
-use std::convert::TryFrom;
 
-impl TryFrom<(&Vec<Expression>, &Vec<Vec<Expression>>)> for GenericField {
-    type Error = Vec<TypeErr>;
+pub struct GenericFields {
+    pub fields: Vec<GenericField>
+}
 
-    fn try_from(
-        (id, values): (&Vec<Expression>, &Vec<Vec<Expression>>)
-    ) -> Result<Self, Self::Error> {
-        Ok(GenericField {
-            name:    "".to_string(),
-            pos:     Default::default(),
-            private: false,
-            mutable: false,
-            ty:      None
-        })
+impl From<(&Vec<Expression>, &Vec<Vec<Expression>>)> for GenericFields {
+    fn from((ids, values): (&Vec<Expression>, &Vec<Vec<Expression>>)) -> GenericFields {
+        GenericFields {
+            fields: ids
+                .iter()
+                .zip(values)
+                .map(|(id, values)| GenericFields::from((id, values)).fields)
+                .flatten()
+                .collect()
+        }
     }
 }
 
-impl TryFrom<(&Vec<Expression>, &Expression, &Vec<Expression>)> for GenericField {
-    type Error = Vec<TypeErr>;
+impl From<(&Vec<Expression>, &Vec<Expression>)> for GenericFields {
+    fn from((ids, values): (&Vec<Expression>, &Vec<Expression>)) -> GenericFields {
+        GenericFields {
+            fields: ids
+                .iter()
+                .zip(values)
+                .map(|(id, _)| GenericFields::from(id).fields)
+                .flatten()
+                .collect()
+        }
+    }
+}
 
-    fn try_from(
-        (id, ty, values): (&Vec<Expression>, &Expression, &Vec<Expression>)
-    ) -> Result<Self, Self::Error> {
-        Ok(GenericField {
-            name:    "".to_string(),
-            pos:     Default::default(),
-            private: false,
-            mutable: false,
-            ty:      None
-        })
+impl From<(&Expression, &Vec<Expression>)> for GenericFields {
+    fn from((id, values): (&Expression, &Vec<Expression>)) -> GenericFields {
+        GenericFields::from(id)
+    }
+}
+
+impl From<&Expression> for GenericFields {
+    fn from(id: &Expression) -> GenericFields {
+        GenericFields {
+            fields: match id {
+                Expression::Name(name) => vec![GenericField {
+                    name:    name.clone(),
+                    pos:     Default::default(),
+                    private: false,
+                    mutable: false,
+                    ty:      None
+                }],
+                Expression::TupleLiteral(items) => items
+                    .iter()
+                    .filter(|item| if let SetItem::Unique(_) = item { true } else { false })
+                    .filter(|item| match &item {
+                        SetItem::Star(_) => false,
+                        SetItem::Unique(expression) =>
+                            if let Expression::Name(_) = expression {
+                                true
+                            } else {
+                                false
+                            },
+                    })
+                    .map(|item| match &item {
+                        SetItem::Star(_) => unreachable!(),
+                        SetItem::Unique(expression) => match expression {
+                            Expression::Name(name) => GenericField {
+                                name:    name.clone(),
+                                pos:     Default::default(),
+                                private: false,
+                                mutable: false,
+                                ty:      None
+                            },
+                            _ => unreachable!()
+                        }
+                    })
+                    .collect(),
+                _ => vec![]
+            }
+        }
     }
 }

@@ -2,9 +2,9 @@ use crate::common::position::Position;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
-use crate::type_checker::type_result::TypeErr;
 use python_parser::ast::Funcdef;
-use std::convert::TryFrom;
+
+pub const INIT: &'static str = "__init__";
 
 pub const ADD: &'static str = "+";
 pub const DIV: &'static str = "/";
@@ -20,11 +20,9 @@ pub const NEQ: &'static str = "/=";
 pub const POW: &'static str = "^";
 pub const SUB: &'static str = "-";
 
-impl TryFrom<&Funcdef> for GenericFunction {
-    type Error = Vec<TypeErr>;
-
-    fn try_from(func_def: &Funcdef) -> Result<Self, Self::Error> {
-        Ok(GenericFunction {
+impl From<&Funcdef> for GenericFunction {
+    fn from(func_def: &Funcdef) -> GenericFunction {
+        GenericFunction {
             name:      func_def.name.clone(),
             pure:      false,
             private:   false,
@@ -34,13 +32,13 @@ impl TryFrom<&Funcdef> for GenericFunction {
                 .parameters
                 .positional_args
                 .iter()
-                .map(|(name, ty, expr)| GenericFunctionArg::try_from((name, ty, expr)))
-                .collect::<Result<Vec<GenericFunctionArg>, TypeErr>>()?,
+                .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
+                .collect(),
             raises:    vec![],
             ret_ty:    match &func_def.return_type {
-                Some(ret_ty) => Some(GenericTypeName::try_from(ret_ty)?),
+                Some(ret_ty) => Some(GenericTypeName::from(ret_ty)),
                 None => None
             }
-        })
+        }
     }
 }

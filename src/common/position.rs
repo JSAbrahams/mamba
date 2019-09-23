@@ -18,6 +18,10 @@ pub struct EndPoint {
 }
 
 impl Position {
+    pub fn new(start: &EndPoint, end: &EndPoint) -> Position {
+        Position { start: start.clone(), end: end.clone() }
+    }
+
     /// Get the absolute width of a position, which represents a rectangle in
     /// the source code.
     ///

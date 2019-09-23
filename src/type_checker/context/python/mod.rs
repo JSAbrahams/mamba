@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::fs;
 use std::ops::Deref;
 use std::path::PathBuf;
@@ -10,6 +9,8 @@ use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::parent::GenericParent;
 use crate::type_checker::context::generic::GenericType;
+use crate::type_checker::context::python::field::GenericFields;
+use crate::type_checker::context::python::function::INIT;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub mod field;
@@ -45,14 +46,14 @@ pub fn python_files() -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<Ge
         for statement in statements {
             match &statement {
                 Statement::Assignment(left, right) =>
-                    fields.push(GenericField::try_from((left, right))),
+                    fields.append(&mut GenericFields::from((left, right)).fields),
                 Statement::TypedAssignment(left, ty, right) =>
-                    fields.push(GenericField::try_from((left, ty, right))),
+                    fields.append(&mut GenericFields::from((left, right)).fields),
                 Statement::Compound(compound_stmt) => match compound_stmt.deref() {
                     CompoundStatement::Funcdef(func_def) =>
-                        functions.push(GenericFunction::try_from(func_def)),
+                        functions.push(GenericFunction::from(func_def)),
                     CompoundStatement::Classdef(class_def) =>
-                        types.push(GenericType::try_from(class_def)),
+                        types.push(GenericType::from(class_def)),
                     _ => {}
                 },
                 _ => {}
@@ -60,76 +61,43 @@ pub fn python_files() -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<Ge
         }
     }
 
-    let (types, ty_errs): (Vec<_>, Vec<_>) = types.into_iter().partition(Result::is_ok);
-    let (fields, field_errs): (Vec<_>, Vec<_>) = fields.into_iter().partition(Result::is_ok);
-    let (functions, fun_errs): (Vec<_>, Vec<_>) = functions.into_iter().partition(Result::is_ok);
-
-    if ty_errs.is_empty() && fun_errs.is_empty() && fun_errs.is_empty() {
-        Ok((
-            types.into_iter().map(Result::unwrap).collect(),
-            fields.into_iter().map(Result::unwrap).collect(),
-            functions.into_iter().map(Result::unwrap).collect()
-        ))
-    } else {
-        let ty_errs: Vec<_> = ty_errs.into_iter().map(Result::unwrap_err).collect();
-        let field_errs: Vec<_> = field_errs.into_iter().map(Result::unwrap_err).collect();
-        let fun_errs: Vec<_> = fun_errs.into_iter().map(Result::unwrap_err).collect();
-        Err(vec![ty_errs, field_errs, fun_errs].into_iter().flatten().flatten().collect())
-    }
+    Ok((types, fields, functions))
 }
 
-impl TryFrom<&Classdef> for GenericType {
-    type Error = Vec<TypeErr>;
-
-    fn try_from(class_def: &Classdef) -> TypeResult<GenericType> {
-        let mut name = String::new();
-        let mut parents: Vec<Result<GenericParent, Vec<TypeErr>>> = vec![];
-        let mut functions: Vec<Result<GenericFunction, Vec<TypeErr>>> = vec![];
-        let mut fields: Vec<Result<GenericField, Vec<TypeErr>>> = vec![];
-
-        name = class_def.name.clone();
-
-        for argument in &class_def.arguments {
-            parents.push(GenericParent::try_from(argument))
-        }
-
+impl From<&Classdef> for GenericType {
+    fn from(class_def: &Classdef) -> GenericType {
+        let mut functions = vec![];
+        let mut fields = vec![];
         for statement in &class_def.code {
             match statement {
                 Statement::Assignment(variables, expressions) =>
-                    fields.push(GenericField::try_from((variables, expressions))),
+                    fields.append(&mut GenericFields::from((variables, expressions)).fields),
                 Statement::TypedAssignment(variables, ty, expressions) =>
-                    fields.push(GenericField::try_from((variables, ty, expressions))),
+                    fields.append(&mut GenericFields::from((variables, expressions)).fields),
                 Statement::Compound(compound) => match compound.deref() {
                     CompoundStatement::Funcdef(func_def) =>
-                        functions.push(GenericFunction::try_from(func_def)),
+                        functions.push(GenericFunction::from(func_def)),
                     _ => {}
                 },
                 _ => {}
             }
         }
 
-        let (fields, field_errs): (Vec<_>, Vec<_>) = fields.into_iter().partition(Result::is_ok);
-        let (functions, fun_errs): (Vec<_>, Vec<_>) =
-            functions.into_iter().partition(Result::is_ok);
-        let (parents, parent_errs): (Vec<_>, Vec<_>) = parents.into_iter().partition(Result::is_ok);
+        let args = functions
+            .iter()
+            .find(|f| f.name.as_str() == INIT)
+            .map_or(vec![], |f| f.arguments.clone());
 
-        if !field_errs.is_empty() || !fun_errs.is_empty() || !parent_errs.is_empty() {
-            let mut errs = vec![];
-            errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
-            errs.append(&mut fun_errs.into_iter().map(Result::unwrap_err).collect());
-            errs.append(&mut parent_errs.into_iter().map(Result::unwrap_err).collect());
-            Err(errs.into_iter().flatten().collect())
-        } else {
-            Ok(GenericType {
-                name,
-                pos: Position::default(),
-                concrete: false,
-                args: vec![],
-                generics: vec![],
-                fields: fields.into_iter().map(Result::unwrap).collect(),
-                functions: functions.into_iter().map(Result::unwrap).collect(),
-                parents: parents.into_iter().map(Result::unwrap).collect()
-            })
+        GenericType {
+            is_py_type: true,
+            name: class_def.name.clone(),
+            pos: Position::default(),
+            concrete: false,
+            args,
+            generics: vec![],
+            fields,
+            functions,
+            parents: class_def.arguments.iter().map(GenericParent::from).collect()
         }
     }
 }

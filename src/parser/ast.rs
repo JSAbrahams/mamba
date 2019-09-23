@@ -1,4 +1,3 @@
-use crate::common::position::EndPoint;
 use crate::common::position::Position;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -10,9 +9,7 @@ pub struct AST {
 }
 
 impl AST {
-    pub fn new(start: &EndPoint, end: &EndPoint, node: Node) -> AST {
-        AST { pos: Position { start: start.clone(), end: end.clone() }, node }
-    }
+    pub fn new(pos: &Position, node: Node) -> AST { AST { pos: pos.clone(), node } }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]

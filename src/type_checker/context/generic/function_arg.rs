@@ -1,9 +1,15 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
+
+pub struct GenericFunctionArgPair {
+    pub field:   Option<GenericField>,
+    pub fun_arg: GenericFunctionArg
+}
 
 #[derive(Debug, Clone)]
 pub struct GenericFunctionArg {
@@ -35,6 +41,18 @@ impl GenericFunctionArg {
         self.ty
             .clone()
             .ok_or_else(|| TypeErr::new(&self.pos.clone(), "Function argument type not given"))
+    }
+}
+
+impl TryFrom<&AST> for GenericFunctionArgPair {
+    type Error = TypeErr;
+
+    fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
+        match &node_pos.node {
+            Node::VariableDef { .. } => panic!(),
+            Node::FunArg { .. } => panic!(),
+            _ => Err(TypeErr::new(&node_pos.pos, "Expected definition or function argument"))
+        }
     }
 }
 

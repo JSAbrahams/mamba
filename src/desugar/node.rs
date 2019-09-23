@@ -11,8 +11,8 @@ use crate::desugar::desugar_result::UnimplementedErr;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 
-pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    Ok(match &node_pos.node {
+pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+    Ok(match &ast.node {
         Node::Import { import, _as } => match _as.len() {
             0 => Core::Import { imports: desugar_vec(import, imp, state)? },
             _ => Core::ImportAs {
@@ -25,7 +25,7 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
             import: Box::from(desugar_node(import, imp, state)?)
         },
 
-        Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(node_pos, imp, state)?,
+        Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(ast, imp, state)?,
         Node::Reassign { left, right } => Core::Assign {
             left:  Box::from(desugar_node(left, imp, state)?),
             right: Box::from(desugar_node(right, imp, state)?)
@@ -44,7 +44,7 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
 
         Node::AddOp => Core::AddOp,
         Node::SubOp => Core::SubOp,
-        Node::SqrtOp => return Err(UnimplementedErr::new(node_pos, "square root")),
+        Node::SqrtOp => return Err(UnimplementedErr::new(ast, "square root")),
         Node::MulOp => Core::MulOp,
         Node::FDivOp => Core::FDivOp,
         Node::DivOp => Core::DivOp,
@@ -64,8 +64,8 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
         Node::List { elements } => Core::List { elements: desugar_vec(elements, imp, state)? },
         Node::Set { elements } => Core::Set { elements: desugar_vec(elements, imp, state)? },
 
-        Node::ListBuilder { .. } => return Err(UnimplementedErr::new(node_pos, "list builder")),
-        Node::SetBuilder { .. } => return Err(UnimplementedErr::new(node_pos, "set builder")),
+        Node::ListBuilder { .. } => return Err(UnimplementedErr::new(ast, "list builder")),
+        Node::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
 
         Node::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         Node::Return { expr } => Core::Return { expr: Box::from(desugar_node(expr, imp, state)?) },
@@ -76,7 +76,7 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
         | Node::While { .. }
         | Node::For { .. }
         | Node::Break
-        | Node::Continue => desugar_control_flow(node_pos, imp, state)?,
+        | Node::Continue => desugar_control_flow(ast, imp, state)?,
         Node::Case { .. } => panic!("Case cannot be top-level"),
 
         Node::Not { expr } => Core::Not { expr: Box::from(desugar_node(expr, imp, state)?) },
@@ -200,8 +200,7 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
             }
         },
 
-        Node::FunctionCall { .. } | Node::PropertyCall { .. } =>
-            desugar_call(node_pos, imp, state)?,
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
 
         Node::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, imp, state)?,
@@ -250,12 +249,12 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
         | Node::Type { .. }
         | Node::TypeFun { .. } => Core::Empty,
 
-        Node::TypeDef { .. } => desugar_class(node_pos, imp, state)?,
-        Node::Class { .. } => desugar_class(node_pos, imp, state)?,
+        Node::TypeDef { .. } => desugar_class(ast, imp, state)?,
+        Node::Class { .. } => desugar_class(ast, imp, state)?,
         Node::Generic { .. } => Core::Empty,
         Node::Parent { .. } => panic!("Parent cannot be top-level"),
 
-        Node::Condition { .. } => return Err(UnimplementedErr::new(node_pos, "condition")),
+        Node::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
 
         Node::Comment { comment } => Core::Comment { comment: comment.clone() },
         Node::Pass => Core::Pass,
@@ -275,7 +274,7 @@ pub fn desugar_node(node_pos: &AST, imp: &mut Imports, state: &State) -> Desugar
         Node::Step { .. } => panic!("Step cannot be top level."),
         Node::Raises { expr_or_stmt, .. } => desugar_node(expr_or_stmt, imp, state)?,
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
-        Node::Retry { .. } => return Err(UnimplementedErr::new(node_pos, "retry")),
+        Node::Retry { .. } => return Err(UnimplementedErr::new(ast, "retry")),
 
         Node::Handle { expr_or_stmt, cases } => {
             let mut statements = vec![];

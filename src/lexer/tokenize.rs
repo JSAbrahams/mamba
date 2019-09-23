@@ -3,7 +3,7 @@ use std::str::Chars;
 
 use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
-use crate::lexer::token::{Token, TokenPos};
+use crate::lexer::token::{Lex, Token};
 
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
@@ -156,12 +156,12 @@ fn next_and_create(
     it: &mut Peekable<Chars>,
     state: &mut State,
     token: Token
-) -> LexResult<Vec<TokenPos>> {
+) -> LexResult<Vec<Lex>> {
     it.next();
     create(state, token)
 }
 
-fn create(state: &mut State, token: Token) -> LexResult<Vec<TokenPos>> { Ok(state.token(token)) }
+fn create(state: &mut State, token: Token) -> LexResult<Vec<Lex>> { Ok(state.token(token)) }
 
 fn as_op_or_id(string: String) -> Token {
     match string.as_ref() {

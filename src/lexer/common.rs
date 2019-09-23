@@ -1,9 +1,9 @@
+use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 
 #[derive(Clone)]
 pub struct State {
-    newlines: Vec<TokenPos>,
+    newlines: Vec<Lex>,
     current_indent: i32,
     line_indent: i32,
     hit_token_this_line: bool,
@@ -23,9 +23,9 @@ impl State {
         }
     }
 
-    pub fn flush_indents(&mut self) -> Vec<TokenPos> {
+    pub fn flush_indents(&mut self) -> Vec<Lex> {
         let dedents = vec![
-            TokenPos::new(self.line, self.pos, Token::Dedent);
+            Lex::new(self.line, self.pos, Token::Dedent);
             ((self.current_indent) / 4) as usize
         ];
 
@@ -42,7 +42,7 @@ impl State {
     /// This allows us to ensure that if we have multiple newlines followed by a
     /// dedent, that the remaining newlines are placed after the dedent.
     /// Therefore, dedents are placed as early as possible.
-    pub fn token(&mut self, token: Token) -> Vec<TokenPos> {
+    pub fn token(&mut self, token: Token) -> Vec<Lex> {
         debug_assert_ne!(token, Token::Indent);
         debug_assert_ne!(token, Token::Dedent);
         if token == Token::NL {
@@ -51,28 +51,28 @@ impl State {
 
         self.hit_token_this_line = true;
         let mut res = match self.newlines.pop() {
-            Some(nl_token_pos) => vec![nl_token_pos],
+            Some(lex) => vec![lex],
             None => vec![]
         };
 
         res.append(&mut if self.line_indent >= self.current_indent {
             vec![
-                TokenPos::new(self.line, self.pos, Token::Indent);
+                Lex::new(self.line, self.pos, Token::Indent);
                 ((self.line_indent - self.current_indent) / 4) as usize
             ]
         } else {
             vec![
-                TokenPos::new(self.line, self.pos, Token::Dedent);
+                Lex::new(self.line, self.pos, Token::Dedent);
                 ((self.current_indent - self.line_indent) / 4) as usize
             ]
         });
 
-        while let Some(nl_token_pos) = self.newlines.pop() {
-            debug_assert_eq!(nl_token_pos.token, Token::NL);
-            res.push(nl_token_pos);
+        while let Some(lex) = self.newlines.pop() {
+            debug_assert_eq!(lex.token, Token::NL);
+            res.push(lex);
         }
 
-        res.push(TokenPos::new(self.line, self.pos, token.clone()));
+        res.push(Lex::new(self.line, self.pos, token.clone()));
 
         self.current_indent = self.line_indent;
         self.pos += match token {
@@ -89,8 +89,8 @@ impl State {
         res
     }
 
-    fn newline(&mut self) -> Vec<TokenPos> {
-        self.newlines.push(TokenPos::new(self.line, self.pos, Token::NL));
+    fn newline(&mut self) -> Vec<Lex> {
+        self.newlines.push(Lex::new(self.line, self.pos, Token::NL));
         self.hit_token_this_line = false;
         self.line_indent = 1;
         self.pos = 1;

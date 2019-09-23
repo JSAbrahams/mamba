@@ -7,8 +7,8 @@ use crate::desugar::node::desugar_node;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 
-pub fn desugar_control_flow(node_pos: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    Ok(match &node_pos.node {
+pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+    Ok(match &ast.node {
         Node::IfElse { cond, then, _else } => match _else {
             Some(_else) => Core::IfElse {
                 cond:  Box::from(desugar_node(cond, imp, state)?),
@@ -38,7 +38,7 @@ pub fn desugar_control_flow(node_pos: &AST, imp: &mut Imports, state: &State) ->
                         },
                         _ =>
                             return Err(UnimplementedErr::new(
-                                node_pos,
+                                ast,
                                 "match case expression as condition (pattern matching)"
                             )),
                     },

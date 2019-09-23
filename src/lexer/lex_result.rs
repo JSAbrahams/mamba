@@ -1,12 +1,12 @@
 use crate::common::position::EndPoint;
-use crate::lexer::token::{Token, TokenPos};
+use crate::lexer::token::{Lex, Token};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-pub type LexResult<T = Vec<TokenPos>> = std::result::Result<T, LexErr>;
+pub type LexResult<T = Vec<Lex>> = std::result::Result<T, LexErr>;
 pub type LexResults =
-    std::result::Result<Vec<(Vec<TokenPos>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
+    std::result::Result<Vec<(Vec<Lex>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
 
 #[derive(Debug, Clone)]
 pub struct LexErr {

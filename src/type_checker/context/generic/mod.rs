@@ -21,27 +21,29 @@ pub mod type_name;
 
 #[derive(Debug, Clone)]
 pub struct GenericType {
-    pub name:      String,
-    pub pos:       Position,
-    pub concrete:  bool,
-    pub args:      Vec<GenericFunctionArg>,
-    pub generics:  Vec<GenericParameter>,
-    pub fields:    Vec<GenericField>,
-    pub functions: Vec<GenericFunction>,
-    pub parents:   Vec<GenericParent>
+    pub is_py_type: bool,
+    pub name:       String,
+    pub pos:        Position,
+    pub concrete:   bool,
+    pub args:       Vec<GenericFunctionArg>,
+    pub generics:   Vec<GenericParameter>,
+    pub fields:     Vec<GenericField>,
+    pub functions:  Vec<GenericFunction>,
+    pub parents:    Vec<GenericParent>
 }
 
 impl GenericType {
     pub fn all_pure(self, pure: bool) -> Result<Self, TypeErr> {
         Ok(GenericType {
-            name:      self.name,
-            pos:       self.pos,
-            concrete:  self.concrete,
-            args:      self.args,
-            generics:  self.generics,
-            fields:    self.fields,
-            functions: self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
-            parents:   self.parents
+            is_py_type: self.is_py_type,
+            name:       self.name,
+            pos:        self.pos,
+            concrete:   self.concrete,
+            args:       self.args,
+            generics:   self.generics,
+            fields:     self.fields,
+            functions:  self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
+            parents:    self.parents
         })
     }
 }
@@ -87,6 +89,7 @@ impl TryFrom<&AST> for GenericType {
                 }
 
                 Ok(GenericType {
+                    is_py_type: false,
                     name,
                     pos: class.pos.clone(),
                     args: args.into_iter().map(Result::unwrap).collect(),
@@ -113,6 +116,7 @@ impl TryFrom<&AST> for GenericType {
                 let parents = vec![];
                 let args = vec![];
                 Ok(GenericType {
+                    is_py_type: false,
                     name,
                     pos: class.pos.clone(),
                     args,

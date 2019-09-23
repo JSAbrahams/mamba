@@ -66,7 +66,7 @@ impl TryFrom<&[CheckInput]> for Context {
             _ => results.push(Err(vec![TypeErr::new(&file.pos, "Expected file")]))
         });
 
-        let (py_types, py_functions, py_fields) = python_files()?;
+        let (mut py_types, mut py_fields, mut py_functions) = python_files()?;
 
         let (types, type_errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
         let (functions, fun_errs): (Vec<_>, Vec<_>) = fun_res.into_iter().partition(Result::is_ok);
@@ -79,11 +79,14 @@ impl TryFrom<&[CheckInput]> for Context {
             errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
             Err(errs)
         } else {
-            Ok(Context {
-                types:     types.into_iter().map(Result::unwrap).collect(),
-                functions: functions.into_iter().map(Result::unwrap).collect(),
-                fields:    fields.into_iter().map(Result::unwrap).collect()
-            })
+            let mut types: Vec<_> = types.into_iter().map(Result::unwrap).collect();
+            let mut functions: Vec<_> = functions.into_iter().map(Result::unwrap).collect();
+            let mut fields: Vec<_> = fields.into_iter().map(Result::unwrap).collect();
+            types.append(&mut py_types);
+            functions.append(&mut py_functions);
+            fields.append(&mut py_fields);
+
+            Ok(Context { types, functions, fields })
         }
     }
 }

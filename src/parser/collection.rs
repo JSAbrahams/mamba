@@ -3,19 +3,19 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expression::is_start_expression;
 use crate::parser::expression::parse_expression;
-use crate::parser::iterator::TPIterator;
+use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
-pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
+pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::LRBrack => parse_tuple(it),
             Token::LSBrack => parse_list(it),
             Token::LCBrack => parse_set(it),
             _ => Err(expected_one_of(
                 &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
-                token_pos,
+                lex,
                 "collection"
             ))
         },
@@ -24,7 +24,7 @@ pub fn parse_collection(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
+pub fn parse_tuple(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("tuple")?;
     it.eat(&Token::LRBrack, "tuple")?;
     let elements = it.parse_vec(&parse_expressions, "tuple", &start)?;
@@ -33,17 +33,17 @@ pub fn parse_tuple(it: &mut TPIterator) -> ParseResult {
     Ok(Box::from(if elements.len() == 1 {
         elements[0].clone()
     } else {
-        AST::new(&start, &end, Node::Tuple { elements })
+        AST::new(&start.union(&end), Node::Tuple { elements })
     }))
 }
 
-fn parse_set(it: &mut TPIterator) -> ParseResult {
+fn parse_set(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("set")?;
     it.eat(&Token::LCBrack, "set")?;
 
     if let Some(end) = it.eat_if(&Token::RCBrack) {
         let node = Node::Set { elements: vec![] };
-        return Ok(Box::from(AST::new(&start, &end, node)));
+        return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
     let item = it.parse(&parse_expression, "set", &start)?;
@@ -51,7 +51,7 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
         let conditions = it.parse_vec(&parse_expressions, "set", &start)?;
         let end = it.eat(&Token::RCBrack, "set")?;
         let node = Node::SetBuilder { item, conditions };
-        return Ok(Box::from(AST::new(&start, &end, node)));
+        return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
     let mut elements = vec![*item];
@@ -59,16 +59,16 @@ fn parse_set(it: &mut TPIterator) -> ParseResult {
 
     let end = it.eat(&Token::RCBrack, "set")?;
     let node = Node::Set { elements };
-    Ok(Box::from(AST::new(&start, &end, node)))
+    Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
-fn parse_list(it: &mut TPIterator) -> ParseResult {
+fn parse_list(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("list")?;
     it.eat(&Token::LSBrack, "list")?;
 
     if let Some(end) = it.eat_if(&Token::RSBrack) {
         let node = Node::List { elements: vec![] };
-        return Ok(Box::from(AST::new(&start, &end, node)));
+        return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
     let item = it.parse(&parse_expression, "list", &start)?;
@@ -76,7 +76,7 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
         let conditions = it.parse_vec(&parse_expressions, "list", &start)?;
         let end = it.eat(&Token::RSBrack, "list")?;
         let node = Node::ListBuilder { item, conditions };
-        return Ok(Box::from(AST::new(&start, &end, node)));
+        return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
     let mut elements = vec![*item];
@@ -84,10 +84,10 @@ fn parse_list(it: &mut TPIterator) -> ParseResult {
 
     let end = it.eat(&Token::RSBrack, "list")?;
     let node = Node::List { elements };
-    Ok(Box::from(AST::new(&start, &end, node)))
+    Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
-pub fn parse_expressions(it: &mut TPIterator) -> ParseResult<Vec<AST>> {
+pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("expression")?;
     let mut expressions = vec![];
     it.peek_while_fn(&is_start_expression, &mut |it, _| {

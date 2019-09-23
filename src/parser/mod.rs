@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use crate::lexer::token::TokenPos;
-use crate::parser::iterator::TPIterator;
+use crate::lexer::token::Lex;
+use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::{ParseResult, ParseResults};
 
 pub mod ast;
@@ -24,7 +24,7 @@ mod file;
 mod operation;
 mod statement;
 
-pub type ParseInput = (Vec<TokenPos>, Option<String>, Option<PathBuf>);
+pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 
 /// Parse input, which is a slice of [TokenPos](crate::lexer::token::TokenPos).
 ///
@@ -34,13 +34,13 @@ pub type ParseInput = (Vec<TokenPos>, Option<String>, Option<PathBuf>);
 ///
 /// ```
 /// # use mamba::lexer::token::Token;
-/// # use mamba::lexer::token::TokenPos;
+/// # use mamba::lexer::token::Lex;
 /// # use mamba::parser::parse;
 /// // Assigning 10 to b
-/// let def = TokenPos::new(1, 1, Token::Def);
-/// let id = TokenPos::new(1, 4, Token::Id(String::from("b")));
-/// let assign = TokenPos::new(1, 6, Token::Assign);
-/// let number = TokenPos::new(1, 9, Token::Int(String::from("9")));
+/// let def = Lex::new(1, 1, Token::Def);
+/// let id = Lex::new(1, 4, Token::Id(String::from("b")));
+/// let assign = Lex::new(1, 6, Token::Assign);
+/// let number = Lex::new(1, 9, Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, assign, number]);
 /// assert_eq!(result.is_ok(), true);
@@ -52,17 +52,17 @@ pub type ParseInput = (Vec<TokenPos>, Option<String>, Option<PathBuf>);
 ///
 /// ```
 /// # use mamba::lexer::token::Token;
-/// # use mamba::lexer::token::TokenPos;
+/// # use mamba::lexer::token::Lex;
 /// # use mamba::parser::parse;
-/// let def = TokenPos::new(0, 0, Token::Def);
-/// let id = TokenPos::new(0, 0, Token::Id(String::from("b")));
-/// let number = TokenPos::new(0, 0, Token::Int(String::from("9")));
+/// let def = Lex::new(0, 0, Token::Def);
+/// let id = Lex::new(0, 0, Token::Id(String::from("b")));
+/// let number = Lex::new(0, 0, Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, number]);
 /// assert_eq!(result.is_err(), true);
 /// ```
-pub fn parse(input: &[TokenPos]) -> ParseResult {
-    file::parse_file(&mut TPIterator::new(input.iter().peekable()))
+pub fn parse(input: &[Lex]) -> ParseResult {
+    file::parse_file(&mut LexIterator::new(input.iter().peekable()))
 }
 
 pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
@@ -86,6 +86,6 @@ pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
 }
 
 /// Parse input as a script.
-pub fn parse_direct(input: &[TokenPos]) -> ParseResult {
-    file::parse_script(&mut TPIterator::new(input.iter().peekable()))
+pub fn parse_direct(input: &[Lex]) -> ParseResult {
+    file::parse_script(&mut LexIterator::new(input.iter().peekable()))
 }

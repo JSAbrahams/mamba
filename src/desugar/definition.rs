@@ -7,8 +7,8 @@ use crate::desugar::node::desugar_node;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 
-pub fn desugar_definition(node_pos: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    Ok(match &node_pos.node {
+pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+    Ok(match &ast.node {
         Node::VariableDef { id_maybe_type, expression, private, .. } => {
             let id = desugar_node(id_maybe_type, imp, state)?;
             let new_state = &State {

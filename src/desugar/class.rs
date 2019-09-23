@@ -15,8 +15,8 @@ use std::ops::Deref;
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn desugar_class(node_pos: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    Ok(match &node_pos.node {
+pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+    Ok(match &ast.node {
         Node::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
             (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
