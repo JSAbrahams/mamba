@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::context::Imports;
@@ -6,7 +8,6 @@ use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
-use std::ops::Deref;
 
 /// Desugar a class.
 ///
@@ -85,21 +86,43 @@ fn constructor_from_inline(
 ) -> DesugarResult<Vec<Core>> {
     let mut final_definitions = vec![];
     let mut args = vec![Core::Id { lit: String::from("self") }];
+    let mut statements = Vec::from(super_calls);
 
     for inline_arg in inline_args {
-        if let Core::FunArg { id, .. } = inline_arg {
-            args.push(inline_arg.clone());
-            if !parent_args.contains(&id) {
-                final_definitions
-                    .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
+        match inline_arg {
+            Core::FunArg { id, .. } => {
+                args.push(inline_arg.clone());
+                if !parent_args.contains(inline_arg) {
+                    final_definitions
+                        .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
+                }
             }
-        } else {
-            panic!("Inline arg was not function argument.")
+            Core::VarDef { id, right, .. } => {
+                args.push(Core::FunArg {
+                    vararg:  false,
+                    id:      id.clone(),
+                    default: match &right.deref() {
+                        Core::None => Box::from(Core::Empty),
+                        _ => right.clone()
+                    }
+                });
+
+                final_definitions
+                    .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) });
+                statements.push(Core::Assign {
+                    left:  Box::from(Core::PropertyCall {
+                        object:   Box::new(Core::Id { lit: String::from("self") }),
+                        property: id.clone()
+                    }),
+                    right: id.clone()
+                });
+            }
+            _ => panic!("Inline arg was not function argument: {:?}", inline_arg)
         }
     }
 
     let id = Box::from(Core::Id { lit: String::from("init") });
-    let body = Box::from(Core::Block { statements: Vec::from(super_calls) });
+    let body = Box::from(Core::Block { statements });
     let core_init = Core::FunDef { private: false, id, args, body };
 
     final_definitions.push(core_init);

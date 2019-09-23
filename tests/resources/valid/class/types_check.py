@@ -2,12 +2,14 @@ from Math import abs
 import something
 
 class MyClass2(MyType):
+    my_field = None
 
-    def __init__(self, my_field):
-        super().__init__(self, my_field)
+    def __init__(self, my_field, other_field):
+        super().__init__(self, other_field)
+        self.my_field = my_field
 
     _z_modified = None
-    _other_field = 10
+    _private_field = 20
 
     def connect(self):
         self.other_field = 200

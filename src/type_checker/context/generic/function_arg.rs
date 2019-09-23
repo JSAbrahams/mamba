@@ -1,12 +1,14 @@
+use std::convert::TryFrom;
+use std::ops::Deref;
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
-use std::ops::Deref;
 
-pub struct GenericFunctionArgPair {
+#[derive(Debug, Clone)]
+pub struct GenericFunctionArgFieldPair {
     pub field:   Option<GenericField>,
     pub fun_arg: GenericFunctionArg
 }
@@ -44,13 +46,26 @@ impl GenericFunctionArg {
     }
 }
 
-impl TryFrom<&AST> for GenericFunctionArgPair {
+impl TryFrom<&AST> for GenericFunctionArgFieldPair {
     type Error = TypeErr;
 
     fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
         match &node_pos.node {
-            Node::VariableDef { .. } => panic!(),
-            Node::FunArg { .. } => panic!(),
+            Node::VariableDef { id_maybe_type, .. } => Ok(GenericFunctionArgFieldPair {
+                field:   Some(GenericField::try_from(node_pos)?),
+                fun_arg: GenericFunctionArg::try_from(&AST {
+                    pos:  node_pos.pos.clone(),
+                    node: Node::FunArg {
+                        vararg:        false,
+                        id_maybe_type: id_maybe_type.clone(),
+                        default:       None
+                    }
+                })?
+            }),
+            Node::FunArg { .. } => Ok(GenericFunctionArgFieldPair {
+                field:   None,
+                fun_arg: GenericFunctionArg::try_from(node_pos)?
+            }),
             _ => Err(TypeErr::new(&node_pos.pos, "Expected definition or function argument"))
         }
     }
@@ -71,12 +86,7 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         pos:     node_pos.pos.clone(),
                         ty:      match _type {
                             Some(_type) => Some(GenericTypeName::try_from(_type.deref())?),
-                            None if name.as_str() == "self" => None,
-                            None =>
-                                return Err(TypeErr::new(
-                                    &node_pos.pos,
-                                    "Non self arguments must have type"
-                                )),
+                            None => None
                         }
                     })
                 }
@@ -85,7 +95,8 @@ impl TryFrom<&AST> for GenericFunctionArg {
                     "Expected function argument identifier (and type)"
                 ))
             },
-            _ => Err(TypeErr::new(&node_pos.pos, "Expected function argument"))
+            _ => panic!("{:?}", node_pos.node) /* Err(TypeErr::new(&node_pos.pos, "Expected
+                                                * function argument")) */
         }
     }
 }
