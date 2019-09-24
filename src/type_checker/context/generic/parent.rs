@@ -9,10 +9,11 @@ use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct GenericParent {
-    pub name:     String,
-    pub pos:      Position,
-    pub generics: Vec<GenericParameter>,
-    pub args:     Vec<GenericTypeName>
+    pub is_py_type: bool,
+    pub name:       String,
+    pub pos:        Position,
+    pub generics:   Vec<GenericParameter>,
+    pub args:       Vec<GenericTypeName>
 }
 
 impl TryFrom<&AST> for GenericParent {
@@ -20,18 +21,19 @@ impl TryFrom<&AST> for GenericParent {
 
     fn try_from(ast: &AST) -> Result<Self, Self::Error> {
         match &ast.node {
+            // TODO infer types of arguments passed to parent
             Node::Parent { id, generics, args } => Ok(GenericParent {
-                name:     match &id.node {
+                is_py_type: false,
+                name:       match &id.node {
                     Node::Id { lit } => lit.clone(),
                     _ => return Err(TypeErr::new(&id.pos.clone(), "Expected identifier"))
                 },
-                pos:      ast.pos.clone(),
-                generics: generics
+                pos:        ast.pos.clone(),
+                generics:   generics
                     .iter()
                     .map(GenericParameter::try_from)
-                    .collect::<Result<_, _>>()?
-                // TODO infer types of arguments passed to parent
-                args: vec![]
+                    .collect::<Result<_, _>>()?,
+                args:       vec![]
             }),
             _ => Err(TypeErr::new(&ast.pos.clone(), "Expected parent"))
         }

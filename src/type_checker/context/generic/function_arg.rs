@@ -21,11 +21,12 @@ pub struct GenericFunctionArgFieldPair {
 
 #[derive(Debug, Clone)]
 pub struct GenericFunctionArg {
-    pub name:    String,
-    pub pos:     Position,
-    pub vararg:  bool,
-    pub mutable: bool,
-    pub ty:      Option<GenericTypeName>
+    pub is_py_type: bool,
+    pub name:       String,
+    pub pos:        Position,
+    pub vararg:     bool,
+    pub mutable:    bool,
+    pub ty:         Option<GenericTypeName>
 }
 
 impl GenericFunctionArg {
@@ -34,21 +35,26 @@ impl GenericFunctionArg {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
             Ok(GenericFunctionArg {
-                name:    self.name,
-                pos:     self.pos,
-                vararg:  self.vararg,
-                mutable: self.mutable,
-                ty:      class
+                is_py_type: false,
+                name:       self.name,
+                pos:        self.pos,
+                vararg:     self.vararg,
+                mutable:    self.mutable,
+                ty:         class
             })
         } else {
             Ok(self)
         }
     }
 
-    pub fn ty(&self) -> Result<GenericTypeName, TypeErr> {
-        self.ty
-            .clone()
-            .ok_or_else(|| TypeErr::new(&self.pos.clone(), "Function argument type not given"))
+    pub fn ty(&self) -> Result<Option<GenericTypeName>, TypeErr> {
+        if self.is_py_type {
+            Ok(self.ty.clone())
+        } else {
+            Ok(Some(self.ty.clone().ok_or_else(|| {
+                TypeErr::new(&self.pos.clone(), "Function argument type not given")
+            })?))
+        }
     }
 }
 
@@ -86,11 +92,12 @@ impl TryFrom<&AST> for GenericFunctionArg {
                 Node::IdType { id, mutable, _type } => {
                     let name = argument_name(id.deref())?;
                     Ok(GenericFunctionArg {
-                        name:    name.clone(),
-                        vararg:  *vararg,
-                        mutable: *mutable,
-                        pos:     node_pos.pos.clone(),
-                        ty:      match _type {
+                        is_py_type: false,
+                        name:       name.clone(),
+                        vararg:     *vararg,
+                        mutable:    *mutable,
+                        pos:        node_pos.pos.clone(),
+                        ty:         match _type {
                             Some(_type) => Some(GenericTypeName::try_from(_type.deref())?),
                             None if name.as_str() == SELF => None,
                             None =>

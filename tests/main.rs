@@ -8,12 +8,12 @@ use std::process::Stdio;
 #[macro_use]
 mod common;
 
-mod checker;
 mod core;
 mod desugar;
 mod lexer;
 mod output;
 mod parser;
+mod type_checker;
 
 #[test]
 fn command_line_class_no_output() -> Result<(), Box<std::error::Error>> {

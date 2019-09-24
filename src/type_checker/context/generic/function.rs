@@ -1,3 +1,6 @@
+use std::convert::TryFrom;
+use std::ops::Deref;
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
@@ -5,60 +8,65 @@ use crate::type_checker::context::generic::parameter::GenericParameter;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::context::python as py;
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
-use std::ops::Deref;
 
 // TODO make ret_ty private again
 // TODO use builder pattern for constructor of GenericFunction
 
 #[derive(Debug, Clone)]
 pub struct GenericFunction {
-    pub name:      String,
-    pub pure:      bool,
-    pub private:   bool,
-    pub pos:       Position,
-    pub generics:  Vec<GenericParameter>,
-    pub arguments: Vec<GenericFunctionArg>,
-    pub raises:    Vec<GenericTypeName>,
-    pub ret_ty:    Option<GenericTypeName>
+    pub is_py_type: bool,
+    pub name:       String,
+    pub pure:       bool,
+    pub private:    bool,
+    pub pos:        Position,
+    pub generics:   Vec<GenericParameter>,
+    pub arguments:  Vec<GenericFunctionArg>,
+    pub raises:     Vec<GenericTypeName>,
+    pub ret_ty:     Option<GenericTypeName>
 }
 
 impl GenericFunction {
     pub fn pure(self, pure: bool) -> Self {
         GenericFunction {
-            name:      self.name,
-            pure:      self.pure || pure,
-            private:   self.private,
-            pos:       self.pos,
-            generics:  self.generics,
-            arguments: self.arguments,
-            raises:    self.raises,
-            ret_ty:    self.ret_ty
+            is_py_type: self.is_py_type,
+            name:       self.name,
+            pure:       self.pure || pure,
+            private:    self.private,
+            pos:        self.pos,
+            generics:   self.generics,
+            arguments:  self.arguments,
+            raises:     self.raises,
+            ret_ty:     self.ret_ty
         }
     }
 
     pub fn in_class(self, class: Option<GenericTypeName>) -> Result<Self, TypeErr> {
         Ok(GenericFunction {
-            name:      self.name,
-            pure:      self.pure,
-            private:   self.private,
-            pos:       self.pos,
-            generics:  self.generics,
-            arguments: self
+            is_py_type: self.is_py_type,
+            name:       self.name,
+            pure:       self.pure,
+            private:    self.private,
+            pos:        self.pos,
+            generics:   self.generics,
+            arguments:  self
                 .arguments
                 .iter()
                 .map(|arg| arg.clone().in_class(class.clone()))
                 .collect::<Result<_, _>>()?,
-            raises:    self.raises,
-            ret_ty:    self.ret_ty
+            raises:     self.raises,
+            ret_ty:     self.ret_ty
         })
     }
 
     // TODO derive return type during type inference stage
-    pub fn ty(&self) -> Result<GenericTypeName, TypeErr> {
-        self.ret_ty
-            .clone()
-            .ok_or_else(|| TypeErr::new(&self.pos.clone(), "Function return type not given"))
+    pub fn ty(&self) -> Result<Option<GenericTypeName>, TypeErr> {
+        if self.is_py_type {
+            Ok(self.ret_ty.clone())
+        } else {
+            Ok(Some(self.ret_ty.clone().ok_or_else(|| {
+                TypeErr::new(&self.pos.clone(), "Function return type not given")
+            })?))
+        }
     }
 }
 
@@ -78,20 +86,21 @@ impl TryFrom<&AST> for GenericFunction {
             // TODO add generics to function definitions
             Node::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } =>
                 Ok(GenericFunction {
-                    name:      function_name(id.deref())?,
-                    pure:      *pure,
-                    private:   *private,
-                    pos:       node_pos.pos.clone(),
-                    generics:  vec![],
-                    arguments: fun_args
+                    is_py_type: false,
+                    name:       function_name(id.deref())?,
+                    pure:       *pure,
+                    private:    *private,
+                    pos:        node_pos.pos.clone(),
+                    generics:   vec![],
+                    arguments:  fun_args
                         .iter()
                         .map(GenericFunctionArg::try_from)
                         .collect::<Result<_, _>>()?,
-                    ret_ty:    match ret_ty {
+                    ret_ty:     match ret_ty {
                         Some(ty) => Some(GenericTypeName::try_from(ty.as_ref())?),
                         None => None
                     },
-                    raises:    raises
+                    raises:     raises
                         .iter()
                         .map(GenericTypeName::try_from)
                         .collect::<Result<_, _>>()?

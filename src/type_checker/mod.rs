@@ -6,8 +6,8 @@ use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeResults;
 
-mod context;
-mod environment;
+pub mod context;
+pub mod environment;
 mod infer;
 
 pub mod type_result;
@@ -29,7 +29,8 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 ///
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
-    Context::try_from(inputs)?;
+    let context = Context::try_from(inputs)?;
+    context.into_with_primitives()?;
     Environment::new();
 
     Ok(inputs

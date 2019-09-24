@@ -23,19 +23,20 @@ pub const SUB: &'static str = "-";
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
-            name:      func_def.name.clone(),
-            pure:      false,
-            private:   false,
-            pos:       Position::default(),
-            generics:  vec![],
-            arguments: func_def
+            is_py_type: true,
+            name:       func_def.name.clone(),
+            pure:       false,
+            private:    false,
+            pos:        Position::default(),
+            generics:   vec![],
+            arguments:  func_def
                 .parameters
                 .positional_args
                 .iter()
                 .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
                 .collect(),
-            raises:    vec![],
-            ret_ty:    match &func_def.return_type {
+            raises:     vec![],
+            ret_ty:     match &func_def.return_type {
                 Some(ret_ty) => Some(GenericTypeName::from(ret_ty)),
                 None => None
             }

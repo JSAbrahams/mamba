@@ -9,6 +9,8 @@ use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::ty::GenericType;
 use crate::type_checker::context::python::field::GenericFields;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::fs::File;
+use std::io::Read;
 
 pub mod field;
 pub mod function;
@@ -30,11 +32,21 @@ pub fn python_files(
 
     for entry in entries {
         let path = entry.map_err(|err| TypeErr::new_no_pos(err.to_string().as_str()))?.path();
-
-        let python_src = path
+        let python_src_path = path
             .as_os_str()
             .to_str()
             .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for primitive"))?;
+
+        let mut python_src = String::new();
+        match File::open(python_src_path) {
+            Ok(mut path) => {
+                let mut content = String::new();
+                path.read_to_string(&mut python_src).map_err(|err| {
+                    TypeErr::new_no_pos(format!("Unable to read python file: {:?}", err).as_str())
+                })?;
+            }
+            Err(err) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")])
+        };
         let statements =
             python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1;
 
@@ -49,9 +61,9 @@ pub fn python_files(
                         functions.push(GenericFunction::from(func_def)),
                     CompoundStatement::Classdef(class_def) =>
                         types.push(GenericType::from(class_def)),
-                    _ => {}
+                    other => panic!("expected fun or class def but {:?}", other)
                 },
-                _ => {}
+                other => panic!("expected assignment or compount but {:?}", other)
             }
         }
     }

@@ -43,11 +43,12 @@ impl From<&Expression> for GenericFields {
         GenericFields {
             fields: match id {
                 Expression::Name(name) => vec![GenericField {
-                    name:    name.clone(),
-                    pos:     Default::default(),
-                    private: false,
-                    mutable: false,
-                    ty:      None
+                    is_py_type: true,
+                    name:       name.clone(),
+                    pos:        Default::default(),
+                    private:    false,
+                    mutable:    false,
+                    ty:         None
                 }],
                 Expression::TupleLiteral(items) => items
                     .iter()
@@ -65,11 +66,12 @@ impl From<&Expression> for GenericFields {
                         SetItem::Star(_) => unreachable!(),
                         SetItem::Unique(expression) => match expression {
                             Expression::Name(name) => GenericField {
-                                name:    name.clone(),
-                                pos:     Default::default(),
-                                private: false,
-                                mutable: false,
-                                ty:      None
+                                is_py_type: true,
+                                name:       name.clone(),
+                                pos:        Default::default(),
+                                private:    false,
+                                mutable:    false,
+                                ty:         None
                             },
                             _ => unreachable!()
                         }

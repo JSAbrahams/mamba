@@ -6,8 +6,9 @@ use std::ops::Deref;
 
 #[derive(Debug, Clone)]
 pub struct GenericParameter {
-    pub name:   String,
-    pub parent: Option<GenericTypeName>
+    pub is_py_type: bool,
+    pub name:       String,
+    pub parent:     Option<GenericTypeName>
 }
 
 impl TryFrom<&AST> for GenericParameter {
@@ -17,10 +18,15 @@ impl TryFrom<&AST> for GenericParameter {
         match &ast.node {
             Node::Generic { id, isa } => match isa {
                 Some(isa) => Ok(GenericParameter {
-                    name:   parameter_name(id.deref())?,
-                    parent: Some(GenericTypeName::try_from(isa.deref())?)
+                    is_py_type: false,
+                    name:       parameter_name(id.deref())?,
+                    parent:     Some(GenericTypeName::try_from(isa.deref())?)
                 }),
-                None => Ok(GenericParameter { name: parameter_name(id.deref())?, parent: None })
+                None => Ok(GenericParameter {
+                    is_py_type: false,
+                    name:       parameter_name(id.deref())?,
+                    parent:     None
+                })
             },
             _ => Err(TypeErr::new(&ast.pos.clone(), "Expected generic"))
         }

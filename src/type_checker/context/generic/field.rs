@@ -7,11 +7,12 @@ use std::ops::Deref;
 
 #[derive(Debug, Clone)]
 pub struct GenericField {
-    pub name:    String,
-    pub pos:     Position,
-    pub private: bool,
-    pub mutable: bool,
-    pub ty:      Option<GenericTypeName>
+    pub is_py_type: bool,
+    pub name:       String,
+    pub pos:        Position,
+    pub private:    bool,
+    pub mutable:    bool,
+    pub ty:         Option<GenericTypeName>
 }
 
 impl GenericField {
@@ -38,7 +39,14 @@ impl TryFrom<&AST> for GenericField {
                     _ => return Err(TypeErr::new(&id_maybe_type.pos, "Expected identifier"))
                 };
 
-                Ok(GenericField { name, mutable, pos: ast.pos.clone(), private: *private, ty })
+                Ok(GenericField {
+                    is_py_type: false,
+                    name,
+                    mutable,
+                    pos: ast.pos.clone(),
+                    private: *private,
+                    ty
+                })
             }
             _ => Err(TypeErr::new(&ast.pos, "Expected variable"))
         }

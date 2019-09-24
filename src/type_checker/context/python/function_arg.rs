@@ -8,11 +8,12 @@ impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFuncti
         (name, ty, expr): (&String, &Option<Expression>, &Option<Expression>)
     ) -> GenericFunctionArg {
         GenericFunctionArg {
-            name:    name.clone(),
-            pos:     Default::default(),
-            vararg:  false,
-            mutable: false,
-            ty:      match ty {
+            is_py_type: true,
+            name:       name.clone(),
+            pos:        Default::default(),
+            vararg:     false,
+            mutable:    false,
+            ty:         match ty {
                 Some(ty) => Some(GenericTypeName::from(ty)),
                 None => None
             }

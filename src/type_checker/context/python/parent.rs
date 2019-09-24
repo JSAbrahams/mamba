@@ -13,6 +13,12 @@ impl From<&Argument> for GenericParent {
             _ => String::new()
         };
 
-        GenericParent { name, pos: Position::default(), generics: vec![], args: vec![] }
+        GenericParent {
+            is_py_type: true,
+            name,
+            pos: Position::default(),
+            generics: vec![],
+            args: vec![]
+        }
     }
 }

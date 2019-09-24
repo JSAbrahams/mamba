@@ -2,10 +2,10 @@ use python_parser::ast::Expression;
 
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 
-pub const INTEGER: &'static str = "Integer";
-pub const FLOAT: &'static str = "Float";
-pub const STRING: &'static str = "String";
-pub const BOOLEAN: &'static str = "Boolean";
+pub const INTEGER: &'static str = "int";
+pub const FLOAT: &'static str = "float";
+pub const STRING: &'static str = "str";
+pub const BOOLEAN: &'static str = "bool";
 
 impl From<&Expression> for GenericTypeName {
     fn from(value: &Expression) -> GenericTypeName {
