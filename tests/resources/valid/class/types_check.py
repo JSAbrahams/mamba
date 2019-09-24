@@ -4,7 +4,7 @@ import something
 class MyClass2(MyType):
     my_field = None
 
-    def __init__(self, my_field, other_field):
+    def __init__(self, my_field, other_field = "Hello"):
         super().__init__(self, other_field)
         self.my_field = my_field
 

@@ -1,7 +1,7 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic::parameter::GenericParameter;
+use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 
@@ -12,7 +12,7 @@ pub struct GenericParent {
     pub name:     String,
     pub pos:      Position,
     pub generics: Vec<GenericParameter>,
-    pub args:     Vec<GenericFunctionArg>
+    pub args:     Vec<GenericTypeName>
 }
 
 impl TryFrom<&AST> for GenericParent {
@@ -29,11 +29,9 @@ impl TryFrom<&AST> for GenericParent {
                 generics: generics
                     .iter()
                     .map(GenericParameter::try_from)
-                    .collect::<Result<_, _>>()?,
-                args:     args
-                    .iter()
-                    .map(GenericFunctionArg::try_from)
                     .collect::<Result<_, _>>()?
+                // TODO infer types of arguments passed to parent
+                args: vec![]
             }),
             _ => Err(TypeErr::new(&ast.pos.clone(), "Expected parent"))
         }

@@ -18,7 +18,7 @@ pub mod function;
 
 mod function_arg;
 mod parent;
-mod type_name;
+pub mod type_name;
 
 pub fn python_files() -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<GenericFunction>)> {
     let mut types = vec![];

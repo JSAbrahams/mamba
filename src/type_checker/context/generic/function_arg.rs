@@ -5,7 +5,13 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::python::type_name::BOOLEAN;
+use crate::type_checker::context::python::type_name::FLOAT;
+use crate::type_checker::context::python::type_name::INTEGER;
+use crate::type_checker::context::python::type_name::STRING;
 use crate::type_checker::type_result::TypeErr;
+
+pub const SELF: &'static str = "self";
 
 #[derive(Debug, Clone)]
 pub struct GenericFunctionArgFieldPair {
@@ -24,9 +30,9 @@ pub struct GenericFunctionArg {
 
 impl GenericFunctionArg {
     pub fn in_class(self, class: Option<GenericTypeName>) -> Result<Self, TypeErr> {
-        if class.is_none() && self.name.as_str() == "self" {
+        if class.is_none() && self.name.as_str() == SELF {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
-        } else if class.is_some() && self.name.as_str() == "self" && self.ty.is_none() {
+        } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
             Ok(GenericFunctionArg {
                 name:    self.name,
                 pos:     self.pos,
@@ -76,7 +82,7 @@ impl TryFrom<&AST> for GenericFunctionArg {
 
     fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
         match &node_pos.node {
-            Node::FunArg { vararg, id_maybe_type, .. } => match &id_maybe_type.node {
+            Node::FunArg { vararg, id_maybe_type, default, .. } => match &id_maybe_type.node {
                 Node::IdType { id, mutable, _type } => {
                     let name = argument_name(id.deref())?;
                     Ok(GenericFunctionArg {
@@ -86,7 +92,31 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         pos:     node_pos.pos.clone(),
                         ty:      match _type {
                             Some(_type) => Some(GenericTypeName::try_from(_type.deref())?),
-                            None => None
+                            None if name.as_str() == SELF => None,
+                            None =>
+                                if let Some(default) = default {
+                                    Some(match &default.deref().node {
+                                        Node::Str { .. } => GenericTypeName::new(STRING),
+                                        Node::Bool { .. } => GenericTypeName::new(BOOLEAN),
+                                        Node::Int { .. } => GenericTypeName::new(INTEGER),
+                                        Node::Real { .. } => GenericTypeName::new(FLOAT),
+                                        // TODO create system for identifying when a enum is an int
+                                        // and when it is a float
+                                        Node::ENum { .. } => GenericTypeName::new(INTEGER),
+                                        // TODO create system for inferring types for constructor
+                                        // and function calls
+                                        _ =>
+                                            return Err(TypeErr::new(
+                                                &default.pos,
+                                                "Can only infer type of literals"
+                                            )),
+                                    })
+                                } else {
+                                    return Err(TypeErr::new(
+                                        &id.pos,
+                                        "Non-self argument must have type if no inferrable default"
+                                    ));
+                                },
                         }
                     })
                 }
@@ -103,7 +133,7 @@ impl TryFrom<&AST> for GenericFunctionArg {
 fn argument_name(ast: &AST) -> Result<String, TypeErr> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
-        Node::_Self => Ok(String::from("self")),
+        Node::_Self => Ok(String::from(SELF)),
         _ => Err(TypeErr::new(&ast.pos, "Expected identifier"))
     }
 }

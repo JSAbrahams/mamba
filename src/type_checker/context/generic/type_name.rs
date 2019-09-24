@@ -13,6 +13,12 @@ pub enum GenericTypeName {
     Tuple { type_names: Vec<GenericTypeName> }
 }
 
+impl GenericTypeName {
+    pub fn new(name: &str) -> GenericTypeName {
+        GenericTypeName::Single { lit: String::from(name), generics: vec![] }
+    }
+}
+
 impl Display for GenericTypeName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

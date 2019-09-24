@@ -29,3 +29,5 @@ class MyClass:
 def factorial(x): x * factorial(x - 1)
 
 def call_higher_order(): some_higher_order(lambda x : x * 2)
+
+def fun_with_default(a = "Some string"): pass

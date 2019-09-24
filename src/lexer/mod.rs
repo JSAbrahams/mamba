@@ -31,8 +31,8 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 /// let tokens = tokenize(&source).unwrap();
 ///
 /// assert_eq!(tokens[0].clone(), Lex::new(1, 1, Token::Id(String::from("a"))));
-/// assert_eq!(tokens[1], Lex { start: EndPoint::new(1, 3), token: Token::Assign });
-/// assert_eq!(tokens[2], Lex { start: EndPoint::new(1, 6), token: Token::Int(String::from("2")) });
+/// assert_eq!(tokens[1], Lex::new(1, 3, Token::Assign));
+/// assert_eq!(tokens[2], Lex::new(1, 6, Token::Int(String::from("2"))));
 /// ```
 ///
 /// # Failures

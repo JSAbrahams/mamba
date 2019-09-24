@@ -9,7 +9,7 @@ type OtherState isa MyClass when
     other_field < 50
 
 # This class does have state
-class MyClass2[C, A isa MyGeneric](def my_field: Int, other_field) isa MyType[A, C](other_field)
+class MyClass2[C, A isa MyGeneric](def my_field: Int, other_field <- "Hello") isa MyType[A, C](other_field)
     def private z_modified
     def private private_field <- 20
 
