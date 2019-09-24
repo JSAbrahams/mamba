@@ -10,7 +10,6 @@ use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::context::python::python_files;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 pub mod concrete;
@@ -46,7 +45,22 @@ impl Context {
             .find(|ty| ty.name.as_str() == name)
             .ok_or(TypeErr::new(pos, "Cannot find type"))?;
 
-        Type::try_from(generic_type, &HashMap::new(), pos)
+        if generic_type.generics.len() == generics.len() {
+            let generics = generic_type
+                .generics
+                .clone()
+                .iter()
+                .zip(generics)
+                .map(|(parameter, type_name)| (parameter.name.clone(), type_name.clone()))
+                .collect();
+
+            Type::try_from(generic_type, &generics, pos)
+        } else {
+            Err(TypeErr::new(
+                pos,
+                format!("Type takes {} generic arguments", generic_type.generics.len()).as_str()
+            ))
+        }
     }
 
     pub fn lookup(&self, type_name: &GenericTypeName, pos: &Position) -> Result<Type, TypeErr> {

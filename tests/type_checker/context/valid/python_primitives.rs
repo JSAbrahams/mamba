@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use mamba::common::position::Position;
-use mamba::type_checker::context::concrete::type_name::TypeName;
 use mamba::type_checker::context::generic::type_name::GenericTypeName;
 use mamba::type_checker::context::Context;
 use mamba::type_checker::CheckInput;

@@ -1,4 +1,6 @@
 use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::ops::Deref;
 use std::path::PathBuf;
 
@@ -9,8 +11,6 @@ use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::ty::GenericType;
 use crate::type_checker::context::python::field::GenericFields;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::fs::File;
-use std::io::Read;
 
 pub mod field;
 pub mod function;
@@ -39,12 +39,9 @@ pub fn python_files(
 
         let mut python_src = String::new();
         match File::open(python_src_path) {
-            Ok(mut path) => {
-                let mut content = String::new();
-                path.read_to_string(&mut python_src).map_err(|err| {
-                    TypeErr::new_no_pos(format!("Unable to read python file: {:?}", err).as_str())
-                })?;
-            }
+            Ok(mut path) => path.read_to_string(&mut python_src).map_err(|err| {
+                TypeErr::new_no_pos(format!("Unable to read python file: {:?}", err).as_str())
+            })?,
             Err(err) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")])
         };
         let statements =

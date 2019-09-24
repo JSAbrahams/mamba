@@ -59,9 +59,9 @@ pub fn generics(
         errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
         Err(errs)
     } else {
-        let mut types: Vec<_> = types.into_iter().map(Result::unwrap).collect();
-        let mut fields: Vec<_> = fields.into_iter().map(Result::unwrap).collect();
-        let mut functions: Vec<_> = functions.into_iter().map(Result::unwrap).collect();
+        let types: Vec<_> = types.into_iter().map(Result::unwrap).collect();
+        let fields: Vec<_> = fields.into_iter().map(Result::unwrap).collect();
+        let functions: Vec<_> = functions.into_iter().map(Result::unwrap).collect();
         Ok((types, fields, functions))
     }
 }
