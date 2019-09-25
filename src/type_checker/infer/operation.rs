@@ -38,8 +38,6 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> I
         Node::Leq { left, right } => override_op(left, right, function::LEQ, env, ctx, state),
         Node::Geq { left, right } => override_op(left, right, function::GEQ, env, ctx, state),
 
-        Node::Eq { .. } | Node::Neq { .. } => unimplemented!(),
-
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected operation")])
     }
 }
@@ -58,8 +56,8 @@ fn override_op(
     let right_expr_ty = right_ty.expr_ty(&right.pos)?;
 
     if left_expr_ty.actual_types == right_expr_ty.actual_types {
-        let left_ty = left_expr_ty.get_actual_type(&left.pos)?.ty(&left.pos)?;
-        let right_ty = left_expr_ty.get_actual_type(&right.pos)?.ty(&right.pos)?;
+        let left_ty = left_expr_ty.get_actual_ty(&left.pos)?.ty(&left.pos)?;
+        let right_ty = left_expr_ty.get_actual_ty(&right.pos)?.ty(&right.pos)?;
         if left_ty.defined_function(overrides, &[right_ty]) {
             Ok((left_ty.union(&right_ty, &left.pos)?, env.clone()))
         } else {

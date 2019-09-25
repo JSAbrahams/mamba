@@ -81,7 +81,7 @@ impl ExpressionType {
     /// # Failure
     ///
     /// If this ExpressionType represents more than one ActualType
-    pub fn get_actual_type(&self, pos: &Position) -> Result<ActualType, TypeErr> {
+    pub fn get_actual_ty(&self, pos: &Position) -> Result<ActualType, TypeErr> {
         if self.actual_types.size() == 1 {
             Ok(self.actual_types.clone().drain().collect()[0])
         } else {

@@ -132,8 +132,6 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::Pow { .. } | Node::Sqrt { .. } => infer_op(ast, env, ctx, state),
         Node::Le { .. } | Node::Ge { .. } => infer_op(ast, env, ctx, state),
         Node::Leq { .. } | Node::Geq { .. } => infer_op(ast, env, ctx, state),
-        Node::Eq { .. } => infer_op(ast, env, ctx, state),
-        Node::Neq { .. } => infer_op(ast, env, ctx, state),
 
         Node::BAnd { .. } | Node::BOr { .. } | Node::BXOr { .. } =>
             infer_bitwise_op(ast, env, ctx, state),
@@ -144,6 +142,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::IsA { .. } | Node::IsNA { .. } => infer_boolean_op(ast, env, ctx, state),
         Node::And { .. } | Node::Or { .. } => infer_boolean_op(ast, env, ctx, state),
         Node::Not { .. } => infer_boolean_op(ast, env, ctx, state),
+        Node::Eq { .. } | Node::Neq { .. } => infer_boolean_op(ast, env, ctx, state),
 
         Node::IfElse { cond, then, _else } => infer_control_flow(ast, env, ctx, state),
         Node::Match { .. } | Node::Case { .. } => infer_control_flow(ast, env, ctx, state),
