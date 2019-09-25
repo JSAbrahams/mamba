@@ -2,6 +2,7 @@ def fun_a():
     print(c)
     if a and b: print(c)
     if c or d: print(e)
+    def a = c or h if d else d
 
 def fun_b(b): print(c)
 

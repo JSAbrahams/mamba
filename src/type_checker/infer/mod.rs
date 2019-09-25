@@ -67,11 +67,11 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
             if errs.is_empty() {
                 Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
             } else {
-                Ok((InferType::new(None), env.clone()))
+                Ok((InferType::new(), env.clone()))
             }
         }
-        Node::Import { .. } => Ok((InferType::new(None), env.clone())),
-        Node::FromImport { .. } => Ok((InferType::new(None), env.clone())),
+        Node::Import { .. } => Ok((InferType::new(), env.clone())),
+        Node::FromImport { .. } => Ok((InferType::new(), env.clone())),
 
         Node::Init | Node::Class { .. } => infer_class(ast, env, ctx, state),
         Node::Generic { .. } | Node::Parent { .. } => infer_class(ast, env, ctx, state),
@@ -93,27 +93,27 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::FunctionCall { .. } => unimplemented!(),
         Node::PropertyCall { .. } => unimplemented!(),
 
-        Node::IdType { .. } => Ok((InferType::new(None), env.clone())),
-        Node::TypeDef { .. } => Ok((InferType::new(None), env.clone())),
-        Node::TypeAlias { .. } => Ok((InferType::new(None), env.clone())),
-        Node::TypeTup { .. } => Ok((InferType::new(None), env.clone())),
-        Node::Type { .. } => Ok((InferType::new(None), env.clone())),
-        Node::TypeFun { .. } => Ok((InferType::new(None), env.clone())),
+        Node::IdType { .. } => Ok((InferType::new(), env.clone())),
+        Node::TypeDef { .. } => Ok((InferType::new(), env.clone())),
+        Node::TypeAlias { .. } => Ok((InferType::new(), env.clone())),
+        Node::TypeTup { .. } => Ok((InferType::new(), env.clone())),
+        Node::Type { .. } => Ok((InferType::new(), env.clone())),
+        Node::TypeFun { .. } => Ok((InferType::new(), env.clone())),
 
         Node::Condition { .. } => unimplemented!(),
 
-        Node::_Self => Ok((InferType::new(None), env.clone())),
-        Node::AddOp => Ok((InferType::new(None), env.clone())),
-        Node::SubOp => Ok((InferType::new(None), env.clone())),
-        Node::SqrtOp => Ok((InferType::new(None), env.clone())),
-        Node::MulOp => Ok((InferType::new(None), env.clone())),
-        Node::FDivOp => Ok((InferType::new(None), env.clone())),
-        Node::DivOp => Ok((InferType::new(None), env.clone())),
-        Node::PowOp => Ok((InferType::new(None), env.clone())),
-        Node::ModOp => Ok((InferType::new(None), env.clone())),
-        Node::EqOp => Ok((InferType::new(None), env.clone())),
-        Node::LeOp => Ok((InferType::new(None), env.clone())),
-        Node::GeOp => Ok((InferType::new(None), env.clone())),
+        Node::_Self => Ok((InferType::new(), env.clone())),
+        Node::AddOp => Ok((InferType::new(), env.clone())),
+        Node::SubOp => Ok((InferType::new(), env.clone())),
+        Node::SqrtOp => Ok((InferType::new(), env.clone())),
+        Node::MulOp => Ok((InferType::new(), env.clone())),
+        Node::FDivOp => Ok((InferType::new(), env.clone())),
+        Node::DivOp => Ok((InferType::new(), env.clone())),
+        Node::PowOp => Ok((InferType::new(), env.clone())),
+        Node::ModOp => Ok((InferType::new(), env.clone())),
+        Node::EqOp => Ok((InferType::new(), env.clone())),
+        Node::LeOp => Ok((InferType::new(), env.clone())),
+        Node::GeOp => Ok((InferType::new(), env.clone())),
 
         Node::Set { .. } | Node::SetBuilder { .. } => infer_coll(ast, env, ctx, state),
         Node::List { .. } | Node::ListBuilder { .. } => infer_coll(ast, env, ctx, state),
@@ -152,14 +152,14 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::While { .. } | Node::Break | Node::Continue =>
             infer_control_flow(ast, env, ctx, state),
 
-        Node::Question { .. } => infer_optional(ast, env, ctx, state),
+        Node::Question { .. } | Node::QuestionUnary { .. } => infer_optional(ast, env, ctx, state),
 
         Node::Return { expr } => infer(expr, env, ctx, state),
-        Node::ReturnEmpty => Ok((InferType::new(None), env.clone())),
+        Node::ReturnEmpty => Ok((InferType::new(), env.clone())),
 
-        Node::Underscore => Ok((InferType::new(None), env.clone())),
-        Node::Pass => Ok((InferType::new(None), env.clone())),
-        Node::Print { .. } => Ok((InferType::new(None), env.clone())),
-        Node::Comment { .. } => Ok((InferType::new(None), env.clone()))
+        Node::Underscore => Ok((InferType::new(), env.clone())),
+        Node::Pass => Ok((InferType::new(), env.clone())),
+        Node::Print { .. } => Ok((InferType::new(), env.clone())),
+        Node::Comment { .. } => Ok((InferType::new(), env.clone()))
     }
 }

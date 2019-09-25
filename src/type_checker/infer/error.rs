@@ -8,7 +8,7 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
-        Node::Raise { .. } => Ok((InferType::new(None), env.clone())),
+        Node::Raise { .. } => Ok((InferType::new(), env.clone())),
 
         // TODO verify that errors of raises equal to expr errors
         Node::Raises { .. } => unimplemented!(),
@@ -18,7 +18,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
 
         Node::Retry =>
             if state.in_handle {
-                Ok((InferType::new(None), env.clone()))
+                Ok((InferType::new(), env.clone()))
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Retry only possible in handle arm")])
             },

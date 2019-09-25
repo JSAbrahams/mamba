@@ -1,4 +1,5 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::concrete::function;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
@@ -8,49 +9,63 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
-        Node::_Self => Ok((InferType::new(None), env.clone())),
-        Node::AddOp => Ok((InferType::new(None), env.clone())),
-        Node::SubOp => Ok((InferType::new(None), env.clone())),
-        Node::SqrtOp => Ok((InferType::new(None), env.clone())),
-        Node::MulOp => Ok((InferType::new(None), env.clone())),
-        Node::FDivOp => Ok((InferType::new(None), env.clone())),
-        Node::DivOp => Ok((InferType::new(None), env.clone())),
-        Node::PowOp => Ok((InferType::new(None), env.clone())),
-        Node::ModOp => Ok((InferType::new(None), env.clone())),
-        Node::EqOp => Ok((InferType::new(None), env.clone())),
-        Node::LeOp => Ok((InferType::new(None), env.clone())),
-        Node::GeOp => Ok((InferType::new(None), env.clone())),
+        Node::_Self => Ok((InferType::new(), env.clone())),
+        Node::AddOp => Ok((InferType::new(), env.clone())),
+        Node::SubOp => Ok((InferType::new(), env.clone())),
+        Node::SqrtOp => Ok((InferType::new(), env.clone())),
+        Node::MulOp => Ok((InferType::new(), env.clone())),
+        Node::FDivOp => Ok((InferType::new(), env.clone())),
+        Node::DivOp => Ok((InferType::new(), env.clone())),
+        Node::PowOp => Ok((InferType::new(), env.clone())),
+        Node::ModOp => Ok((InferType::new(), env.clone())),
+        Node::EqOp => Ok((InferType::new(), env.clone())),
+        Node::LeOp => Ok((InferType::new(), env.clone())),
+        Node::GeOp => Ok((InferType::new(), env.clone())),
 
         Node::AddU { expr } => unimplemented!(),
         Node::SubU { .. } => unimplemented!(),
         Node::Sqrt { .. } => unimplemented!(),
-        Node::Add { left, right }
-        | Node::Sub { left, right }
-        | Node::Mul { left, right }
-        | Node::Div { left, right }
-        | Node::FDiv { left, right }
-        | Node::Mod { left, right }
-        | Node::Pow { left, right }
-        | Node::Le { left, right }
-        | Node::Ge { left, right }
-        | Node::Leq { left, right }
-        | Node::Geq { left, right }
-        | Node::Eq { left, right }
-        | Node::Neq { left, right } => {
-            let (left_expr_ty, left_env) = infer(left, env, ctx, state)?;
-            let (right_expr_ty, right_env) = infer(right, &left_env, ctx, &state)?;
 
-            if left_expr_ty == right_expr_ty {
-                if let Some(type_name) = left_expr_ty.expr_type {
-                    unimplemented!()
-                } else {
-                    Err(vec![TypeErr::new(&left.pos, "Must be expression")])
-                }
-            } else {
-                Err(vec![TypeErr::new(&left.pos.union(&right.pos), "Types must be equal")])
-            }
-        }
+        Node::Add { left, right } => override_op(left, right, function::ADD, env, ctx, state),
+        Node::Sub { left, right } => override_op(left, right, function::SUB, env, ctx, state),
+        Node::Mul { left, right } => override_op(left, right, function::MUL, env, ctx, state),
+        Node::Div { left, right } => override_op(left, right, function::DIV, env, ctx, state),
+        Node::FDiv { left, right } => override_op(left, right, function::FDIV, env, ctx, state),
+        Node::Mod { left, right } => override_op(left, right, function::MOD, env, ctx, state),
+        Node::Pow { left, right } => override_op(left, right, function::POW, env, ctx, state),
+        Node::Le { left, right } => override_op(left, right, function::LE, env, ctx, state),
+        Node::Ge { left, right } => override_op(left, right, function::GE, env, ctx, state),
+        Node::Leq { left, right } => override_op(left, right, function::LEQ, env, ctx, state),
+        Node::Geq { left, right } => override_op(left, right, function::GEQ, env, ctx, state),
+
+        Node::Eq { .. } | Node::Neq { .. } => unimplemented!(),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected operation")])
+    }
+}
+
+fn override_op(
+    left: &Box<AST>,
+    right: &Box<AST>,
+    overrides: &str,
+    env: &Environment,
+    ctx: &Context,
+    state: &State
+) -> InferResult {
+    let (left_ty, left_env) = infer(left, env, ctx, state)?;
+    let left_expr_ty = left_ty.expr_ty(&left.pos)?;
+    let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
+    let right_expr_ty = right_ty.expr_ty(&right.pos)?;
+
+    if left_expr_ty.actual_types == right_expr_ty.actual_types {
+        let left_ty = left_expr_ty.get_actual_type(&left.pos)?.ty(&left.pos)?;
+        let right_ty = left_expr_ty.get_actual_type(&right.pos)?.ty(&right.pos)?;
+        if left_ty.defined_function(overrides, &[right_ty]) {
+            Ok((left_ty.union(&right_ty, &left.pos)?, env.clone()))
+        } else {
+            Err(vec![TypeErr::new(&left.pos, "Operator not defined")])
+        }
+    } else {
+        Err(vec![TypeErr::new(&left.pos, "Types differ")])
     }
 }

@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::field::Field;
@@ -8,13 +10,17 @@ use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::generic::ty::GenericType;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::fmt;
-use std::fmt::{Display, Formatter};
 
 pub mod field;
 pub mod function;
 pub mod function_arg;
 pub mod type_name;
+
+pub const INT_PRIMITIVE: &'static str = "Int";
+pub const FLOAT_PRIMITIVE: &'static str = "Float";
+pub const STRING_PRIMITIVE: &'static str = "String";
+pub const BOOL_PRIMITIVE: &'static str = "Bool";
+pub const ENUM_PRIMITIVE: &'static str = "Enum";
 
 // TODO add parents
 
@@ -67,7 +73,15 @@ impl Type {
         })
     }
 
-    pub fn overrides_function(&self, fun_name: &str) -> bool {
-        self.functions.iter().any(|function| function.name.as_str() == fun_name)
+    pub fn defined_function(&self, fun_name: &str, args: &[Type]) -> bool {
+        self.functions.iter().any(|function| {
+            function.name.as_str() == fun_name
+                && function
+                    .arguments
+                    .iter()
+                    .map(|arg| arg.ty(&Position::default()).unwrap_or(None))
+                    .zip(args)
+                    .all(|(left, right)| left == Some(right.clone()))
+        })
     }
 }

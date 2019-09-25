@@ -34,11 +34,11 @@ pub fn infer_control_flow(
         Node::While { cond, body } => {
             let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
             let (_, body_env) = infer(body, &cond_env, ctx, &state.clone().is(InLoop)?)?;
-            Ok((InferType::new(None), env.clone()))
+            Ok((InferType::new(), env.clone()))
         }
         Node::Break | Node::Continue =>
             if state.in_loop {
-                Ok((InferType::new(None), env.clone()))
+                Ok((InferType::new(), env.clone()))
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Cannot occur outside loop")])
             },

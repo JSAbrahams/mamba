@@ -7,6 +7,22 @@ use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
+pub const INIT: &'static str = "init";
+
+pub const ADD: &'static str = "+";
+pub const DIV: &'static str = "/";
+pub const EQ: &'static str = "=";
+pub const FDIV: &'static str = "//";
+pub const GE: &'static str = ">";
+pub const GEQ: &'static str = ">=";
+pub const LE: &'static str = "<";
+pub const LEQ: &'static str = "<=";
+pub const MOD: &'static str = "mod";
+pub const MUL: &'static str = "*";
+pub const NEQ: &'static str = "/=";
+pub const POW: &'static str = "^";
+pub const SUB: &'static str = "-";
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Function {
     pub is_py_type: bool,

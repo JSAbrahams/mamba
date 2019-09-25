@@ -26,7 +26,7 @@ mod python;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug)]
 pub struct Context {
-    pub types: Vec<GenericType>,
+    types:     Vec<GenericType>,
     functions: Vec<GenericFunction>,
     fields:    Vec<GenericField>
 }
@@ -71,6 +71,7 @@ impl Context {
         }
     }
 
+    /// Loads pre-defined Python primtives into context for easy lookup
     pub fn into_with_primitives(self) -> TypeResult<Self> {
         let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("src")

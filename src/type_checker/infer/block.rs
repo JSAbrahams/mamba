@@ -32,7 +32,7 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
                 block_env = new_env.clone();
             }
 
-            let infer_type = last_stmt_type.unwrap_or_else(|| InferType::new(None));
+            let infer_type = last_stmt_type.unwrap_or_else(|| InferType::new());
             Ok((infer_type.raises(raises), env.clone()))
         }
 
