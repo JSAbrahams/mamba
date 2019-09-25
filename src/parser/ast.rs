@@ -53,7 +53,6 @@ pub enum Node {
         right: Box<AST>
     },
     VariableDef {
-        ofmut:         bool,
         private:       bool,
         id_maybe_type: Box<AST>,
         expression:    Option<Box<AST>>,

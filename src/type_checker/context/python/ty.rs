@@ -24,7 +24,7 @@ impl From<&Classdef> for GenericType {
             match statement {
                 Statement::Assignment(variables, expressions) =>
                     fields.append(&mut GenericFields::from((variables, expressions)).fields),
-                Statement::TypedAssignment(variables, ty, expressions) =>
+                Statement::TypedAssignment(variables, _, expressions) =>
                     fields.append(&mut GenericFields::from((variables, expressions)).fields),
                 Statement::Compound(compound) => match compound.deref() {
                     CompoundStatement::Funcdef(func_def) =>

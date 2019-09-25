@@ -88,7 +88,6 @@ fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
             },
             {
                 let node = Node::VariableDef {
-                    ofmut: false,
                     private,
                     id_maybe_type: Box::from(id.clone()),
                     expression: None,
@@ -189,8 +188,6 @@ pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> ParseResult {
     let start = &id.pos;
-    let ofmut = it.eat_if(&Token::OfMut).is_some();
-
     let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body", start)?;
     let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", start)?;
 
@@ -199,13 +196,8 @@ fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> Parse
         (Some(expr), _) => expr.pos.clone(),
         _ => id.pos.clone()
     };
-    let node = Node::VariableDef {
-        ofmut,
-        private,
-        id_maybe_type: Box::from(id.clone()),
-        expression,
-        forward
-    };
+    let node =
+        Node::VariableDef { private, id_maybe_type: Box::from(id.clone()), expression, forward };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 

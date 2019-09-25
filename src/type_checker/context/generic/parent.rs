@@ -22,7 +22,8 @@ impl TryFrom<&AST> for GenericParent {
     fn try_from(ast: &AST) -> Result<Self, Self::Error> {
         match &ast.node {
             // TODO infer types of arguments passed to parent
-            Node::Parent { id, generics, args } => Ok(GenericParent {
+            // TODO use arguments
+            Node::Parent { id, generics, .. } => Ok(GenericParent {
                 is_py_type: false,
                 name:       match &id.node {
                     Node::Id { lit } => lit.clone(),

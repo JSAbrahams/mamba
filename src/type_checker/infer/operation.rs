@@ -22,7 +22,7 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> I
         Node::LeOp => Ok((InferType::new(), env.clone())),
         Node::GeOp => Ok((InferType::new(), env.clone())),
 
-        Node::AddU { expr } => unimplemented!(),
+        Node::AddU { .. } => unimplemented!(),
         Node::SubU { .. } => unimplemented!(),
         Node::Sqrt { .. } => unimplemented!(),
 
@@ -50,16 +50,16 @@ fn override_op(
     ctx: &Context,
     state: &State
 ) -> InferResult {
-    let (left_ty, left_env) = infer(left, env, ctx, state)?;
-    let left_expr_ty = left_ty.expr_ty(&left.pos)?;
-    let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
-    let right_expr_ty = right_ty.expr_ty(&right.pos)?;
+    let (left_infer_ty, left_env) = infer(left, env, ctx, state)?;
+    let left_expr_ty = left_infer_ty.expr_tys(&left.pos)?;
+    let (right_infer_ty, right_env) = infer(right, &left_env, ctx, &state)?;
+    let right_expr_ty = right_infer_ty.expr_tys(&right.pos)?;
 
     if left_expr_ty.actual_types == right_expr_ty.actual_types {
         let left_ty = left_expr_ty.get_actual_ty(&left.pos)?.ty(&left.pos)?;
         let right_ty = left_expr_ty.get_actual_ty(&right.pos)?.ty(&right.pos)?;
-        if left_ty.defined_function(overrides, &[right_ty]) {
-            Ok((left_ty.union(&right_ty, &left.pos)?, env.clone()))
+        if left_ty.defined_function(overrides, &vec![right_ty.name]) {
+            Ok((left_infer_ty.union(&right_infer_ty, &left.pos)?, right_env))
         } else {
             Err(vec![TypeErr::new(&left.pos, "Operator not defined")])
         }

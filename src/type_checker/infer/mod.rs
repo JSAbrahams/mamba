@@ -58,7 +58,9 @@ pub fn infer_all(
 
 fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
-        Node::File { pure, comments, imports, modules } => {
+        // TODO analyse imports of File somewhere
+        // TODO Check functions are pure if file is pure
+        Node::File { modules, .. } => {
             let (_, errs): (Vec<_>, Vec<_>) = modules
                 .iter()
                 .map(|ast| infer(&Box::from(ast.clone()), env, ctx, state))
@@ -76,10 +78,9 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::Init | Node::Class { .. } => infer_class(ast, env, ctx, state),
         Node::Generic { .. } | Node::Parent { .. } => infer_class(ast, env, ctx, state),
 
-        Node::Script { statements } => infer_block(ast, env, ctx, state),
-        Node::Block { .. } => infer_block(ast, env, ctx, state),
+        Node::Script { .. } | Node::Block { .. } => infer_block(ast, env, ctx, state),
 
-        Node::Id { lit } => unimplemented!(),
+        Node::Id { .. } => unimplemented!(),
         Node::Reassign { .. } => infer_assign(ast, env, ctx, state),
         Node::VariableDef { .. } => infer_assign(ast, env, ctx, state),
         Node::FunArg { .. } | Node::FunDef { .. } => infer_assign(ast, env, ctx, state),
@@ -144,14 +145,14 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::Not { .. } => infer_boolean_op(ast, env, ctx, state),
         Node::Eq { .. } | Node::Neq { .. } => infer_boolean_op(ast, env, ctx, state),
 
-        Node::IfElse { cond, then, _else } => infer_control_flow(ast, env, ctx, state),
+        Node::IfElse { .. } => infer_control_flow(ast, env, ctx, state),
         Node::Match { .. } | Node::Case { .. } => infer_control_flow(ast, env, ctx, state),
         Node::For { .. } | Node::In { .. } | Node::Range { .. } | Node::Step { .. } =>
             infer_control_flow(ast, env, ctx, state),
         Node::While { .. } | Node::Break | Node::Continue =>
             infer_control_flow(ast, env, ctx, state),
 
-        Node::Question { .. } | Node::QuestionUnary { .. } => infer_optional(ast, env, ctx, state),
+        Node::Question { .. } => infer_optional(ast, env, ctx, state),
 
         Node::Return { expr } => infer(expr, env, ctx, state),
         Node::ReturnEmpty => Ok((InferType::new(), env.clone())),

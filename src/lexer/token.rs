@@ -44,7 +44,6 @@ pub enum Token {
 
     Id(String),
     Mut,
-    OfMut,
     Assign,
     Def,
 
@@ -181,7 +180,6 @@ impl fmt::Display for Token {
             Token::BSlash => String::from("\\"),
 
             Token::Mut => String::from("mut"),
-            Token::OfMut => String::from("ofmut"),
             Token::Assign => String::from("<-"),
             Token::Def => String::from("def"),
 

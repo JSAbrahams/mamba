@@ -24,7 +24,6 @@ fn reassign_verify() {
 #[test]
 fn variable_private_def_verify() {
     let definition = to_pos!(Node::VariableDef {
-        ofmut:         false,
         private:       false,
         id_maybe_type: to_pos!(Node::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(Node::Int { lit: String::from("98") })),
@@ -44,7 +43,6 @@ fn variable_private_def_verify() {
 #[test]
 fn variable_def_verify() {
     let definition = to_pos!(Node::VariableDef {
-        ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(Node::Id { lit: String::from("d") }),
         expression:    Some(to_pos!(Node::Int { lit: String::from("98") })),
@@ -72,7 +70,6 @@ fn tuple_def_verify() {
         to_pos_unboxed!(Node::Id { lit: String::from("d") }),
     ];
     let definition = to_pos!(Node::VariableDef {
-        ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(Node::Tuple { elements }),
         expression:    Some(to_pos!(Node::Tuple { elements: expressions })),
@@ -95,7 +92,6 @@ fn tuple_def_verify() {
 #[test]
 fn variable_def_none_verify() {
     let definition = to_pos!(Node::VariableDef {
-        ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(Node::Id { lit: String::from("d") }),
         expression:    None,
@@ -119,7 +115,6 @@ fn tuple_def_none_verify() {
         to_pos_unboxed!(Node::Id { lit: String::from("b") }),
     ];
     let definition = to_pos!(Node::VariableDef {
-        ofmut:         false,
         private:       true,
         id_maybe_type: to_pos!(Node::Tuple { elements }),
         expression:    None,

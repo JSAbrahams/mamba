@@ -6,7 +6,7 @@ use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::InferResult;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+pub fn infer_error(ast: &AST, env: &Environment, _: &Context, state: &State) -> InferResult {
     match &ast.node {
         Node::Raise { .. } => Ok((InferType::new(), env.clone())),
 
@@ -14,7 +14,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
         Node::Raises { .. } => unimplemented!(),
         // TODO traverse arms of handle
         // TODO copy over raises that are not handled in any arms
-        Node::Handle { expr_or_stmt, cases } => unimplemented!(),
+        Node::Handle { .. } => unimplemented!(),
 
         Node::Retry =>
             if state.in_handle {

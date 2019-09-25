@@ -9,7 +9,7 @@ pub fn infer_optional(ast: &AST, env: &Environment, ctx: &Context, state: &State
     match &ast.node {
         Node::Question { left, right } => {
             let (left_ty, env) = infer(left, env, ctx, state)?;
-            if left_ty.is_nullable() {
+            if left_ty.is_nullable(&ast.pos)? {
                 let (right_ty, env) = infer(right, &env, ctx, state)?;
                 Ok((right_ty.union(&left_ty, &ast.pos)?, env))
             } else {

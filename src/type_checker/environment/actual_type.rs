@@ -5,7 +5,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::concrete::Type;
 use crate::type_checker::type_result::TypeErr;
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
     Single { ty: Type },
     Tuple { types: Vec<Type> },

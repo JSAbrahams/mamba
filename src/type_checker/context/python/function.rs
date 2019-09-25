@@ -47,7 +47,7 @@ impl From<&Funcdef> for GenericFunction {
 }
 
 fn convert_name(name: &Name) -> String {
-    match name {
+    match name.as_str() {
         INIT => String::from(concrete::function::INIT),
 
         ADD => String::from(concrete::function::ADD),
@@ -64,6 +64,6 @@ fn convert_name(name: &Name) -> String {
         POW => String::from(concrete::function::POW),
         SUB => String::from(concrete::function::SUB),
 
-        other => other.clone()
+        other => String::from(other)
     }
 }

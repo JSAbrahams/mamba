@@ -29,7 +29,7 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
                     raises.insert(err.clone());
                 });
                 last_stmt_type = Some(statement_type);
-                block_env = new_env.clone();
+                block_env = new_env
             }
 
             let infer_type = last_stmt_type.unwrap_or_else(|| InferType::new());

@@ -2,13 +2,13 @@ use std::collections::HashSet;
 
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::Type;
-use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::environment::expression_type::ExpressionTypes;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct InferType {
     pub raises: HashSet<Type>,
-    expr_type:  Option<ExpressionType>
+    expr_type:  Option<ExpressionTypes>
 }
 
 impl From<Type> for InferType {
@@ -16,7 +16,7 @@ impl From<Type> for InferType {
     ///
     /// If multiple types given, type automatically becomes a tuple.
     fn from(ty: Type) -> Self {
-        InferType { raises: HashSet::new(), expr_type: Some(ExpressionType::new(&[ty])) }
+        InferType { raises: HashSet::new(), expr_type: Some(ExpressionTypes::new(&[ty])) }
     }
 }
 
@@ -25,7 +25,7 @@ impl From<Vec<Type>> for InferType {
     ///
     /// If multiple types given, type automatically becomes a tuple.
     fn from(types: Vec<Type>) -> Self {
-        InferType { raises: HashSet::new(), expr_type: Some(ExpressionType::new(&types)) }
+        InferType { raises: HashSet::new(), expr_type: Some(ExpressionTypes::new(&types)) }
     }
 }
 
@@ -43,36 +43,50 @@ impl InferType {
     ///
     /// If one type represents a statement and another an expression
     pub fn union(self, other: &InferType, pos: &Position) -> Result<InferType, TypeErr> {
-        let mut raises = self.raises;
-        raises.append(other.raises.clone());
-        let expr_type = match (self.expr_type, other.expr_type) {
-            (None, None) => None,
-            (Some(self_ty), Some(other_ty)) => Some(self_ty.union(&other_ty)),
-            _ => return Err(TypeErr::new(pos, "Types are incompatible"))
-        };
-
-        Ok(InferType { raises, expr_type })
+        let union = self.raises.union(&other.raises);
+        Ok(InferType {
+            raises:    union.cloned().collect(),
+            expr_type: match (&self.expr_type, &other.expr_type) {
+                (None, None) => None,
+                (Some(self_ty), Some(other_ty)) => Some(self_ty.clone().union(other_ty)),
+                _ => return Err(TypeErr::new(pos, "Types are incompatible"))
+            }
+        })
     }
 
-    pub fn mutable(self) -> InferType {
-        InferType { raises: self.raises, expr_type: self.expr_type.map(|ty| ty.mutable()) }
+    pub fn mutable(self, pos: &Position) -> Result<Self, TypeErr> {
+        Ok(InferType {
+            raises:    self.raises,
+            expr_type: Some(
+                self.expr_type.ok_or(TypeErr::new(pos, "Is not an expression"))?.mutable()
+            )
+        })
     }
 
-    pub fn nullable(self) -> InferType {
-        InferType { raises: self.raises, expr_type: self.expr_type.map(|ty| ty.nullable()) }
+    pub fn nullable(self, pos: &Position) -> Result<Self, TypeErr> {
+        Ok(InferType {
+            raises:    self.raises,
+            expr_type: Some(
+                self.expr_type.ok_or(TypeErr::new(pos, "Is not an expression"))?.nullable()
+            )
+        })
     }
 
-    pub fn is_mutable(&self) -> bool { self.expr_type.map_or(false, |expr_ty| expr_ty.mutable) }
+    pub fn is_mutable(&self, pos: &Position) -> Result<bool, TypeErr> {
+        Ok(self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))?.is_mutable)
+    }
 
-    pub fn is_nullable(&self) -> bool { self.expr_type.map_or(false, |expr_ty| expr_ty.mutable) }
+    pub fn is_nullable(&self, pos: &Position) -> Result<bool, TypeErr> {
+        Ok(self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))?.is_nullable)
+    }
 
     /// Get expression type
     ///
     /// # Failure
     ///
     /// If a statement type
-    pub fn expr_ty(&self, pos: &Position) -> Result<ExpressionType, TypeErr> {
-        self.expr_type.ok_or(TypeErr::new(pos, "Is not an expression"))
+    pub fn expr_tys(&self, pos: &Position) -> Result<ExpressionTypes, TypeErr> {
+        self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))
     }
 
     /// Add errors to type

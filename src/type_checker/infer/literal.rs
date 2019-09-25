@@ -7,17 +7,13 @@ use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::InferResult;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn infer_literal(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+pub fn infer_literal(ast: &AST, env: &Environment, ctx: &Context, _: &State) -> InferResult {
     let infer_type = match &ast.node {
         Node::Real { .. } => ctx.lookup(&GenericTypeName::new(concrete::FLOAT_PRIMITIVE), &ast.pos),
-        Node::Int { .. } =>
-            ctx.lookup_primitive(&GenericTypeName::new(concrete::INT_PRIMITIVE), &ast.pos),
-        Node::ENum { .. } =>
-            ctx.lookup_primitive(&GenericTypeName::new(concrete::ENUM_PRIMITIVE), &ast.pos),
-        Node::Str { .. } =>
-            ctx.lookup_primitive(&GenericTypeName::new(concrete::STRING_PRIMITIVE), &ast.pos),
-        Node::Bool { .. } =>
-            ctx.lookup_primitive(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos),
+        Node::Int { .. } => ctx.lookup(&GenericTypeName::new(concrete::INT_PRIMITIVE), &ast.pos),
+        Node::ENum { .. } => ctx.lookup(&GenericTypeName::new(concrete::ENUM_PRIMITIVE), &ast.pos),
+        Node::Str { .. } => ctx.lookup(&GenericTypeName::new(concrete::STRING_PRIMITIVE), &ast.pos),
+        Node::Bool { .. } => ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos),
         _ => Err(TypeErr::new(&ast.pos, "Expected control flow"))
     }
     .map_err(|e| vec![e])?;

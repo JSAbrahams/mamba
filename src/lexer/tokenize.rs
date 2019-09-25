@@ -181,7 +181,6 @@ fn as_op_or_id(string: String) -> Token {
         "init" => Token::Init,
 
         "def" => Token::Def,
-        "ofmut" => Token::OfMut,
         "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,

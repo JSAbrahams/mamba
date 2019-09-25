@@ -73,7 +73,7 @@ impl Type {
         })
     }
 
-    pub fn defined_function(&self, fun_name: &str, args: &[Type]) -> bool {
+    pub fn defined_function(&self, fun_name: &str, args: &[TypeName]) -> bool {
         self.functions.iter().any(|function| {
             function.name.as_str() == fun_name
                 && function

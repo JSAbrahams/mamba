@@ -5,7 +5,7 @@ use crate::type_checker::context::generic::type_name::GenericTypeName;
 
 impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFunctionArg {
     fn from(
-        (name, ty, expr): (&String, &Option<Expression>, &Option<Expression>)
+        (name, ty, _): (&String, &Option<Expression>, &Option<Expression>)
     ) -> GenericFunctionArg {
         GenericFunctionArg {
             is_py_type: true,

@@ -42,7 +42,7 @@ pub fn python_files(
             Ok(mut path) => path.read_to_string(&mut python_src).map_err(|err| {
                 TypeErr::new_no_pos(format!("Unable to read python file: {:?}", err).as_str())
             })?,
-            Err(err) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")])
+            Err(_) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")])
         };
         let statements =
             python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1;
@@ -51,7 +51,8 @@ pub fn python_files(
             match &statement {
                 Statement::Assignment(left, right) =>
                     fields.append(&mut GenericFields::from((left, right)).fields),
-                Statement::TypedAssignment(left, ty, right) =>
+                // TODO use type hints
+                Statement::TypedAssignment(left, _, right) =>
                     fields.append(&mut GenericFields::from((left, right)).fields),
                 Statement::Compound(compound_stmt) => match compound_stmt.deref() {
                     CompoundStatement::Funcdef(func_def) =>

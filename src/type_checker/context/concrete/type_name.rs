@@ -86,7 +86,7 @@ fn substitute(
 ) -> Result<TypeName, TypeErr> {
     match (this, substitute) {
         (
-            GenericTypeName::Single { lit: this_lit, generics: this_generics },
+            GenericTypeName::Single { generics: this_generics, .. },
             GenericTypeName::Single { lit: that_lit, generics: that_generics }
         ) => Ok(TypeName::Single {
             lit:      that_lit.clone(),
@@ -106,7 +106,7 @@ fn substitute(
                 return Err(TypeErr::new(pos, "Unable to insert generic"));
             }
         }),
-        (GenericTypeName::Single { lit, generics: this_generics }, substitute)
+        (GenericTypeName::Single { generics: this_generics, .. }, substitute)
             if this_generics.is_empty() =>
             TypeName::try_from(substitute, generics, pos),
         _ => Err(TypeErr::new(pos, "Unable to insert generic"))

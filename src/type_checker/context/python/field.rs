@@ -33,9 +33,8 @@ impl From<(&Vec<Expression>, &Vec<Expression>)> for GenericFields {
 }
 
 impl From<(&Expression, &Vec<Expression>)> for GenericFields {
-    fn from((id, values): (&Expression, &Vec<Expression>)) -> GenericFields {
-        GenericFields::from(id)
-    }
+    // TODO infer type from values
+    fn from((id, _): (&Expression, &Vec<Expression>)) -> GenericFields { GenericFields::from(id) }
 }
 
 impl From<&Expression> for GenericFields {
