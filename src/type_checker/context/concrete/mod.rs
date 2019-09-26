@@ -34,16 +34,6 @@ pub struct Type {
     functions:      Vec<Function>
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct FieldFunType {
-    pub is_defined: bool,
-    pub ty:         Option<TypeName>
-}
-
-impl Default for FieldFunType {
-    fn default() -> FieldFunType { FieldFunType { is_defined: false, ty: None } }
-}
-
 impl Display for Type {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
@@ -83,19 +73,12 @@ impl Type {
         })
     }
 
-    pub fn defines_field(&self, name: &str) -> FieldFunType {
-        let ty = self
-            .fields
-            .iter()
-            .find(|field| field.name.as_str() == name)
-            .and_then(|field| field.ty.clone());
-
-        FieldFunType { is_defined: self.fields.iter().any(|field| field.name.as_str() == name), ty }
+    pub fn field(&self, name: &str) -> Option<Field> {
+        self.fields.iter().find(|field| field.name.as_str() == name).cloned()
     }
 
-    pub fn defines_function(&self, fun_name: &str, args: &[TypeName]) -> FieldFunType {
-        let ty = self
-            .functions
+    pub fn function(&self, fun_name: &str, args: &[TypeName]) -> Option<Function> {
+        self.functions
             .iter()
             .find(|function| {
                 function.name.as_str() == fun_name
@@ -106,19 +89,6 @@ impl Type {
                         .zip(args)
                         .all(|(left, right)| left == Some(right.clone()))
             })
-            .and_then(|function| function.ret_ty.clone());
-
-        FieldFunType {
-            is_defined: self.functions.iter().any(|function| {
-                function.name.as_str() == fun_name
-                    && function
-                        .arguments
-                        .iter()
-                        .map(|arg| arg.ty.clone())
-                        .zip(args)
-                        .all(|(left, right)| left == Some(right.clone()))
-            }),
-            ty
-        }
+            .cloned()
     }
 }
