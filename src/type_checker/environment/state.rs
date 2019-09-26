@@ -1,8 +1,5 @@
 use crate::type_checker::type_result::TypeErr;
 
-// TODO store generics in State when type checking classes (or functions with
-// generics)
-
 #[derive(Clone)]
 pub struct State {
     pub in_loop:   bool,

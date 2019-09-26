@@ -73,8 +73,9 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(&start.union(&end), node)))
             }
             Token::LRBrack => it.parse(&parse_type_tuple, "type", start),
+            Token::LCBrack => it.parse(&parse_type_set, "type", start),
             _ => Err(expected_one_of(
-                &[Token::Id(String::new()), Token::LRBrack],
+                &[Token::Id(String::new()), Token::LRBrack, Token::LCBrack],
                 &lex.clone(),
                 "type"
             ))
@@ -132,6 +133,22 @@ fn parse_condition(it: &mut LexIterator) -> ParseResult {
     let end = _else.clone().map_or(cond.pos.clone(), |e| e.pos);
 
     let node = Node::Condition { cond, _else };
+    Ok(Box::from(AST::new(&start.union(&end), node)))
+}
+
+pub fn parse_type_set(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("type set")?;
+    it.eat(&Token::LCBrack, "type set")?;
+
+    let mut types = vec![];
+    it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
+        types.push(*it.parse(&parse_type, "type set", &start)?);
+        it.eat_if(&Token::Comma);
+        Ok(())
+    })?;
+
+    let end = it.eat(&Token::RCBrack, "type set")?;
+    let node = Node::TypeUnion { types };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 

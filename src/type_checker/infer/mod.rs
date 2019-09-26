@@ -1,5 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::assign::infer_assign;
@@ -10,7 +11,6 @@ use crate::type_checker::infer::class::infer_class;
 use crate::type_checker::infer::collection::infer_coll;
 use crate::type_checker::infer::control_flow::infer_control_flow;
 use crate::type_checker::infer::error::infer_error;
-use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::literal::infer_literal;
 use crate::type_checker::infer::operation::infer_op;
 use crate::type_checker::infer::optional::infer_optional;
@@ -25,7 +25,6 @@ mod class;
 mod collection;
 mod control_flow;
 mod error;
-mod infer_type;
 mod literal;
 mod operation;
 mod optional;
@@ -98,6 +97,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::TypeDef { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeAlias { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeTup { .. } => Ok((InferType::new(), env.clone())),
+        Node::TypeUnion { .. } => Ok((InferType::new(), env.clone())),
         Node::Type { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeFun { .. } => Ok((InferType::new(), env.clone())),
 

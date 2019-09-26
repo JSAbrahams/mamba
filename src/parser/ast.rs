@@ -120,6 +120,9 @@ pub enum Node {
     TypeTup {
         types: Vec<AST>
     },
+    TypeUnion {
+        types: Vec<AST>
+    },
     Type {
         id:       Box<AST>,
         generics: Vec<AST>

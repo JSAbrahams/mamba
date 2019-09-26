@@ -73,7 +73,11 @@ impl Type {
         })
     }
 
-    pub fn defined_function(&self, fun_name: &str, args: &[TypeName]) -> bool {
+    pub fn defines_field(&self, name: &str) -> bool {
+        self.fields.iter().any(|field| field.name.as_str() == name)
+    }
+
+    pub fn defines_function(&self, fun_name: &str, args: &[TypeName]) -> bool {
         self.functions.iter().any(|function| {
             function.name.as_str() == fun_name
                 && function

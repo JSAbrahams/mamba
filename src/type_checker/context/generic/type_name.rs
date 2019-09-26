@@ -10,7 +10,8 @@ use crate::type_checker::type_result::TypeErr;
 pub enum GenericTypeName {
     Single { lit: String, generics: Vec<GenericTypeName> },
     Fun { args: Vec<GenericTypeName>, ret_ty: Box<GenericTypeName> },
-    Tuple { type_names: Vec<GenericTypeName> }
+    Union { ty_names: Vec<GenericTypeName> },
+    Tuple { ty_names: Vec<GenericTypeName> }
 }
 
 impl GenericTypeName {
@@ -28,7 +29,8 @@ impl Display for GenericTypeName {
                 write!(f, "{}<{}>", lit, comma_delimited(generics)?),
             GenericTypeName::Fun { args, ret_ty } =>
                 write!(f, "({}) -> {}", comma_delimited(args)?, ret_ty),
-            GenericTypeName::Tuple { type_names } => write!(f, "({})", comma_delimited(type_names)?)
+            GenericTypeName::Union { ty_names } => write!(f, "{{{}}}", comma_delimited(ty_names)?),
+            GenericTypeName::Tuple { ty_names } => write!(f, "({})", comma_delimited(ty_names)?)
         }
     }
 }
@@ -66,11 +68,11 @@ impl TryFrom<&AST> for GenericTypeName {
                 }),
                 _ => Err(TypeErr::new(&id.pos, "Expected identifier"))
             },
+            Node::TypeUnion { types } => Ok(GenericTypeName::Union {
+                ty_names: types.iter().map(GenericTypeName::try_from).collect::<Result<_, _>>()?
+            }),
             Node::TypeTup { types } => Ok(GenericTypeName::Tuple {
-                type_names: types
-                    .iter()
-                    .map(GenericTypeName::try_from)
-                    .collect::<Result<_, _>>()?
+                ty_names: types.iter().map(GenericTypeName::try_from).collect::<Result<_, _>>()?
             }),
             Node::TypeFun { args, ret_ty } => Ok(GenericTypeName::Fun {
                 args:   args.iter().map(GenericTypeName::try_from).collect::<Result<_, _>>()?,

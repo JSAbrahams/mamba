@@ -10,7 +10,8 @@ use crate::type_checker::type_result::TypeErr;
 pub enum TypeName {
     Single { lit: String, generics: Vec<TypeName> },
     Fun { args: Vec<TypeName>, ret_ty: Box<TypeName> },
-    Tuple { type_names: Vec<TypeName> }
+    Union { ty_names: Vec<TypeName> },
+    Tuple { ty_names: Vec<TypeName> }
 }
 
 impl TypeName {
@@ -43,6 +44,7 @@ impl TypeName {
         generics: &HashMap<String, GenericTypeName>,
         pos: &Position
     ) -> Result<TypeName, TypeErr> {
+        let typename_from = |g| TypeName::try_from(g, generics, pos);
         match gen_type_name {
             GenericTypeName::Single { lit, generics: this_gens } => {
                 if let Some(subst) = generics.get(lit) {
@@ -50,25 +52,19 @@ impl TypeName {
                 } else {
                     Ok(TypeName::Single {
                         lit:      lit.clone(),
-                        generics: this_gens
-                            .iter()
-                            .map(|g| TypeName::try_from(g, generics, pos))
-                            .collect::<Result<_, _>>()?
+                        generics: this_gens.iter().map(typename_from).collect::<Result<_, _>>()?
                     })
                 }
             }
             GenericTypeName::Fun { args, ret_ty } => Ok(TypeName::Fun {
-                args:   args
-                    .iter()
-                    .map(|a| TypeName::try_from(a, generics, pos))
-                    .collect::<Result<_, _>>()?,
+                args:   args.iter().map(typename_from).collect::<Result<_, _>>()?,
                 ret_ty: Box::from(TypeName::try_from(ret_ty, generics, pos)?)
             }),
-            GenericTypeName::Tuple { type_names } => Ok(TypeName::Tuple {
-                type_names: type_names
-                    .iter()
-                    .map(|t| TypeName::try_from(t, generics, pos))
-                    .collect::<Result<_, _>>()?
+            GenericTypeName::Union { ty_names } => Ok(TypeName::Union {
+                ty_names: ty_names.iter().map(typename_from).collect::<Result<_, _>>()?
+            }),
+            GenericTypeName::Tuple { ty_names } => Ok(TypeName::Tuple {
+                ty_names: ty_names.iter().map(typename_from).collect::<Result<_, _>>()?
             })
         }
     }
@@ -84,6 +80,7 @@ fn substitute(
     generics: &HashMap<String, GenericTypeName>,
     pos: &Position
 ) -> Result<TypeName, TypeErr> {
+    let typename_from = |g| TypeName::try_from(g, generics, pos);
     match (this, substitute) {
         (
             GenericTypeName::Single { generics: this_generics, .. },
@@ -93,15 +90,9 @@ fn substitute(
             generics: if this_generics.is_empty() && that_generics.is_empty() {
                 vec![]
             } else if this_generics.is_empty() {
-                that_generics
-                    .iter()
-                    .map(|a| TypeName::try_from(a, generics, pos))
-                    .collect::<Result<_, _>>()?
+                that_generics.iter().map(typename_from).collect::<Result<_, _>>()?
             } else if that_generics.is_empty() {
-                this_generics
-                    .iter()
-                    .map(|a| TypeName::try_from(a, generics, pos))
-                    .collect::<Result<_, _>>()?
+                this_generics.iter().map(typename_from).collect::<Result<_, _>>()?
             } else {
                 return Err(TypeErr::new(pos, "Unable to insert generic"));
             }
@@ -121,7 +112,8 @@ impl Display for TypeName {
                 write!(f, "{}<{}>", lit, comma_delimited(generics)?),
             TypeName::Fun { args, ret_ty } =>
                 write!(f, "({}) -> {}", comma_delimited(args)?, ret_ty),
-            TypeName::Tuple { type_names } => write!(f, "({})", comma_delimited(type_names)?)
+            TypeName::Union { ty_names } => write!(f, "{{{}}}", comma_delimited(ty_names)?),
+            TypeName::Tuple { ty_names } => write!(f, "({})", comma_delimited(ty_names)?)
         }
     }
 }

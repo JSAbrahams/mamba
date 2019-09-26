@@ -1,9 +1,9 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::context::{concrete, Context};
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
-use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 
@@ -17,12 +17,12 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
         | Node::IsNA { left, right } => {
             let (left_ty, left_env) = infer(left, env, ctx, state)?;
             let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
-            left_ty.expr_tys(&left.pos)?;
-            right_ty.expr_tys(&right.pos)?;
+            left_ty.expr_ty(&left.pos)?;
+            right_ty.expr_ty(&right.pos)?;
 
             Ok((
                 InferType::from(
-                    ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+                    &ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
                 )
                 .raises(left_ty.raises)
                 .raises(right_ty.raises),
@@ -34,23 +34,23 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             let (left_ty, left_env) = infer(left, env, ctx, state)?;
             let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
 
-            let left_expr_ty = left_ty.expr_tys(&ast.pos)?;
-            let actual_ty = left_expr_ty.get_actual_ty(&ast.pos)?;
-            let ty = actual_ty.ty(&ast.pos)?;
-            if ty != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)? {
+            let left_expr_ty = left_ty.expr_ty(&ast.pos)?;
+            if left_expr_ty.actual_ty
+                != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+            {
                 return Err(vec![TypeErr::new(&left.pos, "Expected boolean")]);
             }
 
-            let right_expr_ty = right_ty.expr_tys(&ast.pos)?;
-            let actual_ty = right_expr_ty.get_actual_ty(&ast.pos)?;
-            let ty = actual_ty.ty(&ast.pos)?;
-            if ty != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)? {
+            let right_expr_ty = right_ty.expr_ty(&ast.pos)?;
+            if right_expr_ty.actual_ty
+                != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+            {
                 return Err(vec![TypeErr::new(&left.pos, "Expected boolean")]);
             }
 
             Ok((
                 InferType::from(
-                    ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+                    &ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
                 )
                 .raises(left_ty.raises)
                 .raises(right_ty.raises),
@@ -60,10 +60,10 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
 
         Node::Not { expr } => {
             let (infer_ty, env) = infer(expr, env, ctx, state)?;
-            let expr_ty = infer_ty.expr_tys(&ast.pos)?;
-            let actual_ty = expr_ty.get_actual_ty(&ast.pos)?;
-            let ty = actual_ty.ty(&ast.pos)?;
-            if ty != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)? {
+            let expr_ty = infer_ty.expr_ty(&ast.pos)?;
+            if expr_ty.actual_ty
+                != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+            {
                 return Err(vec![TypeErr::new(&expr.pos, "Expected boolean")]);
             }
 

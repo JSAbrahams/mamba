@@ -247,7 +247,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::TypeAlias { .. }
         | Node::TypeTup { .. }
         | Node::Type { .. }
-        | Node::TypeFun { .. } => Core::Empty,
+        | Node::TypeFun { .. }
+        | Node::TypeUnion { .. } => Core::Empty,
 
         Node::TypeDef { .. } => desugar_class(ast, imp, state)?,
         Node::Class { .. } => desugar_class(ast, imp, state)?,

@@ -1,9 +1,9 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::concrete::function;
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
-use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 
@@ -51,14 +51,16 @@ fn override_op(
     state: &State
 ) -> InferResult {
     let (left_infer_ty, left_env) = infer(left, env, ctx, state)?;
-    let left_expr_ty = left_infer_ty.expr_tys(&left.pos)?;
+    let left_expr_ty = left_infer_ty.expr_ty(&left.pos)?;
     let (right_infer_ty, right_env) = infer(right, &left_env, ctx, &state)?;
-    let right_expr_ty = right_infer_ty.expr_tys(&right.pos)?;
+    let right_expr_ty = right_infer_ty.expr_ty(&right.pos)?;
 
-    if left_expr_ty.actual_types == right_expr_ty.actual_types {
-        let left_ty = left_expr_ty.get_actual_ty(&left.pos)?.ty(&left.pos)?;
-        let right_ty = left_expr_ty.get_actual_ty(&right.pos)?.ty(&right.pos)?;
-        if left_ty.defined_function(overrides, &vec![right_ty.name]) {
+    if left_expr_ty.actual_ty == right_expr_ty.actual_ty {
+        if left_expr_ty.actual_ty.defines_function(
+            overrides,
+            &vec![right_expr_ty.actual_ty],
+            &left.pos
+        )? {
             Ok((left_infer_ty.union(&right_infer_ty, &left.pos)?, right_env))
         } else {
             Err(vec![TypeErr::new(&left.pos, "Operator not defined")])

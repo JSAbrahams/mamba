@@ -1,9 +1,9 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::context::{concrete, Context};
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
-use crate::type_checker::infer::infer_type::InferType;
 use crate::type_checker::infer::InferResult;
 use crate::type_checker::type_result::TypeErr;
 
@@ -18,5 +18,5 @@ pub fn infer_literal(ast: &AST, env: &Environment, ctx: &Context, _: &State) -> 
     }
     .map_err(|e| vec![e])?;
 
-    Ok((InferType::from(infer_type), env.clone()))
+    Ok((InferType::from(&infer_type), env.clone()))
 }
