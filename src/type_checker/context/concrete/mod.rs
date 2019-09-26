@@ -73,19 +73,41 @@ impl Type {
         })
     }
 
-    pub fn defines_field(&self, name: &str) -> bool {
-        self.fields.iter().any(|field| field.name.as_str() == name)
+    pub fn defines_field(&self, name: &str) -> (bool, Option<TypeName>) {
+        let ty = self
+            .fields
+            .iter()
+            .find(|field| field.name.as_str() == name)
+            .and_then(|field| field.ty.clone());
+        (self.fields.iter().any(|field| field.name.as_str() == name), ty)
     }
 
-    pub fn defines_function(&self, fun_name: &str, args: &[TypeName]) -> bool {
-        self.functions.iter().any(|function| {
-            function.name.as_str() == fun_name
-                && function
-                    .arguments
-                    .iter()
-                    .map(|arg| arg.ty(&Position::default()).unwrap_or(None))
-                    .zip(args)
-                    .all(|(left, right)| left == Some(right.clone()))
-        })
+    pub fn defines_function(&self, fun_name: &str, args: &[TypeName]) -> (bool, Option<TypeName>) {
+        let ty = self
+            .functions
+            .iter()
+            .find(|function| {
+                function.name.as_str() == fun_name
+                    && function
+                        .arguments
+                        .iter()
+                        .map(|arg| arg.ty.clone())
+                        .zip(args)
+                        .all(|(left, right)| left == Some(right.clone()))
+            })
+            .and_then(|function| function.ret_ty.clone());
+
+        (
+            self.functions.iter().any(|function| {
+                function.name.as_str() == fun_name
+                    && function
+                        .arguments
+                        .iter()
+                        .map(|arg| arg.ty.clone())
+                        .zip(args)
+                        .all(|(left, right)| left == Some(right.clone()))
+            }),
+            ty
+        )
     }
 }

@@ -5,7 +5,7 @@ use crate::type_checker::context::concrete::function_arg::FunctionArg;
 use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::type_result::TypeErr;
 
 pub const INIT: &'static str = "init";
 
@@ -30,7 +30,7 @@ pub struct Function {
     pub pure:       bool,
     pub arguments:  Vec<FunctionArg>,
     pub raises:     Vec<TypeName>,
-    ret_ty:         Option<TypeName>
+    pub ret_ty:     Option<TypeName>
 }
 
 impl Function {
@@ -58,13 +58,5 @@ impl Function {
                 None => None
             }
         })
-    }
-
-    pub fn ty(&self, pos: &Position) -> TypeResult<Option<TypeName>> {
-        if self.is_py_type {
-            Ok(self.ret_ty.clone())
-        } else {
-            Ok(Some(self.ret_ty.clone().ok_or_else(|| TypeErr::new(pos, "Unable to get type"))?))
-        }
     }
 }

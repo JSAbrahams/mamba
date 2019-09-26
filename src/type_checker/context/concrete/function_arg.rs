@@ -4,15 +4,15 @@ use crate::common::position::Position;
 use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic::type_name::GenericTypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::type_result::TypeErr;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {
     pub is_py_type: bool,
-    pub name: String,
-    pub vararg: bool,
-    pub mutable: bool,
-    ty: Option<TypeName>
+    pub name:       String,
+    pub vararg:     bool,
+    pub mutable:    bool,
+    pub ty:         Option<TypeName>
 }
 
 impl FunctionArg {
@@ -31,13 +31,5 @@ impl FunctionArg {
                 None => None
             }
         })
-    }
-
-    pub fn ty(&self, pos: &Position) -> TypeResult<Option<TypeName>> {
-        if self.is_py_type {
-            Ok(self.ty.clone())
-        } else {
-            Ok(Some(self.ty.clone().ok_or_else(|| TypeErr::new(pos, "Unable to get type"))?))
-        }
     }
 }

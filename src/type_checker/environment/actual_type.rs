@@ -15,9 +15,30 @@ pub enum ActualType {
 }
 
 impl ActualType {
-    pub fn defines_field(&self, name: &str, field: &str, pos: &Position) -> Result<bool, TypeErr> {
+    pub fn defines_field(
+        &self,
+        name: &str,
+        field: &str,
+        pos: &Position
+    ) -> Result<(bool, Option<TypeName>), TypeErr> {
         match &self {
             ActualType::Single { ty } => Ok(ty.defines_field(field)),
+            ActualType::Union { types } => {
+                let types = types
+                    .iter()
+                    .map(|t| self.defines_field(name, field, pos))
+                    .collect::<Result<Vec<(bool, Option<TypeName>)>, TypeErr>>()?;
+                let first = match types.get(0) {
+                    Some(first) => first.clone(),
+                    None => return Ok((false, None))
+                };
+
+                if types.iter().all(|ty| ty.clone() == first) {
+                    Ok(first)
+                } else {
+                    Ok((false, None))
+                }
+            }
             _ => Err(TypeErr::new(pos, "Not defined"))
         }
     }
@@ -27,11 +48,27 @@ impl ActualType {
         name: &str,
         args: &[ActualType],
         pos: &Position
-    ) -> Result<bool, TypeErr> {
+    ) -> Result<(bool, Option<TypeName>), TypeErr> {
         match &self {
             ActualType::Single { ty } => {
                 let args: Vec<_> = args.iter().map(|a| a.clone().into_type_name()).collect();
                 Ok(ty.defines_function(name, &args))
+            }
+            ActualType::Union { types } => {
+                let types = types
+                    .iter()
+                    .map(|t| self.defines_function(name, args, pos))
+                    .collect::<Result<Vec<(bool, Option<TypeName>)>, TypeErr>>()?;
+                let first = match types.get(0) {
+                    Some(first) => first.clone(),
+                    None => return Ok((false, None))
+                };
+
+                if types.iter().all(|ty| ty.clone() == first) {
+                    Ok(first)
+                } else {
+                    Ok((false, None))
+                }
             }
             _ => Err(TypeErr::new(pos, "Not defined"))
         }
