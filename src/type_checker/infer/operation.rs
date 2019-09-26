@@ -56,11 +56,9 @@ fn override_op(
     let right_expr_ty = right_infer_ty.expr_ty(&right.pos)?;
 
     if left_expr_ty.actual_ty == right_expr_ty.actual_ty {
-        if left_expr_ty
-            .actual_ty
-            .defines_function(overrides, &vec![right_expr_ty.actual_ty], &left.pos)?
-            .0
-        {
+        let fun_type =
+            left_expr_ty.actual_ty.fun_ty(overrides, &vec![right_expr_ty.actual_ty], &left.pos)?;
+        if fun_type.is_defined {
             Ok((left_infer_ty.union(&right_infer_ty, &left.pos)?, right_env))
         } else {
             Err(vec![TypeErr::new(&left.pos, "Operator not defined")])

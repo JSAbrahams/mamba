@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::type_name::TypeName;
+use crate::type_checker::context::concrete::FieldFunType;
 use crate::type_checker::context::concrete::Type;
 use crate::type_checker::type_result::TypeErr;
 
@@ -15,59 +16,60 @@ pub enum ActualType {
 }
 
 impl ActualType {
-    pub fn defines_field(
+    pub fn field_ty(
         &self,
         name: &str,
         field: &str,
         pos: &Position
-    ) -> Result<(bool, Option<TypeName>), TypeErr> {
+    ) -> Result<FieldFunType, TypeErr> {
         match &self {
             ActualType::Single { ty } => Ok(ty.defines_field(field)),
             ActualType::Union { types } => {
                 let types = types
                     .iter()
-                    .map(|t| self.defines_field(name, field, pos))
-                    .collect::<Result<Vec<(bool, Option<TypeName>)>, TypeErr>>()?;
+                    .map(|t| self.field_ty(name, field, pos))
+                    .collect::<Result<Vec<FieldFunType>, TypeErr>>()?;
                 let first = match types.get(0) {
                     Some(first) => first.clone(),
-                    None => return Ok((false, None))
+                    None => return Ok(FieldFunType::default())
                 };
 
-                if types.iter().all(|ty| ty.clone() == first) {
+                if types.into_iter().all(|ty| ty == first) {
                     Ok(first)
                 } else {
-                    Ok((false, None))
+                    Ok(FieldFunType::default())
                 }
             }
             _ => Err(TypeErr::new(pos, "Not defined"))
         }
     }
 
-    pub fn defines_function(
+    pub fn fun_ty(
         &self,
         name: &str,
         args: &[ActualType],
         pos: &Position
-    ) -> Result<(bool, Option<TypeName>), TypeErr> {
+    ) -> Result<FieldFunType, TypeErr> {
         match &self {
             ActualType::Single { ty } => {
                 let args: Vec<_> = args.iter().map(|a| a.clone().into_type_name()).collect();
                 Ok(ty.defines_function(name, &args))
             }
             ActualType::Union { types } => {
-                let types = types
-                    .iter()
-                    .map(|t| self.defines_function(name, args, pos))
-                    .collect::<Result<Vec<(bool, Option<TypeName>)>, TypeErr>>()?;
+                let types = types.iter().map(|t| self.fun_ty(name, args, pos)).collect::<Result<
+                    Vec<FieldFunType>,
+                    TypeErr
+                >>(
+                )?;
                 let first = match types.get(0) {
                     Some(first) => first.clone(),
-                    None => return Ok((false, None))
+                    None => return Ok(FieldFunType::default())
                 };
 
-                if types.iter().all(|ty| ty.clone() == first) {
+                if types.into_iter().all(|ty| ty == first) {
                     Ok(first)
                 } else {
-                    Ok((false, None))
+                    Ok(FieldFunType::default())
                 }
             }
             _ => Err(TypeErr::new(pos, "Not defined"))

@@ -30,8 +30,18 @@ pub struct Type {
     pub name:       TypeName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
-    pub fields:     Vec<Field>,
-    pub functions:  Vec<Function>
+    fields:         Vec<Field>,
+    functions:      Vec<Function>
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct FieldFunType {
+    pub is_defined: bool,
+    pub ty:         Option<TypeName>
+}
+
+impl Default for FieldFunType {
+    fn default() -> FieldFunType { FieldFunType { is_defined: false, ty: None } }
 }
 
 impl Display for Type {
@@ -73,16 +83,17 @@ impl Type {
         })
     }
 
-    pub fn defines_field(&self, name: &str) -> (bool, Option<TypeName>) {
+    pub fn defines_field(&self, name: &str) -> FieldFunType {
         let ty = self
             .fields
             .iter()
             .find(|field| field.name.as_str() == name)
             .and_then(|field| field.ty.clone());
-        (self.fields.iter().any(|field| field.name.as_str() == name), ty)
+
+        FieldFunType { is_defined: self.fields.iter().any(|field| field.name.as_str() == name), ty }
     }
 
-    pub fn defines_function(&self, fun_name: &str, args: &[TypeName]) -> (bool, Option<TypeName>) {
+    pub fn defines_function(&self, fun_name: &str, args: &[TypeName]) -> FieldFunType {
         let ty = self
             .functions
             .iter()
@@ -97,8 +108,8 @@ impl Type {
             })
             .and_then(|function| function.ret_ty.clone());
 
-        (
-            self.functions.iter().any(|function| {
+        FieldFunType {
+            is_defined: self.functions.iter().any(|function| {
                 function.name.as_str() == fun_name
                     && function
                         .arguments
@@ -108,6 +119,6 @@ impl Type {
                         .all(|(left, right)| left == Some(right.clone()))
             }),
             ty
-        )
+        }
     }
 }
