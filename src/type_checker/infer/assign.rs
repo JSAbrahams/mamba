@@ -1,12 +1,14 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::InferResult;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn infer_assign(ast: &AST, _: &Environment, _: &Context, _: &State) -> InferResult {
+pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
+        Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
         Node::Reassign { .. } => unimplemented!(),
         // TODO use forward and private
         Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {

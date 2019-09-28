@@ -6,34 +6,21 @@ use crate::type_checker::context::concrete::field::Field;
 use crate::type_checker::context::concrete::function::Function;
 use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::concrete::Type;
+use crate::type_checker::environment::expression_type::mutable_type::MutableType;
+use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
     Single { ty: Type },
-    Tuple { types: Vec<ActualType> },
-    Union { types: Vec<ActualType> },
-    Fun { args: Vec<ActualType>, ret_ty: Box<ActualType> }
+    Tuple { types: Vec<ExpressionType> },
+    Fun { args: Vec<ExpressionType>, ret_ty: Box<ActualType> }
 }
 
 impl ActualType {
     pub fn field(&self, name: &str, field: &str, pos: &Position) -> Result<Option<Field>, TypeErr> {
         match &self {
             ActualType::Single { ty } => Ok(ty.field(field)),
-            ActualType::Union { types } => {
-                let types = types.iter().map(|t| self.field(name, field, pos)).collect::<Result<
-                    Vec<Option<Field>>,
-                    TypeErr
-                >>(
-                )?;
-                let first = match types.get(0) {
-                    Some(first) => first.clone(),
-                    None => return Ok(None)
-                };
-
-                let all_same = types.into_iter().all(|ty| ty == first);
-                Ok(if all_same { first } else { None })
-            }
             _ => Err(TypeErr::new(pos, "Not defined"))
         }
     }
@@ -49,30 +36,7 @@ impl ActualType {
                 let args: Vec<_> = args.iter().map(|a| a.clone().into_type_name()).collect();
                 Ok(ty.function(name, &args))
             }
-            ActualType::Union { types } => {
-                let types = types
-                    .iter()
-                    .map(|t| self.fun(name, args, pos))
-                    .collect::<Result<Vec<Option<Function>>, TypeErr>>()?;
-                let first = match types.get(0) {
-                    Some(first) => first.clone(),
-                    None => return Ok(None)
-                };
-
-                let all_same = types.into_iter().all(|ty| ty == first);
-                Ok(if all_same { first } else { None })
-            }
             _ => Err(TypeErr::new(pos, "Not defined"))
-        }
-    }
-
-    pub fn union(self, other: &ActualType) -> ActualType {
-        match (&self, other) {
-            (ActualType::Union { types }, ActualType::Union { types: other }) =>
-                ActualType::Union { types: unimplemented!() },
-            (ActualType::Union { types }, other) => ActualType::Union { types: unimplemented!() },
-            (this, ActualType::Union { types }) => ActualType::Union { types: unimplemented!() },
-            (this, that) => ActualType::Union { types: vec![this.clone(), that.clone()] }
         }
     }
 
@@ -80,9 +44,6 @@ impl ActualType {
         match self {
             ActualType::Single { ty } => ty.name,
             ActualType::Tuple { types } => TypeName::Tuple {
-                ty_names: types.iter().map(|at| at.clone().into_type_name()).collect()
-            },
-            ActualType::Union { types } => TypeName::Union {
                 ty_names: types.iter().map(|at| at.clone().into_type_name()).collect()
             },
             ActualType::Fun { args, ret_ty } => {

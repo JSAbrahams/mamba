@@ -7,6 +7,7 @@ use crate::type_checker::infer::assign::infer_assign;
 use crate::type_checker::infer::bitwise_operation::infer_bitwise_op;
 use crate::type_checker::infer::block::infer_block;
 use crate::type_checker::infer::boolean_operation::infer_boolean_op;
+use crate::type_checker::infer::call::infer_call;
 use crate::type_checker::infer::class::infer_class;
 use crate::type_checker::infer::collection::infer_coll;
 use crate::type_checker::infer::control_flow::infer_control_flow;
@@ -21,6 +22,7 @@ mod assign;
 mod bitwise_operation;
 mod block;
 mod boolean_operation;
+mod call;
 mod class;
 mod collection;
 mod control_flow;
@@ -79,7 +81,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
 
         Node::Script { .. } | Node::Block { .. } => infer_block(ast, env, ctx, state),
 
-        Node::Id { .. } => unimplemented!(),
+        Node::Id { .. } => infer_assign(ast, env, ctx, state),
         Node::Reassign { .. } => infer_assign(ast, env, ctx, state),
         Node::VariableDef { .. } => infer_assign(ast, env, ctx, state),
         Node::FunArg { .. } | Node::FunDef { .. } => infer_assign(ast, env, ctx, state),
@@ -90,8 +92,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
 
         Node::With { .. } => unimplemented!(),
         Node::AnonFun { .. } => unimplemented!(),
-        Node::FunctionCall { .. } => unimplemented!(),
-        Node::PropertyCall { .. } => unimplemented!(),
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx, state),
 
         Node::IdType { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeDef { .. } => Ok((InferType::new(), env.clone())),

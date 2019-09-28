@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::Type;
 use crate::type_checker::environment::actual_type::ActualType;
-use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::environment::expression_type::{ExpressionType, ExpressionType};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -12,9 +12,9 @@ pub struct InferType {
     expr_type:  Option<ExpressionType>
 }
 
-impl From<&ActualType> for InferType {
-    fn from(actual_type: &ActualType) -> Self {
-        InferType { raises: HashSet::new(), expr_type: Some(ExpressionType::from(actual_type)) }
+impl From<&ExpressionType> for InferType {
+    fn from(expr_type: &ExpressionType) -> Self {
+        InferType { raises: HashSet::new(), expr_type: Some(expr_type.clone()) }
     }
 }
 

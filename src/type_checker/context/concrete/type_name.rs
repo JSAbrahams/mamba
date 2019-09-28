@@ -10,7 +10,6 @@ use crate::type_checker::type_result::TypeErr;
 pub enum TypeName {
     Single { lit: String, generics: Vec<TypeName> },
     Fun { args: Vec<TypeName>, ret_ty: Box<TypeName> },
-    Union { ty_names: Vec<TypeName> },
     Tuple { ty_names: Vec<TypeName> }
 }
 

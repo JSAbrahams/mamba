@@ -32,6 +32,15 @@ pub struct Context {
     fields:    Vec<GenericField>
 }
 
+impl TryFrom<&[CheckInput]> for Context {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(files: &[CheckInput]) -> Result<Self, Self::Error> {
+        let (types, fields, functions) = generics(files)?;
+        Ok(Context { types, functions, fields })
+    }
+}
+
 impl Context {
     fn lookup_direct(
         &self,
@@ -69,8 +78,9 @@ impl Context {
         pos: &Position
     ) -> Result<ActualType, TypeErr> {
         Ok(match type_name {
-            GenericTypeName::Single { lit, generics } =>
-                ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
+            GenericTypeName::Single { lit, generics } => ActualType::Single {
+                expr_ty: ExpressionType::from(self.lookup_direct(lit, generics, pos)?)
+            },
             GenericTypeName::Fun { args, ret_ty } => ActualType::Fun {
                 args:   args.iter().map(|a| self.lookup(a, pos)).collect::<Result<_, _>>()?,
                 ret_ty: Box::from(self.lookup(ret_ty, pos)?)
@@ -101,15 +111,6 @@ impl Context {
         functions.append(&mut py_functions);
         fields.append(&mut py_fields);
 
-        Ok(Context { types, functions, fields })
-    }
-}
-
-impl TryFrom<&[CheckInput]> for Context {
-    type Error = Vec<TypeErr>;
-
-    fn try_from(files: &[CheckInput]) -> Result<Self, Self::Error> {
-        let (types, fields, functions) = generics(files)?;
         Ok(Context { types, functions, fields })
     }
 }
