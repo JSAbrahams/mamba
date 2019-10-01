@@ -2,11 +2,16 @@ use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use crate::common::position::Position;
+use crate::type_checker::context::concrete::type_name::actual::ActualTypeName;
+use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::concrete::Type;
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::generics;
+use crate::type_checker::context::generic::ty::GenericType;
 use crate::type_checker::context::python::python_files;
+use crate::type_checker::environment::expression_type::actual_type::ActualType;
+use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -44,7 +49,7 @@ impl Context {
     fn lookup_direct(
         &self,
         name: &str,
-        generics: &[GenericType],
+        generics: &[ActualTypeName],
         pos: &Position
     ) -> Result<Type, TypeErr> {
         let generic_type = self
@@ -71,19 +76,25 @@ impl Context {
         }
     }
 
-    pub fn lookup(&self, type_name: &GenericType, pos: &Position) -> TypeResult<InferType> {
-        Ok(match type_name {
-            GenericType::Single { lit, generics } => ActualType::Single {
-                expr_ty: ExpressionType::from(&self.lookup_direct(lit, generics, pos)?)
-            },
-            GenericType::Fun { args, ret_ty } => ActualType::Fun {
-                args:   args.iter().map(|a| self.lookup(a, pos)).collect::<Result<_, _>>()?,
-                ret_ty: Box::from(self.lookup(ret_ty, pos)?)
-            },
-            GenericType::Tuple { ty_names } => ActualType::Tuple {
-                types: ty_names.iter().map(|t| self.lookup(t, pos)).collect::<Result<_, _>>()?
+    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
+        let ty = match ty_name {
+            ActualTypeName::Single { lit, generics } => self.lookup_direct(lit, generics, pos),
+            ActualTypeName::Tuple { ty_names } => unimplemented!(),
+            ActualTypeName::AnonFun { args, ret_ty } => unimplemented!()
+        }?;
+
+        Ok(MutableType::from(&ActualType::from(&ty)))
+    }
+
+    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<InferType> {
+        let expr_type = match type_name {
+            TypeName::Single { ty } =>
+                ExpressionType::Single { mut_ty: self.lookup_actual(ty, pos)? },
+            TypeName::Union { union } => ExpressionType::Union {
+                union: union.iter().map(|a_t| self.lookup_actual(a_t, pos)).collect()?
             }
-        })
+        };
+        Ok(InferType { raises: vec![], expr_type: Some(expr_type) })
     }
 
     pub fn lookup_fun(&self, name: &str, pos: &Position) {}

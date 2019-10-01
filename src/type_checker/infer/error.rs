@@ -1,5 +1,6 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::concrete::type_name::TypeName;
+use crate::type_checker::context::generic::type_name::GenericActualTypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -7,13 +8,12 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::iter::FromIterator;
 
 pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
         Node::Raise { error } => {
-            let error_name = GenericType::try_from(error);
+            let error_name = GenericActualTypeName::try_from(error);
             let err = ctx.lookup(error_name, &error.pos)?;
             Ok((InferType::new().raises(HashSet::from_iter(vec![err].to_iter())), env.clone()))
         }
@@ -21,8 +21,9 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
         // TODO verify that errors of raises equal to expr errors
         Node::Raises { expr_or_stmt, errors } => {
             let (ty, env) = infer(expr_or_stmt, env, ctx, state)?;
-            let errs = errors.iter().map(|e| (e.pos, GenericType::try_from(e))).collect()?;
-            let errs: HashSet<ActualType> =
+            let errs =
+                errors.iter().map(|e| (e.pos, GenericActualTypeName::try_from(e))).collect()?;
+            let errs: HashSet<TypeName> =
                 errs.iter().map(|(pos, e)| ctx.lookup(e, pos)).collect()?;
 
             let unhandled_errs = ty.raises.difference(&errs).collect();

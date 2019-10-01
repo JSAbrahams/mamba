@@ -4,7 +4,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::concrete;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::generic::type_name::GenericActualTypeName;
 
 pub const INIT: &'static str = "__init__";
 
@@ -39,7 +39,7 @@ impl From<&Funcdef> for GenericFunction {
                 .collect(),
             raises:     vec![],
             ret_ty:     match &func_def.return_type {
-                Some(ret_ty) => Some(GenericType::from(ret_ty)),
+                Some(ret_ty) => Some(GenericActualTypeName::from(ret_ty)),
                 None => None
             }
         }

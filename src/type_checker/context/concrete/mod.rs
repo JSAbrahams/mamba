@@ -6,6 +6,9 @@ use crate::common::position::Position;
 use crate::type_checker::context::concrete::field::Field;
 use crate::type_checker::context::concrete::function::Function;
 use crate::type_checker::context::concrete::function_arg::FunctionArg;
+use crate::type_checker::context::concrete::type_name::TypeName;
+use crate::type_checker::context::generic::ty::GenericType;
+use crate::type_checker::context::generic::type_name::GenericActualTypeName;
 use crate::type_checker::type_result::TypeErr;
 
 pub mod field;
@@ -24,7 +27,7 @@ pub const ENUM_PRIMITIVE: &'static str = "Enum";
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Type {
     pub is_py_type: bool,
-    pub name:       ActualTypeName,
+    pub name:       TypeName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
     fields:         Vec<Field>,
@@ -38,19 +41,15 @@ impl Display for Type {
 impl Type {
     pub fn try_from(
         generic_type: &GenericType,
-        generics: &HashMap<String, GenericType>,
+        generics: &HashMap<String, GenericActualTypeName>,
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(Type {
             is_py_type: generic_type.is_py_type,
-            name:       ActualTypeName::Single {
-                lit:      generic_type.name.clone(),
-                generics: generic_type
-                    .generics
-                    .iter()
-                    .map(|g| ActualTypeName::Single { lit: g.name.clone(), generics: vec![] })
-                    .collect()
-            },
+            name:       TypeName::new(
+                &generic_type.name,
+                generic_type.generics.iter().map(|g| TypeName::new(&g.name, vec![])).collect()?
+            ),
             concrete:   generic_type.concrete,
             args:       generic_type
                 .args
@@ -74,7 +73,9 @@ impl Type {
         self.fields.iter().find(|field| field.name.as_str() == name).cloned()
     }
 
-    pub fn function(&self, fun_name: &str, args: &[ActualTypeName]) -> Option<Function> {
+    pub fn function(&self, fun_name: &str, args: &[TypeName]) -> Option<Function> {
+        // TODO also accept if arguments passed is union that is subset of argument
+        // union
         self.functions
             .iter()
             .find(|function| {

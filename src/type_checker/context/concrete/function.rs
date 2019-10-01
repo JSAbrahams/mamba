@@ -2,9 +2,11 @@ use std::collections::HashMap;
 
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::function_arg::FunctionArg;
+use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::generic::type_name::GenericActualTypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
 
 pub const INIT: &'static str = "init";
 
@@ -28,14 +30,14 @@ pub struct Function {
     pub name:       String,
     pub pure:       bool,
     pub arguments:  Vec<FunctionArg>,
-    pub raises:     Vec<ActualTypeName>,
-    pub ret_ty:     Option<ActualTypeName>
+    pub raises:     Vec<TypeName>,
+    pub ret_ty:     Option<TypeName>
 }
 
 impl Function {
     pub fn try_from(
         generic_fun: &GenericFunction,
-        generics: &HashMap<String, GenericType>,
+        generics: &HashMap<String, GenericActualTypeName>,
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(Function {
@@ -50,10 +52,10 @@ impl Function {
             raises:     generic_fun
                 .raises
                 .iter()
-                .map(|raise| ActualTypeName::try_from(raise, generics, pos))
+                .map(|raise| TypeName::try_from((raise, generics, pos)))
                 .collect::<Result<_, _>>()?,
             ret_ty:     match &generic_fun.ty()? {
-                Some(ty) => Some(ActualTypeName::try_from(ty, generics, pos)?),
+                Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
                 None => None
             }
         })

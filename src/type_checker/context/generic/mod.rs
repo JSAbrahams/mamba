@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use crate::parser::ast::Node;
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::function::GenericFunction;
+use crate::type_checker::context::generic::ty::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
 

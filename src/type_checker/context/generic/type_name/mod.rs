@@ -4,40 +4,48 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::generic::type_name::actual::GenericActualTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-mod actual;
+pub mod actual;
 
-pub enum GenericType {
-    Single { ty: GenericType },
-    Union { union: HashSet<GenericType> }
+pub enum GenericTypeName {
+    Single { ty: GenericActualTypeName },
+    Union { union: HashSet<GenericActualTypeName> }
 }
 
-impl GenericType {
-    pub fn new(name: &str) -> GenericType { GenericType::Single { ty: GenericType::new(name) } }
+impl GenericTypeName {
+    pub fn new(name: &str) -> GenericTypeName {
+        GenericTypeName::Single { ty: GenericActualTypeName::new(name) }
+    }
 }
-impl Display for GenericType {
+impl Display for GenericTypeName {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            GenericType::Single { ty } => write!(f, "{}", ty),
-            GenericType::Union { union } => write!(f, "{{{:#?}}}", union)
+            GenericTypeName::Single { ty } => write!(f, "{}", ty),
+            GenericTypeName::Union { union } => write!(f, "{{{:#?}}}", union)
         }
     }
 }
 
-impl TryFrom<&AST> for GenericType {
+impl TryFrom<&AST> for GenericTypeName {
     type Error = Vec<TypeErr>;
 
-    fn try_from(ast: &AST) -> TypeResult<GenericType> {
+    fn try_from(ast: &AST) -> TypeResult<GenericTypeName> {
         if let Node::TypeUnion { types } = &ast.node {
-            let (types, errs) = types.iter().map(GenericType::try_from).partition(Result::is_ok);
+            let (types, errs) =
+                types.iter().map(GenericTypeName::try_from).partition(Result::is_ok);
             if errs.is_empty() {
-                Ok(types.into_iter().map(Result::unwrap).collect())
+                Ok(GenericTypeName::Union {
+                    union: types.into_iter().map(Result::unwrap).collect()
+                })
             } else {
                 Err(errs.into_iter().map(Result::unwrap_err).collect())
             }
         } else {
-            GenericType::try_from(ast).map_err(|e| vec![e])
+            GenericTypeName::Single {
+                ty: GenericActualTypeName::try_from(ast).map_err(|e| vec![e])?
+            }
         }
     }
 }

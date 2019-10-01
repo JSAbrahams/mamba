@@ -6,12 +6,11 @@ use std::iter::FromIterator;
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::field::Field;
 use crate::type_checker::context::concrete::function::Function;
-use crate::type_checker::context::concrete::Type;
 use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-mod actual_type;
-mod mutable_type;
+pub mod actual_type;
+pub mod mutable_type;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ExpressionType {
@@ -28,8 +27,8 @@ impl Display for ExpressionType {
     }
 }
 
-impl From<&Type> for ExpressionType {
-    fn from(ty: &Type) -> Self { ExpressionType::Single { mut_ty: MutableType::from(ty) } }
+impl From<&MutableType> for ExpressionType {
+    fn from(mut_ty: &MutableType) -> Self { ExpressionType::Single { mut_ty: mut_ty.clone() } }
 }
 
 impl ExpressionType {
@@ -84,12 +83,5 @@ impl ExpressionType {
 
     pub fn fun(&self, name: &str, args: &[ExpressionType], pos: &Position) -> TypeResult<Function> {
         unimplemented!();
-
-        let first = union.get(0);
-        if union.iter.all(|e_ty| e_ty == first) {
-            Ok(first.ok_or(vec![TypeErr::new(pos, "Unknown function")])?)
-        } else {
-            Err(vec![TypeErr::new(pos, "Unknown function")])
-        }
     }
 }

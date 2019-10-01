@@ -6,7 +6,7 @@ use std::ops::Deref;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::type_result::TypeErr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub enum GenericActualTypeName {
     Single { lit: String, generics: Vec<GenericActualTypeName> },
     Fun { args: Vec<GenericActualTypeName>, ret_ty: Box<GenericActualTypeName> },

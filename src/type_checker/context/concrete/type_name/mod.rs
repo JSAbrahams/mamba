@@ -5,10 +5,10 @@ use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::type_name::actual::ActualTypeName;
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::generic::type_name::{GenericActualTypeName, GenericTypeName};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-mod actual;
+pub mod actual;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TypeName {
@@ -25,22 +25,29 @@ impl Display for TypeName {
     }
 }
 
-impl TryFrom<(&GenericType, &HashMap<String, GenericType>, &Position)> for TypeName {
+impl TryFrom<(&GenericTypeName, &HashMap<String, GenericActualTypeName>, &Position)> for TypeName {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (gen_type_name, generics, pos): (&GenericType, &HashMap<String, GenericType>, &Position)
+        (gen_type_name, generics, pos): (
+            &GenericTypeName,
+            &HashMap<String, GenericActualTypeName>,
+            &Position
+        )
     ) -> TypeResult<Self> {
         match gen_type_name {
-            GenericType::Single { ty } =>
-                TypeName { ty: ActualTypeName::try_from((ty, generics, pos)) },
-            GenericType::Union { union } => {
+            GenericTypeName::Single { ty } =>
+                Ok(TypeName::Single { ty: ActualTypeName::try_from((ty, generics, pos))? }),
+            GenericTypeName::Union { union } => {
                 let (union, errs) = union
                     .iter()
                     .map(|ty| ActualTypeName::try_from((ty, generics, pos)))
                     .partition(Result::is_ok);
+
                 if errs.is_empty() {
-                    TypeName { union: union.into_iter().map(Result::unwrap_err).collect() }
+                    Ok(TypeName::Union {
+                        union: union.into_iter().map(Result::unwrap_err).collect()
+                    })
                 } else {
                     Err(errs.into_iter().map(Result::unwrap_err).collect())
                 }
@@ -51,7 +58,7 @@ impl TryFrom<(&GenericType, &HashMap<String, GenericType>, &Position)> for TypeN
 
 impl TypeName {
     pub fn new(lit: &str, generics: &[ActualTypeName]) -> TypeName {
-        TypeName {
+        TypeName::Single {
             ty: ActualTypeName::Single {
                 lit:      String::from(lit),
                 generics: Vec::from(generics)

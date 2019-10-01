@@ -4,7 +4,6 @@ use std::fmt::{Display, Formatter};
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::field::Field;
 use crate::type_checker::context::concrete::function::Function;
-use crate::type_checker::context::concrete::Type;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::TypeResult;
 
@@ -21,10 +20,6 @@ impl Display for MutableType {
         let mutable = if self.is_mutable { "mut " } else { "" };
         write!(f, "{}{}{}", mutable, self.actual_ty, nullable)
     }
-}
-
-impl From<&Type> for MutableType {
-    fn from(ty: &Type) -> Self { MutableType::from(&ActualType::from(ty)) }
 }
 
 impl From<&ActualType> for MutableType {

@@ -1,6 +1,9 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::expression_type::actual_type::ActualType;
+use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
@@ -14,13 +17,14 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
             let mut types = vec![];
             for el in elements {
                 let (mut el_ty, new_env) = infer(el, &env, ctx, state)?;
-                env = new_env;
                 errors.append(&mut el_ty.raises);
-                types.push(ActualType::Single { expr_ty: el_ty.expr_ty(&el.pos)? });
+                types.push(el_ty.expr_ty(&el.pos)?);
+                env = new_env;
             }
 
             let actual_ty = ActualType::Tuple { types };
-            let expr_ty = ExpressionType::from(&actual_ty);
+            let mut_ty = MutableType::from(&actual_ty);
+            let expr_ty = ExpressionType::from(&mut_ty);
             Ok((InferType::from(&expr_ty), env))
         }
         Node::Set { .. } | Node::List { .. } => unimplemented!(),

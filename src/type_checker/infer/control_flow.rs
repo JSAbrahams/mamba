@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::{concrete, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -16,28 +16,25 @@ pub fn infer_control_flow(
 ) -> InferResult {
     match &ast.node {
         Node::IfElse { cond, then, _else } => {
-            let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
-            let cond_expr_ty = cond_type.expr_ty(&ast.pos)?;
-            if cond_expr_ty.actual_ty
-                != ctx.lookup(&GenericType::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+            let (cond_type, env) = infer(cond, env, ctx, state)?;
+            if cond_type
+                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }
 
-            let (then_type, then_env) = infer(then, &cond_env, ctx, state)?;
-
+            let (then_type, env) = infer(then, &env, ctx, state)?;
             if let Some(_else) = _else {
-                let (else_type, else_env) = infer(_else, &cond_env, ctx, state)?;
-                Ok((then_type.union(&else_type, &ast.pos)?, then_env.intersection(else_env)))
+                let (else_type, else_env) = infer(_else, &env, ctx, state)?;
+                Ok((then_type.union(&else_type, &ast.pos)?, env.intersection(else_env)))
             } else {
-                Ok((then_type, then_env))
+                Ok((then_type, env))
             }
         }
         Node::While { cond, body } => {
             let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
-            let cond_expr_ty = cond_type.expr_ty(&ast.pos)?;
-            if cond_expr_ty.actual_ty
-                != ctx.lookup(&GenericType::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+            if cond_type
+                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }

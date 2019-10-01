@@ -4,7 +4,7 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::generic::type_name::GenericActualTypeName;
 use crate::type_checker::context::python::type_name::BOOLEAN;
 use crate::type_checker::context::python::type_name::FLOAT;
 use crate::type_checker::context::python::type_name::INTEGER;
@@ -26,11 +26,11 @@ pub struct GenericFunctionArg {
     pub pos:        Position,
     pub vararg:     bool,
     pub mutable:    bool,
-    pub ty:         Option<GenericType>
+    pub ty:         Option<GenericActualTypeName>
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<GenericType>) -> Result<Self, TypeErr> {
+    pub fn in_class(self, class: Option<GenericActualTypeName>) -> Result<Self, TypeErr> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
@@ -47,7 +47,7 @@ impl GenericFunctionArg {
         }
     }
 
-    pub fn ty(&self) -> Result<Option<GenericType>, TypeErr> {
+    pub fn ty(&self) -> Result<Option<GenericActualTypeName>, TypeErr> {
         if self.is_py_type {
             Ok(self.ty.clone())
         } else {
@@ -98,18 +98,18 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         mutable:    *mutable,
                         pos:        node_pos.pos.clone(),
                         ty:         match _type {
-                            Some(_type) => Some(GenericType::try_from(_type.deref())?),
+                            Some(_type) => Some(GenericActualTypeName::try_from(_type.deref())?),
                             None if name.as_str() == SELF => None,
                             None =>
                                 if let Some(default) = default {
                                     Some(match &default.deref().node {
-                                        Node::Str { .. } => GenericType::new(STRING),
-                                        Node::Bool { .. } => GenericType::new(BOOLEAN),
-                                        Node::Int { .. } => GenericType::new(INTEGER),
-                                        Node::Real { .. } => GenericType::new(FLOAT),
+                                        Node::Str { .. } => GenericActualTypeName::new(STRING),
+                                        Node::Bool { .. } => GenericActualTypeName::new(BOOLEAN),
+                                        Node::Int { .. } => GenericActualTypeName::new(INTEGER),
+                                        Node::Real { .. } => GenericActualTypeName::new(FLOAT),
                                         // TODO create system for identifying when a enum is an int
                                         // and when it is a float
-                                        Node::ENum { .. } => GenericType::new(INTEGER),
+                                        Node::ENum { .. } => GenericActualTypeName::new(INTEGER),
                                         // TODO create system for inferring types for constructor
                                         // and function calls
                                         _ =>

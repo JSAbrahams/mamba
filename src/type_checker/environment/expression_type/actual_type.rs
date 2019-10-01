@@ -4,7 +4,9 @@ use std::fmt::{Display, Formatter};
 use crate::common::position::Position;
 use crate::type_checker::context::concrete::field::Field;
 use crate::type_checker::context::concrete::function::Function;
+use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::concrete::Type;
+use crate::type_checker::environment::expression_type::actual_type::TypeVariant::{Fld, Fun, Ty};
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
@@ -12,24 +14,13 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 pub enum ActualType {
     Single { ty: TypeVariant },
     Tuple { types: Vec<ExpressionType> },
-    AnonFun { args: Vec<ExpressionType>, ret_ty: ExpressionType }
+    AnonFun { args: Vec<ExpressionType>, ret_ty: Box<ExpressionType> }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum TypeVariant {
     Ty(Type),
     Fun(Function),
-    F(Field)
-}
-
-impl Display for TypeVariant {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            TypeVariant::Ty(t) => write!(f, "{}", t),
-            TypeVariant::Fun(f) => write!(f, "{}", f),
-            TypeVariant::F(f) => write!(f, "{}", f)
-        }
-    }
+    Fld(Field)
 }
 
 impl Display for ActualType {
@@ -43,7 +34,15 @@ impl Display for ActualType {
 }
 
 impl From<&Type> for ActualType {
-    fn from(ty: &Type) -> Self { ActualType::Single { ty: TypeVariant::Ty(ty.clone()) } }
+    fn from(ty: &Type) -> Self { ActualType::Single { ty: Ty(ty.clone()) } }
+}
+
+impl From<&Function> for ActualType {
+    fn from(fun: &Function) -> Self { ActualType::Single { ty: Fun(fun.clone()) } }
+}
+
+impl From<&Field> for ActualType {
+    fn from(field: &Field) -> Self { ActualType::Single { ty: Fld(field.clone()) } }
 }
 
 impl ActualType {
@@ -55,29 +54,11 @@ impl ActualType {
         }
     }
 
-    pub fn fun(&self, name: &str, args: &[ActualType], pos: &Position) -> TypeResult<Function> {
+    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
-            ActualType::Single { ty } => {
-                let args: Vec<_> = args.iter().map(|a| a.clone().into_type_name()).collect();
-                Ok(ty.function(name, &args).ok_or(vec![TypeErr::new(pos, "Undefined function")])?)
-            }
+            ActualType::Single { ty } =>
+                Ok(ty.function(name, &args).ok_or(vec![TypeErr::new(pos, "Undefined function")])?),
             _ => Err(vec![TypeErr::new(pos, "Undefined function")])
-        }
-    }
-
-    fn into_type_name(self) -> ActualTypeName {
-        match self {
-            ActualType::Single { ty } => ty.name,
-            ActualType::Tuple { types } => ActualTypeName::Tuple {
-                ty_names: types.iter().map(|at| at.clone().into_type_name()).collect()
-            },
-            ActualType::AnonFun { args, ret_ty } => {
-                let ret_ty: ActualTypeName = ret_ty.clone().into_type_name();
-                ActualTypeName::AnonFun {
-                    args:   args.iter().map(|a| a.clone().into_type_name()).collect(),
-                    ret_ty: Box::from(ret_ty)
-                }
-            }
         }
     }
 }

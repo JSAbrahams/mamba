@@ -50,18 +50,15 @@ fn override_op(
     ctx: &Context,
     state: &State
 ) -> InferResult {
-    let (left_infer_ty, left_env) = infer(left, env, ctx, state)?;
-    let left_expr_ty = left_infer_ty.expr_ty(&left.pos)?;
-    let (right_infer_ty, right_env) = infer(right, &left_env, ctx, &state)?;
-    let right_expr_ty = right_infer_ty.expr_ty(&right.pos)?;
-
-    if left_expr_ty == right_expr_ty {
-        let fun = left_expr_ty.fun(overrides, &vec![right_expr_ty.actual_ty], &left.pos)?;
-        if fun.is_some() {
-            Ok((left_infer_ty.union(&right_infer_ty, &left.pos)?, right_env))
-        } else {
-            Err(vec![TypeErr::new(&left.pos, "Operator not defined")])
-        }
+    let (left_ty, left_env) = infer(left, env, ctx, state)?;
+    let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
+    if left_ty.expr_ty(&left.pos) == right_ty.expr_ty(&right.pos) {
+        let fun = left_ty.expr_ty(&left.pos).fun(
+            overrides,
+            &vec![right_ty.expr_ty(&right.pos)],
+            &left.pos
+        )?;
+        Ok((left_ty.union(&right_ty, &left.pos)?, right_env))
     } else {
         Err(vec![TypeErr::new(&left.pos, "Types differ")])
     }

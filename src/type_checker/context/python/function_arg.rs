@@ -1,7 +1,7 @@
 use python_parser::ast::Expression;
 
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic::type_name::GenericType;
+use crate::type_checker::context::generic::type_name::GenericActualTypeName;
 
 impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFunctionArg {
     fn from(
@@ -14,7 +14,7 @@ impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFuncti
             vararg:     false,
             mutable:    false,
             ty:         match ty {
-                Some(ty) => Some(GenericType::from(ty)),
+                Some(ty) => Some(GenericActualTypeName::from(ty)),
                 None => None
             }
         }
