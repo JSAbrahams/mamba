@@ -7,7 +7,6 @@ use crate::type_checker::context::concrete;
 use crate::type_checker::context::concrete::function::INIT;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::parent::GenericParent;
-use crate::type_checker::context::generic::ty::GenericType;
 use crate::type_checker::context::python::field::GenericFields;
 
 pub const INT_PRIMITIVE: &'static str = "int";

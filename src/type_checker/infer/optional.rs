@@ -9,7 +9,7 @@ pub fn infer_optional(ast: &AST, env: &Environment, ctx: &Context, state: &State
     match &ast.node {
         Node::Question { left, right } => {
             let (left_ty, env) = infer(left, env, ctx, state)?;
-            if left_ty.expr_ty(&ast.pos)?.is_nullable {
+            if left_ty.expr_ty(&ast.pos)?.is_nullable() {
                 let (right_ty, env) = infer(right, &env, ctx, state)?;
                 Ok((right_ty.union(&left_ty, &ast.pos)?, env))
             } else {
@@ -17,6 +17,6 @@ pub fn infer_optional(ast: &AST, env: &Environment, ctx: &Context, state: &State
             }
         }
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected optional")])
     }
 }

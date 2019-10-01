@@ -1,6 +1,5 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::Context;
-use crate::type_checker::environment::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;

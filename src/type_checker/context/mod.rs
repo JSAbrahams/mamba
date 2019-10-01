@@ -6,10 +6,9 @@ use crate::type_checker::context::concrete::Type;
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::function::GenericFunction;
 use crate::type_checker::context::generic::generics;
-use crate::type_checker::context::generic::ty::GenericType;
-use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::context::python::python_files;
-use crate::type_checker::environment::actual_type::ActualType;
+use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
 
@@ -45,7 +44,7 @@ impl Context {
     fn lookup_direct(
         &self,
         name: &str,
-        generics: &[GenericTypeName],
+        generics: &[GenericType],
         pos: &Position
     ) -> Result<Type, TypeErr> {
         let generic_type = self
@@ -72,27 +71,22 @@ impl Context {
         }
     }
 
-    pub fn lookup(
-        &self,
-        type_name: &GenericTypeName,
-        pos: &Position
-    ) -> Result<ActualType, TypeErr> {
+    pub fn lookup(&self, type_name: &GenericType, pos: &Position) -> TypeResult<InferType> {
         Ok(match type_name {
-            GenericTypeName::Single { lit, generics } => ActualType::Single {
-                expr_ty: ExpressionType::from(self.lookup_direct(lit, generics, pos)?)
+            GenericType::Single { lit, generics } => ActualType::Single {
+                expr_ty: ExpressionType::from(&self.lookup_direct(lit, generics, pos)?)
             },
-            GenericTypeName::Fun { args, ret_ty } => ActualType::Fun {
+            GenericType::Fun { args, ret_ty } => ActualType::Fun {
                 args:   args.iter().map(|a| self.lookup(a, pos)).collect::<Result<_, _>>()?,
                 ret_ty: Box::from(self.lookup(ret_ty, pos)?)
             },
-            GenericTypeName::Union { ty_names } => ActualType::Union {
-                types: ty_names.iter().map(|t| self.lookup(t, pos)).collect::<Result<_, _>>()?
-            },
-            GenericTypeName::Tuple { ty_names } => ActualType::Tuple {
+            GenericType::Tuple { ty_names } => ActualType::Tuple {
                 types: ty_names.iter().map(|t| self.lookup(t, pos)).collect::<Result<_, _>>()?
             }
         })
     }
+
+    pub fn lookup_fun(&self, name: &str, pos: &Position) {}
 
     /// Loads pre-defined Python primtives into context for easy lookup
     pub fn into_with_primitives(self) -> TypeResult<Self> {

@@ -1,7 +1,7 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::parameter::GenericParameter;
-use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericType;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 
@@ -13,7 +13,7 @@ pub struct GenericParent {
     pub name:       String,
     pub pos:        Position,
     pub generics:   Vec<GenericParameter>,
-    pub args:       Vec<GenericTypeName>
+    pub args:       Vec<GenericType>
 }
 
 impl TryFrom<&AST> for GenericParent {

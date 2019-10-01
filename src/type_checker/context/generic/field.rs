@@ -1,6 +1,6 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericType;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -12,12 +12,12 @@ pub struct GenericField {
     pub pos:        Position,
     pub private:    bool,
     pub mutable:    bool,
-    pub ty:         Option<GenericTypeName>
+    pub ty:         Option<GenericType>
 }
 
 impl GenericField {
     // TODO add type inference for fields
-    pub fn ty(&self) -> Result<GenericTypeName, TypeErr> {
+    pub fn ty(&self) -> Result<GenericType, TypeErr> {
         self.ty.clone().ok_or_else(|| TypeErr::new(&self.pos.clone(), "Cannot infer type of field"))
     }
 }
@@ -33,7 +33,7 @@ impl TryFrom<&AST> for GenericField {
                 let (name, mutable, ty) = match &id_maybe_type.node {
                     Node::IdType { id, mutable, _type } =>
                         (field_name(id.deref())?, *mutable, match _type {
-                            Some(_ty) => Some(GenericTypeName::try_from(_ty.deref())?),
+                            Some(_ty) => Some(GenericType::try_from(_ty.deref())?),
                             None => None
                         }),
                     _ => return Err(TypeErr::new(&id_maybe_type.pos, "Expected identifier"))

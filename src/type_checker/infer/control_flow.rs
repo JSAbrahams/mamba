@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericType;
 use crate::type_checker::context::{concrete, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -19,7 +19,7 @@ pub fn infer_control_flow(
             let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
             let cond_expr_ty = cond_type.expr_ty(&ast.pos)?;
             if cond_expr_ty.actual_ty
-                != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+                != ctx.lookup(&GenericType::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }
@@ -37,7 +37,7 @@ pub fn infer_control_flow(
             let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
             let cond_expr_ty = cond_type.expr_ty(&ast.pos)?;
             if cond_expr_ty.actual_ty
-                != ctx.lookup(&GenericTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+                != ctx.lookup(&GenericType::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }

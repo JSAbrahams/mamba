@@ -1,0 +1,2 @@
+class MyClass(arg1: SomeType)
+    def init(self) => pass

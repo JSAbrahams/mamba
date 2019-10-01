@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::type_name::TypeName;
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericType;
 use crate::type_checker::type_result::TypeErr;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -12,13 +11,13 @@ pub struct FunctionArg {
     pub name:       String,
     pub vararg:     bool,
     pub mutable:    bool,
-    pub ty:         Option<TypeName>
+    pub ty:         Vec<ActualTypeName>
 }
 
 impl FunctionArg {
     pub fn try_from(
         generic_fun_arg: &GenericFunctionArg,
-        generics: &HashMap<String, GenericTypeName>,
+        generics: &HashMap<String, GenericType>,
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(FunctionArg {
@@ -27,7 +26,7 @@ impl FunctionArg {
             vararg:     generic_fun_arg.vararg,
             mutable:    generic_fun_arg.mutable,
             ty:         match &generic_fun_arg.ty()? {
-                Some(ty) => Some(TypeName::try_from(ty, generics, pos)?),
+                Some(ty) => Some(ActualTypeName::try_from(ty, generics, pos)?),
                 None => None
             }
         })

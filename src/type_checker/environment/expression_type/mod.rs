@@ -1,28 +1,46 @@
 use std::collections::HashSet;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::iter::FromIterator;
 
 use crate::common::position::Position;
+use crate::type_checker::context::concrete::field::Field;
+use crate::type_checker::context::concrete::function::Function;
+use crate::type_checker::context::concrete::Type;
 use crate::type_checker::environment::expression_type::mutable_type::MutableType;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 mod actual_type;
 mod mutable_type;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ExpressionType {
-    Single { expr_ty: MutableType },
+    Single { mut_ty: MutableType },
     Union { union: HashSet<MutableType> }
+}
+
+impl Display for ExpressionType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            ExpressionType::Single { mut_ty } => write!(f, "{}", mut_ty),
+            ExpressionType::Union { union } => write!(f, "{{{:#?}}}", union)
+        }
+    }
+}
+
+impl From<&Type> for ExpressionType {
+    fn from(ty: &Type) -> Self { ExpressionType::Single { mut_ty: MutableType::from(ty) } }
 }
 
 impl ExpressionType {
     pub fn union(self, other: &ExpressionType) -> ExpressionType {
         match (self, other) {
-            (ExpressionType::Single { expr_ty }, ExpressionType::Single { expr_ty: other }) =>
-                ExpressionType::Union { union: HashSet::from_iter(vec![expr_ty, other].iter()) },
-            (ExpressionType::Single { expr_ty }, ExpressionType::Union { union })
-            | (ExpressionType::Union { union }, ExpressionType::Single { expr_ty }) => {
+            (ExpressionType::Single { mut_ty }, ExpressionType::Single { mut_ty: other }) =>
+                ExpressionType::Union { union: HashSet::from_iter(vec![mut_ty, other].iter()) },
+            (ExpressionType::Single { mut_ty }, ExpressionType::Union { union })
+            | (ExpressionType::Union { union }, ExpressionType::Single { mut_ty }) => {
                 let mut union = union.clone();
-                union.insert(expr_ty);
+                union.insert(mut_ty);
                 ExpressionType::Union { union }
             }
             (ExpressionType::Union { union }, ExpressionType::Union { union: other }) => {
@@ -33,16 +51,45 @@ impl ExpressionType {
         }
     }
 
-    pub fn field(&self, name: &str, field: &str, pos: &Position) -> Result<Option<Field>, TypeErr> {
-        unimplemented!()
+    pub fn is_mutable(&self) -> bool {
+        match self {
+            ExpressionType::Single { mut_ty } => mut_ty.is_mutable,
+            ExpressionType::Union { union } =>
+                !union.is_empty() && union.iter().all(|mut_ty| mut_ty.is_mutable),
+        }
     }
 
-    pub fn fun(
-        &self,
-        name: &str,
-        args: &[ExpressionType],
-        pos: &Position
-    ) -> Result<Option<Function>, TypeErr> {
-        unimplemented!()
+    pub fn is_nullable(&self) -> bool {
+        match self {
+            ExpressionType::Single { mut_ty } => mut_ty.is_mutable,
+            ExpressionType::Union { union } =>
+                !union.is_empty() && union.iter().all(|mut_ty| mut_ty.is_nullable),
+        }
+    }
+
+    pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
+        match &self {
+            ExpressionType::Single { mut_ty } => mut_ty.field(field, pos),
+            ExpressionType::Union { union } => {
+                let union = union.iter().map(|e_ty| e_ty.field(field, pos)).collect()?;
+                let first = union.get(0);
+                if union.iter.all(|e_ty| e_ty == first) {
+                    Ok(first.ok_or(vec![TypeErr::new(pos, "Unknown field")])?)
+                } else {
+                    Err(vec![TypeErr::new(pos, "Unknown field")])
+                }
+            }
+        }
+    }
+
+    pub fn fun(&self, name: &str, args: &[ExpressionType], pos: &Position) -> TypeResult<Function> {
+        unimplemented!();
+
+        let first = union.get(0);
+        if union.iter.all(|e_ty| e_ty == first) {
+            Ok(first.ok_or(vec![TypeErr::new(pos, "Unknown function")])?)
+        } else {
+            Err(vec![TypeErr::new(pos, "Unknown function")])
+        }
     }
 }

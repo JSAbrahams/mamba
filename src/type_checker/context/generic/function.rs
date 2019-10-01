@@ -5,7 +5,7 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
 use crate::type_checker::context::generic::parameter::GenericParameter;
-use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericType;
 use crate::type_checker::context::python as py;
 use crate::type_checker::type_result::TypeErr;
 
@@ -21,8 +21,8 @@ pub struct GenericFunction {
     pub pos:        Position,
     pub generics:   Vec<GenericParameter>,
     pub arguments:  Vec<GenericFunctionArg>,
-    pub raises:     Vec<GenericTypeName>,
-    pub ret_ty:     Option<GenericTypeName>
+    pub raises:     Vec<GenericType>,
+    pub ret_ty:     Option<GenericType>
 }
 
 impl GenericFunction {
@@ -40,7 +40,7 @@ impl GenericFunction {
         }
     }
 
-    pub fn in_class(self, class: Option<GenericTypeName>) -> Result<Self, TypeErr> {
+    pub fn in_class(self, class: Option<GenericType>) -> Result<Self, TypeErr> {
         Ok(GenericFunction {
             is_py_type: self.is_py_type,
             name:       self.name,
@@ -59,7 +59,7 @@ impl GenericFunction {
     }
 
     // TODO derive return type during type inference stage
-    pub fn ty(&self) -> Result<Option<GenericTypeName>, TypeErr> {
+    pub fn ty(&self) -> Result<Option<GenericType>, TypeErr> {
         if self.is_py_type {
             Ok(self.ret_ty.clone())
         } else {
@@ -97,12 +97,12 @@ impl TryFrom<&AST> for GenericFunction {
                         .map(GenericFunctionArg::try_from)
                         .collect::<Result<_, _>>()?,
                     ret_ty:     match ret_ty {
-                        Some(ty) => Some(GenericTypeName::try_from(ty.as_ref())?),
+                        Some(ty) => Some(GenericType::try_from(ty.as_ref())?),
                         None => None
                     },
                     raises:     raises
                         .iter()
-                        .map(GenericTypeName::try_from)
+                        .map(GenericType::try_from)
                         .collect::<Result<_, _>>()?
                 }),
             _ => Err(TypeErr::new(&node_pos.pos, "Expected function definition"))

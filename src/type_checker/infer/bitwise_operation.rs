@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericTypeName;
+use crate::type_checker::context::generic::type_name::GenericType;
 use crate::type_checker::context::{concrete, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -20,11 +20,9 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             right_ty.expr_ty(&ast.pos)?;
 
             Ok((
-                InferType::from(
-                    &ctx.lookup(&GenericTypeName::new(concrete::INT_PRIMITIVE), &ast.pos)?
-                )
-                .raises(left_ty.raises)
-                .raises(right_ty.raises),
+                InferType::from(&ctx.lookup(&GenericType::new(concrete::INT_PRIMITIVE), &ast.pos)?)
+                    .raises(left_ty.raises)
+                    .raises(right_ty.raises),
                 env.clone()
             ))
         }
@@ -33,10 +31,8 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             infer_ty.expr_ty(&ast.pos)?;
 
             Ok((
-                InferType::from(
-                    &ctx.lookup(&GenericTypeName::new(concrete::INT_PRIMITIVE), &ast.pos)?
-                )
-                .raises(infer_ty.raises),
+                InferType::from(&ctx.lookup(&GenericType::new(concrete::INT_PRIMITIVE), &ast.pos)?)
+                    .raises(infer_ty.raises),
                 env.clone()
             ))
         }

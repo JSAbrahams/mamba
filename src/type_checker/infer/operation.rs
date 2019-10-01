@@ -55,9 +55,8 @@ fn override_op(
     let (right_infer_ty, right_env) = infer(right, &left_env, ctx, &state)?;
     let right_expr_ty = right_infer_ty.expr_ty(&right.pos)?;
 
-    if left_expr_ty.actual_ty == right_expr_ty.actual_ty {
-        let fun =
-            left_expr_ty.actual_ty.fun(overrides, &vec![right_expr_ty.actual_ty], &left.pos)?;
+    if left_expr_ty == right_expr_ty {
+        let fun = left_expr_ty.fun(overrides, &vec![right_expr_ty.actual_ty], &left.pos)?;
         if fun.is_some() {
             Ok((left_infer_ty.union(&right_infer_ty, &left.pos)?, right_env))
         } else {

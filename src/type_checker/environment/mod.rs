@@ -1,7 +1,7 @@
 use crate::common::position::Position;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub mod expression_type;
 pub mod infer_type;

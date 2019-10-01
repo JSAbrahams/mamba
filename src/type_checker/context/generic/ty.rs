@@ -1,16 +1,13 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::concrete::function::INIT;
 use crate::type_checker::context::generic::field::GenericField;
 use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::function_arg::{GenericFunctionArg,
-                                                          GenericFunctionArgFieldPair};
+use crate::type_checker::context::generic::function_arg::{ClassArgument, GenericFunctionArg};
 use crate::type_checker::context::generic::parameter::GenericParameter;
 use crate::type_checker::context::generic::parent::GenericParent;
-use crate::type_checker::context::generic::type_name::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
-
-// TODO add check that there are no duplicate function names within type
 
 #[derive(Debug, Clone)]
 pub struct GenericType {
@@ -58,12 +55,12 @@ impl TryFrom<&AST> for GenericType {
                 let mut class_fields = vec![];
                 let mut arg_errs = vec![];
 
-                args.iter().for_each(|arg| match GenericFunctionArgFieldPair::try_from(arg) {
+                args.iter().for_each(|arg| match ClassArgument::try_from(arg) {
                     Err(err) => arg_errs.push(err),
-                    Ok(GenericFunctionArgFieldPair { field: None, fun_arg }) => {
+                    Ok(ClassArgument { field: None, fun_arg }) => {
                         class_args.push(fun_arg);
                     }
-                    Ok(GenericFunctionArgFieldPair { field: Some(field), fun_arg }) => {
+                    Ok(ClassArgument { field: Some(field), fun_arg }) => {
                         class_args.push(fun_arg);
                         class_fields.push(field);
                     }
@@ -74,6 +71,19 @@ impl TryFrom<&AST> for GenericType {
 
                 let (mut body_fields, functions) =
                     get_fields_and_functions(&name, &generics, statements)?;
+                for function in functions {
+                    if function.name == INIT {
+                        if class_args.is_empty() {
+                            class_args.append(&mut function.arguments.clone())
+                        } else {
+                            return Err(vec![TypeErr::new(
+                                &class.pos,
+                                "Cannot have constructor and class arguments"
+                            )]);
+                        }
+                    }
+                }
+
                 class_fields.append(&mut body_fields);
 
                 let (parents, parent_errs): (Vec<_>, Vec<_>) =
@@ -157,14 +167,11 @@ fn get_fields_and_functions(
     statements.iter().for_each(|statement| match &statement.node {
         Node::FunDef { .. } => {
             let function = GenericFunction::try_from(statement).and_then(|f| {
-                f.in_class(Some(GenericTypeName::Single {
+                f.in_class(Some(GenericType::Single {
                     lit:      String::from(name),
                     generics: generics
                         .iter()
-                        .map(|g| GenericTypeName::Single {
-                            lit:      g.name.clone(),
-                            generics: vec![]
-                        })
+                        .map(|g| GenericType::Single { lit: g.name.clone(), generics: vec![] })
                         .collect()
                 }))
             });
@@ -178,6 +185,8 @@ fn get_fields_and_functions(
 
     let (fields, field_errs): (Vec<_>, Vec<_>) = field_res.into_iter().partition(Result::is_ok);
     let (functions, function_errs): (Vec<_>, Vec<_>) = fun_res.into_iter().partition(Result::is_ok);
+
+    // TODO check that there are no duplicate fields or functions
 
     if !field_errs.is_empty() || !function_errs.is_empty() || !errs.is_empty() {
         errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
