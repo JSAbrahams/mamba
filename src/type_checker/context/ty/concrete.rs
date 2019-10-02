@@ -53,12 +53,12 @@ impl TryFrom<(&GenericType, &HashMap<String, GenericTypeName>, &Position)> for T
             fields:     generic
                 .fields
                 .iter()
-                .map(|f| Field::try_from(f, generics, pos))
+                .map(|f| Field::try_from((f, generics, pos)))
                 .collect::<Result<_, _>>()?,
             functions:  generic
                 .functions
                 .iter()
-                .map(|f| Function::try_from(f, generics, pos))
+                .map(|f| Function::try_from((f, generics, pos)))
                 .collect::<Result<_, _>>()?
         })
     }
@@ -70,12 +70,12 @@ impl Type {
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
-    pub fn function(&self, fun_name: &str, args: &[TypeName]) -> Option<Function> {
+    pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> Option<Function> {
         // TODO accept if arguments passed is union that is subset of argument union
         self.functions
             .iter()
             .find(|function| {
-                function.name.as_str() == fun_name
+                function.name.name(pos) == fun_name
                     && function
                         .arguments
                         .iter()

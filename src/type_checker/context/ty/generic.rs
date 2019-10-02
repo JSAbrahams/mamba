@@ -7,7 +7,6 @@ use crate::type_checker::context::function_arg::generic::{ClassArgument, Generic
 use crate::type_checker::context::parameter::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
 
@@ -28,7 +27,7 @@ impl GenericType {
     pub fn all_pure(self, pure: bool) -> Result<Self, TypeErr> {
         Ok(GenericType {
             functions: self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
-            ..*self
+            ..self
         })
     }
 }
@@ -157,7 +156,7 @@ fn get_name_and_generics(
 }
 
 fn get_fields_and_functions(
-    class: &GenericTypeName,
+    class: &GenericActualTypeName,
     generics: &[GenericParameter],
     statements: &[AST]
 ) -> Result<(Vec<GenericField>, Vec<GenericFunction>), Vec<TypeErr>> {

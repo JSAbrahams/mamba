@@ -4,7 +4,7 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
-use crate::type_checker::type_result::TypeResult;
+use crate::type_checker::type_result::TypeErr;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -38,27 +38,27 @@ impl Function {
     pub fn ty(&self) -> Option<TypeName> { self.ret_ty.clone() }
 }
 
-impl Function {
-    pub fn try_from(
-        generic_fun: &GenericFunction,
-        generics: &HashMap<String, GenericTypeName>,
-        pos: &Position
-    ) -> TypeResult<Function> {
+impl TryFrom<(&GenericFunction, &HashMap<String, GenericTypeName>, &Position)> for Function {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(
+        (fun, generics, pos): (&GenericFunction, &HashMap<String, GenericTypeName>, &Position)
+    ) -> Result<Self, Self::Error> {
         Ok(Function {
-            is_py_type: generic_fun.is_py_type,
-            name:       ActualTypeName::try_from((&generic_fun.name, generics, pos))?,
-            pure:       generic_fun.pure,
-            arguments:  generic_fun
+            is_py_type: fun.is_py_type,
+            name:       ActualTypeName::try_from((&fun.name, generics, pos))?,
+            pure:       fun.pure,
+            arguments:  fun
                 .arguments
                 .iter()
-                .map(|arg| FunctionArg::try_from(arg, generics, pos))
+                .map(|arg| FunctionArg::try_from((arg, generics, pos)))
                 .collect::<Result<_, _>>()?,
-            raises:     generic_fun
+            raises:     fun
                 .raises
                 .iter()
                 .map(|raise| TypeName::try_from((raise, generics, pos)))
                 .collect::<Result<_, _>>()?,
-            ret_ty:     match &generic_fun.ret_ty {
+            ret_ty:     match &fun.ret_ty {
                 Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
                 None => None
             }

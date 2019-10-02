@@ -26,11 +26,11 @@ pub fn generics(
                 Node::FunDef { .. } => fun_res.push(
                     GenericFunction::try_from(stmt)
                         .and_then(|f| f.in_class(None))
-                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)))
+                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)).collect())
                 ),
                 Node::VariableDef { .. } => field_res.push(
                     GenericField::try_from(stmt)
-                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)))
+                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)).collect())
                 ),
                 _ => {}
             }),
@@ -47,8 +47,8 @@ pub fn generics(
     if !type_errs.is_empty() || !fun_errs.is_empty() || !field_errs.is_empty() {
         let mut errs = vec![];
         errs.append(&mut type_errs.into_iter().map(Result::unwrap_err).flatten().collect());
-        errs.append(&mut fun_errs.into_iter().map(Result::unwrap_err).collect());
-        errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
+        errs.append(&mut fun_errs.into_iter().map(Result::unwrap_err).flatten().collect());
+        errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).flatten().collect());
         Err(errs)
     } else {
         let types: Vec<_> = types.into_iter().map(Result::unwrap).collect();

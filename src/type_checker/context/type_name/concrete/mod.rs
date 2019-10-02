@@ -63,7 +63,7 @@ impl TryFrom<(&GenericTypeName, &HashMap<String, GenericTypeName>, &Position)> f
             GenericTypeName::Single { ty } =>
                 Ok(TypeName::Single { ty: ActualTypeName::try_from((ty, generics, pos))? }),
             GenericTypeName::Union { union } => {
-                let (union, errs) = union
+                let (union, errs): (Vec<_>, Vec<_>) = union
                     .iter()
                     .map(|ty| ActualTypeName::try_from((ty, generics, pos)))
                     .partition(Result::is_ok);
@@ -99,5 +99,6 @@ impl TypeName {
 
     pub fn name(&self, pos: &Position) -> TypeResult<String> { self.single(pos)?.name(pos) }
 
-    pub fn is_cover(&self, other: &TypeName) -> bool {}
+    /// True iff union is (not necessarily strict) superset of other union
+    pub fn is_cover(&self, other: &TypeName) -> bool { unimplemented!() }
 }

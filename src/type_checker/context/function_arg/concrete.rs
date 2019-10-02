@@ -31,18 +31,22 @@ impl FunctionArg {
     }
 }
 
-impl FunctionArg {
-    pub fn try_from(
-        generic_fun_arg: &GenericFunctionArg,
-        generics: &HashMap<String, GenericTypeName>,
-        pos: &Position
-    ) -> Result<Self, TypeErr> {
+impl TryFrom<(&GenericFunctionArg, &HashMap<String, GenericTypeName>, &Position)> for FunctionArg {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(
+        (fun_arg, generics, pos): (
+            &GenericFunctionArg,
+            &HashMap<String, GenericTypeName>,
+            &Position
+        )
+    ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
-            is_py_type: generic_fun_arg.is_py_type,
-            name:       generic_fun_arg.name.clone(),
-            vararg:     generic_fun_arg.vararg,
-            mutable:    generic_fun_arg.mutable,
-            ty:         match &generic_fun_arg.ty {
+            is_py_type: fun_arg.is_py_type,
+            name:       fun_arg.name.clone(),
+            vararg:     fun_arg.vararg,
+            mutable:    fun_arg.mutable,
+            ty:         match &fun_arg.ty {
                 Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
                 None => None
             }

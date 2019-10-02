@@ -75,8 +75,8 @@ impl TryFrom<&AST> for GenericFunction {
     }
 }
 
-fn function_name(ast: &AST) -> TypeResult<GenericTypeName> {
-    Ok(GenericTypeName::from(
+fn function_name(ast: &AST) -> TypeResult<GenericActualTypeName> {
+    Ok(GenericActualTypeName::new(
         match &ast.node {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),

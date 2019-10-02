@@ -60,8 +60,8 @@ impl Context {
         let generic_type: GenericType = self
             .types
             .iter()
-            .find_map(|ty| Some(ty.name.single(pos)?.name(pos)? == name))?
-            .ok_or(vec![TypeErr::new(pos, "Unknown type")])
+            .find_map(|ty| if ty.name.name(pos)? == name { Some(ty) } else { None })
+            .ok_or(vec![TypeErr::new(pos, "Unknown type")])?
             .clone();
         if generic_type.generics.len() == generics.len() {
             let generics = generic_type

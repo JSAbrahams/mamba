@@ -48,7 +48,7 @@ impl ActualType {
     ) -> TypeResult<Function> {
         match &self {
             ActualType::Single { ty } =>
-                Ok(ty.function(name, &args).ok_or(vec![TypeErr::new(pos, "Undefined function")])?),
+                Ok(ty.fun(name, &args, pos).ok_or(vec![TypeErr::new(pos, "Undefined function")])?),
             _ => Err(vec![TypeErr::new(pos, "Undefined function")])
         }
     }

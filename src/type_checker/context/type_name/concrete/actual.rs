@@ -29,7 +29,7 @@ impl Display for ActualTypeName {
 impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Position)>
     for ActualTypeName
 {
-    type Error = TypeErr;
+    type Error = Vec<TypeErr>;
 
     fn try_from(
         (gen_type_name, generics, pos): (
@@ -38,7 +38,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Positi
             &Position
         )
     ) -> Result<Self, Self::Error> {
-        let typename_from = |g| ActualTypeName::try_from(g, generics, pos);
+        let typename_from = |g| ActualTypeName::try_from((g, generics, pos));
         match gen_type_name {
             GenericActualTypeName::Single { lit, generics: this_gens } =>
                 if let Some(subst) = generics.get(lit) {
@@ -51,7 +51,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Positi
                 },
             GenericActualTypeName::Fun { args, ret_ty } => Ok(ActualTypeName::AnonFun {
                 args:   args.iter().map(typename_from).collect::<Result<_, _>>()?,
-                ret_ty: Box::from(ActualTypeName::try_from(ret_ty, generics, pos)?)
+                ret_ty: Box::from(ActualTypeName::try_from((ret_ty, generics, pos))?)
             }),
             GenericActualTypeName::Tuple { ty_names } => Ok(ActualTypeName::Tuple {
                 ty_names: ty_names.iter().map(typename_from).collect::<Result<_, _>>()?

@@ -56,7 +56,7 @@ impl TryFrom<&AST> for GenericTypeName {
                 types.iter().map(GenericTypeName::try_from).partition(Result::is_ok);
             if errs.is_empty() {
                 Ok(GenericTypeName::Union {
-                    union: types.into_iter().map(Result::unwrap).flatten().collect()
+                    union: types.into_iter().map(Result::unwrap).collect()
                 })
             } else {
                 Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())

@@ -2,6 +2,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
+use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use python_parser::ast::{Funcdef, Name};
 
@@ -25,7 +26,7 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       GenericTypeName::from(convert_name(&func_def.name).as_str()),
+            name:       GenericActualTypeName::new(convert_name(&func_def.name).as_str()),
             pure:       false,
             private:    false,
             pos:        Position::default(),
