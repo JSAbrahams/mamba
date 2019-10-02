@@ -78,8 +78,10 @@ impl ExpressionType {
         match &self {
             ExpressionType::Single { mut_ty } => mut_ty.field(field, pos),
             ExpressionType::Union { union } => {
-                let union: Vec<Field> =
-                    union.iter().map(|e_ty| e_ty.field(field, pos)).collect()?;
+                let union: Vec<Field> = union
+                    .iter()
+                    .map(|e_ty| e_ty.field(field, pos))
+                    .collect::<Result<_, Vec<TypeErr>>>()?;
                 let first = union.get(0);
 
                 if union.iter().all(|e_ty| Some(e_ty) == first) {
@@ -101,8 +103,10 @@ impl ExpressionType {
         match &self {
             ExpressionType::Single { mut_ty } => mut_ty.fun(name, args, safe, pos),
             ExpressionType::Union { union } => {
-                let union: Vec<Function> =
-                    union.iter().map(|e_ty| e_ty.fun(name, args, safe, pos)).collect()?;
+                let union: Vec<Function> = union
+                    .iter()
+                    .map(|e_ty| e_ty.fun(name, args, safe, pos))
+                    .collect::<Result<_, Vec<TypeErr>>>()?;
                 let first = union.get(0);
 
                 if union.iter().all(|e_ty| Some(e_ty) == first) {

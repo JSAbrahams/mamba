@@ -9,9 +9,9 @@ use std::convert::TryFrom;
 pub fn generics(
     files: &[CheckInput]
 ) -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<GenericFunction>)> {
-    let mut results = vec![];
-    let mut fun_res = vec![];
-    let mut field_res = vec![];
+    let mut results: Vec<Result<GenericType, Vec<TypeErr>>> = vec![];
+    let mut fun_res: Vec<Result<GenericFunction, Vec<TypeErr>>> = vec![];
+    let mut field_res: Vec<Result<GenericField, Vec<TypeErr>>> = vec![];
 
     files.iter().for_each(|(file, source, path)| match &file.node {
         Node::File { pure, modules, .. } => modules.iter().for_each(|module| match &module.node {
@@ -24,14 +24,14 @@ pub fn generics(
             ),
             Node::Script { statements } => statements.iter().for_each(|stmt| match &stmt.node {
                 Node::FunDef { .. } => fun_res.push(
-                    GenericFunction::try_from(stmt)
-                        .and_then(|f| f.in_class(None))
-                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)).collect())
+                    GenericFunction::try_from(stmt).and_then(|f| f.in_class(None)).map_err(|e| {
+                        e.into_iter().map(|e| e.into_with_source(source, path)).collect()
+                    })
                 ),
-                Node::VariableDef { .. } => field_res.push(
-                    GenericField::try_from(stmt)
-                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)).collect())
-                ),
+                Node::VariableDef { .. } =>
+                    field_res.push(GenericField::try_from(stmt).map_err(|e| {
+                        e.into_iter().map(|e| e.into_with_source(source, path)).collect()
+                    })),
                 _ => {}
             }),
             // TODO process imports

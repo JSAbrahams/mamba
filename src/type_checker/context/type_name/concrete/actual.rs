@@ -5,7 +5,6 @@ use std::fmt::Display;
 
 use crate::common::position::Position;
 use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::ops::Deref;
@@ -43,7 +42,7 @@ impl From<&ActualType> for ActualTypeName {
     }
 }
 
-impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Position)>
+impl TryFrom<(&GenericActualTypeName, &HashMap<String, ActualTypeName>, &Position)>
     for ActualTypeName
 {
     type Error = Vec<TypeErr>;
@@ -51,7 +50,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Positi
     fn try_from(
         (gen_type_name, generics, pos): (
             &GenericActualTypeName,
-            &HashMap<String, GenericTypeName>,
+            &HashMap<String, ActualTypeName>,
             &Position
         )
     ) -> Result<Self, Self::Error> {
@@ -59,7 +58,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Positi
         match gen_type_name {
             GenericActualTypeName::Single { lit, generics: this_gens } =>
                 if let Some(subst) = generics.get(lit) {
-                    substitute(gen_type_name, &subst.single(pos)?, generics, pos)
+                    substitute(gen_type_name, subst, generics, pos)
                 } else {
                     Ok(ActualTypeName::Single {
                         lit:      lit.clone(),
@@ -92,30 +91,23 @@ impl ActualTypeName {
 
 fn substitute(
     this: &GenericActualTypeName,
-    substitute: &GenericActualTypeName,
-    generics: &HashMap<String, GenericTypeName>,
+    substitute: &ActualTypeName,
+    generics: &HashMap<String, ActualTypeName>,
     pos: &Position
 ) -> TypeResult<ActualTypeName> {
-    let typename_from = |g| ActualTypeName::try_from((g, generics, pos));
+    // TODO create substitution rules for function and tuples
     match (this, substitute) {
         (
             GenericActualTypeName::Single { generics: this_generics, .. },
-            GenericActualTypeName::Single { lit: that_lit, generics: that_generics }
+            ActualTypeName::Single { lit: that_lit, generics: that_generics }
         ) => Ok(ActualTypeName::Single {
             lit:      that_lit.clone(),
-            generics: if this_generics.is_empty() && that_generics.is_empty() {
-                vec![]
-            } else if this_generics.is_empty() {
-                that_generics.iter().map(typename_from).collect::<Result<_, _>>()?
-            } else if that_generics.is_empty() {
-                this_generics.iter().map(typename_from).collect::<Result<_, _>>()?
+            generics: if this_generics.len() == that_generics.len() {
+                that_generics.clone()
             } else {
                 return Err(vec![TypeErr::new(pos, "Unable to insert generic")]);
             }
         }),
-        (GenericActualTypeName::Single { generics: this_generics, .. }, substitute)
-            if this_generics.is_empty() =>
-            ActualTypeName::try_from((substitute, generics, pos)),
         _ => Err(vec![TypeErr::new(pos, "Unable to insert generic")])
     }
 }

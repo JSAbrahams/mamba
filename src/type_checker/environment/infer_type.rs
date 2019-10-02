@@ -36,19 +36,19 @@ impl InferType {
         self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))
     }
 
-    pub fn add_raise_from_type(self, raised: InferType, pos: &Position) -> TypeResult<InferType> {
-        let expr_ty = raised.expr_ty(pos)?;
+    pub fn add_raise_from_type(self, raised: &InferType, pos: &Position) -> TypeResult<InferType> {
+        let expr_ty = raised.expr_ty(pos)?.clone();
         let raises = match expr_ty {
             ExpressionType::Single { mut_ty } =>
                 HashSet::from_iter(vec![ActualTypeName::from(&mut_ty.actual_ty)].into_iter()),
             ExpressionType::Union { union } =>
                 union.iter().map(|mut_ty| ActualTypeName::from(&mut_ty.actual_ty)).collect(),
         };
-        Ok(self.add_raises(raises))
+        Ok(self.add_raises(&raises))
     }
 
-    pub fn add_raises(self, raises: HashSet<ActualTypeName>) -> InferType {
-        let raises = self.raises.union(&raises).cloned().collect();
+    pub fn add_raises(self, raises: &HashSet<ActualTypeName>) -> InferType {
+        let raises = self.raises.union(raises).cloned().collect();
         InferType { raises, expr_type: self.expr_type }
     }
 

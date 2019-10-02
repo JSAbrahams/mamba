@@ -1,7 +1,7 @@
 use crate::common::position::Position;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
+use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -31,13 +31,13 @@ impl FunctionArg {
     }
 }
 
-impl TryFrom<(&GenericFunctionArg, &HashMap<String, GenericTypeName>, &Position)> for FunctionArg {
+impl TryFrom<(&GenericFunctionArg, &HashMap<String, ActualTypeName>, &Position)> for FunctionArg {
     type Error = Vec<TypeErr>;
 
     fn try_from(
         (fun_arg, generics, pos): (
             &GenericFunctionArg,
-            &HashMap<String, GenericTypeName>,
+            &HashMap<String, ActualTypeName>,
             &Position
         )
     ) -> Result<Self, Self::Error> {

@@ -34,11 +34,8 @@ mod optional;
 pub type Inferred<T> = (T, Environment);
 pub type InferResult<T = InferType> = std::result::Result<Inferred<T>, Vec<TypeErr>>;
 
-pub fn infer_all(
-    inputs: &[CheckInput],
-    env: &Environment,
-    ctx: &Context
-) -> Result<(), Vec<TypeErr>> {
+pub fn infer_all(inputs: &[CheckInput], ctx: &Context) -> Result<(), Vec<TypeErr>> {
+    let env = Environment::new();
     let (_, errs): (Vec<_>, Vec<_>) = inputs
         .iter()
         .map(|(ast, source, path)| {

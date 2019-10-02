@@ -21,8 +21,8 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             right_ty.expr_ty(&right.pos)?;
             Ok((
                 ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
-                    .add_raises(left_ty.raises)
-                    .add_raises(right_ty.raises),
+                    .add_raises(&left_ty.raises)
+                    .add_raises(&right_ty.raises),
                 env
             ))
         }
@@ -42,8 +42,8 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
 
             Ok((
                 ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
-                    .add_raises(left_ty.raises)
-                    .add_raises(right_ty.raises),
+                    .add_raises(&left_ty.raises)
+                    .add_raises(&right_ty.raises),
                 env
             ))
         }

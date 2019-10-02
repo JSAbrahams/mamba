@@ -47,13 +47,13 @@ impl TryFrom<(&GenericTypeName, &Position)> for TypeName {
     }
 }
 
-impl TryFrom<(&GenericTypeName, &HashMap<String, GenericTypeName>, &Position)> for TypeName {
+impl TryFrom<(&GenericTypeName, &HashMap<String, ActualTypeName>, &Position)> for TypeName {
     type Error = Vec<TypeErr>;
 
     fn try_from(
         (gen_type_name, generics, pos): (
             &GenericTypeName,
-            &HashMap<String, GenericTypeName>,
+            &HashMap<String, ActualTypeName>,
             &Position
         )
     ) -> TypeResult<Self> {
@@ -96,5 +96,5 @@ impl TypeName {
     pub fn name(&self, pos: &Position) -> TypeResult<String> { self.single(pos)?.name(pos) }
 
     /// True iff union is (not necessarily strict) superset of other union
-    pub fn is_cover(&self, other: &TypeName) -> bool { unimplemented!() }
+    pub fn is_cover(&self, _: &TypeName) -> bool { unimplemented!() }
 }

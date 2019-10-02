@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
@@ -10,9 +11,7 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
-use crate::type_checker::type_result::TypeErr;
-use std::hash::{Hash, Hasher};
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub const INT_PRIMITIVE: &'static str = "Int";
 pub const FLOAT_PRIMITIVE: &'static str = "Float";
@@ -40,11 +39,11 @@ impl Display for Type {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericType, &HashMap<String, GenericTypeName>, &Position)> for Type {
+impl TryFrom<(&GenericType, &HashMap<String, ActualTypeName>, &Position)> for Type {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericType, &HashMap<String, GenericTypeName>, &Position)
+        (generic, generics, pos): (&GenericType, &HashMap<String, ActualTypeName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Type {
             is_py_type: generic.is_py_type,
@@ -75,19 +74,26 @@ impl Type {
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
-    pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> Option<Function> {
+    pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         // TODO accept if arguments passed is union that is subset of argument union
         self.functions
             .iter()
-            .find(|function| {
-                function.name.name(pos)?.as_str() == fun_name
-                    && function
-                        .arguments
-                        .iter()
-                        .map(|arg| arg.ty.clone())
-                        .zip(args)
-                        .all(|(left, right)| left == Some(right.clone()))
+            .find_map(|function| match function.name.name(pos) {
+                Err(err) => Some(Err(err)),
+                Ok(name) =>
+                    if name.as_str() == fun_name
+                        && function
+                            .arguments
+                            .iter()
+                            .map(|arg| arg.ty.clone())
+                            .zip(args)
+                            .all(|(left, right)| left == Some(right.clone()))
+                    {
+                        Some(Ok(function.clone()))
+                    } else {
+                        None
+                    },
             })
-            .cloned()
+            .ok_or_else(|| vec![TypeErr::new(pos, "Unknown function")])?
     }
 }

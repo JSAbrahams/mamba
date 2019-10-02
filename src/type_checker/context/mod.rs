@@ -60,14 +60,22 @@ impl Context {
         let generic_type: GenericType = self
             .types
             .iter()
-            .find_map(|ty| if ty.name.name(pos)? == name { Some(ty) } else { None })
-            .ok_or(vec![TypeErr::new(pos, "Unknown type")])?
-            .clone();
+            .find_map(|ty| match ty.name.name(pos) {
+                Ok(ty_name) =>
+                    if ty_name == name {
+                        Some(Ok(ty.clone()))
+                    } else {
+                        None
+                    },
+                Err(err) => Some(Err(err))
+            })
+            .ok_or_else(|| vec![TypeErr::new(pos, "Unknown type")])??;
         if generic_type.generics.len() == generics.len() {
             let generics = generic_type
+                .clone()
                 .generics
                 .into_iter()
-                .zip(generics)
+                .zip(generics.clone())
                 .map(|(parameter, type_name)| (parameter.name, type_name))
                 .collect();
             let ty = Type::try_from((&generic_type, &generics, pos))?;
@@ -84,12 +92,16 @@ impl Context {
         let expr_type = match type_name {
             TypeName::Single { ty } =>
                 ExpressionType::Single { mut_ty: self.lookup_actual(ty, pos)? },
-            TypeName::Union { union } => ExpressionType::Union {
-                union: union.iter().map(|a_t| self.lookup_actual(a_t, pos)).collect()?
+            TypeName::Union { union } => {
+                let union: HashSet<_> = union
+                    .iter()
+                    .map(|a_t| self.lookup_actual(a_t, pos))
+                    .collect::<Result<_, Vec<TypeErr>>>()?;
+                ExpressionType::Union { union }
             }
         };
 
-        Ok(InferType { raises: HashSet::new(), expr_type: Some(expr_type) })
+        Ok(InferType::from(&expr_type))
     }
 
     /// Loads pre-defined Python primitives into context for easy lookup

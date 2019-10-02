@@ -3,7 +3,6 @@ use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -38,11 +37,11 @@ impl Function {
     pub fn ty(&self) -> Option<TypeName> { self.ret_ty.clone() }
 }
 
-impl TryFrom<(&GenericFunction, &HashMap<String, GenericTypeName>, &Position)> for Function {
+impl TryFrom<(&GenericFunction, &HashMap<String, ActualTypeName>, &Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<String, GenericTypeName>, &Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<String, ActualTypeName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Function {
             is_py_type: fun.is_py_type,

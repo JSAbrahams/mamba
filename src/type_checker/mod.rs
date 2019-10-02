@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use crate::parser::ast::AST;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
+use crate::type_checker::infer::infer_all;
 use crate::type_checker::type_result::TypeResults;
 
 pub mod context;
@@ -29,10 +30,9 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 ///
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
-    let context = Context::try_from(inputs)?;
-    context.into_with_primitives()?;
-    Environment::new();
+    let context = Context::try_from(inputs)?.into_with_primitives()?;
 
+    infer_all(inputs, &context)?;
     Ok(inputs
         .iter()
         .map(|(node_pos, source, path)| (node_pos.clone(), source.clone(), path.clone()))

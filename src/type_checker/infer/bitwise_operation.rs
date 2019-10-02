@@ -20,8 +20,8 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             right_ty.expr_ty(&ast.pos)?;
             Ok((
                 ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
-                    .add_raises(left_ty.raises)
-                    .add_raises(right_ty.raises),
+                    .add_raises(&left_ty.raises)
+                    .add_raises(&right_ty.raises),
                 env.clone()
             ))
         }
@@ -30,7 +30,7 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             infer_ty.expr_ty(&ast.pos)?;
             Ok((
                 ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
-                    .add_raises(infer_ty.raises),
+                    .add_raises(&infer_ty.raises),
                 env.clone()
             ))
         }

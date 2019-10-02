@@ -65,7 +65,7 @@ impl TryFrom<&AST> for GenericType {
 
                 let (mut body_fields, functions) =
                     get_fields_and_functions(&name, &generics, statements)?;
-                for function in functions {
+                for function in functions.clone() {
                     if function.name == GenericActualTypeName::new(concrete::INIT) {
                         if class_args.is_empty() {
                             class_args.append(&mut function.arguments.clone())
@@ -147,9 +147,9 @@ fn get_name_and_generics(
 
             let name = GenericActualTypeName::new(
                 match &id.node {
-                    Node::Id { lit } => Ok(lit.clone()),
+                    Node::Id { lit } => lit.clone(),
                     _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
-                }?
+                }
                 .as_str()
             );
 
