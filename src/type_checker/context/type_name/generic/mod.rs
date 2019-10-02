@@ -1,3 +1,4 @@
+use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -18,6 +19,16 @@ impl GenericTypeName {
     pub fn new(name: &str) -> GenericTypeName {
         GenericTypeName::Single { ty: GenericActualTypeName::new(name) }
     }
+
+    pub fn single(&self, pos: &Position) -> TypeResult<GenericActualTypeName> {
+        match self {
+            GenericTypeName::Single { ty } => Ok(ty.clone()),
+            GenericTypeName::Union { .. } =>
+                Err(vec![TypeErr::new(pos, "Unions not supported here")]),
+        }
+    }
+
+    pub fn name(&self, pos: &Position) -> TypeResult<String> { self.single(pos)?.name(pos) }
 }
 impl Display for GenericTypeName {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -45,10 +56,10 @@ impl TryFrom<&AST> for GenericTypeName {
                 types.iter().map(GenericTypeName::try_from).partition(Result::is_ok);
             if errs.is_empty() {
                 Ok(GenericTypeName::Union {
-                    union: types.into_iter().map(Result::unwrap).collect()
+                    union: types.into_iter().map(Result::unwrap).flatten().collect()
                 })
             } else {
-                Err(errs.into_iter().map(Result::unwrap_err).collect())
+                Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
             }
         } else {
             Ok(GenericTypeName::Single {

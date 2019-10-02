@@ -66,6 +66,7 @@ fn override_op(
         let fun = left_ty.expr_ty(&left.pos)?.fun(
             overrides,
             &vec![right_ty.expr_ty(&right.pos)?],
+            state.safe,
             &left.pos
         )?;
         Ok((left_ty.union(&right_ty, &left.pos)?, right_env))

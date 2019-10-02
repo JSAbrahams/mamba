@@ -1,9 +1,10 @@
 use crate::common::position::Position;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::TypeResult;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -23,13 +24,13 @@ pub const NEQ: &'static str = "/=";
 pub const POW: &'static str = "^";
 pub const SUB: &'static str = "-";
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub is_py_type: bool,
-    pub name:       TypeName,
+    pub name:       ActualTypeName,
     pub pure:       bool,
     pub arguments:  Vec<FunctionArg>,
-    pub raises:     Vec<TypeName>,
+    pub raises:     Vec<ActualTypeName>,
     ret_ty:         Option<TypeName>
 }
 
@@ -42,10 +43,10 @@ impl Function {
         generic_fun: &GenericFunction,
         generics: &HashMap<String, GenericTypeName>,
         pos: &Position
-    ) -> Result<Self, TypeErr> {
+    ) -> TypeResult<Function> {
         Ok(Function {
             is_py_type: generic_fun.is_py_type,
-            name:       generic_fun.name.clone(),
+            name:       TypeName::try_from((&generic_fun.name, generics, pos))?,
             pure:       generic_fun.pure,
             arguments:  generic_fun
                 .arguments
@@ -57,7 +58,7 @@ impl Function {
                 .iter()
                 .map(|raise| TypeName::try_from((raise, generics, pos)))
                 .collect::<Result<_, _>>()?,
-            ret_ty:     match &generic_fun.ty()? {
+            ret_ty:     match &generic_fun.ret_ty {
                 Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
                 None => None
             }

@@ -1,3 +1,7 @@
+use std::collections::HashSet;
+use std::convert::TryFrom;
+use std::path::PathBuf;
+
 use crate::common::position::Position;
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::function::generic::GenericFunction;
@@ -13,9 +17,6 @@ use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
-use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::path::PathBuf;
 
 pub mod field;
 pub mod function;
@@ -51,30 +52,32 @@ impl TryFrom<&[CheckInput]> for Context {
 
 impl Context {
     fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
-        let generic_type = self
+        let (name, generics) = match ty_name {
+            ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
+            _ => return Err(vec![TypeErr::new(pos, "Only can look up using single type")])
+        };
+
+        let generic_type: GenericType = self
             .types
             .iter()
-            .find(|ty| ty.name == ty_name)
-            .ok_or(TypeErr::new(pos, "Cannot find type"))?;
-
+            .find_map(|ty| Some(ty.name.single(pos)?.name(pos)? == name))?
+            .ok_or(vec![TypeErr::new(pos, "Unknown type")])
+            .clone();
         if generic_type.generics.len() == generics.len() {
             let generics = generic_type
                 .generics
-                .clone()
-                .iter()
+                .into_iter()
                 .zip(generics)
-                .map(|(parameter, type_name)| (parameter.name.clone(), type_name.clone()))
+                .map(|(parameter, type_name)| (parameter.name, type_name))
                 .collect();
-
-            Type::try_from(generic_type, &generics, pos)
+            let ty = Type::try_from((&generic_type, &generics, pos))?;
+            Ok(MutableType::from(&ActualType::from(&ty)))
         } else {
-            Err(TypeErr::new(
+            Err(vec![TypeErr::new(
                 pos,
                 format!("Type takes {} generic arguments", generic_type.generics.len()).as_str()
-            ))
+            )])
         }
-
-        Ok(MutableType::from(&ActualType::from(&ty)))
     }
 
     pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<InferType> {
@@ -85,7 +88,8 @@ impl Context {
                 union: union.iter().map(|a_t| self.lookup_actual(a_t, pos)).collect()?
             }
         };
-        Ok(InferType { raises: vec![], expr_type: Some(expr_type) })
+
+        Ok(InferType { raises: HashSet::new(), expr_type: Some(expr_type) })
     }
 
     /// Loads pre-defined Python primitives into context for easy lookup

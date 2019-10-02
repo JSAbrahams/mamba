@@ -2,13 +2,13 @@ use std::collections::HashSet;
 
 use crate::common::position::Position;
 use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
-use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::iter::FromIterator;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct InferType {
-    pub raises: HashSet<TypeName>,
+    pub raises: HashSet<ActualTypeName>,
     expr_type:  Option<ExpressionType>
 }
 
@@ -36,13 +36,19 @@ impl InferType {
         self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))
     }
 
-    pub fn raises(self, raises: HashSet<ActualTypeName>) -> InferType {
-        let mut self_raises = self.raises.clone();
-        raises.iter().for_each(|err| {
-            self_raises.insert(err.clone());
-        });
+    pub fn add_raise_from_type(self, raised: InferType, pos: &Position) -> TypeResult<InferType> {
+        let expr_ty = raised.expr_ty(pos)?;
+        let raises = match expr_ty {
+            ExpressionType::Single { mut_ty } =>
+                HashSet::from_iter(vec![ActualTypeName::from(mut_ty.actual_ty)].to_iter()),
+            ExpressionType::Union { union } => union.iter().map(|mut_ty| mut_ty.actual_ty).collect()
+        };
+        Ok(self.add_raises(raises))
+    }
 
-        InferType { raises: self_raises, expr_type: self.expr_type }
+    pub fn add_raises(self, raises: HashSet<ActualTypeName>) -> InferType {
+        let raises = self.raises.union(&raises).into_iter().collect();
+        InferType { raises, expr_type: self.expr_type }
     }
 
     pub fn handled(
@@ -52,9 +58,9 @@ impl InferType {
     ) -> TypeResult<InferType> {
         let mut self_raises = self.raises.clone();
         let mut errors = vec![];
-        handled.iter().for_each(|handled| {
-            if self_raises.contains(handled) {
-                self_raises.remove(handled);
+        handled.into_iter().for_each(|handled| {
+            if self_raises.contains(&handled) {
+                self_raises.remove(&handled);
             } else {
                 errors.push(TypeErr::new(pos, "Type does not have error"))
             }

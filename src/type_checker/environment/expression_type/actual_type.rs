@@ -39,7 +39,13 @@ impl ActualType {
         }
     }
 
-    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
+    pub fn fun(
+        &self,
+        name: &str,
+        args: &[TypeName],
+        safe: bool,
+        pos: &Position
+    ) -> TypeResult<Function> {
         match &self {
             ActualType::Single { ty } =>
                 Ok(ty.function(name, &args).ok_or(vec![TypeErr::new(pos, "Undefined function")])?),

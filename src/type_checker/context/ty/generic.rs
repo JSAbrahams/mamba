@@ -10,7 +10,7 @@ use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone)]
 pub struct GenericType {
     pub is_py_type: bool,
     pub name:       GenericTypeName,
@@ -26,15 +26,8 @@ pub struct GenericType {
 impl GenericType {
     pub fn all_pure(self, pure: bool) -> Result<Self, TypeErr> {
         Ok(GenericType {
-            is_py_type: self.is_py_type,
-            name:       self.name,
-            pos:        self.pos,
-            concrete:   self.concrete,
-            args:       self.args,
-            generics:   self.generics,
-            fields:     self.fields,
-            functions:  self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
-            parents:    self.parents
+            functions: self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
+            ..*self
         })
     }
 }

@@ -24,6 +24,31 @@ impl Display for TypeName {
     }
 }
 
+impl TryFrom<(&GenericTypeName, &Position)> for TypeName {
+    type Error = Vec<TypeErr>;
+
+    fn try_from((type_name, pos): (&GenericTypeName, &Position)) -> Result<Self, Self::Error> {
+        match type_name {
+            GenericTypeName::Single { ty } =>
+                Ok(TypeName::Single { ty: ActualTypeName::try_from((ty, HashMap::new(), pos))? }),
+            GenericTypeName::Union { union } => {
+                let (union, errs) = union
+                    .iter()
+                    .map(|ty| ActualTypeName::try_from((ty, HashMap::new(), pos)))
+                    .partition(Result::is_ok);
+
+                if errs.is_empty() {
+                    Ok(TypeName::Union {
+                        union: union.into_iter().map(Result::unwrap_err).collect()
+                    })
+                } else {
+                    Err(errs.into_iter().map(Result::unwrap_err).collect())
+                }
+            }
+        }
+    }
+}
+
 impl TryFrom<(&GenericTypeName, &HashMap<String, GenericTypeName>, &Position)> for TypeName {
     type Error = Vec<TypeErr>;
 
@@ -71,4 +96,8 @@ impl TypeName {
             TypeName::Union { .. } => Err(vec![TypeErr::new(pos, "Unions not supported here")])
         }
     }
+
+    pub fn name(&self, pos: &Position) -> TypeResult<String> { self.single(pos)?.name(pos) }
+
+    pub fn is_cover(&self, other: &TypeName) -> bool {}
 }

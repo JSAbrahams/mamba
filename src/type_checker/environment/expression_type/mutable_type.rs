@@ -5,6 +5,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
+use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::TypeResult;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -33,7 +34,14 @@ impl MutableType {
         self.actual_ty.field(field, pos)
     }
 
-    pub fn fun(&self, name: &str, args: &[MutableType], pos: &Position) -> TypeResult<Function> {
-        self.actual_ty.fun(name, args.iter().map(|a| a.actual_ty).collect(), pos)
+    pub fn fun(
+        &self,
+        name: &str,
+        args: &[ExpressionType],
+        safe: bool,
+        pos: &Position
+    ) -> TypeResult<Function> {
+        let args = args.iter().map(|arg| arg.into()).collect()?;
+        self.actual_ty.fun(name, args, safe, pos)
     }
 }

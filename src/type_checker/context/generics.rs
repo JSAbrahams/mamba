@@ -26,10 +26,11 @@ pub fn generics(
                 Node::FunDef { .. } => fun_res.push(
                     GenericFunction::try_from(stmt)
                         .and_then(|f| f.in_class(None))
-                        .map_err(|e| e.into_with_source(source, path))
+                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)))
                 ),
                 Node::VariableDef { .. } => field_res.push(
-                    GenericField::try_from(stmt).map_err(|e| e.into_with_source(source, path))
+                    GenericField::try_from(stmt)
+                        .map_err(|e| e.iter().map(|e| e.into_with_source(source, path)))
                 ),
                 _ => {}
             }),

@@ -1,11 +1,12 @@
+use std::convert::TryFrom;
+use std::ops::Deref;
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::context::type_name::python;
-use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
-use std::ops::Deref;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub const SELF: &'static str = "self";
 
@@ -30,14 +31,7 @@ impl GenericFunctionArg {
         if class.is_none() && self.name.as_str() == SELF {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
-            Ok(GenericFunctionArg {
-                is_py_type: false,
-                name:       self.name,
-                pos:        self.pos,
-                vararg:     self.vararg,
-                mutable:    self.mutable,
-                ty:         class.cloned()
-            })
+            Ok(GenericFunctionArg { ty: class.cloned(), ..self })
         } else {
             Ok(self)
         }
@@ -45,9 +39,9 @@ impl GenericFunctionArg {
 }
 
 impl TryFrom<&AST> for ClassArgument {
-    type Error = TypeErr;
+    type Error = Vec<TypeErr>;
 
-    fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
+    fn try_from(node_pos: &AST) -> TypeResult<ClassArgument> {
         match &node_pos.node {
             Node::VariableDef { id_maybe_type, .. } => Ok(ClassArgument {
                 field:   Some(GenericField::try_from(node_pos)?),
@@ -64,15 +58,15 @@ impl TryFrom<&AST> for ClassArgument {
                 field:   None,
                 fun_arg: GenericFunctionArg::try_from(node_pos)?
             }),
-            _ => Err(TypeErr::new(&node_pos.pos, "Expected definition or function argument"))
+            _ => Err(vec![TypeErr::new(&node_pos.pos, "Expected definition or function argument")])
         }
     }
 }
 
 impl TryFrom<&AST> for GenericFunctionArg {
-    type Error = TypeErr;
+    type Error = Vec<TypeErr>;
 
-    fn try_from(node_pos: &AST) -> Result<Self, Self::Error> {
+    fn try_from(node_pos: &AST) -> TypeResult<GenericFunctionArg> {
         match &node_pos.node {
             Node::FunArg { vararg, id_maybe_type, default, .. } => match &id_maybe_type.node {
                 Node::IdType { id, mutable, _type } => {
@@ -99,26 +93,26 @@ impl TryFrom<&AST> for GenericFunctionArg {
                                         // TODO create system for inferring types for constructor
                                         // and function calls
                                         _ =>
-                                            return Err(TypeErr::new(
+                                            return Err(vec![TypeErr::new(
                                                 &default.pos,
                                                 "Can only infer type of literals"
-                                            )),
+                                            )]),
                                     })
                                 } else {
-                                    return Err(TypeErr::new(
+                                    return Err(vec![TypeErr::new(
                                         &id.pos,
                                         "Non-self argument must have type if no inferrable default"
-                                    ));
+                                    )]);
                                 },
                         }
                     })
                 }
-                _ => Err(TypeErr::new(
+                _ => Err(vec![TypeErr::new(
                     &id_maybe_type.pos,
                     "Expected function argument identifier (and type)"
-                ))
+                )])
             },
-            _ => Err(TypeErr::new(&node_pos.pos, "Expected function argument"))
+            _ => Err(vec![TypeErr::new(&node_pos.pos, "Expected function argument")])
         }
     }
 }

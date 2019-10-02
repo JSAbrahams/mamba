@@ -1,5 +1,6 @@
-use crate::type_checker::context::field::generic::GenericField;
 use python_parser::ast::{Expression, SetItem};
+
+use crate::type_checker::context::field::generic::GenericField;
 
 pub struct GenericFields {
     pub fields: Vec<GenericField>
@@ -53,8 +54,8 @@ impl From<&Expression> for GenericFields {
                     .filter(|item| if let SetItem::Unique(_) = item { true } else { false })
                     .filter(|item| match &item {
                         SetItem::Star(_) => false,
-                        SetItem::Unique(expression) =>
-                            if let Expression::Name(_) = expression {
+                        SetItem::Unique(expr) =>
+                            if let Expression::Name(_) = expr {
                                 true
                             } else {
                                 false

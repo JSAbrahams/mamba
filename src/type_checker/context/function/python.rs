@@ -25,7 +25,7 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       GenericTypeName::from(&convert_name(&func_def.name)),
+            name:       GenericTypeName::from(convert_name(&func_def.name).as_str()),
             pure:       false,
             private:    false,
             pos:        Position::default(),

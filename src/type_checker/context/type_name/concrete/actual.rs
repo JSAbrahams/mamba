@@ -1,11 +1,12 @@
-use crate::common::position::Position;
-use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
-use crate::type_checker::type_result::TypeErr;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Display;
+
+use crate::common::position::Position;
+use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ActualTypeName {
@@ -41,7 +42,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Positi
         match gen_type_name {
             GenericActualTypeName::Single { lit, generics: this_gens } =>
                 if let Some(subst) = generics.get(lit) {
-                    substitute(gen_type_name, subst, generics, pos)
+                    substitute(gen_type_name, &subst.single(pos)?, generics, pos)
                 } else {
                     Ok(ActualTypeName::Single {
                         lit:      lit.clone(),
@@ -63,6 +64,13 @@ impl ActualTypeName {
     pub fn new(lit: &str, generics: &[ActualTypeName]) -> ActualTypeName {
         ActualTypeName::Single { lit: String::from(lit), generics: Vec::from(generics) }
     }
+
+    pub fn name(&self, pos: &Position) -> TypeResult<String> {
+        match self {
+            ActualTypeName::Single { lit, .. } => Ok(lit.clone()),
+            _ => Err(vec![TypeErr::new(pos, "Type does not have name")])
+        }
+    }
 }
 
 fn substitute(
@@ -71,7 +79,7 @@ fn substitute(
     generics: &HashMap<String, GenericTypeName>,
     pos: &Position
 ) -> Result<ActualTypeName, TypeErr> {
-    let typename_from = |g| ActualTypeName::try_from(g, generics, pos);
+    let typename_from = |g| ActualTypeName::try_from((g, generics, pos));
     match (this, substitute) {
         (
             GenericActualTypeName::Single { generics: this_generics, .. },
@@ -90,7 +98,7 @@ fn substitute(
         }),
         (GenericActualTypeName::Single { generics: this_generics, .. }, substitute)
             if this_generics.is_empty() =>
-            ActualTypeName::try_from(substitute, generics, pos),
+            ActualTypeName::try_from((substitute, generics, pos)),
         _ => Err(TypeErr::new(pos, "Unable to insert generic"))
     }
 }

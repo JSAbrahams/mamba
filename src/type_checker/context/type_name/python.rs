@@ -8,9 +8,12 @@ pub const BOOLEAN: &'static str = "bool";
 
 impl From<&Expression> for GenericTypeName {
     fn from(value: &Expression) -> GenericTypeName {
-        GenericTypeName::from(&match value {
-            Expression::Name(id) => id.clone(),
-            _ => String::new()
-        })
+        GenericTypeName::from(
+            match value {
+                Expression::Name(id) => id.clone(),
+                _ => String::new()
+            }
+            .as_str()
+        )
     }
 }

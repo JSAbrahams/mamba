@@ -6,7 +6,9 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+// TODO make ty private again
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FunctionArg {
     pub is_py_type: bool,
     pub name:       String,
@@ -20,9 +22,11 @@ impl FunctionArg {
         if self.is_py_type {
             Ok(self.ty.clone())
         } else {
-            Ok(Some(self.ty.clone().ok_or_else(|| {
-                vec![TypeErr::new(&self.pos.clone(), "Function argument type not given")]
-            })?))
+            Ok(Some(
+                self.ty
+                    .clone()
+                    .ok_or_else(|| vec![TypeErr::new_no_pos("Function argument type not given")])?
+            ))
         }
     }
 }
@@ -38,7 +42,7 @@ impl FunctionArg {
             name:       generic_fun_arg.name.clone(),
             vararg:     generic_fun_arg.vararg,
             mutable:    generic_fun_arg.mutable,
-            ty:         match &generic_fun_arg.ty()? {
+            ty:         match &generic_fun_arg.ty {
                 Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
                 None => None
             }

@@ -6,7 +6,7 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
     pub is_py_type: bool,
     pub name:       String,
@@ -15,9 +15,7 @@ pub struct Field {
 
 impl Field {
     pub fn ty(&self) -> TypeResult<TypeName> {
-        self.ty
-            .clone()
-            .ok_or_else(|| vec![TypeErr::new(&self.pos.clone(), "Cannot infer type of field")])
+        self.ty.clone().ok_or_else(|| vec![TypeErr::new_no_pos("Cannot infer type of field")])
     }
 }
 
@@ -30,7 +28,10 @@ impl TryFrom<(&GenericField, &HashMap<String, GenericTypeName>, &Position)> for 
         Ok(Field {
             is_py_type: field.is_py_type,
             name:       field.name.clone(),
-            ty:         Some(TypeName::try_from((&field.ty()?, generics, pos))?)
+            ty:         match &field.ty {
+                Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
+                None => None
+            }
         })
     }
 }

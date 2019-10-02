@@ -1,14 +1,17 @@
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::generic::GenericType;
+use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::collections::HashMap;
-use std::fmt;
-use std::fmt::{Display, Formatter};
 
 pub const INT_PRIMITIVE: &'static str = "Int";
 pub const FLOAT_PRIMITIVE: &'static str = "Float";
@@ -21,7 +24,7 @@ pub const ENUM_PRIMITIVE: &'static str = "Enum";
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Type {
     pub is_py_type: bool,
-    pub name:       TypeName,
+    pub name:       ActualTypeName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
     fields:         Vec<Field>,
@@ -32,44 +35,43 @@ impl Display for Type {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl Type {
-    pub fn try_from(
-        generic_type: &GenericType,
-        generics: &HashMap<String, GenericTypeName>,
-        pos: &Position
-    ) -> Result<Self, TypeErr> {
+impl TryFrom<(&GenericType, &HashMap<String, GenericTypeName>, &Position)> for Type {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(
+        (generic, generics, pos): (&GenericType, &HashMap<String, GenericTypeName>, &Position)
+    ) -> Result<Self, Self::Error> {
         Ok(Type {
-            is_py_type: generic_type.is_py_type,
-            name:       TypeName::new(
-                &generic_type.name,
-                generic_type.generics.iter().map(|g| TypeName::new(&g.name, vec![])).collect()?
-            ),
-            concrete:   generic_type.concrete,
-            args:       generic_type
+            is_py_type: generic.is_py_type,
+            name:       TypeName::try_from((generic.name, generics, pos))?,
+            concrete:   generic.concrete,
+            args:       generic
                 .args
                 .iter()
                 .map(|a| FunctionArg::try_from(a, generics, pos))
                 .collect::<Result<_, _>>()?,
-            fields:     generic_type
+            fields:     generic
                 .fields
                 .iter()
                 .map(|f| Field::try_from(f, generics, pos))
                 .collect::<Result<_, _>>()?,
-            functions:  generic_type
+            functions:  generic
                 .functions
                 .iter()
                 .map(|f| Function::try_from(f, generics, pos))
                 .collect::<Result<_, _>>()?
         })
     }
+}
 
+impl Type {
     pub fn field(&self, name: &str) -> Option<Field> {
         self.fields.iter().find(|field| field.name.as_str() == name).cloned()
     }
 
+    // TODO add boolean for unsafe operator so we can ignore if type is None
     pub fn function(&self, fun_name: &str, args: &[TypeName]) -> Option<Function> {
-        // TODO also accept if arguments passed is union that is subset of argument
-        // union
+        // TODO accept if arguments passed is union that is subset of argument union
         self.functions
             .iter()
             .find(|function| {

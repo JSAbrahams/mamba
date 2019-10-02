@@ -3,10 +3,11 @@ use std::fmt;
 use std::fmt::Display;
 use std::ops::Deref;
 
+use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GenericActualTypeName {
     Single { lit: String, generics: Vec<GenericActualTypeName> },
     Fun { args: Vec<GenericActualTypeName>, ret_ty: Box<GenericActualTypeName> },
@@ -16,6 +17,13 @@ pub enum GenericActualTypeName {
 impl GenericActualTypeName {
     pub fn new(name: &str) -> GenericActualTypeName {
         GenericActualTypeName::Single { lit: String::from(name), generics: vec![] }
+    }
+
+    pub fn name(&self, pos: &Position) -> TypeResult<String> {
+        match self {
+            GenericActualTypeName::Single { lit, .. } => Ok(lit.clone()),
+            _ => Err(vec![TypeErr::new(pos, "Type does not have name")])
+        }
     }
 }
 

@@ -4,7 +4,7 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::parameter::GenericParameter;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
@@ -17,9 +17,9 @@ pub struct GenericParent {
 }
 
 impl TryFrom<&AST> for GenericParent {
-    type Error = TypeErr;
+    type Error = Vec<TypeErr>;
 
-    fn try_from(ast: &AST) -> Result<Self, Self::Error> {
+    fn try_from(ast: &AST) -> TypeResult<GenericParent> {
         match &ast.node {
             // TODO infer types of arguments passed to parent
             // TODO use arguments
@@ -27,7 +27,7 @@ impl TryFrom<&AST> for GenericParent {
                 is_py_type: false,
                 name:       match &id.node {
                     Node::Id { lit } => lit.clone(),
-                    _ => return Err(TypeErr::new(&id.pos.clone(), "Expected identifier"))
+                    _ => return Err(vec![TypeErr::new(&id.pos.clone(), "Expected identifier")])
                 },
                 pos:        ast.pos.clone(),
                 generics:   generics
@@ -36,7 +36,7 @@ impl TryFrom<&AST> for GenericParent {
                     .collect::<Result<_, _>>()?,
                 args:       vec![]
             }),
-            _ => Err(TypeErr::new(&ast.pos.clone(), "Expected parent"))
+            _ => Err(vec![TypeErr::new(&ast.pos.clone(), "Expected parent")])
         }
     }
 }
