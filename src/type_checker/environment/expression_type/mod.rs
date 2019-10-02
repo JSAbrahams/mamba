@@ -6,7 +6,6 @@ use std::iter::FromIterator;
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
-use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
@@ -28,23 +27,13 @@ impl Display for ExpressionType {
     }
 }
 
-impl Into<TypeName> for ExpressionType {
-    fn into(self) -> TypeName {
-        match self {
-            ExpressionType::Single { mut_ty } => TypeName::Single { ty: unimplemented!() },
-            ExpressionType::Union { union } =>
-                TypeName::Union { union: union.iter().map(|ty| unimplemented!()).collect() },
-        }
-    }
-}
-
 impl From<&MutableType> for ExpressionType {
     fn from(mut_ty: &MutableType) -> Self { ExpressionType::Single { mut_ty: mut_ty.clone() } }
 }
 
 impl ExpressionType {
     pub fn union(self, other: &ExpressionType) -> ExpressionType {
-        match (self, other) {
+        match (&self, other) {
             (ExpressionType::Single { mut_ty }, ExpressionType::Single { mut_ty: other }) =>
                 ExpressionType::Union {
                     union: HashSet::from_iter(vec![mut_ty.clone(), other.clone()].into_iter())
@@ -54,10 +43,11 @@ impl ExpressionType {
                 ExpressionType::Union {
                     union: union
                         .union(&HashSet::from_iter(vec![mut_ty.clone()].into_iter()))
+                        .cloned()
                         .collect()
                 },
             (ExpressionType::Union { union }, ExpressionType::Union { union: other }) =>
-                ExpressionType::Union { union: union.union(other).into_iter().collect() },
+                ExpressionType::Union { union: union.union(other).cloned().collect() },
         }
     }
 

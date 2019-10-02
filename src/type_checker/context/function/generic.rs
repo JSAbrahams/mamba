@@ -17,14 +17,14 @@ pub struct GenericFunction {
     pub private:    bool,
     pub pos:        Position,
     pub arguments:  Vec<GenericFunctionArg>,
-    pub raises:     Vec<GenericTypeName>,
+    pub raises:     Vec<GenericActualTypeName>,
     pub ret_ty:     Option<GenericTypeName>
 }
 
 impl GenericFunction {
     pub fn pure(self, pure: bool) -> Self { GenericFunction { pure: self.pure || pure, ..self } }
 
-    pub fn in_class(self, class: Option<&GenericTypeName>) -> TypeResult<GenericFunction> {
+    pub fn in_class(self, class: Option<&GenericActualTypeName>) -> TypeResult<GenericFunction> {
         Ok(GenericFunction {
             arguments: self
                 .arguments
@@ -67,7 +67,7 @@ impl TryFrom<&AST> for GenericFunction {
                     },
                     raises:     raises
                         .iter()
-                        .map(GenericTypeName::try_from)
+                        .map(GenericActualTypeName::try_from)
                         .collect::<Result<_, _>>()?
                 }),
             _ => Err(vec![TypeErr::new(&node_pos.pos, "Expected function definition")])

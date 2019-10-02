@@ -6,7 +6,9 @@ use std::fmt::Display;
 use crate::common::position::Position;
 use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ActualTypeName {
@@ -22,6 +24,21 @@ impl Display for ActualTypeName {
             ActualTypeName::Single { lit, generics } => write!(f, "{}<{:#?}>", lit, generics),
             ActualTypeName::AnonFun { args, ret_ty } => write!(f, "({:#?}) -> {}", args, ret_ty),
             ActualTypeName::Tuple { ty_names } => write!(f, "({:#?})", ty_names)
+        }
+    }
+}
+
+impl From<&ActualType> for ActualTypeName {
+    fn from(actual_type: &ActualType) -> Self {
+        match actual_type {
+            ActualType::Single { ty } => ty.name.clone(),
+            ActualType::Tuple { types } => ActualTypeName::Tuple {
+                ty_names: types.iter().map(|ty| ActualTypeName::from(&ty.actual_ty)).collect()
+            },
+            ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
+                args:   args.iter().map(|arg| ActualTypeName::from(&arg.actual_ty)).collect(),
+                ret_ty: Box::new(ActualTypeName::from(&ret_ty.deref().actual_ty))
+            }
         }
     }
 }
@@ -51,7 +68,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Positi
                 },
             GenericActualTypeName::Fun { args, ret_ty } => Ok(ActualTypeName::AnonFun {
                 args:   args.iter().map(typename_from).collect::<Result<_, _>>()?,
-                ret_ty: Box::from(ActualTypeName::try_from((ret_ty, generics, pos))?)
+                ret_ty: Box::from(ActualTypeName::try_from((ret_ty.deref(), generics, pos))?)
             }),
             GenericActualTypeName::Tuple { ty_names } => Ok(ActualTypeName::Tuple {
                 ty_names: ty_names.iter().map(typename_from).collect::<Result<_, _>>()?
@@ -78,7 +95,7 @@ fn substitute(
     substitute: &GenericActualTypeName,
     generics: &HashMap<String, GenericTypeName>,
     pos: &Position
-) -> Result<ActualTypeName, TypeErr> {
+) -> TypeResult<ActualTypeName> {
     let typename_from = |g| ActualTypeName::try_from((g, generics, pos));
     match (this, substitute) {
         (
@@ -93,12 +110,12 @@ fn substitute(
             } else if that_generics.is_empty() {
                 this_generics.iter().map(typename_from).collect::<Result<_, _>>()?
             } else {
-                return Err(TypeErr::new(pos, "Unable to insert generic"));
+                return Err(vec![TypeErr::new(pos, "Unable to insert generic")]);
             }
         }),
         (GenericActualTypeName::Single { generics: this_generics, .. }, substitute)
             if this_generics.is_empty() =>
             ActualTypeName::try_from((substitute, generics, pos)),
-        _ => Err(TypeErr::new(pos, "Unable to insert generic"))
+        _ => Err(vec![TypeErr::new(pos, "Unable to insert generic")])
     }
 }

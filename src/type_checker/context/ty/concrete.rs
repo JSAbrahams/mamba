@@ -12,6 +12,7 @@ use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
 use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::hash::{Hash, Hasher};
 
 pub const INT_PRIMITIVE: &'static str = "Int";
 pub const FLOAT_PRIMITIVE: &'static str = "Float";
@@ -21,7 +22,7 @@ pub const ENUM_PRIMITIVE: &'static str = "Enum";
 
 // TODO add parents
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Type {
     pub is_py_type: bool,
     pub name:       ActualTypeName,
@@ -29,6 +30,10 @@ pub struct Type {
     pub args:       Vec<FunctionArg>,
     fields:         Vec<Field>,
     functions:      Vec<Function>
+}
+
+impl Hash for Type {
+    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
 }
 
 impl Display for Type {
@@ -48,7 +53,7 @@ impl TryFrom<(&GenericType, &HashMap<String, GenericTypeName>, &Position)> for T
             args:       generic
                 .args
                 .iter()
-                .map(|a| FunctionArg::try_from(a, generics, pos))
+                .map(|a| FunctionArg::try_from((a, generics, pos)))
                 .collect::<Result<_, _>>()?,
             fields:     generic
                 .fields
@@ -75,7 +80,7 @@ impl Type {
         self.functions
             .iter()
             .find(|function| {
-                function.name.name(pos) == fun_name
+                function.name.name(pos)?.as_str() == fun_name
                     && function
                         .arguments
                         .iter()

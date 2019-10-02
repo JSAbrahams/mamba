@@ -30,19 +30,17 @@ impl TryFrom<(&GenericTypeName, &Position)> for TypeName {
     fn try_from((type_name, pos): (&GenericTypeName, &Position)) -> Result<Self, Self::Error> {
         match type_name {
             GenericTypeName::Single { ty } =>
-                Ok(TypeName::Single { ty: ActualTypeName::try_from((ty, HashMap::new(), pos))? }),
+                Ok(TypeName::Single { ty: ActualTypeName::try_from((ty, &HashMap::new(), pos))? }),
             GenericTypeName::Union { union } => {
-                let (union, errs) = union
+                let (union, errs): (Vec<_>, Vec<_>) = union
                     .iter()
-                    .map(|ty| ActualTypeName::try_from((ty, HashMap::new(), pos)))
+                    .map(|ty| ActualTypeName::try_from((ty, &HashMap::new(), pos)))
                     .partition(Result::is_ok);
 
                 if errs.is_empty() {
-                    Ok(TypeName::Union {
-                        union: union.into_iter().map(Result::unwrap_err).collect()
-                    })
+                    Ok(TypeName::Union { union: union.into_iter().map(Result::unwrap).collect() })
                 } else {
-                    Err(errs.into_iter().map(Result::unwrap_err).collect())
+                    Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
                 }
             }
         }
@@ -69,11 +67,9 @@ impl TryFrom<(&GenericTypeName, &HashMap<String, GenericTypeName>, &Position)> f
                     .partition(Result::is_ok);
 
                 if errs.is_empty() {
-                    Ok(TypeName::Union {
-                        union: union.into_iter().map(Result::unwrap_err).collect()
-                    })
+                    Ok(TypeName::Union { union: union.into_iter().map(Result::unwrap).collect() })
                 } else {
-                    Err(errs.into_iter().map(Result::unwrap_err).collect())
+                    Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
                 }
             }
         }

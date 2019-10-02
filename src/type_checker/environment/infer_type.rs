@@ -40,14 +40,15 @@ impl InferType {
         let expr_ty = raised.expr_ty(pos)?;
         let raises = match expr_ty {
             ExpressionType::Single { mut_ty } =>
-                HashSet::from_iter(vec![ActualTypeName::from(mut_ty.actual_ty)].to_iter()),
-            ExpressionType::Union { union } => union.iter().map(|mut_ty| mut_ty.actual_ty).collect()
+                HashSet::from_iter(vec![ActualTypeName::from(&mut_ty.actual_ty)].into_iter()),
+            ExpressionType::Union { union } =>
+                union.iter().map(|mut_ty| ActualTypeName::from(&mut_ty.actual_ty)).collect(),
         };
         Ok(self.add_raises(raises))
     }
 
     pub fn add_raises(self, raises: HashSet<ActualTypeName>) -> InferType {
-        let raises = self.raises.union(&raises).into_iter().collect();
+        let raises = self.raises.union(&raises).cloned().collect();
         InferType { raises, expr_type: self.expr_type }
     }
 

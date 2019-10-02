@@ -4,6 +4,7 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::context::type_name::python;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -27,11 +28,11 @@ pub struct GenericFunctionArg {
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<&GenericTypeName>) -> Result<Self, TypeErr> {
+    pub fn in_class(self, class: Option<&GenericActualTypeName>) -> Result<Self, TypeErr> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
-            Ok(GenericFunctionArg { ty: class.cloned(), ..self })
+            Ok(GenericFunctionArg { ty: Some(GenericTypeName::from(class.unwrap())), ..self })
         } else {
             Ok(self)
         }

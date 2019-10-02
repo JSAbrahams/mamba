@@ -60,13 +60,13 @@ impl TryFrom<&AST> for GenericType {
                     }
                 });
                 if !arg_errs.is_empty() {
-                    return Err(arg_errs.iter().flatten().collect());
+                    return Err(arg_errs.into_iter().flatten().collect());
                 }
 
                 let (mut body_fields, functions) =
                     get_fields_and_functions(&name, &generics, statements)?;
                 for function in functions {
-                    if function.name == concrete::INIT {
+                    if function.name == GenericActualTypeName::new(concrete::INIT) {
                         if class_args.is_empty() {
                             class_args.append(&mut function.arguments.clone())
                         } else {
@@ -83,7 +83,11 @@ impl TryFrom<&AST> for GenericType {
                 let (parents, parent_errs): (Vec<_>, Vec<_>) =
                     parents.iter().map(GenericParent::try_from).partition(Result::is_ok);
                 if !parent_errs.is_empty() {
-                    return Err(parent_errs.into_iter().map(Result::unwrap_err).collect());
+                    return Err(parent_errs
+                        .into_iter()
+                        .map(Result::unwrap_err)
+                        .flatten()
+                        .collect());
                 }
 
                 Ok(GenericType {
@@ -138,7 +142,7 @@ fn get_name_and_generics(
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
                 generics.iter().map(GenericParameter::try_from).partition(Result::is_ok);
             if !generic_errs.is_empty() {
-                return Err(generic_errs.into_iter().map(Result::unwrap_err).collect());
+                return Err(generic_errs.into_iter().map(Result::unwrap_err).flatten().collect());
             }
 
             let name = GenericActualTypeName::new(
@@ -181,8 +185,8 @@ fn get_fields_and_functions(
     // TODO check that there are no duplicate fields or functions
 
     if !field_errs.is_empty() || !function_errs.is_empty() || !errs.is_empty() {
-        errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).collect());
-        errs.append(&mut function_errs.into_iter().map(Result::unwrap_err).collect());
+        errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).flatten().collect());
+        errs.append(&mut function_errs.into_iter().map(Result::unwrap_err).flatten().collect());
         Err(errs)
     } else {
         Ok((

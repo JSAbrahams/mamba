@@ -37,7 +37,7 @@ impl From<&Classdef> for GenericType {
 
         let args = functions
             .iter()
-            .find(|f| f.name.as_str() == function::concrete::INIT)
+            .find(|f| f.name == GenericActualTypeName::new(function::concrete::INIT))
             .map_or(vec![], |f| f.arguments.clone());
 
         GenericType {

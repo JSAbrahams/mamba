@@ -56,7 +56,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, GenericTypeName>, &Position)> f
             raises:     fun
                 .raises
                 .iter()
-                .map(|raise| TypeName::try_from((raise, generics, pos)))
+                .map(|raise| ActualTypeName::try_from((raise, generics, pos)))
                 .collect::<Result<_, _>>()?,
             ret_ty:     match &fun.ret_ty {
                 Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
