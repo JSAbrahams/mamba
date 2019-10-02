@@ -1,18 +1,19 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::concrete::function::INIT;
-use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::function_arg::{ClassArgument, GenericFunctionArg};
-use crate::type_checker::context::generic::parameter::GenericParameter;
-use crate::type_checker::context::generic::parent::GenericParent;
+use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::function::concrete;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
+use crate::type_checker::context::parameter::GenericParameter;
+use crate::type_checker::context::parent::generic::GenericParent;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct GenericType {
     pub is_py_type: bool,
-    pub name:       String,
+    pub name:       GenericTypeName,
     pub pos:        Position,
     pub concrete:   bool,
     pub args:       Vec<GenericFunctionArg>,
@@ -72,7 +73,7 @@ impl TryFrom<&AST> for GenericType {
                 let (mut body_fields, functions) =
                     get_fields_and_functions(&name, &generics, statements)?;
                 for function in functions {
-                    if function.name == INIT {
+                    if function.name == concrete::INIT {
                         if class_args.is_empty() {
                             class_args.append(&mut function.arguments.clone())
                         } else {
@@ -136,7 +137,9 @@ impl TryFrom<&AST> for GenericType {
     }
 }
 
-fn get_name_and_generics(_type: &AST) -> Result<(String, Vec<GenericParameter>), Vec<TypeErr>> {
+fn get_name_and_generics(
+    _type: &AST
+) -> Result<(GenericTypeName, Vec<GenericParameter>), Vec<TypeErr>> {
     match &_type.node {
         Node::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
@@ -145,10 +148,10 @@ fn get_name_and_generics(_type: &AST) -> Result<(String, Vec<GenericParameter>),
                 return Err(generic_errs.into_iter().map(Result::unwrap_err).collect());
             }
 
-            let name = match &id.node {
+            let name = GenericTypeName::from(match &id.node {
                 Node::Id { lit } => Ok(lit.clone()),
                 _ => Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
-            }?;
+            }?);
 
             Ok((name, generics.into_iter().map(Result::unwrap).collect::<Vec<_>>()))
         }
@@ -157,7 +160,7 @@ fn get_name_and_generics(_type: &AST) -> Result<(String, Vec<GenericParameter>),
 }
 
 fn get_fields_and_functions(
-    name: &str,
+    class: &GenericTypeName,
     generics: &[GenericParameter],
     statements: &[AST]
 ) -> Result<(Vec<GenericField>, Vec<GenericFunction>), Vec<TypeErr>> {
@@ -166,15 +169,8 @@ fn get_fields_and_functions(
     let mut errs = vec![];
     statements.iter().for_each(|statement| match &statement.node {
         Node::FunDef { .. } => {
-            let function = GenericFunction::try_from(statement).and_then(|f| {
-                f.in_class(Some(GenericType::Single {
-                    lit:      String::from(name),
-                    generics: generics
-                        .iter()
-                        .map(|g| GenericType::Single { lit: g.name.clone(), generics: vec![] })
-                        .collect()
-                }))
-            });
+            let function =
+                GenericFunction::try_from(statement).and_then(|f| f.in_class(Some(class)));
 
             fun_res.push(function);
         }

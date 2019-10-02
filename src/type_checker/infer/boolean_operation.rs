@@ -1,7 +1,7 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
-use crate::type_checker::context::{concrete, Context};
+use crate::type_checker::context::ty::concrete;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::Context;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
@@ -20,7 +20,7 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             left_ty.expr_ty(&left.pos)?;
             right_ty.expr_ty(&right.pos)?;
             Ok((
-                ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)?
+                ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
                     .raises(left_ty.raises)
                     .raises(right_ty.raises),
                 env
@@ -31,19 +31,17 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             let (left_ty, env) = infer(left, env, ctx, state)?;
             let (right_ty, env) = infer(right, &env, ctx, &state)?;
 
-            if left_ty
-                != ctx.lookup(&GenericActualTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
-            {
+            if left_ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)? {
                 return Err(vec![TypeErr::new(&left.pos, "Expected boolean")]);
             }
             if right_ty
-                != ctx.lookup(&GenericActualTypeName::new(concrete::BOOL_PRIMITIVE), &ast.pos)?
+                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&right.pos, "Expected boolean")]);
             }
 
             Ok((
-                ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)?
+                ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
                     .raises(left_ty.raises)
                     .raises(right_ty.raises),
                 env
@@ -53,7 +51,7 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
         Node::Not { expr } => {
             let (infer_ty, env) = infer(expr, env, ctx, state)?;
             let expr_ty = infer_ty.expr_ty(&ast.pos)?;
-            if expr_ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)? {
+            if expr_ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)? {
                 return Err(vec![TypeErr::new(&expr.pos, "Expected boolean")]);
             }
 

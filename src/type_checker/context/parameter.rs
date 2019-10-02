@@ -1,5 +1,6 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -8,7 +9,7 @@ use std::ops::Deref;
 pub struct GenericParameter {
     pub is_py_type: bool,
     pub name:       String,
-    pub parent:     Option<GenericActualTypeName>
+    pub parent:     Option<GenericTypeName>
 }
 
 impl TryFrom<&AST> for GenericParameter {
@@ -20,7 +21,7 @@ impl TryFrom<&AST> for GenericParameter {
                 Some(isa) => Ok(GenericParameter {
                     is_py_type: false,
                     name:       parameter_name(id.deref())?,
-                    parent:     Some(GenericActualTypeName::try_from(isa.deref())?)
+                    parent:     Some(TypeName::try_from(isa.deref())?)
                 }),
                 None => Ok(GenericParameter {
                     is_py_type: false,

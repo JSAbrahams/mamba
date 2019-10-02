@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -17,9 +16,21 @@ pub struct FunctionArg {
 }
 
 impl FunctionArg {
+    pub fn ty(&self) -> TypeResult<Option<TypeName>> {
+        if self.is_py_type {
+            Ok(self.ty.clone())
+        } else {
+            Ok(Some(self.ty.clone().ok_or_else(|| {
+                vec![TypeErr::new(&self.pos.clone(), "Function argument type not given")]
+            })?))
+        }
+    }
+}
+
+impl FunctionArg {
     pub fn try_from(
         generic_fun_arg: &GenericFunctionArg,
-        generics: &HashMap<String, GenericActualTypeName>,
+        generics: &HashMap<String, GenericTypeName>,
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(FunctionArg {

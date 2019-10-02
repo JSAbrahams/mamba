@@ -4,21 +4,12 @@ use std::io::Read;
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use python_parser::ast::{CompoundStatement, Statement};
-
-use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::ty::GenericType;
-use crate::type_checker::context::python::field::GenericFields;
+use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::field::python::GenericFields;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-
-pub mod field;
-pub mod function;
-pub mod ty;
-
-mod function_arg;
-mod parent;
-pub mod type_name;
+use python_parser::ast::{CompoundStatement, Statement};
 
 pub fn python_files(
     python_dir: &PathBuf

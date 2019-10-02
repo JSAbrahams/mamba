@@ -2,25 +2,18 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::field::Field;
-use crate::type_checker::context::concrete::function::Function;
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::concrete::Type;
-use crate::type_checker::environment::expression_type::actual_type::TypeVariant::{Fld, Fun, Ty};
-use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::context::field::concrete::Field;
+use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::ty::concrete::Type;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
-    Single { ty: TypeVariant },
-    Tuple { types: Vec<ExpressionType> },
-    AnonFun { args: Vec<ExpressionType>, ret_ty: Box<ExpressionType> }
-}
-
-pub enum TypeVariant {
-    Ty(Type),
-    Fun(Function),
-    Fld(Field)
+    Single { ty: Type },
+    Tuple { types: Vec<MutableType> },
+    AnonFun { args: Vec<MutableType>, ret_ty: Box<MutableType> }
 }
 
 impl Display for ActualType {
@@ -34,15 +27,7 @@ impl Display for ActualType {
 }
 
 impl From<&Type> for ActualType {
-    fn from(ty: &Type) -> Self { ActualType::Single { ty: Ty(ty.clone()) } }
-}
-
-impl From<&Function> for ActualType {
-    fn from(fun: &Function) -> Self { ActualType::Single { ty: Fun(fun.clone()) } }
-}
-
-impl From<&Field> for ActualType {
-    fn from(field: &Field) -> Self { ActualType::Single { ty: Fld(field.clone()) } }
+    fn from(ty: &Type) -> Self { ActualType::Single { ty: ty.clone() } }
 }
 
 impl ActualType {

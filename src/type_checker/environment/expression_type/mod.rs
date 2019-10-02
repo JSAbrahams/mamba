@@ -1,13 +1,12 @@
+use crate::common::position::Position;
+use crate::type_checker::context::field::concrete::Field;
+use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::environment::expression_type::mutable_type::MutableType;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::iter::FromIterator;
-
-use crate::common::position::Position;
-use crate::type_checker::context::concrete::field::Field;
-use crate::type_checker::context::concrete::function::Function;
-use crate::type_checker::environment::expression_type::mutable_type::MutableType;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub mod actual_type;
 pub mod mutable_type;
@@ -82,6 +81,17 @@ impl ExpressionType {
     }
 
     pub fn fun(&self, name: &str, args: &[ExpressionType], pos: &Position) -> TypeResult<Function> {
-        unimplemented!();
+        match &self {
+            ExpressionType::Single { mut_ty } => mut_ty.function(name, args, pos),
+            ExpressionType::Union { union } => {
+                let union = union.iter().map(|e_ty| e_ty.fun(name, args, pos)).collect()?;
+                let first = union.get(0);
+                if union.iter.all(|e_ty| e_ty == first) {
+                    Ok(first.ok_or(vec![TypeErr::new(pos, "Unknown field")])?)
+                } else {
+                    Err(vec![TypeErr::new(pos, "Unknown field")])
+                }
+            }
+        }
     }
 }

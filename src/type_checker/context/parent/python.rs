@@ -1,7 +1,6 @@
-use python_parser::ast::{Argument, Expression};
-
 use crate::common::position::Position;
-use crate::type_checker::context::generic::parent::GenericParent;
+use crate::type_checker::context::parent::generic::GenericParent;
+use python_parser::ast::{Argument, Expression};
 
 impl From<&Argument> for GenericParent {
     fn from(argument: &Argument) -> GenericParent {

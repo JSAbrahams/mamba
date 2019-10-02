@@ -1,15 +1,11 @@
-use std::convert::TryFrom;
-use std::ops::Deref;
-
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
-use crate::type_checker::context::python::type_name::BOOLEAN;
-use crate::type_checker::context::python::type_name::FLOAT;
-use crate::type_checker::context::python::type_name::INTEGER;
-use crate::type_checker::context::python::type_name::STRING;
+use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::context::type_name::python;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 pub const SELF: &'static str = "self";
 
@@ -26,11 +22,11 @@ pub struct GenericFunctionArg {
     pub pos:        Position,
     pub vararg:     bool,
     pub mutable:    bool,
-    pub ty:         Option<GenericActualTypeName>
+    pub ty:         Option<GenericTypeName>
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<GenericActualTypeName>) -> Result<Self, TypeErr> {
+    pub fn in_class(self, class: Option<&GenericTypeName>) -> Result<Self, TypeErr> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
@@ -40,20 +36,10 @@ impl GenericFunctionArg {
                 pos:        self.pos,
                 vararg:     self.vararg,
                 mutable:    self.mutable,
-                ty:         class
+                ty:         class.cloned()
             })
         } else {
             Ok(self)
-        }
-    }
-
-    pub fn ty(&self) -> Result<Option<GenericActualTypeName>, TypeErr> {
-        if self.is_py_type {
-            Ok(self.ty.clone())
-        } else {
-            Ok(Some(self.ty.clone().ok_or_else(|| {
-                TypeErr::new(&self.pos.clone(), "Function argument type not given")
-            })?))
         }
     }
 }
@@ -98,18 +84,18 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         mutable:    *mutable,
                         pos:        node_pos.pos.clone(),
                         ty:         match _type {
-                            Some(_type) => Some(GenericActualTypeName::try_from(_type.deref())?),
+                            Some(_type) => Some(GenericTypeName::try_from(_type.deref())?),
                             None if name.as_str() == SELF => None,
                             None =>
                                 if let Some(default) = default {
                                     Some(match &default.deref().node {
-                                        Node::Str { .. } => GenericActualTypeName::new(STRING),
-                                        Node::Bool { .. } => GenericActualTypeName::new(BOOLEAN),
-                                        Node::Int { .. } => GenericActualTypeName::new(INTEGER),
-                                        Node::Real { .. } => GenericActualTypeName::new(FLOAT),
+                                        Node::Str { .. } => GenericTypeName::from(python::STRING),
+                                        Node::Bool { .. } => GenericTypeName::from(python::BOOLEAN),
+                                        Node::Int { .. } => GenericTypeName::from(python::INTEGER),
+                                        Node::Real { .. } => GenericTypeName::from(python::FLOAT),
                                         // TODO create system for identifying when a enum is an int
                                         // and when it is a float
-                                        Node::ENum { .. } => GenericActualTypeName::new(INTEGER),
+                                        Node::ENum { .. } => GenericTypeName::from(python::INTEGER),
                                         // TODO create system for inferring types for constructor
                                         // and function calls
                                         _ =>

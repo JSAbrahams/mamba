@@ -1,20 +1,14 @@
+use crate::common::position::Position;
+use crate::type_checker::context::field::concrete::Field;
+use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::ty::generic::GenericType;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::type_result::TypeErr;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-
-use crate::common::position::Position;
-use crate::type_checker::context::concrete::field::Field;
-use crate::type_checker::context::concrete::function::Function;
-use crate::type_checker::context::concrete::function_arg::FunctionArg;
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::generic::ty::GenericType;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
-use crate::type_checker::type_result::TypeErr;
-
-pub mod field;
-pub mod function;
-pub mod function_arg;
-pub mod type_name;
 
 pub const INT_PRIMITIVE: &'static str = "Int";
 pub const FLOAT_PRIMITIVE: &'static str = "Float";
@@ -41,7 +35,7 @@ impl Display for Type {
 impl Type {
     pub fn try_from(
         generic_type: &GenericType,
-        generics: &HashMap<String, GenericActualTypeName>,
+        generics: &HashMap<String, GenericTypeName>,
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(Type {

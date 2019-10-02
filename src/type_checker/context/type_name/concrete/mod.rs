@@ -1,12 +1,11 @@
+use crate::common::position::Position;
+use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 use core::fmt;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
-
-use crate::common::position::Position;
-use crate::type_checker::context::concrete::type_name::actual::ActualTypeName;
-use crate::type_checker::context::generic::type_name::{GenericActualTypeName, GenericTypeName};
-use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub mod actual;
 
@@ -25,13 +24,13 @@ impl Display for TypeName {
     }
 }
 
-impl TryFrom<(&GenericTypeName, &HashMap<String, GenericActualTypeName>, &Position)> for TypeName {
+impl TryFrom<(&GenericTypeName, &HashMap<String, GenericTypeName>, &Position)> for TypeName {
     type Error = Vec<TypeErr>;
 
     fn try_from(
         (gen_type_name, generics, pos): (
             &GenericTypeName,
-            &HashMap<String, GenericActualTypeName>,
+            &HashMap<String, GenericTypeName>,
             &Position
         )
     ) -> TypeResult<Self> {
@@ -63,6 +62,13 @@ impl TypeName {
                 lit:      String::from(lit),
                 generics: Vec::from(generics)
             }
+        }
+    }
+
+    pub fn single(&self, pos: &Position) -> TypeResult<ActualTypeName> {
+        match self {
+            TypeName::Single { ty } => Ok(ty.clone()),
+            TypeName::Union { .. } => Err(vec![TypeErr::new(pos, "Unions not supported here")])
         }
     }
 }

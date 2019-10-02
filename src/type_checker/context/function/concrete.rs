@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::function_arg::FunctionArg;
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 pub const INIT: &'static str = "init";
@@ -27,17 +26,21 @@ pub const SUB: &'static str = "-";
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Function {
     pub is_py_type: bool,
-    pub name:       String,
+    pub name:       TypeName,
     pub pure:       bool,
     pub arguments:  Vec<FunctionArg>,
     pub raises:     Vec<TypeName>,
-    pub ret_ty:     Option<TypeName>
+    ret_ty:         Option<TypeName>
+}
+
+impl Function {
+    pub fn ty(&self) -> Option<TypeName> { self.ret_ty.clone() }
 }
 
 impl Function {
     pub fn try_from(
         generic_fun: &GenericFunction,
-        generics: &HashMap<String, GenericActualTypeName>,
+        generics: &HashMap<String, GenericTypeName>,
         pos: &Position
     ) -> Result<Self, TypeErr> {
         Ok(Function {

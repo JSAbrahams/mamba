@@ -1,28 +1,32 @@
-use std::convert::TryFrom;
-use std::path::PathBuf;
-
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::type_name::actual::ActualTypeName;
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::concrete::Type;
-use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::generics;
-use crate::type_checker::context::generic::ty::GenericType;
+use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::generics::generics;
 use crate::type_checker::context::python::python_files;
+use crate::type_checker::context::ty::concrete::Type;
+use crate::type_checker::context::ty::generic::GenericType;
+use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
+use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
+use std::collections::HashSet;
+use std::convert::TryFrom;
+use std::path::PathBuf;
 
-pub mod concrete;
-pub mod generic;
+pub mod field;
+pub mod function;
+pub mod function_arg;
+pub mod parameter;
+pub mod parent;
+pub mod python;
+pub mod ty;
+pub mod type_name;
 
-mod python;
-
-// TODO make sets instead of vectors
+mod generics;
 
 /// A context stores all information of all identified types of the current
 /// application.
@@ -46,16 +50,11 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
-    fn lookup_direct(
-        &self,
-        name: &str,
-        generics: &[ActualTypeName],
-        pos: &Position
-    ) -> Result<Type, TypeErr> {
+    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
         let generic_type = self
             .types
             .iter()
-            .find(|ty| ty.name.as_str() == name)
+            .find(|ty| ty.name == ty_name)
             .ok_or(TypeErr::new(pos, "Cannot find type"))?;
 
         if generic_type.generics.len() == generics.len() {
@@ -74,14 +73,6 @@ impl Context {
                 format!("Type takes {} generic arguments", generic_type.generics.len()).as_str()
             ))
         }
-    }
-
-    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
-        let ty = match ty_name {
-            ActualTypeName::Single { lit, generics } => self.lookup_direct(lit, generics, pos),
-            ActualTypeName::Tuple { ty_names } => unimplemented!(),
-            ActualTypeName::AnonFun { args, ret_ty } => unimplemented!()
-        }?;
 
         Ok(MutableType::from(&ActualType::from(&ty)))
     }
@@ -97,9 +88,7 @@ impl Context {
         Ok(InferType { raises: vec![], expr_type: Some(expr_type) })
     }
 
-    pub fn lookup_fun(&self, name: &str, pos: &Position) {}
-
-    /// Loads pre-defined Python primtives into context for easy lookup
+    /// Loads pre-defined Python primitives into context for easy lookup
     pub fn into_with_primitives(self) -> TypeResult<Self> {
         let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("src")

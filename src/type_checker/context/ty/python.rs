@@ -1,14 +1,14 @@
 use std::ops::Deref;
 
-use python_parser::ast::{Classdef, CompoundStatement, Name, Statement};
-
 use crate::common::position::Position;
-use crate::type_checker::context::concrete;
-use crate::type_checker::context::concrete::function::INIT;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::parent::GenericParent;
-use crate::type_checker::context::generic::ty::GenericType;
-use crate::type_checker::context::python::field::GenericFields;
+use crate::type_checker::context::field::python::GenericFields;
+use crate::type_checker::context::function;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::parent::generic::GenericParent;
+use crate::type_checker::context::ty::concrete;
+use crate::type_checker::context::ty::generic::GenericType;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use python_parser::ast::{Classdef, CompoundStatement, Name, Statement};
 
 pub const INT_PRIMITIVE: &'static str = "int";
 pub const FLOAT_PRIMITIVE: &'static str = "float";
@@ -37,12 +37,12 @@ impl From<&Classdef> for GenericType {
 
         let args = functions
             .iter()
-            .find(|f| f.name.as_str() == INIT)
+            .find(|f| f.name.as_str() == function::concrete::INIT)
             .map_or(vec![], |f| f.arguments.clone());
 
         GenericType {
             is_py_type: true,
-            name: primitive_to_concrete(&class_def.name),
+            name: GenericTypeName::from(&primitive_to_concrete(&class_def.name)),
             pos: Position::default(),
             concrete: false,
             args,

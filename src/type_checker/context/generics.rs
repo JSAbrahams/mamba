@@ -1,19 +1,10 @@
-use std::convert::TryFrom;
-
 use crate::parser::ast::Node;
-use crate::type_checker::context::generic::field::GenericField;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::ty::GenericType;
+use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
-
-pub mod field;
-pub mod function;
-pub mod function_arg;
-pub mod parameter;
-pub mod parent;
-pub mod ty;
-pub mod type_name;
+use std::convert::TryFrom;
 
 pub fn generics(
     files: &[CheckInput]

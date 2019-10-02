@@ -2,12 +2,12 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::field::Field;
-use crate::type_checker::context::concrete::function::Function;
+use crate::type_checker::context::field::concrete::Field;
+use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::TypeResult;
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct MutableType {
     pub is_nullable: bool,
     pub is_mutable:  bool,

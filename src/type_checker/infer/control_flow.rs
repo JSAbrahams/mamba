@@ -1,6 +1,7 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::{concrete, Context};
+use crate::type_checker::context::ty::concrete;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::state::StateType::InLoop;
@@ -18,7 +19,7 @@ pub fn infer_control_flow(
         Node::IfElse { cond, then, _else } => {
             let (cond_type, env) = infer(cond, env, ctx, state)?;
             if cond_type
-                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)?
+                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }
@@ -34,7 +35,7 @@ pub fn infer_control_flow(
         Node::While { cond, body } => {
             let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
             if cond_type
-                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, vec![]), &ast.pos)?
+                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
             {
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }

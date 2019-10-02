@@ -1,24 +1,18 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct GenericField {
     pub is_py_type: bool,
     pub name:       String,
     pub pos:        Position,
     pub private:    bool,
     pub mutable:    bool,
-    pub ty:         Option<GenericActualTypeName>
-}
-
-impl GenericField {
-    pub fn ty(&self) -> Result<GenericActualTypeName, TypeErr> {
-        self.ty.clone().ok_or_else(|| TypeErr::new(&self.pos.clone(), "Cannot infer type of field"))
-    }
+    pub ty:         Option<GenericTypeName>
 }
 
 impl TryFrom<&AST> for GenericField {
@@ -27,12 +21,11 @@ impl TryFrom<&AST> for GenericField {
     fn try_from(ast: &AST) -> Result<Self, Self::Error> {
         match &ast.node {
             // TODO do something with forward
-            // TODO do something with ofmut
             Node::VariableDef { private, id_maybe_type, .. } => {
                 let (name, mutable, ty) = match &id_maybe_type.node {
                     Node::IdType { id, mutable, _type } =>
                         (field_name(id.deref())?, *mutable, match _type {
-                            Some(_ty) => Some(GenericActualTypeName::try_from(_ty.deref())?),
+                            Some(_ty) => Some(GenericTypeName::try_from(_ty.deref())?),
                             None => None
                         }),
                     _ => return Err(TypeErr::new(&id_maybe_type.pos, "Expected identifier"))

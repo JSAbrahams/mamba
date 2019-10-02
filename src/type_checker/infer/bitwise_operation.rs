@@ -1,6 +1,7 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::concrete::type_name::TypeName;
-use crate::type_checker::context::{concrete, Context};
+use crate::type_checker::context::ty::concrete;
+use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::Context;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
@@ -18,7 +19,7 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             left_ty.expr_ty(&ast.pos)?;
             right_ty.expr_ty(&ast.pos)?;
             Ok((
-                ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, vec![]), &ast.pos)?
+                ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
                     .raises(left_ty.raises)
                     .raises(right_ty.raises),
                 env.clone()
@@ -28,7 +29,7 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             let (infer_ty, env) = infer(expr, env, ctx, state)?;
             infer_ty.expr_ty(&ast.pos)?;
             Ok((
-                ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, vec![]), &ast.pos)?
+                ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
                     .raises(infer_ty.raises),
                 env.clone()
             ))

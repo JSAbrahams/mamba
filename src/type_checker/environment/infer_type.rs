@@ -1,14 +1,14 @@
 use std::collections::HashSet;
 
 use crate::common::position::Position;
-use crate::type_checker::context::concrete::type_name::actual::ActualTypeName;
-use crate::type_checker::context::concrete::type_name::TypeName;
+use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
+use crate::type_checker::context::type_name::concrete::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct InferType {
-    pub raises: HashSet<ActualTypeName>,
+    pub raises: HashSet<TypeName>,
     expr_type:  Option<ExpressionType>
 }
 
@@ -36,7 +36,7 @@ impl InferType {
         self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))
     }
 
-    pub fn raises(self, raises: HashSet<TypeName>) -> InferType {
+    pub fn raises(self, raises: HashSet<ActualTypeName>) -> InferType {
         let mut self_raises = self.raises.clone();
         raises.iter().for_each(|err| {
             self_raises.insert(err.clone());
@@ -45,7 +45,11 @@ impl InferType {
         InferType { raises: self_raises, expr_type: self.expr_type }
     }
 
-    pub fn handled(self, handled: HashSet<TypeName>, pos: &Position) -> TypeResult<InferType> {
+    pub fn handled(
+        self,
+        handled: HashSet<ActualTypeName>,
+        pos: &Position
+    ) -> TypeResult<InferType> {
         let mut self_raises = self.raises.clone();
         let mut errors = vec![];
         handled.iter().for_each(|handled| {

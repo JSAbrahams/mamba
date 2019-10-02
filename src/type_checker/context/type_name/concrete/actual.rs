@@ -1,11 +1,11 @@
+use crate::common::position::Position;
+use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::type_result::TypeErr;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Display;
-
-use crate::common::position::Position;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
-use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ActualTypeName {
@@ -25,7 +25,7 @@ impl Display for ActualTypeName {
     }
 }
 
-impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericActualTypeName>, &Position)>
+impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericTypeName>, &Position)>
     for ActualTypeName
 {
     type Error = TypeErr;
@@ -33,7 +33,7 @@ impl TryFrom<(&GenericActualTypeName, &HashMap<String, GenericActualTypeName>, &
     fn try_from(
         (gen_type_name, generics, pos): (
             &GenericActualTypeName,
-            &HashMap<String, GenericActualTypeName>,
+            &HashMap<String, GenericTypeName>,
             &Position
         )
     ) -> Result<Self, Self::Error> {
@@ -68,7 +68,7 @@ impl ActualTypeName {
 fn substitute(
     this: &GenericActualTypeName,
     substitute: &GenericActualTypeName,
-    generics: &HashMap<String, GenericActualTypeName>,
+    generics: &HashMap<String, GenericTypeName>,
     pos: &Position
 ) -> Result<ActualTypeName, TypeErr> {
     let typename_from = |g| ActualTypeName::try_from(g, generics, pos);

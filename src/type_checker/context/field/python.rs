@@ -1,6 +1,5 @@
+use crate::type_checker::context::field::generic::GenericField;
 use python_parser::ast::{Expression, SetItem};
-
-use crate::type_checker::context::generic::field::GenericField;
 
 pub struct GenericFields {
     pub fields: Vec<GenericField>

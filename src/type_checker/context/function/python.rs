@@ -1,10 +1,9 @@
-use python_parser::ast::{Funcdef, Name};
-
 use crate::common::position::Position;
-use crate::type_checker::context::concrete;
-use crate::type_checker::context::generic::function::GenericFunction;
-use crate::type_checker::context::generic::function_arg::GenericFunctionArg;
-use crate::type_checker::context::generic::type_name::GenericActualTypeName;
+use crate::type_checker::context::function::concrete;
+use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
+use crate::type_checker::context::type_name::generic::GenericTypeName;
+use python_parser::ast::{Funcdef, Name};
 
 pub const INIT: &'static str = "__init__";
 
@@ -26,11 +25,10 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       convert_name(&func_def.name),
+            name:       GenericTypeName::from(&convert_name(&func_def.name)),
             pure:       false,
             private:    false,
             pos:        Position::default(),
-            generics:   vec![],
             arguments:  func_def
                 .parameters
                 .positional_args
@@ -39,7 +37,7 @@ impl From<&Funcdef> for GenericFunction {
                 .collect(),
             raises:     vec![],
             ret_ty:     match &func_def.return_type {
-                Some(ret_ty) => Some(GenericActualTypeName::from(ret_ty)),
+                Some(ret_ty) => Some(GenericTypeName::from(ret_ty)),
                 None => None
             }
         }
@@ -48,21 +46,21 @@ impl From<&Funcdef> for GenericFunction {
 
 fn convert_name(name: &Name) -> String {
     match name.as_str() {
-        INIT => String::from(concrete::function::INIT),
+        INIT => String::from(concrete::INIT),
 
-        ADD => String::from(concrete::function::ADD),
-        DIV => String::from(concrete::function::DIV),
-        EQ => String::from(concrete::function::EQ),
-        FDIV => String::from(concrete::function::FDIV),
-        GE => String::from(concrete::function::GE),
-        GEQ => String::from(concrete::function::GEQ),
-        LE => String::from(concrete::function::LE),
-        LEQ => String::from(concrete::function::LEQ),
-        MOD => String::from(concrete::function::MOD),
-        MUL => String::from(concrete::function::MUL),
-        NEQ => String::from(concrete::function::NEQ),
-        POW => String::from(concrete::function::POW),
-        SUB => String::from(concrete::function::SUB),
+        ADD => String::from(concrete::ADD),
+        DIV => String::from(concrete::DIV),
+        EQ => String::from(concrete::EQ),
+        FDIV => String::from(concrete::FDIV),
+        GE => String::from(concrete::GE),
+        GEQ => String::from(concrete::GEQ),
+        LE => String::from(concrete::LE),
+        LEQ => String::from(concrete::LEQ),
+        MOD => String::from(concrete::MOD),
+        MUL => String::from(concrete::MUL),
+        NEQ => String::from(concrete::NEQ),
+        POW => String::from(concrete::POW),
+        SUB => String::from(concrete::SUB),
 
         other => String::from(other)
     }
