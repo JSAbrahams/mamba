@@ -43,7 +43,7 @@ impl TryFrom<(&GenericType, &HashMap<String, GenericTypeName>, &Position)> for T
     ) -> Result<Self, Self::Error> {
         Ok(Type {
             is_py_type: generic.is_py_type,
-            name:       TypeName::try_from((generic.name, generics, pos))?,
+            name:       ActualTypeName::try_from((&generic.name, generics, pos))?,
             concrete:   generic.concrete,
             args:       generic
                 .args

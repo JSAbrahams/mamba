@@ -6,6 +6,7 @@ use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::type_checker::context::parameter::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
+use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
@@ -13,7 +14,7 @@ use std::convert::TryFrom;
 #[derive(Debug, Clone)]
 pub struct GenericType {
     pub is_py_type: bool,
-    pub name:       GenericTypeName,
+    pub name:       GenericActualTypeName,
     pub pos:        Position,
     pub concrete:   bool,
     pub args:       Vec<GenericFunctionArg>,
@@ -60,7 +61,7 @@ impl TryFrom<&AST> for GenericType {
                     }
                 });
                 if !arg_errs.is_empty() {
-                    return Err(arg_errs);
+                    return Err(arg_errs.iter().flatten().collect());
                 }
 
                 let (mut body_fields, functions) =
@@ -132,7 +133,7 @@ impl TryFrom<&AST> for GenericType {
 
 fn get_name_and_generics(
     _type: &AST
-) -> Result<(GenericTypeName, Vec<GenericParameter>), Vec<TypeErr>> {
+) -> Result<(GenericActualTypeName, Vec<GenericParameter>), Vec<TypeErr>> {
     match &_type.node {
         Node::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
@@ -141,10 +142,13 @@ fn get_name_and_generics(
                 return Err(generic_errs.into_iter().map(Result::unwrap_err).collect());
             }
 
-            let name = GenericTypeName::from(match &id.node {
-                Node::Id { lit } => Ok(lit.clone()),
-                _ => Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
-            }?);
+            let name = GenericActualTypeName::new(
+                match &id.node {
+                    Node::Id { lit } => Ok(lit.clone()),
+                    _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
+                }?
+                .as_str()
+            );
 
             Ok((name, generics.into_iter().map(Result::unwrap).collect::<Vec<_>>()))
         }

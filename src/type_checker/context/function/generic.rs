@@ -5,13 +5,14 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::function::python;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
+use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
 use crate::type_checker::context::type_name::generic::GenericTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone)]
 pub struct GenericFunction {
     pub is_py_type: bool,
-    pub name:       GenericTypeName,
+    pub name:       GenericActualTypeName,
     pub pure:       bool,
     pub private:    bool,
     pub pos:        Position,

@@ -46,7 +46,7 @@ impl Function {
     ) -> TypeResult<Function> {
         Ok(Function {
             is_py_type: generic_fun.is_py_type,
-            name:       TypeName::try_from((&generic_fun.name, generics, pos))?,
+            name:       ActualTypeName::try_from((&generic_fun.name, generics, pos))?,
             pure:       generic_fun.pure,
             arguments:  generic_fun
                 .arguments
