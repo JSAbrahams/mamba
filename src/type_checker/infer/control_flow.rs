@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -24,12 +24,12 @@ pub fn infer_control_flow(
                 return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
             }
 
-            let (then_type, env) = infer(then, &env, ctx, state)?;
+            let (then_type, then_env) = infer(then, &env, ctx, state)?;
             if let Some(_else) = _else {
                 let (else_type, else_env) = infer(_else, &env, ctx, state)?;
-                Ok((then_type.union(&else_type, &ast.pos)?, env.intersection(else_env)))
+                Ok((then_type.union(&else_type, &ast.pos)?, then_env.intersection(else_env)))
             } else {
-                Ok((then_type, env))
+                Ok((then_type, then_env))
             }
         }
         Node::While { cond, body } => {

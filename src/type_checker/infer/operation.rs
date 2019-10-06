@@ -69,6 +69,8 @@ fn override_op(
             state.safe,
             &left.pos
         )?;
+
+        // TODO return return type function
         Ok((left_ty.union(&right_ty, &left.pos)?, right_env))
     } else {
         Err(vec![TypeErr::new(&left.pos, "Types differ")])

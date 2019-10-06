@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;

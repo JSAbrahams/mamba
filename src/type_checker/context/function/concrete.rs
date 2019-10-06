@@ -1,11 +1,12 @@
+use std::collections::HashMap;
+use std::convert::TryFrom;
+
 use crate::common::position::Position;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
-use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::collections::HashMap;
-use std::convert::TryFrom;
 
 pub const INIT: &'static str = "init";
 
@@ -45,7 +46,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, ActualTypeName>, &Position)> fo
     ) -> Result<Self, Self::Error> {
         Ok(Function {
             is_py_type: fun.is_py_type,
-            name:       ActualTypeName::try_from((&fun.name, generics, pos))?,
+            name:       fun.name.substitute(generics, pos)?,
             pure:       fun.pure,
             arguments:  fun
                 .arguments
@@ -55,10 +56,10 @@ impl TryFrom<(&GenericFunction, &HashMap<String, ActualTypeName>, &Position)> fo
             raises:     fun
                 .raises
                 .iter()
-                .map(|raise| ActualTypeName::try_from((raise, generics, pos)))
+                .map(|raise| raise.substitute(generics, pos))
                 .collect::<Result<_, _>>()?,
             ret_ty:     match &fun.ret_ty {
-                Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
+                Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
             }
         })

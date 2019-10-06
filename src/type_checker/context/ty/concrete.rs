@@ -9,8 +9,8 @@ use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::generic::GenericType;
-use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub const INT_PRIMITIVE: &'static str = "Int";
@@ -47,7 +47,7 @@ impl TryFrom<(&GenericType, &HashMap<String, ActualTypeName>, &Position)> for Ty
     ) -> Result<Self, Self::Error> {
         Ok(Type {
             is_py_type: generic.is_py_type,
-            name:       ActualTypeName::try_from((&generic.name, generics, pos))?,
+            name:       generic.name.substitute(generics, pos)?,
             concrete:   generic.concrete,
             args:       generic
                 .args
@@ -74,7 +74,13 @@ impl Type {
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
-    pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
+    pub fn fun(
+        &self,
+        fun_name: &str,
+        args: &[TypeName],
+        safe: bool,
+        pos: &Position
+    ) -> TypeResult<Function> {
         // TODO accept if arguments passed is union that is subset of argument union
         self.functions
             .iter()

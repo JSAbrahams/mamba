@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use crate::parser::ast::AST;
 use crate::type_checker::context::Context;
-use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::infer_all;
 use crate::type_checker::type_result::TypeResults;
 

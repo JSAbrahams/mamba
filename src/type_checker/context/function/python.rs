@@ -2,8 +2,8 @@ use crate::common::position::Position;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
-use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use python_parser::ast::{Funcdef, Name};
 
 pub const INIT: &'static str = "__init__";
@@ -26,7 +26,7 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       GenericActualTypeName::new(convert_name(&func_def.name).as_str()),
+            name:       ActualTypeName::new(convert_name(&func_def.name).as_str(), &vec![]),
             pure:       false,
             private:    false,
             pos:        Position::default(),
@@ -38,7 +38,7 @@ impl From<&Funcdef> for GenericFunction {
                 .collect(),
             raises:     vec![],
             ret_ty:     match &func_def.return_type {
-                Some(ret_ty) => Some(GenericTypeName::from(ret_ty)),
+                Some(ret_ty) => Some(TypeName::from(ret_ty)),
                 None => None
             }
         }

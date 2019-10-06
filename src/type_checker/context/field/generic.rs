@@ -1,6 +1,6 @@
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::type_name::generic::GenericTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -12,7 +12,7 @@ pub struct GenericField {
     pub pos:        Position,
     pub private:    bool,
     pub mutable:    bool,
-    pub ty:         Option<GenericTypeName>
+    pub ty:         Option<TypeName>
 }
 
 impl TryFrom<&AST> for GenericField {
@@ -25,7 +25,7 @@ impl TryFrom<&AST> for GenericField {
                 let (name, mutable, ty) = match &id_maybe_type.node {
                     Node::IdType { id, mutable, _type } =>
                         (field_name(id.deref())?, *mutable, match _type {
-                            Some(_ty) => Some(GenericTypeName::try_from(_ty.deref())?),
+                            Some(_ty) => Some(TypeName::try_from(_ty.deref())?),
                             None => None
                         }),
                     _ => return Err(vec![TypeErr::new(&id_maybe_type.pos, "Expected identifier")])

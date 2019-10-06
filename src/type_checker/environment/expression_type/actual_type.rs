@@ -5,7 +5,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::ty::concrete::Type;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
@@ -47,7 +47,7 @@ impl ActualType {
         pos: &Position
     ) -> TypeResult<Function> {
         match &self {
-            ActualType::Single { ty } => ty.fun(name, &args, pos),
+            ActualType::Single { ty } => ty.fun(name, &args, safe, pos),
             _ => Err(vec![TypeErr::new(pos, "Undefined function")])
         }
     }

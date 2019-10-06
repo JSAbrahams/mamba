@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::common::position::Position;
-use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::iter::FromIterator;

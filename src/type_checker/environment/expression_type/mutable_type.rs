@@ -4,8 +4,8 @@ use std::fmt::{Display, Formatter};
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
-use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::TypeResult;
@@ -32,6 +32,14 @@ impl From<&ActualType> for MutableType {
 }
 
 impl MutableType {
+    pub fn new(mutable: &bool, nullable: &bool, actual_ty: &ActualType) -> MutableType {
+        MutableType {
+            is_nullable: nullable.clone(),
+            is_mutable:  mutable.clone(),
+            actual_ty:   actual_ty.clone()
+        }
+    }
+
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         self.actual_ty.field(field, pos)
     }
@@ -52,22 +60,31 @@ impl MutableType {
     fn expression_ty_to_type_name(&self, expr_ty: &ExpressionType) -> TypeName {
         match expr_ty {
             ExpressionType::Single { mut_ty } =>
-                TypeName::Single { ty: self.asdf(&mut_ty.actual_ty) },
+                TypeName::Single { ty: self.actual_type_to_actual_type_name(&mut_ty.actual_ty) },
             ExpressionType::Union { union } => TypeName::Union {
-                union: union.iter().map(|mut_ty| self.asdf(&mut_ty.actual_ty)).collect()
+                union: union
+                    .iter()
+                    .map(|mut_ty| self.actual_type_to_actual_type_name(&mut_ty.actual_ty))
+                    .collect()
             }
         }
     }
 
-    fn asdf(&self, actual_type: &ActualType) -> ActualTypeName {
+    fn actual_type_to_actual_type_name(&self, actual_type: &ActualType) -> ActualTypeName {
         match actual_type {
             ActualType::Single { ty } => ty.name.clone(),
             ActualType::Tuple { types } => ActualTypeName::Tuple {
-                ty_names: types.iter().map(|mut_ty| self.asdf(&mut_ty.actual_ty)).collect()
+                ty_names: types
+                    .iter()
+                    .map(|mut_ty| self.actual_type_to_actual_type_name(&mut_ty.actual_ty))
+                    .collect()
             },
             ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
-                args:   args.iter().map(|mut_ty| self.asdf(&mut_ty.actual_ty)).collect(),
-                ret_ty: Box::new(self.asdf(&ret_ty.actual_ty))
+                args:   args
+                    .iter()
+                    .map(|mut_ty| self.actual_type_to_actual_type_name(&mut_ty.actual_ty))
+                    .collect(),
+                ret_ty: Box::new(self.actual_type_to_actual_type_name(&ret_ty.actual_ty))
             }
         }
     }

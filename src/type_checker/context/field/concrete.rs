@@ -1,7 +1,7 @@
 use crate::common::position::Position;
 use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::type_name::concrete::actual::ActualTypeName;
-use crate::type_checker::context::type_name::concrete::TypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -29,7 +29,7 @@ impl TryFrom<(&GenericField, &HashMap<String, ActualTypeName>, &Position)> for F
             is_py_type: field.is_py_type,
             name:       field.name.clone(),
             ty:         match &field.ty {
-                Some(ty) => Some(TypeName::try_from((ty, generics, pos))?),
+                Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
             }
         })

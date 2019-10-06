@@ -7,7 +7,7 @@ use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
-use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use python_parser::ast::{Classdef, CompoundStatement, Name, Statement};
 
 pub const INT_PRIMITIVE: &'static str = "int";
@@ -37,12 +37,12 @@ impl From<&Classdef> for GenericType {
 
         let args = functions
             .iter()
-            .find(|f| f.name == GenericActualTypeName::new(function::concrete::INIT))
+            .find(|f| f.name == ActualTypeName::new(function::concrete::INIT, &vec![]))
             .map_or(vec![], |f| f.arguments.clone());
 
         GenericType {
             is_py_type: true,
-            name: GenericActualTypeName::new(primitive_to_concrete(&class_def.name).as_str()),
+            name: ActualTypeName::new(primitive_to_concrete(&class_def.name).as_str(), &vec![]),
             pos: Position::default(),
             concrete: false,
             args,

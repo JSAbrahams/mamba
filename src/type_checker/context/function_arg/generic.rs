@@ -4,9 +4,8 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::type_name::generic::actual::GenericActualTypeName;
-use crate::type_checker::context::type_name::generic::GenericTypeName;
-use crate::type_checker::context::type_name::python;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::{python, TypeName};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub const SELF: &'static str = "self";
@@ -24,15 +23,15 @@ pub struct GenericFunctionArg {
     pub pos:        Position,
     pub vararg:     bool,
     pub mutable:    bool,
-    pub ty:         Option<GenericTypeName>
+    pub ty:         Option<TypeName>
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<&GenericActualTypeName>) -> Result<Self, TypeErr> {
+    pub fn in_class(self, class: Option<&ActualTypeName>) -> Result<Self, TypeErr> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
-            Ok(GenericFunctionArg { ty: Some(GenericTypeName::from(class.unwrap())), ..self })
+            Ok(GenericFunctionArg { ty: Some(TypeName::from(class.unwrap())), ..self })
         } else {
             Ok(self)
         }
@@ -79,18 +78,18 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         mutable:    *mutable,
                         pos:        node_pos.pos.clone(),
                         ty:         match _type {
-                            Some(_type) => Some(GenericTypeName::try_from(_type.deref())?),
+                            Some(_type) => Some(TypeName::try_from(_type.deref())?),
                             None if name.as_str() == SELF => None,
                             None =>
                                 if let Some(default) = default {
                                     Some(match &default.deref().node {
-                                        Node::Str { .. } => GenericTypeName::from(python::STRING),
-                                        Node::Bool { .. } => GenericTypeName::from(python::BOOLEAN),
-                                        Node::Int { .. } => GenericTypeName::from(python::INTEGER),
-                                        Node::Real { .. } => GenericTypeName::from(python::FLOAT),
+                                        Node::Str { .. } => TypeName::from(python::STRING),
+                                        Node::Bool { .. } => TypeName::from(python::BOOLEAN),
+                                        Node::Int { .. } => TypeName::from(python::INTEGER),
+                                        Node::Real { .. } => TypeName::from(python::FLOAT),
                                         // TODO create system for identifying when a enum is an int
                                         // and when it is a float
-                                        Node::ENum { .. } => GenericTypeName::from(python::INTEGER),
+                                        Node::ENum { .. } => TypeName::from(python::INTEGER),
                                         // TODO create system for inferring types for constructor
                                         // and function calls
                                         _ =>
