@@ -4,7 +4,6 @@ use std::fmt::{Display, Formatter};
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
@@ -51,41 +50,7 @@ impl MutableType {
         safe: bool,
         pos: &Position
     ) -> TypeResult<Function> {
-        let args: Vec<TypeName> =
-            args.iter().map(|arg| self.expression_ty_to_type_name(arg)).collect();
-
+        let args: Vec<TypeName> = args.iter().map(|arg| TypeName::from(arg)).collect();
         self.actual_ty.fun(name, &args, safe, pos)
-    }
-
-    fn expression_ty_to_type_name(&self, expr_ty: &ExpressionType) -> TypeName {
-        match expr_ty {
-            ExpressionType::Single { mut_ty } =>
-                TypeName::Single { ty: self.actual_type_to_actual_type_name(&mut_ty.actual_ty) },
-            ExpressionType::Union { union } => TypeName::Union {
-                union: union
-                    .iter()
-                    .map(|mut_ty| self.actual_type_to_actual_type_name(&mut_ty.actual_ty))
-                    .collect()
-            }
-        }
-    }
-
-    fn actual_type_to_actual_type_name(&self, actual_type: &ActualType) -> ActualTypeName {
-        match actual_type {
-            ActualType::Single { ty } => ty.name.clone(),
-            ActualType::Tuple { types } => ActualTypeName::Tuple {
-                ty_names: types
-                    .iter()
-                    .map(|mut_ty| self.actual_type_to_actual_type_name(&mut_ty.actual_ty))
-                    .collect()
-            },
-            ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
-                args:   args
-                    .iter()
-                    .map(|mut_ty| self.actual_type_to_actual_type_name(&mut_ty.actual_ty))
-                    .collect(),
-                ret_ty: Box::new(self.actual_type_to_actual_type_name(&ret_ty.actual_ty))
-            }
-        }
     }
 }

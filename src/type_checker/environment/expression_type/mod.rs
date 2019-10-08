@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::common::position::Position;
@@ -16,6 +17,19 @@ pub mod mutable_type;
 pub enum ExpressionType {
     Single { mut_ty: MutableType },
     Union { union: HashSet<MutableType> }
+}
+
+impl Hash for ExpressionType {
+    /// Hash ExpressionType
+    ///
+    /// Due to ExpressionTypes containing HashSets, the runtime is O(n) instead
+    /// of O(1).
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match &self {
+            ExpressionType::Single { mut_ty } => mut_ty.hash(state),
+            ExpressionType::Union { union } => union.iter().for_each(|ty| ty.hash(state))
+        }
+    }
 }
 
 impl Display for ExpressionType {

@@ -6,7 +6,9 @@ use std::fmt::{Display, Formatter};
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::hash::{Hash, Hasher};
 
 pub mod actual;
 pub mod python;
@@ -17,11 +19,37 @@ pub enum TypeName {
     Union { union: HashSet<ActualTypeName> }
 }
 
+impl Hash for TypeName {
+    /// Hash TypeName
+    ///
+    /// As a TypeName may be a union, the runtime is O(n) instead of O(1)
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            TypeName::Single { ty } => ty.hash(state),
+            TypeName::Union { union } => union.iter().for_each(|ty| ty.hash(state))
+        }
+    }
+}
+
 impl Display for TypeName {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             TypeName::Single { ty } => write!(f, "{}", ty),
             TypeName::Union { union } => write!(f, "{{{:#?}}}", union)
+        }
+    }
+}
+
+impl From<&ExpressionType> for TypeName {
+    fn from(expr_ty: &ExpressionType) -> Self {
+        match expr_ty {
+            ExpressionType::Single { mut_ty } =>
+                TypeName::from(&ActualTypeName::from(&mut_ty.actual_ty)),
+            ExpressionType::Union { union } => {
+                let union =
+                    union.iter().map(|expr_ty| ActualTypeName::from(&expr_ty.actual_ty)).collect();
+                TypeName::Union { union }
+            }
         }
     }
 }
@@ -44,10 +72,10 @@ impl TryFrom<&AST> for TypeName {
             if errs.is_empty() {
                 Ok(TypeName::Union { union: types.into_iter().map(Result::unwrap).collect() })
             } else {
-                Err(errs.into_iter().map(Result::unwrap_err).collect())
+                Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
             }
         } else {
-            Ok(TypeName::Single { ty: ActualTypeName::try_from(ast).map_err(|e| vec![e])? })
+            Ok(TypeName::Single { ty: ActualTypeName::try_from(ast)? })
         }
     }
 }

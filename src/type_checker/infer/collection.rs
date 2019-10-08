@@ -17,7 +17,7 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
             let mut types = vec![];
             let mut raises = HashSet::new();
             for element in elements {
-                let (mut ty, new_env) = infer(element, &env, ctx, state)?;
+                let (ty, new_env) = infer(element, &env, ctx, state)?;
                 types.push(ty.expr_ty(&element.pos)?);
                 raises = raises.union(&ty.raises).cloned().collect();
                 env = new_env;
