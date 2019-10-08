@@ -18,6 +18,7 @@ pub const FLOAT_PRIMITIVE: &'static str = "Float";
 pub const STRING_PRIMITIVE: &'static str = "String";
 pub const BOOL_PRIMITIVE: &'static str = "Bool";
 pub const ENUM_PRIMITIVE: &'static str = "Enum";
+pub const COMPLEX_PRIMITIVE: &'static str = "Complex";
 
 pub const RANGE: &'static str = "Range";
 

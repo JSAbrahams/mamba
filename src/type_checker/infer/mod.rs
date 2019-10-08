@@ -65,9 +65,9 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
                 .partition(Result::is_ok);
 
             if errs.is_empty() {
-                Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
-            } else {
                 Ok((InferType::new(), env.clone()))
+            } else {
+                Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
             }
         }
         Node::Import { .. } => Ok((InferType::new(), env.clone())),

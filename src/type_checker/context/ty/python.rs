@@ -15,6 +15,7 @@ pub const FLOAT_PRIMITIVE: &'static str = "float";
 pub const STRING_PRIMITIVE: &'static str = "str";
 pub const BOOL_PRIMITIVE: &'static str = "bool";
 pub const ENUM_PRIMITIVE: &'static str = "enum";
+pub const COMPLEX_PRIMITIVE: &'static str = "complex";
 
 pub const RANGE: &'static str = "range";
 
@@ -63,6 +64,7 @@ fn primitive_to_concrete(name: &Name) -> String {
         STRING_PRIMITIVE => String::from(concrete::STRING_PRIMITIVE),
         BOOL_PRIMITIVE => String::from(concrete::BOOL_PRIMITIVE),
         ENUM_PRIMITIVE => String::from(concrete::ENUM_PRIMITIVE),
+        COMPLEX_PRIMITIVE => String::from(concrete::COMPLEX_PRIMITIVE),
 
         RANGE => String::from(concrete::RANGE),
 
