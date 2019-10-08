@@ -16,6 +16,8 @@ pub const STRING_PRIMITIVE: &'static str = "str";
 pub const BOOL_PRIMITIVE: &'static str = "bool";
 pub const ENUM_PRIMITIVE: &'static str = "enum";
 
+pub const RANGE: &'static str = "range";
+
 impl From<&Classdef> for GenericType {
     fn from(class_def: &Classdef) -> GenericType {
         let mut functions = vec![];
@@ -61,6 +63,8 @@ fn primitive_to_concrete(name: &Name) -> String {
         STRING_PRIMITIVE => String::from(concrete::STRING_PRIMITIVE),
         BOOL_PRIMITIVE => String::from(concrete::BOOL_PRIMITIVE),
         ENUM_PRIMITIVE => String::from(concrete::ENUM_PRIMITIVE),
+
+        RANGE => String::from(concrete::RANGE),
 
         other => String::from(other)
     }

@@ -19,6 +19,8 @@ pub const STRING_PRIMITIVE: &'static str = "String";
 pub const BOOL_PRIMITIVE: &'static str = "Bool";
 pub const ENUM_PRIMITIVE: &'static str = "Enum";
 
+pub const RANGE: &'static str = "Range";
+
 // TODO add parents
 
 #[derive(Debug, Clone, Eq, PartialEq)]

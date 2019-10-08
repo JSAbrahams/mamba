@@ -51,6 +51,7 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
+    // TODO change so it accepts all actual type name variants
     fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
         let (name, generics) = match ty_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
@@ -88,6 +89,20 @@ impl Context {
         }
     }
 
+    fn lookup_actual_fun(
+        &self,
+        fun_name: &ActualTypeName,
+        fun_args: &[TypeName],
+        pos: &Position
+    ) -> TypeResult<MutableType> {
+        let (name, generics) = match fun_name {
+            ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
+            _ => return Err(vec![TypeErr::new(pos, "Must be type name")])
+        };
+
+        unimplemented!()
+    }
+
     pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<InferType> {
         let expr_type = match type_name {
             TypeName::Single { ty } =>
@@ -104,6 +119,28 @@ impl Context {
         Ok(InferType::from(&expr_type))
     }
 
+    pub fn lookup_fun(
+        &self,
+        fun_name: &TypeName,
+        args: &[TypeName],
+        pos: &Position
+    ) -> TypeResult<InferType> {
+        let expr_ty = match fun_name {
+            TypeName::Single { ty } =>
+                ExpressionType::Single { mut_ty: self.lookup_actual_fun(ty, args, pos)? },
+            TypeName::Union { union } => {
+                let union: HashSet<_> = union
+                    .iter()
+                    .map(|a_t| self.lookup_actual_fun(a_t, args, pos))
+                    .collect::<Result<_, Vec<TypeErr>>>()?;
+
+                ExpressionType::Union { union }
+            }
+        };
+
+        Ok(InferType::from(&expr_ty))
+    }
+
     /// Loads pre-defined Python primitives into context for easy lookup
     pub fn into_with_primitives(self) -> TypeResult<Self> {
         let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -111,6 +148,25 @@ impl Context {
             .join("type_checker")
             .join("resources")
             .join("primitives");
+        let (mut py_types, mut py_fields, mut py_functions) = python_files(&python_dir)?;
+
+        let mut types = self.types.clone();
+        let mut functions = self.functions.clone();
+        let mut fields = self.fields.clone();
+
+        types.append(&mut py_types);
+        functions.append(&mut py_functions);
+        fields.append(&mut py_fields);
+
+        Ok(Context { types, functions, fields })
+    }
+
+    pub fn into_with_std_lib(self) -> TypeResult<Self> {
+        let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("type_checker")
+            .join("resources")
+            .join("std_lib");
         let (mut py_types, mut py_fields, mut py_functions) = python_files(&python_dir)?;
 
         let mut types = self.types.clone();

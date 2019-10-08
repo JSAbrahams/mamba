@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Display;
+use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::ops::Deref;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ActualTypeName {
@@ -68,7 +68,7 @@ impl From<&ActualType> for ActualTypeName {
         match actual_type {
             ActualType::Single { ty } => ty.name.clone(),
             ActualType::Tuple { types } => ActualTypeName::Tuple {
-                ty_names: types.iter().map(|ty| ActualTypeName::from(&ty.actual_ty)).collect()
+                ty_names: types.iter().map(|ty| ActualTypeName::from(&ty)).collect()
             },
             ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
                 args:   args.iter().map(|arg| ActualTypeName::from(&arg.actual_ty)).collect(),
@@ -92,9 +92,59 @@ impl ActualTypeName {
 
     pub fn substitute(
         &self,
-        generics: &HashMap<String, ActualTypeName>,
+        gens: &HashMap<String, ActualTypeName>,
         pos: &Position
     ) -> TypeResult<ActualTypeName> {
-        unimplemented!()
+        match &self {
+            ActualTypeName::Single { lit, generics } =>
+                if let Some(subst) = gens.get(lit) {
+                    if let ActualTypeName::Single { lit, generics: other_generics } = subst {
+                        if generics.is_empty() && other_generics.is_empty() {
+                            Ok(ActualTypeName::Single { lit: lit.clone(), generics: vec![] })
+                        } else if generics.is_empty() && !other_generics.is_empty() {
+                            Ok(ActualTypeName::Single {
+                                lit:      lit.clone(),
+                                generics: other_generics
+                                    .iter()
+                                    .map(|g| g.substitute(gens, pos))
+                                    .collect::<Result<_, _>>()?
+                            })
+                        } else if !generics.is_empty() && other_generics.is_empty() {
+                            Ok(ActualTypeName::Single {
+                                lit:      lit.clone(),
+                                generics: generics
+                                    .iter()
+                                    .map(|g| g.substitute(gens, pos))
+                                    .collect::<Result<_, _>>()?
+                            })
+                        } else {
+                            Err(vec![TypeErr::new(
+                                pos,
+                                "Replacement generic may not have arguments"
+                            )])
+                        }
+                    } else {
+                        Err(vec![TypeErr::new(pos, "Generic does not take arguments")])
+                    }
+                } else {
+                    Ok(ActualTypeName::Single {
+                        lit:      lit.clone(),
+                        generics: generics
+                            .iter()
+                            .map(|ty| ty.substitute(gens, pos))
+                            .collect::<Result<_, _>>()?
+                    })
+                },
+            ActualTypeName::Tuple { ty_names } => Ok(ActualTypeName::Tuple {
+                ty_names: ty_names
+                    .iter()
+                    .map(|ty| ty.substitute(gens, pos))
+                    .collect::<Result<_, _>>()?
+            }),
+            ActualTypeName::AnonFun { args, ret_ty } => Ok(ActualTypeName::AnonFun {
+                args:   args.iter().map(|ty| ty.substitute(gens, pos)).collect::<Result<_, _>>()?,
+                ret_ty: Box::from(ret_ty.substitute(gens, pos)?)
+            })
+        }
     }
 }

@@ -117,6 +117,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::Set { .. } | Node::SetBuilder { .. } => infer_coll(ast, env, ctx, state),
         Node::List { .. } | Node::ListBuilder { .. } => infer_coll(ast, env, ctx, state),
         Node::Tuple { .. } => infer_coll(ast, env, ctx, state),
+        Node::In { .. } => infer_coll(ast, env, ctx, state),
 
         Node::Real { .. }
         | Node::Int { .. }
@@ -145,7 +146,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
 
         Node::IfElse { .. } => infer_control_flow(ast, env, ctx, state),
         Node::Match { .. } | Node::Case { .. } => infer_control_flow(ast, env, ctx, state),
-        Node::For { .. } | Node::In { .. } | Node::Range { .. } | Node::Step { .. } =>
+        Node::For { .. } | Node::Range { .. } | Node::Step { .. } =>
             infer_control_flow(ast, env, ctx, state),
         Node::While { .. } | Node::Break | Node::Continue =>
             infer_control_flow(ast, env, ctx, state),

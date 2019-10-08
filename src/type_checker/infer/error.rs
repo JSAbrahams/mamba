@@ -1,4 +1,7 @@
+use std::convert::TryFrom;
+
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -9,15 +12,20 @@ use crate::type_checker::type_result::TypeErr;
 pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
         Node::Raise { error } => {
-            let (ty, _) = infer(error, env, ctx, state)?;
-            Ok((
-                InferType::new().add_raise_from_type(&ty, &ast.pos)?.add_raises(&ty.raises),
-                env.clone()
-            ))
+            let (ty, env) = infer(error, env, ctx, state)?;
+            let ty = InferType::new();
+            Ok((ty.add_raise_from_type(&ty, &ast.pos)?.add_raises(&ty.raises), env))
+        }
+        Node::Raises { expr_or_stmt, errors } => {
+            let (ty, env) = infer(expr_or_stmt, env, ctx, state)?;
+            let errors = errors.iter().map(ActualTypeName::try_from).collect::<Result<_, _>>()?;
+            if ty.raises.is_superset(&errors) {
+                Ok((ty, env))
+            } else {
+                Err(vec![TypeErr::new(&expr_or_stmt.pos, "Errors don't match expr or statement")])
+            }
         }
 
-        // TODO verify that errors of raises equal to expr errors
-        Node::Raises { expr_or_stmt, errors } => unimplemented!(),
         Node::Handle { expr_or_stmt, cases } => unimplemented!(),
 
         Node::Retry =>

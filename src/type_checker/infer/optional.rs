@@ -16,7 +16,6 @@ pub fn infer_optional(ast: &AST, env: &Environment, ctx: &Context, state: &State
                 Err(vec![TypeErr::new(&left.pos, "Type must be nullable")])
             }
         }
-
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected optional")])
     }
 }

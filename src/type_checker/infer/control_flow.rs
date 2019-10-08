@@ -47,10 +47,54 @@ pub fn infer_control_flow(
         Node::Match { .. } => unimplemented!(),
         Node::Case { .. } => unimplemented!(),
 
-        Node::For { .. } => unimplemented!(),
-        Node::In { .. } => unimplemented!(),
-        Node::Range { .. } => unimplemented!(),
-        Node::Step { .. } => unimplemented!(),
+        Node::For { expr, body } => {
+            let (range_ty, env) = infer(expr, env, ctx, state)?;
+            if range_ty != ctx.lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)? {
+                return Err(vec![TypeErr::new(&expr.pos, "Must be range")]);
+            }
+
+            let (body_ty, env) = infer(body, &env, ctx, state)?;
+            Ok((InferType::new().add_raises(&range_ty.raises).add_raises(&body_ty.raises), env))
+        }
+
+        Node::Range { from, to, step, .. } => {
+            let (from_ty, env) = infer(from, env, ctx, state)?;
+            if from_ty != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)? {
+                return Err(vec![TypeErr::new(&from.pos, "Must be integer")]);
+            }
+
+            let (to_ty, env) = infer(to, &env, ctx, state)?;
+            if to_ty != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)? {
+                return Err(vec![TypeErr::new(&to.pos, "Must be integer")]);
+            }
+
+            if let Some(step) = step {
+                let (step_ty, env) = infer(step, &env, ctx, state)?;
+                if step_ty
+                    != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
+                {
+                    return Err(vec![TypeErr::new(&step.pos, "Must be integer")]);
+                }
+
+                let ty = ctx
+                    .lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)?
+                    .add_raises(&from_ty.raises)
+                    .add_raises(&to_ty.raises)
+                    .add_raises(&step_ty.raises);
+                Ok((ty, env))
+            } else {
+                let ty = ctx.lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)?;
+                Ok((ty.add_raises(&from_ty.raises).add_raises(&to_ty.raises), env))
+            }
+        }
+        Node::Step { amount } => {
+            let (ty, env) = infer(amount, env, ctx, state)?;
+            if ty != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)? {
+                Err(vec![TypeErr::new(&amount.pos, "Must be integer")])
+            } else {
+                Ok((ty, env))
+            }
+        }
 
         Node::Break | Node::Continue =>
             if state.in_loop {

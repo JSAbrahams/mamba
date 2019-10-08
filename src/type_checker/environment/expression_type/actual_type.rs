@@ -6,14 +6,14 @@ use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::mutable_type::MutableType;
+use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
     Single { ty: Type },
-    Tuple { types: Vec<MutableType> },
-    AnonFun { args: Vec<MutableType>, ret_ty: Box<MutableType> }
+    Tuple { types: Vec<ExpressionType> },
+    AnonFun { args: Vec<ExpressionType>, ret_ty: Box<ExpressionType> }
 }
 
 impl Display for ActualType {

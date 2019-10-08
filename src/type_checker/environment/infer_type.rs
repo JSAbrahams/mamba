@@ -12,6 +12,7 @@ pub struct InferType {
     expr_type:  Option<ExpressionType>
 }
 
+// TODO get raises from nested types and append here
 impl From<&ExpressionType> for InferType {
     fn from(expr_type: &ExpressionType) -> Self {
         InferType { raises: HashSet::new(), expr_type: Some(expr_type.clone()) }
