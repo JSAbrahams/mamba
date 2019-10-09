@@ -25,7 +25,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             }
         }
 
-        Node::Handle { expr_or_stmt, cases } => unimplemented!(),
+        Node::Handle { .. } => unimplemented!(),
 
         Node::Retry =>
             if !(state.in_handle) {

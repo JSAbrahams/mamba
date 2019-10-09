@@ -5,9 +5,11 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::ty::concrete::Type;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::ops::Deref;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
@@ -31,6 +33,18 @@ impl From<&Type> for ActualType {
 }
 
 impl ActualType {
+    pub fn name(&self) -> ActualTypeName {
+        match self {
+            ActualType::Single { ty } => ty.name.clone(),
+            ActualType::Tuple { types } =>
+                ActualTypeName::Tuple { ty_names: types.iter().map(|ty| ty.name()).collect() },
+            ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
+                args:   args.iter().map(|ty| ty.name()).collect(),
+                ret_ty: Box::new(ret_ty.deref().name())
+            }
+        }
+    }
+
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         match &self {
             ActualType::Single { ty } =>

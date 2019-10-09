@@ -7,6 +7,7 @@ use std::iter::FromIterator;
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::mutable_type::MutableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
@@ -46,6 +47,14 @@ impl From<&MutableType> for ExpressionType {
 }
 
 impl ExpressionType {
+    pub fn name(&self) -> TypeName {
+        match self {
+            ExpressionType::Single { mut_ty } => TypeName::Single { ty: mut_ty.actual_ty.name() },
+            ExpressionType::Union { union } =>
+                TypeName::Union { union: union.iter().map(|ty| ty.actual_ty.name()).collect() },
+        }
+    }
+
     pub fn union(self, other: &ExpressionType) -> ExpressionType {
         match (&self, other) {
             (ExpressionType::Single { mut_ty }, ExpressionType::Single { mut_ty: other }) =>

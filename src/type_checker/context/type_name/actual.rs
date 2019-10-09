@@ -28,12 +28,6 @@ impl Display for ActualTypeName {
     }
 }
 
-impl From<&str> for ActualTypeName {
-    fn from(name: &str) -> Self {
-        ActualTypeName::Single { lit: String::from(name), generics: vec![] }
-    }
-}
-
 impl TryFrom<&AST> for ActualTypeName {
     type Error = Vec<TypeErr>;
 
@@ -64,6 +58,12 @@ impl TryFrom<&AST> for ActualTypeName {
     }
 }
 
+impl From<&str> for ActualTypeName {
+    fn from(name: &str) -> Self {
+        ActualTypeName::Single { lit: String::from(name), generics: vec![] }
+    }
+}
+
 impl From<&ActualType> for ActualTypeName {
     fn from(actual_type: &ActualType) -> Self {
         match actual_type {
@@ -75,6 +75,15 @@ impl From<&ActualType> for ActualTypeName {
                 args:   args.iter().map(|arg| TypeName::from(arg)).collect(),
                 ret_ty: Box::new(TypeName::from(ret_ty.deref()))
             }
+        }
+    }
+}
+
+impl From<(&str, &Vec<ActualType>)> for ActualTypeName {
+    fn from((name, generics): (&str, &Vec<ActualType>)) -> Self {
+        ActualTypeName::Single {
+            lit:      String::from(name.clone()),
+            generics: generics.clone().iter().map(|g| g.name()).collect()
         }
     }
 }

@@ -2,13 +2,13 @@ use core::fmt;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::hash::{Hash, Hasher};
 
 pub mod actual;
 pub mod python;
@@ -50,6 +50,37 @@ impl From<&ExpressionType> for TypeName {
                     union.iter().map(|expr_ty| ActualTypeName::from(&expr_ty.actual_ty)).collect();
                 TypeName::Union { union }
             }
+        }
+    }
+}
+
+// TODO change to Vector of ExpressionType
+impl From<(&str, &Vec<ExpressionType>)> for TypeName {
+    fn from((name, generics): (&str, &Vec<ExpressionType>)) -> Self {
+        let generics =
+            generics.get(0).unwrap_or_else(|| panic!("cannot have multiple generics yet"));
+        match generics {
+            ExpressionType::Single { mut_ty } =>
+                TypeName::from(&ActualTypeName::from((name.clone(), &vec![mut_ty
+                    .actual_ty
+                    .clone()]))),
+            ExpressionType::Union { union } => {
+                let union = union
+                    .iter()
+                    .map(|expr_ty| {
+                        ActualTypeName::from((name.clone(), &vec![expr_ty.actual_ty.clone()]))
+                    })
+                    .collect();
+                TypeName::Union { union }
+            }
+        }
+    }
+}
+
+impl From<(&str, &Vec<ActualTypeName>)> for TypeName {
+    fn from((name, actual_ty): (&str, &Vec<ActualTypeName>)) -> Self {
+        TypeName::Single {
+            ty: ActualTypeName::Single { lit: "".to_string(), generics: actual_ty.clone() }
         }
     }
 }

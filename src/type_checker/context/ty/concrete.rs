@@ -13,6 +13,8 @@ use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
+pub const ANY: &'static str = "Any";
+
 pub const INT_PRIMITIVE: &'static str = "Int";
 pub const FLOAT_PRIMITIVE: &'static str = "Float";
 pub const STRING_PRIMITIVE: &'static str = "String";
@@ -20,6 +22,8 @@ pub const BOOL_PRIMITIVE: &'static str = "Bool";
 pub const ENUM_PRIMITIVE: &'static str = "Enum";
 
 pub const RANGE: &'static str = "Range";
+pub const SET: &'static str = "Set";
+pub const LIST: &'static str = "List";
 
 // TODO add parents
 

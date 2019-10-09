@@ -17,6 +17,8 @@ pub const BOOL_PRIMITIVE: &'static str = "bool";
 pub const ENUM_PRIMITIVE: &'static str = "enum";
 
 pub const RANGE: &'static str = "range";
+pub const SET: &'static str = "set";
+pub const LIST: &'static str = "list";
 
 impl From<&Classdef> for GenericType {
     fn from(class_def: &Classdef) -> GenericType {
@@ -65,6 +67,8 @@ fn primitive_to_concrete(name: &Name) -> String {
         ENUM_PRIMITIVE => String::from(concrete::ENUM_PRIMITIVE),
 
         RANGE => String::from(concrete::RANGE),
+        SET => String::from(concrete::SET),
+        LIST => String::from(concrete::LIST),
 
         other => String::from(other)
     }
