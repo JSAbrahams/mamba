@@ -4,11 +4,12 @@ use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
+use std::collections::HashSet;
 use std::convert::TryFrom;
 
 pub fn generics(
     files: &[CheckInput]
-) -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<GenericFunction>)> {
+) -> TypeResult<(HashSet<GenericType>, HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut results: Vec<Result<GenericType, Vec<TypeErr>>> = vec![];
     let mut fun_res: Vec<Result<GenericFunction, Vec<TypeErr>>> = vec![];
     let mut field_res: Vec<Result<GenericField, Vec<TypeErr>>> = vec![];
@@ -51,9 +52,9 @@ pub fn generics(
         errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).flatten().collect());
         Err(errs)
     } else {
-        let types: Vec<_> = types.into_iter().map(Result::unwrap).collect();
-        let fields: Vec<_> = fields.into_iter().map(Result::unwrap).collect();
-        let functions: Vec<_> = functions.into_iter().map(Result::unwrap).collect();
+        let types: HashSet<_> = types.into_iter().map(Result::unwrap).collect();
+        let fields: HashSet<_> = fields.into_iter().map(Result::unwrap).collect();
+        let functions: HashSet<_> = functions.into_iter().map(Result::unwrap).collect();
         Ok((types, fields, functions))
     }
 }

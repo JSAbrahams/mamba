@@ -6,14 +6,24 @@ use crate::type_checker::context::parameter::GenericParameter;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GenericParent {
     pub is_py_type: bool,
     pub name:       String,
     pub pos:        Position,
     pub generics:   Vec<GenericParameter>,
     pub args:       Vec<TypeName>
+}
+
+impl Hash for GenericParent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.is_py_type.hash(state);
+        self.name.hash(state);
+        self.generics.hash(state);
+        self.args.hash(state);
+    }
 }
 
 impl TryFrom<&AST> for GenericParent {

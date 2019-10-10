@@ -36,9 +36,9 @@ mod generics;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug)]
 pub struct Context {
-    types:     Vec<GenericType>,
-    functions: Vec<GenericFunction>,
-    fields:    Vec<GenericField>
+    types:     HashSet<GenericType>,
+    functions: HashSet<GenericFunction>,
+    fields:    HashSet<GenericField>
 }
 
 impl TryFrom<&[CheckInput]> for Context {
@@ -51,26 +51,23 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
-    // TODO change so it accepts all actual type name variants
+    fn find_type_name(&self, name: &str, pos: &Position) -> TypeResult<GenericType> {
+        for ty in &self.types {
+            if &ty.name.name(pos)? == name {
+                return Ok(ty.clone());
+            }
+        }
+        Err(vec![TypeErr::new(pos, &format!("Unknown type: {}", name))])
+    }
+
     fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
-        let (name, generics) = match ty_name {
+        let (_, generics) = match ty_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
             _ => return Err(vec![TypeErr::new(pos, "Only can look up using single type")])
         };
 
-        let generic_type: GenericType = self
-            .types
-            .iter()
-            .find_map(|ty| match ty.name.name(pos) {
-                Ok(ty_name) =>
-                    if ty_name == name {
-                        Some(Ok(ty.clone()))
-                    } else {
-                        None
-                    },
-                Err(err) => Some(Err(err))
-            })
-            .ok_or_else(|| vec![TypeErr::new(pos, "Unknown type")])??;
+        // TODO change so it accepts all actual type name variants besides Single
+        let generic_type: GenericType = self.find_type_name(&ty_name.name(pos)?, pos)?;
         if generic_type.generics.len() == generics.len() {
             let generics = generic_type
                 .clone()
@@ -84,7 +81,13 @@ impl Context {
         } else {
             Err(vec![TypeErr::new(
                 pos,
-                format!("Type takes {} generic arguments", generic_type.generics.len()).as_str()
+                format!(
+                    "Type takes {} generic arguments, but given {}: [{:#?}]",
+                    generic_type.generics.len(),
+                    generics.len(),
+                    generics
+                )
+                .as_str()
             )])
         }
     }
@@ -95,7 +98,7 @@ impl Context {
         fun_args: &[TypeName],
         pos: &Position
     ) -> TypeResult<MutableType> {
-        let (name, generics) = match fun_name {
+        let (..) = match fun_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
             _ => return Err(vec![TypeErr::new(pos, "Must be type name")])
         };
@@ -143,40 +146,30 @@ impl Context {
 
     /// Loads pre-defined Python primitives into context for easy lookup
     pub fn into_with_primitives(self) -> TypeResult<Self> {
-        let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join("type_checker")
-            .join("resources")
-            .join("primitives");
-        let (mut py_types, mut py_fields, mut py_functions) = python_files(&python_dir)?;
+        let python_dir = resource("primitives");
+        let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
 
-        let mut types = self.types.clone();
-        let mut functions = self.functions.clone();
-        let mut fields = self.fields.clone();
-
-        types.append(&mut py_types);
-        functions.append(&mut py_functions);
-        fields.append(&mut py_fields);
-
+        let types = self.types.union(&py_types).cloned().collect();
+        let functions = self.functions.union(&py_functions).cloned().collect();
+        let fields = self.fields.union(&py_fields).cloned().collect();
         Ok(Context { types, functions, fields })
     }
 
     pub fn into_with_std_lib(self) -> TypeResult<Self> {
-        let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join("type_checker")
-            .join("resources")
-            .join("std_lib");
-        let (mut py_types, mut py_fields, mut py_functions) = python_files(&python_dir)?;
+        let python_dir = resource("std_lib");
+        let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
 
-        let mut types = self.types.clone();
-        let mut functions = self.functions.clone();
-        let mut fields = self.fields.clone();
-
-        types.append(&mut py_types);
-        functions.append(&mut py_functions);
-        fields.append(&mut py_fields);
-
+        let types = self.types.union(&py_types).cloned().collect();
+        let functions = self.functions.union(&py_functions).cloned().collect();
+        let fields = self.fields.union(&py_fields).cloned().collect();
         Ok(Context { types, functions, fields })
     }
+}
+
+fn resource(resource: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("type_checker")
+        .join("resources")
+        .join(resource)
 }

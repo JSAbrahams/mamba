@@ -1,4 +1,5 @@
-for a in b do print c
+def b <- {1, 2}
+for a in b do print a
 
 for d in e do
     print f

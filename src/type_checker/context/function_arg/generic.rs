@@ -16,7 +16,7 @@ pub struct ClassArgument {
     pub fun_arg: GenericFunctionArg
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GenericFunctionArg {
     pub is_py_type: bool,
     pub name:       String,

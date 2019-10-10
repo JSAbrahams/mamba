@@ -1,4 +1,7 @@
+use std::collections::HashSet;
 use std::ops::Deref;
+
+use python_parser::ast::{Classdef, CompoundStatement, Name, Statement};
 
 use crate::common::position::Position;
 use crate::type_checker::context::field::python::GenericFields;
@@ -8,7 +11,6 @@ use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
-use python_parser::ast::{Classdef, CompoundStatement, Name, Statement};
 
 pub const INT_PRIMITIVE: &'static str = "int";
 pub const FLOAT_PRIMITIVE: &'static str = "float";
@@ -21,19 +23,25 @@ pub const RANGE: &'static str = "range";
 pub const SET: &'static str = "set";
 pub const LIST: &'static str = "list";
 
+// TODO handle Python generics
 impl From<&Classdef> for GenericType {
     fn from(class_def: &Classdef) -> GenericType {
-        let mut functions = vec![];
-        let mut fields = vec![];
+        let mut functions = HashSet::new();
+        let mut fields = HashSet::new();
         for statement in &class_def.code {
             match statement {
                 Statement::Assignment(variables, expressions) =>
-                    fields.append(&mut GenericFields::from((variables, expressions)).fields),
+                    GenericFields::from((variables, expressions)).fields.iter().for_each(|f| {
+                        fields.insert(f.clone());
+                    }),
                 Statement::TypedAssignment(variables, _, expressions) =>
-                    fields.append(&mut GenericFields::from((variables, expressions)).fields),
+                    GenericFields::from((variables, expressions)).fields.iter().for_each(|f| {
+                        fields.insert(f.clone());
+                    }),
                 Statement::Compound(compound) => match compound.deref() {
-                    CompoundStatement::Funcdef(func_def) =>
-                        functions.push(GenericFunction::from(func_def)),
+                    CompoundStatement::Funcdef(func_def) => {
+                        functions.insert(GenericFunction::from(func_def));
+                    }
                     _ => {}
                 },
                 _ => {}

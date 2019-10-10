@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use crate::common::position::Position;
 use crate::type_checker::environment::expression_type::ExpressionType;
-use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub mod expression_type;
@@ -21,14 +20,9 @@ impl Environment {
         self.variables.get(var).cloned().ok_or(vec![TypeErr::new(pos, "Undefined variable")])
     }
 
-    pub fn insert(
-        self,
-        var: &str,
-        infer_type: &InferType,
-        pos: &Position
-    ) -> TypeResult<Environment> {
+    pub fn insert(self, var: &str, expr_ty: &ExpressionType) -> TypeResult<Environment> {
         let mut variables = self.variables.clone();
-        variables.insert(String::from(var), infer_type.expr_ty(pos)?.clone());
+        variables.insert(String::from(var), expr_ty.clone());
         Ok(Environment { variables })
     }
 

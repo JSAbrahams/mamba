@@ -10,10 +10,12 @@ use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use python_parser::ast::{CompoundStatement, Statement};
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 pub fn python_files(
     python_dir: &PathBuf
-) -> TypeResult<(Vec<GenericType>, Vec<GenericField>, Vec<GenericFunction>)> {
+) -> TypeResult<(HashSet<GenericType>, HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut types = vec![];
     let mut fields = vec![];
     let mut functions = vec![];
@@ -40,22 +42,26 @@ pub fn python_files(
 
         for statement in statements {
             match &statement {
-                Statement::Assignment(left, right) =>
-                    fields.append(&mut GenericFields::from((left, right)).fields),
+                Statement::Assignment(left, right) => fields
+                    .append(&mut GenericFields::from((left, right)).fields.into_iter().collect()),
                 // TODO use type hints
-                Statement::TypedAssignment(left, _, right) =>
-                    fields.append(&mut GenericFields::from((left, right)).fields),
+                Statement::TypedAssignment(left, _, right) => fields
+                    .append(&mut GenericFields::from((left, right)).fields.into_iter().collect()),
                 Statement::Compound(compound_stmt) => match compound_stmt.deref() {
                     CompoundStatement::Funcdef(func_def) =>
                         functions.push(GenericFunction::from(func_def)),
                     CompoundStatement::Classdef(class_def) =>
                         types.push(GenericType::from(class_def)),
-                    other => panic!("expected fun or class def but {:?}", other)
+                    _ => {}
                 },
-                other => panic!("expected assignment or compount but {:?}", other)
+                _ => {}
             }
         }
     }
 
-    Ok((types, fields, functions))
+    Ok((
+        HashSet::from_iter(types.into_iter()),
+        HashSet::from_iter(fields.into_iter()),
+        HashSet::from_iter(functions.into_iter())
+    ))
 }

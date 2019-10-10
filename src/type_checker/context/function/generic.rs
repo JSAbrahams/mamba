@@ -8,8 +8,9 @@ use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
     pub is_py_type: bool,
     pub name:       ActualTypeName,
@@ -19,6 +20,14 @@ pub struct GenericFunction {
     pub arguments:  Vec<GenericFunctionArg>,
     pub raises:     Vec<ActualTypeName>,
     pub ret_ty:     Option<TypeName>
+}
+
+impl PartialEq for GenericFunction {
+    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+}
+
+impl Hash for GenericFunction {
+    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
 }
 
 impl GenericFunction {

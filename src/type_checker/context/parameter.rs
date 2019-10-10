@@ -4,7 +4,7 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GenericParameter {
     pub is_py_type: bool,
     pub name:       String,

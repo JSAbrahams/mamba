@@ -3,9 +3,10 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct GenericField {
     pub is_py_type: bool,
     pub name:       String,
@@ -13,6 +14,14 @@ pub struct GenericField {
     pub private:    bool,
     pub mutable:    bool,
     pub ty:         Option<TypeName>
+}
+
+impl PartialEq for GenericField {
+    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+}
+
+impl Hash for GenericField {
+    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
 }
 
 impl TryFrom<&AST> for GenericField {

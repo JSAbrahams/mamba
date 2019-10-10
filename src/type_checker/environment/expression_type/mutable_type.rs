@@ -39,6 +39,8 @@ impl MutableType {
         }
     }
 
+    pub fn into_mutable(self) -> Self { MutableType { is_mutable: true, ..self } }
+
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         self.actual_ty.field(field, pos)
     }

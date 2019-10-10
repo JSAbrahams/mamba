@@ -80,7 +80,10 @@ impl From<(&str, &Vec<ExpressionType>)> for TypeName {
 impl From<(&str, &Vec<ActualTypeName>)> for TypeName {
     fn from((name, actual_ty): (&str, &Vec<ActualTypeName>)) -> Self {
         TypeName::Single {
-            ty: ActualTypeName::Single { lit: "".to_string(), generics: actual_ty.clone() }
+            ty: ActualTypeName::Single {
+                lit:      String::from(name),
+                generics: actual_ty.clone()
+            }
         }
     }
 }

@@ -1,3 +1,6 @@
+use std::convert::TryFrom;
+use std::ops::Deref;
+
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
@@ -6,8 +9,6 @@ use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
-use std::ops::Deref;
 
 pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
@@ -15,7 +16,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
         Node::Reassign { .. } => unimplemented!(),
         // TODO use forward and private
         Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {
-            // Check whether mutable
+            // TODO Check whether mutable
             Node::IdType { _type, id, mutable } => {
                 let id = match &id.node {
                     Node::Id { lit } => lit.clone(),
@@ -44,7 +45,9 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                     (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])
                 };
 
-                let env = env.insert(id.as_str(), &ty, &ast.pos)?;
+                let ty = ty.expr_ty(&ast.pos)?;
+                let env =
+                    env.insert(id.as_str(), &if *mutable { ty.into_mutable() } else { ty })?;
                 Ok((InferType::new(), env))
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])

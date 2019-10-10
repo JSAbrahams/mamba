@@ -81,6 +81,17 @@ impl ExpressionType {
         }
     }
 
+    pub fn into_mutable(self) -> Self {
+        match self {
+            ExpressionType::Single { mut_ty } =>
+                ExpressionType::Single { mut_ty: mut_ty.into_mutable() },
+            ExpressionType::Union { union } => {
+                let union = union.into_iter().map(|ty| ty.into_mutable()).collect();
+                ExpressionType::Union { union }
+            }
+        }
+    }
+
     pub fn is_mutable(&self) -> bool {
         match self {
             ExpressionType::Single { mut_ty } => mut_ty.is_mutable,
