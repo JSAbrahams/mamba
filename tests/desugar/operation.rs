@@ -24,8 +24,8 @@ macro_rules! verify {
             other => panic!("Expected binary operation but was {:?}", other)
         };
 
-        assert_eq!(*left, Core::Id { lit: String::from("left") });
-        assert_eq!(*right, Core::Id { lit: String::from("right") });
+        assert_eq!(*left, Core::Id { lit: String::from("left"), generics: vec![] });
+        assert_eq!(*right, Core::Id { lit: String::from("right"), generics: vec![] });
     }};
 }
 
@@ -39,7 +39,7 @@ macro_rules! verify_unary {
             other => panic!("Expected unary operation but was {:?}", other)
         };
 
-        assert_eq!(*expr_des, Core::Id { lit: String::from("expression") });
+        assert_eq!(*expr_des, Core::Id { lit: String::from("expression"), generics: vec![] });
     }};
 }
 

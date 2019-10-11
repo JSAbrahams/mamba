@@ -7,6 +7,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::python::GenericFields;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::parameter::python::GenericParameters;
 use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
@@ -28,6 +29,8 @@ impl From<&Classdef> for GenericType {
     fn from(class_def: &Classdef) -> GenericType {
         let mut functions = HashSet::new();
         let mut fields = HashSet::new();
+        let generics = GenericParameters::from(&class_def.arguments).parameters;
+
         for statement in &class_def.code {
             match statement {
                 Statement::Assignment(variables, expressions) =>
@@ -55,11 +58,11 @@ impl From<&Classdef> for GenericType {
 
         GenericType {
             is_py_type: true,
-            name: ActualTypeName::new(primitive_to_concrete(&class_def.name).as_str(), &vec![]),
+            name: ActualTypeName::new(python_to_conrete(&class_def.name).as_str(), &vec![]),
             pos: Position::default(),
             concrete: false,
             args,
-            generics: vec![],
+            generics,
             fields,
             functions,
             parents: class_def.arguments.iter().map(GenericParent::from).collect()
@@ -67,7 +70,7 @@ impl From<&Classdef> for GenericType {
     }
 }
 
-fn primitive_to_concrete(name: &Name) -> String {
+fn python_to_conrete(name: &Name) -> String {
     match name.as_str() {
         INT_PRIMITIVE => String::from(concrete::INT_PRIMITIVE),
         FLOAT_PRIMITIVE => String::from(concrete::FLOAT_PRIMITIVE),

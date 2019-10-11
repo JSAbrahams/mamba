@@ -9,6 +9,7 @@ use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::generic::GenericType;
+use crate::type_checker::context::ty::python;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -108,5 +109,22 @@ impl Type {
                     },
             })
             .ok_or_else(|| vec![TypeErr::new(pos, "Unknown function")])?
+    }
+}
+
+pub fn concrete_to_python(name: &String) -> String {
+    match name.as_str() {
+        INT_PRIMITIVE => String::from(python::INT_PRIMITIVE),
+        FLOAT_PRIMITIVE => String::from(python::FLOAT_PRIMITIVE),
+        STRING_PRIMITIVE => String::from(python::STRING_PRIMITIVE),
+        BOOL_PRIMITIVE => String::from(python::BOOL_PRIMITIVE),
+        ENUM_PRIMITIVE => String::from(python::ENUM_PRIMITIVE),
+        COMPLEX_PRIMITIVE => String::from(python::COMPLEX_PRIMITIVE),
+
+        RANGE => String::from(python::RANGE),
+        SET => String::from(python::SET),
+        LIST => String::from(python::LIST),
+
+        other => String::from(other)
     }
 }

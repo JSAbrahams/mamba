@@ -1,5 +1,7 @@
-class set(Type):
+from typing import TypeVar, Generic
+
+class set(Generic[T]):
     def __init__(self): pass
 
-class list(Type):
+class list(Generic[T]):
     def __init__(self): pass

@@ -7,7 +7,7 @@ use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
-use crate::type_checker::context::parameter::GenericParameter;
+use crate::type_checker::context::parameter::generic::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};

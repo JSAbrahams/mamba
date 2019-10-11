@@ -16,8 +16,8 @@ fn if_verify() {
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
-    assert_eq!(*core_then, Core::Id { lit: String::from("then") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond"), generics: vec![] });
+    assert_eq!(*core_then, Core::Id { lit: String::from("then"), generics: vec![] });
 }
 
 #[test]
@@ -32,9 +32,9 @@ fn if_else_verify() {
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
-    assert_eq!(*core_then, Core::Id { lit: String::from("then") });
-    assert_eq!(*core_else, Core::Id { lit: String::from("else") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond"), generics: vec![] });
+    assert_eq!(*core_then, Core::Id { lit: String::from("then"), generics: vec![] });
+    assert_eq!(*core_else, Core::Id { lit: String::from("else"), generics: vec![] });
 }
 
 #[test]
@@ -48,7 +48,7 @@ fn while_verify() {
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
+    assert_eq!(*core_cond, Core::Id { lit: String::from("cond"), generics: vec![] });
     assert_eq!(*core_body, Core::ENum { num: String::from("num"), exp: String::from("0") });
 }
 
@@ -63,8 +63,8 @@ fn for_verify() {
         other => panic!("Expected for but was {:?}", other)
     };
 
-    assert_eq!(*core_expr, Core::Id { lit: String::from("expr_1") });
-    assert_eq!(*core_body, Core::Id { lit: String::from("body") });
+    assert_eq!(*core_expr, Core::Id { lit: String::from("expr_1"), generics: vec![] });
+    assert_eq!(*core_body, Core::Id { lit: String::from("body"), generics: vec![] });
 }
 
 #[test]
@@ -78,8 +78,8 @@ fn range_verify() {
         other => panic!("Expected range but was {:?}", other)
     };
 
-    assert_eq!(*from, Core::Id { lit: String::from("a") });
-    assert_eq!(*to, Core::Id { lit: String::from("b") });
+    assert_eq!(*from, Core::Id { lit: String::from("a"), generics: vec![] });
+    assert_eq!(*to, Core::Id { lit: String::from("b"), generics: vec![] });
     assert_eq!(*step, Core::Int { int: String::from("1") });
 }
 
@@ -94,9 +94,9 @@ fn range_incl_verify() {
         other => panic!("Expected range but was {:?}", other)
     };
 
-    assert_eq!(*from, Core::Id { lit: String::from("a") });
+    assert_eq!(*from, Core::Id { lit: String::from("a"), generics: vec![] });
     assert_eq!(*to, Core::Add {
-        left:  Box::from(Core::Id { lit: String::from("b") }),
+        left:  Box::from(Core::Id { lit: String::from("b"), generics: vec![] }),
         right: Box::from(Core::Int { int: String::from("1") })
     });
     assert_eq!(*step, Core::Int { int: String::from("1") });
@@ -114,7 +114,7 @@ fn range_step_verify() {
         other => panic!("Expected range but was {:?}", other)
     };
 
-    assert_eq!(*from, Core::Id { lit: String::from("a") });
-    assert_eq!(*to, Core::Id { lit: String::from("b") });
-    assert_eq!(*step, Core::Id { lit: String::from("c") });
+    assert_eq!(*from, Core::Id { lit: String::from("a"), generics: vec![] });
+    assert_eq!(*to, Core::Id { lit: String::from("b"), generics: vec![] });
+    assert_eq!(*step, Core::Id { lit: String::from("c"), generics: vec![] });
 }

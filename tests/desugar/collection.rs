@@ -44,7 +44,7 @@ fn set_verify() {
         other => panic!("Expected tuple but got {:?}", other)
     };
 
-    assert_eq!(core_elements[0], Core::Id { lit: String::from("a") });
+    assert_eq!(core_elements[0], Core::Id { lit: String::from("a"), generics: vec![] });
     assert_eq!(core_elements[1], Core::Bool { _bool: true });
 }
 
