@@ -141,7 +141,7 @@ fn add_parent_to_constructor(
     for definition in core_definitions {
         final_definitions.push(
             if let Core::FunDef { private, id, args: old_args, body: old_body } = definition {
-                if let Core::Id { lit } = id.clone().deref() {
+                if let Core::Id { lit, .. } = id.clone().deref() {
                     if lit == "init" {
                         if found_constructor {
                             panic!("Cannot have more than one constructor.")

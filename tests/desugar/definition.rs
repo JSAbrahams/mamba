@@ -17,8 +17,8 @@ fn reassign_verify() {
         other => panic!("Expected reassign but was {:?}", other)
     };
 
-    assert_eq!(*left, Core::Id { lit: String::from("something"), generics: vec![] });
-    assert_eq!(*right, Core::Id { lit: String::from("other"), generics: vec![] });
+    assert_eq!(*left, Core::Id { lit: String::from("something") });
+    assert_eq!(*right, Core::Id { lit: String::from("other") });
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn variable_private_def_verify() {
     };
 
     assert_eq!(private, false);
-    assert_eq!(*id, Core::Id { lit: String::from("d"), generics: vec![] });
+    assert_eq!(*id, Core::Id { lit: String::from("d") });
     assert_eq!(*right, Core::Int { int: String::from("98") });
 }
 
@@ -55,7 +55,7 @@ fn variable_def_verify() {
     };
 
     assert_eq!(private, true);
-    assert_eq!(*id, Core::Id { lit: String::from("d"), generics: vec![] });
+    assert_eq!(*id, Core::Id { lit: String::from("d") });
     assert_eq!(*right, Core::Int { int: String::from("98") });
 }
 
@@ -82,15 +82,10 @@ fn tuple_def_verify() {
     };
 
     assert_eq!(private, true);
-    let elements = vec![Core::Id { lit: String::from("a"), generics: vec![] }, Core::Id {
-        lit:      String::from("b"),
-        generics: vec![]
-    }];
+    let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
     assert_eq!(*id, Core::Tuple { elements });
-    let expressions = vec![Core::Id { lit: String::from("c"), generics: vec![] }, Core::Id {
-        lit:      String::from("d"),
-        generics: vec![]
-    }];
+    let expressions =
+        vec![Core::Id { lit: String::from("c") }, Core::Id { lit: String::from("d") }];
     assert_eq!(*right, Core::Tuple { elements: expressions });
 }
 
@@ -109,7 +104,7 @@ fn variable_def_none_verify() {
     };
 
     assert_eq!(private, true);
-    assert_eq!(*id, Core::Id { lit: String::from("d"), generics: vec![] });
+    assert_eq!(*id, Core::Id { lit: String::from("d") });
     assert_eq!(*right, Core::None);
 }
 
@@ -132,10 +127,7 @@ fn tuple_def_none_verify() {
     };
 
     assert_eq!(private, true);
-    let elements = vec![Core::Id { lit: String::from("a"), generics: vec![] }, Core::Id {
-        lit:      String::from("b"),
-        generics: vec![]
-    }];
+    let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
     assert_eq!(*id, Core::Tuple { elements });
     assert_eq!(*right, Core::Tuple { elements: vec![Core::None, Core::None] });
 }
@@ -169,17 +161,17 @@ fn fun_def_verify() {
     };
 
     assert_eq!(private, false);
-    assert_eq!(*id, Core::Id { lit: String::from("fun"), generics: vec![] });
+    assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 2);
     assert_eq!(args[0], Core::FunArg {
         vararg:  false,
-        id:      Box::from(Core::Id { lit: String::from("arg1"), generics: vec![] }),
+        id:      Box::from(Core::Id { lit: String::from("arg1") }),
         default: Box::from(Core::Empty)
     });
     assert_eq!(args[1], Core::FunArg {
         vararg:  true,
-        id:      Box::from(Core::Id { lit: String::from("arg2"), generics: vec![] }),
+        id:      Box::from(Core::Id { lit: String::from("arg2") }),
         default: Box::from(Core::Empty)
     });
     assert_eq!(*body, Core::Empty);
@@ -207,12 +199,12 @@ fn fun_def_default_arg_verify() {
     };
 
     assert_eq!(private, false);
-    assert_eq!(*id, Core::Id { lit: String::from("fun"), generics: vec![] });
+    assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 1);
     assert_eq!(args[0], Core::FunArg {
         vararg:  false,
-        id:      Box::from(Core::Id { lit: String::from("arg1"), generics: vec![] }),
+        id:      Box::from(Core::Id { lit: String::from("arg1") }),
         default: Box::from(Core::Str { _str: String::from("asdf") })
     });
     assert_eq!(*body, Core::Empty);
@@ -239,11 +231,11 @@ fn fun_def_with_body_verify() {
     };
 
     assert_eq!(private, false);
-    assert_eq!(*id, Core::Id { lit: String::from("fun"), generics: vec![] });
+    assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 2);
-    assert_eq!(args[0], Core::Id { lit: String::from("arg1"), generics: vec![] });
-    assert_eq!(args[1], Core::Id { lit: String::from("arg2"), generics: vec![] });
+    assert_eq!(args[0], Core::Id { lit: String::from("arg1") });
+    assert_eq!(args[1], Core::Id { lit: String::from("arg2") });
     assert_eq!(*body, Core::Float { float: String::from("2.4") });
 }
 
@@ -263,7 +255,7 @@ fn anon_fun_verify() {
     };
 
     assert_eq!(args.len(), 2);
-    assert_eq!(args[0], Core::Id { lit: String::from("first"), generics: vec![] });
-    assert_eq!(args[1], Core::Id { lit: String::from("second"), generics: vec![] });
+    assert_eq!(args[0], Core::Id { lit: String::from("first") });
+    assert_eq!(args[1], Core::Id { lit: String::from("second") });
     assert_eq!(*body, Core::Str { _str: String::from("this_string") });
 }

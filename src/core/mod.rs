@@ -45,7 +45,14 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::ImportAs { imports, _as } =>
             format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(_as, ind)),
 
-        Core::Id { lit } => lit.clone(),
+        Core::Id { lit } => format!("{}", lit),
+        Core::Type { lit, generics } =>
+            if generics.is_empty() {
+                format!("{}", lit)
+            } else {
+                format!("{}[{}]", lit, comma_delimited(generics, ind))
+            },
+        Core::IdType { lit, ty } => format!("{}: {}", lit, to_py(ty, ind)),
         Core::Str { _str } => format!("\"{}\"", _str),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } => format!("({} * 10 ** {})", num, exp),
@@ -70,7 +77,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 Core::DivOp => String::from("__truediv__"),
                 Core::FDivOp => String::from("__floordiv__"),
 
-                Core::Id { ref lit } => match lit.as_str() {
+                Core::Id { ref lit, .. } => match lit.as_str() {
                     "size" => String::from("__size__"),
                     "init" => String::from("__init__"),
                     other =>

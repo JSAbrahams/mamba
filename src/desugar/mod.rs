@@ -13,6 +13,7 @@ mod context;
 mod control_flow;
 mod definition;
 mod node;
+mod ty;
 
 pub mod desugar_result;
 

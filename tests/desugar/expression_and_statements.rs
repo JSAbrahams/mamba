@@ -52,19 +52,13 @@ fn return_empty_verify() {
 #[test]
 fn init_verify() {
     let _break = to_pos!(Node::Init);
-    assert_eq!(desugar(&_break).unwrap(), Core::Id {
-        lit:      String::from("init"),
-        generics: vec![]
-    });
+    assert_eq!(desugar(&_break).unwrap(), Core::Id { lit: String::from("init") });
 }
 
 #[test]
 fn self_verify() {
     let _break = to_pos!(Node::_Self);
-    assert_eq!(desugar(&_break).unwrap(), Core::Id {
-        lit:      String::from("self"),
-        generics: vec![]
-    });
+    assert_eq!(desugar(&_break).unwrap(), Core::Id { lit: String::from("self") });
 }
 
 #[test]
@@ -75,8 +69,8 @@ fn import_verify() {
     });
 
     assert_eq!(desugar(&_break).unwrap(), Core::ImportAs {
-        imports: vec![Core::Id { lit: String::from("a"), generics: vec![] }],
-        _as:     vec![Core::Id { lit: String::from("b"), generics: vec![] }]
+        imports: vec![Core::Id { lit: String::from("a") }],
+        _as:     vec![Core::Id { lit: String::from("b") }]
     });
 }
 
@@ -91,10 +85,10 @@ fn from_import_as_verify() {
     });
 
     assert_eq!(desugar(&_break).unwrap(), Core::FromImport {
-        from:   Box::from(Core::Id { lit: String::from("f"), generics: vec![] }),
+        from:   Box::from(Core::Id { lit: String::from("f") }),
         import: Box::from(Core::ImportAs {
-            imports: vec![Core::Id { lit: String::from("a"), generics: vec![] }],
-            _as:     vec![Core::Id { lit: String::from("b"), generics: vec![] }]
+            imports: vec![Core::Id { lit: String::from("a") }],
+            _as:     vec![Core::Id { lit: String::from("b") }]
         })
     });
 }
@@ -105,10 +99,7 @@ fn raises_empty_verify() {
         expr_or_stmt: Box::from(to_pos!(Node::Id { lit: String::from("a") })),
         errors:       vec![]
     });
-    assert_eq!(desugar(&type_def).unwrap(), Core::Id {
-        lit:      String::from("a"),
-        generics: vec![]
-    });
+    assert_eq!(desugar(&type_def).unwrap(), Core::Id { lit: String::from("a") });
 }
 
 #[test]

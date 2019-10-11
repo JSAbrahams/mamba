@@ -18,8 +18,8 @@ fn with_verify() {
         other => panic!("Expected with as but was {:?}", other)
     };
 
-    assert_eq!(*resource, Core::Id { lit: String::from("my_resource"), generics: vec![] });
-    assert_eq!(*_as, Core::Id { lit: String::from("other"), generics: vec![] });
+    assert_eq!(*resource, Core::Id { lit: String::from("my_resource") });
+    assert_eq!(*_as, Core::Id { lit: String::from("other") });
     assert_eq!(*expr, Core::Int { int: String::from("9") });
 }
 
@@ -34,7 +34,7 @@ fn with_no_as_verify() {
         other => panic!("Expected with but was {:?}", other)
     };
 
-    assert_eq!(*resource, Core::Id { lit: String::from("other"), generics: vec![] });
+    assert_eq!(*resource, Core::Id { lit: String::from("other") });
     assert_eq!(*expr, Core::Int { int: String::from("2341") });
 }
 
@@ -54,7 +54,7 @@ fn handle_empty_verify() {
         other => panic!("Expected block but was {:?}", other)
     };
 
-    assert_eq!(*_try, Core::Id { lit: String::from("my_fun"), generics: vec![] });
+    assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
     assert!(except.is_empty());
 }
 
@@ -84,12 +84,12 @@ fn handle_verify() {
         other => panic!("Expected block but was {:?}", other)
     };
 
-    assert_eq!(*_try, Core::Id { lit: String::from("my_fun"), generics: vec![] });
+    assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
     assert_eq!(except.len(), 1);
     match &except[0] {
         Core::Except { id, class, body } => {
-            assert_eq!(**id, Core::Id { lit: String::from("err"), generics: vec![] });
-            assert_eq!(**class, Core::Id { lit: String::from("my_type"), generics: vec![] });
+            assert_eq!(**id, Core::Id { lit: String::from("err") });
+            assert_eq!(**class, Core::Id { lit: String::from("my_type") });
             assert_eq!(**body, Core::Int { int: String::from("9999") });
         }
         other => panic!("Expected except case but was {:?}", other)

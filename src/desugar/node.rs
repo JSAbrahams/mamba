@@ -8,9 +8,11 @@ use crate::desugar::control_flow::desugar_control_flow;
 use crate::desugar::definition::desugar_definition;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::desugar_result::UnimplementedErr;
+use crate::desugar::ty::desugar_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 
+// TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
         Node::Import { import, _as } => match _as.len() {
@@ -54,7 +56,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::LeOp => Core::LeOp,
         Node::GeOp => Core::GeOp,
 
-        Node::IdType { id, .. } => desugar_node(id, imp, state)?,
+        Node::IdType { .. } => desugar_type(ast, imp, state)?,
         Node::Id { lit } => Core::Id { lit: lit.clone() },
         Node::_Self => Core::Id { lit: String::from("self") },
         Node::Init => Core::Id { lit: String::from("init") },
@@ -247,8 +249,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::TypeAlias { .. }
         | Node::TypeTup { .. }
         | Node::Type { .. }
-        | Node::TypeFun { .. }
-        | Node::TypeUnion { .. } => Core::Empty,
+        | Node::TypeFun { .. } => Core::Empty,
+        Node::TypeUnion { .. } => desugar_type(ast, imp, state)?,
 
         Node::TypeDef { .. } => desugar_class(ast, imp, state)?,
         Node::Class { .. } => desugar_class(ast, imp, state)?,

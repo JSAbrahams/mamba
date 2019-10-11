@@ -9,6 +9,8 @@ pub enum Core {
     PropertyCall { object: Box<Core>, property: Box<Core> },
 
     Id { lit: String },
+    Type { lit: String, generics: Vec<Core> },
+    IdType { lit: String, ty: Box<Core> },
     Assign { left: Box<Core>, right: Box<Core> },
     VarDef { private: bool, id: Box<Core>, right: Box<Core> },
     FunDef { private: bool, id: Box<Core>, args: Vec<Core>, body: Box<Core> },

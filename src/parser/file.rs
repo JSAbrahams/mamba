@@ -124,12 +124,12 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::IsA => {
                 it.eat(&Token::IsA, "type definition")?;
-                let _type = it.parse(&parse_type, "type definition", &start)?;
+                let alias = it.parse(&parse_type, "type definition", &start)?;
                 let conditions =
                     it.parse_vec_if(&Token::When, &parse_conditions, "type definition", &start)?;
                 let end = conditions.last().map_or(_type.pos.clone(), |cond| cond.pos.clone());
 
-                let node = Node::TypeAlias { _type, conditions };
+                let node = Node::TypeAlias { _type: _type.clone(), alias, conditions };
                 Ok(Box::from(AST::new(&start.union(&end), node)))
             }
             _ => {

@@ -64,7 +64,7 @@ fn from_import_verify() {
         other => panic!("Expected from import but got {:?}", other)
     };
 
-    assert_eq!(*from, Core::Id { lit: String::from("afs"), generics: vec![] });
+    assert_eq!(*from, Core::Id { lit: String::from("afs") });
     assert_eq!(import.len(), 2);
     assert_eq!(import[0], Core::ENum { num: String::from("a"), exp: String::from("100") });
     assert_eq!(import[1], Core::Float { float: String::from("3000.5") });

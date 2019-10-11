@@ -115,6 +115,7 @@ pub enum Node {
     },
     TypeAlias {
         _type:      Box<AST>,
+        alias:      Box<AST>,
         conditions: Vec<AST>
     },
     TypeTup {
