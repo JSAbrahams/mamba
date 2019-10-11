@@ -5,7 +5,7 @@ use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
-use crate::type_checker::environment::expression_type::mutable_type::MutableType;
+use crate::type_checker::environment::expression_type::mutable_type::NullableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -27,7 +27,7 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
             }
 
             let actual_ty = ActualType::Tuple { types };
-            let mutable_ty = MutableType::from(&actual_ty);
+            let mutable_ty = NullableType::from(&actual_ty);
             let expr_ty = ExpressionType::from(&mutable_ty);
             let ty = InferType::from(&expr_ty);
             Ok((ty.add_raises(&raises), env))

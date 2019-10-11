@@ -1,36 +1,40 @@
 b = 40
 
-if a:
+if True:
     print("hello world")
 
-if c:
-    d = 4
+if False:
+    "hello"
 else:
-    asdf
+    "world"
+
+cond = True and False
+cond = True or False
 
 if cond:
-    other
+    "asdf"
     print('hello \"world\"')
 
-    if aaa:
-        bbb
+    if cond or True:
+        "bbb"
     else:
-        ccc
+        "ccc"
 
-    if ggg:
-        hhh
+    iii = "iii"
+    if cond or False:
+        "hhh"
     else:
         iii
 else:
-    other
+    "other"
     print('hello \"world\"')
 
-    if aaa:
-        bbb
+    if cond or True:
+        "bbb"
     else:
-        ccc
+        "ccc"
 
-if c:
-    d = 4
+if "as" == "as":
+    print("hi")
 else:
-    asdf
+    print("asdf")

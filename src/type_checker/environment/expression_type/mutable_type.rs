@@ -10,36 +10,28 @@ use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::TypeResult;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
-pub struct MutableType {
+pub struct NullableType {
     pub is_nullable: bool,
-    pub is_mutable:  bool,
     pub actual_ty:   ActualType
 }
 
-impl Display for MutableType {
+impl Display for NullableType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let nullable = if self.is_nullable { "?" } else { "" };
-        let mutable = if self.is_mutable { "mut " } else { "" };
-        write!(f, "{}{}{}", mutable, self.actual_ty, nullable)
+        write!(f, "{}{}", self.actual_ty, nullable)
     }
 }
 
-impl From<&ActualType> for MutableType {
+impl From<&ActualType> for NullableType {
     fn from(actual_ty: &ActualType) -> Self {
-        MutableType { is_nullable: false, is_mutable: false, actual_ty: actual_ty.clone() }
+        NullableType { is_nullable: false, actual_ty: actual_ty.clone() }
     }
 }
 
-impl MutableType {
-    pub fn new(mutable: &bool, nullable: &bool, actual_ty: &ActualType) -> MutableType {
-        MutableType {
-            is_nullable: nullable.clone(),
-            is_mutable:  mutable.clone(),
-            actual_ty:   actual_ty.clone()
-        }
+impl NullableType {
+    pub fn new(nullable: &bool, actual_ty: &ActualType) -> NullableType {
+        NullableType { is_nullable: nullable.clone(), actual_ty: actual_ty.clone() }
     }
-
-    pub fn into_mutable(self) -> Self { MutableType { is_mutable: true, ..self } }
 
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         self.actual_ty.field(field, pos)

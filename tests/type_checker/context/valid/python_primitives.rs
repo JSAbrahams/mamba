@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 use mamba::common::position::Position;
+use mamba::type_checker::context::type_name::actual::ActualTypeName;
 use mamba::type_checker::context::type_name::TypeName;
 use mamba::type_checker::context::Context;
 use mamba::type_checker::CheckInput;
@@ -33,7 +34,23 @@ pub fn std_lib_present() {
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_std_lib().unwrap();
 
-    context.lookup(&TypeName::new("Set", &vec![]), &Position::default()).unwrap();
-    context.lookup(&TypeName::new("List", &vec![]), &Position::default()).unwrap();
+    context
+        .lookup(
+            &TypeName::new("Set", &vec![ActualTypeName::Single {
+                lit:      String::from("T"),
+                generics: vec![]
+            }]),
+            &Position::default()
+        )
+        .unwrap();
+    context
+        .lookup(
+            &TypeName::new("List", &vec![ActualTypeName::Single {
+                lit:      String::from("T"),
+                generics: vec![]
+            }]),
+            &Position::default()
+        )
+        .unwrap();
     context.lookup(&TypeName::new("Range", &vec![]), &Position::default()).unwrap();
 }

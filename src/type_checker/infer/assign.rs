@@ -13,7 +13,22 @@ use crate::type_checker::type_result::TypeErr;
 pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
-        Node::Reassign { .. } => unimplemented!(),
+        Node::Reassign { left, right } => {
+            let (left_ty, env) = infer(left, env, ctx, state)?;
+            let (right_ty, env) = infer(right, &env, ctx, state)?;
+
+            let left_expr = left_ty.expr_ty(&ast.pos)?;
+            // TODO reevaluate how we deal with mutable (should this be expression level?)
+            let right_expr = right_ty.expr_ty(&ast.pos)?;
+            if left_expr == right_expr {
+                Ok((InferType::new().add_raises(&left_ty.raises).add_raises(&right_ty.raises), env))
+            } else {
+                Err(vec![TypeErr::new(
+                    &ast.pos,
+                    &format!("Types must be equal, should be {}, was {}", left_expr, right_expr)
+                )])
+            }
+        }
         // TODO use forward and private
         Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {
             // TODO Check whether mutable
@@ -45,9 +60,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                     (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])
                 };
 
-                let ty = ty.expr_ty(&ast.pos)?;
-                let env =
-                    env.insert(id.as_str(), &if *mutable { ty.into_mutable() } else { ty })?;
+                let env = env.insert(id.as_str(), *mutable, &ty.expr_ty(&ast.pos)?)?;
                 Ok((InferType::new(), env))
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])

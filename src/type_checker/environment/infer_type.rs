@@ -1,10 +1,12 @@
 use std::collections::HashSet;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::iter::FromIterator;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct InferType {
@@ -16,6 +18,17 @@ pub struct InferType {
 impl From<&ExpressionType> for InferType {
     fn from(expr_type: &ExpressionType) -> Self {
         InferType { raises: HashSet::new(), expr_type: Some(expr_type.clone()) }
+    }
+}
+
+impl Display for InferType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        // TODO display raises
+        write!(
+            f,
+            "{}",
+            if let Some(e_ty) = &self.expr_type { format!("{}", e_ty) } else { String::new() }
+        )
     }
 }
 

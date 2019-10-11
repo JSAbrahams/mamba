@@ -12,7 +12,7 @@ use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
-use crate::type_checker::environment::expression_type::mutable_type::MutableType;
+use crate::type_checker::environment::expression_type::mutable_type::NullableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -60,7 +60,7 @@ impl Context {
         Err(vec![TypeErr::new(pos, &format!("Unknown type: {}", name))])
     }
 
-    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<MutableType> {
+    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
         let (_, generics) = match ty_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
             _ => return Err(vec![TypeErr::new(pos, "Only can look up using single type")])
@@ -77,7 +77,7 @@ impl Context {
                 .map(|(parameter, type_name)| (parameter.name, type_name))
                 .collect();
             let ty = Type::try_from((&generic_type, &generics, pos))?;
-            Ok(MutableType::from(&ActualType::from(&ty)))
+            Ok(NullableType::from(&ActualType::from(&ty)))
         } else {
             Err(vec![TypeErr::new(
                 pos,
@@ -97,7 +97,7 @@ impl Context {
         fun_name: &ActualTypeName,
         fun_args: &[TypeName],
         pos: &Position
-    ) -> TypeResult<MutableType> {
+    ) -> TypeResult<NullableType> {
         let (..) = match fun_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
             _ => return Err(vec![TypeErr::new(pos, "Must be type name")])

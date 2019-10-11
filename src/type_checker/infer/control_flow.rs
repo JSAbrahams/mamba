@@ -21,7 +21,10 @@ pub fn infer_control_flow(
             if cond_type
                 != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
             {
-                return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
+                return Err(vec![TypeErr::new(
+                    &cond.pos,
+                    &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, cond_type)
+                )]);
             }
 
             let (then_type, then_env) = infer(then, &env, ctx, state)?;
@@ -37,7 +40,10 @@ pub fn infer_control_flow(
             if cond_type
                 != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
             {
-                return Err(vec![TypeErr::new(&cond.pos, "Expected boolean")]);
+                return Err(vec![TypeErr::new(
+                    &cond.pos,
+                    &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, cond_type)
+                )]);
             }
 
             let (_, env) = infer(body, &cond_env, ctx, &state.clone().is(InLoop)?)?;

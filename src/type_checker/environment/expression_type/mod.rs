@@ -8,7 +8,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::mutable_type::MutableType;
+use crate::type_checker::environment::expression_type::mutable_type::NullableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub mod actual_type;
@@ -16,8 +16,8 @@ pub mod mutable_type;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ExpressionType {
-    Single { mut_ty: MutableType },
-    Union { union: HashSet<MutableType> }
+    Single { mut_ty: NullableType },
+    Union { union: HashSet<NullableType> }
 }
 
 impl Hash for ExpressionType {
@@ -42,8 +42,8 @@ impl Display for ExpressionType {
     }
 }
 
-impl From<&MutableType> for ExpressionType {
-    fn from(mut_ty: &MutableType) -> Self { ExpressionType::Single { mut_ty: mut_ty.clone() } }
+impl From<&NullableType> for ExpressionType {
+    fn from(mut_ty: &NullableType) -> Self { ExpressionType::Single { mut_ty: mut_ty.clone() } }
 }
 
 impl ExpressionType {
@@ -74,35 +74,16 @@ impl ExpressionType {
         }
     }
 
-    pub fn single(&self, pos: &Position) -> TypeResult<MutableType> {
+    pub fn single(&self, pos: &Position) -> TypeResult<NullableType> {
         match self {
             ExpressionType::Single { mut_ty } => Ok(mut_ty.clone()),
             ExpressionType::Union { .. } => Err(vec![TypeErr::new(pos, "Cannot be union")])
         }
     }
 
-    pub fn into_mutable(self) -> Self {
-        match self {
-            ExpressionType::Single { mut_ty } =>
-                ExpressionType::Single { mut_ty: mut_ty.into_mutable() },
-            ExpressionType::Union { union } => {
-                let union = union.into_iter().map(|ty| ty.into_mutable()).collect();
-                ExpressionType::Union { union }
-            }
-        }
-    }
-
-    pub fn is_mutable(&self) -> bool {
-        match self {
-            ExpressionType::Single { mut_ty } => mut_ty.is_mutable,
-            ExpressionType::Union { union } =>
-                !union.is_empty() && union.iter().all(|mut_ty| mut_ty.is_mutable),
-        }
-    }
-
     pub fn is_nullable(&self) -> bool {
         match self {
-            ExpressionType::Single { mut_ty } => mut_ty.is_mutable,
+            ExpressionType::Single { mut_ty } => mut_ty.is_nullable,
             ExpressionType::Union { union } =>
                 !union.is_empty() && union.iter().all(|mut_ty| mut_ty.is_nullable),
         }

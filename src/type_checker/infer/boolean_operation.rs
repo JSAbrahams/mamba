@@ -32,12 +32,18 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             let (right_ty, env) = infer(right, &env, ctx, &state)?;
 
             if left_ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)? {
-                return Err(vec![TypeErr::new(&left.pos, "Expected boolean")]);
+                return Err(vec![TypeErr::new(
+                    &left.pos,
+                    &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, left_ty)
+                )]);
             }
             if right_ty
                 != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
             {
-                return Err(vec![TypeErr::new(&right.pos, "Expected boolean")]);
+                return Err(vec![TypeErr::new(
+                    &right.pos,
+                    &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, right_ty)
+                )]);
             }
 
             Ok((
@@ -51,7 +57,10 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
         Node::Not { expr } => {
             let (ty, env) = infer(expr, env, ctx, state)?;
             if ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)? {
-                return Err(vec![TypeErr::new(&expr.pos, "Expected boolean")]);
+                return Err(vec![TypeErr::new(
+                    &expr.pos,
+                    &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, ty)
+                )]);
             }
             Ok((ty, env))
         }
