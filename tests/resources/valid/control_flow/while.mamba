@@ -1,10 +1,10 @@
-while b do c
+def b <- False
+while b do print b
 
+def d <- True
 while d do
-    print e
+    print d and False
 
-    print f
-
-    print g
+    print d and True
 
 print "hello"

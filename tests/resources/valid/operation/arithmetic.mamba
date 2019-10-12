@@ -1,8 +1,23 @@
+def a <- 10
+def b <- 20
+def c <- 30
+def d <- 40
+def e <- 50
+def f <- 60
+def g <- 70
+def h <- 80
+def i <- 90
+def j <- 100
+def k <- 80
+def l <- 90
+def m <- 100
+def n <- 100
+
 a + b
 c - d
 e * f
-h / i
-j // k
-l mod n
-sqrt o
-p ^ q
+g / h
+i // j
+k mod l
+sqrt m
+n ^ o
