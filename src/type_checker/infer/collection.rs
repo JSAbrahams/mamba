@@ -103,20 +103,17 @@ pub fn iterable_generic(
             ActualType::Single { ty } => {
                 let (name, generics) = ty.name.as_single(pos)?;
                 match name.as_str() {
-                    concrete::SET | concrete::LIST => {
-                        let generics: Vec<InferType> = generics
-                            .iter()
-                            .map(|g| ctx.lookup(&TypeName::from(g), pos))
-                            .collect::<Result<_, _>>()?;
-                        let types =
-                            generics.iter().map(|g| g.expr_ty(pos)).collect::<Result<_, _>>()?;
-                        Ok(ExpressionType::Single {
-                            mut_ty: NullableType {
-                                is_nullable: mut_ty.is_nullable,
-                                actual_ty:   ActualType::Tuple { types }
-                            }
-                        })
-                    }
+                    concrete::SET | concrete::LIST =>
+                        if generics.len() == 1 {
+                            let generic = generics.get(0).unwrap_or_else(|| unreachable!());
+                            let generic = ctx.lookup(&TypeName::from(generic), pos)?;
+                            generic.expr_ty(pos).map_err(|e| vec![e])
+                        } else {
+                            Err(vec![TypeErr::new(
+                                pos,
+                                "List and Set have single generic parameter"
+                            )])
+                        },
                     concrete::RANGE => Ok(ctx
                         .lookup(&TypeName::from(concrete::INT_PRIMITIVE), pos)?
                         .expr_ty(pos)?),

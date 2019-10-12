@@ -92,8 +92,8 @@ pub fn match_name(
                     Ok(sets.into_iter().flatten().collect())
                 } else {
                     let msg = format!(
-                        "Cannot iterate over ({:?}) with tuple of size {}",
-                        types,
+                        "Cannot iterate over {} with tuple of size {}",
+                        mut_ty.actual_ty,
                         identifier.names.len()
                     );
                     Err(vec![TypeErr::new(pos, &msg)])

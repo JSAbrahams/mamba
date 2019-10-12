@@ -17,6 +17,7 @@ use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
+use std::ops::Deref;
 
 pub mod field;
 pub mod function;
@@ -60,14 +61,13 @@ impl Context {
         Err(vec![TypeErr::new(pos, &format!("Unknown type: {}", name))])
     }
 
-    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
-        let (_, generics) = match ty_name {
-            ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
-            _ => return Err(vec![TypeErr::new(pos, "Can look up using single type")])
-        };
-
-        // TODO change so it accepts all actual type name variants besides Single
-        let generic_type: GenericType = self.find_type_name(&ty_name.name(pos)?, pos)?;
+    fn lookup_direct(
+        &self,
+        name: &str,
+        generics: &Vec<ActualTypeName>,
+        pos: &Position
+    ) -> TypeResult<ActualType> {
+        let generic_type: GenericType = self.find_type_name(name, pos)?;
         if generic_type.generics.len() == generics.len() {
             let generics: HashMap<_, _> = generic_type
                 .clone()
@@ -77,7 +77,7 @@ impl Context {
                 .map(|(parameter, type_name)| (parameter.name, type_name))
                 .collect();
             let ty = Type::try_from((&generic_type, &generics, pos))?;
-            Ok(NullableType::from(&ActualType::from(&ty)))
+            Ok(ActualType::from(&ty))
         } else {
             Err(vec![TypeErr::new(
                 pos,
@@ -90,6 +90,29 @@ impl Context {
                 .as_str()
             )])
         }
+    }
+
+    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
+        Ok(NullableType::from(&match ty_name {
+            ActualTypeName::Single { lit, generics } => self.lookup_direct(lit, generics, pos)?,
+            ActualTypeName::Tuple { ty_names } => {
+                let types: Vec<InferType> = ty_names
+                    .iter()
+                    .map(|ty_name| self.lookup(ty_name, pos))
+                    .collect::<Result<_, _>>()?;
+                ActualType::Tuple {
+                    types: types.iter().map(|ty| ty.expr_ty(pos)).collect::<Result<_, _>>()?
+                }
+            }
+            ActualTypeName::AnonFun { args, ret_ty } => {
+                let args: Vec<InferType> =
+                    args.iter().map(|arg| self.lookup(arg, pos)).collect::<Result<_, _>>()?;
+                ActualType::AnonFun {
+                    args:   args.iter().map(|arg| arg.expr_ty(pos)).collect::<Result<_, _>>()?,
+                    ret_ty: Box::new(self.lookup(ret_ty.deref(), pos)?.expr_ty(pos)?)
+                }
+            }
+        }))
     }
 
     fn lookup_actual_fun(
