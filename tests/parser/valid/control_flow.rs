@@ -1,9 +1,10 @@
-use crate::common::*;
 use mamba::lexer::tokenize;
 use mamba::parser::ast::Node;
 use mamba::parser::ast::AST;
 use mamba::parser::parse;
 use mamba::parser::parse_direct;
+
+use crate::common::*;
 
 #[test]
 fn for_statements() {
@@ -18,10 +19,7 @@ fn for_statement_verify() {
 
     let (expr, collection, body) = match ast_tree.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::For { expr, body } => match &expr.node {
-                Node::In { left, right } => (left.clone(), right.clone(), body.clone()),
-                other => panic!("Expected in but was {:?}", other)
-            },
+            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
             _ => panic!("first element script was not for.")
         },
         _ => panic!("ast_tree was not script.")
@@ -37,30 +35,25 @@ fn for_range_step_verify() {
     let source = String::from("for a in c .. d step e do f");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (expr, body) = match ast_tree.node {
+    let (expr, col, body) = match ast_tree.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::For { expr, body } => (expr.clone(), body.clone()),
+            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
             _ => panic!("first element script was not foreach.")
         },
         _ => panic!("ast_tree was not script.")
     };
 
-    match expr.node {
-        Node::In { left, right } => {
-            assert_eq!(left.node, Node::Id { lit: String::from("a") });
-            match &right.node {
-                Node::Range { from, to, inclusive, step } => {
-                    assert_eq!(from.node, Node::Id { lit: String::from("c") });
-                    assert_eq!(to.node, Node::Id { lit: String::from("d") });
-                    assert!(!inclusive);
-                    assert_eq!(step.clone().unwrap().node, Node::Id { lit: String::from("e") });
-                }
-                _ => panic!("Expected range")
-            }
+    match col.node {
+        Node::Range { from, to, inclusive, step } => {
+            assert_eq!(from.node, Node::Id { lit: String::from("c") });
+            assert_eq!(to.node, Node::Id { lit: String::from("d") });
+            assert!(!inclusive);
+            assert_eq!(step.clone().unwrap().node, Node::Id { lit: String::from("e") });
         }
-        other => panic!("Expected in but was {:?}", other)
+        _ => panic!("Expected range")
     }
 
+    assert_eq!(expr.node, Node::Id { lit: String::from("a") });
     assert_eq!(body.node, Node::Id { lit: String::from("f") });
 }
 
@@ -69,30 +62,25 @@ fn for_range_incl_verify() {
     let source = String::from("for a in c ..= d do f");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (expr, body) = match ast_tree.node {
+    let (expr, col, body) = match ast_tree.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::For { expr, body } => (expr.clone(), body.clone()),
+            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
             _ => panic!("first element script was not foreach.")
         },
         _ => panic!("ast_tree was not script.")
     };
 
-    match expr.node {
-        Node::In { left, right } => {
-            assert_eq!(left.node, Node::Id { lit: String::from("a") });
-            match &right.node {
-                Node::Range { from, to, inclusive, step } => {
-                    assert_eq!(from.node, Node::Id { lit: String::from("c") });
-                    assert_eq!(to.node, Node::Id { lit: String::from("d") });
-                    assert!(inclusive);
-                    assert_eq!(*step, None);
-                }
-                _ => panic!("Expected range")
-            }
+    match col.node {
+        Node::Range { from, to, inclusive, step } => {
+            assert_eq!(from.node, Node::Id { lit: String::from("c") });
+            assert_eq!(to.node, Node::Id { lit: String::from("d") });
+            assert!(inclusive);
+            assert_eq!(step, None);
         }
-        other => panic!("Expected in but was {:?}", other)
+        _ => panic!("Expected range")
     }
 
+    assert_eq!(expr.node, Node::Id { lit: String::from("a") });
     assert_eq!(body.node, Node::Id { lit: String::from("f") });
 }
 

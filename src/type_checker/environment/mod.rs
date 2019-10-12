@@ -4,6 +4,7 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 
 pub mod expression_type;
+pub mod identifier;
 pub mod infer_type;
 pub mod state;
 
@@ -34,14 +35,8 @@ impl Environment {
         Ok(Environment { variables })
     }
 
-    pub fn union(self, env: Environment) -> Environment {
-        let mut variables = self.variables;
-        variables.extend(env.variables);
-        Environment { variables }
-    }
-
-    // TODO change to intersection
-    pub fn intersection(self, env: Environment) -> Environment {
+    // TODO implement properly
+    pub fn difference(self, env: Environment) -> Environment {
         let mut variables = self.variables;
         variables.extend(env.variables);
         Environment { variables }

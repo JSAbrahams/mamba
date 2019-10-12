@@ -37,7 +37,7 @@ pub fn std_lib_present() {
     context
         .lookup(
             &TypeName::new("Set", &vec![ActualTypeName::Single {
-                lit:      String::from("T"),
+                lit:      String::from("Int"),
                 generics: vec![]
             }]),
             &Position::default()
@@ -46,7 +46,7 @@ pub fn std_lib_present() {
     context
         .lookup(
             &TypeName::new("List", &vec![ActualTypeName::Single {
-                lit:      String::from("T"),
+                lit:      String::from("Something"),
                 generics: vec![]
             }]),
             &Position::default()

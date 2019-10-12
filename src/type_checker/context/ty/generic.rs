@@ -1,5 +1,7 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
@@ -11,8 +13,6 @@ use crate::type_checker::context::parameter::generic::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::collections::HashSet;
-use std::iter::FromIterator;
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericType {
@@ -151,16 +151,21 @@ fn get_name_and_generics(
                 return Err(generic_errs.into_iter().map(Result::unwrap_err).flatten().collect());
             }
 
+            let generics = generics.into_iter().map(Result::unwrap).collect::<Vec<_>>();
+            let names: Vec<ActualTypeName> = generics
+                .iter()
+                .map(|g| ActualTypeName::Single { lit: g.name.clone(), generics: vec![] })
+                .collect();
             let name = ActualTypeName::new(
                 match &id.node {
                     Node::Id { lit } => lit.clone(),
                     _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
                 }
                 .as_str(),
-                &vec![]
+                &names.to_vec()
             );
 
-            Ok((name, generics.into_iter().map(Result::unwrap).collect::<Vec<_>>()))
+            Ok((name, generics))
         }
         _ => Err(vec![TypeErr::new(&_type.pos, "Expected class name")])
     }

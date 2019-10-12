@@ -75,7 +75,7 @@ pub enum Core {
     BLShift { left: Box<Core>, right: Box<Core> },
     BRShift { left: Box<Core>, right: Box<Core> },
 
-    For { expr: Box<Core>, body: Box<Core> },
+    For { expr: Box<Core>, col: Box<Core>, body: Box<Core> },
     Range { from: Box<Core>, to: Box<Core>, step: Box<Core> },
     If { cond: Box<Core>, then: Box<Core> },
     IfElse { cond: Box<Core>, then: Box<Core>, _else: Box<Core> },

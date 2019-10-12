@@ -100,6 +100,13 @@ impl ActualTypeName {
         }
     }
 
+    pub fn as_single(&self, pos: &Position) -> TypeResult<(String, Vec<ActualTypeName>)> {
+        match &self {
+            ActualTypeName::Single { lit, generics } => Ok((lit.clone(), generics.clone())),
+            _ => Err(vec![TypeErr::new(pos, &format!("Expected single but was {}", self))])
+        }
+    }
+
     pub fn substitute(
         &self,
         gens: &HashMap<String, ActualTypeName>,
@@ -108,33 +115,15 @@ impl ActualTypeName {
         match &self {
             ActualTypeName::Single { lit, generics } =>
                 if let Some(subst) = gens.get(lit) {
-                    if let ActualTypeName::Single { lit, generics: other_generics } = subst {
-                        if generics.is_empty() && other_generics.is_empty() {
-                            Ok(ActualTypeName::Single { lit: lit.clone(), generics: vec![] })
-                        } else if generics.is_empty() && !other_generics.is_empty() {
-                            Ok(ActualTypeName::Single {
-                                lit:      lit.clone(),
-                                generics: other_generics
-                                    .iter()
-                                    .map(|g| g.substitute(gens, pos))
-                                    .collect::<Result<_, _>>()?
-                            })
-                        } else if !generics.is_empty() && other_generics.is_empty() {
-                            Ok(ActualTypeName::Single {
-                                lit:      lit.clone(),
-                                generics: generics
-                                    .iter()
-                                    .map(|g| g.substitute(gens, pos))
-                                    .collect::<Result<_, _>>()?
-                            })
-                        } else {
-                            Err(vec![TypeErr::new(
-                                pos,
-                                "Replacement generic may not have arguments"
-                            )])
+                    match subst {
+                        ActualTypeName::Single { generics: subs_generics, .. }
+                            if generics.len() == subs_generics.len() =>
+                            Ok(subst.clone()),
+                        _ if generics.is_empty() => Ok(subst.clone()),
+                        _ => {
+                            let msg = format!("Cannot substitute {} with {}", &self, subst);
+                            Err(vec![TypeErr::new(pos, &msg)])
                         }
-                    } else {
-                        Err(vec![TypeErr::new(pos, "Generic does not take arguments")])
                     }
                 } else {
                     Ok(ActualTypeName::Single {

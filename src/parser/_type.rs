@@ -22,6 +22,19 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
                 Ok(Box::from(AST::new(&end, Node::Id { lit: id.clone() })))
             }
+            Token::LRBrack => {
+                let mut elements = vec![];
+                let start = it.eat(&Token::LRBrack, "identifier tuple")?;
+                // TODO allow id's to be mutable within tuples
+                it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
+                    elements.push(*it.parse(&parse_id, "identifier", &start)?);
+                    it.eat_if(&Token::Comma);
+                    Ok(())
+                })?;
+
+                let end = it.eat(&Token::RRBrack, "identifier tuple")?;
+                Ok(Box::from(AST::new(&end, Node::Tuple { elements })))
+            }
             _ => Err(expected_one_of(
                 &[Token::_Self, Token::Init, Token::Id(String::new())],
                 lex,

@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::TypeName;
@@ -11,7 +12,7 @@ use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
@@ -77,7 +78,7 @@ fn collection(
 
     let first = types.first().cloned();
     for ty in types {
-        // TODO get greatest common parent instead of throwing error
+        // TODO use union instead of throwing an error
         if first.clone().unwrap_or_else(|| unreachable!()) != ty {
             return Err(vec![TypeErr::new(&ast.pos, "Set types must all be same")]);
         }
@@ -88,5 +89,43 @@ fn collection(
         None => ctx.lookup(&TypeName::new(concrete::ANY, &vec![]), &ast.pos)?.expr_ty(&ast.pos)?
     }];
     let ty = ctx.lookup(&TypeName::from((col, &generics)), &ast.pos)?;
+
     Ok((ty.add_raises(&raises), env))
+}
+
+pub fn iterable_generic(
+    expr_ty: &ExpressionType,
+    ctx: &Context,
+    pos: &Position
+) -> TypeResult<ExpressionType> {
+    match expr_ty {
+        ExpressionType::Single { mut_ty } => match &mut_ty.actual_ty {
+            ActualType::Single { ty } => {
+                let (name, generics) = ty.name.as_single(pos)?;
+                match name.as_str() {
+                    concrete::SET | concrete::LIST => {
+                        let generics: Vec<InferType> = generics
+                            .iter()
+                            .map(|g| ctx.lookup(&TypeName::from(g), pos))
+                            .collect::<Result<_, _>>()?;
+                        let types =
+                            generics.iter().map(|g| g.expr_ty(pos)).collect::<Result<_, _>>()?;
+                        Ok(ExpressionType::Single {
+                            mut_ty: NullableType {
+                                is_nullable: mut_ty.is_nullable,
+                                actual_ty:   ActualType::Tuple { types }
+                            }
+                        })
+                    }
+                    concrete::RANGE => Ok(ctx
+                        .lookup(&TypeName::from(concrete::INT_PRIMITIVE), pos)?
+                        .expr_ty(pos)?),
+                    _ => Err(vec![TypeErr::new(pos, &format!("{} is not an iterable type", name))])
+                }
+            }
+            ActualType::Tuple { .. } => unimplemented!(),
+            ActualType::AnonFun { .. } => Err(vec![TypeErr::new(pos, "Must be single or tuple")])
+        },
+        ExpressionType::Union { .. } => unimplemented!()
+    }
 }

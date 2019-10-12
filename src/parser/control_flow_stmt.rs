@@ -1,4 +1,5 @@
 use crate::lexer::token::Token;
+use crate::parser::_type::parse_id;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -45,10 +46,12 @@ fn parse_while(it: &mut LexIterator) -> ParseResult {
 fn parse_for(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("for statement")?;
     it.eat(&Token::For, "for statement")?;
-    let expr = it.parse(&parse_expression, "for statement", &start)?;
+    let expr = it.parse(&parse_id, "for statement", &start)?;
+    it.eat(&Token::In, "for statement")?;
+    let col = it.parse(&parse_expression, "for statement", &start)?;
     it.eat(&Token::Do, "for statement")?;
     let body = it.parse(&parse_expr_or_stmt, "for statement", &start)?;
 
-    let node = Node::For { expr, body: body.clone() };
+    let node = Node::For { expr, col, body: body.clone() };
     Ok(Box::from(AST::new(&start.union(&body.pos), node)))
 }

@@ -64,8 +64,9 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
             cond: Box::from(desugar_node(cond, imp, state)?),
             body: Box::from(desugar_node(body, imp, state)?)
         },
-        Node::For { expr, body } => Core::For {
+        Node::For { expr, col, body } => Core::For {
             expr: Box::from(desugar_node(expr, imp, state)?),
+            col:  Box::from(desugar_node(col, imp, state)?),
             body: Box::from(desugar_node(body, imp, state)?)
         },
 

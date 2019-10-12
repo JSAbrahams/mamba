@@ -9,6 +9,7 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::iter::FromIterator;
 
 pub mod actual;
 pub mod python;
@@ -57,9 +58,9 @@ impl From<&ExpressionType> for TypeName {
 // TODO change to Vector of ExpressionType
 impl From<(&str, &Vec<ExpressionType>)> for TypeName {
     fn from((name, generics): (&str, &Vec<ExpressionType>)) -> Self {
-        let generics =
+        let generic =
             generics.get(0).unwrap_or_else(|| panic!("cannot have multiple generics yet"));
-        match generics {
+        match generic {
             ExpressionType::Single { mut_ty } =>
                 TypeName::from(&ActualTypeName::from((name.clone(), &vec![mut_ty
                     .actual_ty
@@ -124,21 +125,10 @@ impl TypeName {
         }
     }
 
-    pub fn single(&self, pos: &Position) -> TypeResult<ActualTypeName> {
-        match self {
-            TypeName::Single { ty } => Ok(ty.clone()),
-            TypeName::Union { .. } => Err(vec![TypeErr::new(pos, "Unions not supported here")])
-        }
-    }
-
-    pub fn name(&self, pos: &Position) -> TypeResult<String> { self.single(pos)?.name(pos) }
-
-    /// True iff union is (not necessarily strict) superset of other union
-    pub fn is_cover(&self, other: &TypeName) -> bool {
-        match (self, other) {
-            (TypeName::Union { union }, TypeName::Union { union: other }) =>
-                union.is_superset(other),
-            _ => false
+    pub fn names(&self) -> HashSet<ActualTypeName> {
+        match &self {
+            TypeName::Single { ty } => HashSet::from_iter(vec![ty.clone()].into_iter()),
+            TypeName::Union { union } => union.clone()
         }
     }
 

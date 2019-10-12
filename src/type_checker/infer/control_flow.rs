@@ -2,12 +2,16 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::identifier::{match_name, Identifier};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::state::StateType::InLoop;
 use crate::type_checker::environment::Environment;
+use crate::type_checker::infer::collection::iterable_generic;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 pub fn infer_control_flow(
     ast: &AST,
@@ -18,9 +22,7 @@ pub fn infer_control_flow(
     match &ast.node {
         Node::IfElse { cond, then, _else } => {
             let (cond_type, env) = infer(cond, env, ctx, state)?;
-            if cond_type
-                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
-            {
+            if cond_type != ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(
                     &cond.pos,
                     &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, cond_type)
@@ -30,16 +32,14 @@ pub fn infer_control_flow(
             let (then_type, then_env) = infer(then, &env, ctx, state)?;
             if let Some(_else) = _else {
                 let (else_type, else_env) = infer(_else, &env, ctx, state)?;
-                Ok((then_type.union(&else_type, &ast.pos)?, then_env.intersection(else_env)))
+                Ok((then_type.union(&else_type, &ast.pos)?, then_env.difference(else_env)))
             } else {
                 Ok((then_type, then_env))
             }
         }
         Node::While { cond, body } => {
             let (cond_type, cond_env) = infer(cond, env, ctx, state)?;
-            if cond_type
-                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
-            {
+            if cond_type != ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(
                     &cond.pos,
                     &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, cond_type)
@@ -53,24 +53,26 @@ pub fn infer_control_flow(
         Node::Match { .. } => unimplemented!(),
         Node::Case { .. } => unimplemented!(),
 
-        Node::For { expr, body } => {
-            let (range_ty, env) = infer(expr, env, ctx, state)?;
-            if range_ty != ctx.lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)? {
-                return Err(vec![TypeErr::new(&expr.pos, "Must be range")]);
+        Node::For { expr, col, body } => {
+            let identifier = Identifier::try_from(expr.deref())?;
+            let (col_ty, mut env) = infer(col, &env, ctx, state)?;
+            let expr_ty = iterable_generic(&col_ty.expr_ty(&col.pos)?, ctx, &col.pos)?;
+            for (mutable, id, expr_ty) in match_name(&identifier, &expr_ty, &col.pos)? {
+                env = env.insert(&id, mutable, &expr_ty)?;
             }
 
             let (body_ty, env) = infer(body, &env, ctx, state)?;
-            Ok((InferType::new().add_raises(&range_ty.raises).add_raises(&body_ty.raises), env))
+            Ok((InferType::new().add_raises(&body_ty.raises).add_raises(&col_ty.raises), env))
         }
 
         Node::Range { from, to, step, .. } => {
             let (from_ty, env) = infer(from, env, ctx, state)?;
-            if from_ty != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)? {
+            if from_ty != ctx.lookup(&TypeName::from(concrete::INT_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(&from.pos, "Must be integer")]);
             }
 
             let (to_ty, env) = infer(to, &env, ctx, state)?;
-            if to_ty != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)? {
+            if to_ty != ctx.lookup(&TypeName::from(concrete::INT_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(&to.pos, "Must be integer")]);
             }
 
@@ -95,7 +97,7 @@ pub fn infer_control_flow(
         }
         Node::Step { amount } => {
             let (ty, env) = infer(amount, env, ctx, state)?;
-            if ty != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)? {
+            if ty != ctx.lookup(&TypeName::from(concrete::INT_PRIMITIVE), &ast.pos)? {
                 Err(vec![TypeErr::new(&amount.pos, "Must be integer")])
             } else {
                 Ok((ty, env))

@@ -55,15 +55,17 @@ fn while_verify() {
 #[test]
 fn for_verify() {
     let expr = to_pos!(Node::Id { lit: String::from("expr_1") });
+    let col = to_pos!(Node::Id { lit: String::from("col") });
     let body = to_pos!(Node::Id { lit: String::from("body") });
-    let for_stmt = to_pos!(Node::For { expr, body });
+    let for_stmt = to_pos!(Node::For { expr, col, body });
 
-    let (core_expr, core_body) = match desugar(&for_stmt) {
-        Ok(Core::For { expr, body }) => (expr, body),
+    let (core_expr, core_col, core_body) = match desugar(&for_stmt) {
+        Ok(Core::For { expr, col, body }) => (expr, col, body),
         other => panic!("Expected for but was {:?}", other)
     };
 
     assert_eq!(*core_expr, Core::Id { lit: String::from("expr_1") });
+    assert_eq!(*core_col, Core::Id { lit: String::from("col") });
     assert_eq!(*core_body, Core::Id { lit: String::from("body") });
 }
 

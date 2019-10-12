@@ -230,9 +230,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
-        Core::For { expr, body } => format!(
-            "for {}:\n{}{}",
+        Core::For { expr, col, body } => format!(
+            "for {} in {}:\n{}{}",
             to_py(expr.as_ref(), ind),
+            to_py(col.as_ref(), ind),
             indent(ind + 1),
             to_py(body.as_ref(), ind + 1)
         ),

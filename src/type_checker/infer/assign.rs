@@ -32,6 +32,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
         // TODO use forward and private
         Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {
             // TODO Check whether mutable
+            // TODO use system for tuples of ids
             Node::IdType { _type, id, mutable } => {
                 let id = match &id.node {
                     Node::Id { lit } => lit.clone(),

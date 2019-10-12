@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
@@ -63,13 +63,13 @@ impl Context {
     fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
         let (_, generics) = match ty_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
-            _ => return Err(vec![TypeErr::new(pos, "Only can look up using single type")])
+            _ => return Err(vec![TypeErr::new(pos, "Can look up using single type")])
         };
 
         // TODO change so it accepts all actual type name variants besides Single
         let generic_type: GenericType = self.find_type_name(&ty_name.name(pos)?, pos)?;
         if generic_type.generics.len() == generics.len() {
-            let generics = generic_type
+            let generics: HashMap<_, _> = generic_type
                 .clone()
                 .generics
                 .into_iter()

@@ -30,6 +30,10 @@ impl From<&Classdef> for GenericType {
         let mut functions = HashSet::new();
         let mut fields = HashSet::new();
         let generics = GenericParameters::from(&class_def.arguments).parameters;
+        let generic_names: Vec<ActualTypeName> = generics
+            .iter()
+            .map(|g| ActualTypeName::Single { lit: g.name.clone(), generics: vec![] })
+            .collect();
 
         for statement in &class_def.code {
             match statement {
@@ -58,7 +62,7 @@ impl From<&Classdef> for GenericType {
 
         GenericType {
             is_py_type: true,
-            name: ActualTypeName::new(python_to_conrete(&class_def.name).as_str(), &vec![]),
+            name: ActualTypeName::new(python_to_conrete(&class_def.name).as_str(), &generic_names),
             pos: Position::default(),
             concrete: false,
             args,

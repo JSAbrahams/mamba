@@ -330,6 +330,7 @@ pub enum Node {
     },
     For {
         expr: Box<AST>,
+        col:  Box<AST>,
         body: Box<AST>
     },
     In {
