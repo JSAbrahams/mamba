@@ -1,10 +1,13 @@
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+
 use crate::common::position::Position;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::collections::HashMap;
-use std::convert::TryFrom;
 
 // TODO make ty private again
 
@@ -15,6 +18,17 @@ pub struct FunctionArg {
     pub vararg:     bool,
     pub mutable:    bool,
     pub ty:         Option<TypeName>
+}
+
+impl Display for FunctionArg {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            self.name,
+            if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() }
+        )
+    }
 }
 
 impl FunctionArg {

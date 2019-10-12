@@ -62,7 +62,7 @@ impl From<&Classdef> for GenericType {
 
         GenericType {
             is_py_type: true,
-            name: ActualTypeName::new(python_to_conrete(&class_def.name).as_str(), &generic_names),
+            name: ActualTypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names),
             pos: Position::default(),
             concrete: false,
             args,
@@ -74,7 +74,7 @@ impl From<&Classdef> for GenericType {
     }
 }
 
-fn python_to_conrete(name: &Name) -> String {
+pub fn python_to_concrete(name: &Name) -> String {
     match name.as_str() {
         INT_PRIMITIVE => String::from(concrete::INT_PRIMITIVE),
         FLOAT_PRIMITIVE => String::from(concrete::FLOAT_PRIMITIVE),

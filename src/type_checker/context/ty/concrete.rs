@@ -89,6 +89,10 @@ impl Type {
         safe: bool,
         pos: &Position
     ) -> TypeResult<Function> {
+        let args: Vec<TypeName> = vec![vec![TypeName::from(&self.name.clone())], args.to_vec()]
+            .into_iter()
+            .flatten()
+            .collect();
         // TODO accept if arguments passed is union that is subset of argument union
         self.functions
             .iter()
@@ -100,7 +104,7 @@ impl Type {
                             .arguments
                             .iter()
                             .map(|arg| arg.ty.clone())
-                            .zip(args)
+                            .zip(args.clone())
                             .all(|(left, right)| left == Some(right.clone()))
                     {
                         Some(Ok(function.clone()))
@@ -108,7 +112,32 @@ impl Type {
                         None
                     },
             })
-            .ok_or_else(|| vec![TypeErr::new(pos, "Unknown function")])?
+            .ok_or_else(|| {
+                vec![TypeErr::new(
+                    pos,
+                    &format!(
+                        "Type {} does not have function {}: ({}) -> ?, must be one of: {}",
+                        self,
+                        fun_name,
+                        {
+                            let mut string = String::new();
+                            args.iter().for_each(|fun| string.push_str(&format!("{}, ", fun)));
+                            if string.len() > 2 {
+                                string.remove(string.len() - 2);
+                            }
+                            string
+                        }
+                        .trim_end(),
+                        {
+                            let mut string = String::new();
+                            self.functions
+                                .iter()
+                                .for_each(|fun| string.push_str(&format!("{}\n", fun)));
+                            string
+                        }
+                    )
+                )]
+            })?
     }
 }
 

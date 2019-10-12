@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 use crate::type_checker::context::function::generic::GenericFunction;
@@ -32,6 +34,35 @@ pub struct Function {
     pub arguments:  Vec<FunctionArg>,
     pub raises:     Vec<ActualTypeName>,
     ret_ty:         Option<TypeName>
+}
+
+impl Display for Function {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}: ({}) -> {} raises [{}]",
+            self.name,
+            {
+                let mut string = String::new();
+                self.arguments.iter().for_each(|arg| string.push_str(&format!("{}, ", arg)));
+                if string.len() > 2 {
+                    string.remove(string.len() - 2);
+                }
+                string
+            }
+            .trim_end(),
+            if let Some(ret_ty) = &self.ret_ty { format!("{}", ret_ty) } else { String::new() },
+            {
+                let mut string = String::new();
+                self.raises.iter().for_each(|arg| string.push_str(&format!("{}, ", arg)));
+                if string.len() > 2 {
+                    string.remove(string.len() - 2);
+                }
+                string
+            }
+            .trim_end()
+        )
+    }
 }
 
 impl Function {
