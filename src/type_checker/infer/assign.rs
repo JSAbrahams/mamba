@@ -21,7 +21,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             // TODO reevaluate how we deal with mutable (should this be expression level?)
             let right_expr = right_ty.expr_ty(&ast.pos)?;
             if left_expr == right_expr {
-                Ok((InferType::new().add_raises(&left_ty.raises).add_raises(&right_ty.raises), env))
+                Ok((InferType::new().add_raises(&left_ty).add_raises(&right_ty), env))
             } else {
                 Err(vec![TypeErr::new(
                     &ast.pos,

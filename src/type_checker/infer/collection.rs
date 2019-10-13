@@ -31,7 +31,7 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
             let mutable_ty = NullableType::from(&actual_ty);
             let expr_ty = ExpressionType::from(&mutable_ty);
             let ty = InferType::from(&expr_ty);
-            Ok((ty.add_raises(&raises), env))
+            Ok((ty.union_raises(&raises), env))
         }
         Node::Set { elements } => collection(&concrete::SET, ast, elements, env, ctx, state),
         Node::List { elements } => collection(&concrete::LIST, ast, elements, env, ctx, state),
@@ -48,8 +48,8 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
 
             Ok((
                 ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
-                    .add_raises(&ty.raises)
-                    .add_raises(&col_ty.raises),
+                    .add_raises(&ty)
+                    .add_raises(&col_ty),
                 env
             ))
         }
@@ -90,7 +90,7 @@ fn collection(
     }];
     let ty = ctx.lookup(&TypeName::from((col, &generics)), &ast.pos)?;
 
-    Ok((ty.add_raises(&raises), env))
+    Ok((ty.union_raises(&raises), env))
 }
 
 pub fn iterable_generic(

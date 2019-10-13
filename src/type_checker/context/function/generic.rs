@@ -23,11 +23,21 @@ pub struct GenericFunction {
 }
 
 impl PartialEq for GenericFunction {
-    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.arguments == other.arguments
+    }
 }
 
 impl Hash for GenericFunction {
-    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+    /// Hash depends on name and arguments.
+    ///
+    /// This means that we can have multiple functions with the same name within
+    /// a type if they have different arguments, even though this isn't
+    /// allowed in Python itself.
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.arguments.iter().for_each(|a| a.hash(state));
+    }
 }
 
 impl GenericFunction {

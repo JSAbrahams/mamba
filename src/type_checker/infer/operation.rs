@@ -21,9 +21,9 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> I
         Node::LeOp => Ok((InferType::new(), env.clone())),
         Node::GeOp => Ok((InferType::new(), env.clone())),
 
-        Node::AddU { .. } => unimplemented!(),
-        Node::SubU { .. } => unimplemented!(),
-        Node::Sqrt { .. } => unimplemented!(),
+        Node::AddU { expr } => override_unary_op(expr, function::concrete::ADD, env, ctx, state),
+        Node::SubU { expr } => override_unary_op(expr, function::concrete::SUB, env, ctx, state),
+        Node::Sqrt { expr } => override_unary_op(expr, function::concrete::SQRT, env, ctx, state),
 
         Node::Add { left, right } =>
             override_op(left, right, function::concrete::ADD, env, ctx, state),
@@ -52,6 +52,21 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> I
     }
 }
 
+fn override_unary_op(
+    expr: &Box<AST>,
+    overrides: &str,
+    env: &Environment,
+    ctx: &Context,
+    state: &State
+) -> InferResult {
+    let (infer_type, env) = infer(expr, env, ctx, state)?;
+    let fun = infer_type.expr_ty(&expr.pos)?.fun(overrides, &vec![], state.safe, &expr.pos)?;
+    match &fun.ty() {
+        Some(fun_ty) => Ok((ctx.lookup(fun_ty, &expr.pos)?.add_raises(&infer_type), env)),
+        None => Ok((InferType::new().add_raises(&infer_type), env))
+    }
+}
+
 fn override_op(
     left: &Box<AST>,
     right: &Box<AST>,
@@ -62,17 +77,20 @@ fn override_op(
 ) -> InferResult {
     let (left_ty, left_env) = infer(left, env, ctx, state)?;
     let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
-    if left_ty.expr_ty(&left.pos)? == right_ty.expr_ty(&right.pos)? {
-        let fun = left_ty.expr_ty(&left.pos)?.fun(
-            overrides,
-            &vec![right_ty.expr_ty(&right.pos)?],
-            state.safe,
-            &left.pos
-        )?;
+    let fun = left_ty.expr_ty(&left.pos)?.fun(
+        overrides,
+        &vec![right_ty.expr_ty(&right.pos)?],
+        state.safe,
+        &left.pos
+    )?;
 
-        // TODO return return type function
-        Ok((left_ty.union(&right_ty, &left.pos)?, right_env))
-    } else {
-        Err(vec![TypeErr::new(&left.pos, "Types differ")])
+    match &fun.ty() {
+        Some(fun_ty) => Ok((
+            ctx.lookup(fun_ty, &left.pos.union(&right.pos))?
+                .add_raises(&left_ty)
+                .add_raises(&right_ty),
+            right_env
+        )),
+        None => Ok((InferType::new().add_raises(&left_ty).add_raises(&right_ty), right_env))
     }
 }

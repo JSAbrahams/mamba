@@ -25,6 +25,7 @@ pub const MUL: &'static str = "*";
 pub const NEQ: &'static str = "/=";
 pub const POW: &'static str = "^";
 pub const SUB: &'static str = "-";
+pub const SQRT: &'static str = "sqrt";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {

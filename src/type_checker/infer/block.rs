@@ -33,7 +33,7 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             }
 
             let infer_type = last_stmt_type.unwrap_or_else(|| InferType::new());
-            Ok((infer_type.add_raises(&raises), env.clone()))
+            Ok((infer_type.union_raises(&raises), env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected code block")])

@@ -100,6 +100,7 @@ impl Type {
                 Err(err) => Some(Err(err)),
                 Ok(name) =>
                     if name.as_str() == fun_name
+                        && function.arguments.len() == args.len()
                         && function
                             .arguments
                             .iter()
@@ -116,7 +117,7 @@ impl Type {
                 vec![TypeErr::new(
                     pos,
                     &format!(
-                        "Type {} does not have function {}: ({}) -> ?, must be one of: {}",
+                        "Type {} does not have function \"{}\": ({}) -> ?, must be one of: {}",
                         self,
                         fun_name,
                         {

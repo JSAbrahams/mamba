@@ -13,7 +13,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
     match &ast.node {
         Node::Raise { error } => {
             let (ty, env) = infer(error, env, ctx, state)?;
-            Ok((InferType::new().add_raise_from_type(&ty, &ast.pos)?.add_raises(&ty.raises), env))
+            Ok((InferType::new().add_type_as_raises(&ty, &ast.pos)?.add_raises(&ty), env))
         }
         Node::Raises { expr_or_stmt, errors } => {
             let (ty, env) = infer(expr_or_stmt, env, ctx, state)?;

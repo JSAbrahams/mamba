@@ -62,7 +62,7 @@ pub fn infer_control_flow(
             }
 
             let (body_ty, env) = infer(body, &env, ctx, state)?;
-            Ok((InferType::new().add_raises(&body_ty.raises).add_raises(&col_ty.raises), env))
+            Ok((InferType::new().add_raises(&body_ty).add_raises(&col_ty), env))
         }
 
         Node::Range { from, to, step, .. } => {
@@ -86,13 +86,13 @@ pub fn infer_control_flow(
 
                 let ty = ctx
                     .lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)?
-                    .add_raises(&from_ty.raises)
-                    .add_raises(&to_ty.raises)
-                    .add_raises(&step_ty.raises);
+                    .add_raises(&from_ty)
+                    .add_raises(&to_ty)
+                    .add_raises(&step_ty);
                 Ok((ty, env))
             } else {
                 let ty = ctx.lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)?;
-                Ok((ty.add_raises(&from_ty.raises).add_raises(&to_ty.raises), env))
+                Ok((ty.add_raises(&from_ty).add_raises(&to_ty), env))
             }
         }
         Node::Step { amount } => {

@@ -60,15 +60,21 @@ impl From<&Classdef> for GenericType {
             .find(|f| f.name == ActualTypeName::new(function::concrete::INIT, &vec![]))
             .map_or(vec![], |f| f.arguments.clone());
 
+        let name =
+            ActualTypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         GenericType {
             is_py_type: true,
-            name: ActualTypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names),
+            name: name.clone(),
             pos: Position::default(),
             concrete: false,
             args,
             generics,
             fields,
-            functions,
+            functions: functions
+                .into_iter()
+                .map(|f| f.in_class(Some(&name)))
+                .filter_map(Result::ok)
+                .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect()
         }
     }

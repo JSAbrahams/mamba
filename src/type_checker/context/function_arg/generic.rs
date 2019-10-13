@@ -7,6 +7,7 @@ use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::{python, TypeName};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use std::hash::{Hash, Hasher};
 
 pub const SELF: &'static str = "self";
 
@@ -16,7 +17,7 @@ pub struct ClassArgument {
     pub fun_arg: GenericFunctionArg
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub struct GenericFunctionArg {
     pub is_py_type: bool,
     pub name:       String,
@@ -24,6 +25,20 @@ pub struct GenericFunctionArg {
     pub vararg:     bool,
     pub mutable:    bool,
     pub ty:         Option<TypeName>
+}
+
+impl PartialEq for GenericFunctionArg {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.ty == other.ty && self.vararg == other.vararg
+    }
+}
+
+impl Hash for GenericFunctionArg {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.ty.hash(state);
+        self.vararg.hash(state);
+    }
 }
 
 impl GenericFunctionArg {

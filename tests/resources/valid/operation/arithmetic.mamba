@@ -1,23 +1,14 @@
 def a <- 10
 def b <- 20
-def c <- 30
-def d <- 40
-def e <- 50
-def f <- 60
-def g <- 70
-def h <- 80
-def i <- 90
-def j <- 100
-def k <- 80
-def l <- 90
-def m <- 100
-def n <- 100
 
-a + b
-c - d
-e * f
-g / h
-i // j
-k mod l
-sqrt m
-n ^ o
+def c <- a + b
+def d <- 10 - c
+def f <- 2.4 * d
+def h <- f / a
+def j <- 100 // 10
+def l <- 100 mod 2
+def n <- sqrt l
+def m <- n ^ 100
+
+def x <- +10
+def y <- -30

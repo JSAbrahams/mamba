@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
+use std::ops::Deref;
 use std::path::PathBuf;
 
 use crate::common::position::Position;
@@ -17,7 +18,6 @@ use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
-use std::ops::Deref;
 
 pub mod field;
 pub mod function;
@@ -82,10 +82,16 @@ impl Context {
             Err(vec![TypeErr::new(
                 pos,
                 format!(
-                    "Type takes {} generic arguments, but given {}: [{:#?}]",
+                    "Type takes {} generic arguments, but given {}: [{}]",
                     generic_type.generics.len(),
                     generics.len(),
-                    generics
+                    {
+                        let mut string = String::new();
+                        generics.iter().for_each(|g| string.push_str(&format!("{}", g)));
+                        string.remove(string.len() - 2);
+                        string
+                    }
+                    .trim_end()
                 )
                 .as_str()
             )])
