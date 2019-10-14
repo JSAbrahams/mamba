@@ -1,16 +1,16 @@
 use std::collections::HashSet;
 
 use crate::common::position::Position;
-use crate::parser::ast::{AST, Node};
-use crate::type_checker::context::Context;
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::Environment;
+use crate::type_checker::context::Context;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
-use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::expression_type::mutable_type::NullableType;
+use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
+use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
@@ -64,7 +64,7 @@ fn collection(
     elements: &Vec<AST>,
     env: &Environment,
     ctx: &Context,
-    state: &State,
+    state: &State
 ) -> InferResult {
     let mut env = env.clone();
     let mut types = vec![];
@@ -96,17 +96,21 @@ fn collection(
 pub fn iterable_generic(
     expr_ty: &ExpressionType,
     ctx: &Context,
-    pos: &Position,
+    pos: &Position
 ) -> TypeResult<ExpressionType> {
     match expr_ty {
         ExpressionType::Single { mut_ty } => match &mut_ty.actual_ty {
             ActualType::Single { ty } => {
-                let iterable = ty.fun("__iter__", &vec![], false, pos)?.ty().ok_or(
-                    TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty))
-                )?;
-                let next_ty = ctx.lookup(&iterable, pos)?.expr_ty(pos)?.fun("__next__", &vec![], false, pos)?.ty().ok_or(
-                    TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty))
-                )?;
+                let iterable = ty
+                    .fun("__iter__", &vec![], false, pos)?
+                    .ty()
+                    .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
+                let next_ty = ctx
+                    .lookup(&iterable, pos)?
+                    .expr_ty(pos)?
+                    .fun("__next__", &vec![], false, pos)?
+                    .ty()
+                    .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
                 ctx.lookup(&next_ty, pos)?.expr_ty(pos).map_err(|e| vec![e])
             }
             ActualType::Tuple { .. } => unimplemented!(),

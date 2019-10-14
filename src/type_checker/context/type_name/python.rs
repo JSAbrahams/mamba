@@ -1,6 +1,8 @@
 use crate::type_checker::context::ty::python::python_to_concrete;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
-use python_parser::ast::Expression;
+use python_parser::ast::{Expression, Subscript};
+use std::ops::Deref;
 
 pub const INTEGER: &'static str = "int";
 pub const FLOAT: &'static str = "float";
@@ -8,15 +10,38 @@ pub const STRING: &'static str = "str";
 pub const BOOLEAN: &'static str = "bool";
 
 // TODO handle type unions
-// TODO handle generics
 impl From<&Expression> for TypeName {
     fn from(value: &Expression) -> TypeName {
-        TypeName::from(
-            match value {
-                Expression::Name(id) => python_to_concrete(&id.clone()),
-                _ => String::new()
+        match value {
+            Expression::Name(id) => TypeName::from(python_to_concrete(&id.clone()).as_str()),
+            Expression::Subscript(id, exprs) => {
+                let lit = match &id.deref() {
+                    Expression::Name(name) => name.clone(),
+                    _ => String::new()
+                };
+                let generics: Vec<_> = exprs.iter().map(|e| to_actual_ty_name(e)).collect();
+                TypeName::new(&lit, &generics)
             }
-            .as_str()
-        )
+            _ => TypeName::from("")
+        }
+    }
+}
+
+fn to_actual_ty_name(sub_script: &Subscript) -> ActualTypeName {
+    match sub_script {
+        Subscript::Simple(expr) => match expr {
+            Expression::Name(name) =>
+                ActualTypeName::from(python_to_concrete(&name.clone()).as_str()),
+            Expression::Subscript(id, generics) => {
+                let lit = match &id.deref() {
+                    Expression::Name(name) => name.clone(),
+                    _ => String::new()
+                };
+                let generics: Vec<_> = generics.iter().map(|e| to_actual_ty_name(e)).collect();
+                ActualTypeName::new(&lit, &generics)
+            }
+            _ => ActualTypeName::from("")
+        },
+        _ => ActualTypeName::from("")
     }
 }

@@ -37,12 +37,17 @@ impl Display for ExpressionType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             ExpressionType::Single { mut_ty } => write!(f, "{}", mut_ty),
-            ExpressionType::Union { union } => write!(f, "{{{}}}", {
-                let mut string = String::new();
-                union.iter().for_each(|e_ty| string.push_str(&format!("{}, ", e_ty)));
-                string.remove(string.len() - 2);
-                string
-            }.trim_end())
+            ExpressionType::Union { union } => write!(
+                f,
+                "{{{}}}",
+                {
+                    let mut string = String::new();
+                    union.iter().for_each(|e_ty| string.push_str(&format!("{}, ", e_ty)));
+                    string.remove(string.len() - 2);
+                    string
+                }
+                .trim_end()
+            )
         }
     }
 }

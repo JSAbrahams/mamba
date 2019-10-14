@@ -88,7 +88,9 @@ impl Context {
                     {
                         let mut string = String::new();
                         generics.iter().for_each(|g| string.push_str(&format!("{}", g)));
-                        string.remove(string.len() - 2);
+                        if string.len() > 2 {
+                            string.remove(string.len() - 2);
+                        }
                         string
                     }
                     .trim_end()

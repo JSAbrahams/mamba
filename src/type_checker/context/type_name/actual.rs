@@ -5,7 +5,7 @@ use std::fmt::Display;
 use std::ops::Deref;
 
 use crate::common::position::Position;
-use crate::parser::ast::{AST, Node};
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -14,31 +14,48 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 pub enum ActualTypeName {
     Single { lit: String, generics: Vec<ActualTypeName> },
     Tuple { ty_names: Vec<TypeName> },
-    AnonFun { args: Vec<TypeName>, ret_ty: Box<TypeName> },
+    AnonFun { args: Vec<TypeName>, ret_ty: Box<TypeName> }
 }
 
 impl Display for ActualTypeName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ActualTypeName::Single { lit, generics } if generics.is_empty() => write!(f, "{}", lit),
-            ActualTypeName::Single { lit, generics } => write!(f, "{}<{}>", lit, {
-                let mut string = String::new();
-                generics.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
-                string.remove(string.len() - 2);
-                string
-            }.trim_end()),
-            ActualTypeName::AnonFun { args, ret_ty } => write!(f, "({}) -> {}", {
-                let mut string = String::new();
-                args.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
-                string.remove(string.len() - 2);
-                string
-            }.trim_end(), ret_ty),
-            ActualTypeName::Tuple { ty_names } => write!(f, "({})", {
-                let mut string = String::new();
-                ty_names.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
-                string.remove(string.len() - 2);
-                string
-            }.trim_end())
+            ActualTypeName::Single { lit, generics } => write!(
+                f,
+                "{}<{}>",
+                lit,
+                {
+                    let mut string = String::new();
+                    generics.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
+                    string.remove(string.len() - 2);
+                    string
+                }
+                .trim_end()
+            ),
+            ActualTypeName::AnonFun { args, ret_ty } => write!(
+                f,
+                "({}) -> {}",
+                {
+                    let mut string = String::new();
+                    args.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
+                    string.remove(string.len() - 2);
+                    string
+                }
+                .trim_end(),
+                ret_ty
+            ),
+            ActualTypeName::Tuple { ty_names } => write!(
+                f,
+                "({})",
+                {
+                    let mut string = String::new();
+                    ty_names.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
+                    string.remove(string.len() - 2);
+                    string
+                }
+                .trim_end()
+            )
         }
     }
 }
@@ -53,11 +70,11 @@ impl TryFrom<&AST> for ActualTypeName {
             Node::Generic { id, .. } => ActualTypeName::try_from(id.deref()),
             Node::Type { id, generics } => match &id.node {
                 Node::Id { lit } => Ok(ActualTypeName::Single {
-                    lit: lit.clone(),
+                    lit:      lit.clone(),
                     generics: generics
                         .iter()
                         .map(ActualTypeName::try_from)
-                        .collect::<Result<_, _>>()?,
+                        .collect::<Result<_, _>>()?
                 }),
                 _ => Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
             },
@@ -65,8 +82,8 @@ impl TryFrom<&AST> for ActualTypeName {
                 ty_names: types.iter().map(TypeName::try_from).collect::<Result<_, _>>()?
             }),
             Node::TypeFun { args, ret_ty } => Ok(ActualTypeName::AnonFun {
-                args: args.iter().map(TypeName::try_from).collect::<Result<_, _>>()?,
-                ret_ty: Box::from(TypeName::try_from(ret_ty.deref())?),
+                args:   args.iter().map(TypeName::try_from).collect::<Result<_, _>>()?,
+                ret_ty: Box::from(TypeName::try_from(ret_ty.deref())?)
             }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected type variant")])
         }
@@ -87,8 +104,8 @@ impl From<&ActualType> for ActualTypeName {
                 ty_names: types.iter().map(|ty| TypeName::from(ty)).collect()
             },
             ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
-                args: args.iter().map(|arg| TypeName::from(arg)).collect(),
-                ret_ty: Box::new(TypeName::from(ret_ty.deref())),
+                args:   args.iter().map(|arg| TypeName::from(arg)).collect(),
+                ret_ty: Box::new(TypeName::from(ret_ty.deref()))
             }
         }
     }
@@ -97,8 +114,8 @@ impl From<&ActualType> for ActualTypeName {
 impl From<(&str, &Vec<ActualType>)> for ActualTypeName {
     fn from((name, generics): (&str, &Vec<ActualType>)) -> Self {
         ActualTypeName::Single {
-            lit: String::from(name.clone()),
-            generics: generics.clone().iter().map(|g| g.name()).collect(),
+            lit:      String::from(name.clone()),
+            generics: generics.clone().iter().map(|g| g.name()).collect()
         }
     }
 }
@@ -125,14 +142,14 @@ impl ActualTypeName {
     pub fn substitute(
         &self,
         gens: &HashMap<String, ActualTypeName>,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<ActualTypeName> {
         match &self {
             ActualTypeName::Single { lit, generics } =>
                 if let Some(subst) = gens.get(lit) {
                     match subst {
                         ActualTypeName::Single { generics: subs_generics, .. }
-                        if generics.len() == subs_generics.len() =>
+                            if generics.len() == subs_generics.len() =>
                             Ok(subst.clone()),
                         _ if generics.is_empty() => Ok(subst.clone()),
                         _ => {
@@ -142,11 +159,11 @@ impl ActualTypeName {
                     }
                 } else {
                     Ok(ActualTypeName::Single {
-                        lit: lit.clone(),
+                        lit:      lit.clone(),
                         generics: generics
                             .iter()
                             .map(|ty| ty.substitute(gens, pos))
-                            .collect::<Result<_, _>>()?,
+                            .collect::<Result<_, _>>()?
                     })
                 },
             ActualTypeName::Tuple { ty_names } => Ok(ActualTypeName::Tuple {
@@ -156,8 +173,8 @@ impl ActualTypeName {
                     .collect::<Result<_, _>>()?
             }),
             ActualTypeName::AnonFun { args, ret_ty } => Ok(ActualTypeName::AnonFun {
-                args: args.iter().map(|ty| ty.substitute(gens, pos)).collect::<Result<_, _>>()?,
-                ret_ty: Box::from(ret_ty.substitute(gens, pos)?),
+                args:   args.iter().map(|ty| ty.substitute(gens, pos)).collect::<Result<_, _>>()?,
+                ret_ty: Box::from(ret_ty.substitute(gens, pos)?)
             })
         }
     }
