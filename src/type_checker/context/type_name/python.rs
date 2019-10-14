@@ -8,6 +8,7 @@ pub const STRING: &'static str = "str";
 pub const BOOLEAN: &'static str = "bool";
 
 // TODO handle type unions
+// TODO handle generics
 impl From<&Expression> for TypeName {
     fn from(value: &Expression) -> TypeName {
         TypeName::from(
