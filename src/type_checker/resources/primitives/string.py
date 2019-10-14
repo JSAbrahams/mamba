@@ -9,4 +9,4 @@ class str:
 
 class str_iterator:
     def __init__(self): pass
-    def __next__(self) -> char: pass
+    def __next__(self) -> str: pass
