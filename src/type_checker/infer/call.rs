@@ -9,7 +9,6 @@ pub fn infer_call(ast: &AST, _: &Environment, _: &Context, _: &State) -> InferRe
     match &ast.node {
         Node::FunctionCall { .. } => unimplemented!(),
         Node::PropertyCall { .. } => unimplemented!(),
-
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or class element")])
     }
 }

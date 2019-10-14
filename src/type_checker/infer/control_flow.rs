@@ -78,14 +78,12 @@ pub fn infer_control_flow(
 
             if let Some(step) = step {
                 let (step_ty, env) = infer(step, &env, ctx, state)?;
-                if step_ty
-                    != ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
-                {
+                if step_ty != ctx.lookup(&TypeName::from(concrete::INT_PRIMITIVE), &ast.pos)? {
                     return Err(vec![TypeErr::new(&step.pos, "Must be integer")]);
                 }
 
                 let ty = ctx
-                    .lookup(&TypeName::new(concrete::RANGE, &vec![]), &ast.pos)?
+                    .lookup(&TypeName::from(concrete::RANGE), &ast.pos)?
                     .add_raises(&from_ty)
                     .add_raises(&to_ty)
                     .add_raises(&step_ty);

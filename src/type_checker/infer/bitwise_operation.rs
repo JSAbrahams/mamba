@@ -29,7 +29,7 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             let (infer_ty, env) = infer(expr, env, ctx, state)?;
             infer_ty.expr_ty(&ast.pos)?;
             Ok((
-                ctx.lookup(&TypeName::new(concrete::INT_PRIMITIVE, &vec![]), &ast.pos)?
+                ctx.lookup(&TypeName::from(concrete::INT_PRIMITIVE), &ast.pos)?
                     .add_raises(&infer_ty),
                 env.clone()
             ))

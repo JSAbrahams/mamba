@@ -21,7 +21,6 @@ pub fn infer_block(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             let mut last_stmt_type = None;
             let mut raises = HashSet::new();
             let mut block_env = env.clone();
-
             for statement in statements {
                 let (statement_type, new_env) =
                     infer(&Box::from(statement.clone()), &block_env, ctx, state)?;

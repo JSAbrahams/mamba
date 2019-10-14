@@ -20,26 +20,23 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
             left_ty.expr_ty(&left.pos)?;
             right_ty.expr_ty(&right.pos)?;
             Ok((
-                ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
+                ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)?
                     .add_raises(&left_ty)
                     .add_raises(&right_ty),
                 env
             ))
         }
-
         Node::And { left, right } | Node::Or { left, right } => {
             let (left_ty, env) = infer(left, env, ctx, state)?;
             let (right_ty, env) = infer(right, &env, ctx, &state)?;
 
-            if left_ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)? {
+            if left_ty != ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(
                     &left.pos,
                     &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, left_ty)
                 )]);
             }
-            if right_ty
-                != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)?
-            {
+            if right_ty != ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(
                     &right.pos,
                     &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, right_ty)
@@ -53,10 +50,9 @@ pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context, state: &Sta
                 env
             ))
         }
-
         Node::Not { expr } => {
             let (ty, env) = infer(expr, env, ctx, state)?;
-            if ty != ctx.lookup(&TypeName::new(concrete::BOOL_PRIMITIVE, &vec![]), &ast.pos)? {
+            if ty != ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)? {
                 return Err(vec![TypeErr::new(
                     &expr.pos,
                     &format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, ty)

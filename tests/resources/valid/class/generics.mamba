@@ -1,6 +1,6 @@
 # This class has no state
 class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
-    def private z_modified
+    def private z_modified <- "asdf"
     def private mut other_field <- 10
 
     def init(mut self, other_field: Int, z: Int) raises [Err] =>
