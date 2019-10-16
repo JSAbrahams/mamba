@@ -27,3 +27,6 @@ for i in range(a, b, 1):
 c = 2451
 for i in range(a, c + 1, 20):
     print('world')
+
+for i in ([1,2], {3,4}):
+    print i

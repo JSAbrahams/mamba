@@ -22,11 +22,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
             (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     Vec::new(),
-                definitions: desugar_vec(statements, imp, &State {
-                    tup:         state.tup,
-                    expect_expr: state.expect_expr,
-                    interface:   true
-                })?
+                definitions: desugar_vec(statements, imp, &state.in_interface(true))?
             },
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },

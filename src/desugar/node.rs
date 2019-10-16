@@ -74,11 +74,11 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Print { expr } => Core::Print { expr: Box::from(desugar_node(expr, imp, state)?) },
 
         Node::IfElse { .. }
-        | Node::Match { .. }
         | Node::While { .. }
         | Node::For { .. }
         | Node::Break
         | Node::Continue => desugar_control_flow(ast, imp, state)?,
+        Node::Match { .. } => desugar_control_flow(ast, imp, &state.expand_ty(false))?,
         Node::Case { .. } => panic!("Case cannot be top-level"),
 
         Node::Not { expr } => Core::Not { expr: Box::from(desugar_node(expr, imp, state)?) },
@@ -249,8 +249,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::TypeAlias { .. }
         | Node::TypeTup { .. }
         | Node::Type { .. }
-        | Node::TypeFun { .. } => Core::Empty,
-        Node::TypeUnion { .. } => desugar_type(ast, imp, state)?,
+        | Node::TypeFun { .. }
+        | Node::TypeUnion { .. } => desugar_type(ast, imp, state)?,
 
         Node::TypeDef { .. } => desugar_class(ast, imp, state)?,
         Node::Class { .. } => desugar_class(ast, imp, state)?,

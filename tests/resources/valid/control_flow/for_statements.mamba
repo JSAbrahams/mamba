@@ -25,3 +25,6 @@ for i in a.. b step 1 do
 def c <- 2451
 for i in a ..= c step 20 do
     print "world"
+
+for i in ([1,2], {3,4}) do
+    print i

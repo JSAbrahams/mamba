@@ -113,7 +113,15 @@ pub fn iterable_generic(
                     .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
                 ctx.lookup(&next_ty, pos)?.expr_ty(pos).map_err(|e| vec![e])
             }
-            ActualType::Tuple { .. } => unimplemented!(),
+            ActualType::Tuple { types } => {
+                let first_ty = types.first();
+                let mut first =
+                    first_ty.ok_or(TypeErr::new(pos, &format!("Cannot infer type")))?.clone();
+                for ty in types {
+                    first = first.union(ty);
+                }
+                Ok(first)
+            }
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(pos, "Must be single or tuple")])
         },
         ExpressionType::Union { .. } => unimplemented!()

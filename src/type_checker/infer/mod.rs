@@ -34,6 +34,8 @@ mod optional;
 pub type Inferred<T> = (T, Environment);
 pub type InferResult<T = InferType> = std::result::Result<Inferred<T>, Vec<TypeErr>>;
 
+// TODO switch to system using restraint programming for more advanced type
+// inference
 pub fn infer_all(inputs: &[CheckInput], ctx: &Context) -> Result<(), Vec<TypeErr>> {
     let env = Environment::new();
     let (_, errs): (Vec<_>, Vec<_>) = inputs

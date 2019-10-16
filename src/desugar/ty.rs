@@ -13,10 +13,18 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::IdType { id, _type, .. } => match &id.node {
             Node::Id { lit } =>
                 if let Some(ty) = _type {
-                    Core::IdType { lit: lit.clone(), ty: Box::from(desugar_node(ty, imp, state)?) }
+                    if state.expand_ty {
+                        Core::IdType {
+                            lit: lit.clone(),
+                            ty:  Box::from(desugar_node(ty, imp, state)?)
+                        }
+                    } else {
+                        Core::Id { lit: lit.clone() }
+                    }
                 } else {
-                    Core::Type { lit: lit.clone(), generics: vec![] }
+                    Core::Id { lit: lit.clone() }
                 },
+            Node::_Self => Core::Id { lit: String::from("self") },
             other => panic!("Expected identifier but was {:?}", other)
         },
         Node::TypeAlias { _type, alias, .. } => Core::Assign {

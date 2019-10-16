@@ -11,6 +11,7 @@ use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+    // TODO check body of function definition
     match &ast.node {
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
         Node::Reassign { left, right } => {
@@ -66,8 +67,8 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])
         },
-        Node::FunArg { .. } => unimplemented!(),
-        Node::FunDef { .. } => unimplemented!(),
+        Node::FunArg { .. } => Ok((InferType::new(), env.clone())),
+        Node::FunDef { .. } => Ok((InferType::new(), env.clone())),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable manipulation")])
     }
