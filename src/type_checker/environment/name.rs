@@ -9,6 +9,7 @@ use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 
 #[derive(Clone, Debug)]
 pub struct Identifier {
@@ -21,17 +22,7 @@ impl Display for Identifier {
         if let Some((mutable, lit)) = &self.lit {
             write!(f, "{}{}", if *mutable { "mut " } else { "" }, lit.clone())
         } else {
-            write!(
-                f,
-                "({})",
-                {
-                    let mut string = String::new();
-                    self.names.iter().for_each(|name| string.push_str(&format!("{}, ", name)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end()
-            )
+            write!(f, "({})", comma_delimited(&self.names))
         }
     }
 }

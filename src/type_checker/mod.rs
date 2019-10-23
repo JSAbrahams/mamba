@@ -8,7 +8,9 @@ use crate::type_checker::type_result::TypeResults;
 
 pub mod context;
 pub mod environment;
+
 mod infer;
+mod util;
 
 pub mod type_result;
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);

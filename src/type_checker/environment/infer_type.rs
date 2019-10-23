@@ -6,6 +6,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct InferType {
@@ -24,18 +25,11 @@ impl Display for InferType {
         write!(
             f,
             "{}{}",
-            if let Some(e_ty) = &self.expr_type { format!("{}", e_ty) } else { String::new() },
+            if let Some(e_ty) = &self.expr_type { format!("{}", e_ty) } else { String::from("()") },
             if self.raises.is_empty() {
                 String::new()
             } else {
-                let mut string = String::from(" raises [");
-                self.raises.iter().for_each(|raise| string.push_str(&format!("{}, ", raise)));
-                if string.len() > 2 {
-                    string.remove(string.len() - 2);
-                }
-                let mut string = String::from(string.trim_end());
-                string.push_str("]");
-                string
+                format!("raises [{}]", comma_delimited(&self.raises))
             }
         )
     }

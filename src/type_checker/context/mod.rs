@@ -17,6 +17,7 @@ use crate::type_checker::environment::expression_type::nullable_type::NullableTy
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 use crate::type_checker::CheckInput;
 
 pub mod field;
@@ -80,21 +81,12 @@ impl Context {
         } else {
             Err(vec![TypeErr::new(
                 pos,
-                format!(
+                &format!(
                     "Type takes {} generic arguments, but given {}: [{}]",
                     generic_type.generics.len(),
                     generics.len(),
-                    {
-                        let mut string = String::new();
-                        generics.iter().for_each(|g| string.push_str(&format!("{}", g)));
-                        if string.len() > 2 {
-                            string.remove(string.len() - 2);
-                        }
-                        string
-                    }
-                    .trim_end()
+                    comma_delimited(generics)
                 )
-                .as_str()
             )])
         }
     }

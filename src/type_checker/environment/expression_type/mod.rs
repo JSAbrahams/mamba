@@ -10,6 +10,7 @@ use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::nullable_type::NullableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 
 pub mod actual_type;
 pub mod nullable_type;
@@ -43,17 +44,7 @@ impl Display for ExpressionType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             ExpressionType::Single { ty } => write!(f, "{}", ty),
-            ExpressionType::Union { union } => write!(
-                f,
-                "{{{}}}",
-                {
-                    let mut string = String::new();
-                    union.iter().for_each(|e_ty| string.push_str(&format!("{}, ", e_ty)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end()
-            )
+            ExpressionType::Union { union } => write!(f, "{{{}}}", comma_delimited(union))
         }
     }
 }

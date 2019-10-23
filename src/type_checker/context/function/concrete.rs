@@ -9,6 +9,7 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::util::comma_delimited;
 
 pub const INIT: &'static str = "init";
 
@@ -43,25 +44,9 @@ impl Display for Function {
             f,
             "{}: ({}) -> {} raises [{}]",
             self.name,
-            {
-                let mut string = String::new();
-                self.arguments.iter().for_each(|arg| string.push_str(&format!("{}, ", arg)));
-                if string.len() > 2 {
-                    string.remove(string.len() - 2);
-                }
-                string
-            }
-            .trim_end(),
+            comma_delimited(&self.arguments),
             if let Some(ret_ty) = &self.ret_ty { format!("{}", ret_ty) } else { String::new() },
-            {
-                let mut string = String::new();
-                self.raises.iter().for_each(|arg| string.push_str(&format!("{}, ", arg)));
-                if string.len() > 2 {
-                    string.remove(string.len() - 2);
-                }
-                string
-            }
-            .trim_end()
+            comma_delimited(&self.raises)
         )
     }
 }

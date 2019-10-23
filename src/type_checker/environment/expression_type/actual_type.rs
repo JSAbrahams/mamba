@@ -8,6 +8,8 @@ use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
+use std::ops::Deref;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
@@ -20,29 +22,9 @@ impl Display for ActualType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
             ActualType::Single { ty } => write!(f, "{}", ty),
-            ActualType::Tuple { types } => write!(
-                f,
-                "({})",
-                {
-                    let mut string = String::new();
-                    types.iter().for_each(|ty| string.push_str(&format!("{}, ", ty)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end()
-            ),
-            ActualType::AnonFun { args, ret_ty } => write!(
-                f,
-                "({}) -> {}",
-                {
-                    let mut string = String::new();
-                    args.iter().for_each(|ty| string.push_str(&format!("{}, ", ty)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end(),
-                ret_ty
-            )
+            ActualType::Tuple { types } => write!(f, "({})", comma_delimited(types)),
+            ActualType::AnonFun { args, ret_ty } =>
+                write!(f, "({}) -> {}", comma_delimited(args), ret_ty),
         }
     }
 }
