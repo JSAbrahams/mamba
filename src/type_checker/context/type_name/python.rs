@@ -1,5 +1,4 @@
 use crate::type_checker::context::ty::python::python_to_concrete;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use python_parser::ast::{Expression, Subscript};
 use std::ops::Deref;
@@ -19,7 +18,7 @@ impl From<&Expression> for TypeName {
                     Expression::Name(name) => name.clone(),
                     _ => String::new()
                 };
-                let generics: Vec<_> = exprs.iter().map(|e| to_actual_ty_name(e)).collect();
+                let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
                 TypeName::new(&lit, &generics)
             }
             _ => TypeName::from("")
@@ -27,21 +26,9 @@ impl From<&Expression> for TypeName {
     }
 }
 
-fn to_actual_ty_name(sub_script: &Subscript) -> ActualTypeName {
+fn to_ty_name(sub_script: &Subscript) -> TypeName {
     match sub_script {
-        Subscript::Simple(expr) => match expr {
-            Expression::Name(name) =>
-                ActualTypeName::from(python_to_concrete(&name.clone()).as_str()),
-            Expression::Subscript(id, generics) => {
-                let lit = match &id.deref() {
-                    Expression::Name(name) => name.clone(),
-                    _ => String::new()
-                };
-                let generics: Vec<_> = generics.iter().map(|e| to_actual_ty_name(e)).collect();
-                ActualTypeName::new(&lit, &generics)
-            }
-            _ => ActualTypeName::from("")
-        },
-        _ => ActualTypeName::from("")
+        Subscript::Simple(expr) => TypeName::from(expr),
+        _ => TypeName::from("")
     }
 }

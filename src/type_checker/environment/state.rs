@@ -1,26 +1,32 @@
-use crate::type_checker::type_result::TypeErr;
-
 #[derive(Clone)]
 pub struct State {
     pub in_loop:   bool,
     pub in_handle: bool,
-    pub safe:      bool
+    pub nullable:  bool
 }
 
 pub enum StateType {
     InLoop,
     InHandle,
-    Unsafe
+    Nullable
 }
 
 impl State {
-    pub fn new() -> State { State { in_loop: false, in_handle: false, safe: true } }
+    pub fn new() -> State { State { in_loop: false, in_handle: false, nullable: true } }
 
-    pub fn is(self, state_type: StateType) -> Result<State, TypeErr> {
+    pub fn as_state(&self, state_type: StateType) -> State {
         match state_type {
-            StateType::InLoop => Ok(State { in_loop: true, ..self }),
-            StateType::InHandle => Ok(State { in_handle: true, ..self }),
-            StateType::Unsafe => Ok(State { safe: false, ..self })
+            StateType::InLoop => State { in_loop: true, ..self.clone() },
+            StateType::InHandle => State { in_handle: true, ..self.clone() },
+            StateType::Nullable => State { nullable: false, ..self.clone() }
+        }
+    }
+
+    pub fn as_not_state(&self, state_type: StateType) -> State {
+        match state_type {
+            StateType::InLoop => State { in_loop: false, ..self.clone() },
+            StateType::InHandle => State { in_handle: false, ..self.clone() },
+            StateType::Nullable => State { nullable: false, ..self.clone() }
         }
     }
 }

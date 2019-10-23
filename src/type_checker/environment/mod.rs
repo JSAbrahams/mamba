@@ -4,8 +4,8 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 
 pub mod expression_type;
-pub mod identifier;
 pub mod infer_type;
+pub mod name;
 pub mod state;
 
 #[derive(Clone, Debug)]

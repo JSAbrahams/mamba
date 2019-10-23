@@ -1,0 +1,35 @@
+use std::fmt;
+use std::fmt::{Display, Formatter};
+
+use crate::common::position::Position;
+use crate::type_checker::environment::expression_type::actual_type::ActualType;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub struct NullableType {
+    pub is_nullable: bool,
+    actual_ty:       ActualType
+}
+
+impl Display for NullableType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let nullable = if self.is_nullable { "?" } else { "" };
+        write!(f, "{}{}", self.actual_ty, nullable)
+    }
+}
+
+impl NullableType {
+    pub fn new(nullable: bool, actual_ty: &ActualType) -> NullableType {
+        NullableType { is_nullable: nullable.clone(), actual_ty: actual_ty.clone() }
+    }
+
+    pub fn actual_ty(&self) -> ActualType { self.actual_ty.clone() }
+
+    pub fn actual_ty_safe(&self, nullable: bool, pos: &Position) -> TypeResult<ActualType> {
+        if nullable || !nullable && !self.is_nullable {
+            Ok(self.actual_ty.clone())
+        } else {
+            Err(vec![TypeErr::new(pos, "May be null")])
+        }
+    }
+}

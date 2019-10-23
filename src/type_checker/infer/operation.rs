@@ -1,5 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::function::concrete;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::{function, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -50,9 +51,12 @@ fn unary_op(
     state: &State
 ) -> InferResult {
     let (infer_type, env) = infer(expr, env, ctx, state)?;
-    let fun = infer_type.expr_ty(&expr.pos)?.fun(overrides, &vec![], state.safe, &expr.pos)?;
+    let fun = infer_type.expr_ty(&expr.pos)?.fun(overrides, &vec![], state.nullable, &expr.pos)?;
     match &fun.ty() {
-        Some(fun_ty) => Ok((ctx.lookup(fun_ty, &expr.pos)?.add_raises(&infer_type), env)),
+        Some(fun_ty) => {
+            let fun_ret_ty = ctx.lookup(fun_ty, &expr.pos)?;
+            Ok((InferType::from(&fun_ret_ty).add_raises(&infer_type), env))
+        }
         None => Ok((InferType::new().add_raises(&infer_type), env))
     }
 }
@@ -69,18 +73,16 @@ fn op(
     let (right_ty, right_env) = infer(right, &left_env, ctx, &state)?;
     let fun = left_ty.expr_ty(&left.pos)?.fun(
         overrides,
-        &vec![right_ty.expr_ty(&right.pos)?],
-        state.safe,
+        &vec![TypeName::from(&right_ty.expr_ty(&right.pos)?)],
+        state.nullable,
         &left.pos
     )?;
 
     match &fun.ty() {
-        Some(fun_ty) => Ok((
-            ctx.lookup(fun_ty, &left.pos.union(&right.pos))?
-                .add_raises(&left_ty)
-                .add_raises(&right_ty),
-            right_env
-        )),
+        Some(fun_ty) => {
+            let expr_ty = ctx.lookup(fun_ty, &left.pos.union(&right.pos))?;
+            Ok((InferType::from(&expr_ty).add_raises(&left_ty).add_raises(&right_ty), right_env))
+        }
         None => Ok((InferType::new().add_raises(&left_ty).add_raises(&right_ty), right_env))
     }
 }

@@ -1,13 +1,13 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::environment::state::State;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Clone, Debug)]
@@ -68,37 +68,65 @@ impl From<&Vec<Identifier>> for Identifier {
 pub fn match_name(
     identifier: &Identifier,
     expr_ty: &ExpressionType,
+    state: &State,
     pos: &Position
-) -> TypeResult<HashSet<(bool, String, ExpressionType)>> {
+) -> TypeResult<HashMap<String, (bool, ExpressionType)>> {
     match expr_ty {
-        ExpressionType::Single { mut_ty } => match &mut_ty.actual_ty {
+        ExpressionType::Single { ty } => match &ty.actual_ty_safe(state.nullable, pos)? {
             ActualType::Single { .. } | ActualType::AnonFun { .. } =>
                 if let Some((mutable, id)) = &identifier.lit {
-                    Ok(HashSet::from_iter(vec![(*mutable, id.clone(), expr_ty.clone())].to_vec()))
+                    let mut mapping = HashMap::with_capacity(1);
+                    mapping.insert(id.clone(), (*mutable, expr_ty.clone()));
+                    Ok(mapping)
                 } else {
                     let msg = format!("Cannot match {} with type {}", identifier, expr_ty);
                     Err(vec![TypeErr::new(pos, &msg)])
                 },
             ActualType::Tuple { types } =>
                 if let Some((mutable, id)) = &identifier.lit {
-                    Ok(HashSet::from_iter(vec![(*mutable, id.clone(), expr_ty.clone())].to_vec()))
+                    let mut mapping = HashMap::with_capacity(1);
+                    mapping.insert(id.clone(), (*mutable, expr_ty.clone()));
+                    Ok(mapping)
                 } else if types.len() == identifier.names.len() {
-                    let sets: Vec<HashSet<_>> = identifier
+                    let sets: Vec<HashMap<_, _>> = identifier
                         .names
                         .iter()
                         .zip(types)
-                        .map(|(identifier, expr_ty)| match_name(&identifier, expr_ty, pos))
+                        .map(|(identifier, expr_ty)| match_name(&identifier, expr_ty, state, pos))
                         .collect::<Result<_, _>>()?;
                     Ok(sets.into_iter().flatten().collect())
                 } else {
-                    let msg = format!(
-                        "Cannot iterate over {} with tuple of size {}",
-                        mut_ty.actual_ty,
-                        identifier.names.len()
-                    );
-                    Err(vec![TypeErr::new(pos, &msg)])
+                    Err(vec![TypeErr::new(
+                        pos,
+                        &format!(
+                            "Cannot iterate over {} with tuple of size {}",
+                            ty,
+                            identifier.names.len()
+                        )
+                    )])
                 },
         },
-        ExpressionType::Union { union } => unimplemented!()
+        ExpressionType::Union { union } => {
+            let unions: Vec<HashMap<String, (bool, ExpressionType)>> = union
+                .iter()
+                .map(|ty| match_name(identifier, &ExpressionType::from(ty), state, pos))
+                .collect::<Result<_, _>>()?;
+            let mut final_union: HashMap<String, (bool, ExpressionType)> = HashMap::new();
+            for union in unions {
+                for (id, (mutable, expr_ty)) in union {
+                    if final_union.contains_key(&id) {
+                        let (current_mutable, current_expr_ty) =
+                            final_union.get(&id).unwrap_or_else(|| unreachable!());
+                        let new_mutable = mutable && *current_mutable;
+                        let new_expr_ty = current_expr_ty.clone().union(&expr_ty);
+                        final_union.insert(id, (new_mutable, new_expr_ty));
+                    } else {
+                        final_union.insert(id, (mutable, expr_ty));
+                    }
+                }
+            }
+
+            Ok(final_union)
+        }
     }
 }

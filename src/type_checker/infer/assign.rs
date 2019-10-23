@@ -45,7 +45,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                         let infer_type =
                             ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?;
                         let (other_ty, env) = infer(expr, env, ctx, state)?;
-                        if infer_type != other_ty {
+                        if infer_type != other_ty.expr_ty(&id_maybe_type.pos)? {
                             return Err(vec![TypeErr::new(
                                 &expr.pos,
                                 "Expression type does not match annotated type"
@@ -56,7 +56,9 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                     }
                     (None, Some(expr)) => infer(expr, env, ctx, state)?,
                     (Some(ty_name), None) => (
-                        ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?,
+                        InferType::from(
+                            &ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?
+                        ),
                         env.clone()
                     ),
                     (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])

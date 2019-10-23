@@ -1,6 +1,5 @@
 use crate::common::position::Position;
 use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
@@ -19,11 +18,11 @@ impl Field {
     }
 }
 
-impl TryFrom<(&GenericField, &HashMap<String, ActualTypeName>, &Position)> for Field {
+impl TryFrom<(&GenericField, &HashMap<String, TypeName>, &Position)> for Field {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (field, generics, pos): (&GenericField, &HashMap<String, ActualTypeName>, &Position)
+        (field, generics, pos): (&GenericField, &HashMap<String, TypeName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,

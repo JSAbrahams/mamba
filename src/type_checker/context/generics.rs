@@ -25,9 +25,11 @@ pub fn generics(
             ),
             Node::Script { statements } => statements.iter().for_each(|stmt| match &stmt.node {
                 Node::FunDef { .. } => fun_res.push(
-                    GenericFunction::try_from(stmt).and_then(|f| f.in_class(None)).map_err(|e| {
-                        e.into_iter().map(|e| e.into_with_source(source, path)).collect()
-                    })
+                    GenericFunction::try_from(stmt)
+                        .and_then(|f| f.in_class(None, &file.pos))
+                        .map_err(|e| {
+                            e.into_iter().map(|e| e.into_with_source(source, path)).collect()
+                        })
                 ),
                 Node::VariableDef { .. } =>
                     field_res.push(GenericField::try_from(stmt).map_err(|e| {

@@ -5,11 +5,9 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::ty::concrete::Type;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::ops::Deref;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
@@ -49,23 +47,7 @@ impl Display for ActualType {
     }
 }
 
-impl From<&Type> for ActualType {
-    fn from(ty: &Type) -> Self { ActualType::Single { ty: ty.clone() } }
-}
-
 impl ActualType {
-    pub fn name(&self) -> ActualTypeName {
-        match self {
-            ActualType::Single { ty } => ty.name.clone(),
-            ActualType::Tuple { types } =>
-                ActualTypeName::Tuple { ty_names: types.iter().map(|ty| ty.name()).collect() },
-            ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
-                args:   args.iter().map(|ty| ty.name()).collect(),
-                ret_ty: Box::new(ret_ty.deref().name())
-            }
-        }
-    }
-
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         match &self {
             ActualType::Single { ty } =>
@@ -74,15 +56,9 @@ impl ActualType {
         }
     }
 
-    pub fn fun(
-        &self,
-        name: &str,
-        args: &[TypeName],
-        safe: bool,
-        pos: &Position
-    ) -> TypeResult<Function> {
+    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
-            ActualType::Single { ty } => ty.fun(name, &args, safe, pos),
+            ActualType::Single { ty } => ty.fun(name, args, pos),
             _ => Err(vec![TypeErr::new(pos, "Undefined function")])
         }
     }

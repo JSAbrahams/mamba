@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
@@ -14,7 +13,6 @@ pub struct InferType {
     expr_type:  Option<ExpressionType>
 }
 
-// TODO get raises from nested types and append here
 impl From<&ExpressionType> for InferType {
     fn from(expr_type: &ExpressionType) -> Self {
         InferType { raises: HashSet::new(), expr_type: Some(expr_type.clone()) }
@@ -23,11 +21,22 @@ impl From<&ExpressionType> for InferType {
 
 impl Display for InferType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        // TODO display raises
         write!(
             f,
-            "{}",
-            if let Some(e_ty) = &self.expr_type { format!("{}", e_ty) } else { String::new() }
+            "{}{}",
+            if let Some(e_ty) = &self.expr_type { format!("{}", e_ty) } else { String::new() },
+            if self.raises.is_empty() {
+                String::new()
+            } else {
+                let mut string = String::from(" raises [");
+                self.raises.iter().for_each(|raise| string.push_str(&format!("{}, ", raise)));
+                if string.len() > 2 {
+                    string.remove(string.len() - 2);
+                }
+                let mut string = String::from(string.trim_end());
+                string.push_str("]");
+                string
+            }
         )
     }
 }
@@ -48,18 +57,6 @@ impl InferType {
 
     pub fn expr_ty(&self, pos: &Position) -> Result<ExpressionType, TypeErr> {
         self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))
-    }
-
-    pub fn add_type_as_raises(self, raised: &InferType, pos: &Position) -> TypeResult<InferType> {
-        let expr_ty = raised.expr_ty(pos)?.clone();
-        let raises = match expr_ty {
-            ExpressionType::Single { mut_ty } =>
-                HashSet::from_iter(vec![ActualTypeName::from(&mut_ty.actual_ty)].into_iter()),
-            ExpressionType::Union { union } =>
-                union.iter().map(|mut_ty| ActualTypeName::from(&mut_ty.actual_ty)).collect(),
-        };
-
-        Ok(InferType { raises: self.raises.union(&raises).cloned().collect(), ..self })
     }
 
     pub fn union_raises(self, raises: &HashSet<ActualTypeName>) -> InferType {

@@ -13,7 +13,7 @@ use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
-use crate::type_checker::environment::expression_type::mutable_type::NullableType;
+use crate::type_checker::environment::expression_type::nullable_type::NullableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -64,9 +64,9 @@ impl Context {
     fn lookup_direct(
         &self,
         name: &str,
-        generics: &Vec<ActualTypeName>,
+        generics: &Vec<TypeName>,
         pos: &Position
-    ) -> TypeResult<ActualType> {
+    ) -> TypeResult<Type> {
         let generic_type: GenericType = self.find_type_name(name, pos)?;
         if generic_type.generics.len() == generics.len() {
             let generics: HashMap<_, _> = generic_type
@@ -76,8 +76,7 @@ impl Context {
                 .zip(generics.clone())
                 .map(|(parameter, type_name)| (parameter.name, type_name))
                 .collect();
-            let ty = Type::try_from((&generic_type, &generics, pos))?;
-            Ok(ActualType::from(&ty))
+            Type::try_from((&generic_type, &generics, pos))
         } else {
             Err(vec![TypeErr::new(
                 pos,
@@ -101,24 +100,19 @@ impl Context {
     }
 
     fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
-        Ok(NullableType::from(&match ty_name {
-            ActualTypeName::Single { lit, generics } => self.lookup_direct(lit, generics, pos)?,
-            ActualTypeName::Tuple { ty_names } => {
-                let types: Vec<InferType> = ty_names
+        Ok(NullableType::new(false, &match ty_name {
+            ActualTypeName::Single { lit, generics } =>
+                ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
+            ActualTypeName::Tuple { ty_names } => ActualType::Tuple {
+                types: ty_names
                     .iter()
                     .map(|ty_name| self.lookup(ty_name, pos))
-                    .collect::<Result<_, _>>()?;
-                ActualType::Tuple {
-                    types: types.iter().map(|ty| ty.expr_ty(pos)).collect::<Result<_, _>>()?
-                }
-            }
+                    .collect::<Result<_, _>>()?
+            },
             ActualTypeName::AnonFun { args, ret_ty } => {
-                let args: Vec<InferType> =
+                let args =
                     args.iter().map(|arg| self.lookup(arg, pos)).collect::<Result<_, _>>()?;
-                ActualType::AnonFun {
-                    args:   args.iter().map(|arg| arg.expr_ty(pos)).collect::<Result<_, _>>()?,
-                    ret_ty: Box::new(self.lookup(ret_ty.deref(), pos)?.expr_ty(pos)?)
-                }
+                ActualType::AnonFun { args, ret_ty: Box::new(self.lookup(ret_ty.deref(), pos)?) }
             }
         }))
     }
@@ -137,20 +131,18 @@ impl Context {
         unimplemented!()
     }
 
-    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<InferType> {
-        let expr_type = match type_name {
+    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<ExpressionType> {
+        match type_name {
             TypeName::Single { ty } =>
-                ExpressionType::Single { mut_ty: self.lookup_actual(ty, pos)? },
+                Ok(ExpressionType::Single { ty: self.lookup_actual(ty, pos)? }),
             TypeName::Union { union } => {
                 let union: HashSet<_> = union
                     .iter()
                     .map(|a_t| self.lookup_actual(a_t, pos))
                     .collect::<Result<_, Vec<TypeErr>>>()?;
-                ExpressionType::Union { union }
+                Ok(ExpressionType::Union { union })
             }
-        };
-
-        Ok(InferType::from(&expr_type))
+        }
     }
 
     pub fn lookup_fun(
@@ -161,7 +153,7 @@ impl Context {
     ) -> TypeResult<InferType> {
         let expr_ty = match fun_name {
             TypeName::Single { ty } =>
-                ExpressionType::Single { mut_ty: self.lookup_actual_fun(ty, args, pos)? },
+                ExpressionType::Single { ty: self.lookup_actual_fun(ty, args, pos)? },
             TypeName::Union { union } => {
                 let union: HashSet<_> = union
                     .iter()

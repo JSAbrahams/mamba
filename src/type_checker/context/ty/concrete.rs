@@ -47,11 +47,11 @@ impl Display for Type {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericType, &HashMap<String, ActualTypeName>, &Position)> for Type {
+impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &Position)> for Type {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericType, &HashMap<String, ActualTypeName>, &Position)
+        (generic, generics, pos): (&GenericType, &HashMap<String, TypeName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Type {
             is_py_type: generic.is_py_type,
@@ -82,13 +82,7 @@ impl Type {
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
-    pub fn fun(
-        &self,
-        fun_name: &str,
-        args: &[TypeName],
-        safe: bool,
-        pos: &Position
-    ) -> TypeResult<Function> {
+    pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         let args: Vec<TypeName> = vec![vec![TypeName::from(&self.name.clone())], args.to_vec()]
             .into_iter()
             .flatten()

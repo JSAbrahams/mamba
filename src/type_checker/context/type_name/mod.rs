@@ -1,15 +1,16 @@
 use core::fmt;
+use std::borrow::BorrowMut;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::iter::FromIterator;
 
 pub mod actual;
 pub mod python;
@@ -41,62 +42,6 @@ impl Display for TypeName {
     }
 }
 
-impl From<&ExpressionType> for TypeName {
-    fn from(expr_ty: &ExpressionType) -> Self {
-        match expr_ty {
-            ExpressionType::Single { mut_ty } =>
-                TypeName::from(&ActualTypeName::from(&mut_ty.actual_ty)),
-            ExpressionType::Union { union } => {
-                let union =
-                    union.iter().map(|expr_ty| ActualTypeName::from(&expr_ty.actual_ty)).collect();
-                TypeName::Union { union }
-            }
-        }
-    }
-}
-
-// TODO change to Vector of ExpressionType
-impl From<(&str, &Vec<ExpressionType>)> for TypeName {
-    fn from((name, generics): (&str, &Vec<ExpressionType>)) -> Self {
-        let generic =
-            generics.get(0).unwrap_or_else(|| panic!("cannot have multiple generics yet"));
-        match generic {
-            ExpressionType::Single { mut_ty } =>
-                TypeName::from(&ActualTypeName::from((name.clone(), &vec![mut_ty
-                    .actual_ty
-                    .clone()]))),
-            ExpressionType::Union { union } => {
-                let union = union
-                    .iter()
-                    .map(|expr_ty| {
-                        ActualTypeName::from((name.clone(), &vec![expr_ty.actual_ty.clone()]))
-                    })
-                    .collect();
-                TypeName::Union { union }
-            }
-        }
-    }
-}
-
-impl From<(&str, &Vec<ActualTypeName>)> for TypeName {
-    fn from((name, actual_ty): (&str, &Vec<ActualTypeName>)) -> Self {
-        TypeName::Single {
-            ty: ActualTypeName::Single {
-                lit:      String::from(name),
-                generics: actual_ty.clone()
-            }
-        }
-    }
-}
-
-impl From<&ActualTypeName> for TypeName {
-    fn from(actual: &ActualTypeName) -> Self { TypeName::Single { ty: actual.clone() } }
-}
-
-impl From<&str> for TypeName {
-    fn from(name: &str) -> Self { TypeName::Single { ty: ActualTypeName::from(name) } }
-}
-
 impl TryFrom<&AST> for TypeName {
     type Error = Vec<TypeErr>;
 
@@ -115,8 +60,30 @@ impl TryFrom<&AST> for TypeName {
     }
 }
 
+impl From<&str> for TypeName {
+    fn from(name: &str) -> TypeName { TypeName::new(name, &vec![]) }
+}
+
+impl From<&ActualTypeName> for TypeName {
+    fn from(actual_type_name: &ActualTypeName) -> TypeName {
+        TypeName::Single { ty: actual_type_name.clone() }
+    }
+}
+
+impl From<&ExpressionType> for TypeName {
+    fn from(expression_type: &ExpressionType) -> TypeName {
+        match &expression_type {
+            ExpressionType::Single { ty } =>
+                TypeName::Single { ty: ActualTypeName::from(&ty.actual_ty()) },
+            ExpressionType::Union { union } => TypeName::Union {
+                union: union.iter().map(|ty| ActualTypeName::from(&ty.actual_ty())).collect()
+            }
+        }
+    }
+}
+
 impl TypeName {
-    pub fn new(lit: &str, generics: &[ActualTypeName]) -> TypeName {
+    pub fn new(lit: &str, generics: &[TypeName]) -> TypeName {
         TypeName::Single {
             ty: ActualTypeName::Single {
                 lit:      String::from(lit),
@@ -132,20 +99,41 @@ impl TypeName {
         }
     }
 
-    pub fn substitute(
-        &self,
-        generics: &HashMap<String, ActualTypeName>,
-        pos: &Position
-    ) -> TypeResult<TypeName> {
-        match self {
-            TypeName::Single { ty } => Ok(TypeName::Single { ty: ty.substitute(generics, pos)? }),
-            TypeName::Union { union } => {
-                let union = union
-                    .into_iter()
-                    .map(|ty| ty.substitute(generics, pos))
-                    .collect::<Result<_, _>>()?;
-                Ok(TypeName::Union { union })
+    pub fn union(self, other: &TypeName) -> TypeName {
+        match (self.clone().borrow_mut(), other.clone().borrow_mut()) {
+            (TypeName::Single { ty }, TypeName::Single { ty: o_ty }) => TypeName::Union {
+                union: HashSet::from_iter(vec![ty.clone(), o_ty.clone()].into_iter())
+            },
+            (TypeName::Union { union }, TypeName::Union { union: o_union }) =>
+                TypeName::Union { union: union.union(o_union).cloned().collect() },
+            (TypeName::Single { ty }, TypeName::Union { union })
+            | (TypeName::Union { union }, TypeName::Single { ty }) => {
+                union.insert(ty.clone());
+                TypeName::Union { union: union.clone() }
             }
         }
+    }
+
+    pub fn single(self, pos: &Position) -> TypeResult<ActualTypeName> {
+        match self {
+            TypeName::Single { ty } => Ok(ty),
+            _ => Err(vec![TypeErr::new(pos, "Unions not supported here")])
+        }
+    }
+
+    pub fn substitute(
+        &self,
+        generics: &HashMap<String, TypeName>,
+        pos: &Position
+    ) -> TypeResult<TypeName> {
+        Ok(match self {
+            TypeName::Single { ty } => TypeName::Single { ty: ty.substitute(generics, pos)? },
+            TypeName::Union { union } => TypeName::Union {
+                union: union
+                    .into_iter()
+                    .map(|ty| ty.substitute(generics, pos))
+                    .collect::<Result<_, _>>()?
+            }
+        })
     }
 }

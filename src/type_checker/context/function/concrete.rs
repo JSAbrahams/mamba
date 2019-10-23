@@ -70,11 +70,11 @@ impl Function {
     pub fn ty(&self) -> Option<TypeName> { self.ret_ty.clone() }
 }
 
-impl TryFrom<(&GenericFunction, &HashMap<String, ActualTypeName>, &Position)> for Function {
+impl TryFrom<(&GenericFunction, &HashMap<String, TypeName>, &Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<String, ActualTypeName>, &Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<String, TypeName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Function {
             is_py_type: fun.is_py_type,
@@ -88,7 +88,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, ActualTypeName>, &Position)> fo
             raises:     fun
                 .raises
                 .iter()
-                .map(|raise| raise.substitute(generics, pos))
+                .map(|raise| raise.substitute(generics, pos).and_then(|ty| ty.single(pos)))
                 .collect::<Result<_, _>>()?,
             ret_ty:     match &fun.ret_ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),

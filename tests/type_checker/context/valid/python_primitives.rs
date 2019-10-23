@@ -1,10 +1,19 @@
 use std::convert::TryFrom;
 
+use crate::common::resource_content;
 use mamba::common::position::Position;
-use mamba::type_checker::context::type_name::actual::ActualTypeName;
+use mamba::lexer::tokenize;
+use mamba::parser::parse;
+use mamba::type_checker::check_all;
 use mamba::type_checker::context::type_name::TypeName;
 use mamba::type_checker::context::Context;
 use mamba::type_checker::CheckInput;
+
+#[test]
+fn float_and() {
+    let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
 
 #[test]
 pub fn non_existent_primitive() {
@@ -35,22 +44,10 @@ pub fn std_lib_present() {
     let context = context.into_with_std_lib().unwrap();
 
     context
-        .lookup(
-            &TypeName::new("Set", &vec![ActualTypeName::Single {
-                lit:      String::from("Int"),
-                generics: vec![]
-            }]),
-            &Position::default()
-        )
+        .lookup(&TypeName::new("Set", &vec![TypeName::from("Int")]), &Position::default())
         .unwrap();
     context
-        .lookup(
-            &TypeName::new("List", &vec![ActualTypeName::Single {
-                lit:      String::from("Something"),
-                generics: vec![]
-            }]),
-            &Position::default()
-        )
+        .lookup(&TypeName::new("List", &vec![TypeName::from("Something")]), &Position::default())
         .unwrap();
     context.lookup(&TypeName::new("Range", &vec![]), &Position::default()).unwrap();
 }

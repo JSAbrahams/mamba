@@ -4,7 +4,6 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::{python, TypeName};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::hash::{Hash, Hasher};
@@ -42,11 +41,15 @@ impl Hash for GenericFunctionArg {
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<&ActualTypeName>) -> Result<Self, TypeErr> {
+    pub fn in_class(
+        self,
+        class: Option<&TypeName>,
+        pos: &Position
+    ) -> TypeResult<GenericFunctionArg> {
         if class.is_none() && self.name.as_str() == SELF {
-            Err(TypeErr::new(&self.pos, "Cannot have self argument outside class"))
+            Err(vec![TypeErr::new(&self.pos, "Cannot have self argument outside class")])
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
-            Ok(GenericFunctionArg { ty: Some(TypeName::from(class.unwrap())), ..self })
+            Ok(GenericFunctionArg { ty: class.cloned(), ..self })
         } else {
             Ok(self)
         }

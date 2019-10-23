@@ -1,18 +1,15 @@
 use crate::core::construct::Core;
 
 pub struct State {
-    pub tup:         usize,
-    pub expect_expr: bool,
-    pub interface:   bool,
-    pub expand_ty:   bool
+    pub tup:       usize,
+    pub interface: bool,
+    pub expand_ty: bool
 }
 
 impl State {
-    pub fn new() -> State { State { tup: 1, expect_expr: true, interface: false, expand_ty: true } }
+    pub fn new() -> State { State { tup: 1, interface: false, expand_ty: true } }
 
     pub fn in_tup(&self, tup: usize) -> State { State { tup, ..*self.clone() } }
-
-    pub fn expect_expr(&self, expect_expr: bool) -> State { State { expect_expr, ..*self.clone() } }
 
     pub fn in_interface(&self, interface: bool) -> State { State { interface, ..*self.clone() } }
 

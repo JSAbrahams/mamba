@@ -12,6 +12,7 @@ use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 
 pub const INT_PRIMITIVE: &'static str = "int";
 pub const FLOAT_PRIMITIVE: &'static str = "float";
@@ -30,10 +31,8 @@ impl From<&Classdef> for GenericType {
         let mut functions = HashSet::new();
         let mut fields = HashSet::new();
         let generics = GenericParameters::from(&class_def.arguments).parameters;
-        let generic_names: Vec<ActualTypeName> = generics
-            .iter()
-            .map(|g| ActualTypeName::Single { lit: g.name.clone(), generics: vec![] })
-            .collect();
+        let generic_names: Vec<TypeName> =
+            generics.iter().map(|g| TypeName::from(g.name.as_str())).collect();
 
         for statement in &class_def.code {
             match statement {
@@ -72,7 +71,7 @@ impl From<&Classdef> for GenericType {
             fields,
             functions: functions
                 .into_iter()
-                .map(|f| f.in_class(Some(&name)))
+                .map(|f| f.in_class(Some(&TypeName::from(&name)), &Position::default()))
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect()

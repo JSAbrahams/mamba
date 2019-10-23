@@ -30,8 +30,8 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
     let context = Context::try_from(inputs)?.into_with_primitives()?.into_with_std_lib()?;
-
     infer_all(inputs, &context)?;
+
     Ok(inputs
         .iter()
         .map(|(node_pos, source, path)| (node_pos.clone(), source.clone(), path.clone()))

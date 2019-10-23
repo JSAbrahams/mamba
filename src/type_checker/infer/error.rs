@@ -8,12 +8,16 @@ use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     match &ast.node {
         Node::Raise { error } => {
             let (ty, env) = infer(error, env, ctx, state)?;
-            Ok((InferType::new().add_type_as_raises(&ty, &ast.pos)?.add_raises(&ty), env))
+            let actual_ty = ty.expr_ty(&error.pos)?.single(&error.pos)?.actual_ty();
+            let set = HashSet::from_iter(vec![ActualTypeName::from(&actual_ty)].into_iter());
+            Ok((InferType::new().union_raises(&set).add_raises(&ty), env))
         }
         Node::Raises { expr_or_stmt, errors } => {
             let (ty, env) = infer(expr_or_stmt, env, ctx, state)?;

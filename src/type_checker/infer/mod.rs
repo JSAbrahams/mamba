@@ -160,7 +160,10 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
 
         Node::Underscore => Ok((InferType::new(), env.clone())),
         Node::Pass => Ok((InferType::new(), env.clone())),
-        Node::Print { .. } => Ok((InferType::new(), env.clone())),
+        Node::Print { expr } => {
+            let (_, env) = infer(expr, env, ctx, state)?;
+            Ok((InferType::new(), env))
+        }
         Node::Comment { .. } => Ok((InferType::new(), env.clone()))
     }
 }
