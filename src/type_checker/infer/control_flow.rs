@@ -61,7 +61,7 @@ pub fn infer_control_flow(
             let (col_ty, mut env) = infer(col, &env, ctx, state)?;
             let expr_ty = iterable_generic(&col_ty.expr_ty(&col.pos)?, ctx, state, &col.pos)?;
             for (id, (mutable, expr_ty)) in match_name(&identifier, &expr_ty, state, &col.pos)? {
-                env = env.insert(&id, mutable, &expr_ty)?;
+                env.insert(&id, mutable, &expr_ty);
             }
 
             let (body_ty, env) = infer(body, &env, ctx, state)?;

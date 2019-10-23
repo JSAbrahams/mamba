@@ -9,7 +9,6 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
-use std::ops::Deref;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {

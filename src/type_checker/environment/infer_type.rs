@@ -38,6 +38,8 @@ impl Display for InferType {
 impl InferType {
     pub fn new() -> InferType { InferType { raises: HashSet::new(), expr_type: None } }
 
+    pub fn is_stmt(&self) -> bool { self.expr_type.is_none() }
+
     pub fn union(self, other: &InferType, pos: &Position) -> Result<InferType, TypeErr> {
         Ok(InferType {
             raises:    self.raises.union(&other.raises).cloned().collect(),

@@ -8,6 +8,8 @@ pub mod infer_type;
 pub mod name;
 pub mod state;
 
+// TODO add functions to environment, which may be pure
+
 #[derive(Clone, Debug)]
 pub struct Environment {
     variables: HashMap<String, ExpressionType>
@@ -23,16 +25,8 @@ impl Environment {
             .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
     }
 
-    // TODO use mutable
-    pub fn insert(
-        self,
-        var: &str,
-        mutable: bool,
-        expr_ty: &ExpressionType
-    ) -> TypeResult<Environment> {
-        let mut variables = self.variables.clone();
-        variables.insert(String::from(var), expr_ty.clone());
-        Ok(Environment { variables })
+    pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {
+        self.variables.insert(String::from(var), expr_ty.clone());
     }
 
     // TODO implement properly

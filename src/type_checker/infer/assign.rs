@@ -1,7 +1,9 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
@@ -9,9 +11,11 @@ use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::util::comma_delimited;
 
 pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
     // TODO check body of function definition
+    // TODO if self, use state to determine type of current class
     match &ast.node {
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
         Node::Reassign { left, right } => {
@@ -40,7 +44,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                     _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
                 };
 
-                let (ty, env) = match (_type, expression) {
+                let (ty, mut env) = match (_type, expression) {
                     (Some(ty_name), Some(expr)) => {
                         let infer_type =
                             ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?;
@@ -64,13 +68,130 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                     (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])
                 };
 
-                let env = env.insert(id.as_str(), *mutable, &ty.expr_ty(&ast.pos)?)?;
+                env.insert(id.as_str(), *mutable, &ty.expr_ty(&ast.pos)?);
                 Ok((InferType::new(), env))
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])
         },
-        Node::FunArg { .. } => Ok((InferType::new(), env.clone())),
-        Node::FunDef { .. } => Ok((InferType::new(), env.clone())),
+
+        Node::FunArg { .. } =>
+            Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
+        Node::FunDef { fun_args, ret_ty, raises, body, .. } => {
+            // TODO use pure
+            // TODO add functions to environment
+            let mut env_with_args = env.clone();
+            for arg in fun_args {
+                // TODO do something with vararg
+                match &arg.node {
+                    Node::FunArg { vararg, id_maybe_type, default } => match &id_maybe_type.node {
+                        Node::IdType { id, mutable, _type } => match &id.node {
+                            Node::Id { lit } => {
+                                let default_ty = match default {
+                                    Some(default) =>
+                                        Some(infer(default, env, ctx, state)?.0.expr_ty(&id.pos)?),
+                                    None => None
+                                };
+
+                                if let Some(_type) = _type {
+                                    let arg_ty_name = TypeName::try_from(_type.deref())?;
+                                    if let Some(default_ty) = default_ty {
+                                        if arg_ty_name == TypeName::from(&default_ty) {
+                                            env_with_args.insert(
+                                                &lit,
+                                                *mutable,
+                                                &ctx.lookup(&arg_ty_name, &_type.pos)?
+                                            );
+                                        } else {
+                                            return Err(vec![TypeErr::new(
+                                                &arg.pos,
+                                                &format!(
+                                                    "default type {} does not match argument type \
+                                                     {}",
+                                                    default_ty, arg_ty_name
+                                                )
+                                            )]);
+                                        }
+                                    } else {
+                                        env_with_args.insert(
+                                            &lit,
+                                            *mutable,
+                                            &ctx.lookup(&arg_ty_name, &_type.pos)?
+                                        );
+                                    }
+                                } else {
+                                    if let Some(default_ty) = default_ty {
+                                        env_with_args.insert(&lit, *mutable, &default_ty);
+                                    } else {
+                                        return Err(vec![TypeErr::new(
+                                            &id_maybe_type.pos,
+                                            &format!("Cannot derive type of {}", lit)
+                                        )]);
+                                    }
+                                }
+                            }
+                            _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
+                        },
+                        _ =>
+                            return Err(vec![TypeErr::new(
+                                &id_maybe_type.pos,
+                                "Expected identifier with type"
+                            )]),
+                    },
+                    _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
+                }
+            }
+
+            let raises: HashSet<ActualTypeName> = raises
+                .iter()
+                .map(|raise| ActualTypeName::try_from(raise))
+                .collect::<Result<_, _>>()?;
+            let ret_ty = match ret_ty {
+                Some(ret_ty) => Some(TypeName::try_from(ret_ty.deref())?),
+                None => None
+            };
+
+            if let Some(body) = body {
+                let (body_ty, _) = infer(body, &env_with_args, ctx, state)?;
+                let mut boy_raises_not_in_signature = body_ty.raises.clone();
+                boy_raises_not_in_signature.retain(|f| !raises.contains(f));
+                if !boy_raises_not_in_signature.is_empty() {
+                    return Err(vec![TypeErr::new(
+                        &ast.pos,
+                        &format!(
+                            "Body raises the following which were not mentioned in the signature: \
+                             [{}]",
+                            comma_delimited(boy_raises_not_in_signature)
+                        )
+                    )]);
+                }
+
+                match ret_ty {
+                    Some(ret_ty) =>
+                        if body_ty.is_stmt() {
+                            Err(vec![TypeErr::new(
+                                &ast.pos,
+                                &format!("body must have type {}", ret_ty)
+                            )])
+                        } else {
+                            let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
+                            if body_ret_name == ret_ty {
+                                Ok((InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?), env.clone()))
+                            } else {
+                                Err(vec![TypeErr::new(
+                                    &ast.pos,
+                                    &format!(
+                                        "Body must have return type {}, was {}",
+                                        ret_ty, body_ret_name
+                                    )
+                                )])
+                            }
+                        },
+                    None => Ok((InferType::new(), env.clone()))
+                }
+            } else {
+                Ok((InferType::new(), env.clone()))
+            }
+        }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable manipulation")])
     }
