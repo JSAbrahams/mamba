@@ -11,6 +11,7 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 
 pub mod actual;
 pub mod python;
@@ -37,7 +38,7 @@ impl Display for TypeName {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             TypeName::Single { ty } => write!(f, "{}", ty),
-            TypeName::Union { union } => write!(f, "{{{:#?}}}", union)
+            TypeName::Union { union } => write!(f, "{{{}}}", comma_delimited(union))
         }
     }
 }

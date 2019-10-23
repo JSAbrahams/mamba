@@ -9,6 +9,7 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ActualTypeName {
@@ -21,41 +22,11 @@ impl Display for ActualTypeName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ActualTypeName::Single { lit, generics } if generics.is_empty() => write!(f, "{}", lit),
-            ActualTypeName::Single { lit, generics } => write!(
-                f,
-                "{}<{}>",
-                lit,
-                {
-                    let mut string = String::new();
-                    generics.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end()
-            ),
-            ActualTypeName::AnonFun { args, ret_ty } => write!(
-                f,
-                "({}) -> {}",
-                {
-                    let mut string = String::new();
-                    args.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end(),
-                ret_ty
-            ),
-            ActualTypeName::Tuple { ty_names } => write!(
-                f,
-                "({})",
-                {
-                    let mut string = String::new();
-                    ty_names.iter().for_each(|g| string.push_str(&format!("{}, ", g)));
-                    string.remove(string.len() - 2);
-                    string
-                }
-                .trim_end()
-            )
+            ActualTypeName::Single { lit, generics } =>
+                write!(f, "{}<{}>", lit, comma_delimited(generics)),
+            ActualTypeName::AnonFun { args, ret_ty } =>
+                write!(f, "({}) -> {}", comma_delimited(args), ret_ty),
+            ActualTypeName::Tuple { ty_names } => write!(f, "({})", comma_delimited(ty_names))
         }
     }
 }

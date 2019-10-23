@@ -183,22 +183,16 @@ impl fmt::Display for Token {
             Token::Assign => String::from("<-"),
             Token::Def => String::from("def"),
 
-            Token::Id(id) => format!("{}{}<identifier>", id, if id.is_empty() { "" } else { " " }),
-            Token::Real(real) =>
-                format!("{}{}<real>", real, if real.is_empty() { "" } else { " " }),
-            Token::Int(int) => format!("{}{}<integer>", int, if int.is_empty() { "" } else { " " }),
+            Token::Id(id) => id.clone(),
+            Token::Real(real) => real.clone(),
+            Token::Int(int) => int.clone(),
             Token::ENum(int, exp) =>
-                if int.is_empty() && exp.is_empty() {
-                    String::from("<e-number>")
+                if exp.is_empty() {
+                    int.clone()
                 } else {
-                    format!("{}e{} <e-number>", int, exp)
+                    format!("{}E{}", int, exp)
                 },
-            Token::Str(string) =>
-                if string.is_empty() {
-                    String::from("<string>")
-                } else {
-                    format!("\"{}\"", string)
-                },
+            Token::Str(string) => format!("\"{}\"", string),
             Token::Bool(boolean) => format!("{}", boolean),
 
             Token::Range => String::from(".."),
