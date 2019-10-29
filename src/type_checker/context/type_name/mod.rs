@@ -9,17 +9,19 @@ use std::iter::FromIterator;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::nullable::NullableTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
 
 pub mod actual;
+pub mod nullable;
 pub mod python;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TypeName {
-    Single { ty: ActualTypeName },
-    Union { union: HashSet<ActualTypeName> }
+    Single { ty: NullableTypeName },
+    Union { union: HashSet<NullableTypeName> }
 }
 
 impl Hash for TypeName {
@@ -49,14 +51,14 @@ impl TryFrom<&AST> for TypeName {
     fn try_from(ast: &AST) -> TypeResult<TypeName> {
         if let Node::TypeUnion { types } = &ast.node {
             let (types, errs): (Vec<_>, Vec<_>) =
-                types.iter().map(ActualTypeName::try_from).partition(Result::is_ok);
+                types.iter().map(NullableTypeName::try_from).partition(Result::is_ok);
             if errs.is_empty() {
                 Ok(TypeName::Union { union: types.into_iter().map(Result::unwrap).collect() })
             } else {
                 Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
             }
         } else {
-            Ok(TypeName::Single { ty: ActualTypeName::try_from(ast)? })
+            Ok(TypeName::Single { ty: NullableTypeName::try_from(ast)? })
         }
     }
 }
@@ -67,17 +69,23 @@ impl From<&str> for TypeName {
 
 impl From<&ActualTypeName> for TypeName {
     fn from(actual_type_name: &ActualTypeName) -> TypeName {
-        TypeName::Single { ty: actual_type_name.clone() }
+        TypeName::Single {
+            ty: NullableTypeName { is_nullable: false, actual: actual_type_name.clone() }
+        }
     }
 }
 
 impl From<&ExpressionType> for TypeName {
     fn from(expression_type: &ExpressionType) -> TypeName {
         match &expression_type {
-            ExpressionType::Single { ty } =>
-                TypeName::Single { ty: ActualTypeName::from(&ty.actual_ty()) },
+            ExpressionType::Single { ty } => TypeName::Single {
+                ty: NullableTypeName {
+                    is_nullable: false,
+                    actual:      ActualTypeName::from(&ty.actual_ty())
+                }
+            },
             ExpressionType::Union { union } => TypeName::Union {
-                union: union.iter().map(|ty| ActualTypeName::from(&ty.actual_ty())).collect()
+                union: union.iter().map(|ty| NullableTypeName::from(ty)).collect()
             }
         }
     }
@@ -86,17 +94,20 @@ impl From<&ExpressionType> for TypeName {
 impl TypeName {
     pub fn new(lit: &str, generics: &[TypeName]) -> TypeName {
         TypeName::Single {
-            ty: ActualTypeName::Single {
-                lit:      String::from(lit),
-                generics: Vec::from(generics)
+            ty: NullableTypeName {
+                is_nullable: false,
+                actual:      ActualTypeName::Single {
+                    lit:      String::from(lit),
+                    generics: Vec::from(generics)
+                }
             }
         }
     }
 
     pub fn names(&self) -> HashSet<ActualTypeName> {
         match &self {
-            TypeName::Single { ty } => HashSet::from_iter(vec![ty.clone()].into_iter()),
-            TypeName::Union { union } => union.clone()
+            TypeName::Single { ty } => HashSet::from_iter(vec![ty.actual.clone()].into_iter()),
+            TypeName::Union { union } => union.into_iter().map(|ty| ty.actual.clone()).collect()
         }
     }
 
@@ -117,7 +128,7 @@ impl TypeName {
 
     pub fn single(self, pos: &Position) -> TypeResult<ActualTypeName> {
         match self {
-            TypeName::Single { ty } => Ok(ty),
+            TypeName::Single { ty } => Ok(ty.actual),
             _ => Err(vec![TypeErr::new(pos, "Unions not supported here")])
         }
     }

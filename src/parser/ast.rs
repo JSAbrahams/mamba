@@ -359,6 +359,9 @@ pub enum Node {
         left:  Box<AST>,
         right: Box<AST>
     },
+    QuestionOp {
+        expr: Box<AST>
+    },
 
     Print {
         expr: Box<AST>

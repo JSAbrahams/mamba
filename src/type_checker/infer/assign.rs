@@ -122,6 +122,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                                 &format!("body must have type {}", ret_ty)
                             )])
                         } else {
+                            // TODO allow return type of be nullable even if body is not
                             let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
                             if body_ret_name == ret_ty {
                                 Ok((InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?), env.clone()))

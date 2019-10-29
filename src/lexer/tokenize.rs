@@ -69,10 +69,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             }
             create(state, Token::Comment(comment))
         }
-        '?' => match it.peek() {
-            Some('.') => next_and_create(it, state, Token::QuestCall),
-            _ => create(state, Token::Question)
-        },
+        '?' => create(state, Token::Question),
         '0'..='9' => {
             let mut number = c.to_string();
             let mut exp = String::new();

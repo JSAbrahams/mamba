@@ -1,10 +1,8 @@
-use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::LexIterator;
-use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
 
 // TODO look at whether we can handle class and type tokens more elegantly

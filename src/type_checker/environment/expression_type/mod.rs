@@ -50,6 +50,8 @@ impl Display for ExpressionType {
 }
 
 impl ExpressionType {
+    // TODO union with undefined should remove undefined, unless only type
+    // TODO union with undefined should make every union type nullable
     pub fn union(self, other: &ExpressionType) -> ExpressionType {
         match (&self, other) {
             (ExpressionType::Single { ty: mut_ty }, ExpressionType::Single { ty: other }) =>

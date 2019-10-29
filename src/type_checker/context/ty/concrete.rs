@@ -27,7 +27,7 @@ pub const RANGE: &'static str = "Range";
 pub const SET: &'static str = "Set";
 pub const LIST: &'static str = "List";
 
-pub const NONE: &'static str = "None";
+pub const NONE: &'static str = "undefined";
 
 // TODO add parents
 
@@ -151,6 +151,7 @@ pub fn concrete_to_python(name: &String) -> String {
         SET => String::from(python::SET),
         LIST => String::from(python::LIST),
 
+        NONE => String::from(python::NONE),
         other => String::from(other)
     }
 }

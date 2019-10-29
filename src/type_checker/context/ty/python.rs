@@ -25,6 +25,8 @@ pub const RANGE: &'static str = "range";
 pub const SET: &'static str = "set";
 pub const LIST: &'static str = "list";
 
+pub const NONE: &'static str = "None";
+
 // TODO handle Python generics
 impl From<&Classdef> for GenericType {
     fn from(class_def: &Classdef) -> GenericType {
@@ -92,6 +94,7 @@ pub fn python_to_concrete(name: &Name) -> String {
         SET => String::from(concrete::SET),
         LIST => String::from(concrete::LIST),
 
+        NONE => String::from(concrete::NONE),
         other => String::from(other)
     }
 }

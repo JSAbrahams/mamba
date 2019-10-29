@@ -46,7 +46,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::AddOp => Core::AddOp,
         Node::SubOp => Core::SubOp,
-        Node::SqrtOp => return Err(UnimplementedErr::new(ast, "square root")),
+        Node::SqrtOp => Core::Id { lit: String::from("sqrt") },
         Node::MulOp => Core::MulOp,
         Node::FDivOp => Core::FDivOp,
         Node::DivOp => Core::DivOp,
@@ -55,6 +55,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::EqOp => Core::EqOp,
         Node::LeOp => Core::LeOp,
         Node::GeOp => Core::GeOp,
+        Node::QuestionOp { expr } => desugar_node(expr, imp, state)?,
 
         Node::Undefined => Core::None,
         Node::IdType { .. } => desugar_type(ast, imp, state)?,

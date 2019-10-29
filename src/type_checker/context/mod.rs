@@ -12,6 +12,7 @@ use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::nullable::NullableTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::nullable_type::NullableType;
@@ -92,10 +93,14 @@ impl Context {
         }
     }
 
-    fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
+    fn lookup_actual(
+        &self,
+        ty_name: &NullableTypeName,
+        pos: &Position
+    ) -> TypeResult<NullableType> {
         Ok(NullableType::new(
-            ty_name == &ActualTypeName::new(concrete::NONE, &vec![]),
-            &match ty_name {
+            ty_name.is_nullable || ty_name.actual == ActualTypeName::new(concrete::NONE, &vec![]),
+            &match &ty_name.actual {
                 ActualTypeName::Single { lit, generics } =>
                     ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
                 ActualTypeName::Tuple { ty_names } => ActualType::Tuple {
@@ -175,11 +180,11 @@ impl Context {
         pos: &Position
     ) -> TypeResult<InferType> {
         match fun_name {
-            TypeName::Single { ty } => self.lookup_actual_fun(ty, args, pos),
+            TypeName::Single { ty } => self.lookup_actual_fun(&ty.actual, args, pos),
             TypeName::Union { union } => {
                 let union: Vec<InferType> = union
                     .iter()
-                    .map(|a_t| self.lookup_actual_fun(a_t, args, pos))
+                    .map(|ty| self.lookup_actual_fun(&ty.actual, args, pos))
                     .collect::<Result<_, Vec<TypeErr>>>()?;
 
                 let mut first = union.first().ok_or(TypeErr::new(pos, "Union is empty"))?.clone();

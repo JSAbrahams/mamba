@@ -101,6 +101,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::TypeUnion { .. } => Ok((InferType::new(), env.clone())),
         Node::Type { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeFun { .. } => Ok((InferType::new(), env.clone())),
+        Node::QuestionOp { .. } => Ok((InferType::new(), env.clone())),
 
         Node::Condition { .. } => unimplemented!(),
 

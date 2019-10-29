@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
@@ -5,7 +7,6 @@ use crate::parser::expression::parse_expression;
 use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
-use std::ops::Deref;
 
 pub fn parse_id(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
@@ -96,6 +97,13 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
         &[Token::Id(String::new()), Token::LRBrack],
         "type"
     )?;
+
+    let _type = if it.peak_if_fn(&|lex| lex.token == Token::Question) {
+        it.eat(&Token::Question, "optional type");
+        Box::from(AST { pos: _type.pos.clone(), node: Node::QuestionOp { expr: _type.clone() } })
+    } else {
+        _type
+    };
 
     let res = it.parse_if(
         &Token::To,
