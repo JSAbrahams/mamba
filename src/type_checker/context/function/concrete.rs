@@ -73,7 +73,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, TypeName>, &Position)> for Func
             raises:     fun
                 .raises
                 .iter()
-                .map(|raise| raise.substitute(generics, pos).and_then(|ty| ty.single(pos)))
+                .map(|raise| raise.substitute(generics, pos))
                 .collect::<Result<_, _>>()?,
             ret_ty:     match &fun.ret_ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),

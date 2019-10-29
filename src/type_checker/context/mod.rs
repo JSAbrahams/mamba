@@ -114,13 +114,37 @@ impl Context {
         fun_name: &ActualTypeName,
         fun_args: &[TypeName],
         pos: &Position
-    ) -> TypeResult<NullableType> {
-        let (..) = match fun_name {
+    ) -> TypeResult<InferType> {
+        // TODO do something with generics
+        let (name, ..) = match fun_name {
             ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
             _ => return Err(vec![TypeErr::new(pos, "Must be type name")])
         };
 
-        unimplemented!()
+        let name = ActualTypeName::new(&name, &vec![]);
+
+        // TODO deal with arguments that have no type (in unsafe mode)
+        let fun_args: Vec<Option<TypeName>> =
+            fun_args.into_iter().map(|a| Some(a.clone())).collect();
+        let fun = self
+            .functions
+            .iter()
+            .find(|f| {
+                f.name == name && {
+                    let args: Vec<Option<TypeName>> =
+                        f.arguments.iter().map(|a| a.ty.clone()).collect();
+                    args == fun_args
+                }
+            })
+            .ok_or(vec![TypeErr::new(pos, &format!("Function {} is undefined", name))])?;
+
+        let raises = fun.raises.clone().into_iter().collect();
+        if let Some(ret_ty) = &fun.ret_ty {
+            let infer_ty = InferType::from(&self.lookup(&ret_ty, pos)?);
+            Ok(infer_ty.union_raises(&raises))
+        } else {
+            Ok(InferType::new().union_raises(&raises))
+        }
     }
 
     pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<ExpressionType> {
@@ -143,20 +167,22 @@ impl Context {
         args: &[TypeName],
         pos: &Position
     ) -> TypeResult<InferType> {
-        let expr_ty = match fun_name {
-            TypeName::Single { ty } =>
-                ExpressionType::Single { ty: self.lookup_actual_fun(ty, args, pos)? },
+        match fun_name {
+            TypeName::Single { ty } => self.lookup_actual_fun(ty, args, pos),
             TypeName::Union { union } => {
-                let union: HashSet<_> = union
+                let union: Vec<InferType> = union
                     .iter()
                     .map(|a_t| self.lookup_actual_fun(a_t, args, pos))
                     .collect::<Result<_, Vec<TypeErr>>>()?;
 
-                ExpressionType::Union { union }
-            }
-        };
+                let mut first = union.first().ok_or(TypeErr::new(pos, "Union is empty"))?.clone();
+                for infer_ty in union {
+                    first = first.union(&infer_ty, pos)?
+                }
 
-        Ok(InferType::from(&expr_ty))
+                Ok(first)
+            }
+        }
     }
 
     /// Loads pre-defined Python primitives into context for easy lookup

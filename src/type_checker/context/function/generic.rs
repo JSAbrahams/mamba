@@ -18,7 +18,7 @@ pub struct GenericFunction {
     pub private:    bool,
     pub pos:        Position,
     pub arguments:  Vec<GenericFunctionArg>,
-    pub raises:     Vec<TypeName>,
+    pub raises:     Vec<ActualTypeName>,
     pub ret_ty:     Option<TypeName>
 }
 
@@ -84,7 +84,10 @@ impl TryFrom<&AST> for GenericFunction {
                         Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                         None => None
                     },
-                    raises:     raises.iter().map(TypeName::try_from).collect::<Result<_, _>>()?
+                    raises:     raises
+                        .iter()
+                        .map(ActualTypeName::try_from)
+                        .collect::<Result<_, _>>()?
                 }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")])
         }

@@ -1,18 +1,18 @@
 def fun_a() =>
-    print c
-    if a and b then print c
-    if c or d then print e
+    print 11
+    if True and True then print "hello"
+    if False or True then print "world"
 
-    def a = c ? if d then h else d
+    def a <- if True then 1 else 11
 
-def fun_b(b: c) => print c
+def fun_b(b: Int) => print b
 
-def fun_c(d: (e, f)) => print g
-def fun_d(h: (i, j) -> k) => print l
+def fun_c(d: (String, Int)) => print d
+def fun_d(h: (String, String) -> Int) => print h("hello", "world")
 
-def fun_e(m: n, o: (p, q), r: (s) -> t) => print u
+def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int) -> Int => r(m, o)
 
-def fun_v(w: x, y: (z, aa), ab: (ac) -> (ad)): ae -> af => print u
+def fun_v(w: String, y: (String, Bool), ab: (String) -> (String -> Bool)): String -> Bool => ab(w)
 
 class MyClass
     def +(self, other: Int): Int => a + b
