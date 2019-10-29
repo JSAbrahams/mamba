@@ -8,6 +8,7 @@ use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::generics::generics;
 use crate::type_checker::context::python::python_files;
+use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
@@ -92,21 +93,27 @@ impl Context {
     }
 
     fn lookup_actual(&self, ty_name: &ActualTypeName, pos: &Position) -> TypeResult<NullableType> {
-        Ok(NullableType::new(false, &match ty_name {
-            ActualTypeName::Single { lit, generics } =>
-                ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
-            ActualTypeName::Tuple { ty_names } => ActualType::Tuple {
-                types: ty_names
-                    .iter()
-                    .map(|ty_name| self.lookup(ty_name, pos))
-                    .collect::<Result<_, _>>()?
-            },
-            ActualTypeName::AnonFun { args, ret_ty } => {
-                let args =
-                    args.iter().map(|arg| self.lookup(arg, pos)).collect::<Result<_, _>>()?;
-                ActualType::AnonFun { args, ret_ty: Box::new(self.lookup(ret_ty.deref(), pos)?) }
+        Ok(NullableType::new(
+            ty_name == &ActualTypeName::new(concrete::NONE, &vec![]),
+            &match ty_name {
+                ActualTypeName::Single { lit, generics } =>
+                    ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
+                ActualTypeName::Tuple { ty_names } => ActualType::Tuple {
+                    types: ty_names
+                        .iter()
+                        .map(|ty_name| self.lookup(ty_name, pos))
+                        .collect::<Result<_, _>>()?
+                },
+                ActualTypeName::AnonFun { args, ret_ty } => {
+                    let args =
+                        args.iter().map(|arg| self.lookup(arg, pos)).collect::<Result<_, _>>()?;
+                    ActualType::AnonFun {
+                        args,
+                        ret_ty: Box::new(self.lookup(ret_ty.deref(), pos)?)
+                    }
+                }
             }
-        }))
+        ))
     }
 
     fn lookup_actual_fun(

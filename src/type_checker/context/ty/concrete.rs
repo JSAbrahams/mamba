@@ -27,6 +27,8 @@ pub const RANGE: &'static str = "Range";
 pub const SET: &'static str = "Set";
 pub const LIST: &'static str = "List";
 
+pub const NONE: &'static str = "None";
+
 // TODO add parents
 
 #[derive(Debug, Clone, Eq, PartialEq)]

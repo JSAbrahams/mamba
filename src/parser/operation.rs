@@ -230,6 +230,10 @@ fn parse_factor(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match &lex.token {
             Token::Id(_) => parse_id(it),
             Token::_Self => parse_id(it),
+            Token::Undefined => {
+                let end = it.eat(&Token::Undefined, "factor")?;
+                Ok(Box::from(AST::new(&start.union(&end), Node::Undefined)))
+            }
             Token::Real(real) => literal!(it, real.to_string(), Real),
             Token::Int(int) => literal!(it, int.to_string(), Int),
             Token::Bool(b) => literal!(it, *b, Bool),
@@ -245,6 +249,7 @@ fn parse_factor(it: &mut LexIterator) -> ParseResult {
         &[
             Token::Id(String::new()),
             Token::_Self,
+            Token::Undefined,
             Token::Real(String::new()),
             Token::Int(String::new()),
             Token::Bool(true),

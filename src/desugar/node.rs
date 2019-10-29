@@ -56,6 +56,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::LeOp => Core::LeOp,
         Node::GeOp => Core::GeOp,
 
+        Node::Undefined => Core::None,
         Node::IdType { .. } => desugar_type(ast, imp, state)?,
         Node::Id { lit } => Core::Id { lit: lit.clone() },
         Node::_Self => Core::Id { lit: String::from("self") },

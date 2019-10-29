@@ -1,8 +1,8 @@
 def fun_a():
-    print(c)
-    if a and b: print(c)
-    if c or d: print(e)
-    def a = c or h if d else d
+    print(11)
+    if True and True: print("hello")
+    if False or True: print("world")
+    a = None or 1 if True else 11
 
 def fun_b(b): print(c)
 

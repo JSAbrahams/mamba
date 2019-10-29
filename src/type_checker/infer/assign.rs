@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
@@ -18,6 +19,10 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
     // TODO check body of function definition
     // TODO if self, use state to determine type of current class
     match &ast.node {
+        Node::Undefined => Ok((
+            InferType::from(&ctx.lookup(&TypeName::from(concrete::NONE), &ast.pos)?),
+            env.clone()
+        )),
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
         Node::Reassign { left, right } => {
             let (left_ty, env) = infer(left, env, ctx, state)?;

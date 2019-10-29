@@ -3,12 +3,12 @@ def fun_a() =>
     if True and True then print "hello"
     if False or True then print "world"
 
-    def a <- if True then 1 else 11
+    def a <- undefined ? if True then 1 else 11
 
 def fun_b(b: Int) => print b
 
 def fun_c(d: (String, Int)) => print d
-def fun_d(h: (String, String) -> Int) => print h("hello", "world")
+def fun_d(h: (String, String) -> Int) => h("hello", "world")
 
 def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int) -> Int => r(m, o)
 

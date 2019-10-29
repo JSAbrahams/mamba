@@ -31,6 +31,7 @@ pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
             | Token::Add
             | Token::Id(_)
             | Token::Sub
+            | Token::Undefined
             | Token::BOneCmpl => parse_operation(it),
 
             Token::BSlash => parse_anon_fun(it),
@@ -55,6 +56,7 @@ pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
                     Token::Add,
                     Token::Id(String::new()),
                     Token::Sub,
+                    Token::Undefined,
                     Token::BOneCmpl,
                     Token::BSlash
                 ],
@@ -81,6 +83,7 @@ pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
             Token::Add,
             Token::Id(String::new()),
             Token::Sub,
+            Token::Undefined,
             Token::BOneCmpl,
             Token::BSlash
         ],
@@ -159,6 +162,7 @@ pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
         | Token::Str(_)
         | Token::Bool(_)
         | Token::Not
+        | Token::Undefined
         | Token::Id(_) => true,
         _ => false
     }

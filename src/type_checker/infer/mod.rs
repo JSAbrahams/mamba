@@ -80,6 +80,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
 
         Node::Script { .. } | Node::Block { .. } => infer_block(ast, env, ctx, state),
 
+        Node::Undefined => infer_assign(ast, env, ctx, state),
         Node::Id { .. } => infer_assign(ast, env, ctx, state),
         Node::Reassign { .. } => infer_assign(ast, env, ctx, state),
         Node::VariableDef { .. } => infer_assign(ast, env, ctx, state),

@@ -352,6 +352,7 @@ pub enum Node {
     },
     ReturnEmpty,
     Underscore,
+    Undefined,
     Pass,
 
     Question {
