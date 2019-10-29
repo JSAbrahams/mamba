@@ -9,6 +9,7 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
+use std::ops::Deref;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
@@ -34,6 +35,18 @@ impl ActualType {
             ActualType::Single { ty } =>
                 Ok(ty.field(field).ok_or(vec![TypeErr::new(pos, "Undefined field")])?),
             _ => Err(vec![TypeErr::new(pos, "Undefined field")])
+        }
+    }
+
+    pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
+        match &self {
+            ActualType::AnonFun { args: a, ret_ty } =>
+                if a.iter().map(|a| TypeName::from(a)).collect::<Vec<TypeName>>() == args {
+                    Ok(ret_ty.deref().clone())
+                } else {
+                    Err(vec![TypeErr::new(pos, "Function does not exist")])
+                },
+            _ => Err(vec![TypeErr::new(pos, "Not anonymous function")])
         }
     }
 

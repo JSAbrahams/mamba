@@ -11,7 +11,6 @@ use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::nullable::NullableTypeName;
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::nullable_type::NullableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
@@ -113,6 +112,24 @@ impl ExpressionType {
             ExpressionType::Single { ty: mut_ty } => mut_ty.is_nullable,
             ExpressionType::Union { union } =>
                 !union.is_empty() && union.iter().all(|mut_ty| mut_ty.is_nullable),
+        }
+    }
+
+    pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
+        match &self {
+            ExpressionType::Single { ty } => ty.actual_ty().anon_fun(args, pos),
+            ExpressionType::Union { union } => {
+                let ret_tys: Vec<ExpressionType> = union
+                    .iter()
+                    .map(|ty| ty.actual_ty().anon_fun(args, pos))
+                    .collect::<Result<_, _>>()?;
+                let mut ret_ty =
+                    ret_tys.first().ok_or(vec![TypeErr::new(pos, "Union is empty")])?.clone();
+                for ty in ret_tys {
+                    ret_ty = ret_ty.union(&ty);
+                }
+                Ok(ret_ty.clone())
+            }
         }
     }
 

@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::function_arg::generic::argument_name;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
@@ -158,50 +159,47 @@ pub fn arg_types(
         // TODO do something with vararg
         match &arg.node {
             Node::FunArg { vararg, id_maybe_type, default } => match &id_maybe_type.node {
-                Node::IdType { id, mutable, _type } => match &id.node {
-                    Node::Id { lit } => {
-                        let default_ty = match default {
-                            Some(default) =>
-                                Some(infer(default, env, ctx, state)?.0.expr_ty(&id.pos)?),
-                            None => None
-                        };
+                Node::IdType { id, mutable, _type } => {
+                    let lit = argument_name(id)?;
+                    let default_ty = match default {
+                        Some(default) => Some(infer(default, env, ctx, state)?.0.expr_ty(&id.pos)?),
+                        None => None
+                    };
 
-                        if let Some(_type) = _type {
-                            let arg_ty_name = TypeName::try_from(_type.deref())?;
-                            if let Some(default_ty) = default_ty {
-                                if arg_ty_name == TypeName::from(&default_ty) {
-                                    arg_types.insert(
-                                        lit.clone(),
-                                        (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?)
-                                    );
-                                } else {
-                                    return Err(vec![TypeErr::new(
-                                        &arg.pos,
-                                        &format!(
-                                            "default type {} does not match argument type {}",
-                                            default_ty, arg_ty_name
-                                        )
-                                    )]);
-                                }
-                            } else {
+                    if let Some(_type) = _type {
+                        let arg_ty_name = TypeName::try_from(_type.deref())?;
+                        if let Some(default_ty) = default_ty {
+                            if arg_ty_name == TypeName::from(&default_ty) {
                                 arg_types.insert(
                                     lit.clone(),
                                     (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?)
                                 );
-                            }
-                        } else {
-                            if let Some(default_ty) = default_ty {
-                                arg_types.insert(lit.clone(), (*mutable, default_ty));
                             } else {
                                 return Err(vec![TypeErr::new(
-                                    &id_maybe_type.pos,
-                                    &format!("Cannot derive type of {}", lit)
+                                    &arg.pos,
+                                    &format!(
+                                        "default type {} does not match argument type {}",
+                                        default_ty, arg_ty_name
+                                    )
                                 )]);
                             }
+                        } else {
+                            arg_types.insert(
+                                lit.clone(),
+                                (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?)
+                            );
+                        }
+                    } else {
+                        if let Some(default_ty) = default_ty {
+                            arg_types.insert(lit.clone(), (*mutable, default_ty));
+                        } else {
+                            return Err(vec![TypeErr::new(
+                                &id_maybe_type.pos,
+                                &format!("Cannot derive type of {}", lit)
+                            )]);
                         }
                     }
-                    _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
-                },
+                }
                 _ =>
                     return Err(vec![TypeErr::new(
                         &id_maybe_type.pos,

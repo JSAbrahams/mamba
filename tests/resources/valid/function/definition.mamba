@@ -13,7 +13,7 @@ def fun_d(h: (String, String) -> Int) => h("hello", "world")
 
 def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int): Int => r(m, o)
 
-def fun_v(w: String, y: (String, Bool), ab: (String) -> (String -> Bool)): String -> Bool => ab(w)
+def fun_v(w: String, y: (String, Bool), ab: (String) -> String -> Bool): String -> Bool => ab(w)
 
 class MyClass(def a: Int, def b: Int)
     def +(self, other: Int): MyClass => MyClass(self.a + self.b, self.b)
