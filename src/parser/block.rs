@@ -27,10 +27,6 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
             }
             _ => {
                 statements.push(*it.parse(&parse_expr_or_stmt, "block", &start)?);
-                let invalid = |lex: &Lex| lex.token != Token::NL && lex.token != Token::Dedent;
-                if it.peak_if_fn(&invalid) {
-                    return Err(expected(&Token::NL, &lex.clone(), "block"));
-                }
                 Ok(())
             }
         }

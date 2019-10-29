@@ -99,7 +99,7 @@ fn function_name(ast: &AST) -> TypeResult<TypeName> {
         match &ast.node {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),
-
+            Node::SqrtOp => String::from("sqrt"),
             Node::GeOp => String::from(python::GE),
             Node::LeOp => String::from(python::LE),
             Node::EqOp => String::from(python::EQ),

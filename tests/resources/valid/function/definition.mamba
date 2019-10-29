@@ -10,22 +10,23 @@ def fun_b(b: Int) => print b
 def fun_c(d: (String, Int)) => print d
 def fun_d(h: (String, String) -> Int) => h("hello", "world")
 
-def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int) -> Int => r(m, o)
+def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int): Int => r(m, o)
 
 def fun_v(w: String, y: (String, Bool), ab: (String) -> (String -> Bool)): String -> Bool => ab(w)
 
-class MyClass
-    def +(self, other: Int): Int => a + b
-    def -(self: Something, other: Int): Something => a - b
-    # for now no square root
-    def *(self: Something, other: Int): Something => a * b
-    def /(self: Something, other: Int): Something => a / b
-    def //(self: Something, other: Int): Something => a // b
-    def ^(self: Something, other: Int): Something => a ^ b
-    def mod(self: Something, other: Int): Something => a mod b
-    def =(self: Something, other: Int): Something => a = b
-    def >(self: Something, other: Int): Something => a > b
-    def <(self: Something, other: Int): Something => a < b
+class MyClass(def a: Int, def b: Int)
+    def +(self, other: Int): MyClass => MyClass(self.a + self.b, self.b)
+    def -(self, other: Int): MyClass => MyClass(self.a - self.b, self.b)
+    def *(self, other: Int): MyClass => MyClass(self.a * self.b, self.b)
+    def /(self, other: Int): MyClass => MyClass(self.a / self.b, self.b)
+    def //(self, other: Int): MyClass => MyClass(self.a // self.b, self.b)
+    def ^(self, other: Int): MyClass => MyClass(self.a ^ self.b, self.b)
+    def =(self, other: Int): MyClass => MyClass(self.a = self.b, self.b)
+    def >(self, other: Int): MyClass => MyClass(self.a > self.b, self.b)
+    def <(self, other: Int): MyClass => MyClass(self.a < self.b, self.b)
+
+    def sqrt(self): MyClass => MyClass(sqrt(self.a), sqrt(self.b))
+    def mod(self, other: Int): MyClass => MyClass(self.a mod self.b, self.b)
 
 def factorial(x: Int) => x * (factorial (x - 1))
 
