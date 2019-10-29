@@ -7,7 +7,11 @@ use std::iter::FromIterator;
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::ty::concrete;
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::nullable::NullableTypeName;
 use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::nullable_type::NullableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
@@ -50,24 +54,50 @@ impl Display for ExpressionType {
 }
 
 impl ExpressionType {
-    // TODO union with undefined should remove undefined, unless only type
-    // TODO union with undefined should make every union type nullable
     pub fn union(self, other: &ExpressionType) -> ExpressionType {
-        match (&self, other) {
+        let union: HashSet<NullableType> = match (&self, other) {
             (ExpressionType::Single { ty: mut_ty }, ExpressionType::Single { ty: other }) =>
-                ExpressionType::Union {
-                    union: HashSet::from_iter(vec![mut_ty.clone(), other.clone()].into_iter())
-                },
-            (ExpressionType::Single { ty: mut_ty }, ExpressionType::Union { union })
-            | (ExpressionType::Union { union }, ExpressionType::Single { ty: mut_ty }) =>
-                ExpressionType::Union {
-                    union: union
-                        .union(&HashSet::from_iter(vec![mut_ty.clone()].into_iter()))
-                        .cloned()
-                        .collect()
-                },
+                HashSet::from_iter(vec![mut_ty.clone(), other.clone()].into_iter()),
+            (ExpressionType::Single { ty }, ExpressionType::Union { union })
+            | (ExpressionType::Union { union }, ExpressionType::Single { ty }) =>
+                union.union(&HashSet::from_iter(vec![ty.clone()].into_iter())).cloned().collect(),
             (ExpressionType::Union { union }, ExpressionType::Union { union: other }) =>
-                ExpressionType::Union { union: union.union(other).cloned().collect() },
+                union.union(other).cloned().collect(),
+        };
+
+        let union = if union.iter().any(|ty| {
+            ActualTypeName::from(&ty.actual_ty()) == ActualTypeName::new(concrete::NONE, &vec![])
+        }) {
+            union.iter().map(|ty| ty.as_nullable()).collect()
+        } else {
+            union
+        };
+
+        if union.len() == 1 {
+            let mut ty = None;
+            for new_ty in union {
+                ty = Some(new_ty);
+            }
+            ExpressionType::Single { ty: ty.unwrap_or_else(|| unreachable!()) }
+        } else {
+            // filter only if undefined may not be only type
+            let union: HashSet<NullableType> = union
+                .into_iter()
+                .filter(|ty| {
+                    NullableTypeName::from(ty).actual
+                        != ActualTypeName::new(concrete::NONE, &vec![])
+                })
+                .collect();
+
+            if union.len() == 1 {
+                let mut ty = None;
+                for new_ty in union {
+                    ty = Some(new_ty);
+                }
+                ExpressionType::Single { ty: ty.unwrap_or_else(|| unreachable!()) }
+            } else {
+                ExpressionType::Union { union }
+            }
         }
     }
 

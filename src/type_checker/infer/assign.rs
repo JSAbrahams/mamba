@@ -124,7 +124,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                         } else {
                             // TODO allow return type of be nullable even if body is not
                             let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
-                            if body_ret_name == ret_ty {
+                            if ret_ty.is_superset(&body_ret_name) {
                                 Ok((InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?), env.clone()))
                             } else {
                                 Err(vec![TypeErr::new(

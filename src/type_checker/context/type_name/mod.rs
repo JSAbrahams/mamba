@@ -133,6 +133,18 @@ impl TypeName {
         }
     }
 
+    pub fn is_superset(&self, other: &TypeName) -> bool {
+        match (self, other) {
+            (TypeName::Single { ty }, TypeName::Single { ty: other_ty }) =>
+                ty.is_superset(other_ty),
+            (TypeName::Single { ty }, TypeName::Union { union })
+            | (TypeName::Union { union }, TypeName::Single { ty }) =>
+                union.iter().any(|u_ty| u_ty.is_superset(ty)),
+            (TypeName::Union { union }, TypeName::Union { union: other }) =>
+                other.iter().all(|o_ty| union.iter().any(|u_ty| u_ty.is_superset(o_ty))),
+        }
+    }
+
     pub fn substitute(
         &self,
         generics: &HashMap<String, TypeName>,

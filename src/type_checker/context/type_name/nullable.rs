@@ -68,6 +68,10 @@ impl NullableTypeName {
 
     pub fn name(&self, pos: &Position) -> TypeResult<String> { self.actual.name(pos) }
 
+    pub fn is_superset(&self, other: &NullableTypeName) -> bool {
+        self.is_nullable || (!self.is_nullable && !other.is_nullable) && self.actual == other.actual
+    }
+
     pub fn as_single(&self, pos: &Position) -> TypeResult<(String, Vec<TypeName>)> {
         match &self.actual {
             ActualTypeName::Single { lit, generics } => Ok((lit.clone(), generics.clone())),

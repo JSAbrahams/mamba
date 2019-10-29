@@ -23,6 +23,10 @@ impl NullableType {
         NullableType { is_nullable: nullable.clone(), actual_ty: actual_ty.clone() }
     }
 
+    pub fn as_nullable(&self) -> NullableType {
+        NullableType { is_nullable: true, actual_ty: self.actual_ty.clone() }
+    }
+
     pub fn actual_ty(&self) -> ActualType { self.actual_ty.clone() }
 
     pub fn actual_ty_safe(&self, nullable: bool, pos: &Position) -> TypeResult<ActualType> {
