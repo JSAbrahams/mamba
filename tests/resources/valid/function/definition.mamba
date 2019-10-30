@@ -18,15 +18,16 @@ def fun_v(w: String, y: (String, Bool), ab: (String) -> String -> Bool): String 
 class MyClass(def a: Int, def b: Int)
     def some_function(self, c: Int): Int => c + 20
 
-    def +(self, other: Int): MyClass => MyClass(self.a + self.b + self.some_function(self.a), self.b)
-    def -(self, other: Int): MyClass => MyClass(self.a - self.b, self.b)
-    def *(self, other: Int): MyClass => MyClass(self.a * self.b, self.b)
-    def /(self, other: Int): MyClass => MyClass(self.a // self.b, self.b)
-    def //(self, other: Int): MyClass => MyClass(self.a // self.b, self.b)
-    def ^(self, other: Int): MyClass => MyClass(self.a ^ self.b, self.b)
-    def =(self, other: Int): MyClass => MyClass(self.a = self.b, self.b)
-    def >(self, other: Int): MyClass => MyClass(self.a > self.b, self.b)
-    def <(self, other: Int): MyClass => MyClass(self.a < self.b, self.b)
+    def +(self, other: MyClass): MyClass => MyClass(self.a + self.b + other.some_function(self.a), self.b)
+    def -(self, other: MyClass): MyClass => MyClass(self.a - other.b, self.b)
+    def *(self, other: MyClass): MyClass => MyClass(self.a * other.b, self.b)
+    def /(self, other: MyClass): MyClass => MyClass(self.a // other.b, self.b)
+    def //(self, other: MyClass): MyClass => MyClass(self.a // other.b, self.b)
+    def ^(self, other: MyClass): MyClass => MyClass(self.a ^ other.b, self.b)
+
+    def =(self, other: MyClass): bool => self.a = other.b
+    def >(self, other: MyClass): bool => self.a > other.b
+    def <(self, other: MyClass): bool => self.a < other.b
 
     def sqrt(self): MyClass => MyClass(sqrt(self.a), sqrt(self.b))
     def mod(self, other: Int): MyClass => MyClass(self.a mod self.b, self.b)

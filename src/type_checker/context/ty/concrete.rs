@@ -13,6 +13,7 @@ use crate::type_checker::context::ty::python;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::util::comma_delimited;
 
 pub const ANY: &'static str = "Any";
 
@@ -84,6 +85,7 @@ impl Type {
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
+    // TODO handle default arguments
     pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         let args: Vec<TypeName> = vec![vec![TypeName::from(&self.name.clone())], args.to_vec()]
             .into_iter()
@@ -110,21 +112,14 @@ impl Type {
                     },
             })
             .ok_or_else(|| {
+                // TODO when type inference is more advanced insert expected type
                 vec![TypeErr::new(
                     pos,
                     &format!(
-                        "Type {} does not have function \"{}\": ({}) -> ?, must be one of: {}",
+                        "Type {} does not have function \"{}: ({}) -> ?\", must be one of: \n{}",
                         self,
                         fun_name,
-                        {
-                            let mut string = String::new();
-                            args.iter().for_each(|fun| string.push_str(&format!("{}, ", fun)));
-                            if string.len() > 2 {
-                                string.remove(string.len() - 2);
-                            }
-                            string
-                        }
-                        .trim_end(),
+                        comma_delimited(args),
                         {
                             let mut string = String::new();
                             self.functions

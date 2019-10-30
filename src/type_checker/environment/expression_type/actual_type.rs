@@ -60,11 +60,13 @@ impl ActualType {
     pub fn args(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
         match &self {
             ActualType::Single { ty } => {
+                // TODO handle default arguments
                 let constructor_args: Vec<TypeName> = ty
                     .args
                     .iter()
                     .map(|a| a.ty.clone().ok_or(TypeErr::new(pos, "Type is unknown")))
                     .collect::<Result<_, _>>()?;
+
                 // TODO handle unknown types
                 if &constructor_args == &args {
                     Ok(self.clone())
