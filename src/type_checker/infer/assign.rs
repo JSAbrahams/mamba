@@ -120,7 +120,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                         if body_ty.is_stmt() {
                             Err(vec![TypeErr::new(
                                 &ast.pos,
-                                &format!("body must have type {}", ret_ty)
+                                &format!("body must have type {}, but was statement", ret_ty)
                             )])
                         } else {
                             // TODO allow return type of be nullable even if body is not
@@ -176,6 +176,8 @@ pub fn arg_types(
             None => None
         };
 
+        // TODO if return type is none, then body should not return anything
+        // TODO if op overloading, return type Bool or class even if not specified
         if let Some(_type) = _type {
             let arg_ty_name = TypeName::try_from(_type.deref())?;
             if let Some(default_ty) = default_ty {

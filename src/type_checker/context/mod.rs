@@ -5,7 +5,9 @@ use std::path::PathBuf;
 
 use crate::common::position::Position;
 use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::function_arg::concrete::args_compatible;
 use crate::type_checker::context::generics::generics;
 use crate::type_checker::context::python::python_files;
 use crate::type_checker::context::ty::concrete;
@@ -136,22 +138,20 @@ impl Context {
         let name = ActualTypeName::new(&name, &vec![]);
 
         // TODO deal with arguments that have no type (in unsafe mode)
-        let fun_args: Vec<Option<TypeName>> =
-            fun_args.into_iter().map(|a| Some(a.clone())).collect();
+        // TODO use generics for arguments
         let fun = self
             .functions
             .iter()
-            .find(|f| {
-                f.name == name && {
-                    let args: Vec<Option<TypeName>> =
-                        f.arguments.iter().map(|a| a.ty.clone()).collect();
-                    args == fun_args
-                }
-            })
+            .find(|f| f.name == name)
             .ok_or(vec![TypeErr::new(pos, &format!("Function {} is undefined", name))])?;
 
+        let fun = Function::try_from((fun, &HashMap::new(), pos))?;
+        if !args_compatible(&fun.arguments, &fun_args, pos) {
+            return Err(vec![TypeErr::new(pos, "arguments not compatible")]);
+        }
+
         let raises = fun.raises.clone().into_iter().collect();
-        if let Some(ret_ty) = &fun.ret_ty {
+        if let Some(ret_ty) = &fun.ty() {
             let infer_ty = InferType::from(&self.lookup(&ret_ty, pos)?);
             Ok(infer_ty.union_raises(&raises))
         } else {

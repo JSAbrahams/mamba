@@ -42,10 +42,10 @@ impl Display for Function {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "{: >5} : ({}) -> {}{}",
+            "{: >5} : ({}){}{}",
             self.name,
             comma_delimited(&self.arguments),
-            if let Some(ret_ty) = &self.ret_ty { format!("{}", ret_ty) } else { String::new() },
+            if let Some(ret_ty) = &self.ret_ty { format!(" -> {}", ret_ty) } else { String::new() },
             if self.raises.is_empty() {
                 String::from("")
             } else {

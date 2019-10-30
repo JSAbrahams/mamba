@@ -9,6 +9,9 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 // TODO make ty private again
+// TODO create second pass where we assign types to function arguments using
+// type inference
+
 pub const SELF: &'static str = "self";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -29,6 +32,12 @@ impl Display for FunctionArg {
             if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() }
         )
     }
+}
+
+pub fn args_compatible(fun_args: &[FunctionArg], args: &[TypeName], pos: &Position) -> bool {
+    let fun_args: Vec<Option<TypeName>> = fun_args.iter().map(|a| a.ty.clone()).collect();
+    let args: Vec<Option<TypeName>> = args.iter().map(|a| Some(a.clone())).collect();
+    args == fun_args
 }
 
 impl FunctionArg {

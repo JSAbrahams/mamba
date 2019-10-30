@@ -32,3 +32,13 @@ class float:
     def __pow__(self, power: int) -> float: pass
     def __pow__(self, power: float) -> float: pass
     def __pow__(self, power: complex) -> complex: pass
+
+    def __ge__(self, other: int) -> bool: pass
+    def __ge__(self, other: float) -> bool: pass
+    def __gt__(self, other: int) -> bool: pass
+    def __gt__(self, other: float) -> bool: pass
+
+    def __le__(self, other: int) -> bool: pass
+    def __le__(self, other: float) -> bool: pass
+    def __lt__(self, other: int) -> bool: pass
+    def __lt__(self, other: float) -> bool: pass

@@ -7,7 +7,7 @@ use std::hash::{Hash, Hasher};
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
-use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::function_arg::concrete::{args_compatible, FunctionArg};
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::ty::python;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
@@ -97,14 +97,7 @@ impl Type {
             .find_map(|function| match function.name.name(pos) {
                 Err(err) => Some(Err(err)),
                 Ok(name) =>
-                    if name.as_str() == fun_name
-                        && function.arguments.len() == args.len()
-                        && function
-                            .arguments
-                            .iter()
-                            .map(|arg| arg.ty.clone())
-                            .zip(args.clone())
-                            .all(|(left, right)| left == Some(right.clone()))
+                    if name.as_str() == fun_name && args_compatible(&function.arguments, &args, pos)
                     {
                         Some(Ok(function.clone()))
                     } else {

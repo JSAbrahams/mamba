@@ -46,7 +46,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
             let expr_ty = instance_ty.expr_ty(&instance.pos)?;
             let property_ty = match &property.node {
                 Node::Id { lit } => {
-                    let field = expr_ty.field(&lit, state.nullable, &instance.pos)?;
+                    let field = expr_ty.field(&lit, state.nullable, &property.pos)?;
                     let field_ty_name = &field
                         .ty
                         .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of field")])?;

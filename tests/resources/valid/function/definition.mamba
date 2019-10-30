@@ -13,27 +13,25 @@ def fun_d(h: (String, String) -> Int): Int? => h("hello", "world")
 
 def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int): Int => r(m, o)
 
-def fun_v(w: String, y: (String, Bool), ab: (String) -> String -> Bool): String -> Bool => ab(w)
+def fun_v(y: String, ab: (String) -> String -> Bool): String -> Bool => ab(y)
 
 class MyClass(def a: Int, def b: Int)
     def some_function(self, c: Int): Int => c + 20
 
     def +(self, other: MyClass): MyClass => MyClass(self.a + self.b + other.some_function(self.a), self.b)
-    def -(self, other: MyClass): MyClass => MyClass(self.a - other.b, self.b)
+    def -(self, other: MyClass): MyClass => self + other
     def *(self, other: MyClass): MyClass => MyClass(self.a * other.b, self.b)
     def /(self, other: MyClass): MyClass => MyClass(self.a // other.b, self.b)
     def //(self, other: MyClass): MyClass => MyClass(self.a // other.b, self.b)
     def ^(self, other: MyClass): MyClass => MyClass(self.a ^ other.b, self.b)
 
-    def =(self, other: MyClass): bool => self.a = other.b
-    def >(self, other: MyClass): bool => self.a > other.b
-    def <(self, other: MyClass): bool => self.a < other.b
+    def =(self, other: MyClass) => self.a = other.b
+    def >(self, other: MyClass) => self.a > other.b
+    def <(self, other: MyClass) => self.a < other.b
 
-    def sqrt(self): MyClass => MyClass(sqrt(self.a), sqrt(self.b))
+    def sqrt(self): MyClass => MyClass(self.a // self.b, self.a // self.b)
     def mod(self, other: Int): MyClass => MyClass(self.a mod self.b, self.b)
 
-def factorial(x: Int) => x * factorial(x - 1)
+def factorial(x: Int): Int => x * factorial(x - 1)
 
-def call_higher_order() => some_higher_order(\x => x * 2)
-
-def fun_with_default(a <- "Some string") => pass
+def some_higher_order(f: (Int) -> Int, x: Int): Int => f(x)

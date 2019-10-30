@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::function::python;
+use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
@@ -100,16 +100,16 @@ fn function_name(ast: &AST) -> TypeResult<TypeName> {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),
             Node::SqrtOp => String::from("sqrt"),
-            Node::GeOp => String::from(python::GE),
-            Node::LeOp => String::from(python::LE),
-            Node::EqOp => String::from(python::EQ),
-            Node::AddOp => String::from(python::ADD),
-            Node::SubOp => String::from(python::SUB),
-            Node::PowOp => String::from(python::POW),
-            Node::MulOp => String::from(python::MUL),
-            Node::ModOp => String::from(python::MOD),
-            Node::DivOp => String::from(python::DIV),
-            Node::FDivOp => String::from(python::FDIV),
+            Node::GeOp => String::from(concrete::GE),
+            Node::LeOp => String::from(concrete::LE),
+            Node::EqOp => String::from(concrete::EQ),
+            Node::AddOp => String::from(concrete::ADD),
+            Node::SubOp => String::from(concrete::SUB),
+            Node::PowOp => String::from(concrete::POW),
+            Node::MulOp => String::from(concrete::MUL),
+            Node::ModOp => String::from(concrete::MOD),
+            Node::DivOp => String::from(concrete::DIV),
+            Node::FDivOp => String::from(concrete::FDIV),
 
             _ => return Err(vec![TypeErr::new(&ast.pos, "Expected valid function name")])
         }
