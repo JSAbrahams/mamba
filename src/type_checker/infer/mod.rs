@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
@@ -103,9 +103,10 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::TypeFun { .. } => Ok((InferType::new(), env.clone())),
         Node::QuestionOp { .. } => Ok((InferType::new(), env.clone())),
 
-        Node::Condition { .. } => unimplemented!(),
+        Node::Condition { .. } => Ok((InferType::new(), env.clone())),
 
-        Node::_Self => Ok((InferType::new(), env.clone())),
+        Node::_Self =>
+            Ok((InferType::from(&env.lookup(function_arg::concrete::SELF, &ast.pos)?), env.clone())),
         Node::AddOp => Ok((InferType::new(), env.clone())),
         Node::SubOp => Ok((InferType::new(), env.clone())),
         Node::SqrtOp => Ok((InferType::new(), env.clone())),

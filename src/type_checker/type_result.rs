@@ -68,7 +68,9 @@ impl Display for TypeErr {
      | {}
 {:3}  |- {}
      |  {}{}",
-                self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
+                self.path
+                    .clone()
+                    .map_or(String::from("<unknown>"), |path| path.display().to_string()),
                 position.start.line,
                 position.start.pos,
                 self.msg,

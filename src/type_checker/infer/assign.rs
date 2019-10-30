@@ -159,7 +159,7 @@ pub fn arg_types(
     for arg in args {
         // TODO do something with vararg
         let (id, mutable, _type, default) = match &arg.node {
-            Node::FunArg { vararg, id_maybe_type, default } => match &id_maybe_type.node {
+            Node::FunArg { id_maybe_type, default, .. } => match &id_maybe_type.node {
                 Node::IdType { id, mutable, _type } => (id, mutable, _type, default),
                 _ =>
                     return Err(vec![TypeErr::new(

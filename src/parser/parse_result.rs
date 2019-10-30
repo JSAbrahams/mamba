@@ -150,7 +150,7 @@ impl Display for ParseErr {
                 let source_line = match &self.source {
                     Some(source) => source
                         .lines()
-                        .nth(cause.position.start.line as usize)
+                        .nth(cause.position.start.line as usize - 1)
                         .unwrap_or("<unknown>"),
                     None => "<unknown>"
                 };

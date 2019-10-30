@@ -1,5 +1,6 @@
 use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
+use crate::parser::_type::parse_id;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::call::parse_anon_fun;
@@ -13,26 +14,40 @@ use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
 pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("literal")?;
+    macro_rules! literal {
+        ($it:expr, $factor:expr, $ast:ident) => {{
+            let end = $it.eat(&Token::$ast($factor.clone()), "factor")?;
+            let node = Node::$ast { lit: $factor };
+            Ok(Box::from(AST::new(&start.union(&end), node)))
+        }};
+    }
+
     let result = it.peek_or_err(
-        &|it, lex| match lex.token {
+        &|it, lex| match &lex.token {
             Token::If | Token::Match => parse_cntrl_flow_expr(it),
             Token::LRBrack | Token::LSBrack | Token::LCBrack => parse_collection(it),
             Token::Ret => parse_return(it),
             Token::Underscore => parse_underscore(it),
 
-            Token::_Self
-            | Token::Real(_)
-            | Token::Int(_)
-            | Token::ENum(..)
-            | Token::Str(_)
-            | Token::Bool(_)
-            | Token::Not
-            | Token::Sqrt
-            | Token::Add
-            | Token::Id(_)
-            | Token::Sub
-            | Token::Undefined
-            | Token::BOneCmpl => parse_operation(it),
+            Token::Id(_) => parse_id(it),
+            Token::_Self => parse_id(it),
+            Token::Real(real) => literal!(it, real.to_string(), Real),
+            Token::Int(int) => literal!(it, int.to_string(), Int),
+            Token::Bool(b) => literal!(it, *b, Bool),
+            Token::Str(str) => literal!(it, str.to_string(), Str),
+            Token::ENum(num, exp) => {
+                let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
+                let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
+                Ok(Box::from(AST::new(&start.union(&end), node)))
+            }
+            Token::Undefined => {
+                let end = it.eat(&Token::Undefined, "factor")?;
+                Ok(Box::from(AST::new(&start.union(&end), Node::Undefined)))
+            }
+
+            Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl =>
+                parse_operation(it),
 
             Token::BSlash => parse_anon_fun(it),
 
@@ -107,7 +122,7 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::Question => {
                 it.eat(&Token::Question, "postfix expression")?;
-                let right = it.parse(&parse_expression, "postfix expression", &lex.pos)?;
+                let right = it.parse(&parse_operation, "postfix expression", &lex.pos)?;
                 let node = Node::Question { left: Box::new(pre.clone()), right: right.clone() };
                 let res = AST::new(&lex.pos.union(&right.pos), node);
                 parse_post_expr(&res, it)
@@ -141,7 +156,7 @@ fn parse_return(it: &mut LexIterator) -> ParseResult {
         return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
-    let expr = it.parse(&parse_expression, "return", &start)?;
+    let expr = it.parse(&parse_operation, "return", &start)?;
     Ok(Box::from(AST::new(&start.union(&expr.pos), Node::Return { expr })))
 }
 

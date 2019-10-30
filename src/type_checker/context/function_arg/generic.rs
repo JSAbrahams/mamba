@@ -44,7 +44,7 @@ impl GenericFunctionArg {
     pub fn in_class(
         self,
         class: Option<&TypeName>,
-        pos: &Position
+        _: &Position
     ) -> TypeResult<GenericFunctionArg> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(vec![TypeErr::new(&self.pos, "Cannot have self argument outside class")])

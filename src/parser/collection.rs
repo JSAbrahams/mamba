@@ -2,8 +2,8 @@ use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expression::is_start_expression;
-use crate::parser::expression::parse_expression;
 use crate::parser::iterator::LexIterator;
+use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
@@ -46,7 +46,7 @@ fn parse_set(it: &mut LexIterator) -> ParseResult {
         return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
-    let item = it.parse(&parse_expression, "set", &start)?;
+    let item = it.parse(&parse_operation, "set", &start)?;
     if it.eat_if(&Token::Ver).is_some() {
         let conditions = it.parse_vec(&parse_expressions, "set", &start)?;
         let end = it.eat(&Token::RCBrack, "set")?;
@@ -71,7 +71,7 @@ fn parse_list(it: &mut LexIterator) -> ParseResult {
         return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
-    let item = it.parse(&parse_expression, "list", &start)?;
+    let item = it.parse(&parse_operation, "list", &start)?;
     if it.eat_if(&Token::Ver).is_some() {
         let conditions = it.parse_vec(&parse_expressions, "list", &start)?;
         let end = it.eat(&Token::RSBrack, "list")?;
@@ -91,7 +91,7 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.start_pos("expression")?;
     let mut expressions = vec![];
     it.peek_while_fn(&is_start_expression, &mut |it, _| {
-        expressions.push(*it.parse(&parse_expression, "expressions", &start)?);
+        expressions.push(*it.parse(&parse_operation, "expressions", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

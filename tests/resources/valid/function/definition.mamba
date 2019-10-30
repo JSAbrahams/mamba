@@ -16,7 +16,9 @@ def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int): Int =
 def fun_v(w: String, y: (String, Bool), ab: (String) -> String -> Bool): String -> Bool => ab(w)
 
 class MyClass(def a: Int, def b: Int)
-    def +(self, other: Int): MyClass => MyClass(self.a + self.b, self.b)
+    def some_function(self, c: Int): Int => c + 20
+
+    def +(self, other: Int): MyClass => MyClass(self.a + self.b + self.some_function(self.a), self.b)
     def -(self, other: Int): MyClass => MyClass(self.a - self.b, self.b)
     def *(self, other: Int): MyClass => MyClass(self.a * self.b, self.b)
     def /(self, other: Int): MyClass => MyClass(self.a / self.b, self.b)
@@ -29,7 +31,7 @@ class MyClass(def a: Int, def b: Int)
     def sqrt(self): MyClass => MyClass(sqrt(self.a), sqrt(self.b))
     def mod(self, other: Int): MyClass => MyClass(self.a mod self.b, self.b)
 
-def factorial(x: Int) => x * (factorial (x - 1))
+def factorial(x: Int) => x * factorial(x - 1)
 
 def call_higher_order() => some_higher_order(\x => x * 2)
 

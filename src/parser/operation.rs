@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_id;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::call::parse_call;
@@ -150,7 +149,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::Range => {
                 it.eat(&Token::Range, "operation")?;
                 let to = it.parse(&parse_operation, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
+                let step = it.parse_if(&Token::Step, &parse_operation, "step", &start)?;
                 let node = Node::Range {
                     from: arithmetic.clone(),
                     to: to.clone(),
@@ -162,7 +161,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::RangeIncl => {
                 it.eat(&Token::RangeIncl, "operation")?;
                 let to = it.parse(&parse_operation, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
+                let step = it.parse_if(&Token::Step, &parse_operation, "step", &start)?;
                 let node =
                     Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
                 Ok(Box::from(AST::new(&start.union(&to.pos), node)))
@@ -200,7 +199,7 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
 
 fn parse_level_1(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_factor, "operation", &start)?;
+    let arithmetic = it.parse(&parse_expression, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
             inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
@@ -213,50 +212,5 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
             _ => Ok(arithmetic.clone())
         },
         Ok(arithmetic.clone())
-    )
-}
-
-fn parse_factor(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
-    macro_rules! literal {
-        ($it:expr, $factor:expr, $ast:ident) => {{
-            let end = $it.eat(&Token::$ast($factor.clone()), "factor")?;
-            let node = Node::$ast { lit: $factor };
-            Ok(Box::from(AST::new(&start.union(&end), node)))
-        }};
-    }
-
-    it.peek_or_err(
-        &|it, lex| match &lex.token {
-            Token::Id(_) => parse_id(it),
-            Token::_Self => parse_id(it),
-            Token::Undefined => {
-                let end = it.eat(&Token::Undefined, "factor")?;
-                Ok(Box::from(AST::new(&start.union(&end), Node::Undefined)))
-            }
-            Token::Real(real) => literal!(it, real.to_string(), Real),
-            Token::Int(int) => literal!(it, int.to_string(), Int),
-            Token::Bool(b) => literal!(it, *b, Bool),
-            Token::Str(str) => literal!(it, str.to_string(), Str),
-            Token::ENum(num, exp) => {
-                let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
-                let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
-                Ok(Box::from(AST::new(&start.union(&end), node)))
-            }
-            _ => it.parse(&parse_expression, "operation", &start)
-        },
-        // TODO add system to also allow us to say something should for instance be an expression
-        &[
-            Token::Id(String::new()),
-            Token::_Self,
-            Token::Undefined,
-            Token::Real(String::new()),
-            Token::Int(String::new()),
-            Token::Bool(true),
-            Token::Bool(false),
-            Token::Str(String::new()),
-            Token::ENum(String::new(), String::new())
-        ],
-        "factor"
     )
 }

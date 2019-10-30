@@ -3,8 +3,8 @@ use std::ops::Deref;
 use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
-use crate::parser::expression::parse_expression;
 use crate::parser::iterator::LexIterator;
+use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
@@ -149,8 +149,8 @@ pub fn parse_conditions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 fn parse_condition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("condition")?;
-    let cond = it.parse(&parse_expression, "condition", &start)?;
-    let _else = it.parse_if(&Token::Else, &parse_expression, "condition else", &start)?;
+    let cond = it.parse(&parse_operation, "condition", &start)?;
+    let _else = it.parse_if(&Token::Else, &parse_operation, "condition else", &start)?;
     let end = _else.clone().map_or(cond.pos.clone(), |e| e.pos);
 
     let node = Node::Condition { cond, _else };

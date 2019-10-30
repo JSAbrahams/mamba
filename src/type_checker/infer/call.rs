@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{function, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
@@ -30,11 +30,65 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
                         .union_raises(&raises),
                     env.clone()
                 )),
-                Err(_) => Ok((ctx.lookup_fun(&fun_name, &args_names, &ast.pos)?, env))
+                Err(_) => match ctx.lookup_fun(&fun_name, &args_names, &ast.pos) {
+                    // see if function is constructor of type
+                    Err(err) => {
+                        let expr_ty = ctx.lookup(&fun_name, &name.pos)?;
+                        let function = expr_ty.fun(
+                            function::concrete::INIT,
+                            &args_names,
+                            state.nullable,
+                            &ast.pos
+                        )?;
+                        let function_name = function
+                            .ty()
+                            .ok_or(vec![TypeErr::new(&ast.pos, "Return type unknown")])?;
+                        let ret_ty = ctx.lookup(&function_name, &ast.pos)?;
+
+                        Ok((InferType::from(&ret_ty).union_raises(&raises), env))
+                    }
+                    Ok(ok) => Ok((ok, env))
+                }
             }
         }
 
-        Node::PropertyCall { .. } => unimplemented!("{:#?}", &ast.pos),
+        Node::PropertyCall { instance, property } => {
+            let (instance_ty, env) = infer(instance, env, ctx, state)?;
+            let expr_ty = instance_ty.expr_ty(&instance.pos)?;
+            let property_ty = match &property.node {
+                Node::Id { lit } => {
+                    let field = expr_ty.field(&lit, state.nullable, &instance.pos)?;
+                    let field_ty_name = &field
+                        .ty
+                        .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of field")])?;
+                    ctx.lookup(&field_ty_name, &property.pos)
+                }
+                Node::FunctionCall { name, args } => {
+                    let name = match &name.node {
+                        Node::Id { lit } => lit.clone(),
+                        _ => return Err(vec![TypeErr::new(&name.pos, "Expected identifier")])
+                    };
+
+                    let mut arg_names = vec![];
+                    let mut env = env.clone();
+                    for arg in args {
+                        let (arg_ty, new_env) = infer(arg, &env, ctx, state)?;
+                        arg_names.push(TypeName::from(&arg_ty.expr_ty(&arg.pos)?));
+                        env = new_env;
+                    }
+
+                    let function = expr_ty.fun(&name, &arg_names, state.nullable, &instance.pos)?;
+                    let function_ty_name = &function
+                        .ty()
+                        .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of function")])?;
+                    ctx.lookup(&function_ty_name, &property.pos)
+                }
+                _ => return Err(vec![TypeErr::new(&property.pos, "Expected property or function")])
+            }?;
+
+            Ok((InferType::from(&property_ty).union_raises(&instance_ty.raises), env))
+        }
+
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or class element")])
     }
 }

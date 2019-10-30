@@ -1,13 +1,15 @@
 extern crate python_parser;
 
+use std::path::Path;
+use std::process::Command;
+
+use mamba::pipeline::transpile_directory;
+
 use crate::common::exists_and_delete;
 use crate::common::python_src_to_stmts;
 use crate::common::resource_content;
 use crate::common::resource_path;
 use crate::output::common::PYTHON;
-use mamba::pipeline::transpile_directory;
-use std::path::Path;
-use std::process::Command;
 
 #[test]
 fn call_ast_verify() -> Result<(), Vec<(String, String)>> {
@@ -39,11 +41,18 @@ fn call_ast_verify() -> Result<(), Vec<(String, String)>> {
 
 #[test]
 fn definition_ast_verify() -> Result<(), Vec<(String, String)>> {
-    transpile_directory(
+    let result = transpile_directory(
         &Path::new(&resource_path(true, &["function"], "")),
         Some("definition.mamba"),
         None
-    )?;
+    );
+    match result {
+        Ok(_) => (),
+        Err(errs) =>
+            for (ty, err) in errs {
+                println!("{}: {}", ty, err);
+            },
+    }
 
     let cmd = Command::new(PYTHON)
         .arg("-m")

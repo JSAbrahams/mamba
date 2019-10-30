@@ -4,8 +4,8 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
 use crate::parser::control_flow_expr::parse_match_cases;
-use crate::parser::expression::parse_expression;
 use crate::parser::iterator::LexIterator;
+use crate::parser::operation::parse_operation;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::is_start_statement;
 use crate::parser::statement::parse_statement;
@@ -21,7 +21,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
                 if is_start_statement(token) {
                     parse_statement(it)
                 } else {
-                    parse_expression(it)
+                    parse_operation(it)
                 },
         },
         &[],
