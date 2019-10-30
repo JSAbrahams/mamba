@@ -177,4 +177,13 @@ impl ExpressionType {
             }
         }
     }
+
+    pub fn args(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
+        Ok(match &self {
+            ExpressionType::Single { ty } => ExpressionType::Single { ty: ty.args(args, pos)? },
+            ExpressionType::Union { union } => ExpressionType::Union {
+                union: union.iter().map(|ty| ty.args(args, pos)).collect::<Result<_, _>>()?
+            }
+        })
+    }
 }

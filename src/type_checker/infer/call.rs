@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::context::{function, Context};
+use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
@@ -14,38 +14,27 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
     match &ast.node {
         Node::FunctionCall { name, args } => {
             let fun_name = TypeName::try_from(name.deref())?;
-            let mut args_names = vec![];
+            let mut arg_names = vec![];
             let mut raises = HashSet::new();
             let mut env = env.clone();
             for arg in args {
                 let (ty, new_env) = infer(arg, &env, ctx, state)?;
-                args_names.push(TypeName::from(&ty.expr_ty(&arg.pos)?));
+                arg_names.push(TypeName::from(&ty.expr_ty(&arg.pos)?));
                 env = new_env;
                 raises = raises.union(&ty.raises).cloned().collect();
             }
 
             match env.lookup(&fun_name.clone().single(&name.pos)?.name(&name.pos)?, &name.pos) {
                 Ok(expr_ty) => Ok((
-                    InferType::from(&expr_ty.anon_fun(&args_names, &ast.pos)?)
-                        .union_raises(&raises),
+                    InferType::from(&expr_ty.anon_fun(&arg_names, &ast.pos)?).union_raises(&raises),
                     env.clone()
                 )),
-                Err(_) => match ctx.lookup_fun(&fun_name, &args_names, &ast.pos) {
+                Err(_) => match ctx.lookup_fun(&fun_name, &arg_names, &ast.pos) {
                     // see if function is constructor of type
-                    Err(err) => {
+                    Err(_) => {
                         let expr_ty = ctx.lookup(&fun_name, &name.pos)?;
-                        let function = expr_ty.fun(
-                            function::concrete::INIT,
-                            &args_names,
-                            state.nullable,
-                            &ast.pos
-                        )?;
-                        let function_name = function
-                            .ty()
-                            .ok_or(vec![TypeErr::new(&ast.pos, "Return type unknown")])?;
-                        let ret_ty = ctx.lookup(&function_name, &ast.pos)?;
-
-                        Ok((InferType::from(&ret_ty).union_raises(&raises), env))
+                        expr_ty.args(&arg_names, &ast.pos)?;
+                        Ok((InferType::from(&expr_ty).union_raises(&raises), env))
                     }
                     Ok(ok) => Ok((ok, env))
                 }

@@ -2,6 +2,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
@@ -35,5 +36,12 @@ impl NullableType {
         } else {
             Err(vec![TypeErr::new(pos, "May be null")])
         }
+    }
+
+    pub fn args(&self, args: &[TypeName], pos: &Position) -> TypeResult<NullableType> {
+        Ok(NullableType {
+            is_nullable: self.is_nullable,
+            actual_ty:   self.actual_ty.args(args, pos)?
+        })
     }
 }
