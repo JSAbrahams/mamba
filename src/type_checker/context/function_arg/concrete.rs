@@ -9,6 +9,7 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 // TODO make ty private again
+pub const SELF: &'static str = "self";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FunctionArg {

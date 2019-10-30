@@ -7,7 +7,7 @@ use crate::type_checker::context::function_arg::generic::argument_name;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::state::State;
@@ -125,6 +125,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                         } else {
                             // TODO allow return type of be nullable even if body is not
                             let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
+                            // TODO if return type empty and return empty to body
                             if ret_ty.is_superset(&body_ret_name) {
                                 Ok((InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?), env.clone()))
                             } else {
@@ -157,49 +158,9 @@ pub fn arg_types(
     let mut arg_types = HashMap::new();
     for arg in args {
         // TODO do something with vararg
-        match &arg.node {
+        let (id, mutable, _type, default) = match &arg.node {
             Node::FunArg { vararg, id_maybe_type, default } => match &id_maybe_type.node {
-                Node::IdType { id, mutable, _type } => {
-                    let lit = argument_name(id)?;
-                    let default_ty = match default {
-                        Some(default) => Some(infer(default, env, ctx, state)?.0.expr_ty(&id.pos)?),
-                        None => None
-                    };
-
-                    if let Some(_type) = _type {
-                        let arg_ty_name = TypeName::try_from(_type.deref())?;
-                        if let Some(default_ty) = default_ty {
-                            if arg_ty_name == TypeName::from(&default_ty) {
-                                arg_types.insert(
-                                    lit.clone(),
-                                    (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?)
-                                );
-                            } else {
-                                return Err(vec![TypeErr::new(
-                                    &arg.pos,
-                                    &format!(
-                                        "default type {} does not match argument type {}",
-                                        default_ty, arg_ty_name
-                                    )
-                                )]);
-                            }
-                        } else {
-                            arg_types.insert(
-                                lit.clone(),
-                                (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?)
-                            );
-                        }
-                    } else {
-                        if let Some(default_ty) = default_ty {
-                            arg_types.insert(lit.clone(), (*mutable, default_ty));
-                        } else {
-                            return Err(vec![TypeErr::new(
-                                &id_maybe_type.pos,
-                                &format!("Cannot derive type of {}", lit)
-                            )]);
-                        }
-                    }
-                }
+                Node::IdType { id, mutable, _type } => (id, mutable, _type, default),
                 _ =>
                     return Err(vec![TypeErr::new(
                         &id_maybe_type.pos,
@@ -207,6 +168,47 @@ pub fn arg_types(
                     )]),
             },
             _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
+        };
+
+        let lit = argument_name(id)?;
+        let default_ty = match default {
+            Some(default) => Some(infer(default, env, ctx, state)?.0.expr_ty(&id.pos)?),
+            None => None
+        };
+
+        if let Some(_type) = _type {
+            let arg_ty_name = TypeName::try_from(_type.deref())?;
+            if let Some(default_ty) = default_ty {
+                if arg_ty_name == TypeName::from(&default_ty) {
+                    let expr_ty = ctx.lookup(&arg_ty_name, &_type.pos)?;
+                    arg_types.insert(lit.clone(), (*mutable, expr_ty));
+                } else {
+                    let msg = format!(
+                        "default type {} does not match argument type {}",
+                        default_ty, arg_ty_name
+                    );
+                    return Err(vec![TypeErr::new(&arg.pos, &msg)]);
+                }
+            } else {
+                arg_types.insert(lit.clone(), (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?));
+            }
+        } else {
+            if &lit == function_arg::concrete::SELF {
+                // TODO get actual type of self from Context in case self is child of class
+                let class = state
+                    .in_class
+                    .clone()
+                    .ok_or(vec![TypeErr::new(&arg.pos, "self cannot be outside class")])?;
+                arg_types.insert(
+                    lit.clone(),
+                    (*mutable, ctx.lookup(&TypeName::from(&class), &arg.pos)?)
+                );
+            } else if let Some(default_ty) = default_ty {
+                arg_types.insert(lit.clone(), (*mutable, default_ty));
+            } else {
+                let msg = format!("Cannot derive type of {}", lit);
+                return Err(vec![TypeErr::new(&arg.pos, &msg)]);
+            }
         }
     }
 

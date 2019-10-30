@@ -33,7 +33,8 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
                 Err(_) => Ok((ctx.lookup_fun(&fun_name, &args_names, &ast.pos)?, env))
             }
         }
-        Node::PropertyCall { .. } => unimplemented!(),
+
+        Node::PropertyCall { .. } => unimplemented!("{:#?}", &ast.pos),
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or class element")])
     }
 }

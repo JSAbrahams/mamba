@@ -9,7 +9,7 @@ def fun_a(): Int? =>
 def fun_b(b: Int) => print b
 
 def fun_c(d: (String, Int)) => print d
-def fun_d(h: (String, String) -> Int) => h("hello", "world")
+def fun_d(h: (String, String) -> Int): Int? => h("hello", "world")
 
 def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int): Int => r(m, o)
 

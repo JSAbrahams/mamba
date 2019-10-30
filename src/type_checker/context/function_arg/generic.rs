@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use crate::common::position::Position;
@@ -6,7 +7,6 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::type_name::{python, TypeName};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::hash::{Hash, Hasher};
 
 pub const SELF: &'static str = "self";
 
@@ -50,6 +50,7 @@ impl GenericFunctionArg {
             Err(vec![TypeErr::new(&self.pos, "Cannot have self argument outside class")])
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
             Ok(GenericFunctionArg { ty: class.cloned(), ..self })
+        // TODO if self has type, check that class is parent of type
         } else {
             Ok(self)
         }
