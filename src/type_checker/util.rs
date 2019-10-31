@@ -11,3 +11,12 @@ where
     }
     String::from(string.trim_end())
 }
+
+pub fn newline_delimited<I, D>(iterable: I) -> String
+where
+    I: IntoIterator<Item = D>,
+    D: Display {
+    let mut string = String::new();
+    iterable.into_iter().for_each(|item| string.push_str(&format!("{}\n", item)));
+    string
+}

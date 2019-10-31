@@ -31,11 +31,9 @@ impl Display for ActualType {
 
 impl ActualType {
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
-        let msg = format!("Undefined field: {}", field);
         match &self {
-            ActualType::Single { ty } =>
-                Ok(ty.field(field).ok_or(vec![TypeErr::new(pos, &msg)])?),
-            _ => Err(vec![TypeErr::new(pos, &msg)])
+            ActualType::Single { ty } => ty.field(field, pos),
+            _ => Err(vec![TypeErr::new(pos, &format!("{} cannot have field: {}", &self, field))])
         }
     }
 

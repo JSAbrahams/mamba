@@ -13,7 +13,7 @@ use crate::type_checker::context::ty::python;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use crate::type_checker::util::comma_delimited;
+use crate::type_checker::util::{comma_delimited, newline_delimited};
 
 pub const ANY: &'static str = "Any";
 
@@ -80,8 +80,17 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &Position)> for Type {
 }
 
 impl Type {
-    pub fn field(&self, name: &str) -> Option<Field> {
-        self.fields.iter().find(|field| field.name.as_str() == name).cloned()
+    pub fn field(&self, name: &str, pos: &Position) -> TypeResult<Field> {
+        let field = self.fields.iter().find(|field| field.name.as_str() == name).cloned();
+        field.ok_or(vec![TypeErr::new(
+            pos,
+            &format!(
+                "Type {} does not define field {}, must be one of:\n{}",
+                self.name,
+                name,
+                newline_delimited(&self.fields)
+            )
+        )])
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
@@ -113,13 +122,7 @@ impl Type {
                         self,
                         fun_name,
                         comma_delimited(args),
-                        {
-                            let mut string = String::new();
-                            self.functions
-                                .iter()
-                                .for_each(|fun| string.push_str(&format!("{}\n", fun)));
-                            string
-                        }
+                        newline_delimited(&self.functions)
                     )
                 )]
             })?
