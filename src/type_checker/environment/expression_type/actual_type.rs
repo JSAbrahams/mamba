@@ -31,29 +31,37 @@ impl Display for ActualType {
 
 impl ActualType {
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
+        let msg = format!("Undefined field: {}", field);
         match &self {
             ActualType::Single { ty } =>
-                Ok(ty.field(field).ok_or(vec![TypeErr::new(pos, "Undefined field")])?),
-            _ => Err(vec![TypeErr::new(pos, "Undefined field")])
+                Ok(ty.field(field).ok_or(vec![TypeErr::new(pos, &msg)])?),
+            _ => Err(vec![TypeErr::new(pos, &msg)])
         }
     }
 
     pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
         match &self {
-            ActualType::AnonFun { args: a, ret_ty } =>
-                if a.iter().map(|a| TypeName::from(a)).collect::<Vec<TypeName>>() == args {
+            ActualType::AnonFun { args: a, ret_ty } => {
+                let fun_args = a.iter().map(|a| TypeName::from(a)).collect::<Vec<TypeName>>();
+                if fun_args == args {
                     Ok(ret_ty.deref().clone())
                 } else {
-                    Err(vec![TypeErr::new(pos, "Function does not exist")])
-                },
-            _ => Err(vec![TypeErr::new(pos, "Not anonymous function")])
+                    let msg = format!(
+                        "Anonymous function expected ({}), but got ({})",
+                        comma_delimited(fun_args),
+                        comma_delimited(args)
+                    );
+                    Err(vec![TypeErr::new(pos, &msg)])
+                }
+            }
+            _ => Err(vec![TypeErr::new(pos, "Not an anonymous function")])
         }
     }
 
     pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
             ActualType::Single { ty } => ty.fun(name, args, pos),
-            _ => Err(vec![TypeErr::new(pos, "Undefined function")])
+            _ => Err(vec![TypeErr::new(pos, &format!("Undefined function: {}", name))])
         }
     }
 

@@ -15,6 +15,9 @@ mod util;
 pub mod type_result;
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 
+// TODO make type checker modify AST where necessary for more advanced language
+// features
+
 /// Checks whether a given [AST](crate::parser::ast::AST) is well
 /// typed according to the specification of the language.
 ///

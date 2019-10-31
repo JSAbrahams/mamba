@@ -1,13 +1,21 @@
 use crate::core::construct::Core;
+use std::collections::HashSet;
 
 pub struct State {
-    pub tup:       usize,
-    pub interface: bool,
-    pub expand_ty: bool
+    pub tup:         usize,
+    pub interface:   bool,
+    pub expand_ty:   bool,
+    pub expect_expr: bool
 }
 
 impl State {
-    pub fn new() -> State { State { tup: 1, interface: false, expand_ty: true } }
+    pub fn new() -> State {
+        State { tup: 1, interface: false, expand_ty: true, expect_expr: false }
+    }
+
+    pub fn expect_expr(&self, expect: bool) -> State {
+        State { expect_expr: expect, ..*self.clone() }
+    }
 
     pub fn in_tup(&self, tup: usize) -> State { State { tup, ..*self.clone() } }
 
@@ -17,18 +25,18 @@ impl State {
 }
 
 pub struct Imports {
-    pub imports: Vec<Core>
+    pub imports: HashSet<Core>
 }
 
 impl Imports {
-    pub fn new() -> Imports { Imports { imports: vec![] } }
+    pub fn new() -> Imports { Imports { imports: HashSet::new() } }
 
     pub fn add_import(&mut self, import: &str) {
-        self.imports.push(Core::Import { imports: vec![Core::Id { lit: String::from(import) }] });
+        self.imports.insert(Core::Import { imports: vec![Core::Id { lit: String::from(import) }] });
     }
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
-        self.imports.push(Core::FromImport {
+        self.imports.insert(Core::FromImport {
             from:   Box::from(Core::Id { lit: String::from(from) }),
             import: Box::from(Core::Import {
                 imports: vec![Core::Id { lit: String::from(import) }]

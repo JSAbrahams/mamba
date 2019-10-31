@@ -1,4 +1,5 @@
 use crate::core::construct::Core;
+use std::ops::Deref;
 
 pub mod construct;
 
@@ -59,7 +60,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::FunDef { private, id, args, body } => {
+        Core::FunDef { private, id, args, ret_ty, body } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
                 Core::GeqOp => String::from("__ge__"),
@@ -91,11 +92,18 @@ fn to_py(core: &Core, ind: usize) -> String {
             };
 
             format!(
-                "def {}({}):\n{}{}",
+                "def {}({}){}:{}\n",
                 name,
                 comma_delimited(args, ind),
-                indent(ind + 1),
-                to_py(body.as_ref(), ind + 1)
+                if let Some(ret_ty) = ret_ty {
+                    format!(" -> {}", to_py(ret_ty.as_ref(), ind))
+                } else {
+                    String::new()
+                },
+                match body.deref() {
+                    Core::Block { .. } => format!("\n{}", to_py(body.as_ref(), ind + 1)),
+                    _ => format!(" {}", to_py(body.as_ref(), ind + 1))
+                }
             )
         }
 
@@ -131,7 +139,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::AnonFun { args, body } =>
             format!("lambda {}: {}", comma_delimited(args, ind), to_py(body, ind)),
 
-        Core::Block { statements } => format!("\n{}", newline_delimited(statements, ind)),
+        Core::Block { statements } => format!("{}", newline_delimited(statements, ind)),
 
         Core::PropertyCall { object, property } =>
             format!("{}.{}", to_py(object, ind), to_py(property, ind)),
@@ -259,6 +267,12 @@ fn to_py(core: &Core, ind: usize) -> String {
             indent(ind + 1),
             to_py(_else.as_ref(), ind + 1)
         ),
+        Core::Ternary { cond, then, _else } => format!(
+            "{} if {} else {}",
+            to_py(then.as_ref(), ind),
+            to_py(cond.as_ref(), ind + 1),
+            to_py(_else.as_ref(), ind + 1)
+        ),
         Core::While { cond, body } => format!(
             "while {}:\n{}{}",
             to_py(cond.as_ref(), ind),
@@ -269,9 +283,13 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Break => String::from("break"),
 
         Core::ClassDef { name, parents, definitions } => format!(
-            "class {}({}):\n{}\n",
+            "class {}{}:\n{}\n",
             to_py(name, ind),
-            comma_delimited(parents, ind),
+            if parents.is_empty() {
+                String::new()
+            } else {
+                format!("({})", comma_delimited(parents, ind))
+            },
             newline_delimited(definitions, ind + 1)
         ),
 

@@ -1,9 +1,9 @@
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::context::Imports;
-use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
+use crate::desugar::state::Imports;
+use crate::desugar::state::State;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 

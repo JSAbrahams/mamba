@@ -1,18 +1,18 @@
 use std::path::PathBuf;
 
-use crate::desugar::context::Imports;
-use crate::desugar::context::State;
 use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
+use crate::desugar::state::Imports;
+use crate::desugar::state::State;
 use crate::parser::ast::AST;
 
 mod call;
 mod class;
 mod common;
-mod context;
 mod control_flow;
 mod definition;
 mod node;
+mod state;
 mod ty;
 
 pub mod desugar_result;

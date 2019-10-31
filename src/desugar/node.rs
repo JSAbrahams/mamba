@@ -1,13 +1,13 @@
 use crate::core::construct::Core;
 use crate::desugar::call::desugar_call;
 use crate::desugar::class::desugar_class;
-use crate::desugar::common::desugar_vec;
-use crate::desugar::context::Imports;
-use crate::desugar::context::State;
+use crate::desugar::common::{desugar_stmts, desugar_vec};
 use crate::desugar::control_flow::desugar_control_flow;
 use crate::desugar::definition::desugar_definition;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::desugar_result::UnimplementedErr;
+use crate::desugar::state::Imports;
+use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
@@ -34,7 +34,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         },
 
         Node::Block { statements } =>
-            Core::Block { statements: desugar_vec(statements, imp, state)? },
+            Core::Block { statements: desugar_stmts(statements, imp, state)? },
 
         Node::Int { lit } => Core::Int { int: lit.clone() },
         Node::Real { lit } => Core::Float { float: lit.clone() },
@@ -55,7 +55,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::EqOp => Core::EqOp,
         Node::LeOp => Core::LeOp,
         Node::GeOp => Core::GeOp,
-        Node::QuestionOp { expr } => desugar_node(expr, imp, state)?,
+        Node::QuestionOp { .. } => desugar_type(ast, imp, state)?,
 
         Node::Undefined => Core::None,
         Node::IdType { .. } => desugar_type(ast, imp, state)?,
@@ -241,7 +241,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::File { modules, imports, .. } => {
             let mut imports = desugar_vec(imports, imp, state)?;
             let mut modules = desugar_vec(modules, imp, state)?;
-            imports.append(&mut imp.imports);
+            imports.append(&mut imp.imports.clone().into_iter().collect());
 
             let mut statements = imports;
             statements.append(&mut modules);

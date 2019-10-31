@@ -156,7 +156,7 @@ fn fun_def_verify() {
     });
 
     let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
+        Ok(Core::FunDef { private, id, args, body, .. }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -194,7 +194,7 @@ fn fun_def_default_arg_verify() {
     });
 
     let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
+        Ok(Core::FunDef { private, id, args, body, .. }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -226,7 +226,7 @@ fn fun_def_with_body_verify() {
     });
 
     let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, args, body }) => (private, id, args, body),
+        Ok(Core::FunDef { private, id, args, body, .. }) => (private, id, args, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 

@@ -2,10 +2,10 @@ use std::ops::Deref;
 
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::context::Imports;
-use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
+use crate::desugar::state::Imports;
+use crate::desugar::state::State;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 
@@ -110,7 +110,10 @@ fn constructor_from_inline(
                         object:   Box::new(Core::Id { lit: String::from("self") }),
                         property: id.clone()
                     }),
-                    right: id.clone()
+                    right: Box::from(match id.deref() {
+                        Core::IdType { lit, ty } => Core::Id { lit: lit.clone() },
+                        id => id.clone()
+                    })
                 });
             }
             _ => panic!("Inline arg was not function argument: {:?}", inline_arg)
@@ -119,7 +122,7 @@ fn constructor_from_inline(
 
     let id = Box::from(Core::Id { lit: String::from("init") });
     let body = Box::from(Core::Block { statements });
-    let core_init = Core::FunDef { private: false, id, args, body };
+    let core_init = Core::FunDef { private: false, id, args, ret_ty: None, body };
 
     final_definitions.push(core_init);
     final_definitions.append(&mut Vec::from(definitions));
@@ -136,7 +139,7 @@ fn add_parent_to_constructor(
 
     for definition in core_definitions {
         final_definitions.push(
-            if let Core::FunDef { private, id, args: old_args, body: old_body } = definition {
+            if let Core::FunDef { private, id, args: old_args, body: old_body, .. } = definition {
                 if let Core::Id { lit, .. } = id.clone().deref() {
                     if lit == "init" {
                         if found_constructor {
@@ -161,7 +164,7 @@ fn add_parent_to_constructor(
                         let mut args = old_args.clone();
                         args.append(&mut Vec::from(parent_args));
 
-                        Core::FunDef { private: *private, id: id.clone(), args, body }
+                        Core::FunDef { private: *private, id: id.clone(), args, ret_ty: None, body }
                     } else {
                         definition.clone()
                     }

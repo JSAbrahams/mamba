@@ -1,15 +1,25 @@
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::context::Imports;
-use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
+use crate::desugar::state::Imports;
+use crate::desugar::state::State;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::type_checker::context::ty::concrete::concrete_to_python;
 
 pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
+        Node::QuestionOp { expr } => {
+            imp.add_from_import("typing", "Union");
+            Core::Type {
+                lit:      String::from("Union"),
+                generics: vec![
+                    Core::Id { lit: String::from("None") },
+                    desugar_node(expr, imp, state)?,
+                ]
+            }
+        }
         Node::IdType { id, _type, .. } => match &id.node {
             Node::Id { lit } =>
                 if let Some(ty) = _type {
