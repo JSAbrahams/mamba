@@ -25,22 +25,29 @@ impl State {
 }
 
 pub struct Imports {
-    pub imports: HashSet<Core>
+    pub imports: Vec<Core>
 }
 
 impl Imports {
-    pub fn new() -> Imports { Imports { imports: HashSet::new() } }
+    pub fn new() -> Imports { Imports { imports: vec![] } }
 
     pub fn add_import(&mut self, import: &str) {
-        self.imports.insert(Core::Import { imports: vec![Core::Id { lit: String::from(import) }] });
+        let import = Core::Import { imports: vec![Core::Id { lit: String::from(import) }] };
+        if !self.imports.contains(&import) {
+            self.imports.push(import);
+        }
     }
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
-        self.imports.insert(Core::FromImport {
+        let import = Core::FromImport {
             from:   Box::from(Core::Id { lit: String::from(from) }),
             import: Box::from(Core::Import {
                 imports: vec![Core::Id { lit: String::from(import) }]
             })
-        });
+        };
+
+        if !self.imports.contains(&import) {
+            self.imports.push(import);
+        }
     }
 }

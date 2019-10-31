@@ -11,13 +11,10 @@ use crate::type_checker::context::ty::concrete::concrete_to_python;
 pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
         Node::QuestionOp { expr } => {
-            imp.add_from_import("typing", "Union");
+            imp.add_from_import("typing", "Optional");
             Core::Type {
-                lit:      String::from("Union"),
-                generics: vec![
-                    Core::Id { lit: String::from("None") },
-                    desugar_node(expr, imp, state)?,
-                ]
+                lit:      String::from("Optional"),
+                generics: vec![desugar_node(expr, imp, state)?]
             }
         }
         Node::IdType { id, _type, .. } => match &id.node {

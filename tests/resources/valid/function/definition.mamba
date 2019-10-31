@@ -30,7 +30,7 @@ class MyClass(def a: Int, def b: Int)
     def <(self, other: MyClass): Bool => self.a < other.b
 
     def sqrt(self): MyClass => MyClass(self.a // self.b, self.a // self.b)
-    def mod(self, other: Int): MyClass => MyClass(self.a mod self.b, self.b)
+    def mod(self, other: MyClass): MyClass => MyClass(self.a mod self.b, self.b)
 
 def factorial(x: Int): Int => x * factorial(x - 1)
 
