@@ -1,5 +1,4 @@
 use crate::core::construct::Core;
-use std::ops::Deref;
 
 pub mod construct;
 
@@ -100,10 +99,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 } else {
                     String::new()
                 },
-                match body.deref() {
-                    Core::Block { .. } => format!("\n{}", to_py(body.as_ref(), ind + 1)),
-                    _ => format!(" {}", to_py(body.as_ref(), ind + 1))
-                }
+                newline_if_body(body, ind)
             )
         }
 
@@ -239,11 +235,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, col, body } => format!(
-            "for {} in {}:\n{}{}",
+            "for {} in {}:{}",
             to_py(expr.as_ref(), ind),
             to_py(col.as_ref(), ind),
-            indent(ind + 1),
-            to_py(body.as_ref(), ind + 1)
+            newline_if_body(body, ind)
         ),
         Core::In { left, right } => format! {"{} in {}", to_py(left, ind), to_py(right, ind)},
         Core::Range { from, to, step } => format!(
@@ -252,20 +247,14 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(to.as_ref(), ind),
             to_py(step.as_ref(), ind),
         ),
-        Core::If { cond, then } => format!(
-            "if {}:\n{}{}",
-            to_py(cond.as_ref(), ind),
-            indent(ind + 1),
-            to_py(then.as_ref(), ind + 1)
-        ),
+        Core::If { cond, then } =>
+            format!("if {}:{}", to_py(cond.as_ref(), ind), newline_if_body(then, ind)),
         Core::IfElse { cond, then, _else } => format!(
-            "if {}:\n{}{}\n{}else:\n{}{}",
+            "if {}:{}\n{}else:{}",
             to_py(cond.as_ref(), ind),
-            indent(ind + 1),
-            to_py(then.as_ref(), ind + 1),
+            newline_if_body(then, ind),
             indent(ind),
-            indent(ind + 1),
-            to_py(_else.as_ref(), ind + 1)
+            newline_if_body(_else, ind)
         ),
         Core::Ternary { cond, then, _else } => format!(
             "{} if {} else {}",
@@ -273,12 +262,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(cond.as_ref(), ind + 1),
             to_py(_else.as_ref(), ind + 1)
         ),
-        Core::While { cond, body } => format!(
-            "while {}:\n{}{}",
-            to_py(cond.as_ref(), ind),
-            indent(ind + 1),
-            to_py(body.as_ref(), ind + 1)
-        ),
+        Core::While { cond, body } =>
+            format!("while {}:{}", to_py(cond.as_ref(), ind), newline_if_body(body, ind)),
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
@@ -299,34 +284,24 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Comment { comment } => format!("#{}", comment),
 
         Core::With { resource, expr } =>
-            format!("with {}:\n{}{}", to_py(resource, ind), indent(ind + 1), to_py(expr, ind + 1)),
+            format!("with {}:{}", to_py(resource, ind), newline_if_body(expr, ind)),
         Core::WithAs { resource, _as, expr } => format!(
-            "with {} as {}:\n{}{}",
+            "with {} as {}:{}",
             to_py(resource, ind),
             to_py(_as, ind),
-            indent(ind + 1),
-            to_py(expr, ind + 1)
+            newline_if_body(expr, ind)
         ),
 
-        Core::TryExcept { _try, except } => format!(
-            "try:\n{}{}\n{}",
-            indent(ind + 1),
-            to_py(_try, ind + 1),
-            newline_delimited(except, ind)
-        ),
+        Core::TryExcept { _try, except } =>
+            format!("try:{}\n{}", newline_if_body(_try, ind + 1), newline_delimited(except, ind)),
         Core::Except { id, class, body } => format!(
-            "except {} as {}:\n{}{}\n",
+            "except {} as {}:{}",
             to_py(class, ind),
             to_py(id, ind),
-            indent(ind + 1),
-            to_py(body, ind + 1)
+            newline_if_body(body, ind)
         ),
-        Core::ExceptNoClass { id, body } => format!(
-            "except Exception as {}:\n{}{}\n",
-            to_py(id, ind),
-            indent(ind + 1),
-            to_py(body, ind + 1)
-        ),
+        Core::ExceptNoClass { id, body } =>
+            format!("except Exception as {}:{}", to_py(id, ind), newline_if_body(body, ind)),
 
         Core::Raise { error } => format!("raise {}", to_py(error, ind))
     }
@@ -334,34 +309,26 @@ fn to_py(core: &Core, ind: usize) -> String {
 
 fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
 
-fn newline_delimited(items: &[Core], ind: usize) -> String {
-    let mut result = String::new();
-
-    for (pos, item) in items.iter().enumerate() {
-        result.push_str(indent(ind).as_ref());
-        result.push_str(to_py(item, ind).as_ref());
-
-        if pos < items.len() - 1 {
-            result.push('\n');
-        }
+fn newline_if_body(core: &Core, ind: usize) -> String {
+    match core {
+        Core::Block { .. } => format!("\n{}", to_py(core, ind + 1)),
+        _ => format!(" {}", to_py(core, ind + 1))
     }
+}
 
-    result
+fn newline_delimited(items: &[Core], ind: usize) -> String {
+    let mut string = String::new();
+    items
+        .into_iter()
+        .for_each(|item| string.push_str(&format!("{}{}\n", indent(ind), to_py(item, ind))));
+    String::from(string.trim_end())
 }
 
 fn comma_delimited(items: &[Core], ind: usize) -> String {
-    if items.is_empty() {
-        return String::new();
+    let mut string = String::new();
+    items.into_iter().for_each(|item| string.push_str(&format!("{}, ", to_py(item, ind))));
+    if string.len() > 2 {
+        string.remove(string.len() - 2);
     }
-
-    let mut result = String::new();
-    for (pos, item) in items.iter().enumerate() {
-        result.push_str(to_py(item, ind).as_ref());
-        if pos < items.len() - 1 {
-            result.push(',');
-            result.push(' ');
-        }
-    }
-
-    result
+    String::from(string.trim_end())
 }

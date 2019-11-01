@@ -14,14 +14,23 @@ use crate::parser::ast::AST;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    Ok(match &ast.node {
-        Node::Import { import, _as } => match _as.len() {
-            0 => Core::Import { imports: desugar_vec(import, imp, state)? },
-            _ => Core::ImportAs {
-                imports: desugar_vec(import, imp, state)?,
-                _as:     desugar_vec(_as, imp, state)?
-            }
-        },
+    // If we expect a return, handle here and do not recursively pass
+    // Unless we have a block, in which case we make use of desugar_stmts
+    // Once our type checker can augment the ast, we can omit this less elegant
+    // solution
+    let expect_return = state.expect_ret;
+    let state = &state.expect_return(false);
+
+    let core = match &ast.node {
+        Node::Import { import, _as } =>
+            if _as.is_empty() {
+                Core::Import { imports: desugar_vec(import, imp, state)? }
+            } else {
+                Core::ImportAs {
+                    imports: desugar_vec(import, imp, state)?,
+                    _as:     desugar_vec(_as, imp, state)?
+                }
+            },
         Node::FromImport { id, import } => Core::FromImport {
             from:   Box::from(desugar_node(id, imp, state)?),
             import: Box::from(desugar_node(import, imp, state)?)
@@ -30,11 +39,13 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(ast, imp, state)?,
         Node::Reassign { left, right } => Core::Assign {
             left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            right: Box::from(desugar_node(right, imp, &state.expect_expr(true))?)
         },
 
-        Node::Block { statements } =>
-            Core::Block { statements: desugar_stmts(statements, imp, state)? },
+        Node::Block { statements } => Core::Block {
+            // Preserve expect_return boolean
+            statements: desugar_stmts(statements, imp, &state.expect_return(expect_return))?
+        },
 
         Node::Int { lit } => Core::Int { int: lit.clone() },
         Node::Real { lit } => Core::Float { float: lit.clone() },
@@ -323,5 +334,16 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
             Core::Block { statements }
         }
-    })
+    };
+
+    if expect_return {
+        match core {
+            // If block, last statement has already been made a return using the desugar_stmts
+            // function
+            Core::Block { .. } | Core::Return { .. } => Ok(core),
+            expr => Ok(Core::Return { expr: Box::from(expr.clone()) })
+        }
+    } else {
+        Ok(core)
+    }
 }

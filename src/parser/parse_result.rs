@@ -174,12 +174,8 @@ impl Display for ParseErr {
 
         write!(
             f,
-            "--> {:#?}:{}:{}
-     | {}
-{}
-{:3}  |- {}
-     | {}{}",
-            self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
+            "--> {}:{}:{}\n     | {}\n{}\n{:3}  |- {}\n     | {}{}",
+            self.path.clone().map_or(String::from("<unknown>"), |path| path.display().to_string()),
             self.position.start.line,
             self.position.start.pos,
             self.msg,

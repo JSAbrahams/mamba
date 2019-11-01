@@ -57,18 +57,13 @@ impl Display for UnimplementedErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "--> {}:{}:{}
-     | {}
-{:3}  |- {}
-     | {}{}",
+            "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     | {}{}",
             self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
             self.position.start.line,
             self.position.start.pos,
             self.msg,
             self.position.start.line,
-            self.source_line
-                .clone()
-                .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
+            self.source_line.clone().unwrap_or(String::from("<unknown>")),
             String::from_utf8(vec![b' '; self.position.end.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
         )

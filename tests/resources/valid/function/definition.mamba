@@ -4,7 +4,7 @@ def fun_a() -> Int? =>
     if False or True then print "world"
 
     def a <- undefined ? if True then 1 else 11
-    undefined
+    if True then 10 else undefined
 
 def fun_b(b: Int) => print b
 

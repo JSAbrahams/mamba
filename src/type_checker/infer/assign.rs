@@ -43,10 +43,8 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             if left_expr == right_expr {
                 Ok((InferType::new().add_raises(&right_ty), env))
             } else {
-                Err(vec![TypeErr::new(
-                    &ast.pos,
-                    &format!("Types must be equal, should be {}, was {}", left_expr, right_expr)
-                )])
+                let msg = format!("Expected a {}, was {}", left_expr, right_expr);
+                Err(vec![TypeErr::new(&ast.pos, &msg)])
             }
         }
         // TODO use forward and private

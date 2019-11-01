@@ -1,21 +1,28 @@
 use crate::core::construct::Core;
-use std::collections::HashSet;
 
+// TODO remove expect_expr once type checker augments AST
 pub struct State {
     pub tup:         usize,
     pub interface:   bool,
     pub expand_ty:   bool,
-    pub expect_expr: bool
+    pub expect_expr: bool,
+    pub expect_ret:  bool
 }
 
 impl State {
     pub fn new() -> State {
-        State { tup: 1, interface: false, expand_ty: true, expect_expr: false }
+        State {
+            tup:         1,
+            interface:   false,
+            expand_ty:   true,
+            expect_expr: false,
+            expect_ret:  false
+        }
     }
 
-    pub fn expect_expr(&self, expect: bool) -> State {
-        State { expect_expr: expect, ..*self.clone() }
-    }
+    pub fn expect_return(&self, expect_ret: bool) -> State { State { expect_ret, ..*self.clone() } }
+
+    pub fn expect_expr(&self, expect_expr: bool) -> State { State { expect_expr, ..*self.clone() } }
 
     pub fn in_tup(&self, tup: usize) -> State { State { tup, ..*self.clone() } }
 

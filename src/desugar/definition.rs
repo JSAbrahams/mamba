@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::desugar_result::DesugarResult;
@@ -44,27 +42,16 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             body:    if state.interface {
                 Box::from(Core::Pass)
             } else {
+                // TODO augment AST in type checker
                 Box::from(match expression {
-                    Some(expr) => match &expr.deref().node {
-                        Node::Block { .. } => desugar_node(
-                            &expr,
-                            imp,
-                            &state.expand_ty(true).expect_expr(ret_ty.is_some())
-                        )?,
-                        _ =>
-                            if ret_ty.is_some() {
-                                // must return result
-                                Core::Return {
-                                    expr: Box::from(desugar_node(
-                                        &expr,
-                                        imp,
-                                        &state.expand_ty(true)
-                                    )?)
-                                }
-                            } else {
-                                desugar_node(&expr, imp, &state.expand_ty(true))?
-                            },
-                    },
+                    Some(expr) => desugar_node(
+                        &expr,
+                        imp,
+                        &state
+                            .expand_ty(true)
+                            .expect_expr(ret_ty.is_some())
+                            .expect_return(ret_ty.is_some())
+                    )?,
                     None => Core::Empty
                 })
             }

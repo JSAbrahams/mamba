@@ -48,18 +48,13 @@ impl Display for LexErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "--> {:#?}:{}:{}
-     | {}
-{:3}  |- {}
-     | {}{}",
-            self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
+            "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     | {}{}",
+            self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string()),
             self.start.line,
             self.start.pos,
             self.msg,
             self.start.line,
-            self.source_line
-                .clone()
-                .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
+            self.source_line.clone().unwrap_or(String::from("<unknown>")),
             String::from_utf8(vec![b' '; self.start.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width) as usize])
                 .unwrap()

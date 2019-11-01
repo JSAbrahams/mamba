@@ -111,7 +111,7 @@ fn constructor_from_inline(
                         property: id.clone()
                     }),
                     right: Box::from(match id.deref() {
-                        Core::IdType { lit, ty } => Core::Id { lit: lit.clone() },
+                        Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
                         id => id.clone()
                     })
                 });

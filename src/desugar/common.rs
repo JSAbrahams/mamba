@@ -22,9 +22,10 @@ pub fn desugar_stmts(
     let mut result = vec![];
     for (i, ast) in node_vec.iter().enumerate() {
         if i == node_vec.len() - 1 {
-            result.push(Core::Return { expr: Box::from(desugar_node(ast, imp, state)?) })
-        } else {
+            // only force the last node to be a return or expression if applicable
             result.push(desugar_node(ast, imp, state)?)
+        } else {
+            result.push(desugar_node(ast, imp, &state.expect_return(false).expect_expr(false))?)
         }
     }
 
