@@ -64,7 +64,9 @@ impl Display for TypeErr {
         let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
         let msg = {
             let mut string = self.msg.replace("\n", "\n     | |  ");
-            string.remove(string.len() - 3);
+            if string.ends_with("|") {
+                string.remove(string.len() - 2);
+            }
             string
         };
 

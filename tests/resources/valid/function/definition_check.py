@@ -9,7 +9,7 @@ def fun_a() -> Optional[int]:
     if False or True:
         print("world")
     a = None or 1 if True else 11
-    return 10 if False else None
+    return None
 
 def fun_b(b: int): print(b)
 
@@ -28,7 +28,10 @@ class MyClass:
         self.a: int = a
         self.b: int = b
 
-    def some_function(self, c: int) -> int: return c + 20
+    def some_function(self, c: int) -> int:
+        d = 20
+        d = 10 + 30
+        return c + 20
 
     def __add__(self, other: MyClass) -> MyClass: return MyClass(self.a + self.b + other.some_function(self.a), self.b)
     def __sub__(self, other: MyClass) -> MyClass: return self + other

@@ -8,25 +8,31 @@ pub mod infer_type;
 pub mod name;
 pub mod state;
 
-// TODO add functions to environment, which may be pure
-
 #[derive(Clone, Debug)]
 pub struct Environment {
-    variables: HashMap<String, ExpressionType>
+    variables: HashMap<String, (bool, ExpressionType)>
 }
 
 impl Environment {
     pub fn new() -> Environment { Environment { variables: HashMap::new() } }
 
-    pub fn lookup(&self, var: &str, pos: &Position) -> TypeResult<ExpressionType> {
+    pub fn lookup_indirect(&self, var: &str, pos: &Position) -> TypeResult<(bool, ExpressionType)> {
         self.variables
             .get(var)
             .cloned()
             .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
     }
 
+    pub fn lookup(&self, var: &str, pos: &Position) -> TypeResult<ExpressionType> {
+        self.variables
+            .get(var)
+            .cloned()
+            .map(|(_, expr_ty)| expr_ty)
+            .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
+    }
+
     pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {
-        self.variables.insert(String::from(var), expr_ty.clone());
+        self.variables.insert(String::from(var), (mutable, expr_ty.clone()));
     }
 
     // TODO implement properly

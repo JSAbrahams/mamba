@@ -106,8 +106,7 @@ impl Type {
             .find_map(|function| match function.name.name(pos) {
                 Err(err) => Some(Err(err)),
                 Ok(name) =>
-                    if name.as_str() == fun_name && args_compatible(&function.arguments, &args, pos)
-                    {
+                    if name.as_str() == fun_name && args_compatible(&function.arguments, &args) {
                         Some(Ok(function.clone()))
                     } else {
                         None

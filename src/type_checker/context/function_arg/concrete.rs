@@ -34,7 +34,7 @@ impl Display for FunctionArg {
     }
 }
 
-pub fn args_compatible(fun_args: &[FunctionArg], args: &[TypeName], pos: &Position) -> bool {
+pub fn args_compatible(fun_args: &[FunctionArg], args: &[TypeName]) -> bool {
     let fun_args: Vec<Option<TypeName>> = fun_args.iter().map(|a| a.ty.clone()).collect();
     let args: Vec<Option<TypeName>> = args.iter().map(|a| Some(a.clone())).collect();
     args == fun_args

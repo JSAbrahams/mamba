@@ -4,7 +4,7 @@ def fun_a() -> Int? =>
     if False or True then print "world"
 
     def a <- undefined ? if True then 1 else 11
-    if False then 10 else undefined
+    undefined
 
 def fun_b(b: Int) => print b
 
@@ -16,7 +16,10 @@ def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int) -> Int
 def fun_v(y: String, ab: String -> String -> Bool) -> String -> Bool => ab(y)
 
 class MyClass(def a: Int, def b: Int)
-    def some_function(self, c: Int) -> Int => c + 20
+    def some_function(self, c: Int) -> Int =>
+        def mut d <- 20
+        d <- 10 + 30
+        c + 20
 
     def +(self, other: MyClass) -> MyClass => MyClass(self.a + self.b + other.some_function(self.a), self.b)
     def -(self, other: MyClass) -> MyClass => self + other

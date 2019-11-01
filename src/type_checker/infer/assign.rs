@@ -26,14 +26,22 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
         )),
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
         Node::Reassign { left, right } => {
-            let (left_ty, env) = infer(left, env, ctx, state)?;
-            let (right_ty, env) = infer(right, &env, ctx, state)?;
+            let id = match &left.node {
+                Node::Id { lit } => lit.clone(),
+                _ => return Err(vec![TypeErr::new(&left.pos, "Expected identifier")])
+            };
 
-            let left_expr = left_ty.expr_ty(&ast.pos)?;
-            // TODO reevaluate how we deal with mutable (should this be expression level?)
-            let right_expr = right_ty.expr_ty(&ast.pos)?;
+            let (right_ty, env) = infer(right, &env, ctx, state)?;
+            let right_expr = right_ty.expr_ty(&right.pos)?;
+
+            let (mutable, left_expr) = env.lookup_indirect(&id, &left.pos)?;
+            if !mutable {
+                let msg = format!("Attempting to assign to immutable variable {}", id);
+                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+            }
+
             if left_expr == right_expr {
-                Ok((InferType::new().add_raises(&left_ty).add_raises(&right_ty), env))
+                Ok((InferType::new().add_raises(&right_ty), env))
             } else {
                 Err(vec![TypeErr::new(
                     &ast.pos,

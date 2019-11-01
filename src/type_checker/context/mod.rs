@@ -146,7 +146,7 @@ impl Context {
             .ok_or(vec![TypeErr::new(pos, &format!("Function {} is undefined", name))])?;
 
         let fun = Function::try_from((fun, &HashMap::new(), pos))?;
-        if !args_compatible(&fun.arguments, &fun_args, pos) {
+        if !args_compatible(&fun.arguments, &fun_args) {
             return Err(vec![TypeErr::new(pos, "arguments not compatible")]);
         }
 
