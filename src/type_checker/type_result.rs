@@ -59,30 +59,30 @@ impl TypeErr {
 }
 
 impl Display for TypeErr {
-    // Deal with Positions that cover multiple lines
+    // TODO deal with Positions that cover multiple lines
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
+        let msg = {
+            let mut string = self.msg.replace("\n", "\n     | |  ");
+            string.remove(string.len() - 3);
+            string
+        };
+
         if let Some(position) = self.position.clone() {
             write!(
                 f,
-                "--> {}:{}:{}
-     | {}
-{:3}  |- {}
-     |  {}{}",
-                self.path
-                    .clone()
-                    .map_or(String::from("<unknown>"), |path| path.display().to_string()),
+                "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     |  {}{}",
+                path,
                 position.start.line,
                 position.start.pos,
-                self.msg,
+                msg,
                 position.start.line,
-                self.source_line
-                    .clone()
-                    .map_or(String::from("<unknown>"), |line| format!("{:#?}", line)),
-                String::from_utf8(vec![b' '; position.start.pos as usize]).unwrap(),
+                self.source_line.clone().unwrap_or(String::from("<unknown>")),
+                String::from_utf8(vec![b' '; position.start.pos as usize - 1]).unwrap(),
                 String::from_utf8(vec![b'^'; position.get_width() as usize]).unwrap()
             )
         } else {
-            write!(f, "{}", self.msg)
+            write!(f, "--> {}\n     | {}", path, msg)
         }
     }
 }

@@ -126,7 +126,7 @@ fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator)
         _ => return Err(custom("Function definition not given id or operator", &id_type.pos))
     };
 
-    let ret_ty = it.parse_if(&Token::DoublePoint, &parse_type, "function return type", &start)?;
+    let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", &start)?;
     let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises", &start)?;
     let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", &start)?;
 

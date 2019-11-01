@@ -66,7 +66,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
                         env = new_env;
                     }
 
-                    let function = expr_ty.fun(&name, &arg_names, state.nullable, &instance.pos)?;
+                    let function = expr_ty.fun(&name, &arg_names, state.nullable, &ast.pos)?;
                     let function_ty_name = &function
                         .ty()
                         .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of function")])?;

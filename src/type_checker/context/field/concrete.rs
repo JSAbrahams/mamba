@@ -11,15 +11,18 @@ use std::fmt;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
     pub is_py_type: bool,
-    pub name: String,
-    pub ty: Option<TypeName>,
+    pub name:       String,
+    pub ty:         Option<TypeName>
 }
 
 impl Display for Field {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}{}",
-               &self.name,
-               if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() })
+        write!(
+            f,
+            "{}{}",
+            &self.name,
+            if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() }
+        )
     }
 }
 
@@ -37,11 +40,11 @@ impl TryFrom<(&GenericField, &HashMap<String, TypeName>, &Position)> for Field {
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,
-            name: field.name.clone(),
-            ty: match &field.ty {
+            name:       field.name.clone(),
+            ty:         match &field.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
-            },
+            }
         })
     }
 }
