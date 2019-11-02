@@ -20,11 +20,11 @@ class MyClass2[C, A isa MyGeneric](def my_field: Int, other_field <- "Hello") is
     def private fun_b(self) => print "this function is private!"
 
     def factorial(self, x: Int <- 0) => x * self.factorial (x - 1)
-    def factorial_infinite(self, x: Int) => x * self.factorial x
+    def factorial_infinite(self, x: Int) => x * self.factorial(x)
 
-    def a(self) => self.a self.b
-    def b(self, c: C) => self.a self.b self.c
-    def c(self, d: D) => self.a self.b self.c d
+    def a(self) => self.a(self.b)
+    def b(self, c: C) => self.a(self.b(self.c))
+    def c(self, d: D) => self.a(self.b(self.c(d)))
 
-    def some_higher_order (self, fun: Int -> Int) => 0
+    def some_higher_order(self, fun: Int -> Int) => 0
     def fancy(self) => self.some_higher_order(\x => x * 2)

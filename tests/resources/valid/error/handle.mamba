@@ -1,3 +1,13 @@
+class MyErr1 isa Exception
+    def init() => pass
+class MyErr2 isa Exception
+    def init() => pass
+
+# TODO fix fragile parsing rules for if statements
+def f(x: Int) -> Int raises [MyErr1, MyErr2] =>
+    if x < 0 then MyErr1() else if x > 10 then MyErr2()
+    else x + 2
+
 def a <- f(10) handle
     err: MyErr1 => print "Something went wrong"
     err: MyErr2 => print "Something else went wrong"

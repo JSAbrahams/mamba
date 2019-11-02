@@ -15,9 +15,3 @@ fn core_function_calling() {
     let source = resource_content(true, &["function"], "calls.mamba");
     to_py!(source);
 }
-
-#[test]
-fn core_infix_function_calling() {
-    let source = resource_content(true, &["function"], "infix_calls.mamba");
-    to_py!(source);
-}

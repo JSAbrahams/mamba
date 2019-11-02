@@ -4,9 +4,10 @@ use mamba::parser::ast::Node;
 use mamba::parser::parse;
 
 #[test]
-fn parse_class() {
+fn parse_class() -> Result<(), String> {
     let source = resource_content(true, &["class"], "types.mamba");
-    parse(&tokenize(&source).unwrap()).unwrap();
+    parse(&tokenize(&source).unwrap()).map_err(|e| format!("{}", e))?;
+    Ok(())
 }
 
 #[test]

@@ -6,7 +6,7 @@ b = {(1, 4), (2, 5)}
 for (first, second) in b:
     print(first + second)
 
-e = {1,2,3,4,5,6,7,8,9,10}
+e = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 for d in e:
     print(d)
     print(d - 1)

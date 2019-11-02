@@ -5,9 +5,9 @@ from typing import Callable
 def fun_a() -> Optional[int]:
     print(11)
     if True and True:
-        print("hello")
+        print(f"hello")
     if False or True:
-        print("world")
+        print(f"world")
     a = None or 1 if True else 11
     return 10 if True else None
 
@@ -15,7 +15,7 @@ def fun_b(b: int): print(b)
 
 def fun_c(d: Tuple[str, int]): print(d)
 
-def fun_d(h: Callable[[str, str], int])-> Optional[int]: return h("hello", "world")
+def fun_d(h: Callable[[str, str], int])-> Optional[int]: return h(f"hello", f"world")
 
 def fun_e(m: int, o: Tuple[str, str], r: Callable[[int, Tuple[str, str]], int]) -> int: return r(m, o)
 
