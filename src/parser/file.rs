@@ -66,7 +66,7 @@ pub fn parse_script(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_module(it: &mut LexIterator) -> ParseResult {
-    if it.peak_if_fn(&|lex| lex.token == Token::Class) {
+    if it.peek_if(&|lex| lex.token == Token::Class) {
         parse_class(it)
     } else {
         parse_script(it)

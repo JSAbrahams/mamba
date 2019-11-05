@@ -46,7 +46,7 @@ impl InferType {
             expr_type: match (&self.expr_type, &other.expr_type) {
                 (None, None) => None,
                 (Some(self_ty), Some(other_ty)) => Some(self_ty.clone().union(other_ty)),
-                _ => return Err(TypeErr::new(pos, "Types are incompatible"))
+                (Some(ty), None) | (None, Some(ty)) => Some(ty.clone())
             }
         })
     }

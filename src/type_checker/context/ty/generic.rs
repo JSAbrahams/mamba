@@ -53,9 +53,13 @@ impl TryFrom<&AST> for GenericType {
             // TODO add pure classes
             Node::Class { _type, args, parents, body } => {
                 let (name, generics) = get_name_and_generics(_type)?;
-                let statements = match &body.node {
-                    Node::Block { statements } => statements,
-                    _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")])
+                let statements = if let Some(body) = body {
+                    match &body.node {
+                        Node::Block { statements } => statements.clone(),
+                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")])
+                    }
+                } else {
+                    vec![]
                 };
 
                 let mut class_args = vec![];
@@ -76,7 +80,7 @@ impl TryFrom<&AST> for GenericType {
                 }
 
                 let (body_fields, functions) =
-                    get_fields_and_functions(&name, statements, &class.pos)?;
+                    get_fields_and_functions(&name, &statements, &class.pos)?;
                 for function in functions.clone() {
                     if function.name == ActualTypeName::new(concrete::INIT, &vec![]) {
                         if class_args.is_empty() {

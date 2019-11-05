@@ -3,7 +3,7 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::LexIterator;
-use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::{expected_one_of, ParseResult};
 
 // TODO look at whether we can handle class and type tokens more elegantly
 pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
@@ -25,7 +25,12 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
             }
             _ => {
                 statements.push(*it.parse(&parse_expr_or_stmt, "block", &start)?);
-                Ok(())
+                if it.peek_if(&|lex| lex.token != Token::NL && lex.token != Token::Dedent) {
+                    // TODO pass actual current
+                    Err(expected_one_of(&[Token::NL, Token::Dedent], lex, "block"))
+                } else {
+                    Ok(())
+                }
             }
         }
     )?;

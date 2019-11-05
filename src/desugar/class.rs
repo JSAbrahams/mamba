@@ -35,41 +35,55 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
 
-        Node::Class { _type, body, args, parents } => match (&_type.node, &body.node) {
-            (Node::Type { id, .. }, Node::Block { statements }) => {
-                let (parent_names, parent_args, super_calls) =
-                    extract_parents(parents, imp, state)?;
-                let core_definitions: Vec<Core> = desugar_vec(statements, imp, state)?;
-                let inline_args = desugar_vec(args, imp, state)?;
-
-                let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
-                    desugar_vec(statements, imp, state)?
-                } else {
-                    let (found_constructor, augmented_definitions) =
-                        add_parent_to_constructor(&core_definitions, &parent_args, &super_calls)?;
-
-                    if found_constructor && !args.is_empty() {
-                        panic!("Cannot have explicit constructor and inline arguments.")
-                    } else if found_constructor {
-                        augmented_definitions
-                    } else {
-                        constructor_from_inline(
-                            &inline_args,
-                            &parent_args,
-                            &super_calls,
-                            &augmented_definitions
-                        )?
-                    }
-                };
-
-                Core::ClassDef {
-                    name:        Box::from(desugar_node(id, imp, state)?),
-                    parents:     parent_names,
-                    definitions: final_definitions
+        Node::Class { _type, body, args, parents } => {
+            let statements = if let Some(body) = body {
+                match &body.deref().node {
+                    Node::Block { statements } => statements.clone(),
+                    _ => vec![]
                 }
+            } else {
+                vec![]
+            };
+
+            match &_type.node {
+                Node::Type { id, .. } => {
+                    let (parent_names, parent_args, super_calls) =
+                        extract_parents(parents, imp, state)?;
+                    let core_definitions: Vec<Core> = desugar_vec(&statements, imp, state)?;
+                    let inline_args = desugar_vec(args, imp, state)?;
+
+                    let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
+                        desugar_vec(&statements, imp, state)?
+                    } else {
+                        let (found_constructor, augmented_definitions) = add_parent_to_constructor(
+                            &core_definitions,
+                            &parent_args,
+                            &super_calls
+                        )?;
+
+                        if found_constructor && !args.is_empty() {
+                            panic!("Cannot have explicit constructor and inline arguments.")
+                        } else if found_constructor {
+                            augmented_definitions
+                        } else {
+                            constructor_from_inline(
+                                &inline_args,
+                                &parent_args,
+                                &super_calls,
+                                &augmented_definitions
+                            )?
+                        }
+                    };
+
+                    Core::ClassDef {
+                        name:        Box::from(desugar_node(id, imp, state)?),
+                        parents:     parent_names,
+                        definitions: final_definitions
+                    }
+                }
+                other => panic!("Didn't recognize while making class: {:?}.", other)
             }
-            other => panic!("Didn't recognize while making class: {:?}.", other)
-        },
+        }
         other => panic!("Expected class or type definition but was {:?}", other)
     })
 }

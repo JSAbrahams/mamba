@@ -1,8 +1,6 @@
 use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
-use crate::parser::call::parse_call;
-use crate::parser::expression::is_start_expression_exclude_unary;
 use crate::parser::expression::parse_expression;
 use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::ParseResult;
@@ -28,17 +26,7 @@ macro_rules! inner_bin_op {
 /// in not, is a, is not a
 /// 7. and, or, question or
 /// 8. postfix calls
-pub fn parse_operation(it: &mut LexIterator) -> ParseResult { parse_level_8(it) }
-
-fn parse_level_8(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_level_7, "operation", &start)?;
-    if it.peak_if_fn(&is_start_expression_exclude_unary) {
-        parse_call(&arithmetic, it)
-    } else {
-        Ok(arithmetic)
-    }
-}
+pub fn parse_operation(it: &mut LexIterator) -> ParseResult { parse_level_7(it) }
 
 fn parse_level_7(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;

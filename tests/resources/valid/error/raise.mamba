@@ -1,3 +1,6 @@
+class Err(def msg: String) isa Exception(msg)
+
 def f(x: Int) -> Int raises[Err] => if x > 0 then raise Err("asdf") else 10
 
+f(10)
 f(10) raises [MyErr]

@@ -147,7 +147,7 @@ fn sub_op_verify() {
 fn sqrt_op_verify() {
     let sqrt_node = to_pos!(Node::SqrtOp);
     let result = desugar(&sqrt_node);
-    assert!(result.is_err());
+    assert!(result.is_ok());
 }
 
 #[test]

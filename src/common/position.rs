@@ -66,5 +66,5 @@ impl Default for Position {
 }
 
 impl Default for EndPoint {
-    fn default() -> Self { EndPoint { line: 0, pos: 0 } }
+    fn default() -> Self { EndPoint { line: 1, pos: 1 } }
 }

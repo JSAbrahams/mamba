@@ -98,7 +98,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
         "type"
     )?;
 
-    let _type = if it.peak_if_fn(&|lex| lex.token == Token::Question) {
+    let _type = if it.peek_if(&|lex| lex.token == Token::Question) {
         it.eat(&Token::Question, "optional type")?;
         Box::from(AST { pos: _type.pos.clone(), node: Node::QuestionOp { expr: _type.clone() } })
     } else {

@@ -46,9 +46,16 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     }
 
     it.eat(&Token::NL, "class")?;
-    let body = it.parse(&parse_block, "class", &start)?;
-    let node = Node::Class { _type, args, parents, body: body.clone() };
-    Ok(Box::from(AST::new(&start.union(&body.pos), node)))
+    let (body, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
+        let body = it.parse(&parse_block, "class", &start)?;
+        let pos = start.union(&body.pos);
+        (Some(body), pos)
+    } else {
+        (None, start)
+    };
+
+    let node = Node::Class { _type, args, parents, body };
+    Ok(Box::from(AST::new(&pos, node)))
 }
 
 pub fn parse_parent(it: &mut LexIterator) -> ParseResult {

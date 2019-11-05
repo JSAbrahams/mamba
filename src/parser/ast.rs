@@ -32,7 +32,7 @@ pub enum Node {
         _type:   Box<AST>,
         args:    Vec<AST>,
         parents: Vec<AST>,
-        body:    Box<AST>
+        body:    Option<Box<AST>>
     },
     Generic {
         id:  Box<AST>,

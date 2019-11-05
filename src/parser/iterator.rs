@@ -16,7 +16,7 @@ pub struct LexIterator<'a> {
 impl<'a> LexIterator<'a> {
     pub fn new(it: Peekable<Iter<'a, Lex>>) -> LexIterator { LexIterator { it } }
 
-    pub fn peak_if_fn(&mut self, fun: &dyn Fn(&Lex) -> bool) -> bool {
+    pub fn peek_if(&mut self, fun: &dyn Fn(&Lex) -> bool) -> bool {
         if let Some(tp) = self.it.peek() {
             fun(tp)
         } else {
@@ -153,7 +153,7 @@ impl<'a> LexIterator<'a> {
     pub fn start_pos(&mut self, msg: &str) -> ParseResult<Position> {
         match self.it.peek() {
             Some(Lex { pos, .. }) => Ok(pos.clone()),
-            None => Err(eof_expected_one_of(&[], msg))
+            None => Err(eof_expected_one_of(&[], &format!("start of a {}", msg)))
         }
     }
 }

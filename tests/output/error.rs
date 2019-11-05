@@ -39,11 +39,17 @@ fn handle_ast_verify() -> Result<(), Vec<(String, String)>> {
 
 #[test]
 fn raise_ast_verify() -> Result<(), Vec<(String, String)>> {
-    transpile_directory(
+    let result = transpile_directory(
         &Path::new(&resource_path(true, &["error"], "")),
         Some("raise.mamba"),
         None
-    )?;
+    );
+
+    if let Err(errs) = result {
+        for (ty, msg) in errs {
+            println!("{}{}", ty, msg)
+        }
+    }
 
     let cmd = Command::new(PYTHON)
         .arg("-m")

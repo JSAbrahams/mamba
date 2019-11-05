@@ -35,6 +35,7 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(&start.union(&body.pos), node)))
 }
 
+// TODO re-add postfix function calling
 pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
         &|it, ast| match ast.token {
