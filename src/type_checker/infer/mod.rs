@@ -90,7 +90,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::Handle { .. } => infer_error(ast, env, ctx, state),
         Node::Retry => infer_error(ast, env, ctx, state),
 
-        Node::With { .. } => unimplemented!(),
+        Node::With { .. } => infer_error(ast, env, ctx, state),
         Node::AnonFun { .. } => unimplemented!(),
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx, state),
 

@@ -38,7 +38,7 @@ impl NullableType {
         }
     }
 
-    pub fn args(&self, args: &[TypeName], pos: &Position) -> TypeResult<NullableType> {
+    pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<NullableType> {
         Ok(NullableType {
             is_nullable: self.is_nullable,
             actual_ty:   self.actual_ty.args(args, pos)?

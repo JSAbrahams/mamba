@@ -30,10 +30,10 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context, state: &State) ->
                     env.clone()
                 )),
                 Err(_) => match ctx.lookup_fun(&fun_name, &arg_names, &ast.pos) {
-                    // see if function is constructor of type
+                    // else, see if constructor of type
                     Err(_) => {
                         let expr_ty = ctx.lookup(&fun_name, &name.pos)?;
-                        expr_ty.args(&arg_names, &ast.pos)?;
+                        expr_ty.constructor(&arg_names, &ast.pos)?;
                         Ok((InferType::from(&expr_ty).union_raises(&raises), env))
                     }
                     Ok(ok) => Ok((ok, env))

@@ -1,0 +1,4 @@
+def my_string <- "my string"
+
+with my_string as my_int: Int
+    print "error"

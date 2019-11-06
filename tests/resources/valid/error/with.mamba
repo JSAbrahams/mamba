@@ -1,5 +1,12 @@
+def do_something(x: Int) => print("hello world {x}")
+
+def my_resource <- 10
+
 with my_resource as other
-    do_something()
+    do_something(other)
+
+with my_resource as yet_another: Int
+    do_something(yet_another)
 
 with my_resource
-    do_something()
+    do_something(my_resource)

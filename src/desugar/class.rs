@@ -88,6 +88,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
     })
 }
 
+// TODO simplify application logic
 fn constructor_from_inline(
     inline_args: &[Core],
     parent_args: &[Core],
@@ -117,18 +118,25 @@ fn constructor_from_inline(
                     }
                 });
 
-                final_definitions
-                    .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) });
-                statements.push(Core::Assign {
-                    left:  Box::from(Core::PropertyCall {
-                        object:   Box::new(Core::Id { lit: String::from("self") }),
-                        property: id.clone()
-                    }),
-                    right: Box::from(match id.deref() {
-                        Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
-                        id => id.clone()
-                    })
-                });
+                let id = match &id.deref() {
+                    Core::IdType { lit, .. } => Box::from(Core::Id { lit: lit.clone() }),
+                    _ => id.clone()
+                };
+
+                if !parent_args.contains(&id) {
+                    final_definitions
+                        .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) });
+                    statements.push(Core::Assign {
+                        left:  Box::from(Core::PropertyCall {
+                            object:   Box::new(Core::Id { lit: String::from("self") }),
+                            property: id.clone()
+                        }),
+                        right: Box::from(match id.deref() {
+                            Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
+                            id => id.clone()
+                        })
+                    });
+                }
             }
             _ => panic!("Inline arg was not function argument: {:?}", inline_arg)
         }

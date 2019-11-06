@@ -31,6 +31,10 @@ impl Environment {
             .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
     }
 
+    pub fn remove(&mut self, var: &str) -> Option<(bool, ExpressionType)> {
+        self.variables.remove(var)
+    }
+
     pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {
         self.variables.insert(String::from(var), (mutable, expr_ty.clone()));
     }

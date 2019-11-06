@@ -40,13 +40,23 @@ impl InferType {
 
     pub fn is_stmt(&self) -> bool { self.expr_type.is_none() }
 
+    // TODO make union error if union between statement and expression
     pub fn union(self, other: &InferType, pos: &Position) -> Result<InferType, TypeErr> {
         Ok(InferType {
             raises:    self.raises.union(&other.raises).cloned().collect(),
             expr_type: match (&self.expr_type, &other.expr_type) {
                 (None, None) => None,
                 (Some(self_ty), Some(other_ty)) => Some(self_ty.clone().union(other_ty)),
-                (Some(ty), None) | (None, Some(ty)) => Some(ty.clone())
+                (Some(_), None) =>
+                    return Err(TypeErr::new(
+                        pos,
+                        "Cannot make union between expression and statement"
+                    )),
+                (None, Some(_)) =>
+                    return Err(TypeErr::new(
+                        pos,
+                        "Cannot make union between statement and expression"
+                    )),
             }
         })
     }

@@ -278,7 +278,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::With { resource, _as, expr } => match _as {
             Some(_as) => Core::WithAs {
                 resource: Box::from(desugar_node(resource, imp, state)?),
-                _as:      Box::from(desugar_node(_as, imp, state)?),
+                _as:      Box::from(desugar_node(_as, imp, &state.expand_ty(false))?),
                 expr:     Box::from(desugar_node(expr, imp, state)?)
             },
             None => Core::With {

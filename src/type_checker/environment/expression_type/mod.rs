@@ -178,11 +178,15 @@ impl ExpressionType {
         }
     }
 
-    pub fn args(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
+    pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
         Ok(match &self {
-            ExpressionType::Single { ty } => ExpressionType::Single { ty: ty.args(args, pos)? },
+            ExpressionType::Single { ty } =>
+                ExpressionType::Single { ty: ty.constructor(args, pos)? },
             ExpressionType::Union { union } => ExpressionType::Union {
-                union: union.iter().map(|ty| ty.args(args, pos)).collect::<Result<_, _>>()?
+                union: union
+                    .iter()
+                    .map(|ty| ty.constructor(args, pos))
+                    .collect::<Result<_, _>>()?
             }
         })
     }

@@ -4,9 +4,9 @@ class Err(Exception):
 
 def f(x: int) -> int:
     if x > 0:
-        raise Err("asdf")
-    else:
         return 10
+    else:
+        raise Err("Expected positive number.")
 
 f(10)
 f(10)
