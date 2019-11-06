@@ -22,11 +22,11 @@ def fun_e(m: int, o: Tuple[str, str], r: Callable[[int, Tuple[str, str]], int]) 
 def fun_v(y: str, ab: Callable[[str], Callable[[str], bool]]) -> Callable[[str], bool]: return ab(y)
 
 class MyClass:
-    a: int = None
-    b: int = None
+    a = None
+    b = None
     def __init__(self, a: int, b: int):
-        self.a: int = a
-        self.b: int = b
+        self.a = a
+        self.b = b
 
     def some_function(self, c: int) -> int:
         d = 20

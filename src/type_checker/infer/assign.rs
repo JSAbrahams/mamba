@@ -43,7 +43,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             if left_expr == right_expr {
                 Ok((InferType::new().add_raises(&right_ty), env))
             } else {
-                let msg = format!("Expected a {}, was {}", left_expr, right_expr);
+                let msg = format!("Expected {}, but was {}", left_expr, right_expr);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])
             }
         }
