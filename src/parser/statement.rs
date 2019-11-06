@@ -68,6 +68,7 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_operation, "with", &start)?;
     let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id", &start)?;
+    it.eat(&Token::Do, "with")?;
     let expr = it.parse(&parse_expr_or_stmt, "with", &start)?;
 
     let node = Node::With { resource, _as, expr: expr.clone() };

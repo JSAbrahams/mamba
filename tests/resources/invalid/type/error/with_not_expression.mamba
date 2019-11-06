@@ -1,4 +1,4 @@
 def not_an_expression() => print "not an expression"
 
-with not_an_expression() as my_expression
+with not_an_expression() as my_expression do
     print "not an expression!"
