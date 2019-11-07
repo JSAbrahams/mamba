@@ -2,9 +2,8 @@ use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
-use crate::parser::expression::parse_expression;
 use crate::parser::iterator::LexIterator;
-use crate::parser::operation::parse_operation;
+use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
@@ -23,7 +22,7 @@ pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
 fn parse_if(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("if expression")?;
     it.eat(&Token::If, "if expressions")?;
-    let cond = it.parse(&parse_operation, "if expression", &start)?;
+    let cond = it.parse(&parse_expression, "if expression", &start)?;
     it.eat(&Token::Then, "if expression")?;
     let then = it.parse(&parse_expr_or_stmt, "if expression", &start)?;
     let _else = it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
@@ -38,7 +37,7 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
 fn parse_match(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match")?;
     it.eat(&Token::Match, "match")?;
-    let cond = it.parse(&parse_operation, "match", &start)?;
+    let cond = it.parse(&parse_expression, "match", &start)?;
     it.eat(&Token::NL, "match")?;
     let cases = it.parse_vec(&parse_match_cases, "match", &start)?;
     let end = cases.last().cloned().map_or(cond.pos.clone(), |case| case.pos);

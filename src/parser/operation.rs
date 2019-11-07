@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
-use crate::parser::expression::parse_expression;
+use crate::parser::expression::parse_inner_expression;
 use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::ParseResult;
 
@@ -26,7 +26,7 @@ macro_rules! inner_bin_op {
 /// in not, is a, is not a
 /// 7. and, or, question or
 /// 8. postfix calls
-pub fn parse_operation(it: &mut LexIterator) -> ParseResult { parse_level_7(it) }
+pub fn parse_expression(it: &mut LexIterator) -> ParseResult { parse_level_7(it) }
 
 fn parse_level_7(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
@@ -136,8 +136,8 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::Mod => bin_op!(it, parse_level_3, Mod, arithmetic.clone(), "mod"),
             Token::Range => {
                 it.eat(&Token::Range, "operation")?;
-                let to = it.parse(&parse_operation, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_operation, "step", &start)?;
+                let to = it.parse(&parse_expression, "operation", &start)?;
+                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
                 let node = Node::Range {
                     from: arithmetic.clone(),
                     to: to.clone(),
@@ -148,8 +148,8 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             }
             Token::RangeIncl => {
                 it.eat(&Token::RangeIncl, "operation")?;
-                let to = it.parse(&parse_operation, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_operation, "step", &start)?;
+                let to = it.parse(&parse_expression, "operation", &start)?;
+                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
                 let node =
                     Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
                 Ok(Box::from(AST::new(&start.union(&to.pos), node)))
@@ -175,11 +175,11 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
     } else if it.eat_if(&Token::Sub).is_some() {
         un_op!(it, parse_level_2, Sub, SubU, "subtract")
     } else if it.eat_if(&Token::Sqrt).is_some() {
-        un_op!(it, parse_operation, Sqrt, Sqrt, "square root")
+        un_op!(it, parse_expression, Sqrt, Sqrt, "square root")
     } else if it.eat_if(&Token::Not).is_some() {
-        un_op!(it, parse_operation, Not, Not, "not")
+        un_op!(it, parse_expression, Not, Not, "not")
     } else if it.eat_if(&Token::BOneCmpl).is_some() {
-        un_op!(it, parse_operation, BOneCmpl, BOneCmpl, "bitwise ones compliment")
+        un_op!(it, parse_expression, BOneCmpl, BOneCmpl, "bitwise ones compliment")
     } else {
         parse_level_1(it)
     }
@@ -187,7 +187,7 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
 
 fn parse_level_1(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("operation")?;
-    let arithmetic = it.parse(&parse_expression, "operation", &start)?;
+    let arithmetic = it.parse(&parse_inner_expression, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
             inner_bin_op!($it, &start, $fun, $ast, $arithmetic, $msg)
@@ -197,6 +197,12 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
     it.peek(
         &|it, lex| match lex.token {
             Token::Pow => bin_op!(it, parse_level_1, Pow, arithmetic.clone(), "exponent"),
+            Token::Question => {
+                it.eat(&Token::Question, "optional expression")?;
+                let right = it.parse(&parse_expression, "optional expression", &lex.pos)?;
+                let node = Node::Question { left: arithmetic.clone(), right: right.clone() };
+                Ok(Box::from(AST::new(&lex.pos.union(&right.pos), node)))
+            }
             _ => Ok(arithmetic.clone())
         },
         Ok(arithmetic.clone())

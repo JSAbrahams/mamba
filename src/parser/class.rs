@@ -7,7 +7,7 @@ use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
 use crate::parser::definition::{parse_definition, parse_fun_arg};
 use crate::parser::iterator::LexIterator;
-use crate::parser::operation::parse_operation;
+use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::parse_result::{expected, expected_one_of};
 
@@ -74,7 +74,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                 Ok(())
             }
             Token::Str { .. } => {
-                args.push(*it.parse(&parse_operation, "parent arguments", &start)?);
+                args.push(*it.parse(&parse_expression, "parent arguments", &start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }

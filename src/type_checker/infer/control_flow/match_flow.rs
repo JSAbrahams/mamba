@@ -59,10 +59,7 @@ pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
                 _ =>
                     return Err(vec![TypeErr::new(
                         &cond.pos,
-                        &format!(
-                            "Currently, condition may only be identifier or literal {:?}",
-                            cond
-                        )
+                        "Currently, condition may only be identifier or literal"
                     )]),
             };
 

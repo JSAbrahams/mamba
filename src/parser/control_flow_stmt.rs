@@ -4,7 +4,7 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::LexIterator;
-use crate::parser::operation::parse_operation;
+use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
@@ -35,7 +35,7 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
 fn parse_while(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("while statement")?;
     it.eat(&Token::While, "while statement")?;
-    let cond = it.parse(&parse_operation, "while statement", &start)?;
+    let cond = it.parse(&parse_expression, "while statement", &start)?;
     it.eat(&Token::Do, "while")?;
     let body = it.parse(&parse_expr_or_stmt, "while statement", &start)?;
 
@@ -48,7 +48,7 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::For, "for statement")?;
     let expr = it.parse(&parse_id, "for statement", &start)?;
     it.eat(&Token::In, "for statement")?;
-    let col = it.parse(&parse_operation, "for statement", &start)?;
+    let col = it.parse(&parse_expression, "for statement", &start)?;
     it.eat(&Token::Do, "for statement")?;
     let body = it.parse(&parse_expr_or_stmt, "for statement", &start)?;
 

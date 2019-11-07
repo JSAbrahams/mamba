@@ -7,7 +7,7 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::LexIterator;
-use crate::parser::operation::parse_operation;
+use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::custom;
 use crate::parser::parse_result::ParseResult;
 
@@ -166,7 +166,7 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
 
     let id_maybe_type = it.parse(&parse_id_maybe_type, "function argument", start)?;
     let default =
-        it.parse_if(&Token::Assign, &parse_operation, "function argument default", start)?;
+        it.parse_if(&Token::Assign, &parse_expression, "function argument default", start)?;
 
     let end = default.clone().map_or(id_maybe_type.pos.clone(), |def| def.pos);
     let node = Node::FunArg { vararg, id_maybe_type, default };
@@ -187,7 +187,7 @@ pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> ParseResult {
     let start = &id.pos;
-    let expression = it.parse_if(&Token::Assign, &parse_operation, "definition body", start)?;
+    let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body", start)?;
     let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", start)?;
 
     let end = &match (&expression, &forward.last()) {

@@ -9,11 +9,11 @@ use crate::parser::call::parse_reassignment;
 use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::iterator::LexIterator;
-use crate::parser::operation::parse_operation;
+use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
-pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
+pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("literal")?;
     macro_rules! literal {
         ($it:expr, $factor:expr, $ast:ident) => {{
@@ -47,7 +47,7 @@ pub fn parse_expression(it: &mut LexIterator) -> ParseResult {
             }
 
             Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl =>
-                parse_operation(it),
+                parse_expression(it),
 
             Token::BSlash => parse_anon_fun(it),
 
@@ -120,13 +120,6 @@ fn parse_underscore(it: &mut LexIterator) -> ParseResult {
 fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
     it.peek(
         &|it, lex| match lex.token {
-            Token::Question => {
-                it.eat(&Token::Question, "postfix expression")?;
-                let right = it.parse(&parse_operation, "postfix expression", &lex.pos)?;
-                let node = Node::Question { left: Box::new(pre.clone()), right: right.clone() };
-                let res = AST::new(&lex.pos.union(&right.pos), node);
-                parse_post_expr(&res, it)
-            }
             Token::Assign => {
                 let res = parse_reassignment(pre, it)?;
                 parse_post_expr(&res, it)
@@ -156,7 +149,7 @@ fn parse_return(it: &mut LexIterator) -> ParseResult {
         return Ok(Box::from(AST::new(&start.union(&end), node)));
     }
 
-    let expr = it.parse(&parse_operation, "return", &start)?;
+    let expr = it.parse(&parse_expression, "return", &start)?;
     Ok(Box::from(AST::new(&start.union(&expr.pos), Node::Return { expr })))
 }
 
