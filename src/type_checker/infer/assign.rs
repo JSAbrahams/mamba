@@ -25,6 +25,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             env.clone()
         )),
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
+        Node::IdType { .. } => Ok((InferType::new(), env.clone())),
         Node::Reassign { left, right } => {
             let id = match &left.node {
                 Node::Id { lit } => lit.clone(),

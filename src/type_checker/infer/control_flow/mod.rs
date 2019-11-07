@@ -11,8 +11,11 @@ use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::state::StateType::InLoop;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::collection::iterable_generic;
+use crate::type_checker::infer::control_flow::match_flow::infer_match;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
+
+mod match_flow;
 
 pub fn infer_control_flow(
     ast: &AST,
@@ -52,10 +55,8 @@ pub fn infer_control_flow(
             let (_, env) = infer(body, &cond_env, ctx, &state.clone().as_state(InLoop))?;
             Ok((InferType::new(), env))
         }
-
-        Node::Match { .. } => unimplemented!(),
-        Node::Case { .. } => unimplemented!(),
-
+        Node::Match { .. } => infer_match(ast, env, ctx, state),
+        Node::Case { .. } => infer_match(ast, env, ctx, state),
         Node::For { expr, col, body } => {
             let identifier = Identifier::try_from(expr.deref())?;
             let (col_ty, mut env) = infer(col, &env, ctx, state)?;

@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -63,22 +62,10 @@ pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 fn parse_match_case(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match case")?;
-    let cond = it.parse(&parse_id_maybe_type, "match case", &start)?;
+    let cond = it.parse(&parse_expression, "match case", &start)?;
     it.eat(&Token::BTo, "match case")?;
     let body = it.parse(&parse_expr_or_stmt, "match case", &start)?;
 
     let node = Node::Case { cond, body: body.clone() };
     Ok(Box::from(AST::new(&start.union(&body.pos), node)))
-}
-
-pub fn parse_id_maybe_type(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("expression maybe type")?;
-    let mutable = it.eat_if(&Token::Mut).is_some();
-
-    let id = it.parse(&parse_expression, "expression maybe type", &start)?;
-    let _type = it.parse_if(&Token::DoublePoint, &parse_type, "id type", &start)?;
-
-    let end = _type.clone().map_or(id.pos.clone(), |t| t.pos);
-    let node = Node::IdType { id, mutable, _type };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
 }

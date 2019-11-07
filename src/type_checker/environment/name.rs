@@ -10,6 +10,7 @@ use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
+use std::ops::Deref;
 
 #[derive(Clone, Debug)]
 pub struct Identifier {
@@ -34,6 +35,7 @@ impl TryFrom<&AST> for Identifier {
         match &ast.node {
             // TODO add mutable field to identifier
             Node::Id { lit } => Ok(Identifier::from(lit.as_str())),
+            Node::IdType { id, .. } => Identifier::try_from(id.deref()),
             Node::Tuple { elements } =>
                 Ok(Identifier::from(&elements.iter().map(Identifier::try_from).collect::<Result<
                     Vec<Identifier>,

@@ -94,7 +94,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::AnonFun { .. } => unimplemented!(),
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx, state),
 
-        Node::IdType { .. } => Ok((InferType::new(), env.clone())),
+        Node::IdType { .. } => infer_assign(ast, env, ctx, state),
         Node::TypeDef { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeAlias { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeTup { .. } => Ok((InferType::new(), env.clone())),

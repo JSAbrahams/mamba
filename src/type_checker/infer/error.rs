@@ -37,7 +37,26 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             }
         }
 
-        Node::Handle { .. } => unimplemented!(),
+        Node::Handle { expr_or_stmt, cases } => {
+            let (cond_ty, mut env) = infer(expr_or_stmt, env, ctx, state)?;
+            let state = state.handling(&cond_ty.raises.into_iter().collect());
+
+            let mut ty: Option<InferType> = None;
+            for case in cases {
+                let (case_ty, new_env) = infer(case, &env, ctx, &state)?;
+                env = new_env;
+                ty = if let Some(ty) = ty {
+                    Some(ty.union(&case_ty, &case.pos)?)
+                } else {
+                    Some(case_ty)
+                };
+            }
+
+            match ty {
+                Some(ty) => Ok((ty, env)),
+                None => Err(vec![TypeErr::new(&ast.pos, "Match must have arms")])
+            }
+        }
 
         Node::Retry =>
             if !(state.in_handle) {

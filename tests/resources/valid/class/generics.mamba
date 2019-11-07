@@ -9,22 +9,22 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
         if z > 10 then raise Err("Something is wrong!")
         self.z_modified <- "fdsa"
 
-        def something <- match c
-            b => d
-            other: Thing => a
+        def something <- match z
+            10 => z + 10
+            other => other + 100
 
         def a <- self.error_function() handle
             err1 =>
                 print "hey"
                 print "there"
                 -1
-            err2: MyErr =>
+            err2 =>
                 print "hoi"
                 -2
 
         print a
 
-    def error_function() -> Int raises [Err, Err2] => 200
+    def error_function(self) -> Int raises [Err, Err2] => 200
 
     def connect(mut self: SomeState) => self.other_field <- 200
 
