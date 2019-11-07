@@ -192,6 +192,7 @@ pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
 pub fn parse_id_maybe_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("identifier maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
+
     let id = it.parse(&parse_id, "identifier maybe type", &start)?;
     let _type = it.parse_if(&Token::DoublePoint, &parse_type, "identifier maybe type", &start)?;
     let end = _type.clone().map_or(id.pos.clone(), |t| t.pos);

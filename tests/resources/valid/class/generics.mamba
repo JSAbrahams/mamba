@@ -9,6 +9,9 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
         if z > 10 then raise Err("Something is wrong!")
         self.z_modified <- "fdsa"
 
+        def mut (a, b) <- (10, 20)
+        (a, b) <- (30, 40)
+
         def something <- match z
             10 => z + 10
             other => other + 100

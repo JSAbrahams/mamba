@@ -5,7 +5,6 @@ use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
-use crate::parser::collection::parse_collection;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_operation;
@@ -202,14 +201,7 @@ fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> Parse
 }
 
 fn parse_variable_def(private: bool, it: &mut LexIterator) -> ParseResult {
-    let id = it.peek_or_err(
-        &|it, lex| match lex.token {
-            Token::LRBrack | Token::LCBrack | Token::LSBrack =>
-                it.parse(&parse_collection, "variable definition", &lex.pos),
-            _ => it.parse(&parse_id_maybe_type, "variable definition", &lex.pos)
-        },
-        &[Token::LRBrack, Token::LCBrack, Token::LSBrack],
-        "variable definition"
-    )?;
+    let start = it.start_pos("variable definition")?;
+    let id = it.parse(&parse_id_maybe_type, "variable definition", &start)?;
     parse_variable_def_id(&id, private, it)
 }

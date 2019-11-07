@@ -10,6 +10,7 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
+use crate::type_checker::environment::name::{match_name, Identifier};
 use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
@@ -27,36 +28,36 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
         Node::IdType { .. } => Ok((InferType::new(), env.clone())),
         Node::Reassign { left, right } => {
-            let id = match &left.node {
-                Node::Id { lit } => lit.clone(),
-                _ => return Err(vec![TypeErr::new(&left.pos, "Expected identifier")])
-            };
-
+            let identifier = Identifier::try_from(left.deref())?;
             let (right_ty, env) = infer(right, &env, ctx, state)?;
             let right_expr = right_ty.expr_ty(&right.pos)?;
 
-            let (mutable, left_expr) = env.lookup_indirect(&id, &left.pos)?;
-            if !mutable {
-                let msg = format!("Attempting to assign to immutable variable {}", id);
-                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+            let mut env = env.clone();
+            for (id, (new_mutable, expr_ty)) in
+                match_name(&identifier, &right_expr, state, &right.pos)?
+            {
+                let (mutable, left_expr) = env.lookup_indirect(&id, &left.pos)?;
+                if !mutable {
+                    let msg = format!("Attempting to assign to immutable variable {}", id);
+                    return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                }
+
+                if left_expr != expr_ty {
+                    let msg = format!("Expected {}, but was {}", left_expr, right_expr);
+                    return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                }
+
+                env.insert(&id, new_mutable, &expr_ty);
             }
 
-            if left_expr == right_expr {
-                Ok((InferType::new().add_raises(&right_ty), env))
-            } else {
-                let msg = format!("Expected {}, but was {}", left_expr, right_expr);
-                Err(vec![TypeErr::new(&ast.pos, &msg)])
-            }
+            Ok((InferType::new().add_raises(&right_ty), env))
         }
         // TODO use forward and private
         Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {
             // TODO Check whether mutable
             // TODO use system for tuples of ids
             Node::IdType { _type, id, mutable } => {
-                let id = match &id.node {
-                    Node::Id { lit } => lit.clone(),
-                    _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
-                };
+                let identifier = Identifier::try_from(id.deref())?;
 
                 let (ty, mut env) = match (_type, expression) {
                     (Some(ty_name), Some(expr)) => {
@@ -82,7 +83,13 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                     (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])
                 };
 
-                env.insert(id.as_str(), *mutable, &ty.expr_ty(&ast.pos)?);
+                let expr_ty = ty.expr_ty(&ast.pos)?;
+                for (id, (inner_mut, expr_ty)) in
+                    match_name(&identifier, &expr_ty, state, &ast.pos)?
+                {
+                    env.insert(id.as_str(), *mutable || inner_mut, &expr_ty);
+                }
+
                 Ok((InferType::new(), env))
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])
