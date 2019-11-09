@@ -25,7 +25,7 @@ pub fn desugar_stmts(
             // only force the last node to be a return or expression if applicable
             result.push(desugar_node(ast, imp, state)?)
         } else {
-            result.push(desugar_node(ast, imp, &state.expect_return(false).expect_expr(false))?)
+            result.push(desugar_node(ast, imp, &state.expect_return(false).assign_to(None))?)
         }
     }
 

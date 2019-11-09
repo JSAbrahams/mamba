@@ -1,12 +1,14 @@
 use crate::core::construct::Core;
 
 // TODO remove expect_expr once type checker augments AST
+#[derive(Clone, Debug)]
 pub struct State {
     pub tup:         usize,
     pub interface:   bool,
     pub expand_ty:   bool,
     pub expect_expr: bool,
-    pub expect_ret:  bool
+    pub expect_ret:  bool,
+    pub assign_to:   Option<Core>
 }
 
 impl State {
@@ -16,19 +18,24 @@ impl State {
             interface:   false,
             expand_ty:   true,
             expect_expr: false,
-            expect_ret:  false
+            expect_ret:  false,
+            assign_to:   None
         }
     }
 
-    pub fn expect_return(&self, expect_ret: bool) -> State { State { expect_ret, ..*self.clone() } }
+    pub fn expect_return(&self, expect_ret: bool) -> State { State { expect_ret, ..self.clone() } }
 
-    pub fn expect_expr(&self, expect_expr: bool) -> State { State { expect_expr, ..*self.clone() } }
+    pub fn expect_expr(&self, expect_expr: bool) -> State { State { expect_expr, ..self.clone() } }
 
-    pub fn in_tup(&self, tup: usize) -> State { State { tup, ..*self.clone() } }
+    pub fn in_tup(&self, tup: usize) -> State { State { tup, ..self.clone() } }
 
-    pub fn in_interface(&self, interface: bool) -> State { State { interface, ..*self.clone() } }
+    pub fn in_interface(&self, interface: bool) -> State { State { interface, ..self.clone() } }
 
-    pub fn expand_ty(&self, expand_ty: bool) -> State { State { expand_ty, ..*self.clone() } }
+    pub fn expand_ty(&self, expand_ty: bool) -> State { State { expand_ty, ..self.clone() } }
+
+    pub fn assign_to(&self, assign_to: Option<&Core>) -> State {
+        State { assign_to: assign_to.cloned(), ..self.clone() }
+    }
 }
 
 pub struct Imports {

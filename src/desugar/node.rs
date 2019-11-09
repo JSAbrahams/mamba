@@ -19,7 +19,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
     // Once our type checker can augment the ast, we can omit this less elegant
     // solution
     let expect_return = state.expect_ret;
-    let state = &state.expect_return(false);
+    let assign_to = state.assign_to.clone();
+    let state = &state.expect_return(false).assign_to(None);
 
     let core = match &ast.node {
         Node::Import { import, _as } =>
@@ -44,7 +45,11 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::Block { statements } => Core::Block {
             // Preserve expect_return boolean
-            statements: desugar_stmts(statements, imp, &state.expect_return(expect_return))?
+            statements: desugar_stmts(
+                statements,
+                imp,
+                &state.expect_return(expect_return).assign_to(assign_to.as_ref())
+            )?
         },
 
         Node::Int { lit } => Core::Int { int: lit.clone() },
@@ -292,43 +297,69 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
         Node::Retry { .. } => return Err(UnimplementedErr::new(ast, "retry")),
 
-        Node::Handle { expr_or_stmt, cases } => Core::TryExcept {
-            setup:  if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
-                Some(Box::from(Core::Assign {
-                    left:  Box::from(desugar_node(id_maybe_type.as_ref(), imp, state)?),
-                    right: Box::from(Core::None)
-                }))
+        Node::Handle { expr_or_stmt, cases } => {
+            let assign_to = if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
+                Some(desugar_node(id_maybe_type.as_ref(), imp, state)?)
             } else {
                 None
-            },
-            _try:   Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
-            except: {
-                let mut except = Vec::new();
-                for case in cases {
-                    let (cond, body) = match &case.node {
-                        Node::Case { cond, body } => (cond, body),
-                        other => panic!("Expected case but was {:?}", other)
-                    };
+            };
 
-                    match &cond.node {
-                        Node::IdType { id, _type: Some(ty), .. } => match &ty.node {
-                            Node::Type { id: ty, .. } => except.push(Core::Except {
-                                id:    Box::from(desugar_node(id, imp, state)?),
-                                class: Box::from(desugar_node(ty, imp, state)?),
-                                body:  Box::from(desugar_node(body, imp, state)?)
-                            }),
-                            other => panic!("Expected type but was {:?}", other)
-                        },
-                        Node::IdType { id, _type: None, .. } => except.push(Core::ExceptNoClass {
-                            id:   Box::from(desugar_node(id, imp, state)?),
-                            body: Box::from(desugar_node(body, imp, state)?)
-                        }),
-                        other => panic!("Expected id type but was {:?}", other)
-                    };
+            Core::TryExcept {
+                setup:  if let Some(assign_to) = &assign_to {
+                    Some(Box::from(Core::Assign {
+                        left:  Box::from(assign_to.clone()),
+                        right: Box::from(Core::Empty)
+                    }))
+                } else {
+                    None
+                },
+                _try:   Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
+                except: {
+                    let mut except = Vec::new();
+                    for case in cases {
+                        let (cond, body) = match &case.node {
+                            Node::Case { cond, body } => (cond, body),
+                            other => panic!("Expected case but was {:?}", other)
+                        };
+
+                        match &cond.node {
+                            Node::IdType { id, _type: Some(ty), .. } => match &ty.node {
+                                Node::Type { id: ty, .. } => except.push(Core::Except {
+                                    id:    Box::from(desugar_node(id, imp, state)?),
+                                    class: Box::from(desugar_node(ty, imp, state)?),
+                                    body:  Box::from(desugar_node(
+                                        body,
+                                        imp,
+                                        &state.assign_to(assign_to.as_ref())
+                                    )?)
+                                }),
+                                other => panic!("Expected type but was {:?}", other)
+                            },
+                            Node::IdType { id, _type: None, .. } =>
+                                except.push(Core::ExceptNoClass {
+                                    id:   Box::from(desugar_node(id, imp, state)?),
+                                    body: Box::from(desugar_node(
+                                        body,
+                                        imp,
+                                        &state.assign_to(assign_to.as_ref())
+                                    )?)
+                                }),
+                            other => panic!("Expected id type but was {:?}", other)
+                        };
+                    }
+                    except
                 }
-                except
             }
         }
+    };
+
+    let core = if let Some(assign_to) = assign_to {
+        match core {
+            Core::Block { .. } | Core::Return { .. } => core,
+            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr.clone()) }
+        }
+    } else {
+        core
     };
 
     if expect_return {
