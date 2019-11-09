@@ -8,6 +8,7 @@ use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
+use crate::type_checker::context::{function, function_arg};
 
 /// Desugar a class.
 ///
@@ -75,6 +76,26 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                         }
                     };
 
+                    let final_definitions = if final_definitions.is_empty() {
+                        vec![Core::FunDef {
+                            private: false,
+                            id:      Box::new(Core::Id {
+                                lit: String::from(function::python::INIT)
+                            }),
+                            args:    vec![Core::FunArg {
+                                vararg:  false,
+                                id:      Box::new(Core::Id {
+                                    lit: String::from(function_arg::python::SELF)
+                                }),
+                                default: Box::new(Core::Empty)
+                            }],
+                            ret_ty:  None,
+                            body:    Box::new(Core::Pass)
+                        }]
+                    } else {
+                        final_definitions
+                    };
+
                     Core::ClassDef {
                         name:        Box::from(desugar_node(id, imp, state)?),
                         parents:     parent_names,
@@ -103,7 +124,10 @@ fn constructor_from_inline(
         match inline_arg {
             Core::FunArg { id, .. } => {
                 args.push(inline_arg.clone());
-                if !parent_args.contains(&id) {
+                if !parent_args.contains(&match id.deref() {
+                    Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
+                    other => other.clone()
+                }) {
                     final_definitions
                         .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
                 }
@@ -123,7 +147,10 @@ fn constructor_from_inline(
                     _ => id.clone()
                 };
 
-                if !parent_args.contains(&id) {
+                if !parent_args.contains(&match id.deref() {
+                    Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
+                    other => other.clone()
+                }) {
                     final_definitions
                         .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) });
                     statements.push(Core::Assign {

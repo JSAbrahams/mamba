@@ -33,11 +33,13 @@ pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
             // TODO expand so we accept more than just literals and identifiers
             // TODO handle cases where identifier is a class
+            // TODO treat identifier without type as default
             match &cond.node {
                 Node::IdType { id, .. } => match &id.node {
                     Node::Str { .. } | Node::Int { .. } | Node::Real { .. } | Node::Bool { .. } => {
                         infer(&id, &env, ctx)?.0.expr_ty(&cond.pos)?;
                     }
+                    Node::Underscore => {}
                     _ => {
                         let identifier = Identifier::try_from(cond.deref())?;
                         let matched = match_name(&identifier, &match_ty, &env, &cond.pos)?;

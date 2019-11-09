@@ -32,7 +32,7 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                     Core::Id { lit: lit.clone() }
                 },
             Node::_Self => Core::Id { lit: String::from("self") },
-            other => panic!("Expected identifier but was {:?}", other)
+            _ => desugar_node(id, imp, state)?
         },
         Node::TypeAlias { _type, alias, .. } => Core::Assign {
             left:  Box::from(desugar_node(_type, imp, state)?),

@@ -145,18 +145,17 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
-        Core::KeyValue { key, value } => format!("{} : {}", to_py(key, ind), to_py(value, ind)),
+        Core::KeyValue { key, value } => format!("{}: {}", to_py(key, ind), to_py(value, ind)),
         Core::Dictionary { expr, cases } => format!(
-            "{{\n{}{}\n{}}}[{}]",
-            indent(ind + 1),
-            comma_delimited(cases, ind + 1),
+            "{{\n{}\n{}}}[{}]",
+            newline_comma_delimited(cases, ind + 1),
             indent(ind),
             to_py(expr, ind)
         ),
         Core::DefaultDictionary { expr, cases, default } => format!(
             "defaultdict({}, {{\n{}\n{}}})[{}]",
             to_py(default, ind),
-            comma_delimited(cases, ind + 1),
+            newline_comma_delimited(cases, ind + 1),
             indent(ind),
             to_py(expr, ind)
         ),
@@ -321,6 +320,14 @@ fn newline_delimited(items: &[Core], ind: usize) -> String {
     items
         .into_iter()
         .for_each(|item| string.push_str(&format!("{}{}\n", indent(ind), to_py(item, ind))));
+    String::from(string.trim_end())
+}
+
+fn newline_comma_delimited(items: &[Core], ind: usize) -> String {
+    let mut string = String::new();
+    items
+        .into_iter()
+        .for_each(|item| string.push_str(&format!("{}{},\n", indent(ind), to_py(item, ind))));
     String::from(string.trim_end())
 }
 

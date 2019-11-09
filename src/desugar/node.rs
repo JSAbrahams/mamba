@@ -218,7 +218,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
 
         Node::AnonFun { args, body } => Core::AnonFun {
-            args: desugar_vec(args, imp, state)?,
+            args: desugar_vec(args, imp, &state.expand_ty(false))?,
             body: Box::from(desugar_node(body, imp, state)?)
         },
 

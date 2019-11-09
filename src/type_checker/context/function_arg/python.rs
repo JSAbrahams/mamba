@@ -3,6 +3,8 @@ use python_parser::ast::Expression;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::TypeName;
 
+pub const SELF: &'static str = "self";
+
 impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFunctionArg {
     fn from(
         (name, ty, _): (&String, &Option<Expression>, &Option<Expression>)

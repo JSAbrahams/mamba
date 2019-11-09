@@ -1,6 +1,8 @@
 class Err(msg: String) isa Exception(msg)
 class Err2(msg: String) isa Exception(msg)
 
+class MyType[A, C]()
+
 class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
     def private z_modified: String <- "asdf"
     def private mut other_field: Int <- 10
@@ -14,7 +16,12 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
 
         def something <- match z
             10 => z + 10
-            other => other + 100
+            _ => z + 100
+
+        def my_bool <- True
+        def other <- match my_bool
+            True => 2
+            False => 3
 
         def a <- self.error_function() handle
             err1 =>
