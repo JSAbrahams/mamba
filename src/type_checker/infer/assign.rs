@@ -11,13 +11,12 @@ use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::name::{match_name, Identifier};
-use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
 
-pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     // TODO check body of function definition
     // TODO if self, use state to determine type of current class
     match &ast.node {
@@ -29,13 +28,12 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
         Node::IdType { .. } => Ok((InferType::new(), env.clone())),
         Node::Reassign { left, right } => {
             let identifier = Identifier::try_from(left.deref())?;
-            let (right_ty, env) = infer(right, &env, ctx, state)?;
+            let (right_ty, env) = infer(right, &env, ctx)?;
             let right_expr = right_ty.expr_ty(&right.pos)?;
 
             let mut env = env.clone();
-            for (id, (new_mutable, expr_ty)) in
-                match_name(&identifier, &right_expr, state, &right.pos)?
-            {
+            let matched = match_name(&identifier, &right_expr, &env, &right.pos)?;
+            for (id, (new_mutable, expr_ty)) in matched {
                 let (mutable, left_expr) = env.lookup_indirect(&id, &left.pos)?;
                 if !mutable {
                     let msg = format!("Attempting to assign to immutable variable {}", id);
@@ -61,19 +59,17 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
 
                 let (ty, mut env) = match (_type, expression) {
                     (Some(ty_name), Some(expr)) => {
-                        let infer_type =
+                        let expr_ty =
                             ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?;
-                        let (other_ty, env) = infer(expr, env, ctx, state)?;
-                        if infer_type != other_ty.expr_ty(&id_maybe_type.pos)? {
-                            return Err(vec![TypeErr::new(
-                                &expr.pos,
-                                "Expression type does not match annotated type"
-                            )]);
+                        let (other_ty, env) = infer(expr, env, ctx)?;
+                        if expr_ty != other_ty.expr_ty(&id_maybe_type.pos)? {
+                            let msg = "Expression type does not match annotated type";
+                            return Err(vec![TypeErr::new(&expr.pos, msg)]);
                         }
 
                         (other_ty, env)
                     }
-                    (None, Some(expr)) => infer(expr, env, ctx, state)?,
+                    (None, Some(expr)) => infer(expr, env, ctx)?,
                     (Some(ty_name), None) => (
                         InferType::from(
                             &ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?
@@ -84,9 +80,8 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                 };
 
                 let expr_ty = ty.expr_ty(&ast.pos)?;
-                for (id, (inner_mut, expr_ty)) in
-                    match_name(&identifier, &expr_ty, state, &ast.pos)?
-                {
+                let matched = match_name(&identifier, &expr_ty, &env, &ast.pos)?;
+                for (id, (inner_mut, expr_ty)) in matched {
                     env.insert(id.as_str(), *mutable || inner_mut, &expr_ty);
                 }
 
@@ -101,7 +96,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             // TODO use pure
             // TODO add functions to environment
             let mut env_with_args = env.clone();
-            for (name, (mutable, expr_ty)) in arg_types(fun_args, env, ctx, state)? {
+            for (name, (mutable, expr_ty)) in arg_types(fun_args, env, ctx)? {
                 env_with_args.insert(&name, mutable, &expr_ty);
             }
 
@@ -115,7 +110,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
             };
 
             if let Some(body) = body {
-                let (body_ty, _) = infer(body, &env_with_args, ctx, state)?;
+                let (body_ty, _) = infer(body, &env_with_args, ctx)?;
                 let mut boy_raises_not_in_signature = body_ty.raises.clone();
                 boy_raises_not_in_signature.retain(|f| !raises.contains(f));
                 if !boy_raises_not_in_signature.is_empty() {
@@ -141,7 +136,11 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                             let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
                             // TODO if return type empty and return empty to body
                             if ret_ty.is_superset(&body_ret_name) {
-                                Ok((InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?), env.clone()))
+                                Ok((
+                                    InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?)
+                                        .union_raises(&raises),
+                                    env.clone()
+                                ))
                             } else {
                                 Err(vec![TypeErr::new(
                                     &ast.pos,
@@ -152,10 +151,10 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
                                 )])
                             }
                         },
-                    None => Ok((InferType::new(), env.clone()))
+                    None => Ok((InferType::new().union_raises(&raises), env.clone()))
                 }
             } else {
-                Ok((InferType::new(), env.clone()))
+                Ok((InferType::new().union_raises(&raises), env.clone()))
             }
         }
 
@@ -166,8 +165,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context, state: &State) 
 pub fn arg_types(
     args: &Vec<AST>,
     env: &Environment,
-    ctx: &Context,
-    state: &State
+    ctx: &Context
 ) -> TypeResult<HashMap<String, (bool, ExpressionType)>> {
     let mut arg_types = HashMap::new();
     for arg in args {
@@ -186,7 +184,7 @@ pub fn arg_types(
 
         let lit = argument_name(id)?;
         let default_ty = match default {
-            Some(default) => Some(infer(default, env, ctx, state)?.0.expr_ty(&id.pos)?),
+            Some(default) => Some(infer(default, env, ctx)?.0.expr_ty(&id.pos)?),
             None => None
         };
 
@@ -211,7 +209,8 @@ pub fn arg_types(
         } else {
             if &lit == function_arg::concrete::SELF {
                 // TODO get actual type of self from Context in case self is child of class
-                let class = state
+                let class = env
+                    .state
                     .in_class
                     .clone()
                     .ok_or(vec![TypeErr::new(&arg.pos, "self cannot be outside class")])?;

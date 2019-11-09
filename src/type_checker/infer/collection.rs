@@ -9,39 +9,38 @@ use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::nullable_type::NullableType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
-use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
         Node::Tuple { elements } => {
             let mut env = env.clone();
             let mut types = vec![];
             let mut raises = HashSet::new();
             for element in elements {
-                let (ty, new_env) = infer(element, &env, ctx, state)?;
+                let (ty, new_env) = infer(element, &env, ctx)?;
                 types.push(ty.expr_ty(&element.pos)?);
                 raises = raises.union(&ty.raises).cloned().collect();
                 env = new_env;
             }
 
             let actual_ty = ActualType::Tuple { types };
-            let nullable_ty = NullableType::new(state.nullable, &actual_ty);
+            let nullable_ty = NullableType::new(env.state.nullable, &actual_ty);
             let expr_ty = ExpressionType::from(&nullable_ty);
             let ty = InferType::from(&expr_ty);
             Ok((ty.union_raises(&raises), env))
         }
-        Node::Set { elements } => collection(&concrete::SET, ast, elements, env, ctx, state),
-        Node::List { elements } => collection(&concrete::LIST, ast, elements, env, ctx, state),
+        Node::Set { elements } => collection(&concrete::SET, ast, elements, env, ctx),
+        Node::List { elements } => collection(&concrete::LIST, ast, elements, env, ctx),
 
         Node::ListBuilder { .. } => Err(vec![TypeErr::new(&ast.pos, "Not implemented")]),
         Node::SetBuilder { .. } => Err(vec![TypeErr::new(&ast.pos, "Not implemented")]),
 
         Node::In { left, right } => {
-            let (ty, env) = infer(left, env, ctx, state)?;
-            let (col_ty, env) = infer(right, &env, ctx, state)?;
+            let (ty, env) = infer(left, env, ctx)?;
+            let (col_ty, env) = infer(right, &env, ctx)?;
 
             // TODO check that right is set or list
             // TODO check list or set type is left type
@@ -59,14 +58,13 @@ fn collection(
     ast: &AST,
     elements: &Vec<AST>,
     env: &Environment,
-    ctx: &Context,
-    state: &State
+    ctx: &Context
 ) -> InferResult {
     let mut env = env.clone();
     let mut types = vec![];
     let mut raises = HashSet::new();
     for element in elements {
-        let (ty, new_env) = infer(element, &env, ctx, state)?;
+        let (ty, new_env) = infer(element, &env, ctx)?;
         types.push(ty.expr_ty(&element.pos)?);
         raises = raises.union(&ty.raises).cloned().collect();
         env = new_env;
@@ -93,11 +91,11 @@ fn collection(
 pub fn iterable_generic(
     expr_ty: &ExpressionType,
     ctx: &Context,
-    state: &State,
+    env: &Environment,
     pos: &Position
 ) -> TypeResult<ExpressionType> {
     match expr_ty {
-        ExpressionType::Single { ty } => match &ty.actual_ty_safe(state.nullable, pos)? {
+        ExpressionType::Single { ty } => match &ty.actual_ty_safe(env.state.nullable, pos)? {
             ActualType::Single { ty } => {
                 let iterable = ty
                     .fun("__iter__", &vec![], pos)?
@@ -105,7 +103,7 @@ pub fn iterable_generic(
                     .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
                 let next_ty = ctx
                     .lookup(&iterable, pos)?
-                    .fun("__next__", &vec![], state.nullable, pos)?
+                    .fun("__next__", &vec![], env.state.nullable, pos)?
                     .ty()
                     .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
                 ctx.lookup(&next_ty, pos)
@@ -124,7 +122,7 @@ pub fn iterable_generic(
         ExpressionType::Union { union } => {
             let union: Vec<ExpressionType> = union
                 .iter()
-                .map(|null_ty| iterable_generic(&ExpressionType::from(null_ty), ctx, state, pos))
+                .map(|null_ty| iterable_generic(&ExpressionType::from(null_ty), ctx, env, pos))
                 .collect::<Result<_, _>>()?;
             let mut first = union
                 .first()

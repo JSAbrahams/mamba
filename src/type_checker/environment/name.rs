@@ -7,7 +7,7 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
-use crate::type_checker::environment::state::State;
+use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
 use std::ops::Deref;
@@ -61,11 +61,11 @@ impl From<&Vec<Identifier>> for Identifier {
 pub fn match_name(
     identifier: &Identifier,
     expr_ty: &ExpressionType,
-    state: &State,
+    env: &Environment,
     pos: &Position
 ) -> TypeResult<HashMap<String, (bool, ExpressionType)>> {
     match expr_ty {
-        ExpressionType::Single { ty } => match &ty.actual_ty_safe(state.nullable, pos)? {
+        ExpressionType::Single { ty } => match &ty.actual_ty_safe(env.state.nullable, pos)? {
             ActualType::Single { .. } | ActualType::AnonFun { .. } =>
                 if let Some((mutable, id)) = &identifier.lit {
                     let mut mapping = HashMap::with_capacity(1);
@@ -85,7 +85,7 @@ pub fn match_name(
                         .names
                         .iter()
                         .zip(types)
-                        .map(|(identifier, expr_ty)| match_name(&identifier, expr_ty, state, pos))
+                        .map(|(identifier, expr_ty)| match_name(&identifier, expr_ty, env, pos))
                         .collect::<Result<_, _>>()?;
                     Ok(sets.into_iter().flatten().collect())
                 } else {
@@ -102,7 +102,7 @@ pub fn match_name(
         ExpressionType::Union { union } => {
             let unions: Vec<HashMap<String, (bool, ExpressionType)>> = union
                 .iter()
-                .map(|ty| match_name(identifier, &ExpressionType::from(ty), state, pos))
+                .map(|ty| match_name(identifier, &ExpressionType::from(ty), env, pos))
                 .collect::<Result<_, _>>()?;
             let mut final_union: HashMap<String, (bool, ExpressionType)> = HashMap::new();
             for union in unions {

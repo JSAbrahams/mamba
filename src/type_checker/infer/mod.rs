@@ -1,7 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::infer_type::InferType;
-use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::assign::infer_assign;
 use crate::type_checker::infer::bitwise_operation::infer_bitwise_op;
@@ -41,7 +40,7 @@ pub fn infer_all(inputs: &[CheckInput], ctx: &Context) -> Result<(), Vec<TypeErr
     let (_, errs): (Vec<_>, Vec<_>) = inputs
         .iter()
         .map(|(ast, source, path)| {
-            infer(&Box::from(ast.clone()), &env.clone(), ctx, &State::new()).map_err(|errs| {
+            infer(&Box::from(ast.clone()), &env.clone(), ctx).map_err(|errs| {
                 errs.into_iter()
                     .map(|err| err.into_with_source(source, path))
                     .collect::<Vec<TypeErr>>()
@@ -56,14 +55,14 @@ pub fn infer_all(inputs: &[CheckInput], ctx: &Context) -> Result<(), Vec<TypeErr
     }
 }
 
-fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
         // TODO analyse imports of File somewhere
         // TODO Check functions are pure if file is pure
         Node::File { modules, .. } => {
             let (_, errs): (Vec<_>, Vec<_>) = modules
                 .iter()
-                .map(|ast| infer(&Box::from(ast.clone()), env, ctx, state))
+                .map(|ast| infer(&Box::from(ast.clone()), env, ctx))
                 .partition(Result::is_ok);
 
             if errs.is_empty() {
@@ -75,26 +74,26 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::Import { .. } => Ok((InferType::new(), env.clone())),
         Node::FromImport { .. } => Ok((InferType::new(), env.clone())),
 
-        Node::Init | Node::Class { .. } => infer_class(ast, env, ctx, state),
-        Node::Generic { .. } | Node::Parent { .. } => infer_class(ast, env, ctx, state),
+        Node::Init | Node::Class { .. } => infer_class(ast, env, ctx),
+        Node::Generic { .. } | Node::Parent { .. } => infer_class(ast, env, ctx),
 
-        Node::Script { .. } | Node::Block { .. } => infer_block(ast, env, ctx, state),
+        Node::Script { .. } | Node::Block { .. } => infer_block(ast, env, ctx),
 
-        Node::Undefined => infer_assign(ast, env, ctx, state),
-        Node::Id { .. } => infer_assign(ast, env, ctx, state),
-        Node::Reassign { .. } => infer_assign(ast, env, ctx, state),
-        Node::VariableDef { .. } => infer_assign(ast, env, ctx, state),
-        Node::FunArg { .. } | Node::FunDef { .. } => infer_assign(ast, env, ctx, state),
+        Node::Undefined => infer_assign(ast, env, ctx),
+        Node::Id { .. } => infer_assign(ast, env, ctx),
+        Node::Reassign { .. } => infer_assign(ast, env, ctx),
+        Node::VariableDef { .. } => infer_assign(ast, env, ctx),
+        Node::FunArg { .. } | Node::FunDef { .. } => infer_assign(ast, env, ctx),
 
-        Node::Raises { .. } | Node::Raise { .. } => infer_error(ast, env, ctx, state),
-        Node::Handle { .. } => infer_error(ast, env, ctx, state),
-        Node::Retry => infer_error(ast, env, ctx, state),
+        Node::Raises { .. } | Node::Raise { .. } => infer_error(ast, env, ctx),
+        Node::Handle { .. } => infer_control_flow(ast, env, ctx),
+        Node::Retry => infer_error(ast, env, ctx),
 
-        Node::With { .. } => infer_error(ast, env, ctx, state),
-        Node::AnonFun { .. } => unimplemented!(),
-        Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx, state),
+        Node::With { .. } => infer_error(ast, env, ctx),
+        Node::AnonFun { .. } => infer_op(ast, env, ctx),
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx),
 
-        Node::IdType { .. } => infer_assign(ast, env, ctx, state),
+        Node::IdType { .. } => infer_assign(ast, env, ctx),
         Node::TypeDef { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeAlias { .. } => Ok((InferType::new(), env.clone())),
         Node::TypeTup { .. } => Ok((InferType::new(), env.clone())),
@@ -119,52 +118,50 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferRes
         Node::LeOp => Ok((InferType::new(), env.clone())),
         Node::GeOp => Ok((InferType::new(), env.clone())),
 
-        Node::Set { .. } | Node::SetBuilder { .. } => infer_coll(ast, env, ctx, state),
-        Node::List { .. } | Node::ListBuilder { .. } => infer_coll(ast, env, ctx, state),
-        Node::Tuple { .. } => infer_coll(ast, env, ctx, state),
-        Node::In { .. } => infer_coll(ast, env, ctx, state),
+        Node::Set { .. } | Node::SetBuilder { .. } => infer_coll(ast, env, ctx),
+        Node::List { .. } | Node::ListBuilder { .. } => infer_coll(ast, env, ctx),
+        Node::Tuple { .. } => infer_coll(ast, env, ctx),
+        Node::In { .. } => infer_coll(ast, env, ctx),
 
         Node::Real { .. }
         | Node::Int { .. }
         | Node::ENum { .. }
         | Node::Str { .. }
-        | Node::Bool { .. } => infer_literal(ast, env, ctx, state),
+        | Node::Bool { .. } => infer_literal(ast, env, ctx),
 
-        Node::Add { .. } | Node::AddU { .. } => infer_op(ast, env, ctx, state),
-        Node::Sub { .. } | Node::SubU { .. } => infer_op(ast, env, ctx, state),
-        Node::Mul { .. } | Node::Div { .. } | Node::FDiv { .. } => infer_op(ast, env, ctx, state),
-        Node::Mod { .. } => infer_op(ast, env, ctx, state),
-        Node::Pow { .. } | Node::Sqrt { .. } => infer_op(ast, env, ctx, state),
-        Node::Le { .. } | Node::Ge { .. } => infer_op(ast, env, ctx, state),
-        Node::Leq { .. } | Node::Geq { .. } => infer_op(ast, env, ctx, state),
+        Node::Add { .. } | Node::AddU { .. } => infer_op(ast, env, ctx),
+        Node::Sub { .. } | Node::SubU { .. } => infer_op(ast, env, ctx),
+        Node::Mul { .. } | Node::Div { .. } | Node::FDiv { .. } => infer_op(ast, env, ctx),
+        Node::Mod { .. } => infer_op(ast, env, ctx),
+        Node::Pow { .. } | Node::Sqrt { .. } => infer_op(ast, env, ctx),
+        Node::Le { .. } | Node::Ge { .. } => infer_op(ast, env, ctx),
+        Node::Leq { .. } | Node::Geq { .. } => infer_op(ast, env, ctx),
 
-        Node::BAnd { .. } | Node::BOr { .. } | Node::BXOr { .. } =>
-            infer_bitwise_op(ast, env, ctx, state),
-        Node::BOneCmpl { .. } => infer_bitwise_op(ast, env, ctx, state),
-        Node::BLShift { .. } | Node::BRShift { .. } => infer_bitwise_op(ast, env, ctx, state),
+        Node::BAnd { .. } | Node::BOr { .. } | Node::BXOr { .. } => infer_bitwise_op(ast, env, ctx),
+        Node::BOneCmpl { .. } => infer_bitwise_op(ast, env, ctx),
+        Node::BLShift { .. } | Node::BRShift { .. } => infer_bitwise_op(ast, env, ctx),
 
-        Node::Is { .. } | Node::IsN { .. } => infer_boolean_op(ast, env, ctx, state),
-        Node::IsA { .. } | Node::IsNA { .. } => infer_boolean_op(ast, env, ctx, state),
-        Node::And { .. } | Node::Or { .. } => infer_boolean_op(ast, env, ctx, state),
-        Node::Not { .. } => infer_boolean_op(ast, env, ctx, state),
-        Node::Eq { .. } | Node::Neq { .. } => infer_boolean_op(ast, env, ctx, state),
+        Node::Is { .. } | Node::IsN { .. } => infer_boolean_op(ast, env, ctx),
+        Node::IsA { .. } | Node::IsNA { .. } => infer_boolean_op(ast, env, ctx),
+        Node::And { .. } | Node::Or { .. } => infer_boolean_op(ast, env, ctx),
+        Node::Not { .. } => infer_boolean_op(ast, env, ctx),
+        Node::Eq { .. } | Node::Neq { .. } => infer_boolean_op(ast, env, ctx),
 
-        Node::IfElse { .. } => infer_control_flow(ast, env, ctx, state),
-        Node::Match { .. } | Node::Case { .. } => infer_control_flow(ast, env, ctx, state),
+        Node::IfElse { .. } => infer_control_flow(ast, env, ctx),
+        Node::Match { .. } | Node::Case { .. } => infer_control_flow(ast, env, ctx),
         Node::For { .. } | Node::Range { .. } | Node::Step { .. } =>
-            infer_control_flow(ast, env, ctx, state),
-        Node::While { .. } | Node::Break | Node::Continue =>
-            infer_control_flow(ast, env, ctx, state),
+            infer_control_flow(ast, env, ctx),
+        Node::While { .. } | Node::Break | Node::Continue => infer_control_flow(ast, env, ctx),
 
-        Node::Question { .. } => infer_optional(ast, env, ctx, state),
+        Node::Question { .. } => infer_optional(ast, env, ctx),
 
-        Node::Return { expr } => infer(expr, env, ctx, state),
+        Node::Return { expr } => infer(expr, env, ctx),
         Node::ReturnEmpty => Ok((InferType::new(), env.clone())),
 
         Node::Underscore => Ok((InferType::new(), env.clone())),
         Node::Pass => Ok((InferType::new(), env.clone())),
         Node::Print { expr } => {
-            let (_, env) = infer(expr, env, ctx, state)?;
+            let (_, env) = infer(expr, env, ctx)?;
             Ok((InferType::new(), env))
         }
         Node::Comment { .. } => Ok((InferType::new(), env.clone()))

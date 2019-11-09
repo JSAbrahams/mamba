@@ -1,7 +1,7 @@
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct State {
     pub in_loop:   bool,
     pub in_handle: bool,

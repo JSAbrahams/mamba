@@ -1,29 +1,28 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
+use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
-use crate::type_checker::environment::state::State;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::util::comma_delimited;
-use std::ops::Deref;
 
-pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -> InferResult {
+pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
         Node::Raise { error } => {
-            let (ty, env) = infer(error, env, ctx, state)?;
+            let (ty, env) = infer(error, env, ctx)?;
             let actual_ty = ty.expr_ty(&error.pos)?.single(&error.pos)?.actual_ty();
             let set = HashSet::from_iter(vec![ActualTypeName::from(&actual_ty)].into_iter());
             Ok((InferType::new().union_raises(&set).add_raises(&ty), env))
         }
         Node::Raises { expr_or_stmt, errors } => {
-            let (ty, env) = infer(expr_or_stmt, env, ctx, state)?;
+            let (ty, env) = infer(expr_or_stmt, env, ctx)?;
             let errors = errors.iter().map(ActualTypeName::try_from).collect::<Result<_, _>>()?;
             if ty.raises.is_superset(&errors) {
                 Ok((ty, env))
@@ -37,36 +36,15 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
             }
         }
 
-        Node::Handle { expr_or_stmt, cases } => {
-            let (cond_ty, mut env) = infer(expr_or_stmt, env, ctx, state)?;
-            let state = state.handling(&cond_ty.raises.into_iter().collect());
-
-            let mut ty: Option<InferType> = None;
-            for case in cases {
-                let (case_ty, new_env) = infer(case, &env, ctx, &state)?;
-                env = new_env;
-                ty = if let Some(ty) = ty {
-                    Some(ty.union(&case_ty, &case.pos)?)
-                } else {
-                    Some(case_ty)
-                };
-            }
-
-            match ty {
-                Some(ty) => Ok((ty, env)),
-                None => Err(vec![TypeErr::new(&ast.pos, "Match must have arms")])
-            }
-        }
-
         Node::Retry =>
-            if !(state.in_handle) {
+            if !env.state.in_handle {
                 Err(vec![TypeErr::new(&ast.pos, "Retry only possible in handle arm")])
             } else {
                 Ok((InferType::new(), env.clone()))
             },
 
         Node::With { resource, _as, expr } => {
-            let (resource_ty, mut env) = infer(resource, env, ctx, state)?;
+            let (resource_ty, mut env) = infer(resource, env, ctx)?;
 
             if let Some(_as) = _as {
                 let (_as, mutable, type_name) = match &_as.node {
@@ -94,7 +72,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context, state: &State) -
                 env.insert(&_as, *mutable, &expr_ty);
             }
 
-            infer(expr, &env, ctx, state)
+            infer(expr, &env, ctx)
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected error")])

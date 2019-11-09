@@ -1,5 +1,6 @@
 use crate::common::position::Position;
 use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::environment::state::State;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 
@@ -10,11 +11,12 @@ pub mod state;
 
 #[derive(Clone, Debug)]
 pub struct Environment {
+    pub state: State,
     variables: HashMap<String, (bool, ExpressionType)>
 }
 
 impl Environment {
-    pub fn new() -> Environment { Environment { variables: HashMap::new() } }
+    pub fn new() -> Environment { Environment { state: State::new(), variables: HashMap::new() } }
 
     pub fn lookup_indirect(&self, var: &str, pos: &Position) -> TypeResult<(bool, ExpressionType)> {
         self.variables
@@ -31,6 +33,10 @@ impl Environment {
             .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
     }
 
+    pub fn new_state(&self, state: &State) -> Self {
+        Environment { state: state.clone(), ..self.clone() }
+    }
+
     pub fn remove(&mut self, var: &str) -> Option<(bool, ExpressionType)> {
         self.variables.remove(var)
     }
@@ -43,6 +49,6 @@ impl Environment {
     pub fn difference(self, env: Environment) -> Environment {
         let mut variables = self.variables;
         variables.extend(env.variables);
-        Environment { variables }
+        Environment { variables, ..self }
     }
 }

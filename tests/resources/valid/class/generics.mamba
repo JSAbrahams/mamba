@@ -43,4 +43,4 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
     def c(self, d: Int) -> Int => self.b(self.c(20))
 
     def some_higher_order(self, fun: Int -> Int) -> Int? => 0
-    def fancy(self) -> Int => self.some_higher_order(\x => x * 2) ? 10
+    def fancy(self) -> Int => self.some_higher_order(\x: Int => x * 2) ? 10
