@@ -132,8 +132,15 @@ fn to_py(core: &Core, ind: usize) -> String {
             }
         ),
 
-        Core::AnonFun { args, body } =>
-            format!("lambda {}: {}", comma_delimited(args, ind), to_py(body, ind)),
+        Core::AnonFun { args, body } => format!(
+            "lambda{}: {}",
+            if args.is_empty() {
+                String::new()
+            } else {
+                format!(" {}", comma_delimited(args, ind))
+            },
+            to_py(body, ind)
+        ),
 
         Core::Block { statements } => format!("{}", newline_delimited(statements, ind)),
 
@@ -291,8 +298,16 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_if_body(expr, ind)
         ),
 
-        Core::TryExcept { _try, except } =>
-            format!("try:{}\n{}", newline_if_body(_try, ind + 1), newline_delimited(except, ind)),
+        Core::TryExcept { setup, _try, except } => format!(
+            "{}try:{}\n{}",
+            if let Some(setup) = setup {
+                format!("{}\n{}", to_py(setup, ind), indent(ind))
+            } else {
+                String::from("")
+            },
+            newline_if_body(_try, ind + 1),
+            newline_delimited(except, ind)
+        ),
         Core::Except { id, class, body } => format!(
             "except {} as {}:{}",
             to_py(class, ind),

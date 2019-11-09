@@ -1,53 +1,79 @@
+from collections import defaultdict
 from typing import Callable
+from typing import Optional
+
+
+class Err1(Exception):
+    def __init__(self, msg: str):
+        super().__init__(msg)
+
+
+class Err2(Exception):
+    def __init__(self, msg: str):
+        super().__init__(msg)
+
+
+class MyType:
+    other_field = None
+
+    def __init__(self, other_field: str):
+        self.other_field = other_field
+
 
 class MyClass2(MyType):
-    _z_modified = "asdf"
-    _other_field = 10
+    _z_modified: str = f"asdf"
+    _other_field: int = 10
 
     def __init__(self, other_field: int, z: int):
-        super().__init__(self)
-        if z > 10: raise Err("Something is wrong!")
-        self.z_modified = z * SOME_CONSTANT
+        super().__init__(f"the quick brown fox jumped over the slow donkey")
+        if z > 10:
+            raise Err1(f"Something is wrong!")
+        self.z_modified = f"fdsa"
 
-        something = {
-            b : d, other : a
-        }[c]
+        (a, b) = (10, 20)
+        (a, b) = (30, 40)
+        (a, b) = (0, 10)
+
+        something = defaultdict(lambda: z + 100, {
+            10: z + 10,
+        })[z]
+
+        my_bool = True
+        other = {
+            True: 2,
+            False: 3,
+        }[my_bool]
 
         a = None
         try:
-            a = self.z_modified
-        except Exception as err1:
-            print("hey")
-            print("there")
-        except MyErr as err2:
-            print("hoi")
+            a = self.error_function()
+        except Err1 as err1:
+            print(err1)
+            a = -1
+        except Err2 as err2:
+            print(err2)
+            a = -2
 
-    def connect(self):
-        self.other_field = 200
+        print(a)
 
-    def fun_a(self):
-        print(self)
+    def error_function(self) -> int: return 200
 
-    def _fun_b(self):
-        print("this function is private!")
+    def connect(self): self.other_field = 200
 
-    def factorial(self, x: int =0):
-        x * self.factorial(x - 1)
+    def fun_a(self): print(self)
 
-    def factorial_infinite(self, x: int):
-        x * self.factorial(x)
+    def _fun_b(self): print(f"this function is private!")
 
-    def a(self):
-        self.a(self.b)
+    def factorial(self, x: int = 0) -> int: return x * self.factorial(x - 1)
 
-    def b(self, c: C):
-        self.a(self.b(self.c))
+    def factorial_infinite(self, x: int) -> int: return x * self.factorial(x)
 
-    def c(self, d: D):
-        self.a(self.b(self.c(d)))
+    def a(self) -> int: return self.b(10)
 
-    def some_higher_order(self, fun: Callable[[int], int]):
-        0
+    def b(self, c: int) -> int: return self.a()
 
-    def fancy(self):
-        self.some_higher_order(lambda x: x * 2) or 10
+    def c(self, d: int) -> int: return self.b(self.c(20))
+
+    def some_higher_order(self, fun: Callable[[int], int]) -> Optional[int]: return fun(10)
+
+    def fancy(self) -> int: return self.some_higher_order(lambda x: x * 2) or 10

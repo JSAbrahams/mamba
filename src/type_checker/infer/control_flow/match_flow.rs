@@ -34,20 +34,31 @@ pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             // TODO expand so we accept more than just literals and identifiers
             // TODO handle cases where identifier is a class
             // TODO treat identifier without type as default
+            // TODO check that _type is covered by match_ty
             match &cond.node {
-                Node::IdType { id, .. } => match &id.node {
-                    Node::Str { .. } | Node::Int { .. } | Node::Real { .. } | Node::Bool { .. } => {
-                        infer(&id, &env, ctx)?.0.expr_ty(&cond.pos)?;
+                Node::IdType { id, mutable, _type } => {
+                    if let Some(_type) = _type {
+                        let type_name = TypeName::try_from(_type.deref())?;
+                        ctx.lookup(&type_name, &_type.pos)?;
                     }
-                    Node::Underscore => {}
-                    _ => {
-                        let identifier = Identifier::try_from(cond.deref())?;
-                        let matched = match_name(&identifier, &match_ty, &env, &cond.pos)?;
-                        for (id, (mutable, expr_ty)) in matched {
-                            env.insert(&id, mutable, &expr_ty);
+
+                    match &id.node {
+                        Node::Str { .. }
+                        | Node::Int { .. }
+                        | Node::Real { .. }
+                        | Node::Bool { .. } => {
+                            infer(&id, &env, ctx)?.0.expr_ty(&cond.pos)?;
+                        }
+                        Node::Underscore => {}
+                        _ => {
+                            let identifier = Identifier::try_from(cond.deref())?;
+                            let matched = match_name(&identifier, &match_ty, &env, &cond.pos)?;
+                            for (id, (inner_mut, expr_ty)) in matched {
+                                env.insert(&id, *mutable || inner_mut, &expr_ty);
+                            }
                         }
                     }
-                },
+                }
                 _ => return Err(vec![TypeErr::new(&cond.pos, "Expected expression maybe type")])
             };
 

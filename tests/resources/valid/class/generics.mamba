@@ -1,18 +1,19 @@
-class Err(msg: String) isa Exception(msg)
+class Err1(msg: String) isa Exception(msg)
 class Err2(msg: String) isa Exception(msg)
 
-class MyType[A, C]()
+class MyType[A, C](def other_field: String)
 
-class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
+class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped over the slow donkey")
     def private z_modified: String <- "asdf"
     def private mut other_field: Int <- 10
 
-    def init(mut self, other_field: Int, z: Int) raises [Err] =>
-        if z > 10 then raise Err("Something is wrong!")
+    def init(mut self, other_field: Int, z: Int) raises [Err1] =>
+        if z > 10 then raise Err1("Something is wrong!")
         self.z_modified <- "fdsa"
 
-        def mut (a, b) <- (10, 20)
-        (a, b) <- (30, 40)
+        def (a, b) <- (10, 20)
+        def mut (a, b) <- (30, 40)
+        (a, b) <- (0, 10)
 
         def something <- match z
             10 => z + 10
@@ -24,12 +25,11 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
             False => 3
 
         def a <- self.error_function() handle
-            err1 =>
-                print "hey"
-                print "there"
+            err1: Err1 =>
+                print err1
                 -1
-            err2 =>
-                print "hoi"
+            err2: Err2 =>
+                print err2
                 -2
 
         print a
@@ -49,5 +49,5 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]
     def b(self, c: Int) -> Int => self.a()
     def c(self, d: Int) -> Int => self.b(self.c(20))
 
-    def some_higher_order(self, fun: Int -> Int) -> Int? => 0
+    def some_higher_order(self, fun: Int -> Int) -> Int? => fun(10)
     def fancy(self) -> Int => self.some_higher_order(\x: Int => x * 2) ? 10

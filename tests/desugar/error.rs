@@ -43,17 +43,19 @@ fn handle_empty_verify() {
     let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
     let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
 
-    let (_try, except) = match desugar(&handle) {
+    let (setup, _try, except) = match desugar(&handle) {
         Ok(Core::Block { statements }) => {
             assert_eq!(statements.len(), 1);
             match &statements[0] {
-                Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
+                Core::TryExcept { setup, _try, except } =>
+                    (setup.clone(), _try.clone(), except.clone()),
                 other => panic!("Expected try except but was {:?}", other)
             }
         }
         other => panic!("Expected block but was {:?}", other)
     };
 
+    assert_eq!(setup, None);
     assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
     assert!(except.is_empty());
 }
@@ -73,17 +75,19 @@ fn handle_verify() {
     let case = to_pos_unboxed!(Node::Case { cond, body });
     let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
-    let (_try, except) = match desugar(&handle) {
+    let (setup, _try, except) = match desugar(&handle) {
         Ok(Core::Block { statements }) => {
             assert_eq!(statements.len(), 1);
             match &statements[0] {
-                Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
+                Core::TryExcept { setup, _try, except } =>
+                    (setup.clone(), _try.clone(), except.clone()),
                 other => panic!("Expected try except but was {:?}", other)
             }
         }
         other => panic!("Expected block but was {:?}", other)
     };
 
+    assert_eq!(setup, None);
     assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
     assert_eq!(except.len(), 1);
     match &except[0] {

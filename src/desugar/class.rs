@@ -56,11 +56,8 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                     let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
                         desugar_vec(&statements, imp, state)?
                     } else {
-                        let (found_constructor, augmented_definitions) = add_parent_to_constructor(
-                            &core_definitions,
-                            &parent_args,
-                            &super_calls
-                        )?;
+                        let (found_constructor, augmented_definitions) =
+                            add_parent_to_constructor(&core_definitions, &super_calls)?;
 
                         if found_constructor && !args.is_empty() {
                             panic!("Cannot have explicit constructor and inline arguments.")
@@ -180,7 +177,6 @@ fn constructor_from_inline(
 
 fn add_parent_to_constructor(
     core_definitions: &[Core],
-    parent_args: &[Core],
     super_calls: &[Core]
 ) -> DesugarResult<(bool, Vec<Core>)> {
     let mut final_definitions = vec![];
@@ -188,7 +184,7 @@ fn add_parent_to_constructor(
 
     for definition in core_definitions {
         final_definitions.push(
-            if let Core::FunDef { private, id, args: old_args, body: old_body, .. } = definition {
+            if let Core::FunDef { private, id, args, body: old_body, .. } = definition {
                 if let Core::Id { lit, .. } = id.clone().deref() {
                     if lit == "init" {
                         if found_constructor {
@@ -210,10 +206,13 @@ fn add_parent_to_constructor(
                             }
                         };
 
-                        let mut args = old_args.clone();
-                        args.append(&mut Vec::from(parent_args));
-
-                        Core::FunDef { private: *private, id: id.clone(), args, ret_ty: None, body }
+                        Core::FunDef {
+                            private: *private,
+                            id: id.clone(),
+                            args: args.clone(),
+                            ret_ty: None,
+                            body
+                        }
                     } else {
                         definition.clone()
                     }
@@ -243,7 +242,7 @@ fn extract_parents(
             Node::Parent { ref id, args: old_args, .. } => {
                 parent_names.push(desugar_node(id, ctx, state)?);
 
-                let mut args = vec![Core::Id { lit: String::from("self") }];
+                let mut args = vec![];
                 args.append(&mut desugar_vec(old_args, ctx, state)?);
                 parent_args.append(&mut desugar_vec(old_args, ctx, state)?);
 

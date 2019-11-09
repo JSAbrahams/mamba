@@ -292,47 +292,42 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
         Node::Retry { .. } => return Err(UnimplementedErr::new(ast, "retry")),
 
-        Node::Handle { expr_or_stmt, cases } => {
-            let mut statements = vec![];
-            if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
-                statements.push(Core::Assign {
+        Node::Handle { expr_or_stmt, cases } => Core::TryExcept {
+            setup:  if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
+                Some(Box::from(Core::Assign {
                     left:  Box::from(desugar_node(id_maybe_type.as_ref(), imp, state)?),
                     right: Box::from(Core::None)
-                });
-            };
+                }))
+            } else {
+                None
+            },
+            _try:   Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
+            except: {
+                let mut except = Vec::new();
+                for case in cases {
+                    let (cond, body) = match &case.node {
+                        Node::Case { cond, body } => (cond, body),
+                        other => panic!("Expected case but was {:?}", other)
+                    };
 
-            statements.push(Core::TryExcept {
-                _try:   Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
-                except: {
-                    let mut except = Vec::new();
-                    for case in cases {
-                        let (cond, body) = match &case.node {
-                            Node::Case { cond, body } => (cond, body),
-                            other => panic!("Expected case but was {:?}", other)
-                        };
-
-                        match &cond.node {
-                            Node::IdType { id, _type: Some(ty), .. } => match &ty.node {
-                                Node::Type { id: ty, .. } => except.push(Core::Except {
-                                    id:    Box::from(desugar_node(id, imp, state)?),
-                                    class: Box::from(desugar_node(ty, imp, state)?),
-                                    body:  Box::from(desugar_node(body, imp, state)?)
-                                }),
-                                other => panic!("Expected type but was {:?}", other)
-                            },
-                            Node::IdType { id, _type: None, .. } =>
-                                except.push(Core::ExceptNoClass {
-                                    id:   Box::from(desugar_node(id, imp, state)?),
-                                    body: Box::from(desugar_node(body, imp, state)?)
-                                }),
-                            other => panic!("Expected id type but was {:?}", other)
-                        };
-                    }
-                    except
+                    match &cond.node {
+                        Node::IdType { id, _type: Some(ty), .. } => match &ty.node {
+                            Node::Type { id: ty, .. } => except.push(Core::Except {
+                                id:    Box::from(desugar_node(id, imp, state)?),
+                                class: Box::from(desugar_node(ty, imp, state)?),
+                                body:  Box::from(desugar_node(body, imp, state)?)
+                            }),
+                            other => panic!("Expected type but was {:?}", other)
+                        },
+                        Node::IdType { id, _type: None, .. } => except.push(Core::ExceptNoClass {
+                            id:   Box::from(desugar_node(id, imp, state)?),
+                            body: Box::from(desugar_node(body, imp, state)?)
+                        }),
+                        other => panic!("Expected id type but was {:?}", other)
+                    };
                 }
-            });
-
-            Core::Block { statements }
+                except
+            }
         }
     };
 
