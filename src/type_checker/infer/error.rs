@@ -44,7 +44,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             },
 
         Node::With { resource, _as, expr } => {
-            let (resource_ty, mut env) = infer(resource, env, ctx)?;
+            let (resource_ty, mut inner_env) = infer(resource, env, ctx)?;
 
             if let Some(_as) = _as {
                 let (_as, mutable, type_name) = match &_as.node {
@@ -67,12 +67,13 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 }
 
                 if let Node::Id { lit } = &resource.node {
-                    env.remove(&lit);
+                    inner_env.remove(&lit);
                 }
-                env.insert(&_as, *mutable, &expr_ty);
+                inner_env.insert(&_as, *mutable, &expr_ty);
             }
 
-            infer(expr, &env, ctx)
+            let (infer_ty, _) = infer(expr, &inner_env, ctx)?;
+            Ok((InferType::new().union_raises(&infer_ty.raises), env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected error")])

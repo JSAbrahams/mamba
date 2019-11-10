@@ -48,7 +48,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
             match &property.node {
                 Node::Id { lit } => {
-                    let field = expr_ty.field(&lit, env.state.nullable, &property.pos)?;
+                    let field = expr_ty.field(&lit, &property.pos)?;
                     let field_ty_name = &field
                         .ty
                         .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of field")])?;
@@ -71,7 +71,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
                     // TODO check if mutable
 
-                    let field = expr_ty.field(&id, env.state.nullable, &left.pos)?;
+                    let field = expr_ty.field(&id, &left.pos)?;
                     if let Some((ty, pos)) = ty {
                         if field.ty()? != ty {
                             let msg = format!("Expected {}, given {}", field.ty()?, ty);
@@ -110,7 +110,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                         env = new_env;
                     }
 
-                    let function = expr_ty.fun(&name, &arg_names, env.state.nullable, &ast.pos)?;
+                    let function = expr_ty.fun(&name, &arg_names, &ast.pos)?;
                     let function_ty_name = &function
                         .ty()
                         .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of function")])?;

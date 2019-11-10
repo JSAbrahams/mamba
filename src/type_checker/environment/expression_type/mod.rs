@@ -133,14 +133,13 @@ impl ExpressionType {
         }
     }
 
-    pub fn field(&self, field: &str, nullable: bool, pos: &Position) -> TypeResult<Field> {
+    pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         match &self {
-            ExpressionType::Single { ty: mut_ty } =>
-                mut_ty.actual_ty_safe(nullable, pos)?.field(field, pos),
+            ExpressionType::Single { ty: mut_ty } => mut_ty.actual_ty().field(field, pos),
             ExpressionType::Union { union } => {
                 let union: Vec<Field> = union
                     .iter()
-                    .map(|e_ty| e_ty.actual_ty_safe(nullable, pos)?.field(field, pos))
+                    .map(|e_ty| e_ty.actual_ty().field(field, pos))
                     .collect::<Result<_, _>>()?;
                 let first = union.get(0);
                 if union.iter().all(|e_ty| Some(e_ty) == first) {
@@ -152,20 +151,13 @@ impl ExpressionType {
         }
     }
 
-    pub fn fun(
-        &self,
-        name: &str,
-        args: &[TypeName],
-        nullable: bool,
-        pos: &Position
-    ) -> TypeResult<Function> {
+    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
-            ExpressionType::Single { ty: mut_ty } =>
-                mut_ty.actual_ty_safe(nullable, pos)?.fun(name, args, pos),
+            ExpressionType::Single { ty } => ty.actual_ty().fun(name, args, pos),
             ExpressionType::Union { union } => {
                 let union: Vec<Function> = union
                     .iter()
-                    .map(|e_ty| e_ty.actual_ty_safe(nullable, pos)?.fun(name, args, pos))
+                    .map(|e_ty| e_ty.actual_ty().fun(name, args, pos))
                     .collect::<Result<_, Vec<TypeErr>>>()?;
                 let first = union.get(0);
 

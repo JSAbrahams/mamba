@@ -27,7 +27,7 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             }
 
             let actual_ty = ActualType::Tuple { types };
-            let nullable_ty = NullableType::new(env.state.nullable, &actual_ty);
+            let nullable_ty = NullableType::new(false, &actual_ty);
             let expr_ty = ExpressionType::from(&nullable_ty);
             let ty = InferType::from(&expr_ty);
             Ok((ty.union_raises(&raises), env))
@@ -95,7 +95,7 @@ pub fn iterable_generic(
     pos: &Position
 ) -> TypeResult<ExpressionType> {
     match expr_ty {
-        ExpressionType::Single { ty } => match &ty.actual_ty_safe(env.state.nullable, pos)? {
+        ExpressionType::Single { ty } => match &ty.actual_ty() {
             ActualType::Single { ty } => {
                 let iterable = ty
                     .fun("__iter__", &vec![], pos)?
@@ -103,7 +103,7 @@ pub fn iterable_generic(
                     .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
                 let next_ty = ctx
                     .lookup(&iterable, pos)?
-                    .fun("__next__", &vec![], env.state.nullable, pos)?
+                    .fun("__next__", &vec![], pos)?
                     .ty()
                     .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
                 ctx.lookup(&next_ty, pos)

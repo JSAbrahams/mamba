@@ -51,6 +51,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             Ok((InferType::new().add_raises(&right_ty), env))
         }
         // TODO use forward and private
+        // TODO check if parent already defines variable if relevant
         Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {
             // TODO Check whether mutable
             // TODO use system for tuples of ids
@@ -100,10 +101,8 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
                 env_with_args.insert(&name, mutable, &expr_ty);
             }
 
-            let raises: HashSet<ActualTypeName> = raises
-                .iter()
-                .map(|raise| ActualTypeName::try_from(raise))
-                .collect::<Result<_, _>>()?;
+            let raises: HashSet<_> =
+                raises.iter().map(ActualTypeName::try_from).collect::<Result<_, _>>()?;
             let ret_ty = match ret_ty {
                 Some(ret_ty) => Some(TypeName::try_from(ret_ty.deref())?),
                 None => None
@@ -111,51 +110,29 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
 
             if let Some(body) = body {
                 let (body_ty, _) = infer(body, &env_with_args, ctx)?;
-                let mut boy_raises_not_in_signature = body_ty.raises.clone();
-                boy_raises_not_in_signature.retain(|f| !raises.contains(f));
-                if !boy_raises_not_in_signature.is_empty() {
-                    return Err(vec![TypeErr::new(
-                        &ast.pos,
-                        &format!(
-                            "Body raises the following which were not mentioned in the signature: \
-                             [{}]",
-                            comma_delimited(boy_raises_not_in_signature)
-                        )
-                    )]);
+                let mut raises_not_in_signature = body_ty.raises.clone();
+                raises_not_in_signature.retain(|f| !raises.contains(f));
+                if !raises_not_in_signature.is_empty() {
+                    let msg = format!(
+                        "Body raises the following which were not mentioned in the signature: [{}]",
+                        comma_delimited(raises_not_in_signature)
+                    );
+                    return Err(vec![TypeErr::new(&ast.pos, &msg)]);
                 }
 
-                match ret_ty {
-                    Some(ret_ty) =>
-                        if body_ty.is_stmt() {
-                            Err(vec![TypeErr::new(
-                                &ast.pos,
-                                &format!("body must have type {}, but was statement", ret_ty)
-                            )])
-                        } else {
-                            // TODO allow return type of be nullable even if body is not
-                            let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
-                            // TODO if return type empty and return empty to body
-                            if ret_ty.is_superset(&body_ret_name) {
-                                Ok((
-                                    InferType::from(&ctx.lookup(&ret_ty, &ast.pos)?)
-                                        .union_raises(&raises),
-                                    env.clone()
-                                ))
-                            } else {
-                                Err(vec![TypeErr::new(
-                                    &ast.pos,
-                                    &format!(
-                                        "Body must have return type {}, was {}",
-                                        ret_ty, body_ret_name
-                                    )
-                                )])
-                            }
-                        },
-                    None => Ok((InferType::new().union_raises(&raises), env.clone()))
+                if let Some(ret_ty) = ret_ty {
+                    ctx.lookup(&ret_ty, &ast.pos)?;
+                    let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
+
+                    if !ret_ty.is_superset(&body_ret_name) {
+                        let msg =
+                            format!("Body must have return type {}, was {}", ret_ty, body_ret_name);
+                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                    }
                 }
-            } else {
-                Ok((InferType::new().union_raises(&raises), env.clone()))
             }
+
+            Ok((InferType::new(), env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable manipulation")])
@@ -173,11 +150,10 @@ pub fn arg_types(
         let (id, mutable, _type, default) = match &arg.node {
             Node::FunArg { id_maybe_type, default, .. } => match &id_maybe_type.node {
                 Node::IdType { id, mutable, _type } => (id, mutable, _type, default),
-                _ =>
-                    return Err(vec![TypeErr::new(
-                        &id_maybe_type.pos,
-                        "Expected identifier with type"
-                    )]),
+                _ => {
+                    let msg = "Expected identifier";
+                    return Err(vec![TypeErr::new(&id_maybe_type.pos, &msg)]);
+                }
             },
             _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
         };
@@ -209,11 +185,9 @@ pub fn arg_types(
         } else {
             if &lit == function_arg::concrete::SELF {
                 // TODO get actual type of self from Context in case self is child of class
-                let class = env
-                    .state
-                    .in_class
-                    .clone()
-                    .ok_or(vec![TypeErr::new(&arg.pos, "self cannot be outside class")])?;
+                let class = env.state.in_class.clone();
+                let msg = "self cannot be outside class";
+                let class = class.ok_or(vec![TypeErr::new(&arg.pos, &msg)])?;
                 arg_types.insert(
                     lit.clone(),
                     (*mutable, ctx.lookup(&TypeName::from(&class), &arg.pos)?)

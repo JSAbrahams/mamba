@@ -5,7 +5,6 @@ use crate::type_checker::environment::expression_type::ExpressionType;
 pub struct State {
     pub in_loop:   bool,
     pub in_handle: bool,
-    pub nullable:  bool,
     pub in_class:  Option<ActualTypeName>,
     pub in_match:  Option<ExpressionType>,
     pub handling:  Vec<ActualTypeName>
@@ -13,8 +12,7 @@ pub struct State {
 
 pub enum StateType {
     InLoop,
-    InHandle,
-    Nullable
+    InHandle
 }
 
 impl State {
@@ -22,7 +20,6 @@ impl State {
         State {
             in_loop:   false,
             in_handle: false,
-            nullable:  true,
             in_class:  None,
             in_match:  None,
             handling:  vec![]
@@ -44,16 +41,14 @@ impl State {
     pub fn as_state(&self, state_type: StateType) -> State {
         match state_type {
             StateType::InLoop => State { in_loop: true, ..self.clone() },
-            StateType::InHandle => State { in_handle: true, ..self.clone() },
-            StateType::Nullable => State { nullable: false, ..self.clone() }
+            StateType::InHandle => State { in_handle: true, ..self.clone() }
         }
     }
 
     pub fn as_not_state(&self, state_type: StateType) -> State {
         match state_type {
             StateType::InLoop => State { in_loop: false, ..self.clone() },
-            StateType::InHandle => State { in_handle: false, ..self.clone() },
-            StateType::Nullable => State { nullable: false, ..self.clone() }
+            StateType::InHandle => State { in_handle: false, ..self.clone() }
         }
     }
 }

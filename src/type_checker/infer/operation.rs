@@ -80,7 +80,7 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 args:   arg_types.into_iter().map(|(_, (_, expr_ty))| expr_ty.clone()).collect(),
                 ret_ty: Box::from(ret_ty)
             };
-            let nullable_type = NullableType::new(env.state.nullable, &actual_ty);
+            let nullable_type = NullableType::new(false, &actual_ty);
             let expr_ty = ExpressionType::from(&nullable_type);
 
             Ok((InferType::from(&expr_ty), env.clone()))
@@ -92,8 +92,7 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
 fn unary_op(expr: &Box<AST>, overrides: &str, env: &Environment, ctx: &Context) -> InferResult {
     let (infer_type, env) = infer(expr, env, ctx)?;
-    let fun =
-        infer_type.expr_ty(&expr.pos)?.fun(overrides, &vec![], env.state.nullable, &expr.pos)?;
+    let fun = infer_type.expr_ty(&expr.pos)?.fun(overrides, &vec![], &expr.pos)?;
     match &fun.ty() {
         Some(fun_ty) => {
             let fun_ret_ty = ctx.lookup(fun_ty, &expr.pos)?;
@@ -112,12 +111,10 @@ fn op(
 ) -> InferResult {
     let (left_ty, left_env) = infer(left, env, ctx)?;
     let (right_ty, right_env) = infer(right, &left_env, ctx)?;
-    let fun = left_ty.expr_ty(&left.pos)?.fun(
-        overrides,
-        &vec![TypeName::from(&right_ty.expr_ty(&right.pos)?)],
-        env.state.nullable,
-        &left.pos
-    )?;
+
+    let expr_ty = left_ty.expr_ty(&left.pos)?;
+    let args = vec![TypeName::from(&right_ty.expr_ty(&right.pos)?)];
+    let fun = expr_ty.fun(overrides, &args, &left.pos)?;
 
     match &fun.ty() {
         Some(fun_ty) => {

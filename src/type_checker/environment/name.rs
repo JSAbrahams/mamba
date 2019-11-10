@@ -65,7 +65,7 @@ pub fn match_name(
     pos: &Position
 ) -> TypeResult<HashMap<String, (bool, ExpressionType)>> {
     match expr_ty {
-        ExpressionType::Single { ty } => match &ty.actual_ty_safe(env.state.nullable, pos)? {
+        ExpressionType::Single { ty } => match &ty.actual_ty() {
             ActualType::Single { .. } | ActualType::AnonFun { .. } =>
                 if let Some((mutable, id)) = &identifier.lit {
                     let mut mapping = HashMap::with_capacity(1);
