@@ -80,7 +80,7 @@ impl From<&ExpressionType> for TypeName {
         match &expression_type {
             ExpressionType::Single { ty } => TypeName::Single {
                 ty: NullableTypeName {
-                    is_nullable: false,
+                    is_nullable: ty.is_nullable,
                     actual:      ActualTypeName::from(&ty.actual_ty())
                 }
             },
