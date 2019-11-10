@@ -1,4 +1,4 @@
-use crate::common::position::EndPoint;
+use crate::common::position::CaretPos;
 use crate::lexer::token::{Lex, Token};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -10,7 +10,7 @@ pub type LexResults =
 
 #[derive(Debug, Clone)]
 pub struct LexErr {
-    pub start:       EndPoint,
+    pub pos:         CaretPos,
     pub token:       Option<Token>,
     pub msg:         String,
     pub source_line: Option<String>,
@@ -18,25 +18,19 @@ pub struct LexErr {
 }
 
 impl LexErr {
-    pub fn new(line: i32, pos: i32, token: Option<Token>, msg: &str) -> LexErr {
-        LexErr {
-            start: EndPoint { line, pos },
-            token,
-            msg: String::from(msg),
-            source_line: None,
-            path: None
-        }
+    pub fn new(pos: &CaretPos, token: Option<Token>, msg: &str) -> LexErr {
+        LexErr { pos: pos.clone(), token, msg: String::from(msg), source_line: None, path: None }
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
         LexErr {
-            start:       self.start.clone(),
+            pos:         self.pos.clone(),
             token:       self.token.clone(),
             msg:         self.msg.clone(),
             source_line: source.clone().map(|source| {
                 source
                     .lines()
-                    .nth(self.start.line as usize - 1)
+                    .nth(self.pos.line as usize - 1)
                     .map_or(String::from("unknown"), String::from)
             }),
             path:        path.clone()
@@ -50,12 +44,12 @@ impl Display for LexErr {
             f,
             "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     | {}{}",
             self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string()),
-            self.start.line,
-            self.start.pos,
+            self.pos.line,
+            self.pos.pos,
             self.msg,
-            self.start.line,
+            self.pos.line,
             self.source_line.clone().unwrap_or(String::from("<unknown>")),
-            String::from_utf8(vec![b' '; self.start.pos as usize]).unwrap(),
+            String::from_utf8(vec![b' '; self.pos.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width) as usize])
                 .unwrap()
         )

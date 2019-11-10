@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::common::position::{EndPoint, Position};
+use crate::common::position::{CaretPos, Position};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lex {
@@ -9,14 +9,10 @@ pub struct Lex {
 }
 
 impl Lex {
-    pub fn new(line: i32, pos: i32, token: Token) -> Self {
-        Lex {
-            pos: Position {
-                start: EndPoint { line, pos },
-                end:   EndPoint { line, pos: pos + token.clone().width() }
-            },
-            token
-        }
+    pub fn new(pos: &CaretPos, token: Token) -> Self {
+        let pos =
+            Position { start: pos.clone(), end: pos.clone().offset_pos(token.clone().width()) };
+        Lex { pos, token }
     }
 }
 
@@ -192,7 +188,7 @@ impl fmt::Display for Token {
                     format!("{}E{}", int, exp)
                 },
             Token::Str(string) => format!("\"{}\"", string),
-            Token::Bool(boolean) => format!("{}", boolean),
+            Token::Bool(boolean) => String::from(if boolean { "True" } else { "False" }),
 
             Token::Range => String::from(".."),
             Token::RangeIncl => String::from("..="),

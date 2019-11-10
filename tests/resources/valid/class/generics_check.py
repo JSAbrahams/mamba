@@ -14,10 +14,10 @@ class Err2(Exception):
 
 
 class MyType:
-    other_field = None
+    super_field = None
 
-    def __init__(self, other_field: str):
-        self.other_field = other_field
+    def __init__(self, super_field: str):
+        self.super_field = super_field
 
 
 class MyClass2(MyType):

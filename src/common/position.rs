@@ -3,8 +3,8 @@ use std::cmp::{max, min};
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// A position represents a rectangle in the source code.
 pub struct Position {
-    pub start: EndPoint,
-    pub end:   EndPoint
+    pub start: CaretPos,
+    pub end:   CaretPos
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -12,13 +12,13 @@ pub struct Position {
 /// [Position] rectangle.
 ///
 /// Line's and position's are 1-indexed.
-pub struct EndPoint {
+pub struct CaretPos {
     pub line: i32,
     pub pos:  i32
 }
 
 impl Position {
-    pub fn new(start: &EndPoint, end: &EndPoint) -> Position {
+    pub fn new(start: &CaretPos, end: &CaretPos) -> Position {
         Position { start: start.clone(), end: end.clone() }
     }
 
@@ -32,11 +32,11 @@ impl Position {
 
     pub fn union(&self, other: &Position) -> Position {
         Position {
-            start: EndPoint {
+            start: CaretPos {
                 line: min(self.start.line, other.start.line),
                 pos:  min(self.start.pos, other.start.pos)
             },
-            end:   EndPoint {
+            end:   CaretPos {
                 line: max(self.end.line, other.end.line),
                 pos:  max(self.end.pos, other.end.pos)
             }
@@ -44,27 +44,29 @@ impl Position {
     }
 }
 
-impl EndPoint {
+impl CaretPos {
     /// Create new endpoint with given line and position.
-    pub fn new(line: i32, pos: i32) -> EndPoint { EndPoint { line, pos } }
+    pub fn new(line: i32, pos: i32) -> CaretPos { CaretPos { line, pos } }
 
     /// Create new [EndPoint] which is offset in the vertical direction by the
     /// given amount.
-    pub fn offset_line(self, offset: i32) -> EndPoint {
-        EndPoint { line: self.line + offset, pos: self.pos }
+    pub fn offset_line(self, offset: i32) -> CaretPos {
+        CaretPos { line: self.line + offset, pos: self.pos }
     }
 
     /// Create new [EndPoint] which is offset in the horizontal direction by the
     /// given amount.
-    pub fn offset_pos(self, offset: i32) -> EndPoint {
-        EndPoint { line: self.line, pos: self.pos + offset }
+    pub fn offset_pos(self, offset: i32) -> CaretPos {
+        CaretPos { line: self.line, pos: self.pos + offset }
     }
+
+    pub fn newline(self) -> CaretPos { CaretPos { line: self.line + 1, pos: 1 } }
 }
 
 impl Default for Position {
-    fn default() -> Self { Position { start: EndPoint::default(), end: EndPoint::default() } }
+    fn default() -> Self { Position { start: CaretPos::default(), end: CaretPos::default() } }
 }
 
-impl Default for EndPoint {
-    fn default() -> Self { EndPoint { line: 1, pos: 1 } }
+impl Default for CaretPos {
+    fn default() -> Self { CaretPos { line: 1, pos: 1 } }
 }

@@ -19,12 +19,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
-            _ => Err(LexErr::new(
-                state.line,
-                state.pos,
-                None,
-                "return carriage not followed by newline"
-            ))
+            _ => Err(LexErr::new(&state.pos, None, "return carriage not followed by newline"))
         },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
@@ -140,12 +135,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        other => Err(LexErr::new(
-            state.line,
-            state.pos,
-            None,
-            format!("unrecognized character: {}", other).as_ref()
-        ))
+        c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c)))
     }
 }
 

@@ -34,9 +34,9 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// # use mamba::parser::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
-/// # use mamba::common::position::{EndPoint, Position};
+/// # use mamba::common::position::{CaretPos, Position};
 /// let node = Node::ReturnEmpty;
-/// let ast_node_pos = AST::new(&Position::new(&EndPoint::new(1, 1), &EndPoint::new(1, 5)), node);
+/// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
 /// let core_result = desugar(&ast_node_pos).unwrap();
 ///
 /// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
@@ -51,11 +51,11 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// # use mamba::parser::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
-/// use mamba::common::position::{EndPoint, Position};
+/// use mamba::common::position::{CaretPos, Position};
 /// let cond_node = Node::Int { lit: String::from("56") };
-/// let cond_pos = AST::new(&Position::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5)), cond_node);
+/// let cond_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), cond_node);
 /// let node = Node::Condition { cond: Box::from(cond_pos), _else: None };
-/// let ast_node_pos = AST::new(&Position::new(&EndPoint::new(0, 0), &EndPoint::new(0, 5)), node);
+/// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
 /// let core_result = desugar(&ast_node_pos);
 ///
 /// assert!(core_result.is_err());

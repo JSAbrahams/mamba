@@ -1,4 +1,3 @@
-use mamba::common::position::EndPoint;
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;

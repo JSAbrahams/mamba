@@ -1,7 +1,7 @@
 class Err1(msg: String) isa Exception(msg)
 class Err2(msg: String) isa Exception(msg)
 
-class MyType[A, C](def other_field: String)
+class MyType[A, C](def super_field: String)
 
 class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped over the slow donkey")
     def private z_modified: String <- "asdf"

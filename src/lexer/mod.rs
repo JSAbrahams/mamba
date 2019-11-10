@@ -26,13 +26,13 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 /// # use mamba::lexer::tokenize;
 /// # use mamba::lexer::token::Token;
 /// # use mamba::lexer::token::Lex;
-/// # use mamba::common::position::EndPoint;
+/// # use mamba::common::position::CaretPos;
 /// let source = "a <- 2";
 /// let tokens = tokenize(&source).unwrap();
 ///
-/// assert_eq!(tokens[0].clone(), Lex::new(1, 1, Token::Id(String::from("a"))));
-/// assert_eq!(tokens[1], Lex::new(1, 3, Token::Assign));
-/// assert_eq!(tokens[2], Lex::new(1, 6, Token::Int(String::from("2"))));
+/// assert_eq!(tokens[0].clone(), Lex::new(&CaretPos::new(1, 1), Token::Id(String::from("a"))));
+/// assert_eq!(tokens[1], Lex::new(&CaretPos::new(1, 3), Token::Assign));
+/// assert_eq!(tokens[2], Lex::new(&CaretPos::new(1, 6), Token::Int(String::from("2"))));
 /// ```
 ///
 /// # Failures
@@ -41,7 +41,7 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 ///
 /// ```
 /// # use mamba::lexer::tokenize;
-/// // The '$' character on its own is meaningless in Mamba.
+/// // The '$' character is meaningless in Mamba.
 /// let source = "$";
 /// let result = tokenize(&source);
 /// assert_eq!(result.is_err(), true);
@@ -65,20 +65,14 @@ pub fn tokenize_all(inputs: &[TokenizeInput]) -> LexResults {
         .iter()
         .map(|(source, path)| (tokenize(source), source, path))
         .map(|(result, source, path)| {
-            (
-                result.map_err(|err| err.into_with_source(&Some(source.clone()), path)),
-                Some(source.clone()),
-                path.clone()
-            )
+            let result = result.map_err(|err| err.into_with_source(&Some(source.clone()), path));
+            (result, Some(source.clone()), path.clone())
         })
         .collect();
 
     let (oks, errs): (Vec<_>, Vec<_>) = inputs.iter().partition(|(res, ..)| res.is_ok());
     if errs.is_empty() {
-        Ok(oks
-            .iter()
-            .map(|(res, src, path)| (res.as_ref().unwrap().clone(), src.clone(), path.clone()))
-            .collect())
+        Ok(oks.into_iter().cloned().map(|(res, src, path)| (res.unwrap(), src, path)).collect())
     } else {
         Err(errs.iter().map(|(res, ..)| res.as_ref().unwrap_err().clone()).collect())
     }
