@@ -23,13 +23,7 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
         Node::Case { .. } => infer_match(ast, env, ctx),
 
         Node::IfElse { cond, then, _else } => {
-            let (cond_type, env) = infer(cond, env, ctx)?;
-            let bool_ty = ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)?;
-            if cond_type.expr_ty(&ast.pos)? != bool_ty {
-                let msg = format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, cond_type);
-                return Err(vec![TypeErr::new(&cond.pos, &msg)]);
-            }
-
+            let (_, env) = is_bool(cond, env, ctx)?;
             let (then_type, then_env) = infer(then, &env, ctx)?;
             if let Some(_else) = _else {
                 let (else_type, else_env) = infer(_else, &env, ctx)?;
@@ -39,13 +33,7 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
             }
         }
         Node::While { cond, body } => {
-            let (cond_type, env) = infer(cond, env, ctx)?;
-            let bool_ty = ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)?;
-            if cond_type.expr_ty(&cond.pos)? != bool_ty {
-                let msg = format!("Expected {}, was {}", concrete::BOOL_PRIMITIVE, cond_type);
-                return Err(vec![TypeErr::new(&cond.pos, &msg)]);
-            }
-
+            let (_, env) = is_bool(cond, env, ctx)?;
             let state = env.state.as_state(InLoop);
             let (body_ty, _) = infer(body, &env.new_state(&state), ctx)?;
             Ok((InferType::new().union_raises(&body_ty.raises), env))
@@ -107,5 +95,24 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
             },
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])
+    }
+}
+
+fn is_bool(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
+    let (ast_type, env) = infer(ast, env, ctx)?;
+    let expr_ty = ast_type.expr_ty(&ast.pos)?;
+    let msg = format!("Cannot evaluate {} to {}", expr_ty, concrete::BOOL_PRIMITIVE);
+
+    let fun_ty = expr_ty
+        .fun("__bool__", &vec![], &ast.pos)?
+        .ty()
+        .ok_or(vec![TypeErr::new(&ast.pos, &msg)])?;
+
+    if fun_ty == TypeName::from(concrete::BOOL_PRIMITIVE) {
+        let bool_ty = ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)?;
+        Ok((InferType::from(&bool_ty).union_raises(&ast_type.raises), env))
+    } else {
+        let msg = format!("Expected {} but got {}", concrete::BOOL_PRIMITIVE, fun_ty);
+        Err(vec![TypeErr::new(&ast.pos, &msg)])
     }
 }

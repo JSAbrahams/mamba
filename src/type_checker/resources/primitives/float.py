@@ -42,3 +42,5 @@ class float:
     def __le__(self, other: float) -> bool: pass
     def __lt__(self, other: int) -> bool: pass
     def __lt__(self, other: float) -> bool: pass
+
+    def __bool__(self) -> bool: pass
