@@ -22,11 +22,11 @@ for i in range(0, 345 + 1, 1):
 a = 1
 b = 112
 for i in range(a, b, 1):
-    print('hello')
+    print(f"hello")
 
 c = 2451
 for i in range(a, c + 1, 20):
-    print('world')
+    print(f"world")
 
 for i in ([1,2], {3,4}):
     print(i)

@@ -124,13 +124,9 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
 
                 if let Some(ret_ty) = ret_ty {
                     ctx.lookup(&ret_ty, &ast.pos)?;
-                    let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
-
-                    println!("{}", body_ret_name);
-
-                    if !ret_ty.is_superset(&body_ret_name) {
-                        let msg =
-                            format!("Body must have return type {}, was {}", ret_ty, body_ret_name);
+                    let body_ty = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
+                    if !ret_ty.is_superset(&body_ty) {
+                        let msg = format!("Must have return type {}, was {}", ret_ty, body_ty);
                         return Err(vec![TypeErr::new(&ast.pos, &msg)]);
                     }
                 }

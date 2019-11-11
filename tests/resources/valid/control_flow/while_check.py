@@ -8,4 +8,4 @@ while d:
 
     print(d and True)
 
-print("hello")
+print(f"hello")
