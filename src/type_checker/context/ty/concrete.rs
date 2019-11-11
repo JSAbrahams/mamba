@@ -29,6 +29,7 @@ pub const SET: &'static str = "Set";
 pub const LIST: &'static str = "List";
 
 pub const NONE: &'static str = "undefined";
+pub const EXCEPTION: &'static str = "Exception";
 
 // TODO add parents
 

@@ -155,7 +155,12 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
         Node::Question { .. } => infer_optional(ast, env, ctx),
 
-        Node::Return { expr } => infer(expr, env, ctx),
+        Node::Return { expr } =>
+            if env.state.in_function {
+                infer(expr, env, ctx)
+            } else {
+                Err(vec![TypeErr::new(&ast.pos, "Cannot have return outside function")])
+            },
         Node::ReturnEmpty => Ok((InferType::new(), env.clone())),
 
         Node::Underscore => Ok((InferType::new(), env.clone())),

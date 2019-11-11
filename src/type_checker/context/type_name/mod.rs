@@ -139,7 +139,7 @@ impl TypeName {
                 ty.is_superset(other_ty),
             (TypeName::Single { ty }, TypeName::Union { union })
             | (TypeName::Union { union }, TypeName::Single { ty }) =>
-                union.iter().any(|u_ty| u_ty.is_superset(ty)),
+                union.iter().all(|u_ty| u_ty.is_superset(ty)),
             (TypeName::Union { union }, TypeName::Union { union: other }) =>
                 other.iter().all(|o_ty| union.iter().any(|u_ty| u_ty.is_superset(o_ty))),
         }

@@ -72,6 +72,16 @@ impl ExpressionType {
             union
         };
 
+        // TODO check if parent of type is Exception
+        // remove exceptions from expression
+        let union: HashSet<NullableType> = union
+            .into_iter()
+            .filter(|ty| {
+                NullableTypeName::from(ty).actual
+                    != ActualTypeName::new(concrete::EXCEPTION, &vec![])
+            })
+            .collect();
+
         if union.len() == 1 {
             let mut ty = None;
             for new_ty in union {

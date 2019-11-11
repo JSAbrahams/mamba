@@ -4,6 +4,7 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
@@ -16,10 +17,17 @@ use crate::type_checker::util::comma_delimited;
 pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
         Node::Raise { error } => {
+            if !env.state.in_function {
+                return Err(vec![TypeErr::new(&ast.pos, "Raise cannot be outside function")]);
+            }
+
             let (ty, env) = infer(error, env, ctx)?;
             let actual_ty = ty.expr_ty(&error.pos)?.single(&error.pos)?.actual_ty();
             let set = HashSet::from_iter(vec![ActualTypeName::from(&actual_ty)].into_iter());
-            Ok((InferType::new().union_raises(&set).add_raises(&ty), env))
+
+            // TODO use actual exception instead of returning generic exception
+            let exception = ctx.lookup(&TypeName::from(concrete::EXCEPTION), &ast.pos)?;
+            Ok((InferType::from(&exception).union_raises(&set).add_raises(&ty), env))
         }
         Node::Raises { expr_or_stmt, errors } => {
             let (ty, env) = infer(expr_or_stmt, env, ctx)?;

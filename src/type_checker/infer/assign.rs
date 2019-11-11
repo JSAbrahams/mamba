@@ -11,6 +11,7 @@ use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::name::{match_name, Identifier};
+use crate::type_checker::environment::state::StateType::InFunction;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -100,6 +101,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             for (name, (mutable, expr_ty)) in arg_types(fun_args, env, ctx)? {
                 env_with_args.insert(&name, mutable, &expr_ty);
             }
+            env_with_args = env_with_args.new_state(&env_with_args.state.as_state(InFunction));
 
             let raises: HashSet<_> =
                 raises.iter().map(ActualTypeName::try_from).collect::<Result<_, _>>()?;
@@ -123,6 +125,8 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
                 if let Some(ret_ty) = ret_ty {
                     ctx.lookup(&ret_ty, &ast.pos)?;
                     let body_ret_name = TypeName::from(&body_ty.expr_ty(&ast.pos)?);
+
+                    println!("{}", body_ret_name);
 
                     if !ret_ty.is_superset(&body_ret_name) {
                         let msg =
