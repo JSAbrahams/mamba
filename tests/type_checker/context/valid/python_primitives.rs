@@ -50,4 +50,6 @@ pub fn std_lib_present() {
         .lookup(&TypeName::new("List", &vec![TypeName::from("Something")]), &Position::default())
         .unwrap();
     context.lookup(&TypeName::new("Range", &vec![]), &Position::default()).unwrap();
+    context.lookup(&TypeName::new("undefined", &vec![]), &Position::default()).unwrap();
+    context.lookup(&TypeName::new("Exception", &vec![]), &Position::default()).unwrap();
 }

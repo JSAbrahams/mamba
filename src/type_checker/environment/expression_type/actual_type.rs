@@ -63,7 +63,7 @@ impl ActualType {
         }
     }
 
-    pub fn args(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
+    pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
         match &self {
             ActualType::Single { ty } => {
                 // TODO handle default arguments

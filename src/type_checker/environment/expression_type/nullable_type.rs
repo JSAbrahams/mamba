@@ -31,7 +31,7 @@ impl NullableType {
     pub fn actual_ty(&self) -> ActualType { self.actual_ty.clone() }
 
     pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<NullableType> {
-        let actual_ty = self.actual_ty.args(args, pos)?;
+        let actual_ty = self.actual_ty.constructor(args, pos)?;
         Ok(NullableType { is_nullable: self.is_nullable, actual_ty })
     }
 }
