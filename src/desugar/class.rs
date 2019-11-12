@@ -19,18 +19,26 @@ use crate::type_checker::context::{function, function_arg};
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
-        Node::TypeDef { _type, body: Some(body) } => match (&_type.node, &body.node) {
+        Node::TypeDef { _type, body: Some(body), isa } => match (&_type.node, &body.node) {
             (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
-                parents:     Vec::new(),
+                parents:     if let Some(isa) = isa {
+                    vec![desugar_node(isa, imp, state)?]
+                } else {
+                    vec![]
+                },
                 definitions: desugar_vec(statements, imp, &state.in_interface(true))?
             },
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
-        Node::TypeDef { _type, body: None } => match &_type.node {
+        Node::TypeDef { _type, body: None, isa } => match &_type.node {
             Node::Type { id, .. } => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
-                parents:     vec![],
+                parents:     if let Some(isa) = isa {
+                    vec![desugar_node(isa, imp, state)?]
+                } else {
+                    vec![]
+                },
                 definitions: vec![]
             },
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)

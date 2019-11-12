@@ -33,7 +33,7 @@ impl TryFrom<&AST> for GenericParent {
         match &ast.node {
             // TODO infer types of arguments passed to parent
             // TODO use arguments
-            Node::Parent { id, generics, .. } => Ok(GenericParent {
+            Node::Parent { id, generics, .. } | Node::Type { id, generics } => Ok(GenericParent {
                 is_py_type: false,
                 name:       match &id.node {
                     Node::Id { lit } => lit.clone(),

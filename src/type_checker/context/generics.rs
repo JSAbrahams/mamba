@@ -1,11 +1,12 @@
+use std::collections::HashSet;
+use std::convert::TryFrom;
+
 use crate::parser::ast::Node;
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::CheckInput;
-use std::collections::HashSet;
-use std::convert::TryFrom;
 
 pub fn generics(
     files: &[CheckInput]
@@ -16,7 +17,7 @@ pub fn generics(
 
     files.iter().for_each(|(file, source, path)| match &file.node {
         Node::File { pure, modules, .. } => modules.iter().for_each(|module| match &module.node {
-            Node::Class { .. } | Node::TypeDef { .. } => results.push(
+            Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => results.push(
                 GenericType::try_from(module)
                     .and_then(|ty| ty.all_pure(*pure).map_err(|e| vec![e]))
                     .map_err(|errs| {

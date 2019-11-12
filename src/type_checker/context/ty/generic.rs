@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
+use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
@@ -116,7 +117,7 @@ impl TryFrom<&AST> for GenericType {
                     parents: parents.into_iter().map(Result::unwrap).collect()
                 })
             }
-            Node::TypeDef { _type, body } => {
+            Node::TypeDef { _type, isa, body } => {
                 let (name, generics) = get_name_and_generics(_type)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
@@ -125,6 +126,12 @@ impl TryFrom<&AST> for GenericType {
                     }
                 } else {
                     vec![]
+                };
+
+                let parents = if let Some(isa) = isa {
+                    HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?])
+                } else {
+                    HashSet::new()
                 };
 
                 let (fields, functions) = get_fields_and_functions(&name, &statements, &class.pos)?;
@@ -138,7 +145,22 @@ impl TryFrom<&AST> for GenericType {
                     generics,
                     fields,
                     functions,
-                    parents: HashSet::new()
+                    parents
+                })
+            }
+            Node::TypeAlias { _type, isa, .. } => {
+                let (name, generics) = get_name_and_generics(_type)?;
+                let parents = HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]);
+                Ok(GenericType {
+                    is_py_type: false,
+                    name,
+                    pos: class.pos.clone(),
+                    args: vec![],
+                    concrete: false,
+                    generics,
+                    fields: HashSet::new(),
+                    functions: HashSet::new(),
+                    parents
                 })
             }
             _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")])

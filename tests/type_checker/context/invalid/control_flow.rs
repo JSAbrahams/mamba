@@ -17,7 +17,7 @@ fn for_non_iterable() {
 
 #[test]
 fn if_boolean() {
-    let source = resource_content(false, &["type", "control_flow"], "if_boolean.mamba");
+    let source = resource_content(false, &["type", "control_flow"], "if_not_boolean.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }
 

@@ -111,11 +111,12 @@ pub enum Node {
     },
     TypeDef {
         _type: Box<AST>,
+        isa:   Option<Box<AST>>,
         body:  Option<Box<AST>>
     },
     TypeAlias {
         _type:      Box<AST>,
-        alias:      Box<AST>,
+        isa:        Box<AST>,
         conditions: Vec<AST>
     },
     TypeTup {

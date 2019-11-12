@@ -34,9 +34,9 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             Node::_Self => Core::Id { lit: String::from("self") },
             _ => desugar_node(id, imp, state)?
         },
-        Node::TypeAlias { _type, alias, .. } => Core::Assign {
+        Node::TypeAlias { _type, isa, .. } => Core::Assign {
             left:  Box::from(desugar_node(_type, imp, state)?),
-            right: Box::from(desugar_node(alias, imp, state)?)
+            right: Box::from(desugar_node(isa, imp, state)?)
         },
         Node::TypeTup { types } => {
             imp.add_from_import("typing", "Tuple");

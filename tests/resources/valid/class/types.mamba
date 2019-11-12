@@ -1,19 +1,29 @@
 from Math import abs
 import something
 
-type SomeState isa MyClass when z_modified > 2
+class MyGeneric isa String
+
+class MyType(def some_field: String)
+
+type SomeState isa MyClass when self.z_modified > 2
 
 type OtherState isa MyClass when
-    z_modified > 10
-    z_modified < 200
-    other_field < 50
+    self.z_modified  > 10
+    self.z_modified  < 200
+    self.other_field < 50
+
+type SuperInterface
+    def bar: Int
+
+type MyInterface isa SuperInterface
+    def foo: Int
+    def f() -> int
 
 # this class has no state
 class MyClass2[C, A isa MyGeneric](def my_field: Int, other_field <- "Hello") isa MyType[A, C](other_field)
-    def private z_modified
     def private private_field <- 20
 
-    def connect(mut self: SomeState) => self.other_field <- 200
+    def connect(mut self: SomeState) => self.some_field <- 200
 
     def fun_a(self) => print self
 

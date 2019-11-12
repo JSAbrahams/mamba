@@ -9,8 +9,8 @@ use crate::parser::block::parse_block;
 use crate::parser::block::parse_statements;
 use crate::parser::class::parse_class;
 use crate::parser::iterator::LexIterator;
-use crate::parser::parse_result::expected;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::{custom, expected};
 
 pub fn parse_from_import(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("from import")?;
@@ -119,28 +119,35 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
     let _type = it.parse(&parse_type, "type definition", &start)?;
+    let isa = it.parse_if(&Token::IsA, &parse_type, "type parent", &start)?;
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::IsA => {
-                it.eat(&Token::IsA, "type definition")?;
-                let alias = it.parse(&parse_type, "type definition", &start)?;
-                let conditions =
-                    it.parse_vec_if(&Token::When, &parse_conditions, "type definition", &start)?;
+            Token::When => {
+                it.eat(&Token::When, "conditional type")?;
+                let isa = isa
+                    .clone()
+                    .ok_or(custom("conditional type must have parent type", &lex.pos))?;
+
+                let conditions = it.parse_vec(&parse_conditions, "conditional type", &start)?;
                 let end = conditions.last().map_or(_type.pos.clone(), |cond| cond.pos.clone());
 
-                let node = Node::TypeAlias { _type: _type.clone(), alias, conditions };
+                let node = Node::TypeAlias { _type: _type.clone(), isa, conditions };
                 Ok(Box::from(AST::new(&start.union(&end), node)))
             }
             _ => {
+                // TODO fix such that we can have empty interfaces
                 it.eat_if(&Token::NL);
                 let body = it.parse(&parse_block, "type definition", &start)?;
-                let node = Node::TypeDef { _type: _type.clone(), body: Some(body.clone()) };
+
+                let isa = isa.clone();
+                let node = Node::TypeDef { _type: _type.clone(), isa, body: Some(body.clone()) };
                 Ok(Box::from(AST::new(&start.union(&body.pos), node)))
             }
         },
         {
-            let node = Node::TypeDef { _type: _type.clone(), body: None };
+            let isa = isa.clone();
+            let node = Node::TypeDef { _type: _type.clone(), isa, body: None };
             Ok(Box::from(AST::new(&start.union(&_type.pos), node)))
         }
     )
