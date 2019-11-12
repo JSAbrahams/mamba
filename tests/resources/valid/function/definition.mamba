@@ -38,3 +38,5 @@ class MyClass(def a: Int, def b: Int)
 def factorial(x: Int) -> Int => x * factorial(x - 1)
 
 def some_higher_order(f: (Int) -> Int, x: Int) -> Int => f(x)
+
+def always_undefined() -> Int? => undefined

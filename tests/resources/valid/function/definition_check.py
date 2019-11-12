@@ -50,3 +50,6 @@ class MyClass:
 def factorial(x: int) -> int: return x * factorial(x - 1)
 
 def some_higher_order(f: Callable[[int], int], x: int)-> int: return f(x)
+
+def always_undefined() -> Optional[int]:
+    return None

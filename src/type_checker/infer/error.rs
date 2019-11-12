@@ -25,7 +25,6 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             let actual_ty = ty.expr_ty(&error.pos)?.single(&error.pos)?.actual_ty();
             let set = HashSet::from_iter(vec![ActualTypeName::from(&actual_ty)].into_iter());
 
-            // TODO use actual exception instead of returning generic exception
             let exception = ctx.lookup(&TypeName::from(concrete::EXCEPTION), &ast.pos)?;
             Ok((InferType::from(&exception).union_raises(&set).add_raises(&ty), env))
         }

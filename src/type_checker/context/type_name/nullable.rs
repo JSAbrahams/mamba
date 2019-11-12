@@ -12,6 +12,8 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::nullable_type::NullableType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
+// TODO add boolean for is_exception for more elegant exception checking
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct NullableTypeName {
     pub is_nullable: bool,

@@ -64,49 +64,14 @@ impl ExpressionType {
                 union.union(other).cloned().collect(),
         };
 
-        let union = if union.iter().any(|ty| {
-            ActualTypeName::from(&ty.actual_ty()) == ActualTypeName::new(concrete::NONE, &vec![])
-        }) {
-            union.iter().map(|ty| ty.as_nullable()).collect()
-        } else {
-            union
-        };
-
         // TODO check if parent of type is Exception
-        // remove exceptions from expression
-        let union: HashSet<NullableType> = union
-            .into_iter()
-            .filter(|ty| {
-                NullableTypeName::from(ty).actual
-                    != ActualTypeName::new(concrete::EXCEPTION, &vec![])
-            })
-            .collect();
-
+        let union = make_nullable_if_none(&union);
+        let union = remove_exception(&union);
         if union.len() == 1 {
-            let mut ty = None;
-            for new_ty in union {
-                ty = Some(new_ty);
-            }
-            ExpressionType::Single { ty: ty.unwrap_or_else(|| unreachable!()) }
+            let ty = Vec::from_iter(union.iter())[0].clone();
+            ExpressionType::Single { ty }
         } else {
-            // filter only if undefined may not be only type
-            let union: HashSet<NullableType> = union
-                .into_iter()
-                .filter(|ty| {
-                    NullableTypeName::from(ty).actual
-                        != ActualTypeName::new(concrete::NONE, &vec![])
-                })
-                .collect();
-
-            if union.len() == 1 {
-                let mut ty = None;
-                for new_ty in union {
-                    ty = Some(new_ty);
-                }
-                ExpressionType::Single { ty: ty.unwrap_or_else(|| unreachable!()) }
-            } else {
-                ExpressionType::Union { union }
-            }
+            ExpressionType::Union { union }
         }
     }
 
@@ -191,5 +156,41 @@ impl ExpressionType {
                     .collect::<Result<_, _>>()?
             }
         })
+    }
+}
+
+fn make_nullable_if_none(union: &HashSet<NullableType>) -> HashSet<NullableType> {
+    let union = if union.iter().any(|ty| {
+        ActualTypeName::from(&ty.actual_ty()) == ActualTypeName::new(concrete::NONE, &vec![])
+    }) {
+        union.iter().map(|ty| ty.as_nullable()).collect()
+    } else {
+        union.clone()
+    };
+
+    if union.len() == 1 {
+        union.clone()
+    } else {
+        union
+            .into_iter()
+            .filter(|ty| {
+                NullableTypeName::from(ty).actual != ActualTypeName::new(concrete::NONE, &vec![])
+            })
+            .collect()
+    }
+}
+
+fn remove_exception(union: &HashSet<NullableType>) -> HashSet<NullableType> {
+    if union.len() == 1 {
+        union.clone()
+    } else {
+        union
+            .clone()
+            .into_iter()
+            .filter(|ty| {
+                NullableTypeName::from(ty).actual
+                    != ActualTypeName::new(concrete::EXCEPTION, &vec![])
+            })
+            .collect()
     }
 }

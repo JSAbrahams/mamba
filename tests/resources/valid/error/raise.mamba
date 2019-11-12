@@ -2,5 +2,9 @@ class Err(def msg: String) isa Exception(msg)
 
 def f(x: Int) -> Int raises[Err] => if x > 0 then 10 else raise Err("Expected positive number.")
 
+def g() -> Int raises[Err] => raise Err("Error always raised")
+
+def h(x: Int) -> Int raises[Err] => if x < 0 then raise Err("Less than") else raise Err("Greater Than")
+
 f(10)
 f(10) raises [Err]

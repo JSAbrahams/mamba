@@ -8,6 +8,7 @@ use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::nullable::NullableTypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
@@ -134,15 +135,16 @@ impl TypeName {
     }
 
     pub fn is_superset(&self, other: &TypeName) -> bool {
-        match (self, other) {
-            (TypeName::Single { ty }, TypeName::Single { ty: other_ty }) =>
-                ty.is_superset(other_ty),
-            (TypeName::Single { ty }, TypeName::Union { union })
-            | (TypeName::Union { union }, TypeName::Single { ty }) =>
-                union.iter().all(|u_ty| u_ty.is_superset(ty)),
-            (TypeName::Union { union }, TypeName::Union { union: other }) =>
-                other.iter().all(|o_ty| union.iter().any(|u_ty| u_ty.is_superset(o_ty))),
-        }
+        self == &TypeName::from(concrete::EXCEPTION)
+            || match (self, other) {
+                (TypeName::Single { ty }, TypeName::Single { ty: other_ty }) =>
+                    ty.is_superset(other_ty),
+                (TypeName::Single { ty }, TypeName::Union { union })
+                | (TypeName::Union { union }, TypeName::Single { ty }) =>
+                    union.iter().all(|u_ty| u_ty.is_superset(ty)),
+                (TypeName::Union { union }, TypeName::Union { union: other }) =>
+                    other.iter().all(|o_ty| union.iter().any(|u_ty| u_ty.is_superset(o_ty))),
+            }
     }
 
     pub fn substitute(

@@ -92,16 +92,13 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])
         },
 
-        Node::FunArg { .. } =>
-            Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
+        Node::FunArg { .. } => Err(vec![TypeErr::new(&ast.pos, "Unexpected function argument")]),
         Node::FunDef { fun_args, ret_ty, raises, body, .. } => {
             // TODO use pure
-            // TODO add functions to environment
-            let mut env_with_args = env.clone();
-            for (name, (mutable, expr_ty)) in arg_types(fun_args, env, ctx)? {
-                env_with_args.insert(&name, mutable, &expr_ty);
-            }
-            env_with_args = env_with_args.new_state(&env_with_args.state.as_state(InFunction));
+            let mut inner_env = env.new_state(&env.state.as_state(InFunction));
+            arg_types(fun_args, env, ctx)?
+                .iter()
+                .for_each(|(name, (m, expr_ty))| inner_env.insert(name, *m, expr_ty));
 
             let raises: HashSet<_> =
                 raises.iter().map(ActualTypeName::try_from).collect::<Result<_, _>>()?;
@@ -111,13 +108,14 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             };
 
             if let Some(body) = body {
-                let (body_ty, _) = infer(body, &env_with_args, ctx)?;
-                let mut raises_not_in_signature = body_ty.raises.clone();
-                raises_not_in_signature.retain(|f| !raises.contains(f));
+                let (body_ty, _) = infer(body, &inner_env, ctx)?;
+                let raises_not_in_signature: HashSet<_> =
+                    body_ty.raises.difference(&raises).collect();
                 if !raises_not_in_signature.is_empty() {
+                    let raised = comma_delimited(raises_not_in_signature);
                     let msg = format!(
-                        "Body raises the following which were not mentioned in the signature: [{}]",
-                        comma_delimited(raises_not_in_signature)
+                        "Following may be raised but are not in function signature: [{}]",
+                        raised
                     );
                     return Err(vec![TypeErr::new(&ast.pos, &msg)]);
                 }
