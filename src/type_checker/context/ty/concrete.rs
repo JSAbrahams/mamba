@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -31,7 +31,7 @@ pub const LIST: &'static str = "List";
 pub const NONE: &'static str = "undefined";
 pub const EXCEPTION: &'static str = "Exception";
 
-// TODO add parents
+// TODO change
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Type {
@@ -39,8 +39,8 @@ pub struct Type {
     pub name:       ActualTypeName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
-    fields:         Vec<Field>,
-    functions:      Vec<Function>
+    fields:         HashSet<Field>,
+    functions:      HashSet<Function>
 }
 
 impl Hash for Type {
@@ -51,31 +51,53 @@ impl Display for Type {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &Position)> for Type {
+impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &Position)>
+    for Type
+{
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericType, &HashMap<String, TypeName>, &Position)
+        (generic, generics, types, pos): (
+            &GenericType,
+            &HashMap<String, TypeName>,
+            &HashSet<GenericType>,
+            &Position
+        )
     ) -> Result<Self, Self::Error> {
+        let mut fields: HashSet<Field> = generic
+            .fields
+            .iter()
+            .map(|field| Field::try_from((field, generics, pos)))
+            .collect::<Result<_, _>>()?;
+        let mut functions: HashSet<Function> = generic
+            .functions
+            .iter()
+            .map(|fun| Function::try_from((fun, generics, pos)))
+            .collect::<Result<_, _>>()?;
+
+        for parent in &generic.parents {
+            let name = TypeName::from(parent.name.as_str()).single(pos)?;
+            let ty = types
+                .iter()
+                .find(|ty| ty.name == name)
+                .ok_or(TypeErr::new(pos, &format!("Unknown type: {}", name)))?;
+
+            let ty = Type::try_from((ty, generics, types, pos))?;
+            fields = fields.union(&ty.fields).cloned().collect();
+            functions = functions.union(&ty.functions).cloned().collect();
+        }
+
         Ok(Type {
             is_py_type: generic.is_py_type,
-            name:       generic.name.substitute(generics, pos)?,
-            concrete:   generic.concrete,
-            args:       generic
+            name: generic.name.substitute(generics, pos)?,
+            concrete: generic.concrete,
+            args: generic
                 .args
                 .iter()
                 .map(|a| FunctionArg::try_from((a, generics, pos)))
                 .collect::<Result<_, _>>()?,
-            fields:     generic
-                .fields
-                .iter()
-                .map(|f| Field::try_from((f, generics, pos)))
-                .collect::<Result<_, _>>()?,
-            functions:  generic
-                .functions
-                .iter()
-                .map(|f| Function::try_from((f, generics, pos)))
-                .collect::<Result<_, _>>()?
+            fields,
+            functions
         })
     }
 }

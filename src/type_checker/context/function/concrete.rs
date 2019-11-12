@@ -28,7 +28,7 @@ pub const POW: &'static str = "^";
 pub const SUB: &'static str = "-";
 pub const SQRT: &'static str = "sqrt";
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Function {
     pub is_py_type: bool,
     pub name:       ActualTypeName,

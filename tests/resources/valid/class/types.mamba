@@ -2,12 +2,10 @@ from Math import abs
 import something
 
 class MyGeneric isa String
-
 class MyType(def some_field: String)
 
-type SomeState isa MyClass when self.z_modified > 2
-
-type OtherState isa MyClass when
+type SomeState isa MyClass[Int, String] when self.z_modified > 2
+type OtherState isa MyClass[Int, String] when
     self.z_modified  > 10
     self.z_modified  < 200
     self.other_field < 50
@@ -16,25 +14,16 @@ type SuperInterface
     def bar: Int
 
 type MyInterface isa SuperInterface
-    def foo: Int
-    def f() -> int
+    def required_field: Int
+    def higher_order() -> int
 
 # this class has no state
-class MyClass2[C, A isa MyGeneric](def my_field: Int, other_field <- "Hello") isa MyType[A, C](other_field)
+class MyClass[C, A isa MyGeneric](def my_field: Int, other_field: String <- "Hello") isa MyType[A, C](other_field), MyInterface
+    def required_field: Int <- 100
     def private private_field <- 20
 
-    def connect(mut self: SomeState) => self.some_field <- 200
+    def fun_a(mut self: SomeState) => self.some_field <- 200 + required_field
+    def private fun_b(self) => print "this function is private: {self.private_field}!"
 
-    def fun_a(self) => print self
-
-    def private fun_b(self) => print "this function is private!"
-
-    def factorial(self, x: Int <- 0) => x * self.factorial (x - 1)
-    def factorial_infinite(self, x: Int) => x * self.factorial(x)
-
-    def a(self) => self.a(self.b)
-    def b(self, c: C) => self.a(self.b(self.c))
-    def c(self, d: D) => self.a(self.b(self.c(d)))
-
-    def some_higher_order(self, fun: Int -> Int) => 0
-    def fancy(self) => self.some_higher_order(\x => x * 2)
+    def some_higher_order(self, fun: Int -> Int) -> Int => fun(self.my_field)
+    def higher_order(self) -> Int => self.some_higher_order(\x: Int => x * 2)

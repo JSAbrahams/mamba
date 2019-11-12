@@ -1,4 +1,5 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::Environment;
@@ -94,15 +95,66 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx),
 
         Node::IdType { .. } => infer_assign(ast, env, ctx),
-        Node::TypeDef { .. } => Ok((InferType::new(), env.clone())),
-        Node::TypeAlias { .. } => Ok((InferType::new(), env.clone())),
-        Node::TypeTup { .. } => Ok((InferType::new(), env.clone())),
-        Node::TypeUnion { .. } => Ok((InferType::new(), env.clone())),
-        Node::Type { .. } => Ok((InferType::new(), env.clone())),
-        Node::TypeFun { .. } => Ok((InferType::new(), env.clone())),
-        Node::QuestionOp { .. } => Ok((InferType::new(), env.clone())),
+        Node::TypeDef { isa, body, .. } => {
+            if let Some(isa) = isa {
+                infer(isa, env, ctx)?;
+            }
+            if let Some(body) = body {
+                infer(body, env, ctx)?;
+            }
+            Ok((InferType::new(), env.clone()))
+        }
+        Node::TypeAlias { isa, conditions, .. } => {
+            infer(isa, env, ctx)?;
+            for condition in conditions {
+                infer(condition, env, ctx)?;
+            }
+            Ok((InferType::new(), env.clone()))
+        }
+        Node::TypeTup { types } => {
+            for ty in types {
+                infer(ty, env, ctx)?;
+            }
+            Ok((InferType::new(), env.clone()))
+        }
+        Node::TypeUnion { types } => {
+            for ty in types {
+                infer(ty, env, ctx)?;
+            }
+            Ok((InferType::new(), env.clone()))
+        }
+        Node::Type { id, generics } => {
+            let id = match &id.node {
+                Node::Id { lit } => lit.clone(),
+                _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
+            };
 
-        Node::Condition { .. } => Ok((InferType::new(), env.clone())),
+            // TODO do something with generics
+            ctx.lookup(&TypeName::from(id.as_str()), &ast.pos)?;
+            for generic in generics {
+                infer(generic, env, ctx)?;
+            }
+            Ok((InferType::new(), env.clone()))
+        }
+        Node::TypeFun { args, ret_ty } => {
+            for arg in args {
+                infer(arg, env, ctx)?;
+            }
+            infer(ret_ty, env, ctx)?;
+            Ok((InferType::new(), env.clone()))
+        }
+        Node::QuestionOp { expr } => {
+            infer(expr, env, ctx)?;
+            Ok((InferType::new(), env.clone()))
+        }
+
+        Node::Condition { cond, _else } => {
+            infer(cond, env, ctx)?;
+            if let Some(_else) = _else {
+                infer(_else, env, ctx)?;
+            }
+            Ok((InferType::new(), env.clone()))
+        }
 
         Node::_Self =>
             Ok((InferType::from(&env.lookup(function_arg::concrete::SELF, &ast.pos)?), env.clone())),

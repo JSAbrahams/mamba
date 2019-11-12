@@ -81,7 +81,7 @@ impl Context {
                 .zip(generics.clone())
                 .map(|(parameter, type_name)| (parameter.name, type_name))
                 .collect();
-            Type::try_from((&generic_type, &generics, pos))
+            Type::try_from((&generic_type, &generics, &self.types, pos))
         } else {
             Err(vec![TypeErr::new(
                 pos,

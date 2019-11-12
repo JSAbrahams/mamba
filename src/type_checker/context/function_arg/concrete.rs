@@ -14,7 +14,7 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub const SELF: &'static str = "self";
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {
     pub is_py_type: bool,
     pub name:       String,
