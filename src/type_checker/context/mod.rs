@@ -75,8 +75,10 @@ impl Context {
         let generic_type: GenericType = self.find_type_name(name, pos)?;
         if generic_type.generics.len() != generics.len() {
             let msg = format!(
-                "Type takes {} generic arguments, but given {}: [{}]",
+                "{} takes {} generic arguments: [{}],\nbut given {}: [{}]",
+                name,
                 generic_type.generics.len(),
+                comma_delimited(&generic_type.generics),
                 generics.len(),
                 comma_delimited(generics)
             );

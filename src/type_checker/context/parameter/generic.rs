@@ -1,14 +1,31 @@
+use std::convert::TryFrom;
+use std::fmt::{Display, Error, Formatter};
+use std::ops::Deref;
+
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::convert::TryFrom;
-use std::ops::Deref;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GenericParameter {
     pub is_py_type: bool,
     pub name:       String,
     pub parent:     Option<TypeName>
+}
+
+impl Display for GenericParameter {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(
+            f,
+            "{}{}",
+            self.name,
+            if let Some(parent) = &self.parent {
+                format!(" isa {}", parent)
+            } else {
+                String::new()
+            }
+        )
+    }
 }
 
 impl TryFrom<&AST> for GenericParameter {
