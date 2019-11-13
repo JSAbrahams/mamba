@@ -3,4 +3,4 @@ type MyType
     def factorial(self, x: Int) -> Int
 
 class MyClass1 isa MyType("asdf")
-    def other
+    def other: Int

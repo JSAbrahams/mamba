@@ -1,0 +1,4 @@
+class SuperClass[B isa Int]
+
+class MyClass[A isa String] isa SuperClass[A]
+    def my_fun(x: A) -> A => x

@@ -1,4 +1,5 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::infer_type::InferType;
@@ -17,6 +18,8 @@ use crate::type_checker::infer::operation::infer_op;
 use crate::type_checker::infer::optional::infer_optional;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::CheckInput;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 mod assign;
 mod bitwise_operation;
@@ -95,19 +98,24 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx),
 
         Node::IdType { .. } => infer_assign(ast, env, ctx),
-        Node::TypeDef { isa, body, .. } => {
+        Node::TypeDef { isa, body, _type } => {
             if let Some(isa) = isa {
                 infer(isa, env, ctx)?;
             }
             if let Some(body) = body {
-                infer(body, env, ctx)?;
+                let class = ActualTypeName::try_from(_type.deref())?;
+                let env = env.new_state(&env.state.in_class(&class));
+                infer(body, &env, ctx)?;
             }
+
             Ok((InferType::new(), env.clone()))
         }
-        Node::TypeAlias { isa, conditions, .. } => {
+        Node::TypeAlias { isa, conditions, _type } => {
             infer(isa, env, ctx)?;
             for condition in conditions {
-                infer(condition, env, ctx)?;
+                let class = ActualTypeName::try_from(_type.deref())?;
+                let env = env.new_state(&env.state.in_class(&class));
+                infer(condition, &env, ctx)?;
             }
             Ok((InferType::new(), env.clone()))
         }

@@ -1,7 +1,9 @@
-use crate::type_checker::context::parameter::generic::GenericParameter;
-use python_parser::ast::Subscript::Simple;
-use python_parser::ast::{Argument, Expression};
 use std::ops::Deref;
+
+use python_parser::ast::Subscript::Simple;
+use python_parser::ast::{Argument, Expression, Subscript};
+
+use crate::type_checker::context::parameter::generic::GenericParameter;
 
 pub struct GenericParameters {
     pub parameters: Vec<GenericParameter>
@@ -30,6 +32,25 @@ impl From<&Vec<Argument>> for GenericParameters {
             Argument::Starargs(_) => {}
             Argument::Keyword(..) => {}
             Argument::Kwargs(_) => {}
+        });
+
+        GenericParameters { parameters }
+    }
+}
+
+impl From<&Vec<Subscript>> for GenericParameters {
+    fn from(args: &Vec<Subscript>) -> Self {
+        let mut parameters = vec![];
+        args.iter().for_each(|subscript| match subscript {
+            Subscript::Simple(expr) => match expr {
+                Expression::Name(name) => parameters.push(GenericParameter {
+                    is_py_type: true,
+                    name:       name.clone(),
+                    parent:     None
+                }),
+                _ => {}
+            },
+            _ => {}
         });
 
         GenericParameters { parameters }

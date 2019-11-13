@@ -14,16 +14,3 @@ fn undefined_variable() {
     let source = resource_content(false, &["type", "definition"], "undefined_variable.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }
-
-#[test]
-fn function_return_undefined() {
-    let source =
-        resource_content(false, &["type", "definition"], "function_return_undefined.mamba");
-    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
-}
-
-#[test]
-fn function_wrong_return() {
-    let source = resource_content(false, &["type", "definition"], "function_wrong_return.mamba");
-    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
-}

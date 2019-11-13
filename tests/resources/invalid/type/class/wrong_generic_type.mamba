@@ -1,0 +1,4 @@
+class MyClass[A isa String]
+    def my_fun(x: A) -> A => x
+
+def my_class = MyClass[Int]()

@@ -73,26 +73,20 @@ impl Context {
         pos: &Position
     ) -> TypeResult<Type> {
         let generic_type: GenericType = self.find_type_name(name, pos)?;
-        if generic_type.generics.len() == generics.len() {
-            let generics: HashMap<_, _> = generic_type
-                .clone()
-                .generics
-                .into_iter()
-                .zip(generics.clone())
-                .map(|(parameter, type_name)| (parameter.name, type_name))
-                .collect();
-            Type::try_from((&generic_type, &generics, &self.types, pos))
-        } else {
-            Err(vec![TypeErr::new(
-                pos,
-                &format!(
-                    "Type takes {} generic arguments, but given {}: [{}]",
-                    generic_type.generics.len(),
-                    generics.len(),
-                    comma_delimited(generics)
-                )
-            )])
+        if generic_type.generics.len() != generics.len() {
+            let msg = format!(
+                "Type takes {} generic arguments, but given {}: [{}]",
+                generic_type.generics.len(),
+                generics.len(),
+                comma_delimited(generics)
+            );
+            return Err(vec![TypeErr::new(pos, &msg)]);
         }
+
+        let type_generics = generic_type.generics.clone();
+        let paired = type_generics.into_iter().zip(generics.clone());
+        let generics = paired.map(|(parameter, type_name)| (parameter.name, type_name)).collect();
+        Type::try_from((&generic_type, &generics, &self.types, pos))
     }
 
     fn lookup_actual(

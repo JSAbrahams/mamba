@@ -1,9 +1,9 @@
-class MyType():
+class MyType:
     def fun_a(self): pass
-    def factorial(self, x): pass
+    def factorial(self, x: int) -> int: pass
 
 class MyClass1(MyType):
     def __init__(self):
-        super().__init__(self, "asdf")
+        super().__init__(f"asdf")
 
-    other = None
+    other: int = None

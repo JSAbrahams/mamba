@@ -80,7 +80,7 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
             let ty = types
                 .iter()
                 .find(|ty| ty.name == name)
-                .ok_or(TypeErr::new(pos, &format!("Unknown type: {}", name)))?;
+                .ok_or(TypeErr::new(pos, &format!("Unknown parent type: {}", name)))?;
 
             let ty = Type::try_from((ty, generics, types, pos))?;
             fields = fields.union(&ty.fields).cloned().collect();

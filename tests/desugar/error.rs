@@ -1,9 +1,10 @@
+use std::panic;
+
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
 use mamba::parser::ast::Node;
 use mamba::parser::ast::AST;
-use std::panic;
 
 #[test]
 fn with_verify() {
@@ -43,15 +44,9 @@ fn handle_empty_verify() {
     let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
 
     let (setup, _try, except) = match desugar(&handle) {
-        Ok(Core::Block { statements }) => {
-            assert_eq!(statements.len(), 1);
-            match &statements[0] {
-                Core::TryExcept { setup, _try, except } =>
-                    (setup.clone(), _try.clone(), except.clone()),
-                other => panic!("Expected try except but was {:?}", other)
-            }
-        }
-        other => panic!("Expected block but was {:?}", other)
+        Ok(Core::TryExcept { setup, _try, except }) =>
+            (setup.clone(), _try.clone(), except.clone()),
+        other => panic!("Expected try except but was {:?}", other)
     };
 
     assert_eq!(setup, None);
@@ -75,15 +70,9 @@ fn handle_verify() {
     let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
     let (setup, _try, except) = match desugar(&handle) {
-        Ok(Core::Block { statements }) => {
-            assert_eq!(statements.len(), 1);
-            match &statements[0] {
-                Core::TryExcept { setup, _try, except } =>
-                    (setup.clone(), _try.clone(), except.clone()),
-                other => panic!("Expected try except but was {:?}", other)
-            }
-        }
-        other => panic!("Expected block but was {:?}", other)
+        Ok(Core::TryExcept { setup, _try, except }) =>
+            (setup.clone(), _try.clone(), except.clone()),
+        other => panic!("Expected try except but was {:?}", other)
     };
 
     assert_eq!(setup, None);

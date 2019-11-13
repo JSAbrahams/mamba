@@ -97,10 +97,7 @@ impl TypeName {
         TypeName::Single {
             ty: NullableTypeName {
                 is_nullable: false,
-                actual:      ActualTypeName::Single {
-                    lit:      String::from(lit),
-                    generics: Vec::from(generics)
-                }
+                actual:      ActualTypeName::new(lit, generics)
             }
         }
     }
