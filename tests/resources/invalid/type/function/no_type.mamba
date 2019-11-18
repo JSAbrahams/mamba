@@ -1,1 +1,1 @@
-def g(self, a) => print("all non-self arguments should have type")
+def g(a) => print("all non-self arguments should have type if no default")

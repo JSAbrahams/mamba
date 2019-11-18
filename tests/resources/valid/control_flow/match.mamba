@@ -1,13 +1,20 @@
-match a
-    "b" => c
-    "d" => e
+def a <- "d"
 
-match (b, bb, bbb)
-    (a, c, d) => print "hello world"
+print match a
+    "b" => "c"
+    "d" => "e"
+
+# TODO handle tuples
+# def (b, bb, bbb) <- (0, 1, 2)
+#
+# match (b, bb, bbb)
+#    (0, 1, 2) => print "hello world"
+
+def nested <- "other"
 
 match nested
-    "a" => b
-    "c" => match c
-        "other" => even_other
-        "other_one" => better_one
-        _ => default
+    "a" => "b"
+    "c" => match nested
+        "other" => "even_other"
+        "other_one" => "better_one"
+        _ => "default"

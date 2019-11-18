@@ -1,4 +1,3 @@
-use mamba::common::position::EndPoint;
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
@@ -26,22 +25,15 @@ fn tuple_verify() {
 #[test]
 fn set_verify() {
     let elements = vec![
-        to_pos_unboxed!(Node::IdType {
-            id:      to_pos!(Node::Id { lit: String::from("a") }),
-            mutable: false,
-            _type:   Some(to_pos!(Node::Type {
-                id:       to_pos!(Node::Id { lit: String::from("some_type") }),
-                generics: vec![]
-            }))
-        }),
+        to_pos_unboxed!(Node::Id { lit: String::from("a") }),
         to_pos_unboxed!(Node::Bool { lit: true }),
     ];
-    let tuple = to_pos!(Node::Set { elements });
-    let core = desugar(&tuple);
+    let set = to_pos!(Node::Set { elements });
+    let core = desugar(&set);
 
     let core_elements = match core {
         Ok(Core::Set { elements }) => elements,
-        other => panic!("Expected tuple but got {:?}", other)
+        other => panic!("Expected set but got {:?}", other)
     };
 
     assert_eq!(core_elements[0], Core::Id { lit: String::from("a") });

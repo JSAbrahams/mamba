@@ -3,7 +3,7 @@ use std::str::Chars;
 
 use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
-use crate::lexer::token::{Token, TokenPos};
+use crate::lexer::token::{Lex, Token};
 
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
@@ -19,12 +19,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
-            _ => Err(LexErr::new(
-                state.line,
-                state.pos,
-                None,
-                "return carriage not followed by newline"
-            ))
+            _ => Err(LexErr::new(&state.pos, None, "return carriage not followed by newline"))
         },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
@@ -69,10 +64,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             }
             create(state, Token::Comment(comment))
         }
-        '?' => match it.peek() {
-            Some('.') => next_and_create(it, state, Token::QuestCall),
-            _ => create(state, Token::Question)
-        },
+        '?' => create(state, Token::Question),
         '0'..='9' => {
             let mut number = c.to_string();
             let mut exp = String::new();
@@ -143,12 +135,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        other => Err(LexErr::new(
-            state.line,
-            state.pos,
-            None,
-            format!("unrecognized character: {}", other).as_ref()
-        ))
+        c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c)))
     }
 }
 
@@ -156,12 +143,12 @@ fn next_and_create(
     it: &mut Peekable<Chars>,
     state: &mut State,
     token: Token
-) -> LexResult<Vec<TokenPos>> {
+) -> LexResult<Vec<Lex>> {
     it.next();
     create(state, token)
 }
 
-fn create(state: &mut State, token: Token) -> LexResult<Vec<TokenPos>> { Ok(state.token(token)) }
+fn create(state: &mut State, token: Token) -> LexResult<Vec<Lex>> { Ok(state.token(token)) }
 
 fn as_op_or_id(string: String) -> Token {
     match string.as_ref() {
@@ -181,7 +168,6 @@ fn as_op_or_id(string: String) -> Token {
         "init" => Token::Init,
 
         "def" => Token::Def,
-        "ofmut" => Token::OfMut,
         "mut" => Token::Mut,
         "and" => Token::And,
         "or" => Token::Or,

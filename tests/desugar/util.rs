@@ -1,12 +1,6 @@
 macro_rules! to_pos_unboxed {
     ($node:expr) => {{
-        AST {
-            pos:  Position {
-                start: EndPoint { line: 0, pos: 0 },
-                end:   EndPoint { line: 0, pos: 0 }
-            },
-            node: $node
-        }
+        AST { pos: Position::default(), node: $node }
     }};
 }
 

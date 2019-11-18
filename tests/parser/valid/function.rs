@@ -13,9 +13,3 @@ fn function_calling() {
     let source = resource_content(true, &["function"], "calls.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();
 }
-
-#[test]
-fn infix_function_calling() {
-    let source = resource_content(true, &["function"], "infix_calls.mamba");
-    parse(&tokenize(&source).unwrap()).unwrap();
-}

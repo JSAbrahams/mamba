@@ -3,15 +3,20 @@ use std::path::PathBuf;
 
 use crate::parser::ast::AST;
 use crate::type_checker::context::Context;
+use crate::type_checker::infer::infer_all;
 use crate::type_checker::type_result::TypeResults;
 
-mod context;
-mod environment;
+pub mod context;
+pub mod environment;
+
 mod infer;
+mod util;
 
 pub mod type_result;
-
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
+
+// TODO make type checker modify AST where necessary for more advanced language
+// features
 
 /// Checks whether a given [AST](crate::parser::ast::AST) is well
 /// typed according to the specification of the language.
@@ -29,7 +34,8 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 ///
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
-    Context::try_from(inputs)?;
+    let context = Context::try_from(inputs)?.into_with_primitives()?.into_with_std_lib()?;
+    infer_all(inputs, &context)?;
 
     Ok(inputs
         .iter()

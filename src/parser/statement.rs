@@ -5,33 +5,33 @@ use crate::parser::ast::AST;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parser::definition::parse_definition;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
-use crate::parser::expression::parse_expression;
-use crate::parser::iterator::TPIterator;
+use crate::parser::iterator::LexIterator;
+use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
 
-pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
+pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
-        &|it, token_pos| match token_pos.token {
+        &|it, lex| match lex.token {
             Token::Print => {
                 it.eat(&Token::Print, "statement")?;
-                let expr = it.parse(&parse_expression, "statement", &token_pos.start)?;
+                let expr = it.parse(&parse_expression, "statement", &lex.pos)?;
                 let node = Node::Print { expr: expr.clone() };
-                Ok(Box::from(AST::new(&token_pos.start, &expr.pos.end.clone(), node)))
+                Ok(Box::from(AST::new(&lex.pos.union(&expr.pos), node)))
             }
             Token::Pass => {
                 let end = it.eat(&Token::Pass, "statement")?;
-                Ok(Box::from(AST::new(&token_pos.start, &end, Node::Pass)))
+                Ok(Box::from(AST::new(&end, Node::Pass)))
             }
             Token::Retry => {
                 let end = it.eat(&Token::Retry, "statement")?;
-                Ok(Box::from(AST::new(&token_pos.start, &end, Node::Retry)))
+                Ok(Box::from(AST::new(&end, Node::Retry)))
             }
             Token::Raise => {
                 it.eat(&Token::Raise, "statement")?;
-                let error = it.parse(&parse_expression, "statement", &token_pos.start)?;
+                let error = it.parse(&parse_expression, "statement", &lex.pos)?;
                 let node = Node::Raise { error: error.clone() };
-                Ok(Box::from(AST::new(&token_pos.start, &error.pos.end, node)))
+                Ok(Box::from(AST::new(&lex.pos.union(&error.pos), node)))
             }
             Token::Def => parse_definition(it),
             Token::With => parse_with(it),
@@ -46,7 +46,7 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
                     Token::For,
                     Token::While
                 ],
-                token_pos,
+                lex,
                 "statement"
             ))
         },
@@ -63,15 +63,16 @@ pub fn parse_statement(it: &mut TPIterator) -> ParseResult {
     )
 }
 
-pub fn parse_with(it: &mut TPIterator) -> ParseResult {
+pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_expression, "with", &start)?;
     let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id", &start)?;
+    it.eat(&Token::Do, "with")?;
     let expr = it.parse(&parse_expr_or_stmt, "with", &start)?;
 
     let node = Node::With { resource, _as, expr: expr.clone() };
-    Ok(Box::from(AST::new(&start, &expr.pos.end, node)))
+    Ok(Box::from(AST::new(&start.union(&expr.pos), node)))
 }
 
 pub fn is_start_statement(tp: &Token) -> bool {

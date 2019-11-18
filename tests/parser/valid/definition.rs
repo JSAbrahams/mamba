@@ -25,10 +25,10 @@ macro_rules! unwrap_definition {
         };
 
         match definition.node {
-            Node::VariableDef { ofmut, private, id_maybe_type, expression, forward } =>
+            Node::VariableDef { private, id_maybe_type, expression, forward } =>
                 match id_maybe_type.node {
                     Node::IdType { id, mutable, _type } =>
-                        (private, mutable, ofmut, id, _type, expression, forward),
+                        (private, mutable, id, _type, expression, forward),
                     other => panic!("Expected id type in variable def but was {:?}.", other)
                 },
             other => panic!("Expected variabledef but was {:?}.", other)
@@ -40,11 +40,10 @@ macro_rules! unwrap_definition {
 fn empty_definition_verify() {
     let source = String::from("def a");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(expression, None);
@@ -55,11 +54,10 @@ fn empty_definition_verify() {
 fn definition_verify() {
     let source = String::from("def a <- 10");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(forward, vec![]);
@@ -74,30 +72,10 @@ fn definition_verify() {
 fn mutable_definition_verify() {
     let source = String::from("def mut a <- 10");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(mutable, true);
-    assert_eq!(ofmut, false);
-    assert_eq!(id.node, Node::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
-    assert_eq!(forward, vec![]);
-
-    match expression {
-        Some(expr_pos) => assert_eq!(expr_pos.node, Node::Int { lit: String::from("10") }),
-        other => panic!("Unexpected expression: {:?}", other)
-    }
-}
-
-#[test]
-fn ofmut_definition_verify() {
-    let source = String::from("def a ofmut <- 10");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
-
-    assert_eq!(private, false);
-    assert_eq!(mutable, false);
-    assert_eq!(ofmut, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(forward, vec![]);
@@ -112,11 +90,10 @@ fn ofmut_definition_verify() {
 fn private_definition_verify() {
     let source = String::from("def private a <- 10");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert_eq!(private, true);
     assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(forward, vec![]);
@@ -131,7 +108,7 @@ fn private_definition_verify() {
 fn typed_definition_verify() {
     let source = String::from("def a: Object <- 10");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     let type_id = match _type {
         Some(_type_pos) => match _type_pos.node {
@@ -147,7 +124,6 @@ fn typed_definition_verify() {
 
     assert_eq!(private, false);
     assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(forward, vec![]);
     assert_eq!(expr.node, Node::Int { lit: String::from("10") });
@@ -158,11 +134,10 @@ fn typed_definition_verify() {
 fn forward_empty_definition_verify() {
     let source = String::from("def a forward b, c");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(expression, None);
     assert_eq!(forward.len(), 2);
@@ -174,11 +149,10 @@ fn forward_empty_definition_verify() {
 fn forward_definition_verify() {
     let source = String::from("def a <- MyClass forward b, c");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, ofmut, id, _type, expression, forward) = unwrap_definition!(ast_tree);
+    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast_tree);
 
     assert_eq!(private, false);
     assert_eq!(mutable, false);
-    assert_eq!(ofmut, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(expression.unwrap().node, Node::Id { lit: String::from("MyClass") });
     assert_eq!(forward.len(), 2);

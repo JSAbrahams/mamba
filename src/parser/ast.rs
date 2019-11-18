@@ -1,4 +1,3 @@
-use crate::common::position::EndPoint;
 use crate::common::position::Position;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -10,9 +9,7 @@ pub struct AST {
 }
 
 impl AST {
-    pub fn new(start: &EndPoint, end: &EndPoint, node: Node) -> AST {
-        AST { pos: Position { start: start.clone(), end: end.clone() }, node }
-    }
+    pub fn new(pos: &Position, node: Node) -> AST { AST { pos: pos.clone(), node } }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -35,7 +32,7 @@ pub enum Node {
         _type:   Box<AST>,
         args:    Vec<AST>,
         parents: Vec<AST>,
-        body:    Box<AST>
+        body:    Option<Box<AST>>
     },
     Generic {
         id:  Box<AST>,
@@ -56,7 +53,6 @@ pub enum Node {
         right: Box<AST>
     },
     VariableDef {
-        ofmut:         bool,
         private:       bool,
         id_maybe_type: Box<AST>,
         expression:    Option<Box<AST>>,
@@ -115,13 +111,18 @@ pub enum Node {
     },
     TypeDef {
         _type: Box<AST>,
+        isa:   Option<Box<AST>>,
         body:  Option<Box<AST>>
     },
     TypeAlias {
         _type:      Box<AST>,
+        isa:        Box<AST>,
         conditions: Vec<AST>
     },
     TypeTup {
+        types: Vec<AST>
+    },
+    TypeUnion {
         types: Vec<AST>
     },
     Type {
@@ -330,6 +331,7 @@ pub enum Node {
     },
     For {
         expr: Box<AST>,
+        col:  Box<AST>,
         body: Box<AST>
     },
     In {
@@ -351,11 +353,15 @@ pub enum Node {
     },
     ReturnEmpty,
     Underscore,
+    Undefined,
     Pass,
 
     Question {
         left:  Box<AST>,
         right: Box<AST>
+    },
+    QuestionOp {
+        expr: Box<AST>
     },
 
     Print {

@@ -52,6 +52,7 @@ fn list_builder_verify() {
 }
 
 #[test]
+#[ignore]
 fn parse_map() {
     let source = resource_content(true, &["collection"], "map.mamba");
     parse(&tokenize(&source).unwrap()).unwrap();

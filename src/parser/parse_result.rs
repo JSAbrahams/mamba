@@ -3,12 +3,12 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::common::position::{EndPoint, Position};
+use crate::common::position::Position;
+use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
-use crate::lexer::token::TokenPos;
 use crate::parser::ast::AST;
 
-const SYNTAX_ERR_MAX_DEPTH: usize = 2;
+const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
 pub type ParseResult<T = Box<AST>> = std::result::Result<T, ParseErr>;
 pub type ParseResults =
@@ -61,9 +61,9 @@ impl ParseErr {
     }
 }
 
-pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> ParseErr {
+pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
-        position: Position::from(actual),
+        position: actual.pos.clone(),
         msg:      format!(
             "Expected one of [{}] while parsing {} \"{}\", but found token '{}'",
             comma_separated(tokens),
@@ -77,9 +77,9 @@ pub fn expected_one_of(tokens: &[Token], actual: &TokenPos, parsing: &str) -> Pa
     }
 }
 
-pub fn expected(expected: &Token, actual: &TokenPos, parsing: &str) -> ParseErr {
+pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
-        position: Position::from(actual),
+        position: actual.pos.clone(),
         msg:      format!(
             "Expected token '{}' while parsing {} \"{}\", but found token '{}'",
             expected,
@@ -105,12 +105,9 @@ pub fn custom(msg: &str, position: &Position) -> ParseErr {
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
-        position: Position {
-            start: EndPoint { line: 0, pos: 0 },
-            end:   EndPoint { line: 0, pos: 0 }
-        },
+        position: Position::default(),
         msg:      format!(
-            "Expected one of {} while parsing {} \"{}\", but end of file",
+            "Expected one of {} while parsing {} {}, but end of file",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing
@@ -174,12 +171,8 @@ impl Display for ParseErr {
 
         write!(
             f,
-            "--> {:#?}:{}:{}
-     | {}
-{}
-{:3}  |- {}
-     | {}{}",
-            self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
+            "--> {}:{}:{}\n     | {}\n{}\n     |\n{:3}  |- {}\n     | {}{}",
+            self.path.clone().map_or(String::from("<unknown>"), |path| path.display().to_string()),
             self.position.start.line,
             self.position.start.pos,
             self.msg,
