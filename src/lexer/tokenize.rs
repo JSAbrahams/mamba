@@ -73,11 +73,11 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 
             while let Some(&c) = it.peek() {
                 match c {
-                    '0'...'9' if !e_num => {
+                    '0'..='9' if !e_num => {
                         number.push(c);
                         it.next();
                     }
-                    '0'...'9' if e_num => {
+                    '0'..='9' if e_num => {
                         exp.push(c);
                         it.next();
                     }
