@@ -1,3 +1,2 @@
 exclude_paths:
-  - 'tests/resources/.*'
-  - 'src/type_checker/resources/.*'
+  - '**/*.py'

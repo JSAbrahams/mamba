@@ -36,7 +36,14 @@ branches:
 
 before_script:
   # Python
-  - if [ $TRAVIS_OS_NAME = 'linux' ]; then sudo apt-get install python3; fi
+  - |
+    if [ $TRAVIS_OS_NAME = 'linux' ]; then
+      apt update;
+      sudo apt install software-properties-common;
+      sudo add-apt-repository ppa:deadsnakes/ppa;
+      then sudo apt-get update;
+      then sudo apt-get install python3.8;
+    fi
 
   # Cargo components
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add rustfmt --toolchain nightly; fi
@@ -44,7 +51,6 @@ before_script:
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add clippy --toolchain nightly; fi
 
 before_install:
-  - sudo apt-get update
   # grcov
   - curl -L https://github.com/mozilla/grcov/releases/download/v0.4.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
 
