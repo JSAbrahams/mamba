@@ -15,25 +15,25 @@ use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::{comma_delimited, newline_delimited};
 
-pub const ANY: &'static str = "Any";
+pub const ANY: &str = "Any";
 
-pub const INT_PRIMITIVE: &'static str = "Int";
-pub const FLOAT_PRIMITIVE: &'static str = "Float";
-pub const STRING_PRIMITIVE: &'static str = "String";
-pub const BOOL_PRIMITIVE: &'static str = "Bool";
-pub const ENUM_PRIMITIVE: &'static str = "Enum";
-pub const COMPLEX_PRIMITIVE: &'static str = "Complex";
+pub const INT_PRIMITIVE: &str = "Int";
+pub const FLOAT_PRIMITIVE: &str = "Float";
+pub const STRING_PRIMITIVE: &str = "String";
+pub const BOOL_PRIMITIVE: &str = "Bool";
+pub const ENUM_PRIMITIVE: &str = "Enum";
+pub const COMPLEX_PRIMITIVE: &str = "Complex";
 
-pub const RANGE: &'static str = "Range";
-pub const SET: &'static str = "Set";
-pub const LIST: &'static str = "List";
+pub const RANGE: &str = "Range";
+pub const SET: &str = "Set";
+pub const LIST: &str = "List";
 
-pub const NONE: &'static str = "undefined";
-pub const EXCEPTION: &'static str = "Exception";
+pub const NONE: &str = "undefined";
+pub const EXCEPTION: &str = "Exception";
 
 // TODO change
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Type {
     pub is_py_type: bool,
     pub name:       ActualTypeName,
@@ -45,6 +45,10 @@ pub struct Type {
 
 impl Hash for Type {
     fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+}
+
+impl PartialEq for Type {
+    fn eq(&self, other: &Self) -> bool { self.name == other.name }
 }
 
 impl Display for Type {
@@ -80,7 +84,7 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
             let ty = types
                 .iter()
                 .find(|ty| ty.name == name)
-                .ok_or(TypeErr::new(pos, &format!("Unknown parent type: {}", name)))?;
+                .ok_or_else(|| TypeErr::new(pos, &format!("Unknown parent type: {}", name)))?;
 
             let ty = Type::try_from((ty, generics, types, pos))?;
             fields = fields.union(&ty.fields).cloned().collect();
@@ -105,15 +109,17 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
 impl Type {
     pub fn field(&self, name: &str, pos: &Position) -> TypeResult<Field> {
         let field = self.fields.iter().find(|field| field.name.as_str() == name).cloned();
-        field.ok_or(vec![TypeErr::new(
-            pos,
-            &format!(
-                "Type {} does not define field {}, must be one of:\n{}",
-                self.name,
-                name,
-                newline_delimited(&self.fields)
-            )
-        )])
+        field.ok_or_else(|| {
+            vec![TypeErr::new(
+                pos,
+                &format!(
+                    "Type {} does not define field {}, must be one of:\n{}",
+                    self.name,
+                    name,
+                    newline_delimited(&self.fields)
+                )
+            )]
+        })
     }
 
     // TODO add boolean for unsafe operator so we can ignore if type is None
@@ -151,8 +157,8 @@ impl Type {
     }
 }
 
-pub fn concrete_to_python(name: &String) -> String {
-    match name.as_str() {
+pub fn concrete_to_python(name: &str) -> String {
+    match name {
         INT_PRIMITIVE => String::from(python::INT_PRIMITIVE),
         FLOAT_PRIMITIVE => String::from(python::FLOAT_PRIMITIVE),
         STRING_PRIMITIVE => String::from(python::STRING_PRIMITIVE),

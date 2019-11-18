@@ -11,7 +11,7 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
-        Node::Init => Ok((InferType::new(), env.clone())),
+        Node::Init => Ok((InferType::default(), env.clone())),
         Node::Class { _type, args, parents, body } => {
             // TODO type check arguments and constructor of parent
             for arg in args {
@@ -50,10 +50,10 @@ pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 infer(body, &env, ctx)?;
             }
 
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
-        Node::Generic { .. } => Ok((InferType::new(), env.clone())),
-        Node::Parent { .. } => Ok((InferType::new(), env.clone())),
+        Node::Generic { .. } => Ok((InferType::default(), env.clone())),
+        Node::Parent { .. } => Ok((InferType::default(), env.clone())),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or class element")])
     }

@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 use crate::common::position::Position;
 use crate::type_checker::context::function::generic::GenericFunction;
@@ -11,26 +12,25 @@ use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::util::comma_delimited;
-use std::hash::{Hash, Hasher};
 
-pub const INIT: &'static str = "init";
+pub const INIT: &str = "init";
 
-pub const ADD: &'static str = "+";
-pub const DIV: &'static str = "/";
-pub const EQ: &'static str = "=";
-pub const FDIV: &'static str = "//";
-pub const GE: &'static str = ">";
-pub const GEQ: &'static str = ">=";
-pub const LE: &'static str = "<";
-pub const LEQ: &'static str = "<=";
-pub const MOD: &'static str = "mod";
-pub const MUL: &'static str = "*";
-pub const NEQ: &'static str = "/=";
-pub const POW: &'static str = "^";
-pub const SUB: &'static str = "-";
-pub const SQRT: &'static str = "sqrt";
+pub const ADD: &str = "+";
+pub const DIV: &str = "/";
+pub const EQ: &str = "=";
+pub const FDIV: &str = "//";
+pub const GE: &str = ">";
+pub const GEQ: &str = ">=";
+pub const LE: &str = "<";
+pub const LEQ: &str = "<=";
+pub const MOD: &str = "mod";
+pub const MUL: &str = "*";
+pub const NEQ: &str = "/=";
+pub const POW: &str = "^";
+pub const SUB: &str = "-";
+pub const SQRT: &str = "sqrt";
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Function {
     pub is_py_type:   bool,
     pub name:         ActualTypeName,
@@ -50,6 +50,17 @@ impl Hash for Function {
         self.arguments.hash(state);
         self.raises.iter().for_each(|a| a.hash(state));
         self.ret_ty.hash(state);
+    }
+}
+
+impl PartialEq for Function {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.self_mutable == other.self_mutable
+            && self.pure == other.pure
+            && self.arguments == other.arguments
+            && self.raises == other.raises
+            && self.ret_ty == other.ret_ty
     }
 }
 

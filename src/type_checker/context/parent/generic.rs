@@ -1,14 +1,15 @@
 // TODO args should be literals or identifiers
 
+use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::parameter::generic::GenericParameter;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::convert::TryFrom;
-use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub struct GenericParent {
     pub is_py_type: bool,
     pub name:       String,
@@ -23,6 +24,15 @@ impl Hash for GenericParent {
         self.name.hash(state);
         self.generics.hash(state);
         self.args.hash(state);
+    }
+}
+
+impl PartialEq for GenericParent {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_py_type == other.is_py_type
+            && self.name == other.name
+            && self.generics == other.generics
+            && self.args == other.args
     }
 }
 

@@ -3,29 +3,14 @@ use crate::core::construct::Core;
 // TODO remove expect_expr once type checker augments AST
 #[derive(Clone, Debug)]
 pub struct State {
-    pub tup:         usize,
-    pub interface:   bool,
-    pub expand_ty:   bool,
-    pub expect_expr: bool,
-    pub expect_ret:  bool,
-    pub assign_to:   Option<Core>
+    pub tup:       usize,
+    pub interface: bool,
+    pub expand_ty: bool,
+    pub assign_to: Option<Core>
 }
 
 impl State {
-    pub fn new() -> State {
-        State {
-            tup:         1,
-            interface:   false,
-            expand_ty:   true,
-            expect_expr: false,
-            expect_ret:  false,
-            assign_to:   None
-        }
-    }
-
-    pub fn expect_return(&self, expect_ret: bool) -> State { State { expect_ret, ..self.clone() } }
-
-    pub fn expect_expr(&self, expect_expr: bool) -> State { State { expect_expr, ..self.clone() } }
+    pub fn new() -> State { State { tup: 1, interface: false, expand_ty: true, assign_to: None } }
 
     pub fn in_tup(&self, tup: usize) -> State { State { tup, ..self.clone() } }
 

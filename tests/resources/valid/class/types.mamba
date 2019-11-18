@@ -1,6 +1,3 @@
-from Math import abs
-import something
-
 class MyGeneric isa String
 class MyType(def mut some_field: String)
 
@@ -15,7 +12,7 @@ type SuperInterface
 
 type MyInterface isa SuperInterface
     def required_field: Int
-    def higher_order() -> int
+    def higher_order(self) -> int
 
 # this class has no state
 class MyClass(def my_field: Int, other_field: String <- "Hello") isa MyType(other_field), MyInterface
@@ -25,5 +22,5 @@ class MyClass(def my_field: Int, other_field: String <- "Hello") isa MyType(othe
     def fun_a(mut self: SomeState) => self.some_field <- "my field is {self.required_field}"
     def private fun_b(self) => print "this function is private: {self.private_field}!"
 
-    def some_higher_order(self, fun: Int -> Int) -> Int => fun(self.my_field)
-    def higher_order(self) -> Int => self.some_higher_order(\x: Int => x * 2)
+    def some_higher_order(self, fun: Int -> Int) -> Int => return fun(self.my_field)
+    def higher_order(self) -> Int => return self.some_higher_order(\x: Int => x * 2)

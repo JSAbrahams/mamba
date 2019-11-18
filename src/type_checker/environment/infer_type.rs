@@ -35,9 +35,11 @@ impl Display for InferType {
     }
 }
 
-impl InferType {
-    pub fn new() -> InferType { InferType { raises: HashSet::new(), expr_type: None } }
+impl Default for InferType {
+    fn default() -> Self { InferType { raises: HashSet::new(), expr_type: None } }
+}
 
+impl InferType {
     pub fn is_stmt(&self) -> bool { self.expr_type.is_none() }
 
     // TODO make union error if union between statement and expression
@@ -62,7 +64,7 @@ impl InferType {
     }
 
     pub fn expr_ty(&self, pos: &Position) -> Result<ExpressionType, TypeErr> {
-        self.expr_type.clone().ok_or(TypeErr::new(pos, "Is not an expression"))
+        self.expr_type.clone().ok_or_else(|| TypeErr::new(pos, "Is not an expression"))
     }
 
     pub fn union_raises(self, raises: &HashSet<ActualTypeName>) -> InferType {

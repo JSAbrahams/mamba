@@ -12,7 +12,7 @@ use crate::type_checker::type_result::{TypeErr, TypeResult};
 // TODO create second pass where we assign types to function arguments using
 // type inference
 
-pub const SELF: &'static str = "self";
+pub const SELF: &str = "self";
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {

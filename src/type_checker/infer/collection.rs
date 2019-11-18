@@ -56,7 +56,7 @@ pub fn infer_coll(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 fn collection(
     col: &str,
     ast: &AST,
-    elements: &Vec<AST>,
+    elements: &[AST],
     env: &Environment,
     ctx: &Context
 ) -> InferResult {
@@ -97,21 +97,19 @@ pub fn iterable_generic(
     match expr_ty {
         ExpressionType::Single { ty } => match &ty.actual_ty() {
             ActualType::Single { ty } => {
-                let iterable = ty
-                    .fun("__iter__", &vec![], pos)?
-                    .ty()
-                    .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
-                let next_ty = ctx
-                    .lookup(&iterable, pos)?
-                    .fun("__next__", &vec![], pos)?
-                    .ty()
-                    .ok_or(TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty)))?;
+                let iterable = ty.fun("__iter__", &[], pos)?.ty().ok_or_else(|| {
+                    TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty))
+                })?;
+                let next_ty =
+                    ctx.lookup(&iterable, pos)?.fun("__next__", &[], pos)?.ty().ok_or_else(
+                        || TypeErr::new(pos, &format!("Cannot iterate over {}", expr_ty))
+                    )?;
                 ctx.lookup(&next_ty, pos)
             }
             ActualType::Tuple { types } => {
                 let first_ty = types.first();
                 let mut first =
-                    first_ty.ok_or(TypeErr::new(pos, &format!("Cannot infer type")))?.clone();
+                    first_ty.ok_or_else(|| TypeErr::new(pos, "Cannot infer type"))?.clone();
                 for ty in types {
                     first = first.union(ty);
                 }
@@ -127,7 +125,7 @@ pub fn iterable_generic(
             let mut first = union
                 .first()
                 .cloned()
-                .ok_or(vec![TypeErr::new(pos, "Cannot infer type of iterable")])?;
+                .ok_or_else(|| vec![TypeErr::new(pos, "Cannot infer type of iterable")])?;
             for ty in union {
                 first = first.union(&ty);
             }

@@ -36,7 +36,7 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
             let (_, env) = is_bool(cond, env, ctx)?;
             let state = env.state.as_state(InLoop);
             let (body_ty, _) = infer(body, &env.new_state(&state), ctx)?;
-            Ok((InferType::new().union_raises(&body_ty.raises), env))
+            Ok((InferType::default().union_raises(&body_ty.raises), env))
         }
 
         Node::For { expr, col, body } => {
@@ -49,7 +49,7 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
 
             let state = env.state.as_state(InLoop);
             let (body_ty, _) = infer(body, &env.new_state(&state), ctx)?;
-            Ok((InferType::new().add_raises(&body_ty).add_raises(&col_ty), env))
+            Ok((InferType::default().add_raises(&body_ty).add_raises(&col_ty), env))
         }
 
         Node::Range { from, to, step, .. } => {
@@ -89,7 +89,7 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
 
         Node::Break | Node::Continue =>
             if env.state.in_loop {
-                Ok((InferType::new(), env.clone()))
+                Ok((InferType::default(), env.clone()))
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Cannot occur outside loop")])
             },
@@ -104,9 +104,9 @@ fn is_bool(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     let msg = format!("Cannot evaluate {} to {}", expr_ty, concrete::BOOL_PRIMITIVE);
 
     let fun_ty = expr_ty
-        .fun("__bool__", &vec![], &ast.pos)?
+        .fun("__bool__", &[], &ast.pos)?
         .ty()
-        .ok_or(vec![TypeErr::new(&ast.pos, &msg)])?;
+        .ok_or_else(|| vec![TypeErr::new(&ast.pos, &msg)])?;
 
     if fun_ty == TypeName::from(concrete::BOOL_PRIMITIVE) {
         let bool_ty = ctx.lookup(&TypeName::from(concrete::BOOL_PRIMITIVE), &ast.pos)?;

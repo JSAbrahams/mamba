@@ -83,7 +83,7 @@ impl TryFrom<&AST> for GenericType {
                 let (body_fields, functions) =
                     get_fields_and_functions(&name, &statements, &class.pos)?;
                 for function in functions.clone() {
-                    if function.name == ActualTypeName::new(concrete::INIT, &vec![]) {
+                    if function.name == ActualTypeName::new(concrete::INIT, &[]) {
                         if class_args.is_empty() {
                             class_args.append(&mut function.arguments.clone())
                         } else {

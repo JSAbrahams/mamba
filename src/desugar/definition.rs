@@ -13,12 +13,10 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
     Ok(match &ast.node {
         Node::VariableDef { id_maybe_type, expression, private, .. } => {
             let id = desugar_node(id_maybe_type, imp, state)?;
-            let state = state
-                .in_tup(match id.clone() {
-                    Core::Tuple { elements } => elements.len(),
-                    _ => 1
-                })
-                .expect_expr(true);
+            let state = state.in_tup(match id.clone() {
+                Core::Tuple { elements } => elements.len(),
+                _ => 1
+            });
 
             Core::VarDef {
                 private: *private,
@@ -44,14 +42,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             } else {
                 // TODO augment AST in type checker
                 Box::from(match expression {
-                    Some(expr) => desugar_node(
-                        &expr,
-                        imp,
-                        &state
-                            .expand_ty(true)
-                            .expect_expr(ret_ty.is_some())
-                            .expect_return(ret_ty.is_some())
-                    )?,
+                    Some(expr) => desugar_node(&expr, imp, &state.expand_ty(true))?,
                     None => Core::Empty
                 })
             }

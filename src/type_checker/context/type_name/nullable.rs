@@ -26,7 +26,7 @@ impl Display for NullableTypeName {
             f,
             "{}{}",
             self.actual,
-            if self.is_nullable && self.actual != ActualTypeName::new(concrete::NONE, &vec![]) {
+            if self.is_nullable && self.actual != ActualTypeName::new(concrete::NONE, &[]) {
                 "?"
             } else {
                 ""
@@ -70,6 +70,8 @@ impl NullableTypeName {
 
     pub fn name(&self, pos: &Position) -> TypeResult<String> { self.actual.name(pos) }
 
+    // TODO make more readable
+    #[allow(clippy::nonminimal_bool)]
     pub fn is_superset(&self, other: &NullableTypeName) -> bool {
         self.is_nullable || (!self.is_nullable && !other.is_nullable) && self.actual == other.actual
     }

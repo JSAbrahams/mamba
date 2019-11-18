@@ -157,21 +157,17 @@ fn constructor_from_inline(
                     }
                 });
 
-                let id = match &id.deref() {
-                    Core::IdType { lit, .. } => Box::from(Core::Id { lit: lit.clone() }),
-                    _ => id.clone()
-                };
-
-                if !parent_args.contains(&match id.deref() {
+                let identifier = match id.deref() {
                     Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
                     other => other.clone()
-                }) {
+                };
+                if !parent_args.contains(&identifier) {
                     final_definitions
                         .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) });
                     statements.push(Core::Assign {
                         left:  Box::from(Core::PropertyCall {
                             object:   Box::new(Core::Id { lit: String::from("self") }),
-                            property: id.clone()
+                            property: Box::from(identifier)
                         }),
                         right: Box::from(match id.deref() {
                             Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
@@ -257,7 +253,8 @@ fn extract_parents(
     for parent in parents {
         match &parent.node {
             Node::Parent { ref id, args: old_args, .. } => {
-                parent_names.push(desugar_type(id, ctx, state)?);
+                let parent_name = desugar_type(id, ctx, state)?;
+                parent_names.push(parent_name.clone());
 
                 let mut args = vec![];
                 args.append(&mut desugar_vec(old_args, ctx, state)?);
@@ -266,7 +263,20 @@ fn extract_parents(
                 super_calls.push(Core::PropertyCall {
                     object:   Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("super") }),
-                        args:     vec![]
+                        args:     vec![
+                            Core::FunArg {
+                                vararg:  false,
+                                id:      Box::new(parent_name),
+                                default: Box::new(Core::Empty)
+                            },
+                            Core::FunArg {
+                                vararg:  false,
+                                id:      Box::new(Core::Id {
+                                    lit: String::from(function_arg::python::SELF)
+                                }),
+                                default: Box::new(Core::Empty)
+                            },
+                        ]
                     }),
                     property: Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("__init__") }),

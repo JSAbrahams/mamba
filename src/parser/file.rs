@@ -127,7 +127,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                 it.eat(&Token::When, "conditional type")?;
                 let isa = isa
                     .clone()
-                    .ok_or(custom("conditional type must have parent type", &lex.pos))?;
+                    .ok_or_else(|| custom("conditional type must have parent type", &lex.pos))?;
 
                 let conditions = it.parse_vec(&parse_conditions, "conditional type", &start)?;
                 let end = conditions.last().map_or(_type.pos.clone(), |cond| cond.pos.clone());

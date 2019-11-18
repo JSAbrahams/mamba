@@ -114,6 +114,6 @@ fn function_name(ast: &AST) -> TypeResult<TypeName> {
             _ => return Err(vec![TypeErr::new(&ast.pos, "Expected valid function name")])
         }
         .as_str(),
-        &vec![]
+        &[]
     ))
 }

@@ -14,13 +14,8 @@ use crate::parser::ast::AST;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    // If we expect a return, handle here and do not recursively pass
-    // Unless we have a block, in which case we make use of desugar_stmts
-    // Once our type checker can augment the ast, we can omit this less elegant
-    // solution
-    let expect_return = state.expect_ret;
     let assign_to = state.assign_to.clone();
-    let state = &state.expect_return(false).assign_to(None);
+    let state = &state.assign_to(None);
 
     let core = match &ast.node {
         Node::Import { import, _as } =>
@@ -40,16 +35,11 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(ast, imp, state)?,
         Node::Reassign { left, right } => Core::Assign {
             left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, &state.expect_expr(true))?)
+            right: Box::from(desugar_node(right, imp, state)?)
         },
 
         Node::Block { statements } => Core::Block {
-            // Preserve expect_return boolean
-            statements: desugar_stmts(
-                statements,
-                imp,
-                &state.expect_return(expect_return).assign_to(assign_to.as_ref())
-            )?
+            statements: desugar_stmts(statements, imp, &state.assign_to(assign_to.as_ref()))?
         },
 
         Node::Int { lit } => Core::Int { int: lit.clone() },
@@ -362,14 +352,5 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         core
     };
 
-    if expect_return {
-        match core {
-            // If block, last statement has already been made a return using the desugar_stmts
-            // function
-            Core::Block { .. } | Core::Return { .. } => Ok(core),
-            expr => Ok(Core::Return { expr: Box::from(expr.clone()) })
-        }
-    } else {
-        Ok(core)
-    }
+    Ok(core)
 }

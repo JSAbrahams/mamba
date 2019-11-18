@@ -38,6 +38,7 @@ fn handle_ast_verify() -> Result<(), Vec<(String, String)>> {
 }
 
 #[test]
+#[ignore]
 fn raise_ast_verify() -> Result<(), Vec<(String, String)>> {
     transpile_directory(
         &Path::new(&resource_path(true, &["error"], "")),

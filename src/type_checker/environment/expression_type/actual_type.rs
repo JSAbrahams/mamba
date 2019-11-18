@@ -40,7 +40,7 @@ impl ActualType {
     pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
         match &self {
             ActualType::AnonFun { args: a, ret_ty } => {
-                let fun_args = a.iter().map(|a| TypeName::from(a)).collect::<Vec<TypeName>>();
+                let fun_args = a.iter().map(TypeName::from).collect::<Vec<TypeName>>();
                 if fun_args == args {
                     Ok(ret_ty.deref().clone())
                 } else {
@@ -70,11 +70,11 @@ impl ActualType {
                 let constructor_args: Vec<TypeName> = ty
                     .args
                     .iter()
-                    .map(|a| a.ty.clone().ok_or(TypeErr::new(pos, "Type is unknown")))
+                    .map(|a| a.ty.clone().ok_or_else(|| TypeErr::new(pos, "Type is unknown")))
                     .collect::<Result<_, _>>()?;
 
                 // TODO handle unknown types
-                if &constructor_args == &args {
+                if constructor_args == args {
                     Ok(self.clone())
                 } else {
                     Err(vec![TypeErr::new(

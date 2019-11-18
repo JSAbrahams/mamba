@@ -8,8 +8,11 @@ def fun_a() -> Optional[int]:
         print(f"hello")
     if False or True:
         print(f"world")
-    a = None or 1 if True else 11
-    return 10 if True else None
+    a = None or 11
+    if True:
+        return 10
+    else:
+        return None
 
 def fun_b(b: int): print(b)
 
@@ -22,8 +25,8 @@ def fun_e(m: int, o: Tuple[str, str], r: Callable[[int, Tuple[str, str]], int]) 
 def fun_v(y: str, ab: Callable[[str], Callable[[str], bool]]) -> Callable[[str], bool]: return ab(y)
 
 class MyClass:
-    a = None
-    b = None
+    a: int = None
+    b: int = None
     def __init__(self, a: int, b: int):
         self.a = a
         self.b = b

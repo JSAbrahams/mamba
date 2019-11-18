@@ -48,7 +48,7 @@ impl Display for LexErr {
             self.pos.pos,
             self.msg,
             self.pos.line,
-            self.source_line.clone().unwrap_or(String::from("<unknown>")),
+            self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
             String::from_utf8(vec![b' '; self.pos.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width) as usize])
                 .unwrap()

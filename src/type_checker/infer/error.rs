@@ -47,7 +47,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             if !env.state.in_handle {
                 Err(vec![TypeErr::new(&ast.pos, "Retry only possible in handle arm")])
             } else {
-                Ok((InferType::new(), env.clone()))
+                Ok((InferType::default(), env.clone()))
             },
 
         Node::With { resource, _as, expr } => {
@@ -80,7 +80,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             }
 
             let (infer_ty, _) = infer(expr, &inner_env, ctx)?;
-            Ok((InferType::new().union_raises(&infer_ty.raises), env.clone()))
+            Ok((InferType::default().union_raises(&infer_ty.raises), env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected error")])

@@ -30,6 +30,7 @@ impl TryFrom<&AST> for GenericField {
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
             // TODO do something with forward
+            // TODO handle tuples
             Node::VariableDef { private, id_maybe_type, .. } => {
                 let (name, mutable, ty) = match &id_maybe_type.node {
                     Node::IdType { id, mutable, _type } =>

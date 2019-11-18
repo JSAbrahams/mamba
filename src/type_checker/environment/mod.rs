@@ -18,14 +18,16 @@ pub struct Environment {
     variables: HashMap<String, (bool, ExpressionType)>
 }
 
-impl Environment {
-    pub fn new() -> Environment { Environment { state: State::new(), variables: HashMap::new() } }
+impl Default for Environment {
+    fn default() -> Self { Environment { state: State::default(), variables: HashMap::new() } }
+}
 
+impl Environment {
     pub fn lookup_indirect(&self, var: &str, pos: &Position) -> TypeResult<(bool, ExpressionType)> {
         self.variables
             .get(var)
             .cloned()
-            .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
+            .ok_or_else(|| vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
     }
 
     pub fn lookup(&self, var: &str, pos: &Position) -> TypeResult<ExpressionType> {
@@ -33,7 +35,7 @@ impl Environment {
             .get(var)
             .cloned()
             .map(|(_, expr_ty)| expr_ty)
-            .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
+            .ok_or_else(|| vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
     }
 
     pub fn in_class(&self, mutable: bool, class: &ExpressionType) -> Environment {

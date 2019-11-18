@@ -16,8 +16,8 @@ pub enum StateType {
     InFunction
 }
 
-impl State {
-    pub fn new() -> State {
+impl Default for State {
+    fn default() -> Self {
         State {
             in_loop:     false,
             in_handle:   false,
@@ -26,13 +26,15 @@ impl State {
             handling:    vec![]
         }
     }
+}
 
+impl State {
     pub fn in_match(&self, expr_ty: &ExpressionType) -> State {
         State { in_match: Some(expr_ty.clone()), ..self.clone() }
     }
 
-    pub fn handling(&self, handling: &Vec<ActualTypeName>) -> State {
-        State { handling: handling.clone(), in_handle: true, ..self.clone() }
+    pub fn handling(&self, handling: &[ActualTypeName]) -> State {
+        State { handling: Vec::from(handling), in_handle: true, ..self.clone() }
     }
 
     pub fn as_state(&self, state_type: StateType) -> State {

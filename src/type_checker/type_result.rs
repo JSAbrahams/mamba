@@ -64,7 +64,7 @@ impl Display for TypeErr {
         let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
         let msg = {
             let mut string = self.msg.replace("\n", "\n     | |  ");
-            if string.ends_with("|") {
+            if string.ends_with('|') {
                 string.remove(string.len() - 2);
             }
             string
@@ -79,7 +79,7 @@ impl Display for TypeErr {
                 position.start.pos,
                 msg,
                 position.start.line,
-                self.source_line.clone().unwrap_or(String::from("<unknown>")),
+                self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
                 String::from_utf8(vec![b' '; position.start.pos as usize - 1]).unwrap(),
                 String::from_utf8(vec![b'^'; position.get_width() as usize]).unwrap()
             )

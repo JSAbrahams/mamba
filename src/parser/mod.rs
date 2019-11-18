@@ -36,11 +36,11 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// # use mamba::lexer::token::Token;
 /// # use mamba::lexer::token::Lex;
 /// # use mamba::parser::parse;
-/// // Assigning 10 to b
-/// let def = Lex::new(1, 1, Token::Def);
-/// let id = Lex::new(1, 4, Token::Id(String::from("b")));
-/// let assign = Lex::new(1, 6, Token::Assign);
-/// let number = Lex::new(1, 9, Token::Int(String::from("9")));
+/// # use mamba::common::position::CaretPos;
+/// let def = Lex::new(&CaretPos::new(1, 1), Token::Def);
+/// let id = Lex::new(&CaretPos::new(1, 4), Token::Id(String::from("b")));
+/// let assign = Lex::new(&CaretPos::new(1, 6), Token::Assign);
+/// let number = Lex::new(&CaretPos::new(1, 9), Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, assign, number]);
 /// assert_eq!(result.is_ok(), true);
@@ -54,9 +54,10 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// # use mamba::lexer::token::Token;
 /// # use mamba::lexer::token::Lex;
 /// # use mamba::parser::parse;
-/// let def = Lex::new(0, 0, Token::Def);
-/// let id = Lex::new(0, 0, Token::Id(String::from("b")));
-/// let number = Lex::new(0, 0, Token::Int(String::from("9")));
+/// # use mamba::common::position::CaretPos;
+/// let def = Lex::new(&CaretPos::new(0, 0), Token::Def);
+/// let id = Lex::new(&CaretPos::new(0, 0), Token::Id(String::from("b")));
+/// let number = Lex::new(&CaretPos::new(0, 0), Token::Int(String::from("9")));
 ///
 /// let result = parse(&[def, id, number]);
 /// assert_eq!(result.is_err(), true);

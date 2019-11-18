@@ -3,10 +3,10 @@ use crate::type_checker::context::type_name::TypeName;
 use python_parser::ast::{Expression, Subscript};
 use std::ops::Deref;
 
-pub const INTEGER: &'static str = "int";
-pub const FLOAT: &'static str = "float";
-pub const STRING: &'static str = "str";
-pub const BOOLEAN: &'static str = "bool";
+pub const INTEGER: &str = "int";
+pub const FLOAT: &str = "float";
+pub const STRING: &str = "str";
+pub const BOOLEAN: &str = "bool";
 
 // TODO handle type unions
 impl From<&Expression> for TypeName {

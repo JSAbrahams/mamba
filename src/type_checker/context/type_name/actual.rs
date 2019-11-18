@@ -62,11 +62,10 @@ impl From<&ActualType> for ActualTypeName {
     fn from(actual_type: &ActualType) -> Self {
         match actual_type {
             ActualType::Single { ty } => ty.name.clone(),
-            ActualType::Tuple { types } => ActualTypeName::Tuple {
-                ty_names: types.iter().map(|ty| TypeName::from(ty)).collect()
-            },
+            ActualType::Tuple { types } =>
+                ActualTypeName::Tuple { ty_names: types.iter().map(TypeName::from).collect() },
             ActualType::AnonFun { args, ret_ty } => ActualTypeName::AnonFun {
-                args:   args.iter().map(|arg| TypeName::from(arg)).collect(),
+                args:   args.iter().map(TypeName::from).collect(),
                 ret_ty: Box::new(TypeName::from(ret_ty.deref()))
             }
         }

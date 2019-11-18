@@ -15,18 +15,18 @@ use std::ops::Deref;
 
 pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
-        Node::_Self => Ok((InferType::new(), env.clone())),
-        Node::AddOp => Ok((InferType::new(), env.clone())),
-        Node::SubOp => Ok((InferType::new(), env.clone())),
-        Node::SqrtOp => Ok((InferType::new(), env.clone())),
-        Node::MulOp => Ok((InferType::new(), env.clone())),
-        Node::FDivOp => Ok((InferType::new(), env.clone())),
-        Node::DivOp => Ok((InferType::new(), env.clone())),
-        Node::PowOp => Ok((InferType::new(), env.clone())),
-        Node::ModOp => Ok((InferType::new(), env.clone())),
-        Node::EqOp => Ok((InferType::new(), env.clone())),
-        Node::LeOp => Ok((InferType::new(), env.clone())),
-        Node::GeOp => Ok((InferType::new(), env.clone())),
+        Node::_Self => Ok((InferType::default(), env.clone())),
+        Node::AddOp => Ok((InferType::default(), env.clone())),
+        Node::SubOp => Ok((InferType::default(), env.clone())),
+        Node::SqrtOp => Ok((InferType::default(), env.clone())),
+        Node::MulOp => Ok((InferType::default(), env.clone())),
+        Node::FDivOp => Ok((InferType::default(), env.clone())),
+        Node::DivOp => Ok((InferType::default(), env.clone())),
+        Node::PowOp => Ok((InferType::default(), env.clone())),
+        Node::ModOp => Ok((InferType::default(), env.clone())),
+        Node::EqOp => Ok((InferType::default(), env.clone())),
+        Node::LeOp => Ok((InferType::default(), env.clone())),
+        Node::GeOp => Ok((InferType::default(), env.clone())),
 
         Node::AddU { expr } => unary_op(expr, function::concrete::ADD, env, ctx),
         Node::SubU { expr } => unary_op(expr, function::concrete::SUB, env, ctx),
@@ -90,25 +90,19 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     }
 }
 
-fn unary_op(expr: &Box<AST>, overrides: &str, env: &Environment, ctx: &Context) -> InferResult {
+fn unary_op(expr: &AST, overrides: &str, env: &Environment, ctx: &Context) -> InferResult {
     let (infer_type, env) = infer(expr, env, ctx)?;
-    let fun = infer_type.expr_ty(&expr.pos)?.fun(overrides, &vec![], &expr.pos)?;
+    let fun = infer_type.expr_ty(&expr.pos)?.fun(overrides, &[], &expr.pos)?;
     match &fun.ty() {
         Some(fun_ty) => {
             let fun_ret_ty = ctx.lookup(fun_ty, &expr.pos)?;
             Ok((InferType::from(&fun_ret_ty).add_raises(&infer_type), env))
         }
-        None => Ok((InferType::new().add_raises(&infer_type), env))
+        None => Ok((InferType::default().add_raises(&infer_type), env))
     }
 }
 
-fn op(
-    left: &Box<AST>,
-    right: &Box<AST>,
-    overrides: &str,
-    env: &Environment,
-    ctx: &Context
-) -> InferResult {
+fn op(left: &AST, right: &AST, overrides: &str, env: &Environment, ctx: &Context) -> InferResult {
     let (left_ty, left_env) = infer(left, env, ctx)?;
     let (right_ty, right_env) = infer(right, &left_env, ctx)?;
 
@@ -121,6 +115,6 @@ fn op(
             let expr_ty = ctx.lookup(fun_ty, &left.pos.union(&right.pos))?;
             Ok((InferType::from(&expr_ty).add_raises(&left_ty).add_raises(&right_ty), right_env))
         }
-        None => Ok((InferType::new().add_raises(&left_ty).add_raises(&right_ty), right_env))
+        None => Ok((InferType::default().add_raises(&left_ty).add_raises(&right_ty), right_env))
     }
 }

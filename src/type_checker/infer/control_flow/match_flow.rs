@@ -3,6 +3,7 @@ use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::expression_type::ExpressionType;
@@ -13,6 +14,8 @@ use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::type_result::TypeErr;
 
 // TODO add pattern matching type checking
+// TODO check that match and handle are exhaustive
+// TODO check that match and handle are expression if assignment
 
 pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
@@ -23,7 +26,8 @@ pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         }
         Node::Handle { expr_or_stmt, cases } => {
             let (cond_ty, env) = infer(expr_or_stmt, env, ctx)?;
-            let state = env.state.handling(&cond_ty.raises.into_iter().collect());
+            let raises: Vec<ActualTypeName> = cond_ty.raises.into_iter().collect();
+            let state = env.state.handling(&raises);
             vec_to_union(cases, &env.new_state(&state), ctx, &ast.pos)
         }
 
@@ -96,12 +100,12 @@ fn remaining_match_ty(
     }
 }
 
-fn vec_to_union(cases: &Vec<AST>, env: &Environment, ctx: &Context, pos: &Position) -> InferResult {
+fn vec_to_union(cases: &[AST], env: &Environment, ctx: &Context, pos: &Position) -> InferResult {
     let mut ty: Option<InferType> = None;
     for case in cases {
         let (case_ty, _) = infer(case, &env, ctx)?;
         ty = if let Some(ty) = ty { Some(ty.union(&case_ty, &case.pos)?) } else { Some(case_ty) };
     }
 
-    ty.map(|ty| (ty, env.clone())).ok_or(vec![TypeErr::new(pos, "Arms are empty")])
+    ty.map(|ty| (ty, env.clone())).ok_or_else(|| vec![TypeErr::new(pos, "Arms are empty")])
 }

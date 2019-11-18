@@ -23,8 +23,8 @@ impl Display for NullableType {
 }
 
 impl NullableType {
-    pub fn new(nullable: bool, actual_ty: &ActualType) -> NullableType {
-        NullableType { is_nullable: nullable.clone(), actual_ty: actual_ty.clone() }
+    pub fn new(is_nullable: bool, actual_ty: &ActualType) -> NullableType {
+        NullableType { is_nullable, actual_ty: actual_ty.clone() }
     }
 
     pub fn as_nullable(&self) -> NullableType {

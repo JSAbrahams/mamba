@@ -18,7 +18,7 @@ use crate::type_checker::util::comma_delimited;
 pub mod actual_type;
 pub mod nullable_type;
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, Debug)]
 pub enum ExpressionType {
     Single { ty: NullableType },
     Union { union: HashSet<NullableType> }
@@ -33,6 +33,17 @@ impl Hash for ExpressionType {
         match &self {
             ExpressionType::Single { ty } => ty.hash(state),
             ExpressionType::Union { union } => union.iter().for_each(|ty| ty.hash(state))
+        }
+    }
+}
+
+impl PartialEq for ExpressionType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ExpressionType::Single { ty }, ExpressionType::Single { ty: other }) => ty == other,
+            (ExpressionType::Union { union }, ExpressionType::Union { union: other }) =>
+                union == other,
+            _ => false
         }
     }
 }
@@ -98,8 +109,10 @@ impl ExpressionType {
                     .iter()
                     .map(|ty| ty.actual_ty().anon_fun(args, pos))
                     .collect::<Result<_, _>>()?;
-                let mut ret_ty =
-                    ret_tys.first().ok_or(vec![TypeErr::new(pos, "Union is empty")])?.clone();
+                let mut ret_ty = ret_tys
+                    .first()
+                    .ok_or_else(|| vec![TypeErr::new(pos, "Union is empty")])?
+                    .clone();
                 for ty in ret_tys {
                     ret_ty = ret_ty.union(&ty);
                 }
@@ -118,7 +131,7 @@ impl ExpressionType {
                     .collect::<Result<_, _>>()?;
                 let first = union.get(0);
                 if union.iter().all(|e_ty| Some(e_ty) == first) {
-                    Ok(first.cloned().ok_or(vec![TypeErr::new(pos, "Unknown field")])?)
+                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, "Unknown field")])?)
                 } else {
                     Err(vec![TypeErr::new(pos, "Unknown field")])
                 }
@@ -137,7 +150,7 @@ impl ExpressionType {
                 let first = union.get(0);
 
                 if union.iter().all(|e_ty| Some(e_ty) == first) {
-                    Ok(first.cloned().ok_or(vec![TypeErr::new(pos, "Unknown function")])?)
+                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, "Unknown function")])?)
                 } else {
                     Err(vec![TypeErr::new(pos, "Unknown field")])
                 }
@@ -160,10 +173,11 @@ impl ExpressionType {
 }
 
 fn make_nullable_if_none(union: &HashSet<NullableType>) -> HashSet<NullableType> {
-    let union = if union.iter().any(|ty| {
-        ActualTypeName::from(&ty.actual_ty()) == ActualTypeName::new(concrete::NONE, &vec![])
-    }) {
-        union.iter().map(|ty| ty.as_nullable()).collect()
+    let any_nullable = union.iter().any(|ty| {
+        ActualTypeName::from(&ty.actual_ty()) == ActualTypeName::new(concrete::NONE, &[])
+    });
+    let union = if any_nullable {
+        union.iter().map(NullableType::as_nullable).collect()
     } else {
         union.clone()
     };
@@ -174,7 +188,7 @@ fn make_nullable_if_none(union: &HashSet<NullableType>) -> HashSet<NullableType>
         union
             .into_iter()
             .filter(|ty| {
-                NullableTypeName::from(ty).actual != ActualTypeName::new(concrete::NONE, &vec![])
+                NullableTypeName::from(ty).actual != ActualTypeName::new(concrete::NONE, &[])
             })
             .collect()
     }
@@ -188,8 +202,7 @@ fn remove_exception(union: &HashSet<NullableType>) -> HashSet<NullableType> {
             .clone()
             .into_iter()
             .filter(|ty| {
-                NullableTypeName::from(ty).actual
-                    != ActualTypeName::new(concrete::EXCEPTION, &vec![])
+                NullableTypeName::from(ty).actual != ActualTypeName::new(concrete::EXCEPTION, &[])
             })
             .collect()
     }

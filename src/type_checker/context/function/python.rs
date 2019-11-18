@@ -4,29 +4,29 @@ use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
-use python_parser::ast::{Funcdef, Name};
+use python_parser::ast::Funcdef;
 
-pub const INIT: &'static str = "__init__";
+pub const INIT: &str = "__init__";
 
-pub const ADD: &'static str = "__add__";
-pub const DIV: &'static str = "__div__";
-pub const EQ: &'static str = "__eq__";
-pub const FDIV: &'static str = "__floordiv__";
-pub const GE: &'static str = "__ge__";
-pub const GEQ: &'static str = "__geq__";
-pub const LE: &'static str = "__le__";
-pub const LEQ: &'static str = "__leq__";
-pub const MOD: &'static str = "__mod__";
-pub const MUL: &'static str = "__mul__";
-pub const NEQ: &'static str = "__neq__";
-pub const POW: &'static str = "__pow__";
-pub const SUB: &'static str = "__sub__";
+pub const ADD: &str = "__add__";
+pub const DIV: &str = "__div__";
+pub const EQ: &str = "__eq__";
+pub const FDIV: &str = "__floordiv__";
+pub const GE: &str = "__ge__";
+pub const GEQ: &str = "__geq__";
+pub const LE: &str = "__le__";
+pub const LEQ: &str = "__leq__";
+pub const MOD: &str = "__mod__";
+pub const MUL: &str = "__mul__";
+pub const NEQ: &str = "__neq__";
+pub const POW: &str = "__pow__";
+pub const SUB: &str = "__sub__";
 
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       ActualTypeName::new(&convert_name(&func_def.name), &vec![]),
+            name:       ActualTypeName::new(&convert_name(&func_def.name), &[]),
             pure:       false,
             private:    false,
             pos:        Position::default(),
@@ -45,8 +45,8 @@ impl From<&Funcdef> for GenericFunction {
     }
 }
 
-fn convert_name(name: &Name) -> String {
-    match name.as_str() {
+fn convert_name(name: &str) -> String {
+    match name {
         INIT => String::from(concrete::INIT),
 
         ADD => String::from(concrete::ADD),

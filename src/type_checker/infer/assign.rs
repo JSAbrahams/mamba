@@ -26,7 +26,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             env.clone()
         )),
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
-        Node::IdType { .. } => Ok((InferType::new(), env.clone())),
+        Node::IdType { .. } => Ok((InferType::default(), env.clone())),
         Node::Reassign { left, right } => {
             let identifier = Identifier::try_from(left.deref())?;
             let (right_ty, env) = infer(right, &env, ctx)?;
@@ -49,7 +49,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
                 env.insert(&id, new_mutable, &expr_ty);
             }
 
-            Ok((InferType::new().add_raises(&right_ty), env))
+            Ok((InferType::default().add_raises(&right_ty), env))
         }
         // TODO use forward and private
         // TODO check if parent already defines variable if relevant
@@ -87,7 +87,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
                     env.insert(id.as_str(), *mutable || inner_mut, &expr_ty);
                 }
 
-                Ok((InferType::new(), env))
+                Ok((InferType::default().union_raises(&ty.raises), env))
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])
         },
@@ -130,7 +130,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
                 }
             }
 
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable manipulation")])
@@ -138,7 +138,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
 }
 
 pub fn arg_types(
-    args: &Vec<AST>,
+    args: &[AST],
     env: &Environment,
     ctx: &Context
 ) -> TypeResult<HashMap<String, (bool, ExpressionType)>> {
@@ -180,18 +180,16 @@ pub fn arg_types(
             } else {
                 arg_types.insert(lit.clone(), (*mutable, ctx.lookup(&arg_ty_name, &_type.pos)?));
             }
+        } else if lit == function_arg::concrete::SELF {
+            // TODO check that type of self is child of class
+            // TODO get actual type of self from Context in case self is child of class
+            let (_, class_ty) = env.lookup_indirect("self", &arg.pos)?;
+            arg_types.insert(lit.clone(), (*mutable, class_ty));
+        } else if let Some(default_ty) = default_ty {
+            arg_types.insert(lit.clone(), (*mutable, default_ty));
         } else {
-            if &lit == function_arg::concrete::SELF {
-                // TODO check that type of self is child of class
-                // TODO get actual type of self from Context in case self is child of class
-                let (_, class_ty) = env.lookup_indirect("self", &arg.pos)?;
-                arg_types.insert(lit.clone(), (*mutable, class_ty));
-            } else if let Some(default_ty) = default_ty {
-                arg_types.insert(lit.clone(), (*mutable, default_ty));
-            } else {
-                let msg = format!("Cannot derive type of {}", lit);
-                return Err(vec![TypeErr::new(&arg.pos, &msg)]);
-            }
+            let msg = format!("Cannot derive type of {}", lit);
+            return Err(vec![TypeErr::new(&arg.pos, &msg)]);
         }
     }
 

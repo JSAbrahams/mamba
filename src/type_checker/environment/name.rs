@@ -58,6 +58,8 @@ impl From<&Vec<Identifier>> for Identifier {
     fn from(names: &Vec<Identifier>) -> Self { Identifier { lit: None, names: names.to_vec() } }
 }
 
+// TODO more elegant map manipulation
+#[allow(clippy::map_entry)]
 pub fn match_name(
     identifier: &Identifier,
     expr_ty: &ExpressionType,

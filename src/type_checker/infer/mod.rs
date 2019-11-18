@@ -39,7 +39,7 @@ pub type InferResult<T = InferType> = std::result::Result<Inferred<T>, Vec<TypeE
 // TODO switch to system using restraint programming for more advanced type
 // inference
 pub fn infer_all(inputs: &[CheckInput], ctx: &Context) -> Result<(), Vec<TypeErr>> {
-    let env = Environment::new();
+    let env = Environment::default();
     let (_, errs): (Vec<_>, Vec<_>) = inputs
         .iter()
         .map(|(ast, source, path)| {
@@ -69,13 +69,13 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 .partition(Result::is_ok);
 
             if errs.is_empty() {
-                Ok((InferType::new(), env.clone()))
+                Ok((InferType::default(), env.clone()))
             } else {
                 Err(errs.into_iter().map(Result::unwrap_err).flatten().collect())
             }
         }
-        Node::Import { .. } => Ok((InferType::new(), env.clone())),
-        Node::FromImport { .. } => Ok((InferType::new(), env.clone())),
+        Node::Import { .. } => Ok((InferType::default(), env.clone())),
+        Node::FromImport { .. } => Ok((InferType::default(), env.clone())),
 
         Node::Init | Node::Class { .. } => infer_class(ast, env, ctx),
         Node::Generic { .. } | Node::Parent { .. } => infer_class(ast, env, ctx),
@@ -107,7 +107,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 infer(body, &env, ctx)?;
             }
 
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
         Node::TypeAlias { isa, conditions, _type } => {
             infer(isa, env, ctx)?;
@@ -116,19 +116,19 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
                 infer(condition, &env, ctx)?;
             }
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
         Node::TypeTup { types } => {
             for ty in types {
                 infer(ty, env, ctx)?;
             }
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
         Node::TypeUnion { types } => {
             for ty in types {
                 infer(ty, env, ctx)?;
             }
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
         Node::Type { id, generics } => {
             let id = match &id.node {
@@ -141,18 +141,18 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             for generic in generics {
                 infer(generic, env, ctx)?;
             }
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
         Node::TypeFun { args, ret_ty } => {
             for arg in args {
                 infer(arg, env, ctx)?;
             }
             infer(ret_ty, env, ctx)?;
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
         Node::QuestionOp { expr } => {
             infer(expr, env, ctx)?;
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
 
         Node::Condition { cond, _else } => {
@@ -160,22 +160,22 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             if let Some(_else) = _else {
                 infer(_else, env, ctx)?;
             }
-            Ok((InferType::new(), env.clone()))
+            Ok((InferType::default(), env.clone()))
         }
 
         Node::_Self =>
             Ok((InferType::from(&env.lookup(function_arg::concrete::SELF, &ast.pos)?), env.clone())),
-        Node::AddOp => Ok((InferType::new(), env.clone())),
-        Node::SubOp => Ok((InferType::new(), env.clone())),
-        Node::SqrtOp => Ok((InferType::new(), env.clone())),
-        Node::MulOp => Ok((InferType::new(), env.clone())),
-        Node::FDivOp => Ok((InferType::new(), env.clone())),
-        Node::DivOp => Ok((InferType::new(), env.clone())),
-        Node::PowOp => Ok((InferType::new(), env.clone())),
-        Node::ModOp => Ok((InferType::new(), env.clone())),
-        Node::EqOp => Ok((InferType::new(), env.clone())),
-        Node::LeOp => Ok((InferType::new(), env.clone())),
-        Node::GeOp => Ok((InferType::new(), env.clone())),
+        Node::AddOp => Ok((InferType::default(), env.clone())),
+        Node::SubOp => Ok((InferType::default(), env.clone())),
+        Node::SqrtOp => Ok((InferType::default(), env.clone())),
+        Node::MulOp => Ok((InferType::default(), env.clone())),
+        Node::FDivOp => Ok((InferType::default(), env.clone())),
+        Node::DivOp => Ok((InferType::default(), env.clone())),
+        Node::PowOp => Ok((InferType::default(), env.clone())),
+        Node::ModOp => Ok((InferType::default(), env.clone())),
+        Node::EqOp => Ok((InferType::default(), env.clone())),
+        Node::LeOp => Ok((InferType::default(), env.clone())),
+        Node::GeOp => Ok((InferType::default(), env.clone())),
 
         Node::Set { .. } | Node::SetBuilder { .. } => infer_coll(ast, env, ctx),
         Node::List { .. } | Node::ListBuilder { .. } => infer_coll(ast, env, ctx),
@@ -220,14 +220,14 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Cannot have return outside function")])
             },
-        Node::ReturnEmpty => Ok((InferType::new(), env.clone())),
+        Node::ReturnEmpty => Ok((InferType::default(), env.clone())),
 
-        Node::Underscore => Ok((InferType::new(), env.clone())),
-        Node::Pass => Ok((InferType::new(), env.clone())),
+        Node::Underscore => Ok((InferType::default(), env.clone())),
+        Node::Pass => Ok((InferType::default(), env.clone())),
         Node::Print { expr } => {
             let (_, env) = infer(expr, env, ctx)?;
-            Ok((InferType::new(), env))
+            Ok((InferType::default(), env))
         }
-        Node::Comment { .. } => Ok((InferType::new(), env.clone()))
+        Node::Comment { .. } => Ok((InferType::default(), env.clone()))
     }
 }

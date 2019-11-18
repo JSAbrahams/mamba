@@ -59,19 +59,14 @@ impl TryFrom<&[CheckInput]> for Context {
 impl Context {
     fn find_type_name(&self, name: &str, pos: &Position) -> TypeResult<GenericType> {
         for ty in &self.types {
-            if &ty.name.name(pos)? == name {
+            if ty.name.name(pos)? == name {
                 return Ok(ty.clone());
             }
         }
         Err(vec![TypeErr::new(pos, &format!("Unknown type: {}", name))])
     }
 
-    fn lookup_direct(
-        &self,
-        name: &str,
-        generics: &Vec<TypeName>,
-        pos: &Position
-    ) -> TypeResult<Type> {
+    fn lookup_direct(&self, name: &str, generics: &[TypeName], pos: &Position) -> TypeResult<Type> {
         let generic_type: GenericType = self.find_type_name(name, pos)?;
         if generic_type.generics.len() != generics.len() {
             let msg = format!(
@@ -86,8 +81,9 @@ impl Context {
         }
 
         let type_generics = generic_type.generics.clone();
-        let paired = type_generics.into_iter().zip(generics.clone());
-        let generics = paired.map(|(parameter, type_name)| (parameter.name, type_name)).collect();
+        let paired = type_generics.into_iter().zip(generics);
+        let generics =
+            paired.map(|(parameter, type_name)| (parameter.name, type_name.clone())).collect();
         Type::try_from((&generic_type, &generics, &self.types, pos))
     }
 
@@ -97,7 +93,7 @@ impl Context {
         pos: &Position
     ) -> TypeResult<NullableType> {
         Ok(NullableType::new(
-            ty_name.is_nullable || ty_name.actual == ActualTypeName::new(concrete::NONE, &vec![]),
+            ty_name.is_nullable || ty_name.actual == ActualTypeName::new(concrete::NONE, &[]),
             &match &ty_name.actual {
                 ActualTypeName::Single { lit, generics } =>
                     ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
@@ -131,15 +127,14 @@ impl Context {
             _ => return Err(vec![TypeErr::new(pos, "Must be type name")])
         };
 
-        let name = ActualTypeName::new(&name, &vec![]);
+        let name = ActualTypeName::new(&name, &[]);
 
         // TODO deal with arguments that have no type (in unsafe mode)
         // TODO use generics for arguments
-        let fun = self
-            .functions
-            .iter()
-            .find(|f| f.name == name)
-            .ok_or(vec![TypeErr::new(pos, &format!("Function {} is undefined", name))])?;
+        let fun =
+            self.functions.iter().find(|f| f.name == name).ok_or_else(|| {
+                vec![TypeErr::new(pos, &format!("Function {} is undefined", name))]
+            })?;
 
         let fun = Function::try_from((fun, &HashMap::new(), pos))?;
         if !args_compatible(&fun.arguments, &fun_args) {
@@ -151,7 +146,7 @@ impl Context {
             let infer_ty = InferType::from(&self.lookup(&ret_ty, pos)?);
             Ok(infer_ty.union_raises(&raises))
         } else {
-            Ok(InferType::new().union_raises(&raises))
+            Ok(InferType::default().union_raises(&raises))
         }
     }
 
@@ -183,7 +178,8 @@ impl Context {
                     .map(|ty| self.lookup_actual_fun(&ty.actual, args, pos))
                     .collect::<Result<_, Vec<TypeErr>>>()?;
 
-                let mut first = union.first().ok_or(TypeErr::new(pos, "Union is empty"))?.clone();
+                let mut first =
+                    union.first().ok_or_else(|| TypeErr::new(pos, "Union is empty"))?.clone();
                 for infer_ty in union {
                     first = first.union(&infer_ty, pos)?
                 }

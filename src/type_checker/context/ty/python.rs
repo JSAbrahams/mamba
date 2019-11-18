@@ -1,7 +1,6 @@
 use std::collections::HashSet;
-use std::ops::Deref;
 
-use python_parser::ast::{Classdef, CompoundStatement, Name, Statement};
+use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
 use crate::common::position::Position;
 use crate::type_checker::context::field::python::GenericFields;
@@ -13,20 +12,21 @@ use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
+use std::ops::Deref;
 
-pub const INT_PRIMITIVE: &'static str = "int";
-pub const FLOAT_PRIMITIVE: &'static str = "float";
-pub const STRING_PRIMITIVE: &'static str = "str";
-pub const BOOL_PRIMITIVE: &'static str = "bool";
-pub const ENUM_PRIMITIVE: &'static str = "enum";
-pub const COMPLEX_PRIMITIVE: &'static str = "complex";
+pub const INT_PRIMITIVE: &str = "int";
+pub const FLOAT_PRIMITIVE: &str = "float";
+pub const STRING_PRIMITIVE: &str = "str";
+pub const BOOL_PRIMITIVE: &str = "bool";
+pub const ENUM_PRIMITIVE: &str = "enum";
+pub const COMPLEX_PRIMITIVE: &str = "complex";
 
-pub const RANGE: &'static str = "range";
-pub const SET: &'static str = "set";
-pub const LIST: &'static str = "list";
+pub const RANGE: &str = "range";
+pub const SET: &str = "set";
+pub const LIST: &str = "list";
 
-pub const NONE: &'static str = "None";
-pub const EXCEPTION: &'static str = "Exception";
+pub const NONE: &str = "None";
+pub const EXCEPTION: &str = "Exception";
 
 // TODO handle Python generics
 impl From<&Classdef> for GenericType {
@@ -47,19 +47,17 @@ impl From<&Classdef> for GenericType {
                     GenericFields::from((variables, expressions)).fields.iter().for_each(|f| {
                         fields.insert(f.clone());
                     }),
-                Statement::Compound(compound) => match compound.deref() {
-                    CompoundStatement::Funcdef(func_def) => {
+                Statement::Compound(compound) =>
+                    if let CompoundStatement::Funcdef(func_def) = compound.deref() {
                         functions.insert(GenericFunction::from(func_def));
-                    }
-                    _ => {}
-                },
+                    },
                 _ => {}
             }
         }
 
         let args = functions
             .iter()
-            .find(|f| f.name == ActualTypeName::new(function::concrete::INIT, &vec![]))
+            .find(|f| f.name == ActualTypeName::new(function::concrete::INIT, &[]))
             .map_or(vec![], |f| f.arguments.clone());
 
         let name =
@@ -82,8 +80,8 @@ impl From<&Classdef> for GenericType {
     }
 }
 
-pub fn python_to_concrete(name: &Name) -> String {
-    match name.as_str() {
+pub fn python_to_concrete(name: &str) -> String {
+    match name {
         INT_PRIMITIVE => String::from(concrete::INT_PRIMITIVE),
         FLOAT_PRIMITIVE => String::from(concrete::FLOAT_PRIMITIVE),
         STRING_PRIMITIVE => String::from(concrete::STRING_PRIMITIVE),

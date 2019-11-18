@@ -33,7 +33,7 @@ pub mod construct;
 ///     _else: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
+/// assert_eq!(to_source(&core_node), "if a: f\"b\"\nelse: f\"c\"\n");
 /// ```
 pub fn to_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -45,10 +45,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::ImportAs { imports, _as } =>
             format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(_as, ind)),
 
-        Core::Id { lit } => format!("{}", lit),
+        Core::Id { lit } => lit.clone(),
         Core::Type { lit, generics } =>
             if generics.is_empty() {
-                format!("{}", lit)
+                lit.clone()
             } else {
                 format!("{}[{}]", lit, comma_delimited(generics, ind))
             },
@@ -59,7 +59,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Float { float } => float.clone(),
         Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
 
-        Core::FunDef { private, id, args, ret_ty, body } => {
+        Core::FunDef { id, args, ret_ty, body, .. } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
                 Core::GeqOp => String::from("__ge__"),
@@ -80,12 +80,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 Core::Id { ref lit, .. } => match lit.as_str() {
                     "size" => String::from("__size__"),
                     "init" => String::from("__init__"),
-                    other =>
-                        if *private {
-                            format!("_{}", other)
-                        } else {
-                            String::from(other)
-                        },
+                    other => String::from(other)
                 },
                 other => panic!("Not a valid identifier for a function: {:?}", other)
             };
@@ -103,16 +98,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
 
-        Core::Assign { left, right } => format!("{} = {}", to_py(left.as_ref(), ind), {
-            let right = to_py(right.as_ref(), ind);
-            if right.is_empty() {
-                String::from("None")
-            } else {
-                right
-            }
-        }),
-        Core::VarDef { private, id, right } =>
-            format!("{}{} = {}", if *private { "_" } else { "" }, to_py(id.as_ref(), ind), {
+        Core::Assign { left, right } | Core::VarDef { id: left, right, .. } =>
+            format!("{} = {}", to_py(left.as_ref(), ind), {
                 let right = to_py(right.as_ref(), ind);
                 if right.is_empty() {
                     String::from("None")
@@ -142,7 +129,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(body, ind)
         ),
 
-        Core::Block { statements } => format!("{}", newline_delimited(statements, ind)),
+        Core::Block { statements } => newline_delimited(statements, ind),
 
         Core::PropertyCall { object, property } =>
             format!("{}.{}", to_py(object, ind), to_py(property, ind)),
@@ -333,7 +320,7 @@ fn newline_if_body(core: &Core, ind: usize) -> String {
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut string = String::new();
     items
-        .into_iter()
+        .iter()
         .for_each(|item| string.push_str(&format!("{}{}\n", indent(ind), to_py(item, ind))));
     String::from(string.trim_end())
 }
@@ -341,14 +328,14 @@ fn newline_delimited(items: &[Core], ind: usize) -> String {
 fn newline_comma_delimited(items: &[Core], ind: usize) -> String {
     let mut string = String::new();
     items
-        .into_iter()
+        .iter()
         .for_each(|item| string.push_str(&format!("{}{},\n", indent(ind), to_py(item, ind))));
     String::from(string.trim_end())
 }
 
 fn comma_delimited(items: &[Core], ind: usize) -> String {
     let mut string = String::new();
-    items.into_iter().for_each(|item| string.push_str(&format!("{}, ", to_py(item, ind))));
+    items.iter().for_each(|item| string.push_str(&format!("{}, ", to_py(item, ind))));
     if string.len() > 2 {
         string.remove(string.len() - 2);
     }

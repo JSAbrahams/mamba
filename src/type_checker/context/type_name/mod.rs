@@ -19,7 +19,7 @@ pub mod actual;
 pub mod nullable;
 pub mod python;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub enum TypeName {
     Single { ty: NullableTypeName },
     Union { union: HashSet<NullableTypeName> }
@@ -33,6 +33,16 @@ impl Hash for TypeName {
         match self {
             TypeName::Single { ty } => ty.hash(state),
             TypeName::Union { union } => union.iter().for_each(|ty| ty.hash(state))
+        }
+    }
+}
+
+impl PartialEq for TypeName {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (TypeName::Single { ty }, TypeName::Single { ty: other }) => ty == other,
+            (TypeName::Union { union }, TypeName::Union { union: other }) => union == other,
+            _ => false
         }
     }
 }
@@ -65,7 +75,7 @@ impl TryFrom<&AST> for TypeName {
 }
 
 impl From<&str> for TypeName {
-    fn from(name: &str) -> TypeName { TypeName::new(name, &vec![]) }
+    fn from(name: &str) -> TypeName { TypeName::new(name, &[]) }
 }
 
 impl From<&ActualTypeName> for TypeName {
@@ -85,9 +95,8 @@ impl From<&ExpressionType> for TypeName {
                     actual:      ActualTypeName::from(&ty.actual_ty())
                 }
             },
-            ExpressionType::Union { union } => TypeName::Union {
-                union: union.iter().map(|ty| NullableTypeName::from(ty)).collect()
-            }
+            ExpressionType::Union { union } =>
+                TypeName::Union { union: union.iter().map(NullableTypeName::from).collect() },
         }
     }
 }
@@ -105,7 +114,7 @@ impl TypeName {
     pub fn names(&self) -> HashSet<ActualTypeName> {
         match &self {
             TypeName::Single { ty } => HashSet::from_iter(vec![ty.actual.clone()].into_iter()),
-            TypeName::Union { union } => union.into_iter().map(|ty| ty.actual.clone()).collect()
+            TypeName::Union { union } => union.iter().map(|ty| ty.actual.clone()).collect()
         }
     }
 
@@ -153,7 +162,7 @@ impl TypeName {
             TypeName::Single { ty } => TypeName::Single { ty: ty.substitute(generics, pos)? },
             TypeName::Union { union } => TypeName::Union {
                 union: union
-                    .into_iter()
+                    .iter()
                     .map(|ty| ty.substitute(generics, pos))
                     .collect::<Result<_, _>>()?
             }

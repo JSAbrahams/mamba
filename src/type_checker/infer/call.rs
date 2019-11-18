@@ -52,7 +52,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
             let mutable = match &instance.node {
                 Node::VariableDef { id_maybe_type, .. } => match &id_maybe_type.node {
-                    Node::IdType { mutable, .. } => mutable.clone(),
+                    Node::IdType { mutable, .. } => *mutable,
                     _ => false
                 },
                 Node::IdType { id, .. } => match &id.node {
@@ -84,7 +84,8 @@ fn property_call(
                 Node::Id { lit } => {
                     let field = instance.field(&lit, &property.pos)?;
                     let msg = format!("Cannot get type of field {}", field);
-                    let field_ty_name = &field.ty.ok_or(vec![TypeErr::new(&property.pos, &msg)])?;
+                    let field_ty_name =
+                        &field.ty.ok_or_else(|| vec![TypeErr::new(&property.pos, &msg)])?;
                     (ctx.lookup(&field_ty_name, &property.pos)?, field.mutable, HashSet::new())
                 }
                 Node::FunctionCall { name, args } => {
@@ -110,9 +111,9 @@ fn property_call(
                         return Err(vec![TypeErr::new(&property.pos, &msg)]);
                     }
 
-                    let function_ty_name = &function
-                        .ty()
-                        .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of function")])?;
+                    let function_ty_name = &function.ty().ok_or_else(|| {
+                        vec![TypeErr::new(&property.pos, "Cannot get type of function")]
+                    })?;
                     (
                         ctx.lookup(&function_ty_name, &property.pos)?,
                         function_self_mut,
@@ -146,7 +147,7 @@ fn final_property_call(
         Node::Id { lit } => {
             let field = instance.field(&lit, &property.pos)?;
             let msg = format!("Cannot get type of field {}", field);
-            let field_ty_name = &field.ty.ok_or(vec![TypeErr::new(&property.pos, &msg)])?;
+            let field_ty_name = &field.ty.ok_or_else(|| vec![TypeErr::new(&property.pos, &msg)])?;
             Ok((InferType::from(&ctx.lookup(&field_ty_name, &property.pos)?), env.clone()))
         }
 
@@ -182,7 +183,7 @@ fn final_property_call(
                 return Err(vec![TypeErr::new(&right.pos, &msg)]);
             }
 
-            let infer_type = InferType::new();
+            let infer_type = InferType::default();
             Ok((infer_type.union_raises(&right_ty.raises).union_raises(&right_ty.raises), env))
         }
 
@@ -210,11 +211,11 @@ fn final_property_call(
 
             let function_ty_name = &function
                 .ty()
-                .ok_or(vec![TypeErr::new(&property.pos, "Cannot get type of function")])?;
+                .ok_or_else(|| vec![TypeErr::new(&property.pos, "Cannot get type of function")])?;
             let infer_type = InferType::from(&ctx.lookup(&function_ty_name, &property.pos)?);
             Ok((infer_type.union_raises(&raises), env))
         }
 
-        _ => return Err(vec![TypeErr::new(&property.pos, "Expected property or function")])
+        _ => Err(vec![TypeErr::new(&property.pos, "Expected property or function")])
     }
 }

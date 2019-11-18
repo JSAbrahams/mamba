@@ -8,7 +8,7 @@ use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::type_name::{python, TypeName};
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-pub const SELF: &'static str = "self";
+pub const SELF: &str = "self";
 
 #[derive(Debug, Clone)]
 pub struct ClassArgument {
