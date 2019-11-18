@@ -23,8 +23,9 @@ install:
 
   - if %channel% == "nightly" rustup install nightly
 
-  - if %channel% == "nightly"  rustup component add rustfmt --toolchain nightly
+  - if %channel% == "nightly" rustup component add rustfmt --toolchain nightly
   - if %channel% == "stable" rustup component add clippy
+  - if %channel% == "nightly" rustup component add clippy --toolchain nightly
 
   - rustc -vV
   - cargo -vV
@@ -34,6 +35,7 @@ build: false
 test_script:
   - if %channel% == "nightly" cargo +nightly fmt --all -- --check
   - if %channel% == "stable" cargo clippy -- -D warnings
+  - if %channel% == "nightly" cargo +nightly clippy -- -D warnings
 
   - cargo test --verbose
 
