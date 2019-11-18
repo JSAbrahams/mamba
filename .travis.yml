@@ -41,6 +41,16 @@ before_script:
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add clippy --toolchain nightly; fi
 
 before_install:
+  # Python
+  - |
+    if [ $TRAVIS_OS_NAME = 'linux' ]; then
+      sudo apt update;
+      sudo apt install software-properties-common;
+      sudo add-apt-repository ppa:deadsnakes/ppa;
+      sudo apt-get update;
+      sudo apt-get install python3.8;
+    fi
+
   # grcov
   - curl -L https://github.com/mozilla/grcov/releases/download/v0.4.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
 
