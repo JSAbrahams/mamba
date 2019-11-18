@@ -2,8 +2,11 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
+use crate::type_checker::context::field::concrete::Field;
+use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
+use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::type_result::TypeResult;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -29,6 +32,18 @@ impl NullableType {
     }
 
     pub fn actual_ty(&self) -> ActualType { self.actual_ty.clone() }
+
+    pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
+        self.actual_ty.field(field, pos)
+    }
+
+    pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
+        self.actual_ty.anon_fun(args, pos)
+    }
+
+    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
+        self.actual_ty.fun(name, args, pos)
+    }
 
     pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<NullableType> {
         let actual_ty = self.actual_ty.constructor(args, pos)?;

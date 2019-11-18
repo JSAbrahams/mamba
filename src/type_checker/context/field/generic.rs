@@ -40,14 +40,8 @@ impl TryFrom<&AST> for GenericField {
                     _ => return Err(vec![TypeErr::new(&id_maybe_type.pos, "Expected identifier")])
                 };
 
-                Ok(GenericField {
-                    is_py_type: false,
-                    name,
-                    mutable,
-                    pos: ast.pos.clone(),
-                    private: *private,
-                    ty
-                })
+                let pos = ast.pos.clone();
+                Ok(GenericField { is_py_type: false, name, mutable, pos, private: *private, ty })
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
         }

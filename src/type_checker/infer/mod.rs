@@ -1,5 +1,4 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::{function_arg, Context};
 use crate::type_checker::environment::infer_type::InferType;
@@ -103,8 +102,8 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 infer(isa, env, ctx)?;
             }
             if let Some(body) = body {
-                let class = ActualTypeName::try_from(_type.deref())?;
-                let env = env.new_state(&env.state.in_class(&class));
+                let class = TypeName::try_from(_type.deref())?;
+                let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
                 infer(body, &env, ctx)?;
             }
 
@@ -113,8 +112,8 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::TypeAlias { isa, conditions, _type } => {
             infer(isa, env, ctx)?;
             for condition in conditions {
-                let class = ActualTypeName::try_from(_type.deref())?;
-                let env = env.new_state(&env.state.in_class(&class));
+                let class = TypeName::try_from(_type.deref())?;
+                let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
                 infer(condition, &env, ctx)?;
             }
             Ok((InferType::new(), env.clone()))

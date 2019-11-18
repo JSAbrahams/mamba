@@ -12,6 +12,7 @@ use std::fmt;
 pub struct Field {
     pub is_py_type: bool,
     pub name:       String,
+    pub mutable:    bool,
     pub ty:         Option<TypeName>
 }
 
@@ -41,6 +42,7 @@ impl TryFrom<(&GenericField, &HashMap<String, TypeName>, &Position)> for Field {
         Ok(Field {
             is_py_type: field.is_py_type,
             name:       field.name.clone(),
+            mutable:    field.mutable,
             ty:         match &field.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None

@@ -2,7 +2,6 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::infer_type::InferType;
@@ -46,8 +45,9 @@ pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             }
 
             if let Some(body) = body {
-                let state = env.state.in_class(&ActualTypeName::try_from(_type.deref())?);
-                infer(body, &env.new_state(&state), ctx)?;
+                let class = TypeName::try_from(_type.deref())?;
+                let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
+                infer(body, &env, ctx)?;
             }
 
             Ok((InferType::new(), env.clone()))

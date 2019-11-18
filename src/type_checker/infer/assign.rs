@@ -182,14 +182,10 @@ pub fn arg_types(
             }
         } else {
             if &lit == function_arg::concrete::SELF {
+                // TODO check that type of self is child of class
                 // TODO get actual type of self from Context in case self is child of class
-                let class = env.state.in_class.clone();
-                let msg = "self cannot be outside class";
-                let class = class.ok_or(vec![TypeErr::new(&arg.pos, &msg)])?;
-                arg_types.insert(
-                    lit.clone(),
-                    (*mutable, ctx.lookup(&TypeName::from(&class), &arg.pos)?)
-                );
+                let (_, class_ty) = env.lookup_indirect("self", &arg.pos)?;
+                arg_types.insert(lit.clone(), (*mutable, class_ty));
             } else if let Some(default_ty) = default_ty {
                 arg_types.insert(lit.clone(), (*mutable, default_ty));
             } else {

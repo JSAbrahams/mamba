@@ -1,42 +1,44 @@
-from Math import abs
-import something
+from typing import Callable
 
-class MyClass2(MyType):
-    my_field = None
 
-    def __init__(self, my_field, other_field = "Hello"):
-        super().__init__(self, other_field)
+class MyGeneric(str):
+    def __init__(self):
+        super().__init__()
+
+
+class MyType:
+    some_field: str = None
+
+    def __init__(self, some_field): self.some_field = some_field
+
+
+SomeState = MyClass
+OtherState = MyClass
+
+
+class SuperInterface:
+    bar: int = None
+
+
+class MyInterface(SuperInterface):
+    required_field: int = None
+
+    def higher_order(self) -> int: pass
+
+
+class MyClass2(MyType, MyInterface):
+    required_field: int = 100
+    _private_field: int = 20
+    my_field: str = None
+
+    def __init__(self, my_field, other_field: str = f"Hello"):
+        super().__init__(other_field)
         self.my_field = my_field
 
-    _z_modified = None
-    _private_field = 20
+    def fun_a(self): self.some_field = f"my field is {self.required_field}"
 
-    def connect(self):
-        self.other_field = 200
+    def _fun_b(self): print(f"this function is private: {self._private_field}!")
 
-    def fun_a(self):
-        print(self)
+    def some_higher_order(self, fun: Callable[[int], int]) -> int: return fun(self.my_field)
 
-    def _fun_b(self):
-        print("this function is private!")
-
-    def factorial(self, x=0):
-        x * self.factorial(x - 1)
-
-    def factorial_infinite(self, x):
-        x * self.factorial(x)
-
-    def a(self):
-        self.a(self.b)
-
-    def b(self, c):
-        self.a(self.b(self.c))
-
-    def c(self, d):
-        self.a(self.b(self.c(d)))
-
-    def some_higher_order(self, fun):
-        0
-
-    def fancy(self):
-        self.some_higher_order(lambda x: x * 2)
+    def higher_order(self) -> int: return self.some_higher_order(lambda x: x * 2)

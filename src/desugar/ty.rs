@@ -17,6 +17,7 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                 generics: vec![desugar_node(expr, imp, state)?]
             }
         }
+        Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         Node::IdType { id, _type, .. } => match &id.node {
             Node::Id { lit } =>
                 if let Some(ty) = _type {

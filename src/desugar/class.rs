@@ -6,6 +6,7 @@ use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
+use crate::desugar::ty::desugar_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::type_checker::context::{function, function_arg};
@@ -81,7 +82,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                         }
                     };
 
-                    let final_definitions = if final_definitions.is_empty() {
+                    let mut final_definitions = if final_definitions.is_empty() {
                         vec![Core::FunDef {
                             private: false,
                             id:      Box::new(Core::Id {
@@ -100,6 +101,14 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                     } else {
                         final_definitions
                     };
+
+                    let (mut stmts, mut non_variables): (Vec<_>, Vec<_>) =
+                        final_definitions.into_iter().partition(|stmt| match stmt {
+                            Core::VarDef { .. } => true,
+                            _ => false
+                        });
+                    stmts.append(&mut non_variables);
+                    final_definitions = stmts.clone();
 
                     Core::ClassDef {
                         name:        Box::from(desugar_node(id, imp, state)?),
@@ -137,6 +146,7 @@ fn constructor_from_inline(
                         .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
                 }
             }
+
             Core::VarDef { id, right, .. } => {
                 args.push(Core::FunArg {
                     vararg:  false,
@@ -198,7 +208,6 @@ fn add_parent_to_constructor(
                         if found_constructor {
                             panic!("Cannot have more than one constructor.")
                         }
-
                         found_constructor = true;
                         let body = match (super_calls.is_empty(), *old_body.clone()) {
                             (true, _) => old_body.clone(),
@@ -248,7 +257,7 @@ fn extract_parents(
     for parent in parents {
         match &parent.node {
             Node::Parent { ref id, args: old_args, .. } => {
-                parent_names.push(desugar_node(id, ctx, state)?);
+                parent_names.push(desugar_type(id, ctx, state)?);
 
                 let mut args = vec![];
                 args.append(&mut desugar_vec(old_args, ctx, state)?);

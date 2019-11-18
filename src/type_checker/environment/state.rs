@@ -6,7 +6,6 @@ pub struct State {
     pub in_loop:     bool,
     pub in_handle:   bool,
     pub in_function: bool,
-    pub in_class:    Option<ActualTypeName>,
     pub in_match:    Option<ExpressionType>,
     pub handling:    Vec<ActualTypeName>
 }
@@ -23,14 +22,9 @@ impl State {
             in_loop:     false,
             in_handle:   false,
             in_function: false,
-            in_class:    None,
             in_match:    None,
             handling:    vec![]
         }
-    }
-
-    pub fn in_class(&self, class: &ActualTypeName) -> State {
-        State { in_class: Some(class.clone()), ..self.clone() }
     }
 
     pub fn in_match(&self, expr_ty: &ExpressionType) -> State {

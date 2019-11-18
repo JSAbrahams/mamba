@@ -1,4 +1,5 @@
 use crate::common::position::Position;
+use crate::type_checker::context::function_arg;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -8,6 +9,8 @@ pub mod expression_type;
 pub mod infer_type;
 pub mod name;
 pub mod state;
+
+// TODO use name in lookup functions
 
 #[derive(Clone, Debug)]
 pub struct Environment {
@@ -31,6 +34,12 @@ impl Environment {
             .cloned()
             .map(|(_, expr_ty)| expr_ty)
             .ok_or(vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
+    }
+
+    pub fn in_class(&self, mutable: bool, class: &ExpressionType) -> Environment {
+        let mut variables = self.variables.clone();
+        variables.insert(String::from(function_arg::concrete::SELF), (mutable, class.clone()));
+        Environment { state: self.state.clone(), variables }
     }
 
     pub fn new_state(&self, state: &State) -> Self {

@@ -10,6 +10,7 @@ use std::path::Path;
 use std::process::Command;
 
 #[test]
+#[ignore]
 fn generics_ast_verify() -> Result<(), Vec<(String, String)>> {
     transpile_directory(
         &Path::new(&resource_path(true, &["class"], "")),

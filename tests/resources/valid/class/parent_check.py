@@ -4,7 +4,7 @@ class MyType:
 
 
 class MyClass1(MyType):
+    other: int = None
+
     def __init__(self):
         super().__init__(f"asdf")
-
-    other: int = None

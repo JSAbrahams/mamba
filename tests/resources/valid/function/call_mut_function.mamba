@@ -1,0 +1,9 @@
+class MyClass
+    def mut a: Int <- 20
+    def f(mut self, x: Int) -> Int =>
+        self.a <- x
+        x + 20
+
+
+def mut my_class <- MyClass()
+my_class.f(10)

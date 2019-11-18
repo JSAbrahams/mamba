@@ -7,6 +7,8 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::InferResult;
 use crate::type_checker::type_result::TypeErr;
 
+// TODO type check expressions within fstrings
+
 pub fn infer_literal(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     Ok((
         InferType::from(&match &ast.node {
