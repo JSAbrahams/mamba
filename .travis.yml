@@ -41,8 +41,8 @@ before_script:
       apt update;
       sudo apt install software-properties-common;
       sudo add-apt-repository ppa:deadsnakes/ppa;
-      then sudo apt-get update;
-      then sudo apt-get install python3.8;
+      sudo apt-get update;
+      sudo apt-get install python3.8;
     fi
 
   # Cargo components
