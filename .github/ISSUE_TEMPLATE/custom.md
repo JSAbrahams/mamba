@@ -1,6 +1,6 @@
 ---
-name: 📋 Custom issue template
-about: An issue that is neither a feature request or bug report.
+name: "\U0001F4CB Custom issue template"
+about: An issue that is not a bug, feature, or architecture issue
 title: ''
 labels: ''
 assignees: ''
@@ -14,4 +14,3 @@ assignees: ''
 
 
 ### Additional Context
-

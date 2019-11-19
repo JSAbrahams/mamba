@@ -2,7 +2,7 @@
 name: "\U0001F41E Bug report"
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: ''
 assignees: ''
 
 ---
@@ -17,4 +17,3 @@ _Steps to reproduce the behaviour, with steps and resulting error._
 
 
 ### Additional context
-

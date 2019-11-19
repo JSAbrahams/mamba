@@ -1,8 +1,8 @@
 ---
 name: "\U0001F4A1 Feature request"
-about: Suggest an idea
+about: "(High level) language features"
 title: ''
-labels: enhancement
+labels: ''
 assignees: ''
 
 ---
@@ -14,4 +14,3 @@ assignees: ''
 
 
 ### Description of potential implementation
-
