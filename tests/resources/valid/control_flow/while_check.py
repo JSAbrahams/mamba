@@ -1,8 +1,11 @@
-while b: c
+b = False
+while b:
+    print(b)
 
+d = True
 while d:
-    print(e)
-    print(f)
-    print(g)
+    print(d and False)
 
-print("hello")
+    print(d and True)
+
+print(f"hello")

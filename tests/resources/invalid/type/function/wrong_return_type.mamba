@@ -1,0 +1,1 @@
+def g(x: Int) -> String => x + 10

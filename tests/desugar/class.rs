@@ -1,17 +1,18 @@
+use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::ASTNode;
-use mamba::parser::ast::ASTNodePos;
+use mamba::parser::ast::Node;
+use mamba::parser::ast::AST;
 use std::ops::Deref;
 
 #[test]
 fn import_verify() {
     let import = vec![
-        to_pos_unboxed!(ASTNode::ENum { num: String::from("a"), exp: String::from("100") }),
-        to_pos_unboxed!(ASTNode::Real { lit: String::from("3000.5") }),
+        to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
+        to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
     let _as = vec![];
-    let import = to_pos!(ASTNode::Import { import, _as });
+    let import = to_pos!(Node::Import { import, _as });
 
     let core_import = match desugar(&import) {
         Ok(Core::Import { imports }) => imports,
@@ -26,11 +27,11 @@ fn import_verify() {
 #[test]
 fn import_as_verify() {
     let import = vec![
-        to_pos_unboxed!(ASTNode::ENum { num: String::from("a"), exp: String::from("100") }),
-        to_pos_unboxed!(ASTNode::Real { lit: String::from("3000.5") }),
+        to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
+        to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
-    let _as = vec![to_pos_unboxed!(ASTNode::Real { lit: String::from("0.5") })];
-    let import = to_pos!(ASTNode::Import { import, _as });
+    let _as = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
+    let import = to_pos!(Node::Import { import, _as });
 
     let (core_import, core_as) = match desugar(&import) {
         Ok(Core::ImportAs { imports, _as }) => (imports, _as),
@@ -46,15 +47,13 @@ fn import_as_verify() {
 
 #[test]
 fn from_import_verify() {
-    let id = to_pos!(ASTNode::Id { lit: String::from("afs") });
+    let id = to_pos!(Node::Id { lit: String::from("afs") });
     let import = vec![
-        to_pos_unboxed!(ASTNode::ENum { num: String::from("a"), exp: String::from("100") }),
-        to_pos_unboxed!(ASTNode::Real { lit: String::from("3000.5") }),
+        to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
+        to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
-    let import = to_pos!(ASTNode::FromImport {
-        id,
-        import: to_pos!(ASTNode::Import { import, _as: vec![] })
-    });
+    let import =
+        to_pos!(Node::FromImport { id, import: to_pos!(Node::Import { import, _as: vec![] }) });
 
     let (from, import) = match desugar(&import) {
         Ok(Core::FromImport { from, import }) => match &import.deref() {
@@ -72,8 +71,8 @@ fn from_import_verify() {
 
 #[test]
 fn condition_verify() {
-    let cond = to_pos!(ASTNode::Bool { lit: true });
-    let condition = to_pos!(ASTNode::Condition { cond, _else: None });
+    let cond = to_pos!(Node::Bool { lit: true });
+    let condition = to_pos!(Node::Condition { cond, _else: None });
 
     let result = desugar(&condition);
     assert!(result.is_err());

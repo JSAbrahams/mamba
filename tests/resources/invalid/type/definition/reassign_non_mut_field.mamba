@@ -1,0 +1,6 @@
+class A
+    def my_num: Int <- 10
+
+
+def mut a <- A()
+a.my_num <- 20

@@ -1,28 +1,31 @@
 def b <- 40
 
-if a then print "hello world"
-if c then d <- 4 else asdf
+if True then print "hello world"
+if False then "hello" else "world"
 
-# this if doesn't do much yet
+def mut cond <- True and False
+cond <- True or False
+
 if cond then
-    other
+    "asdf"
     print "hello \"world\""
 
-    if aaa then
-        bbb
+    if cond or True then
+        "bbb"
     else
-        ccc
+        "ccc"
 
-    if ggg then
-        hhh
+    def iii <- "iii"
+    if cond or False then
+        "hhh"
     else iii
 else
-    other
+    "other"
     print "hello \"world\""
 
-    if aaa then
-        bbb
+    if cond or True then
+        "bbb"
     else
-        ccc
+        "ccc"
 
-if c then d <- 4 else asdf
+if "as" = "as" then print "hi" else print "asdf"

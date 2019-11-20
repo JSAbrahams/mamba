@@ -1,15 +1,17 @@
+use std::panic;
+
+use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::ASTNode;
-use mamba::parser::ast::ASTNodePos;
-use std::panic;
+use mamba::parser::ast::Node;
+use mamba::parser::ast::AST;
 
 #[test]
 fn with_verify() {
-    let resource = to_pos!(ASTNode::Id { lit: String::from("my_resource") });
-    let _as = Some(to_pos!(ASTNode::Id { lit: String::from("other") }));
-    let expr = to_pos!(ASTNode::Int { lit: String::from("9") });
-    let with = to_pos!(ASTNode::With { resource, _as, expr });
+    let resource = to_pos!(Node::Id { lit: String::from("my_resource") });
+    let _as = Some(to_pos!(Node::Id { lit: String::from("other") }));
+    let expr = to_pos!(Node::Int { lit: String::from("9") });
+    let with = to_pos!(Node::With { resource, _as, expr });
 
     let (resource, _as, expr) = match desugar(&with) {
         Ok(Core::WithAs { resource, _as, expr }) => (resource, _as, expr),
@@ -23,9 +25,9 @@ fn with_verify() {
 
 #[test]
 fn with_no_as_verify() {
-    let resource = to_pos!(ASTNode::Id { lit: String::from("other") });
-    let expr = to_pos!(ASTNode::Int { lit: String::from("2341") });
-    let with = to_pos!(ASTNode::With { resource, _as: None, expr });
+    let resource = to_pos!(Node::Id { lit: String::from("other") });
+    let expr = to_pos!(Node::Int { lit: String::from("2341") });
+    let with = to_pos!(Node::With { resource, _as: None, expr });
 
     let (resource, expr) = match desugar(&with) {
         Ok(Core::With { resource, expr }) => (resource, expr),
@@ -38,50 +40,42 @@ fn with_no_as_verify() {
 
 #[test]
 fn handle_empty_verify() {
-    let expr_or_stmt = to_pos!(ASTNode::Id { lit: String::from("my_fun") });
-    let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![] });
+    let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
+    let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
 
-    let (_try, except) = match desugar(&handle) {
-        Ok(Core::Block { statements }) => {
-            assert_eq!(statements.len(), 1);
-            match &statements[0] {
-                Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
-                other => panic!("Expected try except but was {:?}", other)
-            }
-        }
-        other => panic!("Expected block but was {:?}", other)
+    let (setup, _try, except) = match desugar(&handle) {
+        Ok(Core::TryExcept { setup, _try, except }) =>
+            (setup.clone(), _try.clone(), except.clone()),
+        other => panic!("Expected try except but was {:?}", other)
     };
 
+    assert_eq!(setup, None);
     assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
     assert!(except.is_empty());
 }
 
 #[test]
 fn handle_verify() {
-    let expr_or_stmt = to_pos!(ASTNode::Id { lit: String::from("my_fun") });
-    let cond = to_pos!(ASTNode::IdType {
-        id:      to_pos!(ASTNode::Id { lit: String::from("err") }),
+    let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
+    let cond = to_pos!(Node::IdType {
+        id:      to_pos!(Node::Id { lit: String::from("err") }),
         mutable: false,
-        _type:   Some(to_pos!(ASTNode::Type {
-            id:       to_pos!(ASTNode::Id { lit: String::from("my_type") }),
+        _type:   Some(to_pos!(Node::Type {
+            id:       to_pos!(Node::Id { lit: String::from("my_type") }),
             generics: vec![]
         }))
     });
-    let body = to_pos!(ASTNode::Int { lit: String::from("9999") });
-    let case = to_pos_unboxed!(ASTNode::Case { cond, body });
-    let handle = to_pos!(ASTNode::Handle { expr_or_stmt, cases: vec![case] });
+    let body = to_pos!(Node::Int { lit: String::from("9999") });
+    let case = to_pos_unboxed!(Node::Case { cond, body });
+    let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
-    let (_try, except) = match desugar(&handle) {
-        Ok(Core::Block { statements }) => {
-            assert_eq!(statements.len(), 1);
-            match &statements[0] {
-                Core::TryExcept { _try, except } => (_try.clone(), except.clone()),
-                other => panic!("Expected try except but was {:?}", other)
-            }
-        }
-        other => panic!("Expected block but was {:?}", other)
+    let (setup, _try, except) = match desugar(&handle) {
+        Ok(Core::TryExcept { setup, _try, except }) =>
+            (setup.clone(), _try.clone(), except.clone()),
+        other => panic!("Expected try except but was {:?}", other)
     };
 
+    assert_eq!(setup, None);
     assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
     assert_eq!(except.len(), 1);
     match &except[0] {

@@ -1,164 +1,154 @@
+use crate::common::position::Position;
 use crate::lexer::token::Token;
 use crate::parser::_type::parse_conditions;
 use crate::parser::_type::parse_id;
 use crate::parser::_type::parse_type;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
 use crate::parser::block::parse_statements;
 use crate::parser::class::parse_class;
-use crate::parser::iterator::TPIterator;
-use crate::parser::parse_result::expected;
+use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::{custom, expected};
 
-pub fn parse_from_import(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("from import")?;
+pub fn parse_from_import(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("from import")?;
     it.eat(&Token::From, "from import")?;
+    let id = it.parse(&parse_id, "from import", &start)?;
+    let import = it.parse(&parse_import, "from import", &start)?;
 
-    let id = it.parse(&parse_id, "from import", st_line, st_pos)?;
-    let import = it.parse(&parse_import, "from import", st_line, st_pos)?;
-
-    let (en_line, en_pos) = (import.en_line, import.en_pos);
-    let node = ASTNode::FromImport { id, import };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    let node = Node::FromImport { id, import: import.clone() };
+    Ok(Box::from(AST::new(&start.union(&import.pos), node)))
 }
 
-pub fn parse_import(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("import")?;
-    it.eat(&Token::Import, "import")?;
-
+pub fn parse_import(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("import")?;
+    let end = it.eat(&Token::Import, "import")?;
     let mut import = vec![];
     it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _| {
-        import.push(*it.parse(&parse_id, "import", st_line, st_pos)?);
+        import.push(*it.parse(&parse_id, "import", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
-    let _as = it.parse_vec_if(&Token::As, &parse_as, "import", st_line, st_pos)?;
+    let _as = it.parse_vec_if(&Token::As, &parse_as, "import", &start)?;
 
-    let (en_line, en_pos) = match (import.last(), _as.last()) {
-        (_, Some(token_pos)) => (token_pos.en_line, token_pos.en_pos),
-        (Some(token_pos), _) => (token_pos.en_line, token_pos.en_pos),
-        (..) => (st_line, st_pos + Token::Import.width())
+    let end = match (import.last(), _as.last()) {
+        (_, Some(ast)) => ast.pos.clone(),
+        (Some(ast), _) => ast.pos.clone(),
+        (..) => end
     };
-    let node = ASTNode::Import { import, _as };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    Ok(Box::from(AST::new(&start.union(&end), Node::Import { import, _as })))
 }
 
-fn parse_as(it: &mut TPIterator) -> ParseResult<Vec<ASTNodePos>> {
-    let (st_line, st_pos) = it.start_pos("as")?;
+fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
+    let start = it.start_pos("as")?;
     let mut aliases = vec![];
-
-    it.peek_while_not_token(&Token::NL, &mut |it, token_pos| match token_pos.token {
+    it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
         Token::Id(_) => {
-            aliases.push(*it.parse(&parse_id, "as", st_line, st_pos)?);
+            aliases.push(*it.parse(&parse_id, "as", &start)?);
             it.eat_if(&Token::Comma);
             Ok(())
         }
-        _ => Err(expected(&Token::Id(String::new()), token_pos, "as"))
+        _ => Err(expected(&Token::Id(String::new()), lex, "as"))
     })?;
 
     Ok(aliases)
 }
 
-pub fn parse_script(it: &mut TPIterator) -> ParseResult {
-    let statements = it.parse_vec(&parse_statements, "script", 0, 0)?;
+pub fn parse_script(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("script")?;
+    let statements = it.parse_vec(&parse_statements, "script", &start)?;
+    let end = statements.last().map_or(start.clone(), |last| last.pos.clone());
 
-    let (st_line, st_pos, en_line, en_pos) = match (statements.first(), statements.last()) {
-        (Some(first), Some(last)) => (first.st_line, first.st_pos, last.en_line, last.en_pos),
-        (..) => (0, 0, 0, 0)
-    };
-
-    let node = ASTNode::Script { statements };
-    Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+    let node = Node::Script { statements };
+    Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
-pub fn parse_module(it: &mut TPIterator) -> ParseResult {
-    if it.peak_if_fn(&|token_pos| token_pos.token == Token::Class) {
+pub fn parse_module(it: &mut LexIterator) -> ParseResult {
+    if it.peek_if(&|lex| lex.token == Token::Class) {
         parse_class(it)
     } else {
         parse_script(it)
     }
 }
 
-pub fn parse_file(it: &mut TPIterator) -> ParseResult {
+pub fn parse_file(it: &mut LexIterator) -> ParseResult {
+    let start = Position::default();
     let mut imports = Vec::new();
+    let mut comments = Vec::new();
     let mut modules = Vec::new();
-    let mut type_defs = Vec::new();
 
     let pure = it.eat_if(&Token::Pure).is_some();
 
-    it.peek_while_fn(&|_| true, &mut |it, token_pos| match &token_pos.token {
+    it.peek_while_fn(&|_| true, &mut |it, lex| match &lex.token {
         Token::NL => {
             it.eat(&Token::NL, "file")?;
             Ok(())
         }
         Token::Import => {
-            imports.push(*it.parse(&parse_import, "file", 1, 1)?);
+            imports.push(*it.parse(&parse_import, "file", &start)?);
             Ok(())
         }
         Token::From => {
-            imports.push(*it.parse(&parse_from_import, "file", 1, 1)?);
-            Ok(())
-        }
-        Token::Type => {
-            type_defs.push(*it.parse(&parse_type_def, "file", 1, 1)?);
+            imports.push(*it.parse(&parse_from_import, "file", &start)?);
             Ok(())
         }
         Token::Comment(comment) => {
-            let (st_line, st_pos) = it.start_pos("comment")?;
-            let (en_line, en_pos) = it.eat(&Token::Comment(comment.clone()), "file")?;
-            let node = ASTNode::Comment { comment: comment.clone() };
-            modules.push(ASTNodePos { st_line, st_pos, en_line, en_pos, node });
+            let start = it.start_pos("comment")?;
+            let end = it.eat(&Token::Comment(comment.clone()), "file")?;
+            let node = Node::Comment { comment: comment.clone() };
+            comments.push(AST::new(&start.union(&end), node));
+            Ok(())
+        }
+        Token::Type => {
+            modules.push(*it.parse(&parse_type_def, "file", &start)?);
             Ok(())
         }
         _ => {
-            modules.push(*it.parse(&parse_module, "file", 1, 1)?);
+            modules.push(*it.parse(&parse_module, "file", &start)?);
             Ok(())
         }
     })?;
 
-    let node = ASTNode::File { pure, imports, modules, type_defs };
-    Ok(Box::from(ASTNodePos { st_line: 0, st_pos: 0, en_line: 0, en_pos: 0, node }))
+    let node = Node::File { pure, comments, imports, modules };
+    Ok(Box::from(AST::new(&start, node)))
 }
 
-pub fn parse_type_def(it: &mut TPIterator) -> ParseResult {
-    let (st_line, st_pos) = it.start_pos("type definition")?;
+pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
-    let _type = it.parse(&parse_type, "type definition", st_line, st_pos)?;
+    let _type = it.parse(&parse_type, "type definition", &start)?;
+    let isa = it.parse_if(&Token::IsA, &parse_type, "type parent", &start)?;
 
     it.peek(
-        &|it, token_pos| match token_pos.token {
-            Token::IsA => {
-                it.eat(&Token::IsA, "type definition")?;
-                let _type = it.parse(&parse_type, "type definition", st_line, st_pos)?;
-                let conditions = it.parse_vec_if(
-                    &Token::When,
-                    &parse_conditions,
-                    "type definition",
-                    st_line,
-                    st_pos
-                )?;
-                let (en_line, en_pos) = if let Some(token_pos) = conditions.last() {
-                    (token_pos.en_line, token_pos.en_pos)
-                } else {
-                    (_type.en_line, _type.en_pos)
-                };
+        &|it, lex| match lex.token {
+            Token::When => {
+                it.eat(&Token::When, "conditional type")?;
+                let isa = isa
+                    .clone()
+                    .ok_or_else(|| custom("conditional type must have parent type", &lex.pos))?;
 
-                let node = ASTNode::TypeAlias { _type: _type.clone(), conditions };
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+                let conditions = it.parse_vec(&parse_conditions, "conditional type", &start)?;
+                let end = conditions.last().map_or(_type.pos.clone(), |cond| cond.pos.clone());
+
+                let node = Node::TypeAlias { _type: _type.clone(), isa, conditions };
+                Ok(Box::from(AST::new(&start.union(&end), node)))
             }
             _ => {
+                // TODO fix such that we can have empty interfaces
                 it.eat_if(&Token::NL);
-                let body = it.parse(&parse_block, "type definition", st_line, st_pos)?;
-                let (en_line, en_pos) = (body.en_line, body.en_pos);
-                let node = ASTNode::TypeDef { _type: _type.clone(), body: Some(body) };
-                Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+                let body = it.parse(&parse_block, "type definition", &start)?;
+
+                let isa = isa.clone();
+                let node = Node::TypeDef { _type: _type.clone(), isa, body: Some(body.clone()) };
+                Ok(Box::from(AST::new(&start.union(&body.pos), node)))
             }
         },
         {
-            let node = ASTNode::TypeDef { _type: _type.clone(), body: None };
-            let (en_line, en_pos) = (_type.en_line, _type.en_pos);
-            Ok(Box::from(ASTNodePos { st_line, st_pos, en_line, en_pos, node }))
+            let isa = isa.clone();
+            let node = Node::TypeDef { _type: _type.clone(), isa, body: None };
+            Ok(Box::from(AST::new(&start.union(&_type.pos), node)))
         }
     )
 }

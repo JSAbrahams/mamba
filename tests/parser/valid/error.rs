@@ -5,13 +5,14 @@ use mamba::parser::parse;
 #[test]
 fn handle_verify() {
     let source = resource_content(true, &["error"], "handle.mamba");
-    assert!(parse(&tokenize(&source).unwrap()).is_ok());
+    parse(&tokenize(&source).unwrap()).unwrap();
 }
 
 #[test]
-fn raises_verify() {
+fn raises_verify() -> Result<(), String> {
     let source = resource_content(true, &["error"], "raise.mamba");
-    assert!(parse(&tokenize(&source).unwrap()).is_ok());
+    parse(&tokenize(&source).unwrap()).map_err(|e| format!("{}", e))?;
+    Ok(())
 }
 
 #[test]

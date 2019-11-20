@@ -1,8 +1,14 @@
-a + b
-c - d
-e * f
-h / i
-j // k
-l mod n
-sqrt o
-p ^ q
+def a <- 10
+def b <- 20
+
+def c <- a + b
+def d <- 10 - c
+def f <- 2.4 * d
+def h <- f / a
+def j <- 100 // 10
+def l <- 100 mod 2
+def n <- sqrt l
+def m <- n ^ 100
+
+def x <- +10
+def y <- -30

@@ -24,7 +24,7 @@ pub fn main() -> Result<(), String> {
             errors.iter().for_each(|(ty, msg)| error(msg, Some(ty), None));
             match errors.first() {
                 Some((ty, msg)) => format!(
-                    "{} {} type error occurred: {}",
+                    "{} {} error occurred: {}",
                     match ty.chars().next() {
                         Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) =>
                             "An",

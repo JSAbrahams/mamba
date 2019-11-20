@@ -1,29 +1,42 @@
-def fun_a() =>
-    print c
-    if a and b then print c
-    if c or d then print e
+def fun_a() -> Int? =>
+    print 11
+    if True and True then print "hello"
+    if False or True then print "world"
 
-def fun_b(b: c) => print c
+    def a <- undefined ? 11
+    if True then return 10 else return undefined
 
-def fun_c(d: (e, f)) => print g
-def fun_d(h: (i, j) -> k) => print l
+def fun_b(b: Int) => print b
 
-def fun_e(m: n, o: (p, q), r: (s) -> t) => print u
+def fun_c(d: (String, Int)) => print d
+def fun_d(h: (String, String) -> Int) -> Int? => return h("hello", "world")
 
-def fun_v(w: x, y: (z, aa), ab: (ac) -> (ad)): ae -> af => print u
+def fun_e(m: Int, o: (String, String), r: (Int, (String, String)) -> Int) -> Int => return r(m, o)
 
-def +(self, other: Int): Int => a + b
-def -(self: Something, other: Int): Something => a - b
-# for now no square root
-def *(self: Something, other: Int): Something => a * b
-def /(self: Something, other: Int): Something => a / b
-def //(self: Something, other: Int): Something => a // b
-def ^(self: Something, other: Int): Something => a ^ b
-def mod(self: Something, other: Int): Something => a mod b
-def =(self: Something, other: Int): Something => a = b
-def >(self: Something, other: Int): Something => a > b
-def <(self: Something, other: Int): Something => a < b
+def fun_v(y: String, ab: String -> String -> Bool) -> String -> Bool => return ab(y)
 
-def factorial(x: Int) => x * (factorial (x - 1))
+class MyClass(def a: Int, def b: Int)
+    def some_function(self, c: Int) -> Int =>
+        def mut d <- 20
+        d <- 10 + 30
+        return c + 20
 
-def call_higher_order() => some_higher_order(\x => x * 2)
+    def +(self, other: MyClass) -> MyClass => return MyClass(self.a + self.b + other.some_function(self.a), self.b)
+    def -(self, other: MyClass) -> MyClass => return self + other
+    def *(self, other: MyClass) -> MyClass => return MyClass(self.a * other.b, self.b)
+    def /(self, other: MyClass) -> MyClass => return MyClass(self.a // other.b, self.b)
+    def //(self, other: MyClass) -> MyClass => return MyClass(self.a // other.b, self.b)
+    def ^(self, other: MyClass) -> MyClass => return MyClass(self.a ^ other.b, self.b)
+
+    def =(self, other: MyClass) -> Bool => return self.a = other.b
+    def >(self, other: MyClass) -> Bool => return self.a > other.b
+    def <(self, other: MyClass) -> Bool => return self.a < other.b
+
+    def sqrt(self) -> MyClass => return MyClass(self.a // self.b, self.a // self.b)
+    def mod(self, other: MyClass) -> MyClass => return MyClass(self.a mod self.b, self.b)
+
+def factorial(x: Int) -> Int => return x * factorial(x - 1)
+
+def some_higher_order(f: (Int) -> Int, x: Int) -> Int => return f(x)
+
+def always_undefined() -> Int? => return undefined

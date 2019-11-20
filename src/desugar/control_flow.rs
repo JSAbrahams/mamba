@@ -1,19 +1,15 @@
 use crate::core::construct::Core;
-use crate::desugar::context::Imports;
-use crate::desugar::context::State;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::desugar_result::UnimplementedErr;
 use crate::desugar::node::desugar_node;
-use crate::parser::ast::ASTNode;
-use crate::parser::ast::ASTNodePos;
+use crate::desugar::state::Imports;
+use crate::desugar::state::State;
+use crate::parser::ast::Node;
+use crate::parser::ast::AST;
 
-pub fn desugar_control_flow(
-    node_pos: &ASTNodePos,
-    imp: &mut Imports,
-    state: &State
-) -> DesugarResult {
-    Ok(match &node_pos.node {
-        ASTNode::IfElse { cond, then, _else } => match _else {
+pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+    Ok(match &ast.node {
+        Node::IfElse { cond, then, _else } => match _else {
             Some(_else) => Core::IfElse {
                 cond:  Box::from(desugar_node(cond, imp, state)?),
                 then:  Box::from(desugar_node(then, imp, state)?),
@@ -24,16 +20,16 @@ pub fn desugar_control_flow(
                 then: Box::from(desugar_node(then, imp, state)?)
             }
         },
-        ASTNode::Match { cond, cases } => {
+        Node::Match { cond, cases } => {
             let expr = Box::from(desugar_node(cond, imp, state)?);
             let mut core_cases = vec![];
             let mut core_defaults = vec![];
 
             for case in cases {
                 match &case.node {
-                    ASTNode::Case { cond, body } => match &cond.node {
-                        ASTNode::IdType { id, .. } => match id.node {
-                            ASTNode::Underscore =>
+                    Node::Case { cond, body } => match &cond.node {
+                        Node::IdType { id, .. } => match id.node {
+                            Node::Underscore =>
                                 core_defaults.push(desugar_node(body.as_ref(), imp, state)?),
                             _ => core_cases.push(Core::KeyValue {
                                 key:   Box::from(desugar_node(cond.as_ref(), imp, state)?),
@@ -42,7 +38,7 @@ pub fn desugar_control_flow(
                         },
                         _ =>
                             return Err(UnimplementedErr::new(
-                                node_pos,
+                                ast,
                                 "match case expression as condition (pattern matching)"
                             )),
                     },
@@ -64,17 +60,18 @@ pub fn desugar_control_flow(
                 Core::Dictionary { expr, cases: core_cases }
             }
         }
-        ASTNode::While { cond, body } => Core::While {
+        Node::While { cond, body } => Core::While {
             cond: Box::from(desugar_node(cond, imp, state)?),
             body: Box::from(desugar_node(body, imp, state)?)
         },
-        ASTNode::For { expr, body } => Core::For {
+        Node::For { expr, col, body } => Core::For {
             expr: Box::from(desugar_node(expr, imp, state)?),
+            col:  Box::from(desugar_node(col, imp, state)?),
             body: Box::from(desugar_node(body, imp, state)?)
         },
 
-        ASTNode::Break => Core::Break,
-        ASTNode::Continue => Core::Continue,
+        Node::Break => Core::Break,
+        Node::Continue => Core::Continue,
         other => panic!("Expected control flow but was: {:?}.", other)
     })
 }

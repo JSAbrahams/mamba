@@ -1,10 +1,9 @@
 [package]
 name = "mamba"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Joel Abrahams <abrahamsjo@gmail.com>"]
 description = "A transpiler which translates Mamba to Python 3 files"
 edition = "2018"
-license = "MIT"
 license-file = "LICENSE"
 
 readme = "README.md"

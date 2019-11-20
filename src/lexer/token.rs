@@ -1,10 +1,19 @@
 use std::fmt;
 
+use crate::common::position::{CaretPos, Position};
+
 #[derive(PartialEq, Debug, Clone)]
-pub struct TokenPos {
-    pub st_line: i32,
-    pub st_pos:  i32,
-    pub token:   Token
+pub struct Lex {
+    pub pos:   Position,
+    pub token: Token
+}
+
+impl Lex {
+    pub fn new(pos: &CaretPos, token: Token) -> Self {
+        let pos =
+            Position { start: pos.clone(), end: pos.clone().offset_pos(token.clone().width()) };
+        Lex { pos, token }
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -31,7 +40,6 @@ pub enum Token {
 
     Id(String),
     Mut,
-    OfMut,
     Assign,
     Def,
 
@@ -106,9 +114,7 @@ pub enum Token {
     Ret,
     With,
 
-    Quest,
-    QuestOr,
-    QuestCall,
+    Question,
     Handle,
 
     Print,
@@ -169,27 +175,20 @@ impl fmt::Display for Token {
             Token::BSlash => String::from("\\"),
 
             Token::Mut => String::from("mut"),
-            Token::OfMut => String::from("ofmut"),
             Token::Assign => String::from("<-"),
             Token::Def => String::from("def"),
 
-            Token::Id(id) => format!("{}{}<identifier>", id, if id.is_empty() { "" } else { " " }),
-            Token::Real(real) =>
-                format!("{}{}<real>", real, if real.is_empty() { "" } else { " " }),
-            Token::Int(int) => format!("{}{}<integer>", int, if int.is_empty() { "" } else { " " }),
+            Token::Id(id) => id.clone(),
+            Token::Real(real) => real.clone(),
+            Token::Int(int) => int.clone(),
             Token::ENum(int, exp) =>
-                if int.is_empty() && exp.is_empty() {
-                    String::from("<e-number>")
+                if exp.is_empty() {
+                    int.clone()
                 } else {
-                    format!("{}e{} <e-number>", int, exp)
+                    format!("{}E{}", int, exp)
                 },
-            Token::Str(string) =>
-                if string.is_empty() {
-                    String::from("<string>")
-                } else {
-                    format!("\"{}\"", string)
-                },
-            Token::Bool(boolean) => format!("{}", boolean),
+            Token::Str(string) => format!("\"{}\"", string),
+            Token::Bool(boolean) => String::from(if boolean { "True" } else { "False" }),
 
             Token::Range => String::from(".."),
             Token::RangeIncl => String::from("..="),
@@ -252,9 +251,7 @@ impl fmt::Display for Token {
             Token::Do => String::from("do"),
             Token::With => String::from("with"),
 
-            Token::Quest => String::from("?"),
-            Token::QuestOr => String::from("?or"),
-            Token::QuestCall => String::from("?."),
+            Token::Question => String::from("?"),
 
             Token::Handle => String::from("handle"),
             Token::Raises => String::from("raises"),

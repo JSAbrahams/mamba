@@ -1,6 +1,24 @@
-use crate::parser::ast::ASTNodePos;
+use std::convert::TryFrom;
+use std::path::PathBuf;
 
-/// Checks whether a given [ASTNodePos](crate::parser::ast::ASTNodePos) is well
+use crate::parser::ast::AST;
+use crate::type_checker::context::Context;
+use crate::type_checker::infer::infer_all;
+use crate::type_checker::type_result::TypeResults;
+
+pub mod context;
+pub mod environment;
+
+mod infer;
+mod util;
+
+pub mod type_result;
+pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
+
+// TODO make type checker modify AST where necessary for more advanced language
+// features
+
+/// Checks whether a given [AST](crate::parser::ast::AST) is well
 /// typed according to the specification of the language.
 ///
 /// Should never panic.
@@ -11,8 +29,16 @@ use crate::parser::ast::ASTNodePos;
 ///
 /// # Failures
 ///
-/// Any ill-typed [ASTNodePos](crate::parser::ast::ASTNodePos) results in a
+/// Any ill-typed [AST](crate::parser::ast::AST) results in a
 /// failure.
 ///
 /// // failure examples here
-pub fn check(input: &[ASTNodePos]) -> Result<Vec<ASTNodePos>, Vec<String>> { Ok(input.to_vec()) }
+pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
+    let context = Context::try_from(inputs)?.into_with_primitives()?.into_with_std_lib()?;
+    infer_all(inputs, &context)?;
+
+    Ok(inputs
+        .iter()
+        .map(|(node_pos, source, path)| (node_pos.clone(), source.clone(), path.clone()))
+        .collect())
+}
