@@ -44,16 +44,28 @@ impl Hash for GenericFunction {
 impl GenericFunction {
     pub fn pure(self, pure: bool) -> Self { GenericFunction { pure: self.pure || pure, ..self } }
 
-    pub fn in_class(self, class: Option<&TypeName>, pos: &Position) -> TypeResult<GenericFunction> {
-        Ok(GenericFunction {
-            in_class: class.cloned(),
-            arguments: self
-                .arguments
-                .iter()
-                .map(|arg| arg.clone().in_class(class, pos))
-                .collect::<Result<_, _>>()?,
-            ..self
-        })
+    pub fn in_class(
+        self,
+        class: Option<&TypeName>,
+        type_def: bool,
+        pos: &Position
+    ) -> TypeResult<GenericFunction> {
+        if self.private && type_def {
+            Err(vec![TypeErr::new(
+                pos,
+                &format!("Function {} cannot be private: In an interface", self.name)
+            )])
+        } else {
+            Ok(GenericFunction {
+                in_class: class.cloned(),
+                arguments: self
+                    .arguments
+                    .iter()
+                    .map(|arg| arg.clone().in_class(class, pos))
+                    .collect::<Result<_, _>>()?,
+                ..self
+            })
+        }
     }
 }
 

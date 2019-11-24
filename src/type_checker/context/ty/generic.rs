@@ -81,7 +81,7 @@ impl TryFrom<&AST> for GenericType {
                 }
 
                 let (body_fields, functions) =
-                    get_fields_and_functions(&name, &statements, &class.pos)?;
+                    get_fields_and_functions(&name, &statements, false, &class.pos)?;
                 for function in functions.clone() {
                     if function.name == ActualTypeName::new(concrete::INIT, &[]) {
                         if class_args.is_empty() {
@@ -134,7 +134,8 @@ impl TryFrom<&AST> for GenericType {
                     HashSet::new()
                 };
 
-                let (fields, functions) = get_fields_and_functions(&name, &statements, &class.pos)?;
+                let (fields, functions) =
+                    get_fields_and_functions(&name, &statements, true, &class.pos)?;
                 // TODO add parents to type definitions
                 Ok(GenericType {
                     is_py_type: false,
@@ -200,6 +201,7 @@ fn get_name_and_generics(
 fn get_fields_and_functions(
     class: &ActualTypeName,
     statements: &[AST],
+    type_def: bool,
     pos: &Position
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
     let mut field_res = vec![];
@@ -208,13 +210,12 @@ fn get_fields_and_functions(
     let class = TypeName::from(class);
     statements.iter().for_each(|statement| match &statement.node {
         Node::FunDef { .. } => {
-            let function =
-                GenericFunction::try_from(statement).and_then(|f| f.in_class(Some(&class), pos));
-            fun_res.push(function);
+            let function = GenericFunction::try_from(statement);
+            fun_res.push(function.and_then(|f| f.in_class(Some(&class), type_def, pos)));
         }
         Node::VariableDef { .. } => {
             let field = GenericField::try_from(statement);
-            field_res.push(field.map(|f| f.in_class(Some(&class))));
+            field_res.push(field.and_then(|f| f.in_class(Some(&class), type_def, pos)));
         }
         Node::Comment { .. } => {}
         _ => errs.push(TypeErr::new(&statement.pos, "Expected function or variable definition"))
