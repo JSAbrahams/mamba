@@ -48,7 +48,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             num: num.clone(),
             exp: if exp.is_empty() { String::from("0") } else { exp.clone() }
         },
-        Node::Str { lit } => Core::Str { _str: lit.clone() },
+        Node::Str { lit, .. } => Core::Str { _str: lit.clone() },
 
         Node::AddOp => Core::AddOp,
         Node::SubOp => Core::SubOp,

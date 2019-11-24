@@ -237,7 +237,7 @@ fn or_verify() {
 
     let (left, right) = verify_is_operation!(Or, ast_tree);
     assert_eq!(left.node, Node::Id { lit: String::from("one") });
-    assert_eq!(right.node, Node::Str { lit: String::from("asdf") });
+    assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
 }
 
 #[test]
@@ -275,7 +275,7 @@ fn b_or_verify() {
 
     let (left, right) = verify_is_operation!(BOr, ast_tree);
     assert_eq!(left.node, Node::Id { lit: String::from("one") });
-    assert_eq!(right.node, Node::Str { lit: String::from("asdf") });
+    assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
 }
 
 #[test]
@@ -285,7 +285,7 @@ fn b_xor_verify() {
 
     let (left, right) = verify_is_operation!(BXOr, ast_tree);
     assert_eq!(left.node, Node::Id { lit: String::from("one") });
-    assert_eq!(right.node, Node::Str { lit: String::from("asdf") });
+    assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
 }
 
 #[test]
@@ -294,7 +294,7 @@ fn b_ones_complement_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let expr = verify_is_un_operation!(BOneCmpl, ast_tree);
-    assert_eq!(expr.node, Node::Str { lit: String::from("asdf") });
+    assert_eq!(expr.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
 }
 
 #[test]
@@ -304,7 +304,7 @@ fn b_lshift_verify() {
 
     let (left, right) = verify_is_operation!(BLShift, ast_tree);
     assert_eq!(left.node, Node::Id { lit: String::from("one") });
-    assert_eq!(right.node, Node::Str { lit: String::from("asdf") });
+    assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
 }
 
 #[test]
@@ -314,5 +314,5 @@ fn brshift_verify() {
 
     let (left, right) = verify_is_operation!(BRShift, ast_tree);
     assert_eq!(left.node, Node::Id { lit: String::from("one") });
-    assert_eq!(right.node, Node::Str { lit: String::from("asdf") });
+    assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
 }

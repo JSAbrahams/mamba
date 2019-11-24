@@ -81,7 +81,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[
                     Token::Id(String::new()),
-                    Token::Str(String::new()),
+                    Token::Str(String::new(), vec![]),
                     Token::Int(String::new()),
                     Token::Real(String::new()),
                     Token::ENum(String::new(), String::new()),

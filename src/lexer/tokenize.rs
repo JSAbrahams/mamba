@@ -1,9 +1,11 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
+use crate::common::position::CaretPos;
 use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
 use crate::lexer::token::{Lex, Token};
+use crate::lexer::tokenize;
 
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
@@ -119,21 +121,57 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             }
             create(state, as_op_or_id(id_or_operation))
         }
-        '"' => {
-            let mut string = String::new();
-            let mut back_slash = false;
-            for c in it {
-                if !back_slash && c == '"' {
-                    break;
-                }
-                string.push(c);
-                back_slash = c == '\\';
-            }
-            create(state, Token::Str(string))
-        }
         ' ' => {
             state.space();
             Ok(vec![])
+        }
+        '"' => {
+            let mut string = String::new();
+            let mut back_slash = false;
+            let mut characters = 0;
+
+            let mut expressions: Vec<(CaretPos, String)> = vec![];
+            let mut build_current_expression = false;
+            let mut current_offset = CaretPos::default();
+            let mut current_expression = String::new();
+
+            for c in it {
+                characters += 1;
+                if !back_slash && c == '"' {
+                    break;
+                }
+
+                if !back_slash && c == '}' {
+                    expressions.push((current_offset.clone(), current_expression.clone()));
+                    build_current_expression = false;
+                    current_expression.clear();
+                }
+
+                if build_current_expression {
+                    current_expression.push(c);
+                }
+
+                if !back_slash && c == '{' {
+                    current_offset = state.pos.clone().offset_pos(characters);
+                    build_current_expression = true;
+                }
+
+                string.push(c);
+                back_slash = c == '\\';
+            }
+
+            let tokens = expressions
+                .iter()
+                .map(|(offset, string)| match tokenize(string) {
+                    Ok(tokens) => Ok(tokens
+                        .iter()
+                        .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
+                        .collect()),
+                    Err(err) => Err(err)
+                })
+                .collect::<Result<_, _>>()?;
+
+            create(state, Token::Str(string, tokens))
         }
         c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c)))
     }

@@ -10,8 +10,10 @@ use crate::parser::collection::parse_collection;
 use crate::parser::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
+use crate::parser::parse_direct;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use std::ops::Deref;
 
 pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("literal")?;
@@ -35,7 +37,17 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Token::Real(real) => literal!(it, real.to_string(), Real),
             Token::Int(int) => literal!(it, int.to_string(), Int),
             Token::Bool(b) => literal!(it, *b, Bool),
-            Token::Str(str) => literal!(it, str.to_string(), Str),
+            Token::Str(string, tokens) => {
+                let end = it.eat(&Token::Str(string.clone(), tokens.clone()), "factor")?;
+
+                let expressions: Vec<Box<AST>> =
+                    tokens.iter().map(|tokens| parse_direct(tokens)).collect::<Result<_, _>>()?;
+                let node = Node::Str {
+                    lit:         string.clone(),
+                    expressions: expressions.iter().map(|expr| expr.deref().clone()).collect()
+                };
+                Ok(Box::from(AST::new(&start.union(&end), node)))
+            }
             Token::ENum(num, exp) => {
                 let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
                 let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
@@ -167,7 +179,7 @@ pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
         | Token::Real(_)
         | Token::Int(_)
         | Token::ENum(..)
-        | Token::Str(_)
+        | Token::Str(..)
         | Token::Bool(_)
         | Token::Not
         | Token::Undefined

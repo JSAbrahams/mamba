@@ -89,3 +89,16 @@ fn comparison() {
         }
     ]);
 }
+
+#[test]
+fn fstring() {
+    let source = String::from("\"my string {my_var}\"");
+    let tokens = tokenize(&source).unwrap();
+    assert_eq!(tokens, vec![Lex {
+        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 19)),
+        token: Token::Str(String::from("my string {my_var}"), vec![vec![Lex {
+            pos:   Position::new(&CaretPos::new(1, 12), &CaretPos::new(1, 18)),
+            token: Token::Id(String::from("my_var"))
+        }]],)
+    },]);
+}
