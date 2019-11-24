@@ -19,6 +19,7 @@ pub struct GenericFunction {
     pub pos:        Position,
     pub arguments:  Vec<GenericFunctionArg>,
     pub raises:     Vec<ActualTypeName>,
+    pub in_class:   Option<TypeName>,
     pub ret_ty:     Option<TypeName>
 }
 
@@ -45,6 +46,7 @@ impl GenericFunction {
 
     pub fn in_class(self, class: Option<&TypeName>, pos: &Position) -> TypeResult<GenericFunction> {
         Ok(GenericFunction {
+            in_class: class.cloned(),
             arguments: self
                 .arguments
                 .iter()
@@ -84,6 +86,7 @@ impl TryFrom<&AST> for GenericFunction {
                         Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                         None => None
                     },
+                    in_class:   None,
                     raises:     raises
                         .iter()
                         .map(ActualTypeName::try_from)

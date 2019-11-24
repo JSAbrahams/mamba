@@ -212,7 +212,10 @@ fn get_fields_and_functions(
                 GenericFunction::try_from(statement).and_then(|f| f.in_class(Some(&class), pos));
             fun_res.push(function);
         }
-        Node::VariableDef { .. } => field_res.push(GenericField::try_from(statement)),
+        Node::VariableDef { .. } => {
+            let field = GenericField::try_from(statement);
+            field_res.push(field.map(|f| f.in_class(Some(&class))));
+        }
         Node::Comment { .. } => {}
         _ => errs.push(TypeErr::new(&statement.pos, "Expected function or variable definition"))
     });
