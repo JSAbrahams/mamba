@@ -1,0 +1,6 @@
+class MyClass
+    def private my_field: Int <- 10
+
+
+def my_class <- MyClass()
+print my_class.my_field

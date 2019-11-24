@@ -37,6 +37,7 @@ impl From<&Funcdef> for GenericFunction {
                 .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
                 .collect(),
             raises:     vec![],
+            in_class:   None,
             ret_ty:     match &func_def.return_type {
                 Some(ret_ty) => Some(TypeName::from(ret_ty)),
                 None => None

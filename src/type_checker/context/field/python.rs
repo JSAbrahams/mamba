@@ -105,6 +105,7 @@ impl From<&Expression> for GenericFields {
                         pos:        Default::default(),
                         private:    false,
                         mutable:    false,
+                        in_class:   None,
                         ty:         None
                     }],
                     Expression::TupleLiteral(items) => items
@@ -128,6 +129,7 @@ impl From<&Expression> for GenericFields {
                                     pos:        Default::default(),
                                     private:    false,
                                     mutable:    false,
+                                    in_class:   None,
                                     ty:         None
                                 },
                                 _ => unreachable!()

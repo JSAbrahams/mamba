@@ -32,7 +32,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             match env.lookup(&fun_name.clone().single(&name.pos)?.name(&name.pos)?, &name.pos) {
                 Ok(expr_ty) => Ok((
                     InferType::from(&expr_ty.anon_fun(&arg_names, &ast.pos)?).union_raises(&raises),
-                    env.clone()
+                    env
                 )),
                 Err(_) => match ctx.lookup_fun(&fun_name, &arg_names, &ast.pos) {
                     // else, see if constructor of type
@@ -83,6 +83,13 @@ fn property_call(
             let (instance, property_mutable, raises) = match &inner_instance.node {
                 Node::Id { lit } => {
                     let field = instance.field(&lit, &property.pos)?;
+                    if field.private && field.in_class != env.state.in_class {
+                        return Err(vec![TypeErr::new(
+                            &property.pos,
+                            &format!("{} is private", lit)
+                        )]);
+                    }
+
                     let msg = format!("Cannot get type of field {}", field);
                     let field_ty_name =
                         &field.ty.ok_or_else(|| vec![TypeErr::new(&property.pos, &msg)])?;
@@ -106,7 +113,12 @@ fn property_call(
 
                     let function = instance.fun(&name, &arg_names, &property.pos)?;
                     let function_self_mut = function.self_mutable == Some(false);
-                    if !function_self_mut && mutable {
+                    if function.private && function.in_class != env.state.in_class {
+                        return Err(vec![TypeErr::new(
+                            &property.pos,
+                            &format!("{} is private", name)
+                        )]);
+                    } else if !function_self_mut && mutable {
                         let msg = format!("Cannot call {}, which expects self to be mutable", name);
                         return Err(vec![TypeErr::new(&property.pos, &msg)]);
                     }
@@ -146,6 +158,10 @@ fn final_property_call(
     match &property.node {
         Node::Id { lit } => {
             let field = instance.field(&lit, &property.pos)?;
+            if field.private && field.in_class != env.state.in_class {
+                return Err(vec![TypeErr::new(&property.pos, &format!("{} is private", lit))]);
+            }
+
             let msg = format!("Cannot get type of field {}", field);
             let field_ty_name = &field.ty.ok_or_else(|| vec![TypeErr::new(&property.pos, &msg)])?;
             Ok((InferType::from(&ctx.lookup(&field_ty_name, &property.pos)?), env.clone()))
@@ -164,6 +180,10 @@ fn final_property_call(
             };
 
             let field = instance.field(&id, &left.pos)?;
+            if field.private && field.in_class != env.state.in_class {
+                return Err(vec![TypeErr::new(&property.pos, &format!("{} is private", id))]);
+            }
+
             if let Some((ty, pos)) = ty {
                 if field.ty()? != ty {
                     let msg = format!("Expected {}, given {}", field.ty()?, ty);
@@ -204,7 +224,9 @@ fn final_property_call(
             }
 
             let function = instance.fun(&name, &arg_names, &property.pos)?;
-            if function.self_mutable == Some(true) && !mutable {
+            if function.private && function.in_class != env.state.in_class {
+                return Err(vec![TypeErr::new(&property.pos, &format!("{} is private", name))]);
+            } else if function.self_mutable == Some(true) && !mutable {
                 let msg = format!("Cannot call {}, which expects self to be mutable", name);
                 return Err(vec![TypeErr::new(&property.pos, &msg)]);
             }
