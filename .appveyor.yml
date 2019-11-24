@@ -3,10 +3,6 @@
 
 os: Visual Studio 2015
 
-branches:
-  only:
-    - master
-
 environment:
   matrix:
   # Nightly 64-bit MSVC

@@ -30,10 +30,6 @@ addons:
       - gcc
       - binutils-dev
 
-branches:
-  only:
-    - master
-
 before_script:
   # Cargo components
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then rustup component add rustfmt --toolchain nightly; fi
