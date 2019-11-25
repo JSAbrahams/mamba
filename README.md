@@ -48,8 +48,8 @@ def factorial(x: Int) => match x
     n => n * factorial(n - 1)
 
 def num <- input "Compute factorial: "
-if num.is_digit then
-    def result <- factorial int num
+if num.is_digit() then
+    def result <- factorial(int(num))
     print "Factorial {num} is: {result}."
 else
     print "Input was not an integer."
@@ -77,11 +77,11 @@ class MyServer(def ip_address: IPv4Address)
 
     def connect(mut self) => self.is_connected <- true
 
-    def send(mut self, message: String) => if self.is_connected 
+    def send(mut self, message: String) raises [ServerError] => if self.is_connected 
         then self.last_message <- message
-        else Err("Not connected!")
+        else raise ServerError("Not connected!")
 
-    def disconnect(mut self) => self.is_connected <- true
+    def disconnect(mut self) => self.is_connected <- false
 ```
 
 Notice how:
@@ -98,13 +98,13 @@ from server import MyServer
 def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
-http_server.connect
-if my_server.connected then http_server send "Hello World!"
+http_server.connect()
+if my_server.is_connected then http_serve.send "Hello World!"
 
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
 print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerError]
-my_server.disconnect
+my_server.disconnect()
 ```
 
 ### 🗃 Types and type refinement
@@ -140,10 +140,10 @@ class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa 
     def disconnect(mut self: ConnectedMyServer) => self.is_connected <- false
 
 type ConnectedMyServer isa MyServer when
-    self.is_connected else raise ServerErr("Not connected.")
+    self.is_connected
 
 type DisconnectedMyServer isa MyServer when
-    not self.is_connected else raise ServerErr("Already connected.")
+    not self.is_connected
 ```
 
 Notice how above, we define the type of `self`.
@@ -172,9 +172,9 @@ if my_server isa ConnectedMyServer then my_server.disconnect
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 ```mamba
-type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was {self}.")
+type PositiveInt isa Int where self >= 0
 
-def factorial (x: PositiveInt) => match x
+def factorial (x: PositiveInt) -> PositiveInt => match x
     0 => 1
     n => n * factorial (n - 1)
 ```
@@ -256,7 +256,7 @@ def message <- "Hello World!"
 my_server.send message handle
     err: ServerErr => print "Error while sending message: \"{message}\": {err}"
 
-if my_server isa ConnectedMyServer then my_server.disconnect
+if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
 In the above script, we will always print the error since we forgot to actually connect to the server.
