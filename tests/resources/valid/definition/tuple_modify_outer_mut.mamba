@@ -1,0 +1,6 @@
+class MyClass
+    def mut my_field: Int <- 10
+
+
+def mut (a, b) <- (MyClass(), 10)
+a.my_field <- 20
