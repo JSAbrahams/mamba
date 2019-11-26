@@ -121,42 +121,44 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             }
             create(state, as_op_or_id(id_or_operation))
         }
-        ' ' => {
-            state.space();
-            Ok(vec![])
-        }
         '"' => {
             let mut string = String::new();
             let mut back_slash = false;
-            let mut characters = 0;
 
             let mut expressions: Vec<(CaretPos, String)> = vec![];
-            let mut build_current_expression = false;
+            let mut build_current_expression = 0;
             let mut current_offset = CaretPos::default();
             let mut current_expression = String::new();
 
             for c in it {
-                characters += 1;
-                if !back_slash && c == '"' {
+                if !back_slash && build_current_expression == 0 && c == '"' {
                     break;
                 }
-
-                if !back_slash && c == '}' {
-                    expressions.push((current_offset.clone(), current_expression.clone()));
-                    build_current_expression = false;
-                    current_expression.clear();
-                }
-
-                if build_current_expression {
-                    current_expression.push(c);
-                }
-
-                if !back_slash && c == '{' {
-                    current_offset = state.pos.clone().offset_pos(characters);
-                    build_current_expression = true;
-                }
-
                 string.push(c);
+
+                if !back_slash {
+                    if build_current_expression > 0 {
+                        current_expression.push(c);
+                    }
+
+                    if c == '{' {
+                        if build_current_expression == 0 {
+                            current_offset = state.pos.clone().offset_pos(string.len() as i32);
+                        }
+                        build_current_expression += 1;
+                    } else if c == '}' {
+                        build_current_expression -= 1;
+                    }
+
+                    if build_current_expression == 0 && !current_expression.is_empty() {
+                        // Last char is always } due to counter
+                        current_expression =
+                            current_expression[0..current_expression.len() - 1].to_owned();
+                        expressions.push((current_offset.clone(), current_expression.clone()));
+                        current_expression.clear()
+                    }
+                }
+
                 back_slash = c == '\\';
             }
 
@@ -172,6 +174,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                 .collect::<Result<_, _>>()?;
 
             create(state, Token::Str(string, tokens))
+        }
+        ' ' => {
+            state.space();
+            Ok(vec![])
         }
         c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c)))
     }

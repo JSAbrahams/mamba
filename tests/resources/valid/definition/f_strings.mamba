@@ -1,0 +1,8 @@
+print "primitive {10}"
+print "primitive {10.2}"
+print "primitive {True}"
+print "primitive {"a string"}"
+
+print "set {{2, 3, 4}}"
+print "list {[2, 3, 4]}"
+print "Optional {undefined}"

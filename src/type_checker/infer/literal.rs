@@ -17,9 +17,9 @@ pub fn infer_literal(ast: &AST, env: &Environment, ctx: &Context) -> InferResult
             Node::ENum { .. } => ctx.lookup(&TypeName::from(concrete::ENUM_PRIMITIVE), &ast.pos),
             Node::Str { expressions, .. } => {
                 for expression in expressions {
-                    println!("{:?}", expression);
                     let (expr_ty, _) = infer(expression, env, ctx)?;
-                    expr_ty.expr_ty(&expression.pos)?;
+                    let expr_ty = expr_ty.expr_ty(&expression.pos)?;
+                    expr_ty.fun("__str__", &[], &expression.pos)?;
                 }
                 ctx.lookup(&TypeName::from(concrete::STRING_PRIMITIVE), &ast.pos)
             }
