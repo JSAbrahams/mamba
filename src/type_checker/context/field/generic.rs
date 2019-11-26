@@ -1,10 +1,11 @@
+use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
+use std::ops::Deref;
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::convert::TryFrom;
-use std::hash::{Hash, Hasher};
-use std::ops::Deref;
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericField {
@@ -30,7 +31,6 @@ impl TryFrom<&AST> for GenericField {
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
             // TODO do something with forward
-            // TODO handle tuples
             Node::VariableDef { private, id_maybe_type, .. } => {
                 let (name, mutable, ty) = match &id_maybe_type.node {
                     Node::IdType { id, mutable, _type } =>
