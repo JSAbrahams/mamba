@@ -125,44 +125,45 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             let mut string = String::new();
             let mut back_slash = false;
 
-            let mut expressions: Vec<(CaretPos, String)> = vec![];
-            let mut build_current_expression = 0;
-            let mut current_offset = CaretPos::default();
-            let mut current_expression = String::new();
+            let mut exprs: Vec<(CaretPos, String)> = vec![];
+            let mut build_cur_expr = 0;
+            let mut cur_offset = CaretPos::default();
+            let mut cur_expr = String::new();
 
             for c in it {
-                if !back_slash && build_current_expression == 0 && c == '"' {
+                if !back_slash && build_cur_expr == 0 && c == '"' {
                     break;
                 }
                 string.push(c);
 
                 if !back_slash {
-                    if build_current_expression > 0 {
-                        current_expression.push(c);
+                    if build_cur_expr > 0 {
+                        cur_expr.push(c);
                     }
 
                     if c == '{' {
-                        if build_current_expression == 0 {
-                            current_offset = state.pos.clone().offset_pos(string.len() as i32);
+                        if build_cur_expr == 0 {
+                            cur_offset = state.pos.clone().offset_pos(string.len() as i32);
                         }
-                        build_current_expression += 1;
+                        build_cur_expr += 1;
                     } else if c == '}' {
-                        build_current_expression -= 1;
+                        build_cur_expr -= 1;
                     }
 
-                    if build_current_expression == 0 && !current_expression.is_empty() {
+                    if build_cur_expr == 0 && !cur_expr.is_empty() {
                         // Last char is always } due to counter
-                        current_expression =
-                            current_expression[0..current_expression.len() - 1].to_owned();
-                        expressions.push((current_offset.clone(), current_expression.clone()));
-                        current_expression.clear()
+                        cur_expr = cur_expr[0..cur_expr.len() - 1].to_owned();
+                        if !cur_expr.is_empty() {
+                            exprs.push((cur_offset.clone(), cur_expr.clone()));
+                        }
+                        cur_expr.clear()
                     }
                 }
 
                 back_slash = c == '\\';
             }
 
-            let tokens = expressions
+            let tokens = exprs
                 .iter()
                 .map(|(offset, string)| match tokenize(string) {
                     Ok(tokens) => Ok(tokens
