@@ -1,0 +1,6 @@
+def name <- "My name"
+def some_brackets <- "\{\}"
+def age <- 30
+
+def a <- "My name is {name} and my age is {age - 10}."
+print a

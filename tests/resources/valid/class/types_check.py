@@ -32,7 +32,7 @@ class MyClass(MyType, MyInterface):
     private_field: int = 20
     my_field: int = None
 
-    def __init__(self, my_field: int, other_field: str = f"Hello"):
+    def __init__(self, my_field: int, other_field: str = "Hello"):
         super(MyType, self).__init__(other_field)
         super(MyInterface, self).__init__()
         self.my_field = my_field

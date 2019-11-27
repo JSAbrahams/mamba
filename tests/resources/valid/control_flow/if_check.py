@@ -1,40 +1,40 @@
 b = 40
 
 if True:
-    print(f"hello world")
+    print("hello world")
 
 if False:
-    f"hello"
+    "hello"
 else:
-    f"world"
+    "world"
 
 cond = True and False
 cond = True or False
 
 if cond:
-    f"asdf"
-    print(f'hello \"world\"')
+    "asdf"
+    print('hello \"world\"')
 
     if cond or True:
-        f"bbb"
+        "bbb"
     else:
-        f"ccc"
+        "ccc"
 
-    iii = f"iii"
+    iii = "iii"
     if cond or False:
-        f"hhh"
+        "hhh"
     else:
         iii
 else:
-    f"other"
-    print(f'hello \"world\"')
+    "other"
+    print('hello \"world\"')
 
     if cond or True:
-        f"bbb"
+        "bbb"
     else:
-        f"ccc"
+        "ccc"
 
-if f"as" == f"as":
-    print(f"hi")
+if "as" == "as":
+    print("hi")
 else:
-    print(f"asdf")
+    print("asdf")
