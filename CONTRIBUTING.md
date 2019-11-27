@@ -45,15 +45,30 @@ For all the below, every merge is preceded by a Pull Request.
 -   Once approved, the new feature branch is merged with master.
 -   The new merged release is tagged, and a new release is published on GitHub and published to [Cargo](https://crates.io/crates/mamba).
 
-## 🔄 Continuous Integration Tools
+## 🔨 Tooling
 
-We use continuous integration tools to help ensure that no regression takes place.
-Therefore, when adding new functionality or fixing a bug, tests are greatly appreciated.
+Several tools are used to help maintain the quality of the codebase.
+These tools are used by the continuous integration tools to statically check submitted code.
+Therefore, to save time, it is a good idea to install these tools locally and run them before pushing your changes.
 
-Please read the tooling section in the [README](/README.md) to get more information on how to set up tooling locally, which are used by the CI tools.
-A pull request will only be merged if the builds pass.
+### Rustfmt
 
-The CI Tools use:
--   `cargo test` to check that all tests pass.
--   `cargo +nightly fmt --all -- --check` to check that there are no formatting errors.
--   `cargo clippy -- -D warnings` to use a collection of lints to check for common Rust mistakes.
+[Rustfmt](https://github.com/rust-lang/rustfmt) formats Rust code and ensures the formatting is consistent across the codebase.
+
+-   **To install** `rustup component add rustfmt --toolchain nightly`
+-   **To run** `cargo +nightly fmt`
+
+The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
+
+*Note* The nightly build of `cargo` must be used (`rustup install nightly`).
+
+### Clippy
+
+[Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
+
+-   **To install** `rustup component add clippy`
+-   **To run** `cargo clippy`
+
+The configuration of `Clippy` can be found in `.clippy.toml`.
+
+*Note* The stable build of `cargo` must be used (`rustup install stable`).
