@@ -4,6 +4,7 @@ class range:
     step: int = 0
 
     def __iter__(self) -> range_iterator: pass
+    def __str__(self) -> str: pass
 
 class range_iterator:
     def __init__(self): pass

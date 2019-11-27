@@ -22,8 +22,8 @@ a = None
 try:
     a = f(10)
 except MyErr1 as err:
-    print(f"Something went wrong")
+    print("Something went wrong")
     a = -1
 except MyErr2 as err:
-    print(f"Something else went wrong")
+    print("Something else went wrong")
     a = -2

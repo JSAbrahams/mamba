@@ -185,7 +185,10 @@ fn fun_def_default_arg_verify() {
         fun_args: vec![to_pos_unboxed!(Node::FunArg {
             vararg:        false,
             id_maybe_type: to_pos!(Node::Id { lit: String::from("arg1") }),
-            default:       Some(to_pos!(Node::Str { lit: String::from("asdf") }))
+            default:       Some(to_pos!(Node::Str {
+                lit:         String::from("asdf"),
+                expressions: vec![]
+            }))
         })],
         ret_ty:   None,
         raises:   vec![],
@@ -245,7 +248,7 @@ fn anon_fun_verify() {
             to_pos_unboxed!(Node::Id { lit: String::from("first") }),
             to_pos_unboxed!(Node::Id { lit: String::from("second") })
         ],
-        body: to_pos!(Node::Str { lit: String::from("this_string") })
+        body: to_pos!(Node::Str { lit: String::from("this_string"), expressions: vec![] })
     });
 
     let (args, body) = match desugar(&anon_fun) {

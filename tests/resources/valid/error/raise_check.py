@@ -7,11 +7,11 @@ def f(x: int) -> int:
     if x > 0:
         return 10
     else:
-        raise Err(f"Expected positive number.")
+        raise Err("Expected positive number.")
 
 
 def g() -> int:
-    raise Err(f"Error always raised")
+    raise Err("Error always raised")
 
 
 def h(x: int) -> int:
