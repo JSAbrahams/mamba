@@ -74,6 +74,10 @@ impl TryFrom<&AST> for TypeName {
     }
 }
 
+impl From<&NullableTypeName> for TypeName {
+    fn from(nullable: &NullableTypeName) -> TypeName { TypeName::Single { ty: nullable.clone() } }
+}
+
 impl From<&str> for TypeName {
     fn from(name: &str) -> TypeName { TypeName::new(name, &[]) }
 }

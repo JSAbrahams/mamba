@@ -5,8 +5,8 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
-use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::{custom, expected_one_of};
 
 pub fn parse_id(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
@@ -28,7 +28,7 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let start = it.eat(&Token::LRBrack, "identifier tuple")?;
                 // TODO allow id's to be mutable within tuples
                 it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-                    elements.push(*it.parse(&parse_id, "identifier", &start)?);
+                    elements.push(*it.parse(&parse_id_maybe_mut, "identifier", &start)?);
                     it.eat_if(&Token::Comma);
                     Ok(())
                 })?;
@@ -187,6 +187,19 @@ pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
     let end = it.eat(&Token::RRBrack, "type tuple")?;
     let node = Node::TypeTup { types };
     Ok(Box::from(AST::new(&start.union(&end), node)))
+}
+
+pub fn parse_id_maybe_mut(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("identifier maybe type")?;
+    let mutable = it.eat_if(&Token::Mut).is_some();
+
+    let id = it.parse(&parse_id, "identifier maybe type", &start)?;
+    if it.eat_if(&Token::DoublePoint).is_some() {
+        Err(custom("Type annotation not allowed here", &id.pos))
+    } else {
+        let node = Node::IdType { id: id.clone(), mutable, _type: None };
+        Ok(Box::from(AST::new(&start.union(&id.pos), node)))
+    }
 }
 
 pub fn parse_id_maybe_type(it: &mut LexIterator) -> ParseResult {
