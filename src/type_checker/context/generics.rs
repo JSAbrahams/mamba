@@ -2,13 +2,13 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
-use crate::parser::ast::{AST, Node};
-use crate::type_checker::CheckInput;
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::field::python::GenericFields;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::CheckInput;
 
 pub fn generics(
     files: &[CheckInput]
@@ -52,7 +52,7 @@ pub fn generics(
 fn get_functions_and_fields(
     statements: &[AST],
     source: &Option<String>,
-    path: &Option<PathBuf>,
+    path: &Option<PathBuf>
 ) -> TypeResult<(HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut fields: HashSet<GenericField> = HashSet::new();
     let mut functions: HashSet<GenericFunction> = HashSet::new();
@@ -72,8 +72,11 @@ fn get_functions_and_fields(
                             .map(|e| e.into_with_source(source, path))
                             .collect::<Vec<TypeErr>>()
                     })?
-                    .fields
-                    .iter().map(|f| f.into(None, false, &stmt.pos)).collect()?;
+                    .fields;
+                let generic_fields: HashSet<_> = generic_fields
+                    .into_iter()
+                    .map(|f| f.in_class(None, false, &stmt.pos))
+                    .collect::<Result<_, _>>()?;
                 fields = fields.union(&generic_fields).cloned().collect();
             }
             _ => {}
