@@ -23,15 +23,16 @@ The Documentation can be found [here](https://joelabrahams.nl/mamba_doc).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
--   Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
--   Null safety features.
--   More explicit error handling.
--   Clear distinction between mutability and immutability.
--   Pure functions, or, functions without side effects.
+-   Strict static typing rules, but with type inference so it doesn't get in the way too much
+-   Type refinement features
+-   Null safety
+-   Explicit error handling
+-   A distinction between mutability and immutability
+-   Pure functions, or, functions without side effects
 
-This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
-Mamba code should therefore, in theory, be interoperable with Python code.
-Functions written in Python can be called in Mamba and vice versa.
+This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source files.
+Mamba code should therefore be interoperable with Python code.
+Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
 
 ## ⌨️ Code Examples
 
