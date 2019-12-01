@@ -32,7 +32,7 @@ mod literal;
 mod operation;
 mod optional;
 
-pub type Inferred<T> = (T, Environment);
+pub type Inferred<T = InferType> = (T, Environment);
 pub type InferResult<T = InferType> = std::result::Result<Inferred<T>, Vec<TypeErr>>;
 
 // TODO switch to system using restraint programming for more advanced type

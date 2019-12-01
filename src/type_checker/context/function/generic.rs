@@ -86,7 +86,7 @@ impl TryFrom<&AST> for GenericFunction {
             Node::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } =>
                 Ok(GenericFunction {
                     is_py_type: false,
-                    name:       function_name(id.deref())?.single(&ast.pos)?,
+                    name:       function_name(id.deref())?,
                     pure:       *pure,
                     private:    *private,
                     pos:        ast.pos.clone(),
@@ -109,8 +109,8 @@ impl TryFrom<&AST> for GenericFunction {
     }
 }
 
-fn function_name(ast: &AST) -> TypeResult<TypeName> {
-    Ok(TypeName::new(
+pub fn function_name(ast: &AST) -> TypeResult<ActualTypeName> {
+    Ok(ActualTypeName::new(
         match &ast.node {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),

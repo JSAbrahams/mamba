@@ -1,0 +1,11 @@
+class A
+    def b: B
+
+class B
+    def my_c(self) -> C => C()
+
+class C
+    def my_field: Int <- 10
+
+def mut a <- A()
+print a.b.my_c().my_field

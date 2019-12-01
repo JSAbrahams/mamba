@@ -16,6 +16,13 @@ fn undefined_variable() {
 }
 
 #[test]
+fn nested_function_private_field() {
+    let source =
+        resource_content(false, &["type", "definition"], "nested_function_private_field.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn nested_non_mut_field() {
     let source = resource_content(false, &["type", "definition"], "nested_non_mut_field.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
