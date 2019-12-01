@@ -4,6 +4,12 @@ use mamba::parser::parse;
 use mamba::type_checker::check_all;
 
 #[test]
+fn all_mutable_in_call_chain() {
+    let source = resource_content(true, &["definition"], "all_mutable_in_call_chain.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
+}
+
+#[test]
 fn nested_mut_field() {
     let source = resource_content(true, &["definition"], "nested_mut_field.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();

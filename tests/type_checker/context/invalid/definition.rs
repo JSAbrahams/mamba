@@ -60,6 +60,13 @@ fn reassign_non_mut() {
 }
 
 #[test]
+fn non_mutable_in_call_chain() {
+    let source =
+        resource_content(false, &["type", "definition"], "non_mutable_in_call_chain.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn reassign_non_mut_field() {
     let source = resource_content(false, &["type", "definition"], "reassign_non_mut_field.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

@@ -1,5 +1,5 @@
 class A
-    def c: C
+    def mut c: C
 
 class C
     def mut my_class: D <- D()

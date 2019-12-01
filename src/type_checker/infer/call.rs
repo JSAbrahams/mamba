@@ -93,7 +93,7 @@ fn property_call(
             let msg = format!("Cannot get type of field {}", field);
             let field_ty_name = &field.ty.ok_or_else(|| vec![TypeErr::new(&property.pos, &msg)])?;
             let field_ty = InferType::from(&ctx.lookup(&field_ty_name, &property.pos)?);
-            Ok(((field.mutable, field_ty), env.clone()))
+            Ok(((field.mutable && mutable, field_ty), env.clone()))
         }
 
         Node::Reassign { left, right } => {
