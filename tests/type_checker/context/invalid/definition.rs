@@ -10,6 +10,31 @@ fn assign_wrong_type() {
 }
 
 #[test]
+fn assign_to_function_call() {
+    let source = resource_content(false, &["type", "definition"], "assign_to_function_call.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn assign_to_inner_non_mut() {
+    let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn assign_to_inner_non_mut2() {
+    let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut2.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+#[ignore]
+fn assign_to_inner_non_mut3() {
+    let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut3.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn undefined_variable() {
     let source = resource_content(false, &["type", "definition"], "undefined_variable.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

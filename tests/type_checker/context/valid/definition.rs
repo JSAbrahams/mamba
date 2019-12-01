@@ -10,6 +10,12 @@ fn nested_mut_field() {
 }
 
 #[test]
+fn assign_to_inner_mut() {
+    let source = resource_content(true, &["definition"], "assign_to_inner_mut.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
+}
+
+#[test]
 fn nested_function() {
     let source = resource_content(true, &["definition"], "nested_function.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();

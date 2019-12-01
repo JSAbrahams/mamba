@@ -105,6 +105,8 @@ fn property_call(
                     (Node::Id { lit }, None) => (lit.clone(), None),
                     _ => return Err(vec![TypeErr::new(&left.pos, "Expected identifier")])
                 },
+                Node::FunctionCall { .. } =>
+                    return Err(vec![TypeErr::new(&left.pos, "Cannot assign to function call")]),
                 _ => return Err(vec![TypeErr::new(&left.pos, "Expected identifier")])
             };
 
