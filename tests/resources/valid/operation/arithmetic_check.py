@@ -1,4 +1,3 @@
-
 import math
 
 a = 10

@@ -2,20 +2,43 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::actual_type::ActualType;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
-use std::ops::Deref;
 
 #[derive(Clone, Debug)]
 pub struct Identifier {
     lit:   Option<(bool, String)>,
     names: Vec<Identifier>
+}
+
+impl Identifier {
+    pub fn fields(&self) -> Vec<(bool, String)> {
+        if let Some(lit) = &self.lit {
+            vec![lit.clone()]
+        } else {
+            self.names.iter().map(|name| name.fields()).flatten().collect()
+        }
+    }
+
+    fn as_mutable(&self) -> Identifier {
+        if let Some((_, id)) = &self.lit {
+            Identifier { lit: Some((true, id.clone())), names: self.names.clone() }
+        } else {
+            Identifier {
+                lit:   self.lit.clone(),
+                names: self.names.iter().map(|name| name.as_mutable()).collect()
+            }
+        }
+    }
 }
 
 impl Display for Identifier {
@@ -35,7 +58,10 @@ impl TryFrom<&AST> for Identifier {
         match &ast.node {
             // TODO add mutable field to identifier
             Node::Id { lit } => Ok(Identifier::from(lit.as_str())),
-            Node::IdType { id, .. } => Identifier::try_from(id.deref()),
+            Node::IdType { id, mutable, .. } => {
+                let identifier = Identifier::try_from(id.deref())?;
+                Ok(if *mutable { identifier.as_mutable() } else { identifier })
+            }
             Node::Tuple { elements } =>
                 Ok(Identifier::from(&elements.iter().map(Identifier::try_from).collect::<Result<
                     Vec<Identifier>,
@@ -107,6 +133,71 @@ pub fn match_name(
                 .map(|ty| match_name(identifier, &ExpressionType::from(ty), env, pos))
                 .collect::<Result<_, _>>()?;
             let mut final_union: HashMap<String, (bool, ExpressionType)> = HashMap::new();
+            for union in unions {
+                for (id, (mutable, expr_ty)) in union {
+                    if final_union.contains_key(&id) {
+                        let (current_mutable, current_expr_ty) =
+                            final_union.get(&id).unwrap_or_else(|| unreachable!());
+                        let new_mutable = mutable && *current_mutable;
+                        let new_expr_ty = current_expr_ty.clone().union(&expr_ty);
+                        final_union.insert(id, (new_mutable, new_expr_ty));
+                    } else {
+                        final_union.insert(id, (mutable, expr_ty));
+                    }
+                }
+            }
+
+            Ok(final_union)
+        }
+    }
+}
+
+pub fn match_type(
+    identifier: &Identifier,
+    type_name: &TypeName,
+    pos: &Position
+) -> TypeResult<HashMap<String, (bool, TypeName)>> {
+    match type_name {
+        TypeName::Single { ty } => match &ty.actual {
+            ActualTypeName::Single { .. } | ActualTypeName::AnonFun { .. } =>
+                if let Some((mutable, id)) = &identifier.lit {
+                    let mut mapping = HashMap::with_capacity(1);
+                    mapping.insert(id.clone(), (*mutable, type_name.clone()));
+                    Ok(mapping)
+                } else {
+                    let msg = format!("Cannot match {} with type {}", identifier, type_name);
+                    Err(vec![TypeErr::new(pos, &msg)])
+                },
+            ActualTypeName::Tuple { ty_names } =>
+                if let Some((mutable, id)) = &identifier.lit {
+                    let mut mapping = HashMap::with_capacity(1);
+                    mapping.insert(id.clone(), (*mutable, type_name.clone()));
+                    Ok(mapping)
+                } else if ty_names.len() == identifier.names.len() {
+                    let sets: Vec<HashMap<_, _>> = identifier
+                        .names
+                        .iter()
+                        .zip(ty_names)
+                        .map(|(identifier, type_name)| match_type(&identifier, &type_name, pos))
+                        .collect::<Result<_, _>>()?;
+                    Ok(sets.into_iter().flatten().collect())
+                } else {
+                    Err(vec![TypeErr::new(
+                        pos,
+                        &format!(
+                            "Cannot iterate over {} with tuple of size {}",
+                            ty,
+                            identifier.names.len()
+                        )
+                    )])
+                },
+        },
+        TypeName::Union { union } => {
+            let unions: Vec<HashMap<String, (bool, TypeName)>> = union
+                .iter()
+                .map(|ty| match_type(identifier, &TypeName::from(ty), pos))
+                .collect::<Result<_, _>>()?;
+            let mut final_union: HashMap<String, (bool, TypeName)> = HashMap::new();
             for union in unions {
                 for (id, (mutable, expr_ty)) in union {
                     if final_union.contains_key(&id) {

@@ -1,10 +1,10 @@
 from collections import defaultdict
 
-a = f"d"
+a = "d"
 
 print({
-    f"b": f"c",
-    f"d": f"e",
+    "b": "c",
+    "d": "e",
 }[a])
 
 # TODO handle tuples
@@ -13,12 +13,12 @@ print({
 # match (b, bb, bbb)
 #    (0, 1, 2) => print "hello world"
 
-nested = f"other"
+nested = "other"
 
 {
-    f"a": f"b",
-    f"c": defaultdict(lambda: f"default", {
-        f"other": f"even_other",
-        f"other_one": f"better_one",
+    "a": "b",
+    "c": defaultdict(lambda: "default", {
+        "other": "even_other",
+        "other_one": "better_one",
     })[nested],
 }[nested]

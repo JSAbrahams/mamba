@@ -46,7 +46,7 @@ pub enum Token {
     Real(String),
     Int(String),
     ENum(String, String),
-    Str(String),
+    Str(String, Vec<Vec<Lex>>),
     Bool(bool),
     Range,
     RangeIncl,
@@ -132,7 +132,7 @@ impl Token {
             Token::Int(int) => int.len(),
             Token::Bool(true) => 4,
             Token::Bool(false) => 5,
-            Token::Str(_str) => _str.len(),
+            Token::Str(_str, _) => _str.len(),
             Token::ENum(num, exp) => num.len() + 1 + exp.len(),
             other => format!("{}", other).len()
         } as i32)
@@ -144,7 +144,7 @@ impl Token {
             (Token::Real(_), Token::Real(_)) => true,
             (Token::Int(_), Token::Int(_)) => true,
             (Token::Bool(_), Token::Bool(_)) => true,
-            (Token::Str(_), Token::Str(_)) => true,
+            (Token::Str(..), Token::Str(..)) => true,
             (Token::ENum(..), Token::ENum(..)) => true,
             _ => left == right
         }
@@ -187,7 +187,7 @@ impl fmt::Display for Token {
                 } else {
                     format!("{}E{}", int, exp)
                 },
-            Token::Str(string) => format!("\"{}\"", string),
+            Token::Str(string, _) => format!("\"{}\"", string),
             Token::Bool(boolean) => String::from(if boolean { "True" } else { "False" }),
 
             Token::Range => String::from(".."),

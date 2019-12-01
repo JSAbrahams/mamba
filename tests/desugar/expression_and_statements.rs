@@ -25,7 +25,7 @@ fn pass_verify() {
 
 #[test]
 fn print_verify() {
-    let expr = to_pos!(Node::Str { lit: String::from("a") });
+    let expr = to_pos!(Node::Str { lit: String::from("a"), expressions: vec![] });
     let print_stmt = to_pos!(Node::Print { expr });
     assert_eq!(desugar(&print_stmt).unwrap(), Core::Print {
         expr: Box::from(Core::Str { _str: String::from("a") })
@@ -34,7 +34,7 @@ fn print_verify() {
 
 #[test]
 fn return_verify() {
-    let expr = to_pos!(Node::Str { lit: String::from("a") });
+    let expr = to_pos!(Node::Str { lit: String::from("a"), expressions: vec![] });
     let print_stmt = to_pos!(Node::Return { expr });
 
     assert_eq!(desugar(&print_stmt).unwrap(), Core::Return {

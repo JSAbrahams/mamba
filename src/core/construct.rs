@@ -80,6 +80,9 @@ pub enum Core {
     Str {
         _str: String
     },
+    FStr {
+        _str: String
+    },
     Bool {
         _bool: bool
     },

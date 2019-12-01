@@ -7,6 +7,7 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
+use crate::type_checker::context::field::python::GenericFields;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
@@ -38,7 +39,7 @@ impl Hash for GenericType {
 }
 
 impl GenericType {
-    pub fn all_pure(self, pure: bool) -> Result<Self, TypeErr> {
+    pub fn all_pure(self, pure: bool) -> TypeResult<Self> {
         Ok(GenericType {
             functions: self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
             ..self
@@ -80,8 +81,7 @@ impl TryFrom<&AST> for GenericType {
                     return Err(arg_errs.into_iter().flatten().collect());
                 }
 
-                let (body_fields, functions) =
-                    get_fields_and_functions(&name, &statements, false, &class.pos)?;
+                let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
                 for function in functions.clone() {
                     if function.name == ActualTypeName::new(concrete::INIT, &[]) {
                         if class_args.is_empty() {
@@ -134,8 +134,7 @@ impl TryFrom<&AST> for GenericType {
                     HashSet::new()
                 };
 
-                let (fields, functions) =
-                    get_fields_and_functions(&name, &statements, true, &class.pos)?;
+                let (fields, functions) = get_fields_and_functions(&name, &statements, true)?;
                 // TODO add parents to type definitions
                 Ok(GenericType {
                     is_py_type: false,
@@ -201,39 +200,35 @@ fn get_name_and_generics(
 fn get_fields_and_functions(
     class: &ActualTypeName,
     statements: &[AST],
-    type_def: bool,
-    pos: &Position
+    type_def: bool
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
-    let mut field_res = vec![];
-    let mut fun_res = vec![];
-    let mut errs = vec![];
+    let mut fields = HashSet::new();
+    let mut functions = HashSet::new();
     let class = TypeName::from(class);
-    statements.iter().for_each(|statement| match &statement.node {
-        Node::FunDef { .. } => {
-            let function = GenericFunction::try_from(statement);
-            fun_res.push(function.and_then(|f| f.in_class(Some(&class), type_def, pos)));
+
+    for statement in statements {
+        match &statement.node {
+            Node::FunDef { .. } => {
+                let function = GenericFunction::try_from(statement)?;
+                let function = function.in_class(Some(&class), type_def, &statement.pos)?;
+                functions.insert(function);
+            }
+            Node::VariableDef { .. } => {
+                let stmt_fields: HashSet<GenericField> = GenericFields::try_from(statement)?
+                    .fields
+                    .into_iter()
+                    .map(|f| f.in_class(Some(&class), type_def, &statement.pos))
+                    .collect::<Result<_, _>>()?;
+                fields = fields.union(&stmt_fields).cloned().collect();
+            }
+            Node::Comment { .. } => {}
+            _ =>
+                return Err(vec![TypeErr::new(
+                    &statement.pos,
+                    "Expected function or variable definition"
+                )]),
         }
-        Node::VariableDef { .. } => {
-            let field = GenericField::try_from(statement);
-            field_res.push(field.and_then(|f| f.in_class(Some(&class), type_def, pos)));
-        }
-        Node::Comment { .. } => {}
-        _ => errs.push(TypeErr::new(&statement.pos, "Expected function or variable definition"))
-    });
-
-    let (fields, field_errs): (Vec<_>, Vec<_>) = field_res.into_iter().partition(Result::is_ok);
-    let (functions, function_errs): (Vec<_>, Vec<_>) = fun_res.into_iter().partition(Result::is_ok);
-
-    // TODO check that there are no duplicate fields or functions
-
-    if !field_errs.is_empty() || !function_errs.is_empty() || !errs.is_empty() {
-        errs.append(&mut field_errs.into_iter().map(Result::unwrap_err).flatten().collect());
-        errs.append(&mut function_errs.into_iter().map(Result::unwrap_err).flatten().collect());
-        Err(errs)
-    } else {
-        Ok((
-            HashSet::from_iter(fields.into_iter().map(Result::unwrap)),
-            HashSet::from_iter(functions.into_iter().map(Result::unwrap))
-        ))
     }
+
+    Ok((fields, functions))
 }

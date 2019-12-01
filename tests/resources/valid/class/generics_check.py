@@ -21,14 +21,14 @@ class MyType:
 
 
 class MyClass2(MyType):
-    _z_modified: str = f"asdf"
+    _z_modified: str = "asdf"
     _other_field: int = 10
 
     def __init__(self, other_field: int, z: int):
-        super().__init__(f"the quick brown fox jumped over the slow donkey")
+        super().__init__("the quick brown fox jumped over the slow donkey")
         if z > 10:
-            raise Err1(f"Something is wrong!")
-        self.z_modified = f"fdsa"
+            raise Err1("Something is wrong!")
+        self.z_modified = "fdsa"
 
         (a, b) = (10, 20)
         (a, b) = (30, 40)
@@ -62,7 +62,7 @@ class MyClass2(MyType):
 
     def fun_a(self): print(self)
 
-    def _fun_b(self): print(f"this function is private!")
+    def _fun_b(self): print("this function is private!")
 
     def factorial(self, x: int = 0) -> int: return x * self.factorial(x - 1)
 
