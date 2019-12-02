@@ -53,7 +53,7 @@ impl GenericFunction {
         if self.private && type_def {
             Err(vec![TypeErr::new(
                 pos,
-                &format!("Function {} cannot be private: In an interface", self.name)
+                &format!("Function {} cannot be private: In an type definition", self.name)
             )])
         } else {
             Ok(GenericFunction {

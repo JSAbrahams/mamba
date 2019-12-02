@@ -68,7 +68,7 @@ impl GenericField {
         if self.private && type_def {
             Err(vec![TypeErr::new(
                 pos,
-                &format!("Field {} cannot be private: In an interface", self.name)
+                &format!("Field {} cannot be private: In an type definition", self.name)
             )])
         } else {
             Ok(GenericField { in_class: class.cloned(), ..self })
