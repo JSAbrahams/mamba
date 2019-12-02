@@ -60,13 +60,17 @@ script:
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then cargo +nightly clippy -- -D warnings; fi
   - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then cargo +nightly fmt --all -- --check; fi
 
+  - |
+    if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then
+      export CARGO_INCREMENTAL=0;
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
+    fi
+
   - cargo build
   - cargo test
 
   - |
     if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then
-      export CARGO_INCREMENTAL=0;
-      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
       zip -0 ccov.zip `find . \( -name "mamba*.gc*" \) -print`;
       ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" lcov.info;
       bash <(curl -s https://codecov.io/bash) -f lcov.info;
