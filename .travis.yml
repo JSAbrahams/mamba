@@ -46,7 +46,7 @@ before_install:
       sudo add-apt-repository -y ppa:deadsnakes/ppa;
       sudo apt-get update;
       sudo apt-get install python3.8;
-      curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf
+      curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf;
     fi
   - python3 --version
 
