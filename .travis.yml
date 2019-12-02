@@ -53,9 +53,8 @@ before_install:
   # grcov
   - curl -L https://github.com/mozilla/grcov/releases/download/v0.4.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
 
-after_success:
   # Coverage report
-  - if [ $TRAVIS_RUST_VERSION = 'nightly' AND $TRAVIS_OS_NAME = 'linux' ]; then bash <(curl -s https://codecov.io/bash); fi
+after_success:
   - |
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
   tar xzf master.tar.gz &&
