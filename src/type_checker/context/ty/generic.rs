@@ -81,7 +81,7 @@ impl TryFrom<&AST> for GenericType {
                     return Err(arg_errs.into_iter().flatten().collect());
                 }
 
-                let (body_fields, functions) = get_fields_and_functions(&name, &statements)?;
+                let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
                 for function in functions.clone() {
                     if function.name == ActualTypeName::new(concrete::INIT, &[]) {
                         if class_args.is_empty() {
@@ -134,7 +134,7 @@ impl TryFrom<&AST> for GenericType {
                     HashSet::new()
                 };
 
-                let (fields, functions) = get_fields_and_functions(&name, &statements)?;
+                let (fields, functions) = get_fields_and_functions(&name, &statements, true)?;
                 // TODO add parents to type definitions
                 Ok(GenericType {
                     is_py_type: false,
@@ -199,7 +199,8 @@ fn get_name_and_generics(
 
 fn get_fields_and_functions(
     class: &ActualTypeName,
-    statements: &[AST]
+    statements: &[AST],
+    type_def: bool
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
     let mut fields = HashSet::new();
     let mut functions = HashSet::new();
@@ -209,12 +210,16 @@ fn get_fields_and_functions(
         match &statement.node {
             Node::FunDef { .. } => {
                 let function = GenericFunction::try_from(statement)?;
-                let function = function.in_class(Some(&class), &statement.pos)?;
+                let function = function.in_class(Some(&class), type_def, &statement.pos)?;
                 functions.insert(function);
             }
             Node::VariableDef { .. } => {
-                fields =
-                    fields.union(&GenericFields::try_from(statement)?.fields).cloned().collect();
+                let stmt_fields: HashSet<GenericField> = GenericFields::try_from(statement)?
+                    .fields
+                    .into_iter()
+                    .map(|f| f.in_class(Some(&class), type_def, &statement.pos))
+                    .collect::<Result<_, _>>()?;
+                fields = fields.union(&stmt_fields).cloned().collect();
             }
             Node::Comment { .. } => {}
             _ =>

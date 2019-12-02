@@ -37,7 +37,8 @@ impl TryFrom<&AST> for GenericFields {
                                         mutable:    *mutable,
                                         pos:        ast.pos.clone(),
                                         private:    *private,
-                                        ty:         Some(type_name.clone())
+                                        ty:         Some(type_name.clone()),
+                                        in_class:   None
                                     })
                                     .collect())
                             }
@@ -50,6 +51,7 @@ impl TryFrom<&AST> for GenericFields {
                                     pos:        ast.pos.clone(),
                                     private:    *private,
                                     mutable:    *mutable,
+                                    in_class:   None,
                                     ty:         None
                                 })
                                 .collect())
@@ -105,6 +107,7 @@ impl From<&Expression> for GenericFields {
                         pos:        Default::default(),
                         private:    false,
                         mutable:    false,
+                        in_class:   None,
                         ty:         None
                     }],
                     Expression::TupleLiteral(items) => items
@@ -128,6 +131,7 @@ impl From<&Expression> for GenericFields {
                                     pos:        Default::default(),
                                     private:    false,
                                     mutable:    false,
+                                    in_class:   None,
                                     ty:         None
                                 },
                                 _ => unreachable!()

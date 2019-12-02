@@ -14,6 +14,7 @@ pub struct GenericField {
     pub pos:        Position,
     pub private:    bool,
     pub mutable:    bool,
+    pub in_class:   Option<TypeName>,
     pub ty:         Option<TypeName>
 }
 
@@ -42,9 +43,35 @@ impl TryFrom<&AST> for GenericField {
                 };
 
                 let pos = ast.pos.clone();
-                Ok(GenericField { is_py_type: false, name, mutable, pos, private: *private, ty })
+                Ok(GenericField {
+                    is_py_type: false,
+                    name,
+                    mutable,
+                    pos,
+                    in_class: None,
+                    private: *private,
+                    ty
+                })
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
+        }
+    }
+}
+
+impl GenericField {
+    pub fn in_class(
+        self,
+        class: Option<&TypeName>,
+        type_def: bool,
+        pos: &Position
+    ) -> TypeResult<GenericField> {
+        if self.private && type_def {
+            Err(vec![TypeErr::new(
+                pos,
+                &format!("Field {} cannot be private: In an type definition", self.name)
+            )])
+        } else {
+            Ok(GenericField { in_class: class.cloned(), ..self })
         }
     }
 }

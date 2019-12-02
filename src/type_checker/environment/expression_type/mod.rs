@@ -140,6 +140,7 @@ impl ExpressionType {
         }
     }
 
+    // TODO use ActualTypeName
     pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
             ExpressionType::Single { ty } => ty.actual_ty().fun(name, args, pos),

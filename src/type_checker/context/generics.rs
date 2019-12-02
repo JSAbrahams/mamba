@@ -61,7 +61,7 @@ fn get_functions_and_fields(
         match &stmt.node {
             Node::FunDef { .. } => {
                 let generic_function: Result<_, Vec<TypeErr>> = GenericFunction::try_from(stmt)
-                    .and_then(|f| f.in_class(None, &stmt.pos))
+                    .and_then(|f| f.in_class(None, false, &stmt.pos))
                     .map_err(|e| e.into_iter().map(|e| e.into_with_source(source, path)).collect());
                 functions.insert(generic_function?);
             }
@@ -73,6 +73,10 @@ fn get_functions_and_fields(
                             .collect::<Vec<TypeErr>>()
                     })?
                     .fields;
+                let generic_fields: HashSet<_> = generic_fields
+                    .into_iter()
+                    .map(|f| f.in_class(None, false, &stmt.pos))
+                    .collect::<Result<_, _>>()?;
                 fields = fields.union(&generic_fields).cloned().collect();
             }
             _ => {}
