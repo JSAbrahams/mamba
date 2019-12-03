@@ -23,15 +23,16 @@ The Documentation can be found [here](https://joelabrahams.nl/mamba_doc).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
--   Strict typing rules, but with type inference so it doesn't get in the way too much, and type refinement features.
--   Null safety features.
--   More explicit error handling.
--   Clear distinction between mutability and immutability.
--   Pure functions, or, functions without side effects.
+-   Strict static typing rules, but with type inference so it doesn't get in the way too much
+-   Type refinement features
+-   Null safety
+-   Explicit error handling
+-   A distinction between mutability and immutability
+-   Pure functions, or, functions without side effects
 
-This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source code to Python source files.
-Mamba code should therefore, in theory, be interoperable with Python code.
-Functions written in Python can be called in Mamba and vice versa.
+This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source files.
+Mamba code should therefore be interoperable with Python code.
+Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
 
 ## ⌨️ Code Examples
 
@@ -48,8 +49,8 @@ def factorial(x: Int) => match x
     n => n * factorial(n - 1)
 
 def num <- input "Compute factorial: "
-if num.is_digit then
-    def result <- factorial int num
+if num.is_digit() then
+    def result <- factorial(int(num))
     print "Factorial {num} is: {result}."
 else
     print "Input was not an integer."
@@ -77,11 +78,11 @@ class MyServer(def ip_address: IPv4Address)
 
     def connect(mut self) => self.is_connected <- true
 
-    def send(mut self, message: String) => if self.is_connected 
+    def send(mut self, message: String) raises [ServerError] => if self.is_connected 
         then self.last_message <- message
-        else Err("Not connected!")
+        else raise ServerError("Not connected!")
 
-    def disconnect(mut self) => self.is_connected <- true
+    def disconnect(mut self) => self.is_connected <- false
 ```
 
 Notice how:
@@ -98,13 +99,13 @@ from server import MyServer
 def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
-http_server.connect
-if my_server.connected then http_server send "Hello World!"
+http_server.connect()
+if my_server.is_connected then http_serve.send "Hello World!"
 
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
-print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerError]
-my_server.disconnect
+print "last message sent before disconnect: \"{my_server.last_sent()}\"." raises [ServerError]
+my_server.disconnect()
 ```
 
 ### 🗃 Types and type refinement
@@ -139,11 +140,8 @@ class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa 
 
     def disconnect(mut self: ConnectedMyServer) => self.is_connected <- false
 
-type ConnectedMyServer isa MyServer when
-    self.is_connected else raise ServerErr("Not connected.")
-
-type DisconnectedMyServer isa MyServer when
-    not self.is_connected else raise ServerErr("Already connected.")
+type ConnectedMyServer isa MyServer when self.is_connected
+type DisconnectedMyServer isa MyServer when not self.is_connected
 ```
 
 Notice how above, we define the type of `self`.
@@ -159,7 +157,7 @@ def some_ip   <- ipaddress.ip_address "151.101.193.140"
 def my_server <- MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
-http_server.connect
+http_server.connect()
 
 # We check the state
 if my_server isa ConnectedMyServer then
@@ -167,14 +165,15 @@ if my_server isa ConnectedMyServer then
     my_server.send "Hello World!"
 
 print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerErr]
-if my_server isa ConnectedMyServer then my_server.disconnect
+if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 ```mamba
-type PositiveInt isa Int where self >= 0 else Err("Expected positive Int but was {self}.")
+type PositiveInt isa Int when 
+    self >= 0
 
-def factorial (x: PositiveInt) => match x
+def factorial (x: PositiveInt) -> PositiveInt => match x
     0 => 1
     n => n * factorial (n - 1)
 ```
@@ -256,7 +255,7 @@ def message <- "Hello World!"
 my_server.send message handle
     err: ServerErr => print "Error while sending message: \"{message}\": {err}"
 
-if my_server isa ConnectedMyServer then my_server.disconnect
+if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
 In the above script, we will always print the error since we forgot to actually connect to the server.
@@ -275,7 +274,7 @@ def a <- function_may_throw_err() handle
         return
     err : MyOtherErr => 
         print "We have another problem: {err.message}."
-        # or if we don't return, return a default value
+        # or we assign default value 0 to a
         0
         
 print "a has value {a}."
@@ -284,7 +283,41 @@ print "a has value {a}."
 If we don't want to use a `handle`, we can simply use `raises` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
 See the sections above for examples where we don't handle errors and simply pass them on using `raises`.
 
-## 💻 Using the Command Line Interface
+## Project Structure
+
+The compiler, or transpiler, can be split up into four distinct stages: _lexing_, _parsing_, _type checking_, which is where the bulk of the application logic resides, _desugaring_, and _python conversion_.
+
+### Lexer
+
+Convert a string of characters to a string of tokens.
+For each token we store the starting position within the file and its width.
+This information is used when generating error messages in this and consecutive stages.
+
+During this stage, errors are raised if we encounter an illegal character.
+
+### Parser
+
+Convert the list of tokens to an Abstract Syntax Tree (AST) based on the pre-defined grammar of the language.
+
+During this stage syntax errors may be raised if we encounter illegal strings of tokens.
+
+### Type checking
+
+Soon, the type checker will also augment our AST such that certain languaeg constructs can be trivially desugared, as opposed to having to duplicate appliation logic in the desugar stage.
+
+This is also the last stage where error messages may be generated.
+Any error after this stage is indicative of an internal error, and should be fixed.
+
+### Desugar
+
+Convert the AST to a simpler core language which looks similar to Python.
+
+### Core language to Python
+
+Lastly, we convert our internal data structure to a string which represents Python code.
+In future we might want to add an option to compile down to Python bytecode, but whether this has an advantages remains to be seen.
+
+## 💻 The Command Line Interface
 
 ### Usage
 ```
@@ -307,31 +340,3 @@ You can type `mamba -help` for a message containing roughly the above informatio
 ## 👥 Contributing
 
 Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
-
-## 🔨 Tooling
-
-Several tools are used to help maintain the quality of the codebase.
-These tools are used by the continuous integration tools to statically check submitted code.
-Therefore, to save time, it is a good idea to install these tools locally and run them before pushing your changes.
-
-### Rustfmt
-
-[Rustfmt](https://github.com/rust-lang/rustfmt) formats Rust code and ensures the formatting is consistent across the codebase.
-
--   **To install** `rustup component add rustfmt --toolchain nightly`
--   **To run** `cargo +nightly fmt`
-
-The configuration of `Rustfmt` can be found in `.rustfmt.toml`.
-
-*Note* The nightly build of `cargo` must be used (`rustup install nightly`).
-
-### Clippy
-
-[Clippy](https://github.com/rust-lang/rust-clippy) catches common mistakes made in Rust.
-
--   **To install** `rustup component add clippy`
--   **To run** `cargo clippy`
-
-The configuration of `Clippy` can be found in `.clippy.toml`.
-
-*Note* The stable build of `cargo` must be used (`rustup install stable`).

@@ -1,4 +1,6 @@
 class complex:
+    def __init__(self, real: float, imaginary: float) -> complex: pass
+
     def __add__(self, other: int) -> complex: pass
     def __add__(self, other: float) -> complex: pass
     def __add__(self, other: complex) -> complex: pass
@@ -24,3 +26,4 @@ class complex:
     def __pow__(self, power: complex, modulo=None) -> complex: pass
 
     def __bool__(self) -> bool: pass
+    def __str__(self) -> str: pass

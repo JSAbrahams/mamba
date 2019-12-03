@@ -1,0 +1,2 @@
+type MyType
+    def private my_field: Int

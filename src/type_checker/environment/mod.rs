@@ -1,5 +1,6 @@
 use crate::common::position::Position;
 use crate::type_checker::context::function_arg;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
@@ -41,7 +42,9 @@ impl Environment {
     pub fn in_class(&self, mutable: bool, class: &ExpressionType) -> Environment {
         let mut variables = self.variables.clone();
         variables.insert(String::from(function_arg::concrete::SELF), (mutable, class.clone()));
-        Environment { state: self.state.clone(), variables }
+
+        let state = self.state.in_class(&TypeName::from(class));
+        Environment { state, variables }
     }
 
     pub fn new_state(&self, state: &State) -> Self {

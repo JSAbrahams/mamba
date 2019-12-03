@@ -19,6 +19,7 @@ pub struct GenericFunction {
     pub pos:        Position,
     pub arguments:  Vec<GenericFunctionArg>,
     pub raises:     Vec<ActualTypeName>,
+    pub in_class:   Option<TypeName>,
     pub ret_ty:     Option<TypeName>
 }
 
@@ -43,15 +44,28 @@ impl Hash for GenericFunction {
 impl GenericFunction {
     pub fn pure(self, pure: bool) -> Self { GenericFunction { pure: self.pure || pure, ..self } }
 
-    pub fn in_class(self, class: Option<&TypeName>, pos: &Position) -> TypeResult<GenericFunction> {
-        Ok(GenericFunction {
-            arguments: self
-                .arguments
-                .iter()
-                .map(|arg| arg.clone().in_class(class, pos))
-                .collect::<Result<_, _>>()?,
-            ..self
-        })
+    pub fn in_class(
+        self,
+        class: Option<&TypeName>,
+        type_def: bool,
+        pos: &Position
+    ) -> TypeResult<GenericFunction> {
+        if self.private && type_def {
+            Err(vec![TypeErr::new(
+                pos,
+                &format!("Function {} cannot be private: In an type definition", self.name)
+            )])
+        } else {
+            Ok(GenericFunction {
+                in_class: class.cloned(),
+                arguments: self
+                    .arguments
+                    .iter()
+                    .map(|arg| arg.clone().in_class(class, pos))
+                    .collect::<Result<_, _>>()?,
+                ..self
+            })
+        }
     }
 }
 
@@ -72,7 +86,7 @@ impl TryFrom<&AST> for GenericFunction {
             Node::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } =>
                 Ok(GenericFunction {
                     is_py_type: false,
-                    name:       function_name(id.deref())?.single(&ast.pos)?,
+                    name:       function_name(id.deref())?,
                     pure:       *pure,
                     private:    *private,
                     pos:        ast.pos.clone(),
@@ -84,6 +98,7 @@ impl TryFrom<&AST> for GenericFunction {
                         Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                         None => None
                     },
+                    in_class:   None,
                     raises:     raises
                         .iter()
                         .map(ActualTypeName::try_from)
@@ -94,8 +109,8 @@ impl TryFrom<&AST> for GenericFunction {
     }
 }
 
-fn function_name(ast: &AST) -> TypeResult<TypeName> {
-    Ok(TypeName::new(
+pub fn function_name(ast: &AST) -> TypeResult<ActualTypeName> {
+    Ok(ActualTypeName::new(
         match &ast.node {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),

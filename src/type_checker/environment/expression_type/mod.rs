@@ -130,15 +130,17 @@ impl ExpressionType {
                     .map(|e_ty| e_ty.actual_ty().field(field, pos))
                     .collect::<Result<_, _>>()?;
                 let first = union.get(0);
+                let msg = format!("Unknown field, {} does not have field {}", self, field);
                 if union.iter().all(|e_ty| Some(e_ty) == first) {
-                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, "Unknown field")])?)
+                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, &msg)])?)
                 } else {
-                    Err(vec![TypeErr::new(pos, "Unknown field")])
+                    Err(vec![TypeErr::new(pos, &msg)])
                 }
             }
         }
     }
 
+    // TODO use ActualTypeName
     pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
             ExpressionType::Single { ty } => ty.actual_ty().fun(name, args, pos),

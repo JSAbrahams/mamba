@@ -196,7 +196,8 @@ pub enum Node {
         exp: String
     },
     Str {
-        lit: String
+        lit:         String,
+        expressions: Vec<AST>
     },
     Bool {
         lit: bool

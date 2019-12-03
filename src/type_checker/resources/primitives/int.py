@@ -45,3 +45,4 @@ class int:
     def __lt__(self, other: float) -> bool: pass
 
     def __bool__(self) -> bool: pass
+    def __str__(self) -> str: pass

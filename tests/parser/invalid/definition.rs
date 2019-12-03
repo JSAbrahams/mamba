@@ -1,3 +1,4 @@
+use crate::common::resource_content;
 use mamba::lexer::tokenize;
 use mamba::parser::parse_direct;
 
@@ -28,5 +29,11 @@ fn def_fun_missing_arrow() {
 #[test]
 fn def_fun_missing_brackets() {
     let source = String::from("def f => print a");
+    parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+}
+
+#[test]
+fn type_annotation_in_tuple() {
+    let source = resource_content(false, &["syntax"], "type_annotation_in_tuple.mamba");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }

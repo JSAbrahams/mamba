@@ -72,7 +72,7 @@ impl From<&Classdef> for GenericType {
             fields,
             functions: functions
                 .into_iter()
-                .map(|f| f.in_class(Some(&TypeName::from(&name)), &Position::default()))
+                .map(|f| f.in_class(Some(&TypeName::from(&name)), false, &Position::default()))
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect()

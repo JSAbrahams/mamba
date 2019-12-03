@@ -1,9 +1,11 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
+use crate::common::position::CaretPos;
 use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
 use crate::lexer::token::{Lex, Token};
+use crate::lexer::tokenize;
 
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
@@ -122,14 +124,57 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '"' => {
             let mut string = String::new();
             let mut back_slash = false;
+
+            let mut exprs: Vec<(CaretPos, String)> = vec![];
+            let mut build_cur_expr = 0;
+            let mut cur_offset = CaretPos::default();
+            let mut cur_expr = String::new();
+
             for c in it {
-                if !back_slash && c == '"' {
+                if !back_slash && build_cur_expr == 0 && c == '"' {
                     break;
                 }
                 string.push(c);
+
+                if !back_slash {
+                    if build_cur_expr > 0 {
+                        cur_expr.push(c);
+                    }
+
+                    if c == '{' {
+                        if build_cur_expr == 0 {
+                            cur_offset = state.pos.clone().offset_pos(string.len() as i32);
+                        }
+                        build_cur_expr += 1;
+                    } else if c == '}' {
+                        build_cur_expr -= 1;
+                    }
+
+                    if build_cur_expr == 0 && !cur_expr.is_empty() {
+                        // Last char is always } due to counter
+                        cur_expr = cur_expr[0..cur_expr.len() - 1].to_owned();
+                        if !cur_expr.is_empty() {
+                            exprs.push((cur_offset.clone(), cur_expr.clone()));
+                        }
+                        cur_expr.clear()
+                    }
+                }
+
                 back_slash = c == '\\';
             }
-            create(state, Token::Str(string))
+
+            let tokens = exprs
+                .iter()
+                .map(|(offset, string)| match tokenize(string) {
+                    Ok(tokens) => Ok(tokens
+                        .iter()
+                        .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
+                        .collect()),
+                    Err(err) => Err(err)
+                })
+                .collect::<Result<_, _>>()?;
+
+            create(state, Token::Str(string, tokens))
         }
         ' ' => {
             state.space();

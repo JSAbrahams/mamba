@@ -7,6 +7,37 @@ use crate::common::resource_content;
 // TODO implement generics fully in type checker
 
 #[test]
+fn access_private_field() {
+    let source = resource_content(false, &["type", "class"], "access_private_field.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn access_private_function() {
+    let source = resource_content(false, &["type", "class"], "access_private_function.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn private_tuple() {
+    let source = resource_content(false, &["type", "class"], "private_tuple.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn type_def_with_private_field() {
+    let source = resource_content(false, &["type", "class"], "type_def_with_private_field.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn type_def_with_private_function() {
+    let source =
+        resource_content(false, &["type", "class"], "type_def_with_private_function.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn class_with_args_and_init() {
     let source = resource_content(false, &["type", "class"], "args_and_init.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

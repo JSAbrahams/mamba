@@ -3,10 +3,6 @@
 
 os: Visual Studio 2015
 
-branches:
-  only:
-    - master
-
 environment:
   matrix:
   # Nightly 64-bit MSVC
@@ -38,10 +34,3 @@ test_script:
   - if %channel% == "nightly" cargo +nightly clippy -- -D warnings
 
   - cargo test --verbose
-
-# Skip commits
-skip_commits:
-  files:
-  - '*.md'
-  - .gitignore
-  - .travis

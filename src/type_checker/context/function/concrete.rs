@@ -35,9 +35,11 @@ pub struct Function {
     pub is_py_type:   bool,
     pub name:         ActualTypeName,
     pub self_mutable: Option<bool>,
+    pub private:      bool,
     pub pure:         bool,
     pub arguments:    Vec<FunctionArg>,
     pub raises:       HashSet<ActualTypeName>,
+    pub in_class:     Option<TypeName>,
     ret_ty:           Option<TypeName>
 }
 
@@ -112,12 +114,17 @@ impl TryFrom<(&GenericFunction, &HashMap<String, TypeName>, &Position)> for Func
                 function_arg.map(|a| a.mutable)
             },
             pure: fun.pure,
+            private: fun.private,
             arguments,
             raises: fun
                 .raises
                 .iter()
                 .map(|raise| raise.substitute(generics, pos))
                 .collect::<Result<_, _>>()?,
+            in_class: match &fun.in_class {
+                Some(in_class) => Some(in_class.substitute(generics, pos)?),
+                None => None
+            },
             ret_ty: match &fun.ret_ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None

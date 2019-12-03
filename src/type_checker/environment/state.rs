@@ -1,4 +1,5 @@
 use crate::type_checker::context::type_name::actual::ActualTypeName;
+use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
 
 #[derive(Clone, Debug)]
@@ -7,6 +8,7 @@ pub struct State {
     pub in_handle:   bool,
     pub in_function: bool,
     pub in_match:    Option<ExpressionType>,
+    pub in_class:    Option<TypeName>,
     pub handling:    Vec<ActualTypeName>
 }
 
@@ -23,6 +25,7 @@ impl Default for State {
             in_handle:   false,
             in_function: false,
             in_match:    None,
+            in_class:    None,
             handling:    vec![]
         }
     }
@@ -35,6 +38,10 @@ impl State {
 
     pub fn handling(&self, handling: &[ActualTypeName]) -> State {
         State { handling: Vec::from(handling), in_handle: true, ..self.clone() }
+    }
+
+    pub fn in_class(&self, in_class: &TypeName) -> State {
+        State { in_class: Some(in_class.clone()), ..self.clone() }
     }
 
     pub fn as_state(&self, state_type: StateType) -> State {
