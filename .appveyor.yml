@@ -34,10 +34,3 @@ test_script:
   - if %channel% == "nightly" cargo +nightly clippy -- -D warnings
 
   - cargo test --verbose
-
-# Skip commits
-skip_commits:
-  files:
-  - '*.md'
-  - .gitignore
-  - .travis
