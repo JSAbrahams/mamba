@@ -215,7 +215,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             }
         },
 
-        Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } | Node::ConstructorCall { .. } =>
+            desugar_call(ast, imp, state)?,
 
         Node::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, imp, &state.expand_ty(false))?,

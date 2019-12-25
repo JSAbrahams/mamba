@@ -94,6 +94,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::With { .. } => infer_error(ast, env, ctx),
         Node::AnonFun { .. } => infer_op(ast, env, ctx),
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx),
+        Node::ConstructorCall { .. } => infer_call(ast, env, ctx),
 
         Node::IdType { .. } => infer_assign(ast, env, ctx),
 

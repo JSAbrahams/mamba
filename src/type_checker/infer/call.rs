@@ -15,7 +15,8 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
-        Node::FunctionCall { name, args } => {
+        // TODO split up application logic
+        Node::ConstructorCall { name, args } | Node::FunctionCall { name, args } => {
             let fun_name = TypeName::try_from(name.deref())?;
             let mut arg_names = vec![];
             let mut raises = HashSet::new();

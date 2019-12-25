@@ -10,6 +10,7 @@ pub mod context;
 pub mod environment;
 
 mod infer;
+mod modify;
 mod util;
 
 pub mod type_result;
