@@ -10,6 +10,7 @@ use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::field::python::GenericFields;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
+use crate::type_checker::context::function_arg;
 use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::type_checker::context::parameter::generic::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
@@ -80,19 +81,44 @@ impl TryFrom<&AST> for GenericType {
                 if !arg_errs.is_empty() {
                     return Err(arg_errs.into_iter().flatten().collect());
                 }
+                let mut class_args = if class_args.is_empty() {
+                    class_args
+                } else {
+                    let mut new_args = vec![GenericFunctionArg {
+                        is_py_type: false,
+                        name:       String::from(function_arg::generic::SELF),
+                        pos:        Default::default(),
+                        vararg:     false,
+                        mutable:    false,
+                        ty:         Some(TypeName::from(&name))
+                    }];
+                    new_args.append(&mut class_args);
+                    new_args
+                };
 
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
-                for function in functions.clone() {
-                    if function.name == ActualTypeName::new(concrete::INIT, &[]) {
-                        if class_args.is_empty() {
-                            class_args.append(&mut function.arguments.clone())
-                        } else {
-                            return Err(vec![TypeErr::new(
-                                &class.pos,
-                                "Cannot have constructor and class arguments"
-                            )]);
-                        }
+                if let Some(function) =
+                    functions.iter().find(|f| f.name == ActualTypeName::new(concrete::INIT, &[]))
+                {
+                    if class_args.is_empty() {
+                        class_args.append(&mut function.arguments.clone())
+                    } else {
+                        return Err(vec![TypeErr::new(
+                            &class.pos,
+                            "Cannot have constructor and class arguments"
+                        )]);
                     }
+                }
+
+                if class_args.is_empty() {
+                    class_args.push(GenericFunctionArg {
+                        is_py_type: false,
+                        name:       String::from(function_arg::concrete::SELF),
+                        pos:        Default::default(),
+                        vararg:     false,
+                        mutable:    false,
+                        ty:         Option::from(TypeName::from(&name))
+                    })
                 }
 
                 let (parents, parent_errs): (Vec<_>, Vec<_>) =

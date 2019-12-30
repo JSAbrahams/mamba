@@ -12,13 +12,8 @@ impl Forward {
 impl Modification for Forward {
     fn modify(&self, ast: &AST, ctx: &Context) -> TypeResult<AST> {
         match &ast.node {
-            Node::VariableDef { forward, .. } =>
-                if forward.is_empty() {
-                    Ok(ast.clone())
-                } else {
-                    unimplemented!()
-                },
-            _ => unimplemented!()
+            Node::VariableDef { .. } => unimplemented!(),
+            _ => self.recursion(ast, ctx)
         }
     }
 }

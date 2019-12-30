@@ -73,14 +73,31 @@ impl ActualType {
     pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
         match &self {
             ActualType::Single { ty } => {
+                let args = match self {
+                    ActualType::Single { ty } => {
+                        let mut new_args = vec![TypeName::from(&ty.name)];
+                        new_args.append(&mut args.clone().to_vec());
+                        new_args
+                    }
+                    _ =>
+                        return Err(vec![TypeErr::new(
+                            pos,
+                            "Can only call constructor on single type"
+                        )]),
+                };
+
                 // TODO handle default arguments
+                // TODO handle unknown types
                 let constructor_args: Vec<TypeName> = ty
                     .args
                     .iter()
-                    .map(|a| a.ty.clone().ok_or_else(|| TypeErr::new(pos, "Type is unknown")))
+                    .map(|a| {
+                        a.ty.clone().ok_or_else(|| {
+                            TypeErr::new(pos, "Type constructor argument is unknown")
+                        })
+                    })
                     .collect::<Result<_, _>>()?;
 
-                // TODO handle unknown types
                 if constructor_args == args {
                     Ok(self.clone())
                 } else {
