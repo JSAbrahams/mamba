@@ -21,7 +21,7 @@ pub trait Modification {
                     .map(|module| self.modify(module, ctx))
                     .collect::<Result<_, _>>()?;
                 Ok(AST {
-                    node: Node::File { comments, imports, modules, pure: pure.clone() },
+                    node: Node::File { comments, imports, modules, pure: *pure },
                     ..ast.clone()
                 })
             }
@@ -96,7 +96,7 @@ pub trait Modification {
                     .collect::<Result<_, _>>()?;
                 Ok(AST {
                     node: Node::VariableDef {
-                        private: private.clone(),
+                        private: *private,
                         id_maybe_type,
                         expression,
                         forward
@@ -122,8 +122,8 @@ pub trait Modification {
                 };
                 Ok(AST {
                     node: Node::FunDef {
-                        pure: pure.clone(),
-                        private: private.clone(),
+                        pure: *pure,
+                        private: *private,
                         id,
                         fun_args,
                         ret_ty,
@@ -191,10 +191,7 @@ pub trait Modification {
                 } else {
                     None
                 };
-                Ok(AST {
-                    node: Node::IdType { mutable: mutable.clone(), id, _type },
-                    ..ast.clone()
-                })
+                Ok(AST { node: Node::IdType { mutable: *mutable, id, _type }, ..ast.clone() })
             }
             Node::TypeDef { _type, isa, body } => {
                 let _type = Box::from(self.modify(_type, ctx)?);
@@ -260,7 +257,7 @@ pub trait Modification {
                     None
                 };
                 Ok(AST {
-                    node: Node::FunArg { vararg: vararg.clone(), id_maybe_type, default },
+                    node: Node::FunArg { vararg: *vararg, id_maybe_type, default },
                     ..ast.clone()
                 })
             }
@@ -316,7 +313,7 @@ pub trait Modification {
                     None
                 };
                 Ok(AST {
-                    node: Node::Range { from, to, inclusive: inclusive.clone(), step },
+                    node: Node::Range { from, to, inclusive: *inclusive, step },
                     ..ast.clone()
                 })
             }

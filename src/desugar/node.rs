@@ -11,6 +11,7 @@ use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
+use crate::type_checker::context::ty::concrete::concrete_to_python;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
@@ -70,7 +71,9 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::Undefined => Core::None,
         Node::IdType { .. } => desugar_type(ast, imp, state)?,
-        Node::Id { lit } => Core::Id { lit: lit.clone() },
+        Node::Id { lit } => Core::Id {
+            lit: if state.is_constructor { concrete_to_python(lit) } else { lit.clone() }
+        },
         Node::_Self => Core::Id { lit: String::from("self") },
         Node::Init => Core::Id { lit: String::from("init") },
         Node::Bool { lit } => Core::Bool { _bool: *lit },

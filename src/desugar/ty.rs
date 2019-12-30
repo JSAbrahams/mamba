@@ -27,10 +27,22 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                             ty:  Box::from(desugar_node(ty, imp, state)?)
                         }
                     } else {
-                        Core::Id { lit: lit.clone() }
+                        Core::Id {
+                            lit: if state.is_constructor {
+                                concrete_to_python(lit)
+                            } else {
+                                lit.clone()
+                            }
+                        }
                     }
                 } else {
-                    Core::Id { lit: lit.clone() }
+                    Core::Id {
+                        lit: if state.is_constructor {
+                            concrete_to_python(lit)
+                        } else {
+                            lit.clone()
+                        }
+                    }
                 },
             Node::_Self => Core::Id { lit: String::from("self") },
             _ => desugar_node(id, imp, state)?

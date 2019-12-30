@@ -14,5 +14,5 @@ pub fn modify(ast: &AST, ctx: &Context) -> TypeResult<AST> {
         ast = modification.modify(&ast, ctx)?;
     }
 
-    Ok(ast.clone())
+    Ok(ast)
 }

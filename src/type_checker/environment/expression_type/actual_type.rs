@@ -76,7 +76,7 @@ impl ActualType {
                 let args = match self {
                     ActualType::Single { ty } => {
                         let mut new_args = vec![TypeName::from(&ty.name)];
-                        new_args.append(&mut args.clone().to_vec());
+                        new_args.append(&mut args.to_vec());
                         new_args
                     }
                     _ =>

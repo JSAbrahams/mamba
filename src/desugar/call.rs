@@ -18,7 +18,7 @@ pub fn desugar_call(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             args:     desugar_vec(args, imp, state)?
         },
         Node::ConstructorCall { name, args } => Core::FunctionCall {
-            function: Box::from(desugar_node(name, imp, state)?),
+            function: Box::from(desugar_node(name, imp, &state.is_constructor(true))?),
             args:     desugar_vec(args, imp, state)?
         },
         other => panic!("Expected call flow but was: {:?}.", other)
