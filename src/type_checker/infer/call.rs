@@ -16,7 +16,23 @@ use crate::type_checker::type_result::TypeErr;
 pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
         // TODO split up application logic
-        Node::ConstructorCall { name, args } | Node::FunctionCall { name, args } => {
+        Node::ConstructorCall { name, args } => {
+            let fun_name = TypeName::try_from(name.deref())?;
+            let mut arg_names = vec![];
+            let mut raises = HashSet::new();
+            let mut env = env.clone();
+            for arg in args {
+                let (ty, new_env) = infer(arg, &env, ctx)?;
+                arg_names.push(TypeName::from(&ty.expr_ty(&arg.pos)?));
+                env = new_env;
+                raises = raises.union(&ty.raises).cloned().collect();
+            }
+
+            let expr_ty = ctx.lookup(&fun_name, &name.pos)?;
+            expr_ty.constructor(&arg_names, &ast.pos)?;
+            Ok((InferType::from(&expr_ty).union_raises(&raises), env))
+        }
+        Node::FunctionCall { name, args } => {
             let fun_name = TypeName::try_from(name.deref())?;
             let mut arg_names = vec![];
             let mut raises = HashSet::new();
@@ -35,12 +51,7 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                     env
                 )),
                 Err(_) => match ctx.lookup_fun(&fun_name, &arg_names, &ast.pos) {
-                    // else, see if constructor of type
-                    Err(_) => {
-                        let expr_ty = ctx.lookup(&fun_name, &name.pos)?;
-                        expr_ty.constructor(&arg_names, &ast.pos)?;
-                        Ok((InferType::from(&expr_ty).union_raises(&raises), env))
-                    }
+                    Err(err) => Err(err),
                     Ok(ok) => Ok((ok.union_raises(&raises), env))
                 }
             }

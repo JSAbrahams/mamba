@@ -23,16 +23,16 @@ impl Modification for Constructor {
 
                 match ctx.lookup(&type_name, &ast.pos) {
                     Ok(_) => Ok(AST {
-                        node: Node::FunctionCall { name: name.clone(), args },
+                        node: Node::ConstructorCall { name: name.clone(), args },
                         ..ast.clone()
                     }),
                     Err(_) => Ok(AST {
-                        node: Node::ConstructorCall { name: name.clone(), args },
+                        node: Node::FunctionCall { name: name.clone(), args },
                         ..ast.clone()
                     })
                 }
             }
-            _ => Ok(ast.clone())
+            _ => self.recursion(ast, &ctx)
         }
     }
 }
