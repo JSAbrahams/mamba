@@ -78,7 +78,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
                 let generics =
                     it.parse_vec_if(&Token::LSBrack, &parse_generics, "type generic", start)?;
                 let end = match (it.eat_if(&Token::RSBrack), generics.last()) {
-                    (Some(end), _) => end.clone(),
+                    (Some(end), _) => end,
                     (_, Some(generic)) => generic.pos.clone(),
                     _ => id.pos.clone()
                 };
@@ -100,7 +100,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
 
     let _type = if it.peek_if(&|lex| lex.token == Token::Question) {
         it.eat(&Token::Question, "optional type")?;
-        Box::from(AST { pos: _type.pos.clone(), node: Node::QuestionOp { expr: _type.clone() } })
+        Box::from(AST { pos: _type.pos.clone(), node: Node::QuestionOp { expr: _type } })
     } else {
         _type
     };
@@ -123,7 +123,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
 
     match res {
         Some(ast_node_pos) => Ok(ast_node_pos),
-        None => Ok(_type.clone())
+        None => Ok(_type)
     }
 }
 

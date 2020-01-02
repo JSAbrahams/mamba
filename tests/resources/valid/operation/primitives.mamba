@@ -1,0 +1,6 @@
+def a <- Complex(10.0, 20.0)
+def b <- Int(10)
+def c <- Float(2.3)
+
+def d <- Bool(True)
+def e <- String("hello world")

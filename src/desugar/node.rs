@@ -11,6 +11,7 @@ use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
+use crate::type_checker::context::ty::concrete::concrete_to_python;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
@@ -70,7 +71,9 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::Undefined => Core::None,
         Node::IdType { .. } => desugar_type(ast, imp, state)?,
-        Node::Id { lit } => Core::Id { lit: lit.clone() },
+        Node::Id { lit } => Core::Id {
+            lit: if state.is_constructor { concrete_to_python(lit) } else { lit.clone() }
+        },
         Node::_Self => Core::Id { lit: String::from("self") },
         Node::Init => Core::Id { lit: String::from("init") },
         Node::Bool { lit } => Core::Bool { _bool: *lit },
@@ -215,7 +218,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             }
         },
 
-        Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } | Node::ConstructorCall { .. } =>
+            desugar_call(ast, imp, state)?,
 
         Node::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, imp, &state.expand_ty(false))?,
@@ -351,7 +355,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
     let core = if let Some(assign_to) = assign_to {
         match core {
             Core::Block { .. } | Core::Return { .. } => core,
-            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr.clone()) }
+            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr) }
         }
     } else {
         core

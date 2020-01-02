@@ -4,12 +4,14 @@ use std::path::PathBuf;
 use crate::parser::ast::AST;
 use crate::type_checker::context::Context;
 use crate::type_checker::infer::infer_all;
+use crate::type_checker::modify::modify;
 use crate::type_checker::type_result::TypeResults;
 
 pub mod context;
 pub mod environment;
 
 mod infer;
+mod modify;
 mod util;
 
 pub mod type_result;
@@ -35,10 +37,14 @@ pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 /// // failure examples here
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
     let context = Context::try_from(inputs)?.into_with_primitives()?.into_with_std_lib()?;
-    infer_all(inputs, &context)?;
-
-    Ok(inputs
+    let inputs: Vec<CheckInput> = inputs
         .iter()
-        .map(|(node_pos, source, path)| (node_pos.clone(), source.clone(), path.clone()))
-        .collect())
+        .map(|(ast, source, path)| match modify(ast, &context) {
+            Ok(ast) => Ok((ast, source.clone(), path.clone())),
+            Err(err) => Err(err)
+        })
+        .collect::<Result<_, _>>()?;
+
+    infer_all(&inputs, &context)?;
+    Ok(inputs)
 }

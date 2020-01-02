@@ -116,7 +116,7 @@ impl ExpressionType {
                 for ty in ret_tys {
                     ret_ty = ret_ty.union(&ty);
                 }
-                Ok(ret_ty.clone())
+                Ok(ret_ty)
             }
         }
     }
@@ -185,7 +185,7 @@ fn make_nullable_if_none(union: &HashSet<NullableType>) -> HashSet<NullableType>
     };
 
     if union.len() == 1 {
-        union.clone()
+        union
     } else {
         union
             .into_iter()

@@ -1,4 +1,6 @@
 use std::collections::HashSet;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
@@ -12,7 +14,7 @@ use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
-use std::ops::Deref;
+use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub const INT_PRIMITIVE: &str = "int";
 pub const FLOAT_PRIMITIVE: &str = "float";
@@ -29,8 +31,10 @@ pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
 
 // TODO handle Python generics
-impl From<&Classdef> for GenericType {
-    fn from(class_def: &Classdef) -> GenericType {
+impl TryFrom<&Classdef> for GenericType {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(class_def: &Classdef) -> TypeResult<GenericType> {
         let mut functions = HashSet::new();
         let mut fields = HashSet::new();
         let generics = GenericParameters::from(&class_def.arguments).parameters;
@@ -55,14 +59,19 @@ impl From<&Classdef> for GenericType {
             }
         }
 
+        let name =
+            ActualTypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
+        let class = TypeName::from(&name);
+        let functions: Vec<GenericFunction> = functions
+            .into_iter()
+            .map(|f| f.in_class(Some(&class), false, &Position::default()))
+            .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
             .find(|f| f.name == ActualTypeName::new(function::concrete::INIT, &[]))
             .map_or(vec![], |f| f.arguments.clone());
 
-        let name =
-            ActualTypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
-        GenericType {
+        Ok(GenericType {
             is_py_type: true,
             name: name.clone(),
             pos: Position::default(),
@@ -76,7 +85,7 @@ impl From<&Classdef> for GenericType {
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect()
-        }
+        })
     }
 }
 

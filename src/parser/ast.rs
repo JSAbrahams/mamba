@@ -91,6 +91,10 @@ pub enum Node {
         expr:     Box<AST>
     },
 
+    ConstructorCall {
+        name: Box<AST>,
+        args: Vec<AST>
+    },
     FunctionCall {
         name: Box<AST>,
         args: Vec<AST>

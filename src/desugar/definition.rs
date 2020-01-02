@@ -21,7 +21,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             Core::VarDef {
                 private: *private,
                 id:      Box::from(id.clone()),
-                right:   match (id.clone(), expression) {
+                right:   match (id, expression) {
                     (_, Some(expr)) => Box::from(desugar_node(&expr, imp, &state)?),
                     (Core::Tuple { elements }, None) =>
                         Box::from(Core::Tuple { elements: vec![Core::None; elements.len()] }),

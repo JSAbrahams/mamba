@@ -19,12 +19,12 @@ pub fn infer_bitwise_op(ast: &AST, env: &Environment, ctx: &Context) -> InferRes
             let (right_ty, env) = infer(right, &env, ctx)?;
             left_ty.expr_ty(&ast.pos)?;
             right_ty.expr_ty(&ast.pos)?;
-            Ok((InferType::from(&int_ty).add_raises(&left_ty).add_raises(&right_ty), env.clone()))
+            Ok((InferType::from(&int_ty).add_raises(&left_ty).add_raises(&right_ty), env))
         }
         Node::BOneCmpl { expr } => {
             let (infer_ty, env) = infer(expr, env, ctx)?;
             infer_ty.expr_ty(&ast.pos)?;
-            Ok((InferType::from(&int_ty).add_raises(&infer_ty), env.clone()))
+            Ok((InferType::from(&int_ty).add_raises(&infer_ty), env))
         }
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected bitwise operation")])
     }
