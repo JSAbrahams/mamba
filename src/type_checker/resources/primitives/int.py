@@ -1,4 +1,6 @@
 class int:
+    def __init__(self, arg: int): pass
+
     def __add__(self, other: int) -> int: pass
     def __add__(self, other: float) -> float: pass
     def __add__(self, other: complex) -> complex: pass

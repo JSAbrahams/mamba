@@ -12,4 +12,3 @@ def m <- n ^ 100
 
 def x <- +10
 def y <- -30
-def z <- Complex(10.0, 20.0)

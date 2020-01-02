@@ -178,12 +178,12 @@ impl fmt::Display for Token {
             Token::Assign => String::from("<-"),
             Token::Def => String::from("def"),
 
-            Token::Id(id) => id.clone(),
-            Token::Real(real) => real.clone(),
-            Token::Int(int) => int.clone(),
+            Token::Id(id) => id,
+            Token::Real(real) => real,
+            Token::Int(int) => int,
             Token::ENum(int, exp) =>
                 if exp.is_empty() {
-                    int.clone()
+                    int
                 } else {
                     format!("{}E{}", int, exp)
                 },

@@ -77,7 +77,7 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             let ret_ty = ret_ty.expr_ty(&body.pos)?;
 
             let actual_ty = ActualType::AnonFun {
-                args:   arg_types.into_iter().map(|(_, (_, expr_ty))| expr_ty.clone()).collect(),
+                args:   arg_types.into_iter().map(|(_, (_, expr_ty))| expr_ty).collect(),
                 ret_ty: Box::from(ret_ty)
             };
             let nullable_type = NullableType::new(false, &actual_ty);

@@ -122,16 +122,6 @@ impl Type {
         })
     }
 
-    pub fn has_fun(&self, fun: &str, pos: &Position) -> TypeResult<Function> {
-        self.functions
-            .iter()
-            .find(|f| f.name.name(pos) == Ok(String::from(fun)))
-            .cloned()
-            .ok_or_else(|| {
-                vec![TypeErr::new(pos, &format!("Type {} does not have function {}", self, fun))]
-            })
-    }
-
     // TODO add boolean for unsafe operator so we can ignore if type is None
     // TODO handle default arguments
     pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {

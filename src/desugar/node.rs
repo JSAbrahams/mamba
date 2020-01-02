@@ -355,7 +355,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
     let core = if let Some(assign_to) = assign_to {
         match core {
             Core::Block { .. } | Core::Return { .. } => core,
-            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr.clone()) }
+            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr) }
         }
     } else {
         core

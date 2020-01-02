@@ -116,7 +116,7 @@ impl ExpressionType {
                 for ty in ret_tys {
                     ret_ty = ret_ty.union(&ty);
                 }
-                Ok(ret_ty.clone())
+                Ok(ret_ty)
             }
         }
     }
@@ -135,25 +135,6 @@ impl ExpressionType {
                     Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, &msg)])?)
                 } else {
                     Err(vec![TypeErr::new(pos, &msg)])
-                }
-            }
-        }
-    }
-
-    pub fn has_fun(&self, name: &str, pos: &Position) -> TypeResult<Function> {
-        match &self {
-            ExpressionType::Single { ty } => ty.actual_ty().has_fun(name, pos),
-            ExpressionType::Union { union } => {
-                let union: Vec<Function> = union
-                    .iter()
-                    .map(|e_ty| e_ty.actual_ty().has_fun(name, pos))
-                    .collect::<Result<_, Vec<TypeErr>>>()?;
-                let first = union.get(0);
-
-                if union.iter().all(|e_ty| Some(e_ty) == first) {
-                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, "Unknown function")])?)
-                } else {
-                    Err(vec![TypeErr::new(pos, "Unknown field")])
                 }
             }
         }
@@ -204,7 +185,7 @@ fn make_nullable_if_none(union: &HashSet<NullableType>) -> HashSet<NullableType>
     };
 
     if union.len() == 1 {
-        union.clone()
+        union
     } else {
         union
             .into_iter()
