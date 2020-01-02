@@ -4,6 +4,16 @@ use mamba::parser::parse;
 use mamba::type_checker::check_all;
 
 #[test]
+fn argument_after_argument_with_default() {
+    let source = resource_content(
+        false,
+        &["type", "definition"],
+        "argument_after_argument_with_default.mamba"
+    );
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn assign_wrong_type() {
     let source = resource_content(false, &["type", "definition"], "assign_wrong_type.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

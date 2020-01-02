@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use crate::common::position::Position;
@@ -8,7 +9,6 @@ use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::actual::ActualTypeName;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
@@ -90,10 +90,26 @@ impl TryFrom<&AST> for GenericFunction {
                     pure:       *pure,
                     private:    *private,
                     pos:        ast.pos.clone(),
-                    arguments:  fun_args
-                        .iter()
-                        .map(GenericFunctionArg::try_from)
-                        .collect::<Result<_, _>>()?,
+                    arguments:  {
+                        let args: Vec<GenericFunctionArg> = fun_args
+                            .iter()
+                            .map(GenericFunctionArg::try_from)
+                            .collect::<Result<_, _>>()?;
+
+                        let mut has_default = false;
+                        for arg in args.clone() {
+                            if has_default && !arg.has_default {
+                                return Err(vec![TypeErr::new(
+                                    &arg.pos,
+                                    "Cannot have argument with default followed by argument with \
+                                     no default."
+                                )]);
+                            }
+                            has_default = arg.has_default;
+                        }
+
+                        args
+                    },
                     ret_ty:     match ret_ty {
                         Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
                         None => None

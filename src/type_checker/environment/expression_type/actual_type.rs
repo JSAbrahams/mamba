@@ -2,6 +2,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
+use itertools::{EitherOrBoth, Itertools};
+
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
@@ -81,29 +83,44 @@ impl ActualType {
 
                 // TODO handle default arguments
                 // TODO handle unknown types
-                let constructor_args: Vec<TypeName> = ty
+                let constructor_args: Vec<(TypeName, bool)> = ty
                     .args
                     .iter()
                     .map(|a| {
-                        a.ty.clone().ok_or_else(|| {
+                        match a.ty.clone().ok_or_else(|| {
                             TypeErr::new(pos, "Type constructor argument is unknown")
-                        })
+                        }) {
+                            Ok(ok) => Ok((ok, a.has_default)),
+                            Err(err) => Err(err)
+                        }
                     })
                     .collect::<Result<_, _>>()?;
 
-                if constructor_args == args {
-                    Ok(self.clone())
-                } else {
-                    Err(vec![TypeErr::new(
-                        pos,
-                        &format!(
-                            "Attempted to pass ({}) to a {} which only takes ({})",
-                            comma_delimited(args),
-                            ty.name,
-                            comma_delimited(constructor_args)
-                        )
-                    )])
+                let errors = vec![TypeErr::new(
+                    pos,
+                    &format!(
+                        "Attempted to pass ({}) to a {} which only takes ({})",
+                        comma_delimited(args.clone()),
+                        ty.name,
+                        comma_delimited(constructor_args.iter().map(|(ty, _)| ty))
+                    )
+                )];
+
+                for pair in constructor_args.iter().zip_longest(args.iter()) {
+                    match pair {
+                        EitherOrBoth::Both((contr_ty, _), arg) =>
+                            if contr_ty != arg {
+                                return Err(errors);
+                            },
+                        EitherOrBoth::Left((_, has_default)) =>
+                            if !has_default {
+                                return Err(errors);
+                            },
+                        EitherOrBoth::Right(_) => return Err(errors)
+                    }
                 }
+
+                Ok(self.clone())
             }
             _ => Err(vec![TypeErr::new(pos, "Type does not have constructor arguments")])
         }

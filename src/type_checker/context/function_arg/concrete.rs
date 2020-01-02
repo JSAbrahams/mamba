@@ -16,20 +16,22 @@ pub const SELF: &str = "self";
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {
-    pub is_py_type: bool,
-    pub name:       String,
-    pub vararg:     bool,
-    pub mutable:    bool,
-    pub ty:         Option<TypeName>
+    pub is_py_type:  bool,
+    pub name:        String,
+    pub has_default: bool,
+    pub vararg:      bool,
+    pub mutable:     bool,
+    pub ty:          Option<TypeName>
 }
 
 impl Display for FunctionArg {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "{}{}",
+            "{}{}{}",
             self.name,
-            if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() }
+            if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() },
+            if self.has_default { "?" } else { "" }
         )
     }
 }
@@ -61,11 +63,12 @@ impl TryFrom<(&GenericFunctionArg, &HashMap<String, TypeName>, &Position)> for F
         (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, TypeName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
-            is_py_type: fun_arg.is_py_type,
-            name:       fun_arg.name.clone(),
-            vararg:     fun_arg.vararg,
-            mutable:    fun_arg.mutable,
-            ty:         match &fun_arg.ty {
+            is_py_type:  fun_arg.is_py_type,
+            name:        fun_arg.name.clone(),
+            has_default: fun_arg.has_default,
+            vararg:      fun_arg.vararg,
+            mutable:     fun_arg.mutable,
+            ty:          match &fun_arg.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
             }
