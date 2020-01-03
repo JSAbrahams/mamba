@@ -2,11 +2,10 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
-use itertools::{EitherOrBoth, Itertools};
-
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::function_arg::concrete::args_compatible;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
@@ -68,59 +67,22 @@ impl ActualType {
     pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
         match &self {
             ActualType::Single { ty } => {
-                let args = match self {
-                    ActualType::Single { ty } => {
-                        let mut new_args = vec![TypeName::from(&ty.name)];
-                        new_args.append(&mut args.to_vec());
-                        new_args
-                    }
-                    _ =>
-                        return Err(vec![TypeErr::new(
-                            pos,
-                            "Can only call constructor on single type"
-                        )]),
-                };
+                let mut new_args = vec![TypeName::from(&ty.name)];
+                new_args.append(&mut args.to_vec());
 
-                // TODO handle default arguments
-                // TODO handle unknown types
-                let constructor_args: Vec<(TypeName, bool)> = ty
-                    .args
-                    .iter()
-                    .map(|a| {
-                        match a.ty.clone().ok_or_else(|| {
-                            TypeErr::new(pos, "Type constructor argument is unknown")
-                        }) {
-                            Ok(ok) => Ok((ok, a.has_default)),
-                            Err(err) => Err(err)
-                        }
-                    })
-                    .collect::<Result<_, _>>()?;
-
-                let errors = vec![TypeErr::new(
-                    pos,
-                    &format!(
-                        "Attempted to pass ({}) to a {} which only takes ({})",
-                        comma_delimited(args.clone()),
-                        ty.name,
-                        comma_delimited(constructor_args.iter().map(|(ty, _)| ty))
-                    )
-                )];
-
-                for pair in constructor_args.iter().zip_longest(args.iter()) {
-                    match pair {
-                        EitherOrBoth::Both((contr_ty, _), arg) =>
-                            if contr_ty != arg {
-                                return Err(errors);
-                            },
-                        EitherOrBoth::Left((_, has_default)) =>
-                            if !has_default {
-                                return Err(errors);
-                            },
-                        EitherOrBoth::Right(_) => return Err(errors)
-                    }
+                if args_compatible(&ty.args, &new_args) {
+                    Ok(self.clone())
+                } else {
+                    Err(vec![TypeErr::new(
+                        pos,
+                        &format!(
+                            "{} only takes arguments ({}). Was given: ({}).",
+                            ty.clone(),
+                            comma_delimited(&ty.args),
+                            comma_delimited(new_args)
+                        )
+                    )])
                 }
-
-                Ok(self.clone())
             }
             _ => Err(vec![TypeErr::new(pos, "Type does not have constructor arguments")])
         }

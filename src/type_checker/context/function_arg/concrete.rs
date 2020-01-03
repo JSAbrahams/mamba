@@ -7,6 +7,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
+use itertools::{EitherOrBoth, Itertools};
 
 // TODO make ty private again
 // TODO create second pass where we assign types to function arguments using
@@ -37,9 +38,20 @@ impl Display for FunctionArg {
 }
 
 pub fn args_compatible(fun_args: &[FunctionArg], args: &[TypeName]) -> bool {
-    let fun_args: Vec<Option<TypeName>> = fun_args.iter().map(|a| a.ty.clone()).collect();
-    let args: Vec<Option<TypeName>> = args.iter().map(|a| Some(a.clone())).collect();
-    args == fun_args
+    for pair in fun_args.iter().zip_longest(args.iter()) {
+        match pair {
+            EitherOrBoth::Both(fun_arg, arg) =>
+                if fun_arg.ty != Some(arg.clone()) {
+                    return false;
+                },
+            EitherOrBoth::Left(fun_arg) =>
+                if !fun_arg.has_default {
+                    return false;
+                },
+            EitherOrBoth::Right(_) => return false
+        }
+    }
+    true
 }
 
 impl FunctionArg {
