@@ -84,7 +84,6 @@ pub enum Node {
         expr_or_stmt: Box<AST>,
         cases:        Vec<AST>
     },
-    Retry,
     With {
         resource: Box<AST>,
         _as:      Option<Box<AST>>,

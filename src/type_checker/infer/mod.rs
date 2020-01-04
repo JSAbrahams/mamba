@@ -89,7 +89,6 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
         Node::Raises { .. } | Node::Raise { .. } => infer_error(ast, env, ctx),
         Node::Handle { .. } => infer_control_flow(ast, env, ctx),
-        Node::Retry => infer_error(ast, env, ctx),
 
         Node::With { .. } => infer_error(ast, env, ctx),
         Node::AnonFun { .. } => infer_op(ast, env, ctx),

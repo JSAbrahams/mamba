@@ -247,7 +247,6 @@ fn as_op_or_id(string: String) -> Token {
         "raises" => Token::Raises,
         "raise" => Token::Raise,
         "handle" => Token::Handle,
-        "retry" => Token::Retry,
         "when" => Token::When,
 
         "True" => Token::Bool(true),

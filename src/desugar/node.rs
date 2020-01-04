@@ -294,7 +294,6 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Step { .. } => panic!("Step cannot be top level."),
         Node::Raises { expr_or_stmt, .. } => desugar_node(expr_or_stmt, imp, state)?,
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
-        Node::Retry { .. } => return Err(UnimplementedErr::new(ast, "retry")),
 
         Node::Handle { expr_or_stmt, cases } => {
             let assign_to = if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {

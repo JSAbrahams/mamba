@@ -43,13 +43,6 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             }
         }
 
-        Node::Retry =>
-            if !env.state.in_handle {
-                Err(vec![TypeErr::new(&ast.pos, "Retry only possible in handle arm")])
-            } else {
-                Ok((InferType::default(), env.clone()))
-            },
-
         Node::With { resource, _as, expr } => {
             let (resource_ty, mut inner_env) = infer(resource, env, ctx)?;
 
