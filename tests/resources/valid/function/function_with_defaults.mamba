@@ -1,0 +1,5 @@
+def my_fun(a: Int, b: Int <- 10, c: String <- "Hello") -> String => c + b + a
+
+my_fun(1, 2, "hello world")
+my_fun(1, 2)
+my_fun(1)

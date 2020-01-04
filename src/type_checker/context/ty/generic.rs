@@ -85,12 +85,13 @@ impl TryFrom<&AST> for GenericType {
                     class_args
                 } else {
                     let mut new_args = vec![GenericFunctionArg {
-                        is_py_type: false,
-                        name:       String::from(function_arg::generic::SELF),
-                        pos:        Default::default(),
-                        vararg:     false,
-                        mutable:    false,
-                        ty:         Some(TypeName::from(&name))
+                        is_py_type:  false,
+                        name:        String::from(function_arg::generic::SELF),
+                        has_default: false,
+                        pos:         Default::default(),
+                        vararg:      false,
+                        mutable:     false,
+                        ty:          Some(TypeName::from(&name))
                     }];
                     new_args.append(&mut class_args);
                     new_args
@@ -112,12 +113,13 @@ impl TryFrom<&AST> for GenericType {
 
                 if class_args.is_empty() {
                     class_args.push(GenericFunctionArg {
-                        is_py_type: false,
-                        name:       String::from(function_arg::concrete::SELF),
-                        pos:        Default::default(),
-                        vararg:     false,
-                        mutable:    false,
-                        ty:         Option::from(TypeName::from(&name))
+                        is_py_type:  false,
+                        name:        String::from(function_arg::concrete::SELF),
+                        pos:         Default::default(),
+                        has_default: false,
+                        vararg:      false,
+                        mutable:     false,
+                        ty:          Option::from(TypeName::from(&name))
                     })
                 }
 

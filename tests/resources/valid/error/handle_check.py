@@ -1,11 +1,11 @@
 class MyErr1(Exception):
     def __init__(self):
-        super(Exception, self).__init__()
+        super(Exception, self).__init__("Something went wrong")
 
 
 class MyErr2(Exception):
-    def __init__(self):
-        super(Exception, self).__init__()
+    def __init__(self, msg: str):
+        super(Exception, self).__init__(msg)
 
 
 def f(x: int) -> int:
@@ -13,7 +13,7 @@ def f(x: int) -> int:
         raise MyErr1()
     else:
         if x > 10:
-            raise MyErr2()
+            raise MyErr2("Greater than 10.")
         else:
             return x + 2
 

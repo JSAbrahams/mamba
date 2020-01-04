@@ -18,12 +18,13 @@ pub struct ClassArgument {
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunctionArg {
-    pub is_py_type: bool,
-    pub name:       String,
-    pub pos:        Position,
-    pub vararg:     bool,
-    pub mutable:    bool,
-    pub ty:         Option<TypeName>
+    pub is_py_type:  bool,
+    pub name:        String,
+    pub pos:         Position,
+    pub has_default: bool,
+    pub vararg:      bool,
+    pub mutable:     bool,
+    pub ty:          Option<TypeName>
 }
 
 impl PartialEq for GenericFunctionArg {
@@ -91,12 +92,13 @@ impl TryFrom<&AST> for GenericFunctionArg {
                 Node::IdType { id, mutable, _type } => {
                     let name = argument_name(id.deref())?;
                     Ok(GenericFunctionArg {
-                        is_py_type: false,
-                        name:       name.clone(),
-                        vararg:     *vararg,
-                        mutable:    *mutable,
-                        pos:        node_pos.pos.clone(),
-                        ty:         match _type {
+                        is_py_type:  false,
+                        name:        name.clone(),
+                        has_default: default.is_some(),
+                        vararg:      *vararg,
+                        mutable:     *mutable,
+                        pos:         node_pos.pos.clone(),
+                        ty:          match _type {
                             Some(_type) => Some(TypeName::try_from(_type.deref())?),
                             None if name.as_str() == SELF => None,
                             None =>

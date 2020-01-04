@@ -1,12 +1,12 @@
-class MyErr1 isa Exception
-class MyErr2 isa Exception
+class MyErr1 isa Exception("Something went wrong")
+class MyErr2(msg: String) isa Exception(msg)
 
 def f(x: Int) -> Int raises [MyErr1, MyErr2] =>
     if x < 0 then
         raise MyErr1()
     else
         if x > 10 then
-            raise MyErr2()
+            raise MyErr2("Greater than 10.")
         else
             return x + 2
 
