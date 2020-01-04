@@ -20,21 +20,33 @@ use crate::type_checker::context::{function, function_arg};
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
-        Node::TypeDef { _type, body: Some(body), isa } => match (&_type.node, &body.node) {
-            (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
-                name:        Box::from(desugar_node(id, imp, state)?),
-                parents:     if let Some(isa) = isa {
-                    vec![desugar_node(isa, imp, state)?]
-                } else {
-                    vec![]
+        Node::TypeDef { _type, doc_string, body: Some(body), isa } =>
+            match (&_type.node, &body.node) {
+                (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
+                    name:        Box::from(desugar_node(id, imp, state)?),
+                    doc_string:  if let Some(doc_string) = doc_string {
+                        Some(Box::from(desugar_node(doc_string, imp, state)?))
+                    } else {
+                        None
+                    },
+                    parents:     if let Some(isa) = isa {
+                        vec![desugar_node(isa, imp, state)?]
+                    } else {
+                        vec![]
+                    },
+                    definitions: desugar_vec(statements, imp, &state.in_interface(true))?
                 },
-                definitions: desugar_vec(statements, imp, &state.in_interface(true))?
+                other =>
+                    panic!("desugar didn't recognize while making type definition: {:?}.", other),
             },
-            other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
-        },
-        Node::TypeDef { _type, body: None, isa } => match &_type.node {
+        Node::TypeDef { _type, doc_string, body: None, isa } => match &_type.node {
             Node::Type { id, .. } => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
+                doc_string:  if let Some(doc_string) = doc_string {
+                    Some(Box::from(desugar_node(doc_string, imp, state)?))
+                } else {
+                    None
+                },
                 parents:     if let Some(isa) = isa {
                     vec![desugar_node(isa, imp, state)?]
                 } else {
@@ -45,7 +57,13 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
 
-        Node::Class { _type, body, args, parents } => {
+        Node::Class { _type, body, doc_string, args, parents } => {
+            let doc_string = if let Some(doc_string) = doc_string {
+                Some(Box::from(desugar_node(doc_string, imp, state)?))
+            } else {
+                None
+            };
+
             let statements = if let Some(body) = body {
                 match &body.deref().node {
                     Node::Block { statements } => statements.clone(),
@@ -84,19 +102,20 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
 
                     let mut final_definitions = if final_definitions.is_empty() {
                         vec![Core::FunDef {
-                            private: false,
-                            id:      Box::new(Core::Id {
+                            private:    false,
+                            id:         Box::new(Core::Id {
                                 lit: String::from(function::python::INIT)
                             }),
-                            args:    vec![Core::FunArg {
+                            doc_string: None,
+                            args:       vec![Core::FunArg {
                                 vararg:  false,
                                 id:      Box::new(Core::Id {
                                     lit: String::from(function_arg::python::SELF)
                                 }),
                                 default: Box::new(Core::Empty)
                             }],
-                            ret_ty:  None,
-                            body:    Box::new(Core::Pass)
+                            ret_ty:     None,
+                            body:       Box::new(Core::Pass)
                         }]
                     } else {
                         final_definitions
@@ -111,8 +130,9 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                     final_definitions = stmts;
 
                     Core::ClassDef {
-                        name:        Box::from(desugar_node(id, imp, state)?),
-                        parents:     parent_names,
+                        name: Box::from(desugar_node(id, imp, state)?),
+                        parents: parent_names,
+                        doc_string,
                         definitions: final_definitions
                     }
                 }
@@ -182,7 +202,7 @@ fn constructor_from_inline(
 
     let id = Box::from(Core::Id { lit: String::from("init") });
     let body = Box::from(Core::Block { statements });
-    let core_init = Core::FunDef { private: false, id, args, ret_ty: None, body };
+    let core_init = Core::FunDef { private: false, doc_string: None, id, args, ret_ty: None, body };
 
     final_definitions.push(core_init);
     final_definitions.append(&mut Vec::from(definitions));
@@ -221,6 +241,7 @@ fn add_parent_to_constructor(
 
                         Core::FunDef {
                             private: *private,
+                            doc_string: None,
                             id: id.clone(),
                             args: args.clone(),
                             ret_ty: None,

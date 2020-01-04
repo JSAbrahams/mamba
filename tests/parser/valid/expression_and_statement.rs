@@ -157,7 +157,7 @@ fn from_import_verify() {
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast_tree.node {
-        Node::File { imports, .. } => imports,
+        Node::File { modules, .. } => modules,
         _ => panic!("ast_tree was not file.")
     };
 
@@ -182,7 +182,7 @@ fn import_verify() {
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast_tree.node {
-        Node::File { imports, .. } => imports,
+        Node::File { modules, .. } => modules,
         _ => panic!("ast_tree was not file.")
     };
 
@@ -203,7 +203,7 @@ fn import_as_verify() {
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast_tree.node {
-        Node::File { imports, .. } => imports,
+        Node::File { modules, .. } => modules,
         _ => panic!("ast_tree was not file.")
     };
 

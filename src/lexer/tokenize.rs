@@ -1,4 +1,3 @@
-use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::common::position::CaretPos;
@@ -6,6 +5,7 @@ use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
 use crate::lexer::token::{Lex, Token};
 use crate::lexer::tokenize;
+use std::iter::Peekable;
 
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
@@ -130,7 +130,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             let mut cur_offset = CaretPos::default();
             let mut cur_expr = String::new();
 
-            for c in it {
+            while let Some(c) = it.next() {
                 if !back_slash && build_cur_expr == 0 && c == '"' {
                     break;
                 }
@@ -163,18 +163,23 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                 back_slash = c == '\\';
             }
 
-            let tokens = exprs
-                .iter()
-                .map(|(offset, string)| match tokenize(string) {
-                    Ok(tokens) => Ok(tokens
-                        .iter()
-                        .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
-                        .collect()),
-                    Err(err) => Err(err)
-                })
-                .collect::<Result<_, _>>()?;
+            if string.starts_with("\"\"") && string.ends_with("\"\"") {
+                let string = string.trim_start_matches("\"\"").trim_end_matches("\"\"");
+                create(state, Token::DocStr(String::from(string)))
+            } else {
+                let tokens = exprs
+                    .iter()
+                    .map(|(offset, string)| match tokenize(string) {
+                        Ok(tokens) => Ok(tokens
+                            .iter()
+                            .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
+                            .collect()),
+                        Err(err) => Err(err)
+                    })
+                    .collect::<Result<_, _>>()?;
 
-            create(state, Token::Str(string, tokens))
+                create(state, Token::Str(string, tokens))
+            }
         }
         ' ' => {
             state.space();

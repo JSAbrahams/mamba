@@ -139,6 +139,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         | Node::ENum { .. }
         | Node::Str { .. }
         | Node::Bool { .. } => infer_literal(ast, env, ctx),
+        Node::DocStr { .. } => Ok((InferType::default(), env.clone())),
 
         Node::Add { .. } | Node::AddU { .. } => infer_op(ast, env, ctx),
         Node::Sub { .. } | Node::SubU { .. } => infer_op(ast, env, ctx),

@@ -65,18 +65,8 @@ pub fn parse_script(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
-pub fn parse_module(it: &mut LexIterator) -> ParseResult {
-    if it.peek_if(&|lex| lex.token == Token::Class) {
-        parse_class(it)
-    } else {
-        parse_script(it)
-    }
-}
-
 pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     let start = Position::default();
-    let mut imports = Vec::new();
-    let mut comments = Vec::new();
     let mut modules = Vec::new();
 
     let pure = it.eat_if(&Token::Pure).is_some();
@@ -87,32 +77,59 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
             Ok(())
         }
         Token::Import => {
-            imports.push(*it.parse(&parse_import, "file", &start)?);
+            modules.push(*it.parse(&parse_import, "file", &start)?);
             Ok(())
         }
         Token::From => {
-            imports.push(*it.parse(&parse_from_import, "file", &start)?);
+            modules.push(*it.parse(&parse_from_import, "file", &start)?);
+            Ok(())
+        }
+        Token::DocStr(string) => {
+            let start = it.start_pos("doc_string")?;
+            let end = it.eat(&Token::Comment(string.clone()), "file")?;
+            let node = Node::DocStr { lit: string.clone() };
+            modules.push(AST::new(&start.union(&end), node));
             Ok(())
         }
         Token::Comment(comment) => {
             let start = it.start_pos("comment")?;
             let end = it.eat(&Token::Comment(comment.clone()), "file")?;
             let node = Node::Comment { comment: comment.clone() };
-            comments.push(AST::new(&start.union(&end), node));
+            modules.push(AST::new(&start.union(&end), node));
             Ok(())
         }
         Token::Type => {
             modules.push(*it.parse(&parse_type_def, "file", &start)?);
             Ok(())
         }
+        Token::Class => {
+            modules.push(*it.parse(&parse_class, "file", &start)?);
+            Ok(())
+        }
         _ => {
-            modules.push(*it.parse(&parse_module, "file", &start)?);
+            modules.push(*it.parse(&parse_script, "file", &start)?);
             Ok(())
         }
     })?;
 
-    let node = Node::File { pure, comments, imports, modules };
+    let node = Node::File { pure, modules };
     Ok(Box::from(AST::new(&start, node)))
+}
+
+pub fn parse_doc_string(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("type definition")?;
+    it.peek_or_err(
+        &|it, lex| match &lex.token {
+            Token::DocStr(lit) => {
+                let end = it.eat(&Token::DocStr(lit.clone()), "docstring")?;
+                let node = Node::DocStr { lit: lit.clone() };
+                Ok(Box::from(AST::new(&start.union(&end), node)))
+            }
+            _ => Err(expected(&Token::DocStr(String::new()), lex, "docstring"))
+        },
+        &[Token::DocStr(String::new())],
+        "docstring"
+    )
 }
 
 pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
@@ -138,16 +155,28 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
             _ => {
                 // TODO fix such that we can have empty interfaces
                 it.eat_if(&Token::NL);
+                let doc_string = if it
+                    .peek_if(&|lex| Token::same_type(&lex.token, &Token::DocStr(String::new())))
+                {
+                    Some(it.parse(&parse_doc_string, "doc_string", &start)?)
+                } else {
+                    None
+                };
                 let body = it.parse(&parse_block, "type definition", &start)?;
 
                 let isa = isa.clone();
-                let node = Node::TypeDef { _type: _type.clone(), isa, body: Some(body.clone()) };
+                let node = Node::TypeDef {
+                    _type: _type.clone(),
+                    isa,
+                    doc_string,
+                    body: Some(body.clone())
+                };
                 Ok(Box::from(AST::new(&start.union(&body.pos), node)))
             }
         },
         {
             let isa = isa.clone();
-            let node = Node::TypeDef { _type: _type.clone(), isa, body: None };
+            let node = Node::TypeDef { _type: _type.clone(), doc_string: None, isa, body: None };
             Ok(Box::from(AST::new(&start.union(&_type.pos), node)))
         }
     )

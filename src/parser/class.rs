@@ -6,6 +6,7 @@ use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
 use crate::parser::definition::{parse_definition, parse_fun_arg};
+use crate::parser::file::parse_doc_string;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::ParseResult;
@@ -46,15 +47,21 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     }
 
     it.eat(&Token::NL, "class")?;
-    let (body, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
+    let (body, doc_string, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
+        let doc_string =
+            if it.peek_if(&|lex| Token::same_type(&lex.token, &Token::DocStr(String::new()))) {
+                Some(it.parse(&parse_doc_string, "doc_string", &start)?)
+            } else {
+                None
+            };
         let body = it.parse(&parse_block, "class", &start)?;
         let pos = start.union(&body.pos);
-        (Some(body), pos)
+        (Some(body), doc_string, pos)
     } else {
-        (None, start)
+        (None, None, start)
     };
 
-    let node = Node::Class { _type, args, parents, body };
+    let node = Node::Class { _type, doc_string, args, parents, body };
     Ok(Box::from(AST::new(&pos, node)))
 }
 

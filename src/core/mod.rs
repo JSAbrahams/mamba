@@ -53,6 +53,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 format!("{}[{}]", lit, comma_delimited(generics, ind))
             },
         Core::IdType { lit, ty } => format!("{}: {}", lit, to_py(ty, ind)),
+        Core::DocStr { _str } => format!("\"\"\"{}\"\"\"", _str),
         Core::Str { _str } => format!("\"{}\"", _str),
         Core::FStr { _str } => format!("f\"{}\"", _str),
         Core::Int { int } => int.clone(),
@@ -261,14 +262,15 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions } => format!(
-            "class {}{}:\n{}\n",
+        Core::ClassDef { name, doc_string, parents, definitions } => format!(
+            "class {}{}:\n{}{}\n",
             to_py(name, ind),
             if parents.is_empty() {
                 String::new()
             } else {
                 format!("({})", comma_delimited(parents, ind))
             },
+            doc_string.as_ref().map_or(String::new(), |doc| to_py(doc, ind)),
             newline_delimited(definitions, ind + 1)
         ),
 

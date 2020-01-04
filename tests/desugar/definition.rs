@@ -134,10 +134,11 @@ fn tuple_def_none_verify() {
 #[test]
 fn fun_def_verify() {
     let definition = to_pos!(Node::FunDef {
-        id:       to_pos!(Node::Id { lit: String::from("fun") }),
-        pure:     false,
-        private:  false,
-        fun_args: vec![
+        id:         to_pos!(Node::Id { lit: String::from("fun") }),
+        pure:       false,
+        private:    false,
+        doc_string: None,
+        fun_args:   vec![
             to_pos_unboxed!(Node::FunArg {
                 vararg:        false,
                 id_maybe_type: to_pos!(Node::Id { lit: String::from("arg1") }),
@@ -149,9 +150,9 @@ fn fun_def_verify() {
                 default:       None
             })
         ],
-        ret_ty:   None,
-        raises:   vec![],
-        body:     None
+        ret_ty:     None,
+        raises:     vec![],
+        body:       None
     });
 
     let (private, id, args, body) = match desugar(&definition) {
@@ -179,10 +180,11 @@ fn fun_def_verify() {
 #[test]
 fn fun_def_default_arg_verify() {
     let definition = to_pos!(Node::FunDef {
-        id:       to_pos!(Node::Id { lit: String::from("fun") }),
-        pure:     false,
-        private:  false,
-        fun_args: vec![to_pos_unboxed!(Node::FunArg {
+        id:         to_pos!(Node::Id { lit: String::from("fun") }),
+        pure:       false,
+        private:    false,
+        doc_string: None,
+        fun_args:   vec![to_pos_unboxed!(Node::FunArg {
             vararg:        false,
             id_maybe_type: to_pos!(Node::Id { lit: String::from("arg1") }),
             default:       Some(to_pos!(Node::Str {
@@ -190,9 +192,9 @@ fn fun_def_default_arg_verify() {
                 expressions: vec![]
             }))
         })],
-        ret_ty:   None,
-        raises:   vec![],
-        body:     None
+        ret_ty:     None,
+        raises:     vec![],
+        body:       None
     });
 
     let (private, id, args, body) = match desugar(&definition) {
@@ -215,16 +217,17 @@ fn fun_def_default_arg_verify() {
 #[test]
 fn fun_def_with_body_verify() {
     let definition = to_pos!(Node::FunDef {
-        id:       to_pos!(Node::Id { lit: String::from("fun") }),
-        pure:     false,
-        private:  false,
-        fun_args: vec![
+        id:         to_pos!(Node::Id { lit: String::from("fun") }),
+        pure:       false,
+        private:    false,
+        doc_string: None,
+        fun_args:   vec![
             to_pos_unboxed!(Node::Id { lit: String::from("arg1") }),
             to_pos_unboxed!(Node::Id { lit: String::from("arg2") })
         ],
-        ret_ty:   None,
-        raises:   vec![],
-        body:     Some(to_pos!(Node::Real { lit: String::from("2.4") }))
+        ret_ty:     None,
+        raises:     vec![],
+        body:       Some(to_pos!(Node::Real { lit: String::from("2.4") }))
     });
 
     let (private, id, args, body) = match desugar(&definition) {

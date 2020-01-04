@@ -49,6 +49,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             num: num.clone(),
             exp: if exp.is_empty() { String::from("0") } else { exp.clone() }
         },
+        Node::DocStr { lit } => Core::DocStr { _str: lit.clone() },
         Node::Str { lit, expressions } =>
             if expressions.is_empty() {
                 Core::Str { _str: lit.clone() }
@@ -253,12 +254,9 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         },
         Node::Script { statements } =>
             Core::Block { statements: desugar_vec(statements, imp, state)? },
-        Node::File { modules, imports, .. } => {
-            let mut imports = desugar_vec(imports, imp, state)?;
+        Node::File { modules, .. } => {
             let mut modules = desugar_vec(modules, imp, state)?;
-            imports.append(&mut imp.imports.clone().into_iter().collect());
-
-            let mut statements = imports;
+            let mut statements = imp.imports.clone();
             statements.append(&mut modules);
             Core::Block { statements }
         }

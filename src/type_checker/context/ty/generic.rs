@@ -54,7 +54,7 @@ impl TryFrom<&AST> for GenericType {
     fn try_from(class: &AST) -> TypeResult<GenericType> {
         match &class.node {
             // TODO add pure classes
-            Node::Class { _type, args, parents, body } => {
+            Node::Class { _type, args, parents, body, .. } => {
                 let (name, generics) = get_name_and_generics(_type)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
@@ -145,7 +145,7 @@ impl TryFrom<&AST> for GenericType {
                     parents: parents.into_iter().map(Result::unwrap).collect()
                 })
             }
-            Node::TypeDef { _type, isa, body } => {
+            Node::TypeDef { _type, isa, body, .. } => {
                 let (name, generics) = get_name_and_generics(_type)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
