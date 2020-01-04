@@ -126,19 +126,6 @@ fn return_verify() {
 }
 
 #[test]
-fn retry_verify() {
-    let source = String::from("retry");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
-
-    let node_pos = match ast_tree.node {
-        Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
-        _ => panic!("ast_tree was not script.")
-    };
-
-    assert_eq!(node_pos.node, Node::Retry);
-}
-
-#[test]
 fn underscore_verify() {
     let source = String::from("_");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();

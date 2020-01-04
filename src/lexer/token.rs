@@ -97,7 +97,6 @@ pub enum Token {
 
     Raises,
     Raise,
-    Retry,
     When,
 
     While,
@@ -256,7 +255,6 @@ impl fmt::Display for Token {
             Token::Handle => String::from("handle"),
             Token::Raises => String::from("raises"),
             Token::Raise => String::from("raise"),
-            Token::Retry => String::from("retry"),
             Token::When => String::from("when"),
 
             Token::Pass => String::from("pass"),

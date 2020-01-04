@@ -14,22 +14,30 @@ impl Constructor {
 }
 
 impl Modification for Constructor {
-    fn modify(&self, ast: &AST, ctx: &Context) -> TypeResult<AST> {
+    fn modify(&self, ast: &AST, ctx: &Context) -> TypeResult<(AST, bool)> {
         match &ast.node {
             Node::FunctionCall { name, args } => {
                 let type_name = TypeName::try_from(name.deref())?;
-                let args =
+                let args: Vec<(AST, bool)> =
                     args.iter().map(|arg| self.modify(arg, ctx)).collect::<Result<_, _>>()?;
+                let (args, m_args): (Vec<AST>, Vec<bool>) = args.into_iter().unzip();
+                let m_args = m_args.iter().any(|b| *b);
 
                 match ctx.lookup(&type_name, &ast.pos) {
-                    Ok(_) => Ok(AST {
-                        node: Node::ConstructorCall { name: name.clone(), args },
-                        ..ast.clone()
-                    }),
-                    Err(_) => Ok(AST {
-                        node: Node::FunctionCall { name: name.clone(), args },
-                        ..ast.clone()
-                    })
+                    Ok(_) => Ok((
+                        AST {
+                            node: Node::ConstructorCall { name: name.clone(), args },
+                            ..ast.clone()
+                        },
+                        true
+                    )),
+                    Err(_) => Ok((
+                        AST {
+                            node: Node::FunctionCall { name: name.clone(), args },
+                            ..ast.clone()
+                        },
+                        m_args
+                    ))
                 }
             }
             _ => self.recursion(ast, &ctx)

@@ -11,7 +11,7 @@ pub fn modify(ast: &AST, ctx: &Context) -> TypeResult<AST> {
 
     let mut ast = ast.clone();
     for modification in modifications {
-        ast = modification.modify(&ast, ctx)?;
+        ast = modification.modify(&ast, ctx)?.0;
     }
 
     Ok(ast)
