@@ -1,14 +1,16 @@
 use std::path::PathBuf;
 
-use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexResult, LexResults};
+use crate::lexer::pass::pass;
+use crate::lexer::state::State;
 use crate::lexer::tokenize::into_tokens;
 
 pub mod lex_result;
 pub mod token;
 
 #[macro_use]
-mod common;
+mod state;
+mod pass;
 mod tokenize;
 
 pub type TokenizeInput = (String, Option<PathBuf>);
@@ -57,6 +59,7 @@ pub fn tokenize(input: &str) -> LexResult {
     }
     tokens.append(&mut state.flush_indents());
 
+    let tokens = pass(&tokens);
     Ok(tokens)
 }
 

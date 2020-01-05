@@ -1,11 +1,11 @@
+use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::common::position::CaretPos;
-use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
+use crate::lexer::state::State;
 use crate::lexer::token::{Lex, Token};
 use crate::lexer::tokenize;
-use std::iter::Peekable;
 
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
@@ -130,7 +130,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             let mut cur_offset = CaretPos::default();
             let mut cur_expr = String::new();
 
-            while let Some(c) = it.next() {
+            for c in it {
                 if !back_slash && build_cur_expr == 0 && c == '"' {
                     break;
                 }
@@ -143,7 +143,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 
                     if c == '{' {
                         if build_cur_expr == 0 {
-                            cur_offset = state.pos.clone().offset_pos(string.len() as i32);
+                            cur_offset = state.pos.clone().offset_pos(string.len() as i32 + 1);
                         }
                         build_cur_expr += 1;
                     } else if c == '}' {

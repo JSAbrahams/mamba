@@ -249,7 +249,7 @@ fn get_fields_and_functions(
                     .collect::<Result<_, _>>()?;
                 fields = fields.union(&stmt_fields).cloned().collect();
             }
-            Node::Comment { .. } => {}
+            Node::Comment { .. } | Node::DocStr { .. } => {}
             _ =>
                 return Err(vec![TypeErr::new(
                     &statement.pos,

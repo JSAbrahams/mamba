@@ -5,9 +5,7 @@ use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
-use crate::parser::block::parse_block;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
-use crate::parser::file::parse_doc_string;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::custom;
@@ -129,28 +127,8 @@ fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator)
 
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", &start)?;
     let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises", &start)?;
-    let (doc_string, body) = if it.peek_if(&|lex| lex.token == Token::BTo) {
-        it.eat(&Token::BTo, "function body")?;
-        if it.peek_if(&|lex| lex.token == Token::NL) {
-            it.eat(&Token::NL, "function body")?;
-            let doc_string =
-                if it.peek_if(&|lex| Token::same_type(&lex.token, &Token::DocStr(String::new()))) {
-                    Some(it.parse(&parse_doc_string, "doc_string", &start)?)
-                } else {
-                    None
-                };
-            let body = if it.peek_if(&|lex| lex.token == Token::Dedent) {
-                None
-            } else {
-                Some(it.parse(&parse_block, "block", &start)?)
-            };
-            (doc_string, body)
-        } else {
-            (None, Some(it.parse(&parse_expr_or_stmt, "function body", &start)?))
-        }
-    } else {
-        (None, None)
-    };
+    let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", &start)?;
+    let doc_string = None;
 
     let end = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => b.pos.clone(),

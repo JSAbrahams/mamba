@@ -86,7 +86,7 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
         }
         Token::DocStr(string) => {
             let start = it.start_pos("doc_string")?;
-            let end = it.eat(&Token::Comment(string.clone()), "file")?;
+            let end = it.eat(&Token::DocStr(string.clone()), "file")?;
             let node = Node::DocStr { lit: string.clone() };
             modules.push(AST::new(&start.union(&end), node));
             Ok(())
@@ -116,22 +116,6 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(&start, node)))
 }
 
-pub fn parse_doc_string(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("type definition")?;
-    it.peek_or_err(
-        &|it, lex| match &lex.token {
-            Token::DocStr(lit) => {
-                let end = it.eat(&Token::DocStr(lit.clone()), "docstring")?;
-                let node = Node::DocStr { lit: lit.clone() };
-                Ok(Box::from(AST::new(&start.union(&end), node)))
-            }
-            _ => Err(expected(&Token::DocStr(String::new()), lex, "docstring"))
-        },
-        &[Token::DocStr(String::new())],
-        "docstring"
-    )
-}
-
 pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
@@ -155,14 +139,8 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
             _ => {
                 // TODO fix such that we can have empty interfaces
                 it.eat_if(&Token::NL);
-                let doc_string = if it
-                    .peek_if(&|lex| Token::same_type(&lex.token, &Token::DocStr(String::new())))
-                {
-                    Some(it.parse(&parse_doc_string, "doc_string", &start)?)
-                } else {
-                    None
-                };
                 let body = it.parse(&parse_block, "type definition", &start)?;
+                let doc_string = None;
 
                 let isa = isa.clone();
                 let node = Node::TypeDef {

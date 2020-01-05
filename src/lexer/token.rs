@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::fmt;
 
 use crate::common::position::{CaretPos, Position};
@@ -10,8 +11,17 @@ pub struct Lex {
 
 impl Lex {
     pub fn new(pos: &CaretPos, token: Token) -> Self {
-        let pos =
-            Position { start: pos.clone(), end: pos.clone().offset_pos(token.clone().width()) };
+        let start = pos.clone();
+        let end = if let Token::Str(_str, _) = &token {
+            pos.clone().offset_line(max(_str.lines().count().clone() as i32 - 1, 0))
+        } else if let Token::DocStr(_str) = &token {
+            pos.clone().offset_line(max(_str.lines().count().clone() as i32 - 1, 0))
+        } else {
+            pos.clone()
+        };
+
+        let end = end.offset_pos(token.clone().width());
+        let pos = Position { start, end };
         Lex { pos, token }
     }
 }
@@ -132,7 +142,8 @@ impl Token {
             Token::Int(int) => int.len(),
             Token::Bool(true) => 4,
             Token::Bool(false) => 5,
-            Token::Str(_str, _) | Token::DocStr(_str) => _str.len(),
+            Token::Str(_str, _) => _str.len() + 2,
+            Token::DocStr(_str) => _str.len() + 6,
             Token::ENum(num, exp) => num.len() + 1 + exp.len(),
             other => format!("{}", other).len()
         } as i32)

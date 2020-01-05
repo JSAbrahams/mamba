@@ -9,7 +9,7 @@ class MyClass:
     It can do many things
     """
 
-    def my_fun -> Int:
+    def my_fun(self) -> int:
         """
         This is my function, it can't do so much
         """

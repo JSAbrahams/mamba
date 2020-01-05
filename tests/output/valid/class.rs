@@ -12,7 +12,6 @@ fn import_ast_verify() -> Result<(), Vec<(String, String)>> {
 }
 
 #[test]
-#[ignore]
 fn doc_strings_ast_verify() -> Result<(), Vec<(String, String)>> {
     test_directory(true, &["class"], &["class", "target"], "doc_strings")
 }
