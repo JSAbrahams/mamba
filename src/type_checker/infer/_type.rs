@@ -11,7 +11,7 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_type(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
-        Node::TypeDef { isa, body, _type } => {
+        Node::TypeDef { isa, body, _type, .. } => {
             if let Some(isa) = isa {
                 infer(isa, env, ctx)?;
             }

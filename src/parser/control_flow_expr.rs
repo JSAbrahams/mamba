@@ -30,7 +30,7 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
 
     let pos =
         if let Some(_else) = &_else { start.union(&_else.pos) } else { start.union(&then.pos) };
-    let node = Node::IfElse { cond, then: then.clone(), _else };
+    let node = Node::IfElse { cond, then, _else };
 
     Ok(Box::from(AST::new(&pos, node)))
 }

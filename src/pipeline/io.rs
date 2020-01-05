@@ -31,6 +31,8 @@ pub fn write_source(source: &str, out_path: &PathBuf) -> Result<usize, (String, 
             )),
     };
 
+    // LF instead of CRLF line endings
+    let source = source.replace("\r\n", "\n");
     OpenOptions::new()
         .write(true)
         .create(true)

@@ -53,6 +53,7 @@ fn to_py(core: &Core, ind: usize) -> String {
                 format!("{}[{}]", lit, comma_delimited(generics, ind))
             },
         Core::IdType { lit, ty } => format!("{}: {}", lit, to_py(ty, ind)),
+        Core::DocStr { _str } => format!("\"\"\"{}\"\"\"", _str),
         Core::Str { _str } => format!("\"{}\"", _str),
         Core::FStr { _str } => format!("f\"{}\"", _str),
         Core::Int { int } => int.clone(),

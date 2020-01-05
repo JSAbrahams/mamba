@@ -22,7 +22,7 @@ fn import_verify() {
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (import, _as) = match ast_tree.node {
-        Node::File { imports, .. } => match &imports.first().expect("script empty.").node {
+        Node::File { modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, _as } => (import.clone(), _as.clone()),
             _ => panic!("first element script was not list.")
         },
@@ -40,7 +40,7 @@ fn import_as_verify() {
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (import, _as) = match ast_tree.node {
-        Node::File { imports, .. } => match &imports.first().expect("script empty.").node {
+        Node::File { modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, _as } => (import.clone(), _as.clone()),
             other => panic!("first element script was not import: {:?}.", other)
         },
@@ -59,7 +59,7 @@ fn from_import_as_verify() {
     let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (from, import, _as) = match ast_tree.node {
-        Node::File { imports, .. } => match &imports.first().expect("script empty.").node {
+        Node::File { modules, .. } => match &modules.first().expect("script empty.").node {
             Node::FromImport { id, import } => match &import.node {
                 Node::Import { import, _as } => (id.clone(), import.clone(), _as.clone()),
                 other => panic!("not import: {:?}.", other)

@@ -135,7 +135,7 @@ fn title_case(s: &str) -> String {
     if let Some(first) = tile_case.get_mut(0..1) {
         first.make_ascii_uppercase();
     }
-    tile_case.to_string()
+    tile_case
 }
 
 impl Display for ParseErr {

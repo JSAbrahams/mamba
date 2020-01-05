@@ -5,6 +5,7 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::function_arg::concrete::args_compatible;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::expression_type::ExpressionType;
@@ -66,24 +67,19 @@ impl ActualType {
     pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
         match &self {
             ActualType::Single { ty } => {
-                // TODO handle default arguments
-                let constructor_args: Vec<TypeName> = ty
-                    .args
-                    .iter()
-                    .map(|a| a.ty.clone().ok_or_else(|| TypeErr::new(pos, "Type is unknown")))
-                    .collect::<Result<_, _>>()?;
+                let mut new_args = vec![TypeName::from(&ty.name)];
+                new_args.append(&mut args.to_vec());
 
-                // TODO handle unknown types
-                if constructor_args == args {
+                if args_compatible(&ty.args, &new_args) {
                     Ok(self.clone())
                 } else {
                     Err(vec![TypeErr::new(
                         pos,
                         &format!(
-                            "Attempted to pass ({}) to a {} which only takes ({})",
-                            comma_delimited(args),
-                            ty.name,
-                            comma_delimited(constructor_args)
+                            "{} only takes arguments ({}). Was given: ({}).",
+                            ty.clone(),
+                            comma_delimited(&ty.args),
+                            comma_delimited(new_args)
                         )
                     )])
                 }

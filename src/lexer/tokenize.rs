@@ -2,8 +2,8 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::common::position::CaretPos;
-use crate::lexer::common::State;
 use crate::lexer::lex_result::{LexErr, LexResult};
+use crate::lexer::state::State;
 use crate::lexer::token::{Lex, Token};
 use crate::lexer::tokenize;
 
@@ -143,7 +143,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 
                     if c == '{' {
                         if build_cur_expr == 0 {
-                            cur_offset = state.pos.clone().offset_pos(string.len() as i32);
+                            cur_offset = state.pos.clone().offset_pos(string.len() as i32 + 1);
                         }
                         build_cur_expr += 1;
                     } else if c == '}' {
@@ -163,18 +163,23 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                 back_slash = c == '\\';
             }
 
-            let tokens = exprs
-                .iter()
-                .map(|(offset, string)| match tokenize(string) {
-                    Ok(tokens) => Ok(tokens
-                        .iter()
-                        .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
-                        .collect()),
-                    Err(err) => Err(err)
-                })
-                .collect::<Result<_, _>>()?;
+            if string.starts_with("\"\"") && string.ends_with("\"\"") {
+                let string = string.trim_start_matches("\"\"").trim_end_matches("\"\"");
+                create(state, Token::DocStr(String::from(string)))
+            } else {
+                let tokens = exprs
+                    .iter()
+                    .map(|(offset, string)| match tokenize(string) {
+                        Ok(tokens) => Ok(tokens
+                            .iter()
+                            .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
+                            .collect()),
+                        Err(err) => Err(err)
+                    })
+                    .collect::<Result<_, _>>()?;
 
-            create(state, Token::Str(string, tokens))
+                create(state, Token::Str(string, tokens))
+            }
         }
         ' ' => {
             state.space();
@@ -247,7 +252,6 @@ fn as_op_or_id(string: String) -> Token {
         "raises" => Token::Raises,
         "raise" => Token::Raise,
         "handle" => Token::Handle,
-        "retry" => Token::Retry,
         "when" => Token::When,
 
         "True" => Token::Bool(true),

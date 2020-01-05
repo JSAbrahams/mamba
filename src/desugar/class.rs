@@ -108,7 +108,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                             _ => false
                         });
                     stmts.append(&mut non_variables);
-                    final_definitions = stmts.clone();
+                    final_definitions = stmts;
 
                     Core::ClassDef {
                         name:        Box::from(desugar_node(id, imp, state)?),

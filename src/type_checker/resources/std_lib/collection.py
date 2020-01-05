@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Union
 
 class set(Generic[T]):
     def __init__(self): pass

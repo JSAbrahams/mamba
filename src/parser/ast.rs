@@ -15,10 +15,8 @@ impl AST {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
     File {
-        pure:     bool,
-        comments: Vec<AST>,
-        imports:  Vec<AST>,
-        modules:  Vec<AST>
+        pure:    bool,
+        modules: Vec<AST>
     },
     Import {
         import: Vec<AST>,
@@ -84,13 +82,16 @@ pub enum Node {
         expr_or_stmt: Box<AST>,
         cases:        Vec<AST>
     },
-    Retry,
     With {
         resource: Box<AST>,
         _as:      Option<Box<AST>>,
         expr:     Box<AST>
     },
 
+    ConstructorCall {
+        name: Box<AST>,
+        args: Vec<AST>
+    },
     FunctionCall {
         name: Box<AST>,
         args: Vec<AST>
@@ -198,6 +199,9 @@ pub enum Node {
     Str {
         lit:         String,
         expressions: Vec<AST>
+    },
+    DocStr {
+        lit: String
     },
     Bool {
         lit: bool

@@ -11,6 +11,7 @@ use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use python_parser::ast::{CompoundStatement, Statement};
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::iter::FromIterator;
 
 pub fn python_files(
@@ -51,7 +52,7 @@ pub fn python_files(
                     CompoundStatement::Funcdef(func_def) =>
                         functions.push(GenericFunction::from(func_def)),
                     CompoundStatement::Classdef(class_def) =>
-                        types.push(GenericType::from(class_def)),
+                        types.push(GenericType::try_from(class_def)?),
                     _ => {}
                 },
                 _ => {}

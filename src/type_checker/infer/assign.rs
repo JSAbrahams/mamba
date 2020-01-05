@@ -32,7 +32,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             let (right_ty, env) = infer(right, &env, ctx)?;
             let right_expr = right_ty.expr_ty(&right.pos)?;
 
-            let mut env = env.clone();
+            let mut env = env;
             let matched = match_name(&identifier, &right_expr, &env, &right.pos)?;
             for (id, (new_mutable, expr_ty)) in matched {
                 let (mutable, left_expr) = env.lookup_indirect(&id, &left.pos)?;

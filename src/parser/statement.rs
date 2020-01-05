@@ -23,10 +23,6 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::Pass, "statement")?;
                 Ok(Box::from(AST::new(&end, Node::Pass)))
             }
-            Token::Retry => {
-                let end = it.eat(&Token::Retry, "statement")?;
-                Ok(Box::from(AST::new(&end, Node::Retry)))
-            }
             Token::Raise => {
                 it.eat(&Token::Raise, "statement")?;
                 let error = it.parse(&parse_expression, "statement", &lex.pos)?;
@@ -82,7 +78,6 @@ pub fn is_start_statement(tp: &Token) -> bool {
         | Token::Print
         | Token::For
         | Token::While
-        | Token::Retry
         | Token::Pass
         | Token::Raise
         | Token::With => true,

@@ -77,6 +77,9 @@ pub enum Core {
         num: String,
         exp: String
     },
+    DocStr {
+        _str: String
+    },
     Str {
         _str: String
     },

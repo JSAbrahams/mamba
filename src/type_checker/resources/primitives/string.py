@@ -1,9 +1,11 @@
 class str:
-    def __add__(self, other: int) -> string: pass
-    def __add__(self, other: float) -> string: pass
-    def __add__(self, other: complex) -> string: pass
-    def __add__(self, other: bool) -> string: pass
-    def __add__(self, other: string) -> string: pass
+    def __init__(self, arg: str): pass
+
+    def __add__(self, other: int) -> str: pass
+    def __add__(self, other: float) -> str: pass
+    def __add__(self, other: complex) -> str: pass
+    def __add__(self, other: bool) -> str: pass
+    def __add__(self, other: string) -> str: pass
     def __str__(self) -> str: pass
 
     def __iter__(self) -> str_iterator: pass

@@ -94,13 +94,13 @@ pub fn mamba_to_python(
             .collect::<Vec<(String, String)>>()
     })?;
 
-    check_all(ast_trees.as_slice()).map_err(|errs| {
+    let modified_trees = check_all(ast_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("type"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
 
-    let core_tree = desugar_all(ast_trees.as_slice()).map_err(|errs| {
+    let core_tree = desugar_all(modified_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("unimplemented"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
