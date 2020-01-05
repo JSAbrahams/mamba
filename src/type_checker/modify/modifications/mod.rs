@@ -63,18 +63,14 @@ pub trait Modification {
                 let (import, m_import) = modify!(import);
                 Ok((AST { node: Node::FromImport { id, import }, ..ast.clone() }, m_id || m_import))
             }
-            Node::Class { _type, doc_string, args, parents, body } => {
+            Node::Class { _type, args, parents, body } => {
                 let (_type, m_type) = modify!(_type);
-                let (doc_string, m_doc_string) = optional!(doc_string);
                 let (args, m_args) = vec_recursion!(args);
                 let (parents, m_parents) = vec_recursion!(parents);
                 let (body, m_body) = optional!(body);
                 Ok((
-                    AST {
-                        node: Node::Class { _type, doc_string, args, parents, body },
-                        ..ast.clone()
-                    },
-                    m_type || m_doc_string || m_args || m_parents || m_body
+                    AST { node: Node::Class { _type, args, parents, body }, ..ast.clone() },
+                    m_type || m_args || m_parents || m_body
                 ))
             }
             Node::Generic { id, isa } => {
@@ -118,9 +114,8 @@ pub trait Modification {
                     m_id_maybe_type || m_expression || m_forward
                 ))
             }
-            Node::FunDef { pure, doc_string, private, id, fun_args, ret_ty, raises, body } => {
+            Node::FunDef { pure, private, id, fun_args, ret_ty, raises, body } => {
                 let (id, m_id) = modify!(id);
-                let (doc_string, m_doc_string) = optional!(doc_string);
                 let (fun_args, m_fun_args) = vec_recursion!(fun_args);
                 let (ret_ty, m_ret_ty) = optional!(ret_ty);
                 let (raises, m_raises) = vec_recursion!(raises);
@@ -134,12 +129,11 @@ pub trait Modification {
                             fun_args,
                             ret_ty,
                             raises,
-                            doc_string,
                             body
                         },
                         ..ast.clone()
                     },
-                    m_id || m_fun_args || m_ret_ty || m_raises || m_doc_string || m_body
+                    m_id || m_fun_args || m_ret_ty || m_raises || m_body
                 ))
             }
             Node::AnonFun { args, body } => {
@@ -209,14 +203,13 @@ pub trait Modification {
                     m_id || m_type
                 ))
             }
-            Node::TypeDef { _type, doc_string, isa, body } => {
+            Node::TypeDef { _type, isa, body } => {
                 let (_type, m_type) = modify!(_type);
-                let (doc_string, m_doc_string) = optional!(doc_string);
                 let (isa, m_isa) = optional!(isa);
                 let (body, m_body) = optional!(body);
                 Ok((
-                    AST { node: Node::TypeDef { _type, doc_string, isa, body }, ..ast.clone() },
-                    m_type || m_isa || m_doc_string || m_body
+                    AST { node: Node::TypeDef { _type, isa, body }, ..ast.clone() },
+                    m_type || m_isa || m_body
                 ))
             }
             Node::TypeAlias { _type, isa, conditions } => {

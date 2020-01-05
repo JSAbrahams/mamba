@@ -140,21 +140,14 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                 // TODO fix such that we can have empty interfaces
                 it.eat_if(&Token::NL);
                 let body = it.parse(&parse_block, "type definition", &start)?;
-                let doc_string = None;
-
                 let isa = isa.clone();
-                let node = Node::TypeDef {
-                    _type: _type.clone(),
-                    isa,
-                    doc_string,
-                    body: Some(body.clone())
-                };
+                let node = Node::TypeDef { _type: _type.clone(), isa, body: Some(body.clone()) };
                 Ok(Box::from(AST::new(&start.union(&body.pos), node)))
             }
         },
         {
             let isa = isa.clone();
-            let node = Node::TypeDef { _type: _type.clone(), doc_string: None, isa, body: None };
+            let node = Node::TypeDef { _type: _type.clone(), isa, body: None };
             Ok(Box::from(AST::new(&start.union(&_type.pos), node)))
         }
     )

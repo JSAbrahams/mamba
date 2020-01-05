@@ -46,15 +46,14 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     }
 
     it.eat(&Token::NL, "class")?;
-    let (body, doc_string, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
+    let (body, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
         let body = it.parse(&parse_block, "class", &start)?;
-        let pos = start.union(&body.pos);
-        (Some(body), None, pos)
+        (Some(body.clone()), start.union(&body.pos))
     } else {
-        (None, None, start)
+        (None, start)
     };
 
-    let node = Node::Class { _type, doc_string, args, parents, body };
+    let node = Node::Class { _type, args, parents, body };
     Ok(Box::from(AST::new(&pos, node)))
 }
 

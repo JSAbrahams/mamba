@@ -128,7 +128,6 @@ fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator)
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", &start)?;
     let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises", &start)?;
     let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", &start)?;
-    let doc_string = None;
 
     let end = match (&ret_ty, &raises.last(), &body) {
         (_, _, Some(b)) => b.pos.clone(),
@@ -137,7 +136,7 @@ fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator)
         _ => id_type.pos.clone()
     };
 
-    let node = Node::FunDef { id, pure, doc_string, private, fun_args, ret_ty, raises, body };
+    let node = Node::FunDef { id, pure, private, fun_args, ret_ty, raises, body };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 

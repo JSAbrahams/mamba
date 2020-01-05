@@ -14,7 +14,6 @@ pub enum Core {
     ClassDef {
         name:        Box<Core>,
         parents:     Vec<Core>,
-        doc_string:  Option<Box<Core>>,
         definitions: Vec<Core>
     },
 
@@ -48,12 +47,11 @@ pub enum Core {
         right:   Box<Core>
     },
     FunDef {
-        private:    bool,
-        id:         Box<Core>,
-        args:       Vec<Core>,
-        doc_string: Option<Box<Core>>,
-        ret_ty:     Option<Box<Core>>,
-        body:       Box<Core>
+        private: bool,
+        id:      Box<Core>,
+        args:    Vec<Core>,
+        ret_ty:  Option<Box<Core>>,
+        body:    Box<Core>
     },
     FunArg {
         vararg:  bool,

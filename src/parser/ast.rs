@@ -27,11 +27,10 @@ pub enum Node {
         import: Box<AST>
     },
     Class {
-        _type:      Box<AST>,
-        doc_string: Option<Box<AST>>,
-        args:       Vec<AST>,
-        parents:    Vec<AST>,
-        body:       Option<Box<AST>>
+        _type:   Box<AST>,
+        args:    Vec<AST>,
+        parents: Vec<AST>,
+        body:    Option<Box<AST>>
     },
     Generic {
         id:  Box<AST>,
@@ -58,14 +57,13 @@ pub enum Node {
         forward:       Vec<AST>
     },
     FunDef {
-        pure:       bool,
-        private:    bool,
-        id:         Box<AST>,
-        doc_string: Option<Box<AST>>,
-        fun_args:   Vec<AST>,
-        ret_ty:     Option<Box<AST>>,
-        raises:     Vec<AST>,
-        body:       Option<Box<AST>>
+        pure:     bool,
+        private:  bool,
+        id:       Box<AST>,
+        fun_args: Vec<AST>,
+        ret_ty:   Option<Box<AST>>,
+        raises:   Vec<AST>,
+        body:     Option<Box<AST>>
     },
 
     AnonFun {
@@ -113,10 +111,9 @@ pub enum Node {
         _type:   Option<Box<AST>>
     },
     TypeDef {
-        _type:      Box<AST>,
-        doc_string: Option<Box<AST>>,
-        isa:        Option<Box<AST>>,
-        body:       Option<Box<AST>>
+        _type: Box<AST>,
+        isa:   Option<Box<AST>>,
+        body:  Option<Box<AST>>
     },
     TypeAlias {
         _type:      Box<AST>,

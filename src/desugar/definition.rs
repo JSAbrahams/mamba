@@ -29,30 +29,24 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                 }
             }
         }
-        Node::FunDef { id, doc_string, fun_args, body: expression, private, ret_ty, .. } =>
-            Core::FunDef {
-                private:    *private,
-                id:         Box::from(desugar_node(&id, imp, state)?),
-                doc_string: if let Some(doc_string) = doc_string {
-                    Some(Box::from(desugar_node(doc_string, imp, state)?))
-                } else {
-                    None
-                },
-                args:       desugar_vec(&fun_args, imp, state)?,
-                ret_ty:     match ret_ty {
-                    Some(ret_ty) => Some(Box::from(desugar_node(ret_ty, imp, state)?)),
-                    None => None
-                },
-                body:       if state.interface {
-                    Box::from(Core::Pass)
-                } else {
-                    // TODO augment AST in type checker
-                    Box::from(match expression {
-                        Some(expr) => desugar_node(&expr, imp, &state.expand_ty(true))?,
-                        None => Core::Empty
-                    })
-                }
+        Node::FunDef { id, fun_args, body: expression, private, ret_ty, .. } => Core::FunDef {
+            private: *private,
+            id:      Box::from(desugar_node(&id, imp, state)?),
+            args:    desugar_vec(&fun_args, imp, state)?,
+            ret_ty:  match ret_ty {
+                Some(ret_ty) => Some(Box::from(desugar_node(ret_ty, imp, state)?)),
+                None => None
             },
+            body:    if state.interface {
+                Box::from(Core::Pass)
+            } else {
+                // TODO augment AST in type checker
+                Box::from(match expression {
+                    Some(expr) => desugar_node(&expr, imp, &state.expand_ty(true))?,
+                    None => Core::Empty
+                })
+            }
+        },
         definition => panic!("Expected definition: {:?}.", definition)
     })
 }
