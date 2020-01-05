@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::fmt;
 
 use crate::common::position::{CaretPos, Position};
@@ -10,8 +11,17 @@ pub struct Lex {
 
 impl Lex {
     pub fn new(pos: &CaretPos, token: Token) -> Self {
-        let pos =
-            Position { start: pos.clone(), end: pos.clone().offset_pos(token.clone().width()) };
+        let start = pos.clone();
+        let end = if let Token::Str(_str, _) = &token {
+            pos.clone().offset_line(max(_str.lines().count().clone() as i32 - 1, 0))
+        } else if let Token::DocStr(_str) = &token {
+            pos.clone().offset_line(max(_str.lines().count().clone() as i32 - 1, 0))
+        } else {
+            pos.clone()
+        };
+
+        let end = end.offset_pos(token.clone().width());
+        let pos = Position { start, end };
         Lex { pos, token }
     }
 }
@@ -47,6 +57,7 @@ pub enum Token {
     Int(String),
     ENum(String, String),
     Str(String, Vec<Vec<Lex>>),
+    DocStr(String),
     Bool(bool),
     Range,
     RangeIncl,
@@ -131,7 +142,8 @@ impl Token {
             Token::Int(int) => int.len(),
             Token::Bool(true) => 4,
             Token::Bool(false) => 5,
-            Token::Str(_str, _) => _str.len(),
+            Token::Str(_str, _) => _str.len() + 2,
+            Token::DocStr(_str) => _str.len() + 6,
             Token::ENum(num, exp) => num.len() + 1 + exp.len(),
             other => format!("{}", other).len()
         } as i32)
@@ -144,6 +156,7 @@ impl Token {
             (Token::Int(_), Token::Int(_)) => true,
             (Token::Bool(_), Token::Bool(_)) => true,
             (Token::Str(..), Token::Str(..)) => true,
+            (Token::DocStr(_), Token::DocStr(_)) => true,
             (Token::ENum(..), Token::ENum(..)) => true,
             _ => left == right
         }
@@ -187,6 +200,7 @@ impl fmt::Display for Token {
                     format!("{}E{}", int, exp)
                 },
             Token::Str(string, _) => format!("\"{}\"", string),
+            Token::DocStr(string) => format!("\"\"\"{}\"\"\"", string),
             Token::Bool(boolean) => String::from(if boolean { "True" } else { "False" }),
 
             Token::Range => String::from(".."),

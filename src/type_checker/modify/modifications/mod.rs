@@ -49,17 +49,9 @@ pub trait Modification {
         }
 
         match &ast.node {
-            Node::File { pure, comments, imports, modules } => {
-                let (comments, m_comments) = vec_recursion!(comments);
-                let (imports, m_imports) = vec_recursion!(imports);
+            Node::File { pure, modules } => {
                 let (modules, m_modules) = vec_recursion!(modules);
-                Ok((
-                    AST {
-                        node: Node::File { comments, imports, modules, pure: *pure },
-                        ..ast.clone()
-                    },
-                    m_comments || m_imports || m_modules
-                ))
+                Ok((AST { node: Node::File { modules, pure: *pure }, ..ast.clone() }, m_modules))
             }
             Node::Import { import, _as } => {
                 let (import, m_import) = vec_recursion!(import);
@@ -410,7 +402,8 @@ pub trait Modification {
             Node::Question { left, right } => inner!(Question, left, right),
             Node::QuestionOp { expr } => inner!(QuestionOp, expr),
             Node::Print { expr } => inner!(Print, expr),
-            Node::Comment { .. } => Ok((ast.clone(), false))
+            Node::Comment { .. } => Ok((ast.clone(), false)),
+            Node::DocStr { .. } => Ok((ast.clone(), false))
         }
     }
 }

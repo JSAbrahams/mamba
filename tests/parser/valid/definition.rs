@@ -10,7 +10,7 @@ macro_rules! unwrap_func_definition {
         };
 
         match definition.node {
-            Node::FunDef { id, private, pure, fun_args, ret_ty, raises, body } =>
+            Node::FunDef { id, private, pure, fun_args, ret_ty, raises, body, .. } =>
                 (private, pure, id, fun_args, ret_ty, raises, body),
             other => panic!("Expected variabledef but was {:?}.", other)
         }

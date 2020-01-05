@@ -95,9 +95,9 @@ fn fstring() {
     let source = String::from("\"my string {my_var}\"");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![Lex {
-        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 19)),
+        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 21)),
         token: Token::Str(String::from("my string {my_var}"), vec![vec![Lex {
-            pos:   Position::new(&CaretPos::new(1, 12), &CaretPos::new(1, 18)),
+            pos:   Position::new(&CaretPos::new(1, 13), &CaretPos::new(1, 19)),
             token: Token::Id(String::from("my_var"))
         }]],)
     },]);
@@ -108,26 +108,26 @@ fn fstring_set() {
     let source = String::from("\"{{a, b}}\"");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![Lex {
-        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 9)),
+        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 11)),
         token: Token::Str(String::from("{{a, b}}"), vec![vec![
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 2), &CaretPos::new(1, 3)),
+                pos:   Position::new(&CaretPos::new(1, 3), &CaretPos::new(1, 4)),
                 token: Token::LCBrack
             },
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 3), &CaretPos::new(1, 4)),
+                pos:   Position::new(&CaretPos::new(1, 4), &CaretPos::new(1, 5)),
                 token: Token::Id(String::from("a"))
             },
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 4), &CaretPos::new(1, 5)),
+                pos:   Position::new(&CaretPos::new(1, 5), &CaretPos::new(1, 6)),
                 token: Token::Comma
             },
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 6), &CaretPos::new(1, 7)),
+                pos:   Position::new(&CaretPos::new(1, 7), &CaretPos::new(1, 8)),
                 token: Token::Id(String::from("b"))
             },
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 7), &CaretPos::new(1, 8)),
+                pos:   Position::new(&CaretPos::new(1, 8), &CaretPos::new(1, 9)),
                 token: Token::RCBrack
             }
         ]])
@@ -139,18 +139,18 @@ fn fstring_operation() {
     let source = String::from("\"{a + b}\"");
     let tokens = tokenize(&source).unwrap();
     assert_eq!(tokens, vec![Lex {
-        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 8)),
+        pos:   Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 10)),
         token: Token::Str(String::from("{a + b}"), vec![vec![
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 2), &CaretPos::new(1, 3)),
+                pos:   Position::new(&CaretPos::new(1, 3), &CaretPos::new(1, 4)),
                 token: Token::Id(String::from("a"))
             },
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 4), &CaretPos::new(1, 5)),
+                pos:   Position::new(&CaretPos::new(1, 5), &CaretPos::new(1, 6)),
                 token: Token::Add
             },
             Lex {
-                pos:   Position::new(&CaretPos::new(1, 6), &CaretPos::new(1, 7)),
+                pos:   Position::new(&CaretPos::new(1, 7), &CaretPos::new(1, 8)),
                 token: Token::Id(String::from("b"))
             }
         ]])

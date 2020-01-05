@@ -15,10 +15,8 @@ impl AST {
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
     File {
-        pure:     bool,
-        comments: Vec<AST>,
-        imports:  Vec<AST>,
-        modules:  Vec<AST>
+        pure:    bool,
+        modules: Vec<AST>
     },
     Import {
         import: Vec<AST>,
@@ -201,6 +199,9 @@ pub enum Node {
     Str {
         lit:         String,
         expressions: Vec<AST>
+    },
+    DocStr {
+        lit: String
     },
     Bool {
         lit: bool
