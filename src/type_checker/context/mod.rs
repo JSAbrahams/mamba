@@ -57,6 +57,11 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
+    pub fn lookup_name(&self, name: &TypeName, pos: &Position) -> TypeResult<TypeName> {
+        let expr_type = self.lookup(name, pos)?;
+        Ok(TypeName::from(&expr_type))
+    }
+
     fn find_type_name(&self, name: &str, pos: &Position) -> TypeResult<GenericType> {
         for ty in &self.types {
             if ty.name.name(pos)? == name {

@@ -27,7 +27,7 @@ fn division_missing_factor() {
 
 #[test]
 fn power_missing_factor() {
-    let source = String::from("asd ^");
+    let source = String::from("a ^");
     parse_direct(&tokenize(&source).unwrap()).unwrap_err();
 }
 

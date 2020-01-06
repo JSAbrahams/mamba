@@ -1,25 +1,20 @@
 use crate::parser::ast::AST;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::constraints::expected::Expected;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Constraint {
     ast:      AST,
-    expected: Expected
+    expected: Box<Expected>
 }
 
-#[derive(Debug, Clone)]
-pub enum Expected {
-    Exceptions { exceptions: Vec<Expected> },
-
-    AnyExpression,
-    NullableExpression,
-    Expression { type_name: TypeName },
-
-    Implements { fun: String, args: Vec<Expected> }
+impl Clone for Constraint {
+    fn clone(&self) -> Self {
+        Constraint { ast: self.ast.clone(), expected: self.expected.clone() }
+    }
 }
 
 impl Constraint {
-    pub fn new(ast: &AST, expected: Expected) -> Constraint {
-        Constraint { ast: ast.clone(), expected }
+    pub fn new(ast: &AST, expected: &Expected) -> Constraint {
+        Constraint { ast: ast.clone(), expected: Box::from(expected.clone()) }
     }
 }
