@@ -1,12 +1,25 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::environment::infer_type::InferType;
+use crate::type_checker::constraints::constraint::Constraint;
+use crate::type_checker::constraints::constraint::Expected;
+use crate::type_checker::context::function;
+use crate::type_checker::context::Context;
+use crate::type_checker::environment::Environment;
+use crate::type_checker::infer::InferResult;
 
-pub struct Constraint {
-    ast: AST,
-    ty:  InferType
-}
+mod constraint;
 
-pub fn generate(ast: &AST, constr: &[Constraint]) -> Vec<Constraint> {
+pub type Inferred = InferResult<Vec<Constraint>>;
+
+pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &[Constraint]) -> Inferred {
+    macro_rules! gen {
+        ($ast:expr, $constr:expr, $env:expr, $(($bind:expr, $exp:expr))*) => {{
+            let mut constr = $constr.to_vec();
+            constr.append(&mut vec![$(Constraint::new($bind, $exp)),*]);
+            generate($ast, &$env, ctx, &constr)
+        }};
+        ($ast:expr, $(($bind:expr, $exp:expr))*) => {{ gen!($ast, constr, env, $(($bind, $exp))*) }};
+    }
+
     match &ast.node {
         Node::File { .. } => unimplemented!(),
         Node::Import { .. } => unimplemented!(),
@@ -37,18 +50,18 @@ pub fn generate(ast: &AST, constr: &[Constraint]) -> Vec<Constraint> {
         Node::TypeFun { .. } => unimplemented!(),
         Node::Condition { .. } => unimplemented!(),
         Node::FunArg { .. } => unimplemented!(),
-        Node::_Self => unimplemented!(),
-        Node::AddOp => unimplemented!(),
-        Node::SubOp => unimplemented!(),
-        Node::SqrtOp => unimplemented!(),
-        Node::MulOp => unimplemented!(),
-        Node::FDivOp => unimplemented!(),
-        Node::DivOp => unimplemented!(),
-        Node::PowOp => unimplemented!(),
-        Node::ModOp => unimplemented!(),
-        Node::EqOp => unimplemented!(),
-        Node::LeOp => unimplemented!(),
-        Node::GeOp => unimplemented!(),
+        Node::_Self => Ok((constr.to_vec(), env.clone())),
+        Node::AddOp => Ok((constr.to_vec(), env.clone())),
+        Node::SubOp => Ok((constr.to_vec(), env.clone())),
+        Node::SqrtOp => Ok((constr.to_vec(), env.clone())),
+        Node::MulOp => Ok((constr.to_vec(), env.clone())),
+        Node::FDivOp => Ok((constr.to_vec(), env.clone())),
+        Node::DivOp => Ok((constr.to_vec(), env.clone())),
+        Node::PowOp => Ok((constr.to_vec(), env.clone())),
+        Node::ModOp => Ok((constr.to_vec(), env.clone())),
+        Node::EqOp => Ok((constr.to_vec(), env.clone())),
+        Node::LeOp => Ok((constr.to_vec(), env.clone())),
+        Node::GeOp => Ok((constr.to_vec(), env.clone())),
         Node::Set { .. } => unimplemented!(),
         Node::SetBuilder { .. } => unimplemented!(),
         Node::List { .. } => unimplemented!(),
@@ -78,7 +91,18 @@ pub fn generate(ast: &AST, constr: &[Constraint]) -> Vec<Constraint> {
         Node::BOneCmpl { .. } => unimplemented!(),
         Node::BLShift { .. } => unimplemented!(),
         Node::BRShift { .. } => unimplemented!(),
-        Node::Le { .. } => unimplemented!(),
+        Node::Le { left, right } => {
+            let (constr, env) = gen!(right, (right, Expected::AnyExpression))?;
+            gen!(
+                left,
+                constr,
+                env,
+                (left, Expected::Implements {
+                    fun:  String::from(function::concrete::LE),
+                    args: vec![Expected::AnyExpression]
+                })
+            )
+        }
         Node::Ge { .. } => unimplemented!(),
         Node::Leq { .. } => unimplemented!(),
         Node::Geq { .. } => unimplemented!(),
@@ -98,16 +122,25 @@ pub fn generate(ast: &AST, constr: &[Constraint]) -> Vec<Constraint> {
         Node::In { .. } => unimplemented!(),
         Node::Step { .. } => unimplemented!(),
         Node::While { .. } => unimplemented!(),
-        Node::Break => unimplemented!(),
-        Node::Continue => unimplemented!(),
-        Node::Return { .. } => unimplemented!(),
-        Node::ReturnEmpty => unimplemented!(),
-        Node::Underscore => unimplemented!(),
-        Node::Undefined => unimplemented!(),
-        Node::Pass => unimplemented!(),
-        Node::Question { .. } => unimplemented!(),
+
+        Node::Break => Ok((constr.to_vec(), env.clone())),
+        Node::Continue => Ok((constr.to_vec(), env.clone())),
+
+        Node::Return { expr } => gen!(expr, (expr, Expected::AnyExpression)),
+        Node::ReturnEmpty => Ok((constr.to_vec(), env.clone())),
+        Node::Underscore => Ok((constr.to_vec(), env.clone())),
+        Node::Undefined => Ok((constr.to_vec(), env.clone())),
+        Node::Pass => Ok((constr.to_vec(), env.clone())),
+
+        Node::Question { left, right } => {
+            // TODO check that they are the same expression type somehow
+            let (cons, env) = gen!(left, (left, Expected::NullableExpression))?;
+            gen!(right, cons, env, (right, Expected::AnyExpression))
+        }
         Node::QuestionOp { .. } => unimplemented!(),
-        Node::Print { .. } => unimplemented!(),
-        Node::Comment { .. } => unimplemented!()
+
+        Node::Print { expr } => gen!(expr, (expr, Expected::AnyExpression)),
+
+        Node::Comment { .. } => Ok((constr.to_vec(), env.clone()))
     }
 }
