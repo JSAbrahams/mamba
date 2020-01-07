@@ -8,8 +8,8 @@ use crate::common::position::Position;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::util::comma_delimited;
 

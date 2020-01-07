@@ -1,13 +1,13 @@
-use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
-use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
+use crate::type_checker::infer_type::InferType;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
 
 pub fn infer_type(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {

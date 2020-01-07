@@ -5,13 +5,11 @@ use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use itertools::{EitherOrBoth, Itertools};
 
 // TODO make ty private again
-// TODO create second pass where we assign types to function arguments using
-// type inference
 
 pub const SELF: &str = "self";
 

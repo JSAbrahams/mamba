@@ -7,9 +7,9 @@ use std::ops::Deref;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::nullable_type::NullableType;
+use crate::type_checker::infer_type::nullable::NullableType;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 // TODO add boolean for is_exception for more elegant exception checking

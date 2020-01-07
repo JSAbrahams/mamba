@@ -10,8 +10,8 @@ use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::{args_compatible, FunctionArg};
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::ty::python;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::{comma_delimited, newline_delimited};
 

@@ -8,15 +8,12 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::ty::concrete;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::nullable::NullableTypeName;
-use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::nullable_type::NullableType;
+use crate::type_checker::infer_type::nullable::NullableType;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::nullable::NullableTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
-
-pub mod actual_type;
-pub mod nullable_type;
 
 #[derive(Clone, Eq, Debug)]
 pub enum ExpressionType {
@@ -79,7 +76,7 @@ impl ExpressionType {
         let union = make_nullable_if_none(&union);
         let union = remove_exception(&union);
         if union.len() == 1 {
-            let ty = Vec::from_iter(union.iter())[0].clone();
+            let ty: NullableType = Vec::from_iter(union.iter())[0].clone();
             ExpressionType::Single { ty }
         } else {
             ExpressionType::Union { union }

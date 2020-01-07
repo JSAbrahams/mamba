@@ -10,6 +10,9 @@ use crate::type_checker::type_result::TypeResults;
 pub mod context;
 pub mod environment;
 
+pub mod infer_type;
+pub mod type_name;
+
 mod constraints;
 mod infer;
 mod modify;

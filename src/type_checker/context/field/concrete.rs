@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::fmt;
 

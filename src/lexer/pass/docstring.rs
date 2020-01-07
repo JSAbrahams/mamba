@@ -21,8 +21,8 @@ impl DocString {
             (Some(front), Some(middle), Some(back)) =>
                 match (front.token, middle.token, back.token) {
                     (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) =>
-                        if f_str.is_empty() && b_str.is_empty()
-                            // No spaces in between
+                        if f_str.is_empty()
+                            && b_str.is_empty()
                             && front.pos.end.pos == middle.pos.start.pos
                             && middle.pos.end.pos == back.pos.start.pos
                         {

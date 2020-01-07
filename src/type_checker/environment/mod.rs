@@ -1,13 +1,11 @@
 use crate::common::position::Position;
 use crate::type_checker::context::function_arg;
-use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::state::State;
+use crate::type_checker::infer_type::expression::ExpressionType;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use std::collections::HashMap;
 
-pub mod expression_type;
-pub mod infer_type;
 pub mod name;
 pub mod state;
 

@@ -5,8 +5,8 @@ use mamba::common::position::Position;
 use mamba::lexer::tokenize;
 use mamba::parser::parse;
 use mamba::type_checker::check_all;
-use mamba::type_checker::context::type_name::TypeName;
 use mamba::type_checker::context::Context;
+use mamba::type_checker::type_name::TypeName;
 use mamba::type_checker::CheckInput;
 
 #[test]

@@ -7,8 +7,8 @@ use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::args_compatible;
 use crate::type_checker::context::ty::concrete::Type;
-use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::infer_type::expression::ExpressionType;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
 

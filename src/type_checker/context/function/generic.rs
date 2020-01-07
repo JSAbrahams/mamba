@@ -6,8 +6,8 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone, Eq)]

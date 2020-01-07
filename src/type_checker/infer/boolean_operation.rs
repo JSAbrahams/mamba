@@ -1,10 +1,10 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::ty::concrete;
-use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::context::Context;
-use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::{infer, InferResult};
+use crate::type_checker::infer_type::InferType;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
 pub fn infer_boolean_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {

@@ -14,8 +14,8 @@ use crate::type_checker::context::function_arg;
 use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::type_checker::context::parameter::generic::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone, Eq)]

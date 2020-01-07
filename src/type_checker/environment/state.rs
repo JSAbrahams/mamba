@@ -1,6 +1,6 @@
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::infer_type::expression::ExpressionType;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct State {

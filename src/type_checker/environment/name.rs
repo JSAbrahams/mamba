@@ -6,11 +6,11 @@ use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::context::type_name::TypeName;
-use crate::type_checker::environment::expression_type::actual_type::ActualType;
-use crate::type_checker::environment::expression_type::ExpressionType;
 use crate::type_checker::environment::Environment;
+use crate::type_checker::infer_type::actual::ActualType;
+use crate::type_checker::infer_type::expression::ExpressionType;
+use crate::type_checker::type_name::actual::ActualTypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
 

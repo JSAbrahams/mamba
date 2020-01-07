@@ -7,8 +7,8 @@ use python_parser::ast::{Expression, SetItem};
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::type_name::TypeName;
 use crate::type_checker::environment::name::{match_type, Identifier};
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 pub struct GenericFields {

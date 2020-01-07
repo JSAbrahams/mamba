@@ -3,10 +3,15 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
-use crate::type_checker::context::type_name::actual::ActualTypeName;
-use crate::type_checker::environment::expression_type::ExpressionType;
+use crate::type_checker::infer_type::expression::ExpressionType;
+use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
+
+// TODO make these private
+pub mod actual;
+pub mod expression;
+pub mod nullable;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct InferType {

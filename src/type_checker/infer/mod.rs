@@ -1,6 +1,5 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::{function_arg, Context};
-use crate::type_checker::environment::infer_type::InferType;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::infer::_type::infer_type;
 use crate::type_checker::infer::assign::infer_assign;
@@ -15,6 +14,7 @@ use crate::type_checker::infer::error::infer_error;
 use crate::type_checker::infer::literal::infer_literal;
 use crate::type_checker::infer::operation::infer_op;
 use crate::type_checker::infer::optional::infer_optional;
+use crate::type_checker::infer_type::InferType;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::CheckInput;
 

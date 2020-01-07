@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::parameter::generic::GenericParameter;
-use crate::type_checker::context::type_name::TypeName;
+use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
 #[derive(Debug, Clone, Eq)]
