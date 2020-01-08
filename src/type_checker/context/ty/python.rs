@@ -5,7 +5,7 @@ use std::ops::Deref;
 use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
 use crate::common::position::Position;
-use crate::type_checker::context::field::python::GenericFields;
+use crate::type_checker::context::field::generic::GenericFields;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::parameter::python::GenericParameters;

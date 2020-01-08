@@ -49,10 +49,10 @@ pub fn infer_op(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             let mut arg_types: Vec<(String, (bool, ExpressionType))> = vec![];
             for arg in args {
                 match &arg.node {
-                    Node::IdType { id, mutable, _type } => {
-                        let identifier = Identifier::try_from(id.deref())?;
-                        let type_name = if let Some(_type) = _type {
-                            TypeName::try_from(_type.deref())?
+                    Node::ExpressionType { expr, mutable, ty } => {
+                        let identifier = Identifier::try_from(expr.deref())?;
+                        let type_name = if let Some(ty) = ty {
+                            TypeName::try_from(ty.deref())?
                         } else {
                             let msg = "Anonymous argument Must have type";
                             return Err(vec![TypeErr::new(&arg.pos, msg)]);

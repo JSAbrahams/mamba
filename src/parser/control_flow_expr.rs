@@ -74,10 +74,10 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression maybe type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
 
-    let id = it.parse(&parse_expression, "expression maybe type", &start)?;
-    let _type = it.parse_if(&Token::DoublePoint, &parse_type, "expression maybe type", &start)?;
-    let end = _type.clone().map_or(id.pos.clone(), |t| t.pos);
+    let expr = it.parse(&parse_expression, "expression maybe type", &start)?;
+    let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression maybe type", &start)?;
+    let end = ty.clone().map_or(expr.pos.clone(), |t| t.pos);
 
-    let node = Node::IdType { id, mutable, _type };
+    let node = Node::ExpressionType { expr, mutable, ty };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }

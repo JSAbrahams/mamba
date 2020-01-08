@@ -1,105 +1,258 @@
+use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect;
 use crate::type_checker::constraints::Constrained;
+use crate::type_checker::context::function;
 use crate::type_checker::context::ty;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
+use crate::type_checker::type_result::TypeErr;
 
 pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
-        Node::File { .. } => unimplemented!(),
-        Node::Import { .. } => unimplemented!(),
-        Node::FromImport { .. } => unimplemented!(),
-        Node::Class { .. } => unimplemented!(),
-        Node::Generic { .. } => unimplemented!(),
-        Node::Parent { .. } => unimplemented!(),
-        Node::Script { .. } => unimplemented!(),
-        Node::Init => unimplemented!(),
-        Node::Reassign { .. } => unimplemented!(),
+        Node::File { modules, .. } => {
+            let mut constr_env = (constr.clone(), env.clone());
+            for module in modules {
+                constr_env = generate(module, &env, &ctx, &constr)?;
+            }
+            Ok(constr_env)
+        }
+
+        Node::Block { statements } | Node::Script { statements } => {
+            let mut constr_env = (constr.clone(), env.clone());
+            for statement in statements {
+                constr_env = generate(statement, &env, &ctx, &constr)?;
+            }
+            Ok(constr_env)
+        }
+
+        Node::Class { body, .. } =>
+            if let Some(body) = body {
+                match &body.node {
+                    Node::Block { statements } => {
+                        let mut constr_env = (constr.clone(), env.clone());
+                        for statement in statements {
+                            constr_env = generate(statement, &env, &ctx, &constr)?;
+                        }
+                        Ok(constr_env)
+                    }
+                    _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
+                }
+            } else {
+                Ok((constr.clone(), env.clone()))
+            },
+
+        Node::TypeDef { body, .. } =>
+            if let Some(body) = body {
+                generate(body, env, ctx, constr)
+            } else {
+                Ok((constr.clone(), env.clone()))
+            },
+        Node::TypeAlias { conditions, .. } => {
+            let mut constr_env = (constr.clone(), env.clone());
+            for cond in conditions {
+                constr_env = generate(cond, &env, &ctx, &constr)?;
+            }
+            Ok(constr_env)
+        }
+        Node::Condition { cond, _else } => {
+            let (constr, env) = generate(cond, env, ctx, constr)?;
+            if let Some(el) = _else {
+                generate(el, &env, ctx, &constr)
+            } else {
+                Ok((constr, env))
+            }
+        }
+
         Node::VariableDef { .. } => unimplemented!(),
-        Node::FunDef { .. } => unimplemented!(),
+        Node::FunDef { fun_args, ret_ty, body, .. } => {
+            for fun_arg in fun_args {
+                match &fun_arg.node {
+                    Node::FunArg { .. } => unimplemented!(),
+                    _ => return Err(vec![TypeErr::new(&fun_arg.pos, "Expected function argument")])
+                }
+            }
+
+            match (ret_ty, body) {
+                (Some(ret_ty), Some(body)) => {
+                    let type_name = TypeName::try_from(ret_ty.deref())?;
+                    let constr = constr
+                        .add(&Expect::Expression { ast: body.deref().clone() }, &Expect::Type {
+                            type_name
+                        });
+                    generate(body, &env, ctx, &constr)
+                }
+                _ => Ok((constr.clone(), env.clone()))
+            }
+        }
+        Node::Reassign { left, right } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Expression {
+                    ast: right.deref().clone()
+                });
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Mutable {
+                    expect: Box::from(Expect::AnyExpression)
+                });
+            let (constr, env) = generate(right, env, ctx, &constr)?;
+            generate(left, &env, ctx, &constr)
+        }
+
+        Node::ConstructorCall { .. } => unimplemented!(),
+        Node::FunctionCall { .. } => unimplemented!(),
+        Node::PropertyCall { .. } => unimplemented!(),
+
+        Node::TypeTup { .. } => unimplemented!(),
+        Node::TypeUnion { .. } => unimplemented!(),
+        Node::Type { .. } => unimplemented!(),
+        Node::TypeFun { .. } => unimplemented!(),
+
         Node::AnonFun { .. } => unimplemented!(),
         Node::Raises { .. } => unimplemented!(),
         Node::Raise { .. } => unimplemented!(),
         Node::Handle { .. } => unimplemented!(),
         Node::With { .. } => unimplemented!(),
-        Node::ConstructorCall { .. } => unimplemented!(),
-        Node::FunctionCall { .. } => unimplemented!(),
-        Node::PropertyCall { .. } => unimplemented!(),
-        Node::Id { .. } => unimplemented!(),
-        Node::IdType { .. } => unimplemented!(),
-        Node::TypeDef { .. } => unimplemented!(),
-        Node::TypeAlias { .. } => unimplemented!(),
-        Node::TypeTup { .. } => unimplemented!(),
-        Node::TypeUnion { .. } => unimplemented!(),
-        Node::Type { .. } => unimplemented!(),
-        Node::TypeFun { .. } => unimplemented!(),
-        Node::Condition { .. } => unimplemented!(),
-        Node::FunArg { .. } => unimplemented!(),
-        Node::_Self => unimplemented!(),
-        Node::AddOp => unimplemented!(),
-        Node::SubOp => unimplemented!(),
-        Node::SqrtOp => unimplemented!(),
-        Node::MulOp => unimplemented!(),
-        Node::FDivOp => unimplemented!(),
-        Node::DivOp => unimplemented!(),
-        Node::PowOp => unimplemented!(),
-        Node::ModOp => unimplemented!(),
-        Node::EqOp => unimplemented!(),
-        Node::LeOp => unimplemented!(),
-        Node::GeOp => unimplemented!(),
-        Node::Set { .. } => unimplemented!(),
+        Node::Id { lit } =>
+            if env.vars.contains(lit) {
+                Ok((constr.clone(), env.clone()))
+            } else {
+                Err(vec![TypeErr::new(&ast.pos, &format!("Unknown variable: {}", lit))])
+            },
+
         Node::SetBuilder { .. } => unimplemented!(),
-        Node::List { .. } => unimplemented!(),
         Node::ListBuilder { .. } => unimplemented!(),
-        Node::Tuple { .. } => unimplemented!(),
+        Node::Set { elements } | Node::List { elements } =>
+            if let Some(first) = elements.first() {
+                let mut constr_env = (constr.clone(), env.clone());
+                for element in elements {
+                    constr_env.0 = constr_env
+                        .0
+                        .add(&Expect::Expression { ast: element.clone() }, &Expect::Expression {
+                            ast: first.clone()
+                        });
+                    constr_env = generate(element, &env, &ctx, &constr)?;
+                }
+                Ok(constr_env)
+            } else {
+                Ok((constr.clone(), env.clone()))
+            },
+        Node::Tuple { elements } => {
+            let mut constr_env = (constr.clone(), env.clone());
+            for element in elements {
+                constr_env = generate(element, &env, &ctx, &constr)?;
+            }
+            Ok(constr_env)
+        }
         Node::Range { .. } => unimplemented!(),
-        Node::Block { .. } => unimplemented!(),
-        Node::Real { .. } => unimplemented!(),
-        Node::Int { .. } => unimplemented!(),
-        Node::ENum { .. } => unimplemented!(),
-        Node::Str { .. } => unimplemented!(),
-        Node::DocStr { .. } => unimplemented!(),
-        Node::Bool { .. } => unimplemented!(),
-        Node::Add { .. } => unimplemented!(),
-        Node::AddU { .. } => unimplemented!(),
-        Node::Sub { .. } => unimplemented!(),
+
+        Node::Real { .. } => primitive(ast, ty::concrete::FLOAT_PRIMITIVE, env, constr),
+        Node::Int { .. } => primitive(ast, ty::concrete::INT_PRIMITIVE, env, constr),
+        Node::ENum { .. } => primitive(ast, ty::concrete::INT_PRIMITIVE, env, constr),
+        Node::Str { .. } => primitive(ast, ty::concrete::STRING_PRIMITIVE, env, constr),
+        Node::Bool { .. } => {
+            let constr =
+                constr.add(&Expect::Expression { ast: ast.deref().clone() }, &Expect::Truthy);
+            Ok((constr, env.clone()))
+        }
+
+        Node::Add { left, right } =>
+            implements(function::concrete::ADD, left, right, env, ctx, constr),
+        Node::Sub { left, right } =>
+            implements(function::concrete::SUB, left, right, env, ctx, constr),
+        Node::Mul { left, right } =>
+            implements(function::concrete::MUL, left, right, env, ctx, constr),
+        Node::Div { left, right } =>
+            implements(function::concrete::DIV, left, right, env, ctx, constr),
+        Node::FDiv { left, right } =>
+            implements(function::concrete::FDIV, left, right, env, ctx, constr),
+        Node::Pow { left, right } =>
+            implements(function::concrete::POW, left, right, env, ctx, constr),
+        Node::Le { left, right } =>
+            implements(function::concrete::LE, left, right, env, ctx, constr),
+        Node::Ge { left, right } =>
+            implements(function::concrete::GE, left, right, env, ctx, constr),
+        Node::Leq { left, right } =>
+            implements(function::concrete::LEQ, left, right, env, ctx, constr),
+        Node::Geq { left, right } =>
+            implements(function::concrete::GEQ, left, right, env, ctx, constr),
+        Node::Eq { left, right } =>
+            implements(function::concrete::EQ, left, right, env, ctx, constr),
+        Node::Mod { left, right } =>
+            implements(function::concrete::MOD, left, right, env, ctx, constr),
+        Node::Neq { left, right } =>
+            implements(function::concrete::NEQ, left, right, env, ctx, constr),
+        Node::AddU { expr } => {
+            let constr =
+                constr.add(&Expect::Expression { ast: ast.deref().clone() }, &Expect::Truthy);
+            let (constr, env) = generate(expr, env, ctx, &constr)?;
+            Ok((constr, env))
+        }
         Node::SubU { .. } => unimplemented!(),
-        Node::Mul { .. } => unimplemented!(),
-        Node::Div { .. } => unimplemented!(),
-        Node::FDiv { .. } => unimplemented!(),
-        Node::Mod { .. } => unimplemented!(),
-        Node::Pow { .. } => unimplemented!(),
-        Node::Sqrt { .. } => unimplemented!(),
-        Node::BAnd { .. } => unimplemented!(),
-        Node::BOr { .. } => unimplemented!(),
-        Node::BXOr { .. } => unimplemented!(),
-        Node::BOneCmpl { .. } => unimplemented!(),
-        Node::BLShift { .. } => unimplemented!(),
-        Node::BRShift { .. } => unimplemented!(),
-        Node::Le { .. } => unimplemented!(),
-        Node::Ge { .. } => unimplemented!(),
-        Node::Leq { .. } => unimplemented!(),
-        Node::Geq { .. } => unimplemented!(),
-        Node::Is { .. } => unimplemented!(),
-        Node::IsN { .. } => unimplemented!(),
-        Node::Eq { .. } => unimplemented!(),
-        Node::Neq { .. } => unimplemented!(),
-        Node::IsA { .. } => unimplemented!(),
-        Node::IsNA { .. } => unimplemented!(),
-        Node::Not { .. } => unimplemented!(),
-        Node::And { .. } => unimplemented!(),
-        Node::Or { .. } => unimplemented!(),
-        Node::IfElse { cond, then, _else } => {
-            let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
+        Node::Sqrt { expr } => {
+            let constr = constr.add(
+                &Expect::Expression { ast: expr.deref().clone() },
+                &Expect::Implements {
+                    name: String::from(function::concrete::SQRT),
+                    args: vec![Expect::Expression { ast: expr.deref().clone() }]
+                }
+            );
+            generate(expr, &env, ctx, &constr)
+        }
+
+        Node::BOneCmpl { expr } => {
             let constr = constr
-                .add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Type {
+                .add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::AnyExpression);
+            generate(expr, &env, ctx, &constr)
+        }
+        Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::AnyExpression);
+            let constr = constr
+                .add(&Expect::Expression { ast: right.deref().clone() }, &Expect::AnyExpression);
+            let (constr, env) = generate(right, env, ctx, &constr)?;
+            generate(left, &env, ctx, &constr)
+        }
+
+        Node::BLShift { left, right } | Node::BRShift { left, right } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::AnyExpression);
+            let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
+            let constr = constr
+                .add(&Expect::Expression { ast: right.deref().clone() }, &Expect::Type {
                     type_name
                 });
+            let (constr, env) = generate(right, env, ctx, &constr)?;
+            generate(left, &env, ctx, &constr)
+        }
+
+        Node::Is { left, right }
+        | Node::IsN { left, right }
+        | Node::IsA { left, right }
+        | Node::IsNA { left, right } => {
+            let (constr, env) = generate(right, env, ctx, constr)?;
+            generate(left, &env, ctx, &constr)
+        }
+
+        Node::Not { expr } => {
+            let constr =
+                constr.add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::Truthy);
+            generate(expr, env, ctx, &constr)
+        }
+        Node::And { left, right } | Node::Or { left, right } => {
+            let constr =
+                constr.add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Truthy);
+            let constr =
+                constr.add(&Expect::Expression { ast: right.deref().clone() }, &Expect::Truthy);
+            let (constr, env) = generate(left, env, ctx, &constr)?;
+            generate(right, &env, &ctx, &constr)
+        }
+        Node::IfElse { cond, then, _else } => {
+            let constr =
+                constr.add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy);
             if let Some(_else) = _else {
                 // TODO change constraint depending on whether we expect an expression or not
                 let constr = constr
@@ -108,38 +261,106 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
                     });
                 let (constr, env) = generate(cond, env, ctx, &constr)?;
                 let (constr, env) = generate(then, &env, ctx, &constr)?;
-                let (constr, env) = generate(_else, &env, ctx, &constr)?;
-                Ok((constr, env.clone()))
+                generate(_else, &env, ctx, &constr)
             } else {
-                let constr =
-                    constr.add(&Expect::Statement { ast: then.deref().clone() }, &Expect::Any);
+                let constr = constr
+                    .add(&Expect::Expression { ast: then.deref().clone() }, &Expect::AnyExpression);
                 let (constr, env) = generate(cond, env, ctx, &constr)?;
-                let (constr, env) = generate(then, &env, ctx, &constr)?;
-                Ok((constr, env.clone()))
+                generate(then, &env, ctx, &constr)
             }
         }
+
         Node::Match { .. } => unimplemented!(),
         Node::Case { .. } => unimplemented!(),
-        Node::For { .. } => unimplemented!(),
+
+        Node::For { expr, col, body } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::AnyExpression);
+            let constr =
+                constr.add(&Expect::Expression { ast: col.deref().clone() }, &Expect::Collection {
+                    ty: Some(Box::from(Expect::Expression { ast: expr.deref().clone() }))
+                });
+            let (constr, env) = generate(expr, env, ctx, &constr)?;
+            let (constr, env) = generate(col, &env, ctx, &constr)?;
+            generate(body, &env, ctx, &constr)
+        }
         Node::In { .. } => unimplemented!(),
-        Node::Step { .. } => unimplemented!(),
-        Node::While { .. } => unimplemented!(),
-        Node::Break => unimplemented!(),
-        Node::Continue => unimplemented!(),
-        Node::Return { .. } => unimplemented!(),
-        Node::ReturnEmpty => unimplemented!(),
-        Node::Underscore => unimplemented!(),
-        Node::Undefined => unimplemented!(),
-        Node::Pass => unimplemented!(),
-        Node::Question { .. } => unimplemented!(),
-        Node::QuestionOp { .. } => unimplemented!(),
+        Node::Step { amount } => {
+            let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
+            let constr = constr
+                .add(&Expect::Expression { ast: amount.deref().clone() }, &Expect::Type {
+                    type_name
+                });
+            Ok((constr, env.clone()))
+        }
+        Node::While { cond, body } => {
+            let constr =
+                constr.add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy);
+            generate(body, env, ctx, &constr)
+        }
+
+        Node::Return { expr } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::AnyExpression);
+            let constr = constr
+                .add(&Expect::Expression { ast: ast.deref().clone() }, &Expect::Expression {
+                    ast: expr.deref().clone()
+                });
+            generate(expr, env, ctx, &constr)
+        }
+
+        Node::Question { left, right } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Nullable {
+                    expect: Box::from(Expect::AnyExpression)
+                });
+            let constr = constr
+                .add(&Expect::Expression { ast: right.deref().clone() }, &Expect::AnyExpression);
+            let (constr, env) = generate(left, env, ctx, &constr)?;
+            generate(right, &env, ctx, &constr)
+        }
+        Node::QuestionOp { expr } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::AnyExpression);
+            generate(expr, env, ctx, &constr)
+        }
+
         Node::Print { expr } => {
             let constr = constr
                 .add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::AnyExpression);
-            let constr = constr.add(&Expect::Statement { ast: ast.clone() }, &Expect::AnyStatement);
-            let (constr, env) = generate(expr, env, ctx, &constr)?;
-            Ok((constr, env.clone()))
+            generate(expr, env, ctx, &constr)
         }
-        Node::Comment { .. } => Ok((constr.clone(), env.clone()))
+
+        _ => Ok((constr.clone(), env.clone()))
     }
+}
+
+fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &Constraints) -> Constrained {
+    let type_name = TypeName::from(ty);
+    let constr =
+        constr.add(&Expect::Expression { ast: ast.deref().clone() }, &Expect::Type { type_name });
+    Ok((constr, env.clone()))
+}
+
+fn implements(
+    fun: &str,
+    left: &AST,
+    right: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &Constraints
+) -> Constrained {
+    let constr = constr
+        .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Expression {
+            ast: right.deref().clone()
+        });
+    let constr =
+        constr.add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Implements {
+            name: String::from(fun),
+            args: vec![Expect::Expression { ast: left.deref().clone() }, Expect::Expression {
+                ast: right.deref().clone()
+            }]
+        });
+    let (constr, env) = generate(left, env, ctx, &constr)?;
+    generate(right, &env, ctx, &constr)
 }

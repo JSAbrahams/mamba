@@ -97,21 +97,24 @@ pub trait Modification {
                 let (right, m_right) = modify!(right);
                 Ok((AST { node: Node::Reassign { left, right }, ..ast.clone() }, m_left || m_right))
             }
-            Node::VariableDef { private, id_maybe_type, expression, forward } => {
-                let (id_maybe_type, m_id_maybe_type) = modify!(id_maybe_type);
+            Node::VariableDef { private, mutable, var, ty, expression, forward } => {
+                let (var, m_var) = modify!(var);
+                let (ty, m_ty) = optional!(ty);
                 let (expression, m_expression) = optional!(expression);
                 let (forward, m_forward) = vec_recursion!(forward);
                 Ok((
                     AST {
                         node: Node::VariableDef {
                             private: *private,
-                            id_maybe_type,
+                            mutable: *mutable,
+                            var,
+                            ty,
                             expression,
                             forward
                         },
                         ..ast.clone()
                     },
-                    m_id_maybe_type || m_expression || m_forward
+                    m_var || m_ty || m_expression || m_forward
                 ))
             }
             Node::FunDef { pure, private, id, fun_args, ret_ty, raises, body } => {
@@ -195,12 +198,15 @@ pub trait Modification {
                 ))
             }
             Node::Id { .. } => Ok((ast.clone(), false)),
-            Node::IdType { id, mutable, _type } => {
-                let (id, m_id) = modify!(id);
-                let (_type, m_type) = optional!(_type);
+            Node::ExpressionType { expr, mutable, ty } => {
+                let (expr, m_expr) = modify!(expr);
+                let (ty, m_ty) = optional!(ty);
                 Ok((
-                    AST { node: Node::IdType { mutable: *mutable, id, _type }, ..ast.clone() },
-                    m_id || m_type
+                    AST {
+                        node: Node::ExpressionType { expr, mutable: *mutable, ty },
+                        ..ast.clone()
+                    },
+                    m_expr || m_ty
                 ))
             }
             Node::TypeDef { _type, isa, body } => {
@@ -247,15 +253,16 @@ pub trait Modification {
                 let (_else, m_else) = optional!(_else);
                 Ok((AST { node: Node::Condition { cond, _else }, ..ast.clone() }, m_cond || m_else))
             }
-            Node::FunArg { vararg, id_maybe_type, default } => {
-                let (id_maybe_type, m_id_maybe_type) = modify!(id_maybe_type);
+            Node::FunArg { vararg, mutable, var, ty, default } => {
+                let (var, m_var) = modify!(var);
+                let (ty, m_ty) = optional!(ty);
                 let (default, m_default) = optional!(default);
                 Ok((
                     AST {
-                        node: Node::FunArg { vararg: *vararg, id_maybe_type, default },
+                        node: Node::FunArg { vararg: *vararg, mutable: *mutable, var, ty, default },
                         ..ast.clone()
                     },
-                    m_id_maybe_type || m_default
+                    m_var || m_ty || m_default
                 ))
             }
             Node::_Self => Ok((ast.clone(), false)),

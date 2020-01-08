@@ -33,9 +33,9 @@ pub enum Core {
         lit:      String,
         generics: Vec<Core>
     },
-    IdType {
-        lit: String,
-        ty:  Box<Core>
+    ExpressionType {
+        expr: Box<Core>,
+        ty:   Box<Core>
     },
     Assign {
         left:  Box<Core>,
@@ -43,8 +43,9 @@ pub enum Core {
     },
     VarDef {
         private: bool,
-        id:      Box<Core>,
-        right:   Box<Core>
+        var:     Box<Core>,
+        ty:      Option<Box<Core>>,
+        expr:    Option<Box<Core>>
     },
     FunDef {
         private: bool,
@@ -55,8 +56,9 @@ pub enum Core {
     },
     FunArg {
         vararg:  bool,
-        id:      Box<Core>,
-        default: Box<Core>
+        var:     Box<Core>,
+        ty:      Option<Box<Core>>,
+        default: Option<Box<Core>>
     },
     AnonFun {
         args: Vec<Core>,
@@ -295,12 +297,8 @@ pub enum Core {
     },
     Except {
         id:    Box<Core>,
-        class: Box<Core>,
+        class: Option<Box<Core>>,
         body:  Box<Core>
-    },
-    ExceptNoClass {
-        id:   Box<Core>,
-        body: Box<Core>
     },
     Raise {
         error: Box<Core>

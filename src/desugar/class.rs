@@ -90,10 +90,11 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                             }),
                             args:    vec![Core::FunArg {
                                 vararg:  false,
-                                id:      Box::new(Core::Id {
+                                var:     Box::new(Core::Id {
                                     lit: String::from(function_arg::python::SELF)
                                 }),
-                                default: Box::new(Core::Empty)
+                                ty:      None,
+                                default: None
                             }],
                             ret_ty:  None,
                             body:    Box::new(Core::Pass)
@@ -136,43 +137,33 @@ fn constructor_from_inline(
 
     for inline_arg in inline_args {
         match inline_arg {
-            Core::FunArg { id, .. } => {
+            Core::FunArg { var, .. } => {
                 args.push(inline_arg.clone());
-                if !parent_args.contains(&match id.deref() {
-                    Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
-                    other => other.clone()
-                }) {
+                if !parent_args.contains(&var) {
                     final_definitions
-                        .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) })
+                        .push(Core::Assign { left: var.clone(), right: Box::from(Core::None) })
                 }
             }
 
-            Core::VarDef { id, right, .. } => {
+            Core::VarDef { var, ty, expr, .. } => {
                 args.push(Core::FunArg {
                     vararg:  false,
-                    id:      id.clone(),
-                    default: match &right.deref() {
-                        Core::None => Box::from(Core::Empty),
-                        _ => right.clone()
+                    var:     var.clone(),
+                    ty:      ty.clone(),
+                    default: match &expr.deref() {
+                        Some(expr) => Some(expr.clone()),
+                        _ => None
                     }
                 });
 
-                let identifier = match id.deref() {
-                    Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
-                    other => other.clone()
-                };
-                if !parent_args.contains(&identifier) {
-                    final_definitions
-                        .push(Core::Assign { left: id.clone(), right: Box::from(Core::None) });
+                if !parent_args.contains(&var) {
+                    final_definitions.push(inline_arg.clone());
                     statements.push(Core::Assign {
                         left:  Box::from(Core::PropertyCall {
                             object:   Box::new(Core::Id { lit: String::from("self") }),
-                            property: Box::from(identifier)
+                            property: var.clone()
                         }),
-                        right: Box::from(match id.deref() {
-                            Core::IdType { lit, .. } => Core::Id { lit: lit.clone() },
-                            id => id.clone()
-                        })
+                        right: var.clone()
                     });
                 }
             }
@@ -263,20 +254,9 @@ fn extract_parents(
                 super_calls.push(Core::PropertyCall {
                     object:   Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("super") }),
-                        args:     vec![
-                            Core::FunArg {
-                                vararg:  false,
-                                id:      Box::new(parent_name),
-                                default: Box::new(Core::Empty)
-                            },
-                            Core::FunArg {
-                                vararg:  false,
-                                id:      Box::new(Core::Id {
-                                    lit: String::from(function_arg::python::SELF)
-                                }),
-                                default: Box::new(Core::Empty)
-                            },
-                        ]
+                        args:     vec![parent_name, Core::Id {
+                            lit: String::from(function_arg::python::SELF)
+                        }]
                     }),
                     property: Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("__init__") }),

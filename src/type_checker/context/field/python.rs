@@ -1,69 +1,9 @@
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::iter::FromIterator;
-use std::ops::Deref;
 
 use python_parser::ast::{Expression, SetItem};
 
-use crate::parser::ast::{Node, AST};
-use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::environment::name::{match_type, Identifier};
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
-
-pub struct GenericFields {
-    pub fields: HashSet<GenericField>
-}
-
-impl TryFrom<&AST> for GenericFields {
-    type Error = Vec<TypeErr>;
-
-    fn try_from(ast: &AST) -> TypeResult<GenericFields> {
-        Ok(GenericFields {
-            fields: match &ast.node {
-                // TODO do something with forward
-                Node::VariableDef { private, id_maybe_type, .. } => match &id_maybe_type.node {
-                    Node::IdType { _type, .. } => {
-                        let identifier = Identifier::try_from(id_maybe_type.deref())?;
-                        // TODO infer type if not present
-                        match &_type {
-                            Some(ty) => {
-                                let type_name = TypeName::try_from(ty.deref())?;
-                                Ok(match_type(&identifier, &type_name, &ast.pos)?
-                                    .iter()
-                                    .map(|(id, (mutable, type_name))| GenericField {
-                                        is_py_type: false,
-                                        name:       id.clone(),
-                                        mutable:    *mutable,
-                                        pos:        ast.pos.clone(),
-                                        private:    *private,
-                                        ty:         Some(type_name.clone()),
-                                        in_class:   None
-                                    })
-                                    .collect())
-                            }
-                            None => Ok(identifier
-                                .fields()
-                                .iter()
-                                .map(|(mutable, id)| GenericField {
-                                    is_py_type: false,
-                                    name:       id.clone(),
-                                    pos:        ast.pos.clone(),
-                                    private:    *private,
-                                    mutable:    *mutable,
-                                    in_class:   None,
-                                    ty:         None
-                                })
-                                .collect())
-                        }
-                    }
-                    _ => Err(vec![TypeErr::new(&id_maybe_type.pos, "Expected identifier")])
-                },
-                _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
-            }?
-        })
-    }
-}
+use crate::type_checker::context::field::generic::{GenericField, GenericFields};
 
 impl From<(&Vec<Expression>, &Vec<Vec<Expression>>)> for GenericFields {
     fn from((ids, values): (&Vec<Expression>, &Vec<Vec<Expression>>)) -> GenericFields {
@@ -108,7 +48,7 @@ impl From<&Expression> for GenericFields {
                         private:    false,
                         mutable:    false,
                         in_class:   None,
-                        ty:         None
+                        type_name:  None
                     }],
                     Expression::TupleLiteral(items) => items
                         .iter()
@@ -132,7 +72,7 @@ impl From<&Expression> for GenericFields {
                                     private:    false,
                                     mutable:    false,
                                     in_class:   None,
-                                    ty:         None
+                                    type_name:  None
                                 },
                                 _ => unreachable!()
                             }

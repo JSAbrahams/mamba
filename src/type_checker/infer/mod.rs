@@ -95,7 +95,7 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => infer_call(ast, env, ctx),
         Node::ConstructorCall { .. } => infer_call(ast, env, ctx),
 
-        Node::IdType { .. } => infer_assign(ast, env, ctx),
+        Node::ExpressionType { .. } => infer_assign(ast, env, ctx),
 
         Node::TypeUnion { .. } => infer_type(ast, env, ctx),
         Node::TypeDef { .. } | Node::TypeAlias { .. } => infer_type(ast, env, ctx),

@@ -1,7 +1,7 @@
 use crate::lexer::token::Token;
+use crate::parser::_type::parse_expression_type;
 use crate::parser::_type::parse_generics;
 use crate::parser::_type::parse_id;
-use crate::parser::_type::parse_id_maybe_type;
 use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
@@ -26,7 +26,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     };
 
     if pure {
-        let id = it.parse(&parse_id_maybe_type, "definition", &start)?;
+        let id = it.parse(&parse_expression_type, "definition", &start)?;
         parse_fun_def(&id, pure, private, it)
     } else {
         it.peek_or_err(
@@ -70,16 +70,16 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
 
 fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
     let start = it.start_pos("function definition")?;
-    let id = *it.parse(&parse_id_maybe_type, "variable or function definition", &start)?;
+    let id = *it.parse(&parse_expression_type, "variable or function definition", &start)?;
 
-    match id.node {
-        Node::IdType { _type: Some(_), .. } | Node::TypeTup { .. } =>
+    match &id.node {
+        Node::ExpressionType { ty: Some(_), .. } | Node::TypeTup { .. } =>
             parse_variable_def_id(&id, private, it),
-        Node::IdType { _type: None, mutable, .. } => it.peek(
+        Node::ExpressionType { expr, ty: None, mutable } => it.peek(
             &|it, lex| match lex.token {
                 Token::LRBrack => {
-                    if mutable {
-                        return Err(custom("Function definition cannot be mutable.", &id.pos));
+                    if *mutable {
+                        return Err(custom("Function definition cannot be mutable.", &expr.pos));
                     }
                     parse_fun_def(&id, false, private, it)
                 }
@@ -88,7 +88,9 @@ fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
             {
                 let node = Node::VariableDef {
                     private,
-                    id_maybe_type: Box::from(id.clone()),
+                    mutable: *mutable,
+                    var: expr.clone(),
+                    ty: None,
                     expression: None,
                     forward: vec![]
                 };
@@ -99,15 +101,15 @@ fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
     }
 }
 
-fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator) -> ParseResult {
+fn parse_fun_def(id: &AST, pure: bool, private: bool, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function definition")?;
     let fun_args = it.parse_vec(&parse_fun_args, "function definition", &start)?;
 
-    let id = match &id_type.node {
-        Node::IdType { id, mutable, _type } => match (mutable, _type) {
-            (false, None) => id.clone(),
-            (true, _) => return Err(custom("Function definition cannot be mutable", &id.pos)),
-            (_, Some(_)) => return Err(custom("Function identifier cannot have type", &id.pos))
+    let id = match &id.node {
+        Node::ExpressionType { expr, mutable, ty } => match (mutable, ty) {
+            (false, None) => expr.clone(),
+            (true, _) => return Err(custom("Function definition cannot be mutable", &expr.pos)),
+            (_, Some(_)) => return Err(custom("Function identifier cannot have type", &expr.pos))
         },
 
         Node::AddOp
@@ -120,9 +122,9 @@ fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator)
         | Node::ModOp
         | Node::EqOp
         | Node::GeOp
-        | Node::LeOp => Box::from(id_type.clone()),
+        | Node::LeOp => Box::from(id.clone()),
 
-        _ => return Err(custom("Function definition not given id or operator", &id_type.pos))
+        _ => return Err(custom("Function definition not given id or operator", &id.pos))
     };
 
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", &start)?;
@@ -133,7 +135,7 @@ fn parse_fun_def(id_type: &AST, pure: bool, private: bool, it: &mut LexIterator)
         (_, _, Some(b)) => b.pos.clone(),
         (_, Some(b), _) => b.pos.clone(),
         (Some(b), ..) => b.pos.clone(),
-        _ => id_type.pos.clone()
+        _ => id.pos.clone()
     };
 
     let node = Node::FunDef { id, pure, private, fun_args, ret_ty, raises, body };
@@ -164,12 +166,20 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     let start = &it.start_pos("function argument")?;
     let vararg = it.eat_if(&Token::Vararg).is_some();
 
-    let id_maybe_type = it.parse(&parse_id_maybe_type, "function argument", start)?;
+    let expression_type = it.parse(&parse_expression_type, "function argument", start)?;
+    let (mutable, var, ty) = match &expression_type.node {
+        Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
+        _ =>
+            return Err(custom(
+                "Expected expression type in function argument",
+                &expression_type.pos
+            )),
+    };
     let default =
         it.parse_if(&Token::Assign, &parse_expression, "function argument default", start)?;
 
-    let end = default.clone().map_or(id_maybe_type.pos.clone(), |def| def.pos);
-    let node = Node::FunArg { vararg, id_maybe_type, default };
+    let end = default.clone().map_or(expression_type.pos.clone(), |def| def.pos);
+    let node = Node::FunArg { vararg, mutable, var, ty, default };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
@@ -189,19 +199,22 @@ fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> Parse
     let start = &id.pos;
     let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body", start)?;
     let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", start)?;
+    let (mutable, var, ty) = match &id.node {
+        Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
+        _ => return Err(custom("Expected expression type in variable definition", &id.pos))
+    };
 
     let end = &match (&expression, &forward.last()) {
         (_, Some(expr)) => expr.pos.clone(),
         (Some(expr), _) => expr.pos.clone(),
         _ => id.pos.clone()
     };
-    let node =
-        Node::VariableDef { private, id_maybe_type: Box::from(id.clone()), expression, forward };
+    let node = Node::VariableDef { private, mutable, var, ty, expression, forward };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
 fn parse_variable_def(private: bool, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("variable definition")?;
-    let id = it.parse(&parse_id_maybe_type, "variable definition", &start)?;
+    let id = it.parse(&parse_expression_type, "variable definition", &start)?;
     parse_variable_def_id(&id, private, it)
 }

@@ -51,10 +51,12 @@ pub enum Node {
         right: Box<AST>
     },
     VariableDef {
-        private:       bool,
-        id_maybe_type: Box<AST>,
-        expression:    Option<Box<AST>>,
-        forward:       Vec<AST>
+        private:    bool,
+        mutable:    bool,
+        var:        Box<AST>,
+        ty:         Option<Box<AST>>,
+        expression: Option<Box<AST>>,
+        forward:    Vec<AST>
     },
     FunDef {
         pure:     bool,
@@ -104,12 +106,12 @@ pub enum Node {
     Id {
         lit: String
     },
-
-    IdType {
-        id:      Box<AST>,
+    ExpressionType {
+        expr:    Box<AST>,
         mutable: bool,
-        _type:   Option<Box<AST>>
+        ty:      Option<Box<AST>>
     },
+
     TypeDef {
         _type: Box<AST>,
         isa:   Option<Box<AST>>,
@@ -139,9 +141,11 @@ pub enum Node {
         _else: Option<Box<AST>>
     },
     FunArg {
-        vararg:        bool,
-        id_maybe_type: Box<AST>,
-        default:       Option<Box<AST>>
+        vararg:  bool,
+        mutable: bool,
+        var:     Box<AST>,
+        ty:      Option<Box<AST>>,
+        default: Option<Box<AST>>
     },
 
     _Self,

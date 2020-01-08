@@ -65,7 +65,7 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
     ParseErr {
         position: actual.pos.clone(),
         msg:      format!(
-            "Expected one of [{}] while parsing {} \"{}\", but found token '{}'",
+            "Expected one of ({}) while parsing {} \"{}\", but found token '{}'",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing,

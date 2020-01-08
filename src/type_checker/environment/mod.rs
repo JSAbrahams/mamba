@@ -4,7 +4,7 @@ use crate::type_checker::environment::state::State;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub mod name;
 pub mod state;
@@ -14,11 +14,18 @@ pub mod state;
 #[derive(Clone, Debug)]
 pub struct Environment {
     pub state: State,
+    pub vars:  HashSet<String>,
     variables: HashMap<String, (bool, ExpressionType)>
 }
 
 impl Default for Environment {
-    fn default() -> Self { Environment { state: State::default(), variables: HashMap::new() } }
+    fn default() -> Self {
+        Environment {
+            state:     State::default(),
+            vars:      HashSet::new(),
+            variables: HashMap::new()
+        }
+    }
 }
 
 impl Environment {
@@ -42,7 +49,7 @@ impl Environment {
         variables.insert(String::from(function_arg::concrete::SELF), (mutable, class.clone()));
 
         let state = self.state.in_class(&TypeName::from(class));
-        Environment { state, variables }
+        Environment { state, vars: self.vars.clone(), variables }
     }
 
     pub fn new_state(&self, state: &State) -> Self {

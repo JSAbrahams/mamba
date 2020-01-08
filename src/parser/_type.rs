@@ -26,9 +26,8 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
             Token::LRBrack => {
                 let mut elements = vec![];
                 let start = it.eat(&Token::LRBrack, "identifier tuple")?;
-                // TODO allow id's to be mutable within tuples
                 it.peek_while_not_token(&Token::RRBrack, &mut |it, _| {
-                    elements.push(*it.parse(&parse_id_maybe_mut, "identifier", &start)?);
+                    elements.push(*it.parse(&parse_expr_no_type, "identifier", &start)?);
                     it.eat_if(&Token::Comma);
                     Ok(())
                 })?;
@@ -37,7 +36,7 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(&end, Node::Tuple { elements })))
             }
             _ => Err(expected_one_of(
-                &[Token::_Self, Token::Init, Token::Id(String::new())],
+                &[Token::_Self, Token::Init, Token::Id(String::new()), Token::LRBrack],
                 lex,
                 "identifier"
             ))
@@ -189,27 +188,26 @@ pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
-pub fn parse_id_maybe_mut(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("identifier maybe type")?;
+pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("expression no type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
-
-    let id = it.parse(&parse_id, "identifier maybe type", &start)?;
-    if it.eat_if(&Token::DoublePoint).is_some() {
-        Err(custom("Type annotation not allowed here", &id.pos))
+    let expr = it.parse(&parse_id, "expression no type", &start)?;
+    if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
+        Err(custom("Type annotation not allowed here", &annotation_pos))
     } else {
-        let node = Node::IdType { id: id.clone(), mutable, _type: None };
-        Ok(Box::from(AST::new(&start.union(&id.pos), node)))
+        let node = Node::ExpressionType { expr: expr.clone(), mutable, ty: None };
+        Ok(Box::from(AST::new(&start.union(&expr.pos), node)))
     }
 }
 
-pub fn parse_id_maybe_type(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("identifier maybe type")?;
+pub fn parse_expression_type(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("expression type")?;
     let mutable = it.eat_if(&Token::Mut).is_some();
 
-    let id = it.parse(&parse_id, "identifier maybe type", &start)?;
-    let _type = it.parse_if(&Token::DoublePoint, &parse_type, "identifier maybe type", &start)?;
-    let end = _type.clone().map_or(id.pos.clone(), |t| t.pos);
+    let expr = it.parse(&parse_id, "expression type", &start)?;
+    let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression type", &start)?;
+    let end = ty.clone().map_or(expr.pos.clone(), |t| t.pos);
 
-    let node = Node::IdType { id, mutable, _type };
+    let node = Node::ExpressionType { expr, mutable, ty };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }

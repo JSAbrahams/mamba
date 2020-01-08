@@ -1,5 +1,4 @@
 use core::fmt;
-use std::borrow::BorrowMut;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
@@ -122,17 +121,18 @@ impl TypeName {
         }
     }
 
-    pub fn union(self, other: &TypeName) -> TypeName {
-        match (self.clone().borrow_mut(), other.clone().borrow_mut()) {
+    pub fn union(&self, other: &TypeName) -> TypeName {
+        match (&self, other) {
             (TypeName::Single { ty }, TypeName::Single { ty: o_ty }) => TypeName::Union {
                 union: HashSet::from_iter(vec![ty.clone(), o_ty.clone()].into_iter())
             },
             (TypeName::Union { union }, TypeName::Union { union: o_union }) =>
-                TypeName::Union { union: union.union(o_union).cloned().collect() },
+                TypeName::Union { union: union.union(&o_union).cloned().collect() },
             (TypeName::Single { ty }, TypeName::Union { union })
             | (TypeName::Union { union }, TypeName::Single { ty }) => {
+                let mut union = union.clone();
                 union.insert(ty.clone());
-                TypeName::Union { union: union.clone() }
+                TypeName::Union { union }
             }
         }
     }

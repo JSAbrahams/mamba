@@ -62,24 +62,24 @@ impl GenericFunctionArg {
 impl TryFrom<&AST> for ClassArgument {
     type Error = Vec<TypeErr>;
 
-    fn try_from(node_pos: &AST) -> TypeResult<ClassArgument> {
-        match &node_pos.node {
-            Node::VariableDef { id_maybe_type, .. } => Ok(ClassArgument {
-                field:   Some(GenericField::try_from(node_pos)?),
+    fn try_from(ast: &AST) -> TypeResult<ClassArgument> {
+        match &ast.node {
+            Node::VariableDef { mutable, var, expression, ty, .. } => Ok(ClassArgument {
+                field:   Some(GenericField::try_from(ast)?),
                 fun_arg: GenericFunctionArg::try_from(&AST {
-                    pos:  node_pos.pos.clone(),
+                    pos:  ast.pos.clone(),
                     node: Node::FunArg {
-                        vararg:        false,
-                        id_maybe_type: id_maybe_type.clone(),
-                        default:       None
+                        vararg:  false,
+                        mutable: *mutable,
+                        var:     var.clone(),
+                        default: expression.clone(),
+                        ty:      ty.clone()
                     }
                 })?
             }),
-            Node::FunArg { .. } => Ok(ClassArgument {
-                field:   None,
-                fun_arg: GenericFunctionArg::try_from(node_pos)?
-            }),
-            _ => Err(vec![TypeErr::new(&node_pos.pos, "Expected definition or function argument")])
+            Node::FunArg { .. } =>
+                Ok(ClassArgument { field: None, fun_arg: GenericFunctionArg::try_from(ast)? }),
+            _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition or function argument")])
         }
     }
 }
@@ -89,51 +89,41 @@ impl TryFrom<&AST> for GenericFunctionArg {
 
     fn try_from(node_pos: &AST) -> TypeResult<GenericFunctionArg> {
         match &node_pos.node {
-            Node::FunArg { vararg, id_maybe_type, default, .. } => match &id_maybe_type.node {
-                Node::IdType { id, mutable, _type } => {
-                    let name = argument_name(id.deref())?;
-                    Ok(GenericFunctionArg {
-                        is_py_type:  false,
-                        name:        name.clone(),
-                        has_default: default.is_some(),
-                        vararg:      *vararg,
-                        mutable:     *mutable,
-                        pos:         node_pos.pos.clone(),
-                        ty:          match _type {
-                            Some(_type) => Some(TypeName::try_from(_type.deref())?),
-                            None if name.as_str() == SELF => None,
-                            None =>
-                                if let Some(default) = default {
-                                    Some(match &default.deref().node {
-                                        Node::Str { .. } => TypeName::from(python::STRING),
-                                        Node::Bool { .. } => TypeName::from(python::BOOLEAN),
-                                        Node::Int { .. } => TypeName::from(python::INTEGER),
-                                        Node::Real { .. } => TypeName::from(python::FLOAT),
-                                        // TODO create system for identifying when a enum is an int
-                                        // and when it is a float
-                                        Node::ENum { .. } => TypeName::from(python::INTEGER),
-                                        // TODO create system for inferring types for constructor
-                                        // and function calls
-                                        _ =>
-                                            return Err(vec![TypeErr::new(
-                                                &default.pos,
-                                                "Can only infer type of literals"
-                                            )]),
-                                    })
-                                } else {
-                                    return Err(vec![TypeErr::new(
-                                        &id.pos,
-                                        "Non-self argument must have type if no inferrable default"
-                                    )]);
-                                },
-                        }
-                    })
-                }
-                _ => Err(vec![TypeErr::new(
-                    &id_maybe_type.pos,
-                    "Expected function argument identifier (and type)"
-                )])
-            },
+            Node::FunArg { vararg, var, mutable, ty, default, .. } => {
+                let name = argument_name(var.deref())?;
+                Ok(GenericFunctionArg {
+                    is_py_type:  false,
+                    name:        name.clone(),
+                    has_default: default.is_some(),
+                    vararg:      *vararg,
+                    mutable:     *mutable,
+                    pos:         node_pos.pos.clone(),
+                    ty:          match ty {
+                        Some(_type) => Some(TypeName::try_from(_type.deref())?),
+                        None if name.as_str() == SELF => None,
+                        None =>
+                            if let Some(default) = default {
+                                Some(match &default.deref().node {
+                                    Node::Str { .. } => TypeName::from(python::STRING),
+                                    Node::Bool { .. } => TypeName::from(python::BOOLEAN),
+                                    Node::Int { .. } => TypeName::from(python::INTEGER),
+                                    Node::Real { .. } => TypeName::from(python::FLOAT),
+                                    Node::ENum { .. } => TypeName::from(python::INTEGER),
+                                    _ =>
+                                        return Err(vec![TypeErr::new(
+                                            &default.pos,
+                                            "Can only infer type of literals"
+                                        )]),
+                                })
+                            } else {
+                                return Err(vec![TypeErr::new(
+                                    &var.pos,
+                                    "Non-self argument must have type if no inferrable default"
+                                )]);
+                            },
+                    }
+                })
+            }
             _ => Err(vec![TypeErr::new(&node_pos.pos, "Expected function argument")])
         }
     }

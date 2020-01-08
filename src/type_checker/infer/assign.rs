@@ -26,7 +26,7 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
             env.clone()
         )),
         Node::Id { lit } => Ok((InferType::from(&env.lookup(lit, &ast.pos)?), env.clone())),
-        Node::IdType { .. } => Ok((InferType::default(), env.clone())),
+        Node::ExpressionType { .. } => Ok((InferType::default(), env.clone())),
         Node::Reassign { left, right } => {
             let identifier = Identifier::try_from(left.deref())?;
             let (right_ty, env) = infer(right, &env, ctx)?;
@@ -53,44 +53,37 @@ pub fn infer_assign(ast: &AST, env: &Environment, ctx: &Context) -> InferResult 
         }
         // TODO use forward and private
         // TODO check if parent already defines variable if relevant
-        Node::VariableDef { id_maybe_type, expression, .. } => match &id_maybe_type.node {
-            // TODO Check whether mutable
-            // TODO use system for tuples of ids
-            Node::IdType { _type, id, mutable } => {
-                let identifier = Identifier::try_from(id.deref())?;
+        Node::VariableDef { var, mutable, ty, expression, .. } => {
+            let identifier = Identifier::try_from(var.deref())?;
 
-                let (ty, mut env) = match (_type, expression) {
-                    (Some(ty_name), Some(expr)) => {
-                        let expr_ty =
-                            ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?;
-                        let (other_ty, env) = infer(expr, env, ctx)?;
-                        if expr_ty != other_ty.expr_ty(&id_maybe_type.pos)? {
-                            let msg = "Expression type does not match annotated type";
-                            return Err(vec![TypeErr::new(&expr.pos, msg)]);
-                        }
-
-                        (other_ty, env)
+            let (ty, mut env) = match (ty, expression) {
+                (Some(ty), Some(expr)) => {
+                    let expr_ty = ctx.lookup(&TypeName::try_from(ty.deref())?, &ty.pos)?;
+                    let (other_ty, env) = infer(expr, env, ctx)?;
+                    if expr_ty != other_ty.expr_ty(&ty.pos)? {
+                        let msg = "Expression type does not match annotated type";
+                        return Err(vec![TypeErr::new(&expr.pos, msg)]);
                     }
-                    (None, Some(expr)) => infer(expr, env, ctx)?,
-                    (Some(ty_name), None) => (
-                        InferType::from(
-                            &ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?
-                        ),
-                        env.clone()
-                    ),
-                    (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])
-                };
-
-                let expr_ty = ty.expr_ty(&ast.pos)?;
-                let matched = match_name(&identifier, &expr_ty, &env, &ast.pos)?;
-                for (id, (inner_mut, expr_ty)) in matched {
-                    env.insert(id.as_str(), *mutable || inner_mut, &expr_ty);
+                    (other_ty, env)
                 }
+                (None, Some(expr)) => infer(expr, env, ctx)?,
+                (Some(ty_name), None) => (
+                    InferType::from(
+                        &ctx.lookup(&TypeName::try_from(ty_name.deref())?, &ty_name.pos)?
+                    ),
+                    env.clone()
+                ),
+                (None, None) => return Err(vec![TypeErr::new(&ast.pos, "Cannot infer type")])
+            };
 
-                Ok((InferType::default().union_raises(&ty.raises), env))
+            let expr_ty = ty.expr_ty(&ast.pos)?;
+            let matched = match_name(&identifier, &expr_ty, &env, &ast.pos)?;
+            for (id, (inner_mut, expr_ty)) in matched {
+                env.insert(id.as_str(), *mutable || inner_mut, &expr_ty);
             }
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected identifier")])
-        },
+
+            Ok((InferType::default().union_raises(&ty.raises), env))
+        }
 
         Node::FunArg { .. } => Err(vec![TypeErr::new(&ast.pos, "Unexpected function argument")]),
         Node::FunDef { fun_args, ret_ty, raises, body, .. } => {
@@ -145,26 +138,20 @@ pub fn arg_types(
     let mut arg_types = HashMap::new();
     for arg in args {
         // TODO do something with vararg
-        let (id, mutable, _type, default) = match &arg.node {
-            Node::FunArg { id_maybe_type, default, .. } => match &id_maybe_type.node {
-                Node::IdType { id, mutable, _type } => (id, mutable, _type, default),
-                _ => {
-                    let msg = "Expected identifier";
-                    return Err(vec![TypeErr::new(&id_maybe_type.pos, &msg)]);
-                }
-            },
+        let (var, mutable, ty, default) = match &arg.node {
+            Node::FunArg { var, mutable, ty, default, .. } => (var, mutable, ty, default),
             _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
         };
 
-        let lit = argument_name(id)?;
+        let lit = argument_name(var)?;
         let default_ty = match default {
-            Some(default) => Some(infer(default, env, ctx)?.0.expr_ty(&id.pos)?),
+            Some(default) => Some(infer(default, env, ctx)?.0.expr_ty(&var.pos)?),
             None => None
         };
 
         // TODO if return type is none, then body should not return anything
         // TODO if op overloading, return type Bool or class even if not specified
-        if let Some(_type) = _type {
+        if let Some(_type) = ty {
             let arg_ty_name = TypeName::try_from(_type.deref())?;
             if let Some(default_ty) = default_ty {
                 if arg_ty_name == TypeName::from(&default_ty) {

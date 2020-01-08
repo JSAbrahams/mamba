@@ -48,7 +48,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
 
             if let Some(_as) = _as {
                 let (_as, mutable, type_name) = match &_as.node {
-                    Node::IdType { id, _type, mutable } => match (&id.node, &_type) {
+                    Node::ExpressionType { expr, ty, mutable } => match (&expr.node, &ty) {
                         (Node::Id { lit }, Some(ty)) =>
                             (lit.clone(), mutable, Some(TypeName::try_from(ty.deref())?)),
                         (Node::Id { lit }, None) => (lit.clone(), mutable, None),

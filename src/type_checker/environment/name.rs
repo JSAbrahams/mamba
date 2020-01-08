@@ -58,8 +58,8 @@ impl TryFrom<&AST> for Identifier {
         match &ast.node {
             // TODO add mutable field to identifier
             Node::Id { lit } => Ok(Identifier::from(lit.as_str())),
-            Node::IdType { id, mutable, .. } => {
-                let identifier = Identifier::try_from(id.deref())?;
+            Node::ExpressionType { expr, mutable, .. } => {
+                let identifier = Identifier::try_from(expr.deref())?;
                 Ok(if *mutable { identifier.as_mutable() } else { identifier })
             }
             Node::Tuple { elements } =>

@@ -8,7 +8,6 @@ macro_rules! unwrap_func_definition {
             Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
             _ => panic!("ast_tree was not script.")
         };
-
         match definition.node {
             Node::FunDef { id, private, pure, fun_args, ret_ty, raises, body, .. } =>
                 (private, pure, id, fun_args, ret_ty, raises, body),
@@ -23,14 +22,9 @@ macro_rules! unwrap_definition {
             Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
             _ => panic!("ast_tree was not script.")
         };
-
         match definition.node {
-            Node::VariableDef { private, id_maybe_type, expression, forward } =>
-                match id_maybe_type.node {
-                    Node::IdType { id, mutable, _type } =>
-                        (private, mutable, id, _type, expression, forward),
-                    other => panic!("Expected id type in variable def but was {:?}.", other)
-                },
+            Node::VariableDef { private, mutable, var, ty, expression, forward } =>
+                (private, mutable, var, ty, expression, forward),
             other => panic!("Expected variabledef but was {:?}.", other)
         }
     }};
@@ -180,33 +174,29 @@ fn function_definition_verify() {
 
     match (&fun_args[0].node, &fun_args[1].node) {
         (
-            Node::FunArg { vararg: v1, id_maybe_type: id1, default: d1 },
-            Node::FunArg { vararg: v2, id_maybe_type: id2, default: d2 }
+            Node::FunArg { vararg: v1, var: id1, mutable: mut1, ty: ty1, default: d1 },
+            Node::FunArg { vararg: v2, var: id2, mutable: mut2, ty: ty2, default: d2 }
         ) => {
             assert_eq!(v1.clone(), false);
             assert_eq!(v2.clone(), true);
+
+            assert_eq!(id1.node, Node::Id { lit: String::from("b") });
+            assert_eq!(id2.node, Node::Id { lit: String::from("c") });
+
+            assert!(!mut1);
+            assert!(!mut2);
+
+            match ty1.clone().unwrap().node {
+                Node::Type { id, generics } => {
+                    assert_eq!(id.node, Node::Id { lit: String::from("Something") });
+                    assert_eq!(generics.len(), 0);
+                }
+                other => panic!("Expected type for first argument: {:?}", other)
+            }
+            assert_eq!(ty2.clone(), None);
+
             assert_eq!(d1.clone(), None);
             assert_eq!(d2.clone(), None);
-
-            match (&id1.node, &id2.node) {
-                (
-                    Node::IdType { id: id1, _type: t1, mutable: false },
-                    Node::IdType { id: id2, _type: t2, mutable: false }
-                ) => {
-                    assert_eq!(id1.node, Node::Id { lit: String::from("b") });
-                    assert_eq!(id2.node, Node::Id { lit: String::from("c") });
-                    assert_eq!(t2.clone(), None);
-
-                    match t1.clone().unwrap().node {
-                        Node::Type { id, generics } => {
-                            assert_eq!(id.node, Node::Id { lit: String::from("Something") });
-                            assert_eq!(generics.len(), 0);
-                        }
-                        other => panic!("Expected type for first argument: {:?}", other)
-                    }
-                }
-                other => panic!("Expected two id's: {:?}", other)
-            }
         }
         other => panic!("Expected two fun args: {:?}", other)
     }
@@ -250,7 +240,7 @@ fn function_pure_definition_verify() {
 
 #[test]
 fn function_definition_with_literal_verify() {
-    let source = String::from("def f(x, vararg b: Something) => d");
+    let source = String::from("def f(x, vararg mut b: Something) => d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast_tree);
 
@@ -267,32 +257,29 @@ fn function_definition_with_literal_verify() {
 
     match (&fun_args[0].node, &fun_args[1].node) {
         (
-            Node::FunArg { vararg: v1, id_maybe_type: id1, default: d1 },
-            Node::FunArg { vararg: v2, id_maybe_type: id2, default: d2 }
+            Node::FunArg { vararg: v1, var: id1, mutable: mut1, ty: ty1, default: d1 },
+            Node::FunArg { vararg: v2, var: id2, mutable: mut2, ty: ty2, default: d2 }
         ) => {
-            assert_eq!(v1.clone(), false);
-            assert_eq!(v2.clone(), true);
+            assert!(!v1.clone());
+            assert!(v2.clone());
+
+            assert!(!mut1.clone());
+            assert!(mut2.clone());
+
+            assert_eq!(id1.node, Node::Id { lit: String::from("x") });
+            assert_eq!(id2.node, Node::Id { lit: String::from("b") });
+
+            assert_eq!(ty1.clone(), None);
+            match ty2.clone().unwrap().node {
+                Node::Type { id, generics } => {
+                    assert_eq!(id.node, Node::Id { lit: String::from("Something") });
+                    assert_eq!(generics.len(), 0);
+                }
+                other => panic!("Expected type for first argument: {:?}", other)
+            }
+
             assert_eq!(d1.clone(), None);
             assert_eq!(d2.clone(), None);
-
-            match (&id1.node, &id2.node) {
-                (
-                    Node::IdType { id: id1, mutable: false, _type: None },
-                    Node::IdType { id: id2, mutable: false, _type: t2 }
-                ) => {
-                    assert_eq!(id1.node, Node::Id { lit: String::from("x") });
-                    assert_eq!(id2.node, Node::Id { lit: String::from("b") });
-
-                    match t2.clone().unwrap().node {
-                        Node::Type { id, generics } => {
-                            assert_eq!(id.node, Node::Id { lit: String::from("Something") });
-                            assert_eq!(generics.len(), 0);
-                        }
-                        other => panic!("Expected type for first argument: {:?}", other)
-                    }
-                }
-                other => panic!("Expected two id's: {:?}", other)
-            }
         }
         other => panic!("Expected two fun args: {:?}", other)
     }

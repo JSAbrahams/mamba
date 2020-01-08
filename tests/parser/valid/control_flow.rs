@@ -187,9 +187,11 @@ fn match_verify() {
             AST { node: Node::Case { cond: cond1, body: expr1 }, .. },
             AST { node: Node::Case { cond: cond2, body: expr2 }, .. }
         ) => match (&cond1.node, &cond2.node) {
-            (Node::IdType { id: cond1, .. }, Node::IdType { id: cond2, .. }) =>
-                (cond1, expr1, cond2, expr2),
-            other => panic!("expected id maybe type: {:?}", other)
+            (
+                Node::ExpressionType { expr: cond1, .. },
+                Node::ExpressionType { expr: cond2, .. }
+            ) => (cond1, expr1, cond2, expr2),
+            other => panic!("expected expression type: {:?}", other)
         },
         _ => panic!("Cases incorrect.")
     };

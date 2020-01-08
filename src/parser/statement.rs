@@ -1,5 +1,5 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_id_maybe_type;
+use crate::parser::_type::parse_expression_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
@@ -63,7 +63,7 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_expression, "with", &start)?;
-    let _as = it.parse_if(&Token::As, &parse_id_maybe_type, "with id", &start)?;
+    let _as = it.parse_if(&Token::As, &parse_expression_type, "with id", &start)?;
     it.eat(&Token::Do, "with")?;
     let expr = it.parse(&parse_expr_or_stmt, "with", &start)?;
 

@@ -57,10 +57,10 @@ fn handle_empty_verify() {
 #[test]
 fn handle_verify() {
     let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
-    let cond = to_pos!(Node::IdType {
-        id:      to_pos!(Node::Id { lit: String::from("err") }),
+    let cond = to_pos!(Node::ExpressionType {
+        expr:    to_pos!(Node::Id { lit: String::from("err") }),
         mutable: false,
-        _type:   Some(to_pos!(Node::Type {
+        ty:      Some(to_pos!(Node::Type {
             id:       to_pos!(Node::Id { lit: String::from("my_type") }),
             generics: vec![]
         }))
@@ -80,9 +80,12 @@ fn handle_verify() {
     assert_eq!(except.len(), 1);
     match &except[0] {
         Core::Except { id, class, body } => {
-            assert_eq!(**id, Core::Id { lit: String::from("err") });
-            assert_eq!(**class, Core::Id { lit: String::from("my_type") });
-            assert_eq!(**body, Core::Int { int: String::from("9999") });
+            assert_eq!(*id, Box::from(Core::Id { lit: String::from("err") }));
+            assert_eq!(
+                *class,
+                Some(Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }))
+            );
+            assert_eq!(*body, Box::from(Core::Int { int: String::from("9999") }));
         }
         other => panic!("Expected except case but was {:?}", other)
     }

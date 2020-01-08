@@ -61,12 +61,9 @@ pub fn infer_call(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             let (instance_ty, env) = infer(instance, env, ctx)?;
             let expr_ty = instance_ty.expr_ty(&instance.pos)?;
             let mutable = match &instance.node {
-                Node::VariableDef { id_maybe_type, .. } => match &id_maybe_type.node {
-                    Node::IdType { mutable, .. } => *mutable,
-                    _ => false
-                },
-                Node::IdType { id, .. } => match &id.node {
-                    Node::Id { lit } => env.lookup_indirect(lit, &id.pos)?.0,
+                Node::VariableDef { mutable, .. } => *mutable,
+                Node::ExpressionType { expr, .. } => match &expr.node {
+                    Node::Id { lit } => env.lookup_indirect(lit, &expr.pos)?.0,
                     _ => false
                 },
                 Node::Id { lit } => env.lookup_indirect(&lit, &instance.pos)?.0,
@@ -111,7 +108,7 @@ fn property_call(
         Node::Reassign { left, right } => {
             let (id, ty) = match &left.node {
                 Node::Id { lit } => (lit.clone(), None),
-                Node::IdType { id, _type, .. } => match (&id.node, &_type) {
+                Node::ExpressionType { expr, ty, .. } => match (&expr.node, &ty) {
                     (Node::Id { lit }, Some(ty)) =>
                         (lit.clone(), Some((TypeName::try_from(ty.deref())?, ty.pos.clone()))),
                     (Node::Id { lit }, None) => (lit.clone(), None),

@@ -4,8 +4,7 @@ use std::io::Read;
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use crate::type_checker::context::field::generic::GenericField;
-use crate::type_checker::context::field::python::GenericFields;
+use crate::type_checker::context::field::generic::{GenericField, GenericFields};
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::type_result::{TypeErr, TypeResult};

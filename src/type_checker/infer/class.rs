@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
@@ -7,7 +8,6 @@ use crate::type_checker::infer::{infer, InferResult};
 use crate::type_checker::infer_type::InferType;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
 
 pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
@@ -15,20 +15,16 @@ pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::Class { _type, args, parents, body, .. } => {
             // TODO type check arguments and constructor of parent
             for arg in args {
-                let id_maybe_type = match &arg.node {
-                    Node::VariableDef { id_maybe_type, .. } => id_maybe_type.clone(),
-                    Node::FunArg { id_maybe_type, .. } => id_maybe_type.clone(),
+                let ty = match &arg.node {
+                    Node::VariableDef { ty, .. } => ty.clone(),
+                    Node::FunArg { ty, .. } => ty.clone(),
                     _ => return Err(vec![TypeErr::new(&arg.pos, "Expected argument")])
                 };
 
-                match &id_maybe_type.node {
-                    Node::IdType { _type, .. } =>
-                        if let Some(_type) = _type {
-                            let type_name = TypeName::try_from(_type.deref())?;
-                            ctx.lookup(&type_name, &_type.pos)?;
-                        },
-                    _ => return Err(vec![TypeErr::new(&arg.pos, "Expected identifier")])
-                };
+                if let Some(ty) = ty {
+                    let type_name = TypeName::try_from(ty.deref())?;
+                    ctx.lookup(&type_name, &ty.pos)?;
+                }
             }
 
             for parent in parents {

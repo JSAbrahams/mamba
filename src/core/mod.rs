@@ -52,7 +52,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             } else {
                 format!("{}[{}]", lit, comma_delimited(generics, ind))
             },
-        Core::IdType { lit, ty } => format!("{}: {}", lit, to_py(ty, ind)),
+        Core::ExpressionType { expr, ty } => format!("{}: {}", to_py(expr, ind), to_py(ty, ind)),
         Core::DocStr { _str } => format!("\"\"\"{}\"\"\"", _str),
         Core::Str { _str } => format!("\"{}\"", _str),
         Core::FStr { _str } => format!("f\"{}\"", _str),
@@ -100,24 +100,24 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
 
-        Core::Assign { left, right } | Core::VarDef { id: left, right, .. } =>
-            format!("{} = {}", to_py(left.as_ref(), ind), {
-                let right = to_py(right.as_ref(), ind);
-                if right.is_empty() {
-                    String::from("None")
-                } else {
-                    right
-                }
-            }),
+        Core::Assign { left, right } => format!("{} = {}", to_py(left, ind), to_py(right, ind)),
+        Core::VarDef { private, var, expr, ty } => format!(
+            "{}{}{} = {}",
+            if *private { "_" } else { "" },
+            to_py(var, ind),
+            if let Some(ty) = ty { format!(": {}", to_py(ty, ind)) } else { String::new() },
+            if let Some(expr) = expr { to_py(expr, ind) } else { String::from("None") }
+        ),
 
-        Core::FunArg { vararg, id, default } => format!(
-            "{}{}{}",
+        Core::FunArg { vararg, var, ty, default } => format!(
+            "{}{}{}{}",
             if *vararg { "*" } else { "" },
-            to_py(id.as_ref(), ind),
-            if **default == Core::Empty {
-                String::new()
+            to_py(var, ind),
+            if let Some(ty) = ty { format!(": {}", to_py(ty, ind)) } else { String::new() },
+            if let Some(default) = default {
+                format!(" = {}", to_py(default, ind))
             } else {
-                format!(" = {}", to_py(default.as_ref(), ind))
+                String::new()
             }
         ),
 
@@ -299,12 +299,10 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::Except { id, class, body } => format!(
             "except {} as {}:{}",
-            to_py(class, ind),
+            if let Some(class) = class { to_py(class, ind) } else { String::from("Exception") },
             to_py(id, ind),
             newline_if_body(body, ind)
         ),
-        Core::ExceptNoClass { id, body } =>
-            format!("except Exception as {}:{}", to_py(id, ind), newline_if_body(body, ind)),
 
         Core::Raise { error } => format!("raise {}", to_py(error, ind))
     }

@@ -50,7 +50,7 @@ impl TryFrom<(&GenericField, &HashMap<String, TypeName>, &Position)> for Field {
                 Some(in_class) => Some(in_class.substitute(generics, pos)?),
                 None => None
             },
-            ty:         match &field.ty {
+            ty:         match &field.type_name {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
             }

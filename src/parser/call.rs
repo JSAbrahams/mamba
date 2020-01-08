@@ -1,5 +1,5 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_id_maybe_type;
+use crate::parser::_type::parse_expression_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expression::parse_inner_expression;
@@ -23,7 +23,7 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
 
     let mut args: Vec<AST> = vec![];
     it.peek_while_not_token(&Token::BTo, &mut |it, _| {
-        args.push(*it.parse(&parse_id_maybe_type, "anonymous function", &start)?);
+        args.push(*it.parse(&parse_expression_type, "anonymous function", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

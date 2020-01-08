@@ -28,7 +28,7 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
             for case in cases {
                 match &case.node {
                     Node::Case { cond, body } => match &cond.node {
-                        Node::IdType { id, .. } => match id.node {
+                        Node::ExpressionType { expr, .. } => match expr.node {
                             Node::Underscore =>
                                 core_defaults.push(desugar_node(body.as_ref(), imp, state)?),
                             _ => core_cases.push(Core::KeyValue {

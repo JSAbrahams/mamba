@@ -40,18 +40,18 @@ pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             // TODO treat identifier without type as default
             // TODO check that _type is covered by match_ty
             match &cond.node {
-                Node::IdType { id, mutable, _type } => {
-                    if let Some(_type) = _type {
-                        let type_name = TypeName::try_from(_type.deref())?;
-                        ctx.lookup(&type_name, &_type.pos)?;
+                Node::ExpressionType { expr, mutable, ty } => {
+                    if let Some(ty) = ty {
+                        let type_name = TypeName::try_from(ty.deref())?;
+                        ctx.lookup(&type_name, &ty.pos)?;
                     }
 
-                    match &id.node {
+                    match &expr.node {
                         Node::Str { .. }
                         | Node::Int { .. }
                         | Node::Real { .. }
                         | Node::Bool { .. } => {
-                            infer(&id, &env, ctx)?.0.expr_ty(&cond.pos)?;
+                            infer(&expr, &env, ctx)?.0.expr_ty(&cond.pos)?;
                         }
                         Node::Underscore => {}
                         _ => {
@@ -63,7 +63,7 @@ pub fn infer_match(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                         }
                     }
                 }
-                _ => return Err(vec![TypeErr::new(&cond.pos, "Expected expression maybe type")])
+                _ => return Err(vec![TypeErr::new(&cond.pos, "Expected expression type")])
             };
 
             infer(body, &env, ctx)

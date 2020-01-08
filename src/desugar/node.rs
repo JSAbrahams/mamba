@@ -71,7 +71,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::QuestionOp { .. } => desugar_type(ast, imp, state)?,
 
         Node::Undefined => Core::None,
-        Node::IdType { .. } => desugar_type(ast, imp, state)?,
+        Node::ExpressionType { .. } => desugar_type(ast, imp, state)?,
         Node::Id { lit } => Core::Id {
             lit: if state.is_constructor { concrete_to_python(lit) } else { lit.clone() }
         },
@@ -210,12 +210,19 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             right: Box::from(desugar_node(right, imp, state)?)
         },
 
-        Node::FunArg { vararg, id_maybe_type, default } => Core::FunArg {
+        Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
             vararg:  *vararg,
-            id:      Box::from(desugar_node(id_maybe_type, imp, state)?),
+            var:     Box::from(desugar_node(var, imp, state)?),
+            ty:      match ty {
+                Some(ty) => match &var.node {
+                    Node::_Self => None,
+                    _ => Some(Box::from(desugar_node(ty, imp, state)?))
+                },
+                None => None
+            },
             default: match default {
-                Some(default) => Box::from(desugar_node(default, imp, state)?),
-                None => Box::from(Core::Empty)
+                Some(default) => Some(Box::from(desugar_node(default, imp, state)?)),
+                None => None
             }
         },
 
@@ -294,18 +301,25 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
 
         Node::Handle { expr_or_stmt, cases } => {
-            let assign_to = if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
-                Some(desugar_node(id_maybe_type.as_ref(), imp, state)?)
-            } else {
-                None
-            };
+            let (var, private, ty) =
+                if let Node::VariableDef { var, private, ty, .. } = &expr_or_stmt.node {
+                    (
+                        Some(Box::from(desugar_node(var, imp, state)?)),
+                        *private,
+                        if let Some(ty) = ty {
+                            Some(Box::from(desugar_node(ty, imp, state)?))
+                        } else {
+                            None
+                        }
+                    )
+                } else {
+                    (None, false, None)
+                };
+            let assign_state = state.assign_to(var.as_deref());
 
             Core::TryExcept {
-                setup:  if let Some(assign_to) = &assign_to {
-                    Some(Box::from(Core::Assign {
-                        left:  Box::from(assign_to.clone()),
-                        right: Box::from(Core::Empty)
-                    }))
+                setup:  if let Some(var) = var {
+                    Some(Box::from(Core::VarDef { private, var, ty, expr: None }))
                 } else {
                     None
                 },
@@ -319,27 +333,15 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                         };
 
                         match &cond.node {
-                            Node::IdType { id, _type: Some(ty), .. } => match &ty.node {
-                                Node::Type { id: ty, .. } => except.push(Core::Except {
-                                    id:    Box::from(desugar_node(id, imp, state)?),
-                                    class: Box::from(desugar_node(ty, imp, state)?),
-                                    body:  Box::from(desugar_node(
-                                        body,
-                                        imp,
-                                        &state.assign_to(assign_to.as_ref())
-                                    )?)
-                                }),
-                                other => panic!("Expected type but was {:?}", other)
-                            },
-                            Node::IdType { id, _type: None, .. } =>
-                                except.push(Core::ExceptNoClass {
-                                    id:   Box::from(desugar_node(id, imp, state)?),
-                                    body: Box::from(desugar_node(
-                                        body,
-                                        imp,
-                                        &state.assign_to(assign_to.as_ref())
-                                    )?)
-                                }),
+                            Node::ExpressionType { expr, ty, .. } => except.push(Core::Except {
+                                id:    Box::from(desugar_node(expr, imp, state)?),
+                                class: if let Some(ty) = ty {
+                                    Some(Box::from(desugar_node(ty, imp, state)?))
+                                } else {
+                                    None
+                                },
+                                body:  Box::from(desugar_node(body, imp, &assign_state)?)
+                            }),
                             other => panic!("Expected id type but was {:?}", other)
                         };
                     }

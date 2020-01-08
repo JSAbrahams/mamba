@@ -21,13 +21,15 @@ pub struct Constraint(pub Expect, pub Expect);
 
 #[derive(Clone, Debug)]
 pub enum Expect {
-    Any,
-    AnyStatement,
+    Nullable { expect: Box<Expect> },
+    Mutable { expect: Box<Expect> },
+
     AnyExpression,
-
-    Statement { ast: AST },
     Expression { ast: AST },
-    NullableExpression { ast: AST },
 
+    Collection { ty: Option<Box<Expect>> },
+    Truthy,
+
+    Implements { name: String, args: Vec<Expect> },
     Type { type_name: TypeName }
 }
