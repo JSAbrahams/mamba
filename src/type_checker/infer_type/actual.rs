@@ -6,6 +6,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::args_compatible;
+use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::TypeName;
@@ -61,6 +62,13 @@ impl ActualType {
         match &self {
             ActualType::Single { ty } => ty.fun(name, args, pos),
             _ => Err(vec![TypeErr::new(pos, &format!("Undefined function: {}", name))])
+        }
+    }
+
+    pub fn constructor_args(&self, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+        match &self {
+            ActualType::Single { ty } => Ok(ty.args.clone()),
+            _ => Err(vec![TypeErr::new(pos, "Type does not have constructor arguments")])
         }
     }
 

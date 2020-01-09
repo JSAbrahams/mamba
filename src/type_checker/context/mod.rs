@@ -7,7 +7,7 @@ use crate::common::position::Position;
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function::generic::GenericFunction;
-use crate::type_checker::context::function_arg::concrete::args_compatible;
+use crate::type_checker::context::function_arg::concrete::{args_compatible, FunctionArg};
 use crate::type_checker::context::generics::generics;
 use crate::type_checker::context::python::python_files;
 use crate::type_checker::context::ty::concrete;
@@ -120,6 +120,20 @@ impl Context {
         ))
     }
 
+    fn lookup_actual_fun_args(
+        &self,
+        name: &ActualTypeName,
+        pos: &Position
+    ) -> TypeResult<Vec<FunctionArg>> {
+        let fun =
+            self.functions.iter().find(|f| f.name == name.clone()).ok_or_else(|| {
+                vec![TypeErr::new(pos, &format!("Function {} is undefined", name))]
+            })?;
+
+        let fun = Function::try_from((fun, &HashMap::new(), pos))?;
+        Ok(fun.arguments)
+    }
+
     fn lookup_actual_fun(
         &self,
         fun_name: &ActualTypeName,
@@ -166,6 +180,24 @@ impl Context {
                     .collect::<Result<_, Vec<TypeErr>>>()?;
                 Ok(ExpressionType::Union { union })
             }
+        }
+    }
+
+    pub fn lookup_fun_args(
+        &self,
+        name: &TypeName,
+        pos: &Position
+    ) -> TypeResult<HashSet<Vec<FunctionArg>>> {
+        match name {
+            TypeName::Single { ty } => {
+                let mut function_arg_set: HashSet<Vec<FunctionArg>> = HashSet::new();
+                function_arg_set.insert(self.lookup_actual_fun_args(&ty.actual, pos)?);
+                Ok(function_arg_set)
+            }
+            TypeName::Union { union } => union
+                .iter()
+                .map(|ty| self.lookup_actual_fun_args(&ty.actual, pos))
+                .collect::<Result<_, Vec<TypeErr>>>()
         }
     }
 

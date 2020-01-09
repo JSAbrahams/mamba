@@ -7,6 +7,7 @@ use std::iter::FromIterator;
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::infer_type::nullable::NullableType;
 use crate::type_checker::type_name::actual::ActualTypeName;
@@ -168,6 +169,21 @@ impl ExpressionType {
                     .collect::<Result<_, _>>()?
             }
         })
+    }
+
+    pub fn constructor_args(&self, pos: &Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
+        match &self {
+            ExpressionType::Single { ty } => {
+                let mut possible_args: HashSet<Vec<FunctionArg>> = HashSet::new();
+                possible_args.insert(ty.constructor_args(pos)?);
+                Ok(possible_args)
+            }
+            ExpressionType::Union { union } => {
+                let constructor: HashSet<Vec<FunctionArg>> =
+                    union.iter().map(|ty| ty.constructor_args(pos)).collect::<Result<_, _>>()?;
+                Ok(constructor)
+            }
+        }
     }
 }
 

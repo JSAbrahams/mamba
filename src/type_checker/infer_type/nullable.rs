@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 use crate::common::position::Position;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
+use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::infer_type::actual::ActualType;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::TypeName;
@@ -48,5 +49,9 @@ impl NullableType {
     pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<NullableType> {
         let actual_ty = self.actual_ty.constructor(args, pos)?;
         Ok(NullableType { is_nullable: self.is_nullable, actual_ty })
+    }
+
+    pub fn constructor_args(&self, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+        self.actual_ty.constructor_args(pos)
     }
 }

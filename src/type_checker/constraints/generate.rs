@@ -1,11 +1,16 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
+use itertools::{EitherOrBoth, Itertools};
+
+use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function;
+use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
@@ -102,8 +107,26 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             generate(left, &env, ctx, &constr)
         }
 
-        Node::ConstructorCall { .. } => unimplemented!(),
-        Node::FunctionCall { .. } => unimplemented!(),
+        Node::ConstructorCall { name, args } => {
+            let type_name = TypeName::try_from(name.deref())?;
+            // TODO lookup in environment if not in context
+            let possible_constructor_args: HashSet<Vec<FunctionArg>> =
+                ctx.lookup(&type_name, &ast.pos)?.constructor_args(&ast.pos)?;
+
+            let constr = fun_args(ast, &possible_constructor_args, args, constr)?;
+            let (constr, env) = gen_vec(args, env, ctx, &constr)?;
+            generate(name, &env, ctx, &constr)
+        }
+        Node::FunctionCall { name, args } => {
+            let type_name = TypeName::try_from(name.deref())?;
+            // TODO lookup in environment if not in context
+            let possible_fun_args: HashSet<Vec<FunctionArg>> =
+                ctx.lookup_fun_args(&type_name, &ast.pos)?;
+
+            let constr = fun_args(ast, &possible_fun_args, args, constr)?;
+            let (constr, env) = gen_vec(args, env, ctx, &constr)?;
+            generate(name, &env, ctx, &constr)
+        }
         Node::PropertyCall { .. } => unimplemented!(),
 
         Node::TypeTup { .. } => unimplemented!(),
@@ -335,11 +358,56 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
     }
 }
 
+fn gen_vec(asts: &Vec<AST>, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
+    let mut constr_env = (constr.clone(), env.clone());
+    for ast in asts {
+        constr_env = generate(ast, &constr_env.1, ctx, &constr_env.0)?;
+    }
+    Ok(constr_env)
+}
+
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &Constraints) -> Constrained {
     let type_name = TypeName::from(ty);
     let constr =
         constr.add(&Expect::Expression { ast: ast.deref().clone() }, &Expect::Type { type_name });
     Ok((constr, env.clone()))
+}
+
+fn fun_args(
+    ast: &AST,
+    possible: &HashSet<Vec<FunctionArg>>,
+    args: &Vec<AST>,
+    constr: &Constraints
+) -> Result<Constraints, Vec<TypeErr>> {
+    let mut constr = constr.clone();
+    for fun_args in possible {
+        for pair in fun_args.iter().zip_longest(args.iter()) {
+            match pair {
+                EitherOrBoth::Both(fun_arg, arg) =>
+                    constr = constr.add(
+                        &Expect::Expression { ast: arg.deref().clone() },
+                        &Expect::Type {
+                            type_name: fun_arg
+                                .ty
+                                .as_ref()
+                                .ok_or_else(|| {
+                                    TypeErr::new(&arg.pos, "Functions mut have type parameters")
+                                })?
+                                .clone()
+                        }
+                    ),
+                EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
+                    return Err(vec![TypeErr::new(
+                        &Position::new(&ast.pos.end, &ast.pos.end),
+                        "Expected argument"
+                    )]),
+                EitherOrBoth::Right(arg) =>
+                    return Err(vec![TypeErr::new(&arg.pos, "Unexpected argument")]),
+                _ => {}
+            }
+        }
+    }
+    Ok(constr)
 }
 
 fn implements(
