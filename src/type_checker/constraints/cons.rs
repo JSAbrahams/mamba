@@ -24,6 +24,7 @@ pub enum Expect {
     Nullable { expect: Box<Expect> },
     Mutable { expect: Box<Expect> },
 
+    Any { ast: AST },
     AnyExpression,
     Expression { ast: AST },
 
@@ -31,5 +32,6 @@ pub enum Expect {
     Truthy,
 
     Implements { name: String, args: Vec<Expect> },
+    HasField { name: String },
     Type { type_name: TypeName }
 }

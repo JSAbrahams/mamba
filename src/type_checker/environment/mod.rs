@@ -1,10 +1,11 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::common::position::Position;
 use crate::type_checker::context::function_arg;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::collections::{HashMap, HashSet};
 
 pub mod name;
 pub mod state;
@@ -14,7 +15,7 @@ pub mod state;
 #[derive(Clone, Debug)]
 pub struct Environment {
     pub state: State,
-    pub vars:  HashSet<String>,
+    pub vars:  HashSet<(bool, String)>,
     variables: HashMap<String, (bool, ExpressionType)>
 }
 
@@ -58,6 +59,20 @@ impl Environment {
 
     pub fn remove(&mut self, var: &str) -> Option<(bool, ExpressionType)> {
         self.variables.remove(var)
+    }
+
+    pub fn insert_new(&self, mutable: bool, var: &str) -> Environment {
+        let mut vars = self.vars.clone();
+        vars.insert((mutable, String::from(var)));
+        Environment { vars, ..self.clone() }
+    }
+
+    pub fn lookup_new(&self, var: &str, pos: &Position) -> TypeResult<bool> {
+        self.vars
+            .iter()
+            .find(|(_, name)| name == var)
+            .ok_or_else(|| vec![TypeErr::new(pos, &format!("Unknown variable {}", var))])
+            .map(|(mutable, _)| *mutable)
     }
 
     pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {

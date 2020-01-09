@@ -13,7 +13,7 @@ mod unify;
 pub type Constrained = Result<(Constraints, Environment), Vec<TypeErr>>;
 pub type Unified = Result<Constraints, Vec<TypeErr>>;
 
-pub fn constraints(ast: &AST, env: &Environment, ctx: &Context) -> Unified {
-    let (constrained, _) = generate(ast, env, ctx, &Constraints::new())?;
+pub fn constraints(ast: &AST, ctx: &Context) -> Unified {
+    let (constrained, _) = generate(ast, &Environment::default(), ctx, &Constraints::new())?;
     unify(&constrained)
 }

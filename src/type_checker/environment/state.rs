@@ -4,6 +4,7 @@ use crate::type_checker::type_name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct State {
+    pub expect_expr: bool,
     pub in_loop:     bool,
     pub in_handle:   bool,
     pub in_function: bool,
@@ -13,6 +14,7 @@ pub struct State {
 }
 
 pub enum StateType {
+    Expression,
     InLoop,
     InHandle,
     InFunction
@@ -21,6 +23,7 @@ pub enum StateType {
 impl Default for State {
     fn default() -> Self {
         State {
+            expect_expr: false,
             in_loop:     false,
             in_handle:   false,
             in_function: false,
@@ -48,7 +51,8 @@ impl State {
         match state_type {
             StateType::InLoop => State { in_loop: true, ..self.clone() },
             StateType::InHandle => State { in_handle: true, ..self.clone() },
-            StateType::InFunction => State { in_function: true, ..self.clone() }
+            StateType::InFunction => State { in_function: true, ..self.clone() },
+            StateType::Expression => State { expect_expr: true, ..self.clone() }
         }
     }
 
@@ -56,7 +60,8 @@ impl State {
         match state_type {
             StateType::InLoop => State { in_loop: false, ..self.clone() },
             StateType::InHandle => State { in_handle: false, ..self.clone() },
-            StateType::InFunction => State { in_function: false, ..self.clone() }
+            StateType::InFunction => State { in_function: false, ..self.clone() },
+            StateType::Expression => State { expect_expr: true, ..self.clone() }
         }
     }
 }
