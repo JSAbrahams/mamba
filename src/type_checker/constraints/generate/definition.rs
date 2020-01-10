@@ -1,5 +1,6 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::{Constraints, Expect};
+use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::cons::Expect::{Expression, Type};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -22,10 +23,8 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
             match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let type_name = TypeName::try_from(ret_ty.deref())?;
-                    let constr = constr
-                        .add(&Expect::Expression { ast: body.deref().clone() }, &Expect::Type {
-                            type_name
-                        });
+                    let constr =
+                        constr.add(&Expression { ast: *body.clone() }, &Type { type_name });
                     generate(body, &env, ctx, &constr)
                 }
                 _ => Ok((constr.clone(), env.clone()))

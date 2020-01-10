@@ -25,7 +25,7 @@ pub enum Expect {
     Mutable { expect: Box<Expect> },
 
     Any { ast: AST },
-    AnyExpression,
+    AnyExpr,
     Expression { ast: AST },
 
     Collection { ty: Option<Box<Expect>> },

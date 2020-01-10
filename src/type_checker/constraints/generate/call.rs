@@ -1,13 +1,12 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect;
+use crate::type_checker::constraints::cons::Expect::{AnyExpr, Expression, Mutable, Type};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
@@ -15,17 +14,14 @@ use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::ops::Deref;
 
 pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
             let constr = constr
-                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Expression {
-                    ast: right.deref().clone()
-                })
-                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Mutable {
-                    expect: Box::from(Expect::AnyExpression)
-                });
+                .add(&Expression { ast: *left.clone() }, &Expression { ast: *right.clone() })
+                .add(&Expression { ast: *left.clone() }, &Mutable { expect: Box::from(AnyExpr) });
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
@@ -67,18 +63,15 @@ fn fun_args(
         for pair in fun_args.iter().zip_longest(args.iter()) {
             match pair {
                 EitherOrBoth::Both(fun_arg, arg) =>
-                    constr = constr.add(
-                        &Expect::Expression { ast: arg.deref().clone() },
-                        &Expect::Type {
-                            type_name: fun_arg
-                                .ty
-                                .as_ref()
-                                .ok_or_else(|| {
-                                    TypeErr::new(&arg.pos, "Functions mut have type parameters")
-                                })?
-                                .clone()
-                        }
-                    ),
+                    constr = constr.add(&Expression { ast: arg.clone() }, &Type {
+                        type_name: fun_arg
+                            .ty
+                            .as_ref()
+                            .ok_or_else(|| {
+                                TypeErr::new(&arg.pos, "Functions mut have type parameters")
+                            })?
+                            .clone()
+                    }),
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
                     return Err(vec![TypeErr::new(
                         &Position::new(&ast.pos.end, &ast.pos.end),

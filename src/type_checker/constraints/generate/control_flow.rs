@@ -1,8 +1,9 @@
 use std::collections::HashSet;
-use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::{Constraints, Expect};
+use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::cons::Expect::{Any, AnyExpr, Collection, Expression, Truthy,
+                                                     Type};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::{ty, Context};
@@ -19,7 +20,7 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let case_body = if let Some(case) = cases.first() {
                 match &expr_or_stmt.node {
                     Node::VariableDef { .. } | Node::Reassign { .. } =>
-                        Some(Expect::Any { ast: case.clone() }),
+                        Some(Any { ast: case.clone() }),
                     _ => None
                 }
             } else {
@@ -31,15 +32,11 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             for case in cases {
                 match &case.node {
                     Node::Case { cond: case_cond, body } => {
-                        constr_env.0 = constr_env
-                            .0
-                            .add(&Expect::Type { type_name: raises }, &Expect::Expression {
-                                ast: case_cond.deref().clone()
-                            });
+                        constr_env.0 = constr_env.0.add(&Type { type_name: raises }, &Expression {
+                            ast: *case_cond.clone()
+                        });
                         if let Some(case_body) = &case_body {
-                            constr_env.0 = constr_env
-                                .0
-                                .add(case_body, &Expect::Any { ast: body.deref().clone() });
+                            constr_env.0 = constr_env.0.add(case_body, &Any { ast: *body.clone() });
                         }
                         constr_env = generate(body, &constr_env.1, ctx, &constr_env.0)?;
                     }
@@ -51,23 +48,20 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
-            let constr =
-                constr.add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy);
             let constr = if env.state.expect_expr {
-                constr.add(&Expect::Expression { ast: then.deref().clone() }, &Expect::Expression {
-                    ast: el.deref().clone()
-                })
+                constr.add(&Expression { ast: *then.clone() }, &Expression { ast: *el.clone() })
             } else {
-                constr
-            };
+                constr.clone()
+            }
+            .add(&Expression { ast: *cond.clone() }, &Truthy);
             let (constr, env) = generate(cond, env, ctx, &constr)?;
             let (constr, env) = generate(then, &env, ctx, &constr)?;
             generate(el, &env, ctx, &constr)
         }
         Node::IfElse { cond, then, .. } => {
             let constr = constr
-                .add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy)
-                .add(&Expect::Expression { ast: then.deref().clone() }, &Expect::AnyExpression);
+                .add(&Expression { ast: *cond.clone() }, &Truthy)
+                .add(&Expression { ast: *then.clone() }, &AnyExpr);
             let (constr, env) = generate(cond, env, ctx, &constr)?;
             generate(then, &env, ctx, &constr)
         }
@@ -77,7 +71,7 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let mut constr_env = (constr.clone(), env.clone());
             let case_body = if let Some(case) = cases.first() {
                 if env.state.expect_expr {
-                    Some(Expect::Expression { ast: case.clone() })
+                    Some(Expression { ast: case.clone() })
                 } else {
                     None
                 }
@@ -88,14 +82,13 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             for case in cases {
                 match &case.node {
                     Node::Case { cond: case_cond, body } => {
-                        constr_env.0 = constr_env.0.add(
-                            &Expect::Expression { ast: cond.deref().clone() },
-                            &Expect::Expression { ast: case_cond.deref().clone() }
-                        );
+                        constr_env.0 =
+                            constr_env.0.add(&Expression { ast: *cond.clone() }, &Expression {
+                                ast: *case_cond.clone()
+                            });
                         if let Some(case_body) = &case_body {
-                            constr_env.0 = constr_env
-                                .0
-                                .add(case_body, &Expect::Expression { ast: body.deref().clone() });
+                            constr_env.0 =
+                                constr_env.0.add(case_body, &Expression { ast: *body.clone() });
                         }
                         constr_env = generate(body, &constr_env.1, ctx, &constr_env.0)?;
                     }
@@ -107,25 +100,20 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
 
         Node::For { expr, col, body } => {
-            let constr =
-                constr.add(&Expect::Expression { ast: col.deref().clone() }, &Expect::Collection {
-                    ty: Some(Box::from(Expect::Expression { ast: expr.deref().clone() }))
-                });
+            let constr = constr.add(&Expression { ast: *col.clone() }, &Collection {
+                ty: Some(Box::from(Expression { ast: *expr.clone() }))
+            });
             let (constr, env) = generate(expr, env, ctx, &constr)?;
             let (constr, env) = generate(col, &env, ctx, &constr)?;
             generate(body, &env, ctx, &constr)
         }
         Node::Step { amount } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
-            let constr = constr
-                .add(&Expect::Expression { ast: amount.deref().clone() }, &Expect::Type {
-                    type_name
-                });
+            let constr = constr.add(&Expression { ast: *amount.clone() }, &Type { type_name });
             Ok((constr, env.clone()))
         }
         Node::While { cond, body } => {
-            let constr =
-                constr.add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy);
+            let constr = constr.add(&Expression { ast: *cond.clone() }, &Truthy);
             generate(body, env, ctx, &constr)
         }
 

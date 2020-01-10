@@ -1,7 +1,6 @@
-use std::ops::Deref;
-
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::{Constraints, Expect};
+use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::cons::Expect::Expression;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -18,9 +17,7 @@ pub fn gen_resources(
         Node::Raises { .. } => unimplemented!(),
         Node::With { resource, alias: Some(alias), expr } => {
             let constr = constr
-                .add(&Expect::Expression { ast: resource.deref().clone() }, &Expect::Expression {
-                    ast: alias.deref().clone()
-                });
+                .add(&Expression { ast: *resource.clone() }, &Expression { ast: *alias.clone() });
             let (constr, env) = generate(resource, env, ctx, &constr)?;
             let (constr, env) = generate(alias, &env, ctx, &constr)?;
             generate(expr, &env, ctx, &constr)

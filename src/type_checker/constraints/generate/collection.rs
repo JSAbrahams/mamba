@@ -1,5 +1,6 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::{Constraints, Expect};
+use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::cons::Expect::Expression;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -16,9 +17,7 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             for element in elements {
                 constr_env.0 = constr_env
                     .0
-                    .add(&Expect::Expression { ast: element.clone() }, &Expect::Expression {
-                        ast: first.clone()
-                    });
+                    .add(&Expression { ast: element.clone() }, &Expression { ast: first.clone() });
                 constr_env = generate(element, &env, &ctx, &constr)?;
             }
             Ok(constr_env)
