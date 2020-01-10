@@ -43,18 +43,18 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             }
         }
 
-        Node::With { resource, _as, expr } => {
+        Node::With { resource, alias, expr } => {
             let (resource_ty, mut inner_env) = infer(resource, env, ctx)?;
 
-            if let Some(_as) = _as {
-                let (_as, mutable, type_name) = match &_as.node {
+            if let Some(alias) = alias {
+                let (_as, mutable, type_name) = match &alias.node {
                     Node::ExpressionType { expr, ty, mutable } => match (&expr.node, &ty) {
                         (Node::Id { lit }, Some(ty)) =>
                             (lit.clone(), mutable, Some(TypeName::try_from(ty.deref())?)),
                         (Node::Id { lit }, None) => (lit.clone(), mutable, None),
-                        _ => return Err(vec![TypeErr::new(&_as.pos, "Expected identifier")])
+                        _ => return Err(vec![TypeErr::new(&alias.pos, "Expected identifier")])
                     },
-                    _ => return Err(vec![TypeErr::new(&_as.pos, "Expected identifier")])
+                    _ => return Err(vec![TypeErr::new(&alias.pos, "Expected identifier")])
                 };
 
                 let expr_ty = resource_ty.expr_ty(&resource.pos)?;

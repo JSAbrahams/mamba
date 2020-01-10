@@ -9,17 +9,17 @@ use mamba::parser::ast::AST;
 #[test]
 fn with_verify() {
     let resource = to_pos!(Node::Id { lit: String::from("my_resource") });
-    let _as = Some(to_pos!(Node::Id { lit: String::from("other") }));
+    let alias = Some(to_pos!(Node::Id { lit: String::from("other") }));
     let expr = to_pos!(Node::Int { lit: String::from("9") });
-    let with = to_pos!(Node::With { resource, _as, expr });
+    let with = to_pos!(Node::With { resource, alias, expr });
 
-    let (resource, _as, expr) = match desugar(&with) {
-        Ok(Core::WithAs { resource, _as, expr }) => (resource, _as, expr),
+    let (resource, alias, expr) = match desugar(&with) {
+        Ok(Core::WithAs { resource, alias, expr }) => (resource, alias, expr),
         other => panic!("Expected with as but was {:?}", other)
     };
 
     assert_eq!(*resource, Core::Id { lit: String::from("my_resource") });
-    assert_eq!(*_as, Core::Id { lit: String::from("other") });
+    assert_eq!(*alias, Core::Id { lit: String::from("other") });
     assert_eq!(*expr, Core::Int { int: String::from("9") });
 }
 
@@ -27,7 +27,7 @@ fn with_verify() {
 fn with_no_as_verify() {
     let resource = to_pos!(Node::Id { lit: String::from("other") });
     let expr = to_pos!(Node::Int { lit: String::from("2341") });
-    let with = to_pos!(Node::With { resource, _as: None, expr });
+    let with = to_pos!(Node::With { resource, alias: None, expr });
 
     let (resource, expr) = match desugar(&with) {
         Ok(Core::With { resource, expr }) => (resource, expr),

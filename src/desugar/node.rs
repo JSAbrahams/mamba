@@ -284,10 +284,10 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Comment { comment } => Core::Comment { comment: comment.clone() },
         Node::Pass => Core::Pass,
 
-        Node::With { resource, _as, expr } => match _as {
-            Some(_as) => Core::WithAs {
+        Node::With { resource, alias, expr } => match _as {
+            Some(alias) => Core::WithAs {
                 resource: Box::from(desugar_node(resource, imp, state)?),
-                _as:      Box::from(desugar_node(_as, imp, &state.expand_ty(false))?),
+                alias:    Box::from(desugar_node(alias, imp, &state.expand_ty(false))?),
                 expr:     Box::from(desugar_node(expr, imp, state)?)
             },
             None => Core::With {

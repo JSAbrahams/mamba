@@ -1,9 +1,10 @@
+#![feature(box_patterns)]
+
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::generate::call::generate_call;
 use crate::type_checker::constraints::generate::class::gen_class;
 use crate::type_checker::constraints::generate::collection::gen_collection;
-use crate::type_checker::constraints::generate::common::gen_vec;
 use crate::type_checker::constraints::generate::control_flow::gen_cntrl_flow;
 use crate::type_checker::constraints::generate::definition::gen_definition;
 use crate::type_checker::constraints::generate::expression::gen_expression;
@@ -26,8 +27,6 @@ mod resources;
 mod statement;
 mod ty;
 
-mod common;
-
 pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::File { modules, .. } => gen_vec(modules, env, ctx, constr),
@@ -49,9 +48,8 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::TypeFun { .. } => gen_ty(ast, env, ctx, constr),
         Node::QuestionOp { .. } => gen_ty(ast, env, ctx, constr),
 
-        Node::Id { .. } => gen_expression(ast, env, ctx, constr),
+        Node::Id { .. } | Node::Question { .. } => gen_expression(ast, env, ctx, constr),
         Node::AnonFun { .. } => gen_expression(ast, env, ctx, constr),
-        Node::Question { .. } => gen_expression(ast, env, ctx, constr),
 
         Node::Raises { .. } => gen_resources(ast, env, ctx, constr),
         Node::With { .. } => gen_resources(ast, env, ctx, constr),
@@ -61,12 +59,12 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::Tuple { .. } => gen_collection(ast, env, ctx, constr),
 
         Node::Range { .. } => gen_operation(ast, env, ctx, constr),
-        Node::Real { .. } => gen_operation(ast, env, ctx, constr),
-        Node::Int { .. } => gen_operation(ast, env, ctx, constr),
+        Node::Real { .. } | Node::Int { .. } => gen_operation(ast, env, ctx, constr),
         Node::ENum { .. } => gen_operation(ast, env, ctx, constr),
         Node::Str { .. } => gen_operation(ast, env, ctx, constr),
         Node::Bool { .. } => gen_operation(ast, env, ctx, constr),
 
+        Node::In { .. } => gen_operation(ast, env, ctx, constr),
         Node::Add { .. } | Node::Sub { .. } => gen_operation(ast, env, ctx, constr),
         Node::Mul { .. } | Node::Div { .. } => gen_operation(ast, env, ctx, constr),
         Node::FDiv { .. } => gen_operation(ast, env, ctx, constr),
@@ -88,13 +86,10 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::And { .. } | Node::Or { .. } => gen_operation(ast, env, ctx, constr),
         Node::Not { .. } => gen_operation(ast, env, ctx, constr),
 
-        Node::Handle { .. } => gen_cntrl_flow(ast, env, ctx, constr),
         Node::IfElse { .. } => gen_cntrl_flow(ast, env, ctx, constr),
+        Node::Match { .. } | Node::Handle { .. } => gen_cntrl_flow(ast, env, ctx, constr),
         Node::Case { .. } => gen_cntrl_flow(ast, env, ctx, constr),
-        Node::Match { .. } => gen_cntrl_flow(ast, env, ctx, constr),
-        Node::For { .. } => gen_cntrl_flow(ast, env, ctx, constr),
-        Node::In { .. } => gen_cntrl_flow(ast, env, ctx, constr),
-        Node::Step { .. } => gen_cntrl_flow(ast, env, ctx, constr),
+        Node::For { .. } | Node::Step { .. } => gen_cntrl_flow(ast, env, ctx, constr),
         Node::While { .. } => gen_cntrl_flow(ast, env, ctx, constr),
 
         Node::Return { .. } => gen_statement(ast, env, ctx, constr),
@@ -103,4 +98,17 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
 
         _ => Ok((constr.clone(), env.clone()))
     }
+}
+
+pub fn gen_vec(
+    asts: &Vec<AST>,
+    env: &Environment,
+    ctx: &Context,
+    constr: &Constraints
+) -> Constrained {
+    let mut constr_env = (constr.clone(), env.clone());
+    for ast in asts {
+        constr_env = generate(ast, &constr_env.1, ctx, &constr_env.0)?;
+    }
+    Ok(constr_env)
 }

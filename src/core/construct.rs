@@ -310,7 +310,7 @@ pub enum Core {
     },
     WithAs {
         resource: Box<Core>,
-        _as:      Box<Core>,
+        alias:    Box<Core>,
         expr:     Box<Core>
     }
 }

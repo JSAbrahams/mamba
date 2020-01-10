@@ -113,18 +113,14 @@ pub fn gen_cntrl_flow(
         }
 
         Node::For { expr, col, body } => {
-            let constr = constr
-                .add(&Expect::Expression { ast: expr.deref().clone() }, &Expect::AnyExpression);
             let constr =
                 constr.add(&Expect::Expression { ast: col.deref().clone() }, &Expect::Collection {
                     ty: Some(Box::from(Expect::Expression { ast: expr.deref().clone() }))
                 });
-
             let (constr, env) = generate(expr, env, ctx, &constr)?;
             let (constr, env) = generate(col, &env, ctx, &constr)?;
             generate(body, &env, ctx, &constr)
         }
-        Node::In { .. } => unimplemented!(),
         Node::Step { amount } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             let constr = constr

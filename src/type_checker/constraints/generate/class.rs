@@ -1,7 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::generate::common::gen_vec;
-use crate::type_checker::constraints::generate::generate;
+use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;

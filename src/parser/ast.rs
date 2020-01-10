@@ -86,7 +86,7 @@ pub enum Node {
     },
     With {
         resource: Box<AST>,
-        _as:      Option<Box<AST>>,
+        alias:    Option<Box<AST>>,
         expr:     Box<AST>
     },
 

@@ -63,11 +63,11 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_expression, "with", &start)?;
-    let _as = it.parse_if(&Token::As, &parse_expression_type, "with id", &start)?;
+    let alias = it.parse_if(&Token::As, &parse_expression_type, "with id", &start)?;
     it.eat(&Token::Do, "with")?;
     let expr = it.parse(&parse_expr_or_stmt, "with", &start)?;
 
-    let node = Node::With { resource, _as, expr: expr.clone() };
+    let node = Node::With { resource, alias, expr: expr.clone() };
     Ok(Box::from(AST::new(&start.union(&expr.pos), node)))
 }
 

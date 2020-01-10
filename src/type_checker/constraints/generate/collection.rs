@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::{Constraints, Expect};
-use crate::type_checker::constraints::generate::generate;
+use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
@@ -30,13 +30,7 @@ pub fn gen_collection(
             } else {
                 Ok((constr.clone(), env.clone()))
             },
-        Node::Tuple { elements } => {
-            let mut constr_env = (constr.clone(), env.clone());
-            for element in elements {
-                constr_env = generate(element, &env, &ctx, &constr)?;
-            }
-            Ok(constr_env)
-        }
+        Node::Tuple { elements } => gen_vec(elements, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected collection")])
     }
