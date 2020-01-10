@@ -1,23 +1,12 @@
-use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::ops::Deref;
-
-use itertools::{EitherOrBoth, Itertools};
-
-use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect;
-use crate::type_checker::constraints::generate::call::generate_call;
+use crate::type_checker::constraints::cons::{Constraints, Expect};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
-use crate::type_checker::context::function;
-use crate::type_checker::context::function_arg::concrete::FunctionArg;
-use crate::type_checker::context::ty;
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{function, ty, Context};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::ops::Deref;
 
 pub fn gen_operation(
     ast: &AST,
@@ -26,6 +15,7 @@ pub fn gen_operation(
     constr: &Constraints
 ) -> Constrained {
     match &ast.node {
+        Node::Range { .. } => unimplemented!(),
         Node::Real { .. } => primitive(ast, ty::concrete::FLOAT_PRIMITIVE, env, constr),
         Node::Int { .. } => primitive(ast, ty::concrete::INT_PRIMITIVE, env, constr),
         Node::ENum { .. } => primitive(ast, ty::concrete::INT_PRIMITIVE, env, constr),

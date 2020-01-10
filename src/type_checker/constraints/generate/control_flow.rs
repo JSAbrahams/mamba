@@ -1,25 +1,13 @@
-use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::ops::Deref;
-
-use itertools::{EitherOrBoth, Itertools};
-
-use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect;
-use crate::type_checker::constraints::generate::call::generate_call;
-use crate::type_checker::constraints::generate::common::gen_vec;
+use crate::type_checker::constraints::cons::{Constraints, Expect};
 use crate::type_checker::constraints::generate::generate;
-use crate::type_checker::constraints::generate::operation::gen_operation;
 use crate::type_checker::constraints::Constrained;
-use crate::type_checker::context::function;
-use crate::type_checker::context::function_arg::concrete::FunctionArg;
-use crate::type_checker::context::ty;
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::collections::HashSet;
+use std::ops::Deref;
 
 pub fn gen_cntrl_flow(
     ast: &AST,

@@ -11,9 +11,7 @@ use crate::type_checker::constraints::cons::Expect;
 use crate::type_checker::constraints::generate::common::gen_vec;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
-use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
-use crate::type_checker::context::ty;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
@@ -26,6 +24,18 @@ pub fn generate_call(
     constr: &Constraints
 ) -> Constrained {
     match &ast.node {
+        Node::Reassign { left, right } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Expression {
+                    ast: right.deref().clone()
+                });
+            let constr = constr
+                .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Mutable {
+                    expect: Box::from(Expect::AnyExpression)
+                });
+            let (constr, env) = generate(right, env, ctx, &constr)?;
+            generate(left, &env, ctx, &constr)
+        }
         Node::ConstructorCall { name, args } => {
             let type_name = TypeName::try_from(name.deref())?;
             // TODO lookup in environment if not in context
