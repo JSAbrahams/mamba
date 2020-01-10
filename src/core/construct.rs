@@ -242,9 +242,9 @@ pub enum Core {
         then: Box<Core>
     },
     IfElse {
-        cond:  Box<Core>,
-        then:  Box<Core>,
-        _else: Box<Core>
+        cond: Box<Core>,
+        then: Box<Core>,
+        el:   Box<Core>
     },
     Ternary {
         cond:  Box<Core>,

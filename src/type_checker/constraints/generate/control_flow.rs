@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::ops::Deref;
+
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::{Constraints, Expect};
 use crate::type_checker::constraints::generate::generate;
@@ -6,15 +9,8 @@ use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::collections::HashSet;
-use std::ops::Deref;
 
-pub fn gen_cntrl_flow(
-    ast: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &Constraints
-) -> Constrained {
+pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
             let mut constr_env = (constr.clone(), env.clone());
@@ -54,28 +50,26 @@ pub fn gen_cntrl_flow(
             generate(expr_or_stmt, &constr_env.1, ctx, &constr_env.0)
         }
 
-        Node::IfElse { cond, then, _else } => {
+        Node::IfElse { cond, then, el: Some(el) } => {
             let constr =
                 constr.add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy);
-            if let Some(_else) = _else {
-                // TODO change constraint depending on whether we expect an expression or not
-                let constr = if env.state.expect_expr {
-                    constr.add(
-                        &Expect::Expression { ast: then.deref().clone() },
-                        &Expect::Expression { ast: _else.deref().clone() }
-                    )
-                } else {
-                    constr
-                };
-                let (constr, env) = generate(cond, env, ctx, &constr)?;
-                let (constr, env) = generate(then, &env, ctx, &constr)?;
-                generate(_else, &env, ctx, &constr)
+            let constr = if env.state.expect_expr {
+                constr.add(&Expect::Expression { ast: then.deref().clone() }, &Expect::Expression {
+                    ast: el.deref().clone()
+                })
             } else {
-                let constr = constr
-                    .add(&Expect::Expression { ast: then.deref().clone() }, &Expect::AnyExpression);
-                let (constr, env) = generate(cond, env, ctx, &constr)?;
-                generate(then, &env, ctx, &constr)
-            }
+                constr
+            };
+            let (constr, env) = generate(cond, env, ctx, &constr)?;
+            let (constr, env) = generate(then, &env, ctx, &constr)?;
+            generate(el, &env, ctx, &constr)
+        }
+        Node::IfElse { cond, then, .. } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: cond.deref().clone() }, &Expect::Truthy)
+                .add(&Expect::Expression { ast: then.deref().clone() }, &Expect::AnyExpression);
+            let (constr, env) = generate(cond, env, ctx, &constr)?;
+            generate(then, &env, ctx, &constr)
         }
 
         Node::Case { .. } => Err(vec![TypeErr::new(&ast.pos, "Case cannot be top level")]),

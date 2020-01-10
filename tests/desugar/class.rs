@@ -72,7 +72,7 @@ fn from_import_verify() {
 #[test]
 fn condition_verify() {
     let cond = to_pos!(Node::Bool { lit: true });
-    let condition = to_pos!(Node::Condition { cond, _else: None });
+    let condition = to_pos!(Node::Condition { cond, el: None });
 
     let result = desugar(&condition);
     assert!(result.is_err());

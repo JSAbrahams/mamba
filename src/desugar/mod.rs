@@ -54,7 +54,7 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// use mamba::common::position::{CaretPos, Position};
 /// let cond_node = Node::Int { lit: String::from("56") };
 /// let cond_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), cond_node);
-/// let node = Node::Condition { cond: Box::from(cond_pos), _else: None };
+/// let node = Node::Condition { cond: Box::from(cond_pos), el: None };
 /// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
 /// let core_result = desugar(&ast_node_pos);
 ///

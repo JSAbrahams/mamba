@@ -26,11 +26,10 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
     let cond = it.parse(&parse_expression, "if expression", &start)?;
     it.eat(&Token::Then, "if expression")?;
     let then = it.parse(&parse_expr_or_stmt, "if expression", &start)?;
-    let _else = it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
+    let el = it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
 
-    let pos =
-        if let Some(_else) = &_else { start.union(&_else.pos) } else { start.union(&then.pos) };
-    let node = Node::IfElse { cond, then, _else };
+    let pos = if let Some(el) = &el { start.union(&el.pos) } else { start.union(&then.pos) };
+    let node = Node::IfElse { cond, then, el };
 
     Ok(Box::from(AST::new(&pos, node)))
 }

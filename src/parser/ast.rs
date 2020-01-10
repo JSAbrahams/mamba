@@ -137,8 +137,8 @@ pub enum Node {
         ret_ty: Box<AST>
     },
     Condition {
-        cond:  Box<AST>,
-        _else: Option<Box<AST>>
+        cond: Box<AST>,
+        el:   Option<Box<AST>>
     },
     FunArg {
         vararg:  bool,
@@ -326,9 +326,9 @@ pub enum Node {
     },
 
     IfElse {
-        cond:  Box<AST>,
-        then:  Box<AST>,
-        _else: Option<Box<AST>>
+        cond: Box<AST>,
+        then: Box<AST>,
+        el:   Option<Box<AST>>
     },
     Match {
         cond:  Box<AST>,

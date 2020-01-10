@@ -96,11 +96,11 @@ fn if_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let (cond, then, _else) = match ast_tree.node {
+    let (cond, then, el) = match ast_tree.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
-                Node::IfElse { cond, then, _else } => (cond, then, _else),
+                Node::IfElse { cond, then, el } => (cond, then, el),
                 _ => panic!("first element script was not if.")
             }
         }
@@ -109,7 +109,7 @@ fn if_verify() {
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
     assert_eq!(then.node, Node::Id { lit: String::from("c") });
-    assert_eq!(_else.is_none(), true);
+    assert_eq!(el.is_none(), true);
 }
 
 #[test]
@@ -117,16 +117,16 @@ fn if_with_block_verify() {
     let source = String::from("if a then\n    c\n    d");
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (cond, then, _else) = match ast_tree.node {
+    let (cond, then, el) = match ast_tree.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::IfElse { cond, then, _else } => (cond.clone(), then.clone(), _else.clone()),
+            Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
             _ => panic!("first element script was not if.")
         },
         _ => panic!("ast_tree was not script.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
-    assert_eq!(_else.is_none(), true);
+    assert_eq!(el.is_none(), true);
 
     let block = match then.node {
         Node::Block { statements } => statements,
@@ -144,11 +144,11 @@ fn if_else_verify() {
     let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let (cond, then, _else) = match ast_tree.node {
+    let (cond, then, el) = match ast_tree.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
-                Node::IfElse { cond, then, _else } => (cond, then, _else),
+                Node::IfElse { cond, then, el } => (cond, then, el),
                 _ => panic!("first element script was not if.")
             }
         }
@@ -157,7 +157,7 @@ fn if_else_verify() {
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
     assert_eq!(then.node, Node::Id { lit: String::from("c") });
-    assert_eq!(_else.as_ref().unwrap().node, Node::Id { lit: String::from("d") });
+    assert_eq!(el.as_ref().unwrap().node, Node::Id { lit: String::from("d") });
 }
 
 #[test]

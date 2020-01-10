@@ -8,31 +8,21 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn gen_class(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
-        Node::Class { body, .. } =>
-            if let Some(body) = body {
-                match &body.node {
-                    Node::Block { statements } => gen_vec(statements, env, ctx, constr),
-                    _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
-                }
-            } else {
-                Ok((constr.clone(), env.clone()))
-            },
+        Node::Class { body: Some(body), .. } => match &body.node {
+            Node::Block { statements } => gen_vec(statements, env, ctx, constr),
+            _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
+        },
+        Node::Class { body, .. } => Ok((constr.clone(), env.clone())),
 
-        Node::TypeDef { body, .. } =>
-            if let Some(body) = body {
-                generate(body, env, ctx, constr)
-            } else {
-                Ok((constr.clone(), env.clone()))
-            },
+        Node::TypeDef { body: Some(body), .. } => generate(body, env, ctx, constr),
+        Node::TypeDef { body, .. } => Ok((constr.clone(), env.clone())),
+
         Node::TypeAlias { conditions, .. } => gen_vec(conditions, env, ctx, constr),
-        Node::Condition { cond, _else } => {
+        Node::Condition { cond, el: Some(el) } => {
             let (constr, env) = generate(cond, env, ctx, constr)?;
-            if let Some(el) = _else {
-                generate(el, &env, ctx, &constr)
-            } else {
-                Ok((constr, env))
-            }
+            generate(el, &env, ctx, &constr)
         }
+        Node::Condition { cond, .. } => generate(cond, env, ctx, constr),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or type definition")])
     }

@@ -16,22 +16,17 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::Raises { .. } => unimplemented!(),
-        Node::With { resource, alias, expr } => {
-            let constr = if let Some(alias) = alias {
-                constr.add(
-                    &Expect::Expression { ast: resource.deref().clone() },
-                    &Expect::Expression { ast: alias.deref().clone() }
-                )
-            } else {
-                constr.clone()
-            };
-
+        Node::With { resource, alias: Some(alias), expr } => {
+            let constr = constr
+                .add(&Expect::Expression { ast: resource.deref().clone() }, &Expect::Expression {
+                    ast: alias.deref().clone()
+                });
             let (constr, env) = generate(resource, env, ctx, &constr)?;
-            let (constr, env) = if let Some(alias) = alias {
-                generate(alias, &env, ctx, &constr)
-            } else {
-                (constr, env)
-            };
+            let (constr, env) = generate(alias, &env, ctx, &constr)?;
+            generate(expr, &env, ctx, &constr)
+        }
+        Node::With { resource, expr, .. } => {
+            let (constr, env) = generate(resource, env, ctx, &constr)?;
             generate(expr, &env, ctx, &constr)
         }
 

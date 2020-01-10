@@ -9,12 +9,7 @@ use crate::type_checker::type_result::TypeErr;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-pub fn gen_definition(
-    ast: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &Constraints
-) -> Constrained {
+pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, .. } => {
             for fun_arg in fun_args {

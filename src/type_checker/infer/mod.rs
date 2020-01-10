@@ -107,10 +107,10 @@ fn infer(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             Ok((InferType::default(), env.clone()))
         }
 
-        Node::Condition { cond, _else } => {
+        Node::Condition { cond, el } => {
             infer(cond, env, ctx)?;
-            if let Some(_else) = _else {
-                infer(_else, env, ctx)?;
+            if let Some(el) = el {
+                infer(el, env, ctx)?;
             }
             Ok((InferType::default(), env.clone()))
         }

@@ -22,11 +22,11 @@ pub fn infer_control_flow(ast: &AST, env: &Environment, ctx: &Context) -> InferR
         Node::Match { .. } => infer_match(ast, env, ctx),
         Node::Case { .. } => infer_match(ast, env, ctx),
 
-        Node::IfElse { cond, then, _else } => {
+        Node::IfElse { cond, then, el } => {
             let (_, env) = is_bool(cond, env, ctx)?;
             let (then_type, then_env) = infer(then, &env, ctx)?;
-            if let Some(_else) = _else {
-                let (else_type, else_env) = infer(_else, &env, ctx)?;
+            if let Some(el) = el {
+                let (else_type, else_env) = infer(el, &env, ctx)?;
                 Ok((then_type.union(&else_type, &ast.pos)?, then_env.difference(else_env)))
             } else {
                 Ok((then_type, then_env))

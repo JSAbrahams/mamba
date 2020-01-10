@@ -16,19 +16,13 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn generate_call(
-    ast: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &Constraints
-) -> Constrained {
+pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
             let constr = constr
                 .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Expression {
                     ast: right.deref().clone()
-                });
-            let constr = constr
+                })
                 .add(&Expect::Expression { ast: left.deref().clone() }, &Expect::Mutable {
                     expect: Box::from(Expect::AnyExpression)
                 });
@@ -43,7 +37,7 @@ pub fn generate_call(
 
             let constr = fun_args(ast, &possible_constructor_args, args, constr)?;
             let (constr, env) = gen_vec(args, env, ctx, &constr)?;
-            generate_call(name, &env, ctx, &constr)
+            gen_call(name, &env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
             let type_name = TypeName::try_from(name.deref())?;
@@ -53,7 +47,7 @@ pub fn generate_call(
 
             let constr = fun_args(ast, &possible_fun_args, args, constr)?;
             let (constr, env) = gen_vec(args, env, ctx, &constr)?;
-            generate_call(name, &env, ctx, &constr)
+            gen_call(name, &env, ctx, &constr)
         }
         Node::PropertyCall { instance, property } =>
             property_call(instance, property, env, ctx, constr),

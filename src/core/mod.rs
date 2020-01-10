@@ -30,7 +30,7 @@ pub mod construct;
 /// let core_node = Core::IfElse {
 ///     cond:  Box::from(Core::Id { lit: String::from("a") }),
 ///     then:  Box::from(Core::Str { _str: String::from("b") }),
-///     _else: Box::from(Core::Str { _str: String::from("c") })
+///     el: Box::from(Core::Str { _str: String::from("c") })
 /// };
 ///
 /// assert_eq!(to_source(&core_node), "if a: \"b\"\nelse: \"c\"\n");
@@ -244,12 +244,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         ),
         Core::If { cond, then } =>
             format!("if {}:{}", to_py(cond.as_ref(), ind), newline_if_body(then, ind)),
-        Core::IfElse { cond, then, _else } => format!(
+        Core::IfElse { cond, then, el } => format!(
             "if {}:{}\n{}else:{}",
             to_py(cond.as_ref(), ind),
             newline_if_body(then, ind),
             indent(ind),
-            newline_if_body(_else, ind)
+            newline_if_body(el, ind)
         ),
         Core::Ternary { cond, then, _else } => format!(
             "{} if {} else {}",
@@ -280,10 +280,10 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::With { resource, expr } =>
             format!("with {}:{}", to_py(resource, ind), newline_if_body(expr, ind)),
-        Core::WithAs { resource, _as, expr } => format!(
+        Core::WithAs { resource, alias, expr } => format!(
             "with {} as {}:{}",
             to_py(resource, ind),
-            to_py(_as, ind),
+            to_py(alias, ind),
             newline_if_body(expr, ind)
         ),
 

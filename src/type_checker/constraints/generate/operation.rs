@@ -9,12 +9,7 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn gen_operation(
-    ast: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &Constraints
-) -> Constrained {
+pub fn gen_op(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
             let constr = constr.add(
@@ -26,25 +21,34 @@ pub fn gen_operation(
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
-        Node::Range { from, to, inclusive, step } => {
+        Node::Range { from, to, inclusive, step: Some(step) } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             let constr = constr
-                .add(&Expect::Expression { ast: from.deref().clone() }, &Expect::Type { type_name })
-                .add(&Expect::Expression { ast: to.deref().clone() }, &Expect::Type { type_name });
-
-            let constr = if let Some(step) = step {
-                constr.add(&Expect { ast: step.deref().clone() }, &Expect::Type { type_name })
-            } else {
-                constr
-            };
+                .add(&Expect::Expression { ast: from.deref().clone() }, &Expect::Type {
+                    type_name: type_name.clone()
+                })
+                .add(&Expect::Expression { ast: to.deref().clone() }, &Expect::Type {
+                    type_name: type_name.clone()
+                })
+                .add(&Expect::Expression { ast: step.deref().clone() }, &Expect::Type {
+                    type_name
+                });
 
             let (constr, env) = generate(from, env, ctx, &constr)?;
             let (constr, env) = generate(to, &env, ctx, &constr)?;
-            if let Some(step) = step {
-                generate(step, &env, ctx, &constr)
-            } else {
-                Ok((constr, env))
-            }
+            generate(step, &env, ctx, &constr)
+        }
+        Node::Range { from, to, inclusive, .. } => {
+            let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
+            let constr = constr
+                .add(&Expect::Expression { ast: from.deref().clone() }, &Expect::Type {
+                    type_name: type_name.clone()
+                })
+                .add(&Expect::Expression { ast: to.deref().clone() }, &Expect::Type {
+                    type_name: type_name.clone()
+                });
+            let (constr, env) = generate(from, env, ctx, &constr)?;
+            generate(to, &env, ctx, &constr)
         }
 
         Node::Real { .. } => primitive(ast, ty::concrete::FLOAT_PRIMITIVE, env, constr),

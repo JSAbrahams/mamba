@@ -9,11 +9,11 @@ use crate::parser::ast::AST;
 
 pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
-        Node::IfElse { cond, then, _else } => match _else {
-            Some(_else) => Core::IfElse {
-                cond:  Box::from(desugar_node(cond, imp, state)?),
-                then:  Box::from(desugar_node(then, imp, state)?),
-                _else: Box::from(desugar_node(_else, imp, state)?)
+        Node::IfElse { cond, then, el } => match el {
+            Some(el) => Core::IfElse {
+                cond: Box::from(desugar_node(cond, imp, state)?),
+                then: Box::from(desugar_node(then, imp, state)?),
+                el:   Box::from(desugar_node(el, imp, state)?)
             },
             None => Core::If {
                 cond: Box::from(desugar_node(cond, imp, state)?),

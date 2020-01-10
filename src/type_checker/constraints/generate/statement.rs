@@ -7,12 +7,7 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeErr;
 use std::ops::Deref;
 
-pub fn gen_statement(
-    ast: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &Constraints
-) -> Constrained {
+pub fn gen_stmt(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::Raise { .. } => unimplemented!(),
         Node::Return { expr } => {

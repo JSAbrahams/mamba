@@ -248,10 +248,10 @@ pub trait Modification {
                     m_args || m_ret_ty
                 ))
             }
-            Node::Condition { cond, _else } => {
+            Node::Condition { cond, el } => {
                 let (cond, m_cond) = modify!(cond);
-                let (_else, m_else) = optional!(_else);
-                Ok((AST { node: Node::Condition { cond, _else }, ..ast.clone() }, m_cond || m_else))
+                let (el, m_else) = optional!(el);
+                Ok((AST { node: Node::Condition { cond, el }, ..ast.clone() }, m_cond || m_else))
             }
             Node::FunArg { vararg, mutable, var, ty, default } => {
                 let (var, m_var) = modify!(var);
@@ -361,12 +361,12 @@ pub trait Modification {
             Node::SubU { expr } => inner!(SubU, expr),
             Node::AddU { expr } => inner!(AddU, expr),
             Node::Not { expr } => inner!(Not, expr),
-            Node::IfElse { cond, then, _else } => {
+            Node::IfElse { cond, then, el } => {
                 let (cond, m_cond) = modify!(cond);
                 let (then, m_then) = modify!(then);
-                let (_else, m_else) = optional!(_else);
+                let (el, m_else) = optional!(el);
                 Ok((
-                    AST { node: Node::IfElse { cond, then, _else }, ..ast.clone() },
+                    AST { node: Node::IfElse { cond, then, el }, ..ast.clone() },
                     m_cond || m_then || m_else
                 ))
             }
