@@ -9,7 +9,7 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn gen_ty(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
+pub fn gen_ty(ast: &AST, _: &Environment, _: &Context, _: &Constraints) -> Constrained {
     match &ast.node {
         Node::QuestionOp { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Nullable type annotation cannot be top level")]),

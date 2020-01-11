@@ -1,8 +1,7 @@
-use std::collections::HashSet;
-
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::{Any, AnyExpr, Expression, Truthy, Type};
+use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, Raises, RaisesAny,
+                                                     Truthy, Type};
+use crate::type_checker::constraints::cons::{Constraints, Expect};
 use crate::type_checker::constraints::generate::collection::constrain_collection;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
@@ -10,41 +9,44 @@ use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
-            let mut constr_env = (constr.clone(), env.clone());
-            // TODO add system for generating constraints of thrown errors
-            let mut raises: HashSet<TypeName> = unimplemented!();
-            let case_body = if let Some(case) = cases.first() {
-                match &expr_or_stmt.node {
-                    Node::VariableDef { .. } | Node::Reassign { .. } =>
-                        Some(Any { ast: case.clone() }),
-                    _ => None
-                }
-            } else {
-                None
-            };
+            let mut res = (constr.clone(), env.clone());
+            let first_case_exp = first_case_expect(cases, env);
+            let cond_expect = Expression { ast: *expr_or_stmt.clone() };
 
-            // TODO add system for checking that all raises are covered
-            let raises: TypeName = unimplemented!();
+            // TODO check that all raises are covered
             for case in cases {
                 match &case.node {
-                    Node::Case { cond: case_cond, body } => {
-                        constr_env.0 = constr_env.0.add(&Type { type_name: raises }, &Expression {
-                            ast: *case_cond.clone()
-                        });
-                        if let Some(case_body) = &case_body {
-                            constr_env.0 = constr_env.0.add(case_body, &Any { ast: *body.clone() });
+                    Node::Case { cond: case_cond, body } => match &case_cond.node {
+                        Node::ExpressionType { expr, mutable, ty } => {
+                            if let Some(ty) = ty {
+                                let type_name = TypeName::try_from(ty.deref())?;
+                                res.0 = res.0.add(&Raises { type_name }, &cond_expect);
+                            } else {
+                                res.0 = res.0.add(&RaisesAny, &cond_expect)
+                            }
+                            if let Some(first_case_exp) = &first_case_exp {
+                                res.0 =
+                                    res.0.add(first_case_exp, &Expression { ast: *body.clone() });
+                            }
+                            res = generate(body, &res.1, ctx, &res.0)?;
                         }
-                        constr_env = generate(body, &constr_env.1, ctx, &constr_env.0)?;
-                    }
+                        _ =>
+                            return Err(vec![TypeErr::new(
+                                &case_cond.pos,
+                                "Expected expression type"
+                            )]),
+                    },
                     _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
                 }
             }
 
-            generate(expr_or_stmt, &constr_env.1, ctx, &constr_env.0)
+            generate(expr_or_stmt, &res.1, ctx, &res.0)
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
@@ -61,42 +63,32 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::IfElse { cond, then, .. } => {
             let constr = constr
                 .add(&Expression { ast: *cond.clone() }, &Truthy)
-                .add(&Expression { ast: *then.clone() }, &AnyExpr);
+                .add(&Expression { ast: *then.clone() }, &ExpressionAny);
             let (constr, env) = generate(cond, env, ctx, &constr)?;
             generate(then, &env, ctx, &constr)
         }
 
         Node::Case { .. } => Err(vec![TypeErr::new(&ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
-            let mut constr_env = (constr.clone(), env.clone());
-            let case_body = if let Some(case) = cases.first() {
-                if env.state.expect_expr {
-                    Some(Expression { ast: case.clone() })
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
+            let mut res = (constr.clone(), env.clone());
+            let cond_expect = Expression { ast: *cond.clone() };
+            let first_case_exp = first_case_expect(cases, env);
 
+            // TODO check that all variants are covered
             for case in cases {
                 match &case.node {
-                    Node::Case { cond: case_cond, body } => {
-                        constr_env.0 =
-                            constr_env.0.add(&Expression { ast: *cond.clone() }, &Expression {
-                                ast: *case_cond.clone()
-                            });
-                        if let Some(case_body) = &case_body {
-                            constr_env.0 =
-                                constr_env.0.add(case_body, &Expression { ast: *body.clone() });
+                    Node::Case { cond, body } => {
+                        res.0 = res.0.add(&Expression { ast: *cond.clone() }, &cond_expect);
+                        if let Some(case_expectation) = &first_case_exp {
+                            res.0 = res.0.add(case_expectation, &Expression { ast: *body.clone() });
                         }
-                        constr_env = generate(body, &constr_env.1, ctx, &constr_env.0)?;
+                        res = generate(body, &res.1, ctx, &res.0)?;
                     }
                     _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
                 }
             }
 
-            generate(cond, &constr_env.1, ctx, &constr_env.0)
+            generate(cond, &res.1, ctx, &res.0)
         }
 
         Node::For { expr, col, body } => {
@@ -116,5 +108,17 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])
+    }
+}
+
+fn first_case_expect(cases: &Vec<AST>, env: &Environment) -> Option<Expect> {
+    if let Some(case) = cases.first() {
+        if env.state.expect_expr {
+            Some(Expression { ast: case.clone() })
+        } else {
+            None
+        }
+    } else {
+        None
     }
 }

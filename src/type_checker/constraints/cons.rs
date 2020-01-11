@@ -23,16 +23,17 @@ pub struct Constraint(pub Expect, pub Expect);
 pub enum Expect {
     Nullable { expect: Box<Expect> },
     Mutable { expect: Box<Expect> },
-
-    Any { ast: AST },
-    AnyExpr,
     Expression { ast: AST },
+    ExpressionAny,
 
-    Collection { ty: Option<Box<Expect>> },
+    Collection { ty: Box<Expect> },
     Truthy,
 
+    RaisesAny,
     Raises { type_name: TypeName },
-    Implements { name: String, args: Vec<Expect> },
+
+    Implements { type_name: TypeName, args: Vec<Expect> },
     HasField { name: String },
+
     Type { type_name: TypeName }
 }

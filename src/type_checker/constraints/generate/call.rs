@@ -2,12 +2,14 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use itertools::{EitherOrBoth, Itertools};
+use itertools::EitherOrBoth::{Both, Left, Right};
+use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::{AnyExpr, Expression, Mutable, Type};
+use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, HasField,
+                                                     Implements, Mutable, Type};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
@@ -21,7 +23,9 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::Reassign { left, right } => {
             let constr = constr
                 .add(&Expression { ast: *left.clone() }, &Expression { ast: *right.clone() })
-                .add(&Expression { ast: *left.clone() }, &Mutable { expect: Box::from(AnyExpr) });
+                .add(&Expression { ast: *left.clone() }, &Mutable {
+                    expect: Box::from(ExpressionAny)
+                });
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
@@ -57,20 +61,19 @@ fn fun_args(
     let possible_it = possible.iter();
     let pair_it = possible_it.flat_map(|f_args| f_args.into_iter().zip_longest(args.iter()));
 
-    for pair in pair_it {
-        match pair {
-            EitherOrBoth::Both(fun_arg, arg) => {
+    for either_or_both in pair_it {
+        match either_or_both {
+            Both(fun_arg, arg) => {
                 let ty = &fun_arg.ty.as_ref();
                 let type_name =
                     ty.ok_or_else(|| TypeErr::new(&arg.pos, "Must have type parameters"))?.clone();
                 constr = constr.add(&Expression { ast: arg.clone() }, &Type { type_name })
             }
-            EitherOrBoth::Left(fun_arg) if !fun_arg.has_default => {
+            Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&ast.pos.end, &ast.pos.end);
                 return Err(vec![TypeErr::new(&pos, "Expected argument")]);
             }
-            EitherOrBoth::Right(arg) =>
-                return Err(vec![TypeErr::new(&arg.pos, "Unexpected argument")]),
+            Right(arg) => return Err(vec![TypeErr::new(&arg.pos, "Unexpected argument")]),
             _ => {}
         }
     }
@@ -85,5 +88,29 @@ fn property_call(
     ctx: &Context,
     constr: &Constraints
 ) -> Constrained {
-    unimplemented!()
+    match &property.node {
+        Node::PropertyCall { instance: inner_instance, property } =>
+            property_call(inner_instance, property, env, ctx, constr),
+        Node::Id { lit } => {
+            let property = Expression { ast: property.clone() };
+            let constr = constr.add(&property, &HasField { name: lit.clone() });
+            Ok((constr, env.clone()))
+        }
+        Node::Reassign { left, right } => {
+            let left = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
+            let constr = constr.add(&left, &Expression { ast: *right.clone() });
+            Ok((constr, env.clone()))
+        }
+        Node::FunctionCall { name, args } => {
+            let type_name = TypeName::try_from(name.deref())?;
+            let property = Expression { ast: property.clone() };
+            let constr = constr.add(&property, &Implements {
+                type_name,
+                args: args.iter().map(|arg| Expression { ast: arg.clone() }).collect()
+            });
+            Ok((constr, env.clone()))
+        }
+
+        _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")])
+    }
 }

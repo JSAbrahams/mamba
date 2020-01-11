@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::{AnyExpr, Expression};
+use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -12,11 +12,11 @@ pub fn gen_stmt(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
     match &ast.node {
         Node::Raise { error } => generate(error, env, ctx, constr),
         Node::Return { expr } => {
-            let constr = constr.add(&Expression { ast: *expr.clone() }, &AnyExpr);
+            let constr = constr.add(&Expression { ast: *expr.clone() }, &ExpressionAny);
             generate(expr, env, ctx, &constr)
         }
         Node::Print { expr } => {
-            let constr = constr.add(&Expression { ast: *expr.clone() }, &AnyExpr);
+            let constr = constr.add(&Expression { ast: *expr.clone() }, &ExpressionAny);
             generate(expr, env, ctx, &constr)
         }
 
