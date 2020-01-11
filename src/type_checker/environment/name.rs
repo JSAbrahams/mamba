@@ -29,13 +29,17 @@ impl Identifier {
         }
     }
 
-    fn as_mutable(&self) -> Identifier {
+    pub fn as_mutable(&self, mutable: bool) -> Identifier {
+        if !mutable {
+            return self.clone();
+        }
+
         if let Some((_, id)) = &self.lit {
             Identifier { lit: Some((true, id.clone())), names: self.names.clone() }
         } else {
             Identifier {
                 lit:   self.lit.clone(),
-                names: self.names.iter().map(|name| name.as_mutable()).collect()
+                names: self.names.iter().map(|name| name.as_mutable(mutable)).collect()
             }
         }
     }
@@ -60,7 +64,7 @@ impl TryFrom<&AST> for Identifier {
             Node::Id { lit } => Ok(Identifier::from(lit.as_str())),
             Node::ExpressionType { expr, mutable, .. } => {
                 let identifier = Identifier::try_from(expr.deref())?;
-                Ok(if *mutable { identifier.as_mutable() } else { identifier })
+                Ok(identifier.as_mutable(*mutable))
             }
             Node::Tuple { elements } =>
                 Ok(Identifier::from(&elements.iter().map(Identifier::try_from).collect::<Result<

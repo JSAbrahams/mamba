@@ -35,6 +35,7 @@ pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::TypeAlias { .. } | Node::Condition { .. } => gen_class(ast, env, ctx, constr),
 
         Node::VariableDef { .. } | Node::FunDef { .. } => gen_def(ast, env, ctx, constr),
+        Node::FunArg { .. } => gen_def(ast, env, ctx, constr),
 
         Node::Reassign { .. } => gen_call(ast, env, ctx, constr),
         Node::ConstructorCall { .. } => gen_call(ast, env, ctx, constr),
