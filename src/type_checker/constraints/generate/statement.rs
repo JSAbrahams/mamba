@@ -8,8 +8,9 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeErr;
 
 pub fn gen_stmt(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
+    // TODO add constraints for checking that an exception is raised
     match &ast.node {
-        Node::Raise { .. } => unimplemented!(),
+        Node::Raise { error } => generate(error, env, ctx, constr),
         Node::Return { expr } => {
             let constr = constr.add(&Expression { ast: *expr.clone() }, &AnyExpr);
             generate(expr, env, ctx, &constr)

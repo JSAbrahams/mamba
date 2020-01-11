@@ -27,7 +27,7 @@ pub enum Node {
         import: Box<AST>
     },
     Class {
-        _type:   Box<AST>,
+        ty:      Box<AST>,
         args:    Vec<AST>,
         parents: Vec<AST>,
         body:    Option<Box<AST>>
@@ -113,12 +113,12 @@ pub enum Node {
     },
 
     TypeDef {
-        _type: Box<AST>,
-        isa:   Option<Box<AST>>,
-        body:  Option<Box<AST>>
+        ty:   Box<AST>,
+        isa:  Option<Box<AST>>,
+        body: Option<Box<AST>>
     },
     TypeAlias {
-        _type:      Box<AST>,
+        ty:         Box<AST>,
         isa:        Box<AST>,
         conditions: Vec<AST>
     },

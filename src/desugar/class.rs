@@ -20,7 +20,7 @@ use crate::type_checker::context::{function, function_arg};
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
-        Node::TypeDef { _type, body: Some(body), isa } => match (&_type.node, &body.node) {
+        Node::TypeDef { ty, body: Some(body), isa } => match (&ty.node, &body.node) {
             (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     if let Some(isa) = isa {
@@ -32,7 +32,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
             },
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
-        Node::TypeDef { _type, body: None, isa } => match &_type.node {
+        Node::TypeDef { ty, body: None, isa } => match &ty.node {
             Node::Type { id, .. } => Core::ClassDef {
                 name:        Box::from(desugar_node(id, imp, state)?),
                 parents:     if let Some(isa) = isa {
@@ -45,7 +45,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
             other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
         },
 
-        Node::Class { _type, body, args, parents } => {
+        Node::Class { ty, body, args, parents } => {
             let statements = if let Some(body) = body {
                 match &body.deref().node {
                     Node::Block { statements } => statements.clone(),
@@ -55,7 +55,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                 vec![]
             };
 
-            match &_type.node {
+            match &ty.node {
                 Node::Type { id, .. } => {
                     let (parent_names, parent_args, super_calls) =
                         extract_parents(parents, imp, state)?;

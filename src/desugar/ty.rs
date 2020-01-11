@@ -19,8 +19,8 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         }
         Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         Node::ExpressionType { expr, .. } => desugar_node(expr, imp, state)?,
-        Node::TypeAlias { _type, isa, .. } => Core::Assign {
-            left:  Box::from(desugar_node(_type, imp, state)?),
+        Node::TypeAlias { ty, isa, .. } => Core::Assign {
+            left:  Box::from(desugar_node(ty, imp, state)?),
             right: Box::from(desugar_node(isa, imp, state)?)
         },
         Node::TypeTup { types } => {

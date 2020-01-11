@@ -9,8 +9,6 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
-        Node::SetBuilder { .. } => unimplemented!(),
-        Node::ListBuilder { .. } => unimplemented!(),
         Node::Set { elements } | Node::List { elements } if elements.first().is_some() => {
             let first = elements.first().unwrap();
             let mut constr_env = (constr.clone(), env.clone());
@@ -25,6 +23,10 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         Node::Set { .. } | Node::List { .. } => Ok((constr.clone(), env.clone())),
         Node::Tuple { elements } => gen_vec(elements, env, ctx, constr),
 
+        Node::SetBuilder { .. } =>
+            Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")]),
+        Node::ListBuilder { .. } =>
+            Err(vec![TypeErr::new(&ast.pos, "List builders currently not supported")]),
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected collection")])
     }
 }

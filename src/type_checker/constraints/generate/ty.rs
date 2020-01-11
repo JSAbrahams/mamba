@@ -28,11 +28,10 @@ pub fn gen_ty(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints)
 pub fn constrain_ty(
     expr: &AST,
     ty: &AST,
-    env: &Environment,
     ctx: &Context,
     constr: &Constraints
-) -> Constrained {
+) -> Constrained<Constraints> {
     let type_name = TypeName::try_from(ty)?;
     let constr = constr.add(&Expression { ast: expr.clone() }, &Type { type_name });
-    Ok((constr, env.clone()))
+    Ok(constr)
 }

@@ -31,6 +31,7 @@ pub enum Expect {
     Collection { ty: Option<Box<Expect>> },
     Truthy,
 
+    Raises { type_name: TypeName },
     Implements { name: String, args: Vec<Expect> },
     HasField { name: String },
     Type { type_name: TypeName }

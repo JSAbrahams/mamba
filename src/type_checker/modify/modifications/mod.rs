@@ -63,13 +63,13 @@ pub trait Modification {
                 let (import, m_import) = modify!(import);
                 Ok((AST { node: Node::FromImport { id, import }, ..ast.clone() }, m_id || m_import))
             }
-            Node::Class { _type, args, parents, body } => {
-                let (_type, m_type) = modify!(_type);
+            Node::Class { ty, args, parents, body } => {
+                let (ty, m_type) = modify!(ty);
                 let (args, m_args) = vec_recursion!(args);
                 let (parents, m_parents) = vec_recursion!(parents);
                 let (body, m_body) = optional!(body);
                 Ok((
-                    AST { node: Node::Class { _type, args, parents, body }, ..ast.clone() },
+                    AST { node: Node::Class { ty, args, parents, body }, ..ast.clone() },
                     m_type || m_args || m_parents || m_body
                 ))
             }
@@ -209,21 +209,21 @@ pub trait Modification {
                     m_expr || m_ty
                 ))
             }
-            Node::TypeDef { _type, isa, body } => {
-                let (_type, m_type) = modify!(_type);
+            Node::TypeDef { ty, isa, body } => {
+                let (ty, m_type) = modify!(ty);
                 let (isa, m_isa) = optional!(isa);
                 let (body, m_body) = optional!(body);
                 Ok((
-                    AST { node: Node::TypeDef { _type, isa, body }, ..ast.clone() },
+                    AST { node: Node::TypeDef { ty, isa, body }, ..ast.clone() },
                     m_type || m_isa || m_body
                 ))
             }
-            Node::TypeAlias { _type, isa, conditions } => {
-                let (_type, m_type) = modify!(_type);
+            Node::TypeAlias { ty, isa, conditions } => {
+                let (ty, m_type) = modify!(ty);
                 let (isa, m_isa) = modify!(isa);
                 let (conditions, m_conditions) = vec_recursion!(conditions);
                 Ok((
-                    AST { node: Node::TypeAlias { _type, isa, conditions }, ..ast.clone() },
+                    AST { node: Node::TypeAlias { ty, isa, conditions }, ..ast.clone() },
                     m_type || m_isa || m_conditions
                 ))
             }

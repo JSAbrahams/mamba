@@ -14,7 +14,7 @@ use crate::parser::parse_result::{expected, expected_one_of};
 pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("class")?;
     it.eat(&Token::Class, "class")?;
-    let _type = it.parse(&parse_type, "class", &start)?;
+    let ty = it.parse(&parse_type, "class", &start)?;
 
     let mut args = vec![];
     if it.eat_if(&Token::LRBrack).is_some() {
@@ -53,7 +53,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
         (None, start)
     };
 
-    let node = Node::Class { _type, args, parents, body };
+    let node = Node::Class { ty, args, parents, body };
     Ok(Box::from(AST::new(&pos, node)))
 }
 

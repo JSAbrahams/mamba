@@ -11,23 +11,23 @@ use std::convert::TryFrom;
 
 pub fn infer_type(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
-        Node::TypeDef { isa, body, _type, .. } => {
+        Node::TypeDef { isa, body, ty, .. } => {
             if let Some(isa) = isa {
                 infer(isa, env, ctx)?;
             }
             if let Some(body) = body {
-                let class = TypeName::try_from(_type.deref())?;
-                let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
+                let class = TypeName::try_from(ty.deref())?;
+                let env = env.in_class(false, &ctx.lookup(&class, &ty.pos)?);
                 infer(body, &env, ctx)?;
             }
 
             Ok((InferType::default(), env.clone()))
         }
-        Node::TypeAlias { isa, conditions, _type } => {
+        Node::TypeAlias { isa, conditions, ty } => {
             infer(isa, env, ctx)?;
             for condition in conditions {
                 let class = TypeName::try_from(isa.deref())?;
-                let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
+                let env = env.in_class(false, &ctx.lookup(&class, &ty.pos)?);
                 infer(condition, &env, ctx)?;
             }
             Ok((InferType::default(), env.clone()))

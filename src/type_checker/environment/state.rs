@@ -1,16 +1,18 @@
+use crate::type_checker::constraints::cons::Expect;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct State {
-    pub expect_expr: bool,
-    pub in_loop:     bool,
-    pub in_handle:   bool,
-    pub in_function: bool,
-    pub in_match:    Option<ExpressionType>,
-    pub in_class:    Option<TypeName>,
-    pub handling:    Vec<ActualTypeName>
+    pub expect_expr:  bool,
+    pub in_loop:      bool,
+    pub in_handle:    bool,
+    pub in_function:  bool,
+    pub in_match:     Option<ExpressionType>,
+    pub in_class:     Option<TypeName>,
+    pub in_class_new: Option<Expect>,
+    pub handling:     Vec<ActualTypeName>
 }
 
 pub enum StateType {
@@ -23,13 +25,14 @@ pub enum StateType {
 impl Default for State {
     fn default() -> Self {
         State {
-            expect_expr: false,
-            in_loop:     false,
-            in_handle:   false,
-            in_function: false,
-            in_match:    None,
-            in_class:    None,
-            handling:    vec![]
+            expect_expr:  false,
+            in_loop:      false,
+            in_handle:    false,
+            in_function:  false,
+            in_match:     None,
+            in_class:     None,
+            in_class_new: None,
+            handling:     vec![]
         }
     }
 }
@@ -41,6 +44,10 @@ impl State {
 
     pub fn handling(&self, handling: &[ActualTypeName]) -> State {
         State { handling: Vec::from(handling), in_handle: true, ..self.clone() }
+    }
+
+    pub fn in_class_new(&self, in_class: &Expect) -> State {
+        State { in_class_new: Some(in_class.clone()), ..self.clone() }
     }
 
     pub fn in_class(&self, in_class: &TypeName) -> State {

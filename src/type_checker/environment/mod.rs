@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::common::position::Position;
+use crate::type_checker::constraints::cons::Expect;
 use crate::type_checker::context::function_arg;
 use crate::type_checker::environment::state::State;
 use crate::type_checker::infer_type::expression::ExpressionType;
@@ -43,6 +44,11 @@ impl Environment {
             .cloned()
             .map(|(_, expr_ty)| expr_ty)
             .ok_or_else(|| vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
+    }
+
+    pub fn in_class_new(&self, class: &Expect) -> Environment {
+        let state = self.state.in_class_new(class);
+        Environment { state, ..self.clone() }
     }
 
     pub fn in_class(&self, mutable: bool, class: &ExpressionType) -> Environment {

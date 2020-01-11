@@ -6,11 +6,11 @@ use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeErr;
 
-mod cons;
+pub mod cons;
 mod generate;
 mod unify;
 
-pub type Constrained = Result<(Constraints, Environment), Vec<TypeErr>>;
+pub type Constrained<T = (Constraints, Environment)> = Result<T, Vec<TypeErr>>;
 pub type Unified = Result<Constraints, Vec<TypeErr>>;
 
 pub fn constraints(ast: &AST, ctx: &Context) -> Unified {

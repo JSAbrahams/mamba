@@ -53,8 +53,8 @@ impl TryFrom<&AST> for GenericType {
     fn try_from(class: &AST) -> TypeResult<GenericType> {
         match &class.node {
             // TODO add pure classes
-            Node::Class { _type, args, parents, body, .. } => {
-                let (name, generics) = get_name_and_generics(_type)?;
+            Node::Class { ty, args, parents, body, .. } => {
+                let (name, generics) = get_name_and_generics(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -144,8 +144,8 @@ impl TryFrom<&AST> for GenericType {
                     parents: parents.into_iter().map(Result::unwrap).collect()
                 })
             }
-            Node::TypeDef { _type, isa, body, .. } => {
-                let (name, generics) = get_name_and_generics(_type)?;
+            Node::TypeDef { ty, isa, body, .. } => {
+                let (name, generics) = get_name_and_generics(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -175,8 +175,8 @@ impl TryFrom<&AST> for GenericType {
                     parents
                 })
             }
-            Node::TypeAlias { _type, isa, .. } => {
-                let (name, generics) = get_name_and_generics(_type)?;
+            Node::TypeAlias { ty, isa, .. } => {
+                let (name, generics) = get_name_and_generics(ty)?;
                 let parents = HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]);
                 Ok(GenericType {
                     is_py_type: false,

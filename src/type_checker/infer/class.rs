@@ -12,7 +12,7 @@ use crate::type_checker::type_result::TypeErr;
 pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
         Node::Init => Ok((InferType::default(), env.clone())),
-        Node::Class { _type, args, parents, body, .. } => {
+        Node::Class { ty, args, parents, body, .. } => {
             // TODO type check arguments and constructor of parent
             for arg in args {
                 let ty = match &arg.node {
@@ -41,8 +41,8 @@ pub fn infer_class(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
             }
 
             if let Some(body) = body {
-                let class = TypeName::try_from(_type.deref())?;
-                let env = env.in_class(false, &ctx.lookup(&class, &_type.pos)?);
+                let class = TypeName::try_from(ty.deref())?;
+                let env = env.in_class(false, &ctx.lookup(&class, &ty.pos)?);
                 infer(body, &env, ctx)?;
             }
 

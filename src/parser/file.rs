@@ -119,7 +119,7 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
 pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
-    let _type = it.parse(&parse_type, "type definition", &start)?;
+    let ty = it.parse(&parse_type, "type definition", &start)?;
     let isa = it.parse_if(&Token::IsA, &parse_type, "type parent", &start)?;
 
     it.peek(
@@ -131,9 +131,9 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                     .ok_or_else(|| custom("conditional type must have parent type", &lex.pos))?;
 
                 let conditions = it.parse_vec(&parse_conditions, "conditional type", &start)?;
-                let end = conditions.last().map_or(_type.pos.clone(), |cond| cond.pos.clone());
+                let end = conditions.last().map_or(ty.pos.clone(), |cond| cond.pos.clone());
 
-                let node = Node::TypeAlias { _type: _type.clone(), isa, conditions };
+                let node = Node::TypeAlias { ty: ty.clone(), isa, conditions };
                 Ok(Box::from(AST::new(&start.union(&end), node)))
             }
             _ => {
@@ -141,14 +141,14 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
                 it.eat_if(&Token::NL);
                 let body = it.parse(&parse_block, "type definition", &start)?;
                 let isa = isa.clone();
-                let node = Node::TypeDef { _type: _type.clone(), isa, body: Some(body.clone()) };
+                let node = Node::TypeDef { ty: ty.clone(), isa, body: Some(body.clone()) };
                 Ok(Box::from(AST::new(&start.union(&body.pos), node)))
             }
         },
         {
             let isa = isa.clone();
-            let node = Node::TypeDef { _type: _type.clone(), isa, body: None };
-            Ok(Box::from(AST::new(&start.union(&_type.pos), node)))
+            let node = Node::TypeDef { ty: ty.clone(), isa, body: None };
+            Ok(Box::from(AST::new(&start.union(&ty.pos), node)))
         }
     )
 }
