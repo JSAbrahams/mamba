@@ -1,4 +1,5 @@
-use crate::parser::ast::{Node, AST};
+use crate::parser::ast::Node::*;
+use crate::parser::ast::AST;
 use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::generate::call::gen_call;
 use crate::type_checker::constraints::generate::class::gen_class;
@@ -27,73 +28,73 @@ mod ty;
 
 pub fn generate(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
-        Node::File { modules, .. } => gen_vec(modules, env, ctx, constr),
-        Node::Block { statements } => gen_vec(statements, env, ctx, constr),
-        Node::Script { statements } => gen_vec(statements, env, ctx, constr),
+        File { modules, .. } => gen_vec(modules, env, ctx, constr),
+        Block { statements } => gen_vec(statements, env, ctx, constr),
+        Script { statements } => gen_vec(statements, env, ctx, constr),
 
-        Node::Class { .. } | Node::TypeDef { .. } => gen_class(ast, env, ctx, constr),
-        Node::TypeAlias { .. } | Node::Condition { .. } => gen_class(ast, env, ctx, constr),
+        Class { .. } | TypeDef { .. } => gen_class(ast, env, ctx, constr),
+        TypeAlias { .. } | Condition { .. } => gen_class(ast, env, ctx, constr),
 
-        Node::VariableDef { .. } | Node::FunDef { .. } => gen_def(ast, env, ctx, constr),
-        Node::FunArg { .. } => gen_def(ast, env, ctx, constr),
+        VariableDef { .. } | FunDef { .. } => gen_def(ast, env, ctx, constr),
+        FunArg { .. } => gen_def(ast, env, ctx, constr),
 
-        Node::Reassign { .. } => gen_call(ast, env, ctx, constr),
-        Node::ConstructorCall { .. } => gen_call(ast, env, ctx, constr),
-        Node::FunctionCall { .. } => gen_call(ast, env, ctx, constr),
-        Node::PropertyCall { .. } => gen_call(ast, env, ctx, constr),
+        Reassign { .. } => gen_call(ast, env, ctx, constr),
+        ConstructorCall { .. } => gen_call(ast, env, ctx, constr),
+        FunctionCall { .. } => gen_call(ast, env, ctx, constr),
+        PropertyCall { .. } => gen_call(ast, env, ctx, constr),
 
-        Node::TypeTup { .. } => gen_ty(ast, env, ctx, constr),
-        Node::TypeUnion { .. } | Node::Type { .. } => gen_ty(ast, env, ctx, constr),
-        Node::TypeFun { .. } => gen_ty(ast, env, ctx, constr),
-        Node::QuestionOp { .. } => gen_ty(ast, env, ctx, constr),
+        TypeTup { .. } => gen_ty(ast, env, ctx, constr),
+        TypeUnion { .. } | Type { .. } => gen_ty(ast, env, ctx, constr),
+        TypeFun { .. } => gen_ty(ast, env, ctx, constr),
+        QuestionOp { .. } => gen_ty(ast, env, ctx, constr),
 
-        Node::Id { .. } | Node::Question { .. } => gen_expr(ast, env, ctx, constr),
-        Node::AnonFun { .. } => gen_expr(ast, env, ctx, constr),
+        Id { .. } | Question { .. } => gen_expr(ast, env, ctx, constr),
+        AnonFun { .. } => gen_expr(ast, env, ctx, constr),
 
-        Node::Raises { .. } => gen_resources(ast, env, ctx, constr),
-        Node::With { .. } => gen_resources(ast, env, ctx, constr),
+        Raises { .. } => gen_resources(ast, env, ctx, constr),
+        With { .. } => gen_resources(ast, env, ctx, constr),
 
-        Node::SetBuilder { .. } | Node::ListBuilder { .. } => gen_coll(ast, env, ctx, constr),
-        Node::Set { .. } | Node::List { .. } => gen_coll(ast, env, ctx, constr),
-        Node::Tuple { .. } => gen_coll(ast, env, ctx, constr),
+        SetBuilder { .. } | ListBuilder { .. } => gen_coll(ast, env, ctx, constr),
+        Set { .. } | List { .. } => gen_coll(ast, env, ctx, constr),
+        Tuple { .. } => gen_coll(ast, env, ctx, constr),
 
-        Node::Range { .. } => gen_op(ast, env, ctx, constr),
-        Node::Real { .. } | Node::Int { .. } => gen_op(ast, env, ctx, constr),
-        Node::ENum { .. } => gen_op(ast, env, ctx, constr),
-        Node::Str { .. } => gen_op(ast, env, ctx, constr),
-        Node::Bool { .. } => gen_op(ast, env, ctx, constr),
+        Range { .. } => gen_op(ast, env, ctx, constr),
+        Real { .. } | Int { .. } => gen_op(ast, env, ctx, constr),
+        ENum { .. } => gen_op(ast, env, ctx, constr),
+        Str { .. } => gen_op(ast, env, ctx, constr),
+        Bool { .. } => gen_op(ast, env, ctx, constr),
 
-        Node::In { .. } => gen_op(ast, env, ctx, constr),
-        Node::Add { .. } | Node::Sub { .. } => gen_op(ast, env, ctx, constr),
-        Node::Mul { .. } | Node::Div { .. } => gen_op(ast, env, ctx, constr),
-        Node::FDiv { .. } => gen_op(ast, env, ctx, constr),
-        Node::Pow { .. } => gen_op(ast, env, ctx, constr),
-        Node::Le { .. } | Node::Ge { .. } => gen_op(ast, env, ctx, constr),
-        Node::Leq { .. } | Node::Geq { .. } => gen_op(ast, env, ctx, constr),
-        Node::Eq { .. } | Node::Neq { .. } => gen_op(ast, env, ctx, constr),
-        Node::Mod { .. } => gen_op(ast, env, ctx, constr),
-        Node::AddU { .. } | Node::SubU { .. } => gen_op(ast, env, ctx, constr),
-        Node::Sqrt { .. } => gen_op(ast, env, ctx, constr),
+        In { .. } => gen_op(ast, env, ctx, constr),
+        Add { .. } | Sub { .. } => gen_op(ast, env, ctx, constr),
+        Mul { .. } | Div { .. } => gen_op(ast, env, ctx, constr),
+        FDiv { .. } => gen_op(ast, env, ctx, constr),
+        Pow { .. } => gen_op(ast, env, ctx, constr),
+        Le { .. } | Ge { .. } => gen_op(ast, env, ctx, constr),
+        Leq { .. } | Geq { .. } => gen_op(ast, env, ctx, constr),
+        Eq { .. } | Neq { .. } => gen_op(ast, env, ctx, constr),
+        Mod { .. } => gen_op(ast, env, ctx, constr),
+        AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
+        Sqrt { .. } => gen_op(ast, env, ctx, constr),
 
-        Node::BOneCmpl { .. } => gen_op(ast, env, ctx, constr),
-        Node::BAnd { .. } => gen_op(ast, env, ctx, constr),
-        Node::BOr { .. } | Node::BXOr { .. } => gen_op(ast, env, ctx, constr),
-        Node::BLShift { .. } | Node::BRShift { .. } => gen_op(ast, env, ctx, constr),
+        BOneCmpl { .. } => gen_op(ast, env, ctx, constr),
+        BAnd { .. } => gen_op(ast, env, ctx, constr),
+        BOr { .. } | BXOr { .. } => gen_op(ast, env, ctx, constr),
+        BLShift { .. } | BRShift { .. } => gen_op(ast, env, ctx, constr),
 
-        Node::Is { .. } | Node::IsN { .. } => gen_op(ast, env, ctx, constr),
-        Node::IsA { .. } | Node::IsNA { .. } => gen_op(ast, env, ctx, constr),
-        Node::And { .. } | Node::Or { .. } => gen_op(ast, env, ctx, constr),
-        Node::Not { .. } => gen_op(ast, env, ctx, constr),
+        Is { .. } | IsN { .. } => gen_op(ast, env, ctx, constr),
+        IsA { .. } | IsNA { .. } => gen_op(ast, env, ctx, constr),
+        And { .. } | Or { .. } => gen_op(ast, env, ctx, constr),
+        Not { .. } => gen_op(ast, env, ctx, constr),
 
-        Node::IfElse { .. } => gen_flow(ast, env, ctx, constr),
-        Node::Match { .. } | Node::Handle { .. } => gen_flow(ast, env, ctx, constr),
-        Node::Case { .. } => gen_flow(ast, env, ctx, constr),
-        Node::For { .. } | Node::Step { .. } => gen_flow(ast, env, ctx, constr),
-        Node::While { .. } => gen_flow(ast, env, ctx, constr),
+        IfElse { .. } => gen_flow(ast, env, ctx, constr),
+        Match { .. } | Handle { .. } => gen_flow(ast, env, ctx, constr),
+        Case { .. } => gen_flow(ast, env, ctx, constr),
+        For { .. } | Step { .. } => gen_flow(ast, env, ctx, constr),
+        While { .. } => gen_flow(ast, env, ctx, constr),
 
-        Node::Return { .. } => gen_stmt(ast, env, ctx, constr),
-        Node::Print { .. } => gen_stmt(ast, env, ctx, constr),
-        Node::Raise { .. } => gen_stmt(ast, env, ctx, constr),
+        Return { .. } => gen_stmt(ast, env, ctx, constr),
+        Print { .. } => gen_stmt(ast, env, ctx, constr),
+        Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
         _ => Ok((constr.clone(), env.clone()))
     }

@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::{Any, AnyExpr, Collection, Expression, Truthy,
-                                                     Type};
+use crate::type_checker::constraints::cons::Expect::{Any, AnyExpr, Expression, Truthy, Type};
+use crate::type_checker::constraints::generate::collection::constrain_collection;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::{ty, Context};
@@ -100,9 +100,7 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
 
         Node::For { expr, col, body } => {
-            let constr = constr.add(&Expression { ast: *col.clone() }, &Collection {
-                ty: Some(Box::from(Expression { ast: *expr.clone() }))
-            });
+            let constr = constrain_collection(col, expr, constr)?;
             let (constr, env) = generate(expr, env, ctx, &constr)?;
             let (constr, env) = generate(col, &env, ctx, &constr)?;
             generate(body, &env, ctx, &constr)

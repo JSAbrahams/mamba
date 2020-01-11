@@ -7,6 +7,7 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeErr;
 
 pub mod cons;
+
 mod generate;
 mod unify;
 

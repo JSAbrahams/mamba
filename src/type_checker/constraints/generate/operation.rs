@@ -1,7 +1,7 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::{AnyExpr, Collection, Expression, Implements,
-                                                     Truthy, Type};
+use crate::type_checker::constraints::cons::Expect::{AnyExpr, Expression, Implements, Truthy, Type};
+use crate::type_checker::constraints::generate::collection::constrain_collection;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::{function, ty, Context};
@@ -12,9 +12,7 @@ use crate::type_checker::type_result::TypeErr;
 pub fn gen_op(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            let constr = constr.add(&Expression { ast: *right.clone() }, &Collection {
-                ty: Some(Box::from(Expression { ast: *left.clone() }))
-            });
+            let constr = constrain_collection(right, left, constr)?;
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }

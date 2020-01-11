@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::Expression;
+use crate::type_checker::constraints::cons::Expect::{Collection, Expression};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -29,4 +29,13 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             Err(vec![TypeErr::new(&ast.pos, "List builders currently not supported")]),
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected collection")])
     }
+}
+
+pub fn constrain_collection(
+    collection: &AST,
+    lookup: &AST,
+    constr: &Constraints
+) -> Constrained<Constraints> {
+    let exp_collection = Collection { ty: Some(Box::from(Expression { ast: lookup.clone() })) };
+    Ok(constr.add(&Expression { ast: collection.clone() }, &exp_collection))
 }
