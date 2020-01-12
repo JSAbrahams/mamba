@@ -17,8 +17,8 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::Raises { expr_or_stmt, errors } => {
-            let constr = constrain_raises(expr_or_stmt, errors, ctx, constr)?;
-            generate(expr_or_stmt, env, ctx, &constr)
+            let (constr, env) = constrain_raises(expr_or_stmt, errors, env, ctx, constr)?;
+            generate(expr_or_stmt, &env, ctx, &constr)
         }
         Node::With { resource, alias: Some(alias), expr } => {
             let constr = constr
@@ -39,13 +39,15 @@ pub fn gen_resources(
 pub fn constrain_raises(
     expr: &AST,
     errors: &Vec<AST>,
+    env: &Environment,
     ctx: &Context,
     constr: &Constraints
-) -> Constrained<Constraints> {
-    let mut constr = constr.clone();
+) -> Constrained {
+    let mut res = (constr.clone(), env.clone());
     for error in errors {
         let type_name = TypeName::try_from(error)?;
-        constr = constr.add(&Expression { ast: expr.clone() }, &Raises { type_name });
+        res.0 = res.0.add(&Expression { ast: expr.clone() }, &Raises { type_name });
+        res = generate(error, &res.1, ctx, &res.0)?;
     }
-    Ok(constr)
+    Ok(res)
 }

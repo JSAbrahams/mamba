@@ -14,13 +14,8 @@ use crate::type_checker::type_result::TypeErr;
 
 pub fn gen_op(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
-        Node::In { left, right } => {
-            let constr = constrain_collection(right, left, constr)?;
-            let (constr, env) = generate(right, env, ctx, &constr)?;
-            generate(left, &env, ctx, &constr)
-        }
-
-        Node::Range { from, to, inclusive, step: Some(step) } => {
+        Node::In { left, right } => constrain_collection(right, left, env, ctx, constr),
+        Node::Range { from, to, step: Some(step), .. } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             let constr = constr
                 .add(&Expression { ast: *from.clone() }, &Type { type_name: type_name.clone() })
@@ -30,7 +25,7 @@ pub fn gen_op(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints)
             let (constr, env) = generate(to, &env, ctx, &constr)?;
             generate(step, &env, ctx, &constr)
         }
-        Node::Range { from, to, inclusive, .. } => {
+        Node::Range { from, to, .. } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             let constr = constr
                 .add(&Expression { ast: *from.clone() }, &Type { type_name: type_name.clone() })
@@ -113,6 +108,7 @@ pub fn gen_op(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints)
 }
 
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &Constraints) -> Constrained {
+    // Do not recursively check ast
     let type_name = TypeName::from(ty);
     let constr = constr.add(&Expression { ast: ast.clone() }, &Type { type_name });
     Ok((constr, env.clone()))

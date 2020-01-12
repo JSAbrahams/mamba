@@ -23,7 +23,8 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             for case in cases {
                 match &case.node {
                     Node::Case { cond: case_cond, body } => match &case_cond.node {
-                        Node::ExpressionType { expr, mutable, ty } => {
+                        Node::ExpressionType { expr: _, mutable: _, ty } => {
+                            // TODO use expr and mutable
                             if let Some(ty) = ty {
                                 let type_name = TypeName::try_from(ty.deref())?;
                                 res.0 = res.0.add(&Raises { type_name }, &cond_expect);
@@ -57,15 +58,17 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             }
             .add(&Expression { ast: *cond.clone() }, &Truthy);
             let (constr, env) = generate(cond, env, ctx, &constr)?;
-            let (constr, env) = generate(then, &env, ctx, &constr)?;
-            generate(el, &env, ctx, &constr)
+            let (constr, _) = generate(then, &env, ctx, &constr)?;
+            let (constr, _) = generate(el, &env, ctx, &constr)?;
+            Ok((constr, env))
         }
         Node::IfElse { cond, then, .. } => {
             let constr = constr
                 .add(&Expression { ast: *cond.clone() }, &Truthy)
                 .add(&Expression { ast: *then.clone() }, &ExpressionAny);
             let (constr, env) = generate(cond, env, ctx, &constr)?;
-            generate(then, &env, ctx, &constr)
+            let (constr, _) = generate(then, &env, ctx, &constr)?;
+            Ok((constr, env))
         }
 
         Node::Case { .. } => Err(vec![TypeErr::new(&ast.pos, "Case cannot be top level")]),
@@ -92,10 +95,9 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
 
         Node::For { expr, col, body } => {
-            let constr = constrain_collection(col, expr, constr)?;
-            let (constr, env) = generate(expr, env, ctx, &constr)?;
-            let (constr, env) = generate(col, &env, ctx, &constr)?;
-            generate(body, &env, ctx, &constr)
+            let (constr, env) = constrain_collection(col, expr, env, ctx, constr)?;
+            let (constr, _) = generate(body, &env, ctx, &constr)?;
+            Ok((constr, env.clone()))
         }
         Node::Step { amount } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
@@ -104,7 +106,8 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
         Node::While { cond, body } => {
             let constr = constr.add(&Expression { ast: *cond.clone() }, &Truthy);
-            generate(body, env, ctx, &constr)
+            let (constr, _) = generate(body, env, ctx, &constr)?;
+            Ok((constr, env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])

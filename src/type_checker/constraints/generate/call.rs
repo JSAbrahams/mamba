@@ -8,8 +8,8 @@ use itertools::Itertools;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Constraints;
-use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, HasField,
-                                                     Implements, Mutable, Type};
+use crate::type_checker::constraints::cons::Expect::{Expression, HasField, Implements, Mutable,
+                                                     Type};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
@@ -21,19 +21,16 @@ use crate::type_checker::type_result::TypeErr;
 pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
-            let constr = constr
-                .add(&Expression { ast: *left.clone() }, &Expression { ast: *right.clone() })
-                .add(&Expression { ast: *left.clone() }, &Mutable {
-                    expect: Box::from(ExpressionAny)
-                });
+            let mutable = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
+            let constr = constr.add(&mutable, &Expression { ast: *right.clone() });
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
         Node::ConstructorCall { name, args } => {
             let c_name = TypeName::try_from(name.deref())?;
             // TODO lookup in environment if not in context
-            let possible_constr_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
-            let constr = fun_args(ast, &possible_constr_args, args, constr)?;
+            let constr_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
+            let constr = fun_args(ast, &constr_args, args, constr)?;
             let (constr, env) = gen_vec(args, env, ctx, &constr)?;
             gen_call(name, &env, ctx, &constr)
         }
@@ -89,26 +86,29 @@ fn property_call(
     constr: &Constraints
 ) -> Constrained {
     match &property.node {
-        Node::PropertyCall { instance: inner_instance, property } =>
-            property_call(inner_instance, property, env, ctx, constr),
+        Node::PropertyCall { instance: inner, property } => {
+            let (constr, env) = property_call(instance, inner, env, ctx, constr)?;
+            property_call(inner, property, &env, ctx, &constr)
+        }
         Node::Id { lit } => {
             let property = Expression { ast: property.clone() };
             let constr = constr.add(&property, &HasField { name: lit.clone() });
             Ok((constr, env.clone()))
         }
         Node::Reassign { left, right } => {
-            let left = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
-            let constr = constr.add(&left, &Expression { ast: *right.clone() });
-            Ok((constr, env.clone()))
+            let left_mut = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
+            let constr = constr.add(&left_mut, &Expression { ast: *right.clone() });
+            let (constr, env) = generate(right, env, ctx, &constr)?;
+            generate(left, &env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
             let type_name = TypeName::try_from(name.deref())?;
+            let arg_exp = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
+
             let property = Expression { ast: property.clone() };
-            let constr = constr.add(&property, &Implements {
-                type_name,
-                args: args.iter().map(|arg| Expression { ast: arg.clone() }).collect()
-            });
-            Ok((constr, env.clone()))
+            let constr = constr.add(&property, &Implements { type_name, args: arg_exp });
+            let (constr, env) = gen_vec(args, env, ctx, &constr)?;
+            generate(name, &env, ctx, &constr)
         }
 
         _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")])

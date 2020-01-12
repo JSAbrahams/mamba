@@ -37,6 +37,7 @@ fn variable_private_def_verify() {
     };
 
     assert!(private);
+    assert_eq!(ty, None);
     assert_eq!(var, Box::from(Core::Id { lit: String::from("d") }));
     assert_eq!(expr, Some(Box::from(Core::Int { int: String::from("98") })));
 }
@@ -58,6 +59,7 @@ fn variable_def_verify() {
     };
 
     assert!(!private);
+    assert_eq!(ty, None);
     assert_eq!(var, Box::from(Core::Id { lit: String::from("d") }));
     assert_eq!(expr, Some(Box::from(Core::Int { int: String::from("98") })));
 }
@@ -87,6 +89,7 @@ fn tuple_def_verify() {
     };
 
     assert!(private);
+    assert_eq!(ty, None);
     let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
     assert_eq!(var, Box::from(Core::Tuple { elements }));
     let expressions =
@@ -137,6 +140,7 @@ fn tuple_def_none_verify() {
     };
 
     assert!(private);
+    assert_eq!(ty, None);
     let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
     assert_eq!(var, Box::from(Core::Tuple { elements }));
     assert_eq!(expr, Some(Box::from(Core::Tuple { elements: vec![Core::None, Core::None] })));

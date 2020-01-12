@@ -88,7 +88,9 @@ impl Environment {
     // TODO implement properly
     pub fn difference(self, env: Environment) -> Environment {
         let mut variables = self.variables;
+        let mut vars = self.vars;
         variables.extend(env.variables);
-        Environment { variables, ..self }
+        vars.extend(env.vars);
+        Environment { variables, vars, ..self }
     }
 }

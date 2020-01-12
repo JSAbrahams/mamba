@@ -19,6 +19,7 @@ mod modify;
 mod util;
 
 pub mod type_result;
+
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 
 /// Checks whether a given [AST](crate::parser::ast::AST) is well

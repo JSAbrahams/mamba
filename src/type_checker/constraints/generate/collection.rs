@@ -11,15 +11,14 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
     match &ast.node {
         Node::Set { elements } | Node::List { elements } =>
             if let Some(first) = elements.first() {
-                let mut constr_env = (constr.clone(), env.clone());
+                let mut res = (constr.clone(), env.clone());
+                let first_exp = Expression { ast: first.clone() };
                 for element in elements {
-                    constr_env.0 =
-                        constr_env.0.add(&Expression { ast: element.clone() }, &Expression {
-                            ast: first.clone()
-                        });
-                    constr_env = generate(element, &env, &ctx, &constr)?;
+                    let element_expr = Expression { ast: element.clone() };
+                    res.0 = res.0.add(&element_expr, &first_exp);
+                    res = generate(element, &res.1, &ctx, &res.0)?;
                 }
-                Ok(constr_env)
+                Ok(res)
             } else {
                 Ok((constr.clone(), env.clone()))
             },
@@ -36,8 +35,12 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
 pub fn constrain_collection(
     collection: &AST,
     lookup: &AST,
+    env: &Environment,
+    ctx: &Context,
     constr: &Constraints
-) -> Constrained<Constraints> {
+) -> Constrained {
     let exp_collection = Collection { ty: Box::from(Expression { ast: lookup.clone() }) };
-    Ok(constr.add(&Expression { ast: collection.clone() }, &exp_collection))
+    let constr = constr.add(&Expression { ast: collection.clone() }, &exp_collection);
+    let (constr, env) = generate(lookup, env, ctx, &constr)?;
+    generate(collection, &env, ctx, &constr)
 }
