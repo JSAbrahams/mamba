@@ -35,6 +35,5 @@ pub fn constrain_ty(
 ) -> Constrained {
     let type_name = TypeName::try_from(ty)?;
     let constr = constr.add(&Expression { ast: expr.clone() }, &Type { type_name });
-    let (constr, env) = generate(ty, env, ctx, &constr)?;
     generate(expr, &env, ctx, &constr)
 }

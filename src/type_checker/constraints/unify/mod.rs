@@ -4,6 +4,4 @@ use crate::type_checker::constraints::Unified;
 
 mod unify_link;
 
-pub fn unify(constr: &Constraints) -> Unified {
-    unify_link(None, None, &mut constr.clone(), Constraints::new())
-}
+pub fn unify(constr: &Constraints) -> Unified { unify_link(&constr.clone(), &Constraints::new()) }

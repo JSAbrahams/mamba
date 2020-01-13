@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use crate::parser::ast::AST;
+use crate::type_checker::constraints::constraints;
 use crate::type_checker::context::Context;
 use crate::type_checker::infer::infer_all;
 use crate::type_checker::modify::modify;

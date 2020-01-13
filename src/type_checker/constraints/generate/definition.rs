@@ -32,9 +32,9 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
         Node::VariableDef { mutable, var, ty, expression: Some(expr), .. } => {
-            let env = identifier_from_var(var, *mutable, env)?;
+            let (constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
             match ty {
-                Some(ty) => constrain_ty(expr, ty, &env, ctx, constr),
+                Some(ty) => constrain_ty(expr, ty, &env, ctx, &constr),
                 None => {
                     let constr = constr.add(&Expression { ast: *expr.clone() }, &ExpressionAny);
                     generate(expr, &env, ctx, &constr)
@@ -42,9 +42,9 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
             }
         }
         Node::VariableDef { mutable, var, ty, .. } => {
-            let env = identifier_from_var(var, *mutable, env)?;
+            let (constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
             match ty {
-                Some(ty) => generate(ty, &env, ctx, constr),
+                Some(ty) => generate(ty, &env, ctx, &constr),
                 _ => Ok((constr.clone(), env))
             }
         }
@@ -69,22 +69,19 @@ pub fn constrain_args(
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
                     })?;
                     if default.is_some() {
-                        return Err(vec![TypeErr::new(
-                            &arg.pos,
-                            &format!("{} cannot have default argument", SELF)
-                        )]);
+                        let msg = format!("{} cannot have default argument", SELF);
+                        return Err(vec![TypeErr::new(&arg.pos, &msg)]);
                     }
 
                     res.1 = res.1.insert_new(*mutable, SELF);
                     res.0 = res.0.add(&Expression { ast: *var.clone() }, self_type)
                 } else {
-                    res.1 = identifier_from_var(var, *mutable, &res.1)?;
+                    res = identifier_from_var(var, ty, *mutable, &res.0, &res.1)?;
                 }
 
                 match (ty, default) {
                     (Some(ty), Some(default)) =>
                         res = constrain_ty(default, ty, env, ctx, &constr)?,
-                    (Some(ty), None) => res = generate(ty, &res.1, ctx, &res.0)?,
                     (None, Some(expr)) => res = generate(expr, &res.1, ctx, &res.0)?,
                     _ => {}
                 }
@@ -98,14 +95,21 @@ pub fn constrain_args(
 
 pub fn identifier_from_var(
     var: &AST,
+    expect: &Option<Box<AST>>,
     mutable: bool,
+    constr: &Constraints,
     env: &Environment
-) -> Constrained<Environment> {
+) -> Constrained {
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
+    let constr = if let Some(expect) = expect {
+        constr.add(&Expression { ast: var.clone() }, &Expression { ast: *expect.clone() })
+    } else {
+        constr.clone()
+    };
     let mut env = env.clone();
     for (f_mut, f_name) in &identifier.fields() {
         // TODO add Expect binding to environment
         env = env.insert_new(*f_mut, f_name);
     }
-    Ok(env)
+    Ok((constr, env))
 }
