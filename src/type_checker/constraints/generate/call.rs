@@ -36,6 +36,7 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
         Node::FunctionCall { name, args } => {
             let f_name = TypeName::try_from(name.deref())?;
+            // TODO look up function in environment
             let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
             let constr = fun_args(ast, &possible_fun_args, args, constr)?;
             let (constr, env) = gen_vec(args, env, ctx, &constr)?;

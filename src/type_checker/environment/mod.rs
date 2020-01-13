@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::common::position::Position;
 use crate::type_checker::constraints::cons::Expect;
@@ -16,7 +16,7 @@ pub mod state;
 #[derive(Clone, Debug)]
 pub struct Environment {
     pub state: State,
-    pub vars:  HashSet<(bool, String)>,
+    pub vars:  HashMap<String, (bool, Expect)>,
     variables: HashMap<String, (bool, ExpressionType)>
 }
 
@@ -24,7 +24,7 @@ impl Default for Environment {
     fn default() -> Self {
         Environment {
             state:     State::default(),
-            vars:      HashSet::new(),
+            vars:      HashMap::new(),
             variables: HashMap::new()
         }
     }
@@ -67,18 +67,20 @@ impl Environment {
         self.variables.remove(var)
     }
 
-    pub fn insert_new(&self, mutable: bool, var: &str) -> Environment {
+    pub fn insert_new(&self, mutable: bool, var: &str, expect: &Expect) -> Environment {
         let mut vars = self.vars.clone();
-        vars.insert((mutable, String::from(var)));
+        vars.insert(String::from(var), (mutable, expect.clone()));
         Environment { vars, ..self.clone() }
     }
 
-    pub fn lookup_new(&self, var: &str, pos: &Position) -> TypeResult<bool> {
-        self.vars
-            .iter()
-            .find(|(_, name)| name == var)
-            .ok_or_else(|| vec![TypeErr::new(pos, &format!("Unknown variable {}", var))])
-            .map(|(mutable, _)| *mutable)
+    pub fn get_var_new(&self, var: &str) -> Option<Expect> {
+        self.vars.get(var).cloned().map(|(mutable, expect)| {
+            if mutable {
+                Expect::Mutable { expect: Box::from(expect) }
+            } else {
+                expect
+            }
+        })
     }
 
     pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {

@@ -14,10 +14,12 @@ pub fn gen_expr(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let (constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &constr)
         }
-        Node::Id { lit } => {
-            env.lookup_new(lit, &ast.pos)?;
-            Ok((constr.clone(), env.clone()))
-        }
+        Node::Id { lit } =>
+            if let Some(expected) = env.get_var_new(lit) {
+                Ok((constr.add(&Expression { ast: ast.clone() }, &expected), env.clone()))
+            } else {
+                Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))])
+            },
         Node::Question { left, right } => {
             let nullable = Nullable { expect: Box::from(Expression { ast: *left.clone() }) };
             let constr = constr.add(&Expression { ast: *right.clone() }, &nullable);
