@@ -16,8 +16,14 @@ impl Constraints {
     }
 }
 
+impl From<Constraint> for Constraints {
+    fn from(constraint: Constraint) -> Self { Constraints { constraints: vec![constraint] } }
+}
+
 #[derive(Clone, Debug)]
 pub struct Constraint(pub Expect, pub Expect);
+
+// TODO rework HasField
 
 #[derive(Clone, Debug)]
 pub enum Expect {

@@ -1,5 +1,9 @@
 use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::unify::unify_link::unify_link;
 use crate::type_checker::constraints::Unified;
-use crate::type_checker::environment::Environment;
 
-pub fn unify(constr: &Constraints, _: &Environment) -> Unified { Ok(constr.clone()) }
+mod unify_link;
+
+pub fn unify(constr: &Constraints) -> Unified {
+    unify_link(None, None, &mut constr.clone(), Constraints::new())
+}
