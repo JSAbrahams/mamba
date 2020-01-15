@@ -1,3 +1,6 @@
+use std::convert::TryFrom;
+use std::ops::Deref;
+
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, Raises, RaisesAny,
                                                      Truthy, Type};
@@ -9,8 +12,6 @@ use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
-use std::ops::Deref;
 
 pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
@@ -63,9 +64,12 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             Ok((constr, env))
         }
         Node::IfElse { cond, then, .. } => {
-            let constr = constr
-                .add(&Expression { ast: *cond.clone() }, &Truthy)
-                .add(&Expression { ast: *then.clone() }, &ExpressionAny);
+            let constr = constr.add(&Expression { ast: *cond.clone() }, &Truthy);
+            let constr = if env.state.expect_expr {
+                constr.add(&Expression { ast: *then.clone() }, &ExpressionAny)
+            } else {
+                constr
+            };
             let (constr, env) = generate(cond, env, ctx, &constr)?;
             let (constr, _) = generate(then, &env, ctx, &constr)?;
             Ok((constr, env))

@@ -7,8 +7,8 @@ use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::{Expression, HasField, Implements, Mutable,
-                                                     Type};
+use crate::type_checker::constraints::cons::Expect::{Expression, Function, HasField, HasFunction,
+                                                     Mutable, Type};
 use crate::type_checker::constraints::cons::{Constraints, Expect};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
@@ -32,25 +32,27 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
 
             let self_arg = Some(Type { type_name: c_name });
             let constr = call_parameters(ast, &constr_args, &self_arg, args, constr)?;
-
-            let (constr, env) = gen_vec(args, env, ctx, &constr)?;
-            generate(name, &env, ctx, &constr)
+            gen_vec(args, env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
             let f_name = TypeName::try_from(name.deref())?;
             let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
             let (constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            let constr = match env.get_var_new(&f_str_name) {
-                Some(_) => constr.clone(),
-                None => {
-                    // Resort to looking up in Context
-                    let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
-                    call_parameters(ast, &possible_fun_args, &None, args, &constr)?
-                }
-            };
-
-            generate(name, &env, ctx, &constr)
+            Ok((
+                match env.get_var_new(&f_str_name) {
+                    Some(function) => {
+                        let args = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
+                        constr.add(&function, &Function { name: f_name, args })
+                    }
+                    None => {
+                        // Resort to looking up in Context
+                        let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
+                        call_parameters(ast, &possible_fun_args, &None, args, &constr)?
+                    }
+                },
+                env
+            ))
         }
         Node::PropertyCall { instance, property } =>
             property_call(instance, property, env, ctx, constr),
@@ -68,25 +70,34 @@ fn call_parameters(
 ) -> Result<Constraints, Vec<TypeErr>> {
     let mut constr = constr.clone();
     let possible_it = possible.iter();
-    if let Some(self_arg) = self_arg {
-        // TODO if self parameter some consume every first arg
-    }
-    let pair_it = possible_it.flat_map(|f_args| f_args.into_iter().zip_longest(args));
 
-    for either_or_both in pair_it {
-        println!("either or both: {:?}", either_or_both);
+    let args = if let Some(self_arg) = self_arg {
+        let mut new_args = vec![(ast.pos.clone(), self_arg.clone())];
+        new_args.append(
+            &mut args
+                .iter()
+                .map(|arg| (arg.pos.clone(), Expression { ast: arg.clone() }))
+                .collect()
+        );
+        new_args
+    } else {
+        args.iter().map(|arg| (arg.pos.clone(), Expression { ast: arg.clone() })).collect()
+    };
+
+    let paired = possible_it.flat_map(|f_args| f_args.into_iter().zip_longest(args.iter()));
+    for either_or_both in paired {
         match either_or_both {
-            Both(fun_arg, arg) => {
+            Both(fun_arg, (pos, arg)) => {
                 let ty = &fun_arg.ty.as_ref();
                 let type_name =
-                    ty.ok_or_else(|| TypeErr::new(&arg.pos, "Must have type parameters"))?.clone();
-                constr = constr.add(&Expression { ast: arg.clone() }, &Type { type_name })
+                    ty.ok_or_else(|| TypeErr::new(&pos, "Must have type parameters"))?.clone();
+                constr = constr.add(&arg, &Type { type_name })
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&ast.pos.end, &ast.pos.end);
                 return Err(vec![TypeErr::new(&pos, "Expected argument")]);
             }
-            Right(arg) => return Err(vec![TypeErr::new(&arg.pos, "Unexpected argument")]),
+            Right((pos, _)) => return Err(vec![TypeErr::new(&pos, "Unexpected argument")]),
             _ => {}
         }
     }
@@ -107,8 +118,8 @@ fn property_call(
             property_call(inner, property, &env, ctx, &constr)
         }
         Node::Id { lit } => {
-            let property = Expression { ast: property.clone() };
-            let constr = constr.add(&property, &HasField { name: lit.clone() });
+            let instance = Expression { ast: instance.clone() };
+            let constr = constr.add(&instance, &HasField { name: lit.clone() });
             Ok((constr, env.clone()))
         }
         Node::Reassign { left, right } => {
@@ -118,13 +129,14 @@ fn property_call(
             generate(left, &env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
-            let type_name = TypeName::try_from(name.deref())?;
-            let arg_exp = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
+            let f_name = TypeName::try_from(name.deref())?;
+            let (constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            let property = Expression { ast: property.clone() };
-            let constr = constr.add(&property, &Implements { type_name, args: arg_exp });
-            let (constr, env) = gen_vec(args, env, ctx, &constr)?;
-            generate(name, &env, ctx, &constr)
+            let args = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
+            let instance = Expression { ast: instance.clone() };
+            let constr = constr.add(&instance, &HasFunction { name: f_name, args });
+
+            Ok((constr, env))
         }
 
         _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")])

@@ -24,7 +24,6 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
                     let (constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
                     constrain_ty(body, ret_ty, &env, ctx, &constr)
                 }
-                (Some(ret_ty), None) => generate(ret_ty, &env, ctx, &constr),
                 (None, Some(body)) => generate(body, &env, ctx, &constr),
                 _ => Ok((constr.clone(), env.clone()))
             }

@@ -31,7 +31,6 @@ pub enum Expect {
     Mutable { expect: Box<Expect> },
     Expression { ast: AST },
     ExpressionAny,
-    Function { args: Vec<Expect> },
 
     Collection { ty: Box<Expect> },
     Truthy,
@@ -40,6 +39,8 @@ pub enum Expect {
     Raises { type_name: TypeName },
 
     Implements { type_name: TypeName, args: Vec<Expect> },
+    Function { name: TypeName, args: Vec<Expect> },
+    HasFunction { name: TypeName, args: Vec<Expect> },
     HasField { name: String },
 
     Type { type_name: TypeName }
