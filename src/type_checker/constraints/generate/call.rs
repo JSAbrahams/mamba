@@ -7,9 +7,9 @@ use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect::{Expression, HasField, Implements, Mutable,
                                                      Type};
+use crate::type_checker::constraints::cons::{Constraints, Expect};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
@@ -28,19 +28,29 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
         }
         Node::ConstructorCall { name, args } => {
             let c_name = TypeName::try_from(name.deref())?;
-            // TODO lookup in environment if not in context
             let constr_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
-            let constr = fun_args(ast, &constr_args, args, constr)?;
+
+            let self_arg = Some(Type { type_name: c_name });
+            let constr = call_parameters(ast, &constr_args, &self_arg, args, constr)?;
+
             let (constr, env) = gen_vec(args, env, ctx, &constr)?;
-            gen_call(name, &env, ctx, &constr)
+            generate(name, &env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
             let f_name = TypeName::try_from(name.deref())?;
-            // TODO look up function in environment
-            let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
-            let constr = fun_args(ast, &possible_fun_args, args, constr)?;
-            let (constr, env) = gen_vec(args, env, ctx, &constr)?;
-            gen_call(name, &env, ctx, &constr)
+            let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
+            let (constr, env) = gen_vec(args, env, ctx, constr)?;
+
+            let constr = match env.get_var_new(&f_str_name) {
+                Some(_) => constr.clone(),
+                None => {
+                    // Resort to looking up in Context
+                    let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
+                    call_parameters(ast, &possible_fun_args, &None, args, &constr)?
+                }
+            };
+
+            generate(name, &env, ctx, &constr)
         }
         Node::PropertyCall { instance, property } =>
             property_call(instance, property, env, ctx, constr),
@@ -49,17 +59,22 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
     }
 }
 
-fn fun_args(
+fn call_parameters(
     ast: &AST,
     possible: &HashSet<Vec<FunctionArg>>,
+    self_arg: &Option<Expect>,
     args: &Vec<AST>,
     constr: &Constraints
 ) -> Result<Constraints, Vec<TypeErr>> {
     let mut constr = constr.clone();
     let possible_it = possible.iter();
-    let pair_it = possible_it.flat_map(|f_args| f_args.into_iter().zip_longest(args.iter()));
+    if let Some(self_arg) = self_arg {
+        // TODO if self parameter some consume every first arg
+    }
+    let pair_it = possible_it.flat_map(|f_args| f_args.into_iter().zip_longest(args));
 
     for either_or_both in pair_it {
+        println!("either or both: {:?}", either_or_both);
         match either_or_both {
             Both(fun_arg, arg) => {
                 let ty = &fun_arg.ty.as_ref();

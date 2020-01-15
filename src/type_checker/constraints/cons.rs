@@ -31,6 +31,7 @@ pub enum Expect {
     Mutable { expect: Box<Expect> },
     Expression { ast: AST },
     ExpressionAny,
+    Function { args: Vec<Expect> },
 
     Collection { ty: Box<Expect> },
     Truthy,

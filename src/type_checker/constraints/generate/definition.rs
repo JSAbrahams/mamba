@@ -18,9 +18,7 @@ use crate::type_checker::type_result::TypeErr;
 pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
-            println!("Fun def {:?}", ast);
             let (constr, env) = constrain_args(fun_args, env, ctx, constr)?;
-            println!("Checking function body: {:?}\n{:?}", env.vars, body);
             match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let (constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
@@ -35,7 +33,6 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
         Node::VariableDef { mutable, var, ty, expression: Some(expr), .. } => {
-            println!("Variable def {:?}", ast);
             let (constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
             match ty {
                 Some(ty) => constrain_ty(expr, ty, &env, ctx, &constr),
@@ -45,14 +42,8 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
                 }
             }
         }
-        Node::VariableDef { mutable, var, ty, .. } => {
-            println!("Variable def {:?}", ast);
-            let (constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
-            match ty {
-                Some(ty) => generate(ty, &env, ctx, &constr),
-                _ => Ok((constr.clone(), env))
-            }
-        }
+        Node::VariableDef { mutable, var, ty, .. } =>
+            identifier_from_var(var, ty, *mutable, constr, env),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")])
     }
