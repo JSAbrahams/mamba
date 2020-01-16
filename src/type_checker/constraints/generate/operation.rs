@@ -73,7 +73,7 @@ pub fn gen_op(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints)
             let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
             let right = Expected::new(&expr.pos, &Implements {
                 type_name: TypeName::from(SQRT),
-                args:      vec![Expression { ast: *expr.clone() }]
+                args:      vec![Expected::new(&expr.pos, &Expression { ast: *expr.clone() })]
             });
             let constr = constr.add(&left, &right);
             generate(expr, &env, ctx, &constr)
@@ -156,7 +156,10 @@ fn implements(
     let l_exp = Expected::new(&left.pos, &Expression { ast: left.clone() });
     let r_exp = Expected::new(&left.pos, &Implements {
         type_name: TypeName::from(fun),
-        args:      vec![Expression { ast: left.clone() }, Expression { ast: right.clone() }]
+        args:      vec![
+            Expected::new(&left.pos, &Expression { ast: left.clone() }),
+            Expected::new(&right.pos, &Expression { ast: right.clone() }),
+        ]
     });
 
     let constr = constr.add(&l_exp, &r_exp);

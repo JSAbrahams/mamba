@@ -58,6 +58,13 @@ impl ActualType {
         }
     }
 
+    pub fn fun_args(&self, name: &TypeName, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+        match &self {
+            ActualType::Single { ty } => ty.fun_args(name, pos),
+            _ => Err(vec![TypeErr::new(pos, &format!("Undefined function: {}", name))])
+        }
+    }
+
     pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {
             ActualType::Single { ty } => ty.fun(name, args, pos),

@@ -41,10 +41,14 @@ impl From<&Constraint> for Constraints {
 #[derive(Clone, Debug)]
 pub struct Constraint(pub Expected, pub Expected);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub struct Expected {
     pub pos:    Position,
     pub expect: Expect
+}
+
+impl PartialEq for Expected {
+    fn eq(&self, other: &Self) -> bool { self.expect == other.expect }
 }
 
 impl Expected {
@@ -68,9 +72,9 @@ pub enum Expect {
     RaisesAny,
     Raises { type_name: TypeName },
 
-    Implements { type_name: TypeName, args: Vec<Expect> },
-    Function { name: TypeName, args: Vec<Expect> },
-    HasFunction { name: TypeName, args: Vec<Expect> },
+    Implements { type_name: TypeName, args: Vec<Expected> },
+    Function { name: TypeName, args: Vec<Expected> },
+    HasFunction { name: TypeName, args: Vec<Expected> },
     HasField { name: String },
 
     Type { type_name: TypeName }
@@ -80,8 +84,8 @@ impl PartialEq for Expect {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Nullable { expect: l }, Nullable { expect: r })
-            | (Mutable { expect: l }, Mutable { expect: r })
-            | (Collection { ty: l }, Collection { ty: r }) => l == r,
+            | (Mutable { expect: l }, Mutable { expect: r }) => l == r,
+            (Collection { ty: l }, Collection { ty: r }) => l == r,
             (HasField { name: l }, HasField { name: r }) => l == r,
             (Raises { type_name: l }, Raises { type_name: r })
             | (Type { type_name: l }, Type { type_name: r }) => l == r,

@@ -122,6 +122,29 @@ impl Type {
         })
     }
 
+    pub fn fun_args(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+        self.functions
+            .iter()
+            .find_map(|function| {
+                if TypeName::from(&function.name) == fun_name.clone() {
+                    Some(function.arguments.clone())
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| {
+                vec![TypeErr::new(
+                    pos,
+                    &format!(
+                        "Type {} does not define function \"{}\", must be one of: \n{}",
+                        self,
+                        fun_name,
+                        newline_delimited(&self.functions)
+                    )
+                )]
+            })
+    }
+
     // TODO add boolean for unsafe operator so we can ignore if type is None
     // TODO handle default arguments
     pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {

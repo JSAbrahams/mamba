@@ -8,6 +8,8 @@ class str:
     def __add__(self, other: string) -> str: pass
     def __str__(self) -> str: pass
 
+    def __eq__(self, other: str) -> bool: pass
+
     def __iter__(self) -> str_iterator: pass
 
 class str_iterator:

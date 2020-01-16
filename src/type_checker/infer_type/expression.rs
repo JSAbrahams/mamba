@@ -138,6 +138,24 @@ impl ExpressionType {
         }
     }
 
+    pub fn fun_args(
+        &self,
+        name: &TypeName,
+        pos: &Position
+    ) -> TypeResult<HashSet<Vec<FunctionArg>>> {
+        match &self {
+            ExpressionType::Single { ty } => {
+                let mut set = HashSet::new();
+                set.insert(ty.actual_ty().fun_args(name, pos)?);
+                Ok(set)
+            }
+            ExpressionType::Union { union } => union
+                .iter()
+                .map(|e_ty| e_ty.actual_ty().fun_args(name, pos))
+                .collect::<Result<_, Vec<TypeErr>>>()
+        }
+    }
+
     // TODO use ActualTypeName
     pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {

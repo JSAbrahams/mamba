@@ -46,7 +46,10 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
                     Some(function) => {
                         let last_pos =
                             args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-                        let args = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
+                        let args = args
+                            .iter()
+                            .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
+                            .collect();
                         let left = Expected::new(&name.pos, &function);
                         let right = Expected::new(&last_pos, &Function { name: f_name, args });
                         constr.add(&left, &right)
@@ -95,8 +98,11 @@ fn call_parameters(
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
                 let ty = &fun_arg.ty.as_ref();
-                let type_name =
-                    ty.ok_or_else(|| TypeErr::new(&pos, "Must have type parameters"))?.clone();
+                let type_name = ty
+                    .ok_or_else(|| {
+                        TypeErr::new(&pos, "Function argument must have type parameters")
+                    })?
+                    .clone();
 
                 let left = Expected::new(&pos, &arg);
                 constr = constr.add(&left, &Expected::new(&pos, &Type { type_name }))
@@ -143,7 +149,10 @@ fn property_call(
             let (constr, env) = gen_vec(args, env, ctx, constr)?;
 
             let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-            let args = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
+            let args = args
+                .iter()
+                .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
+                .collect();
             let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
             let right = Expected::new(&last_pos, &HasFunction { name: f_name, args });
             Ok((constr.add(&left, &right), env))

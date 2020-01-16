@@ -16,7 +16,7 @@ pub mod state;
 #[derive(Clone, Debug)]
 pub struct Environment {
     pub state: State,
-    pub vars:  HashMap<String, (bool, Expect)>,
+    pub vars:  HashMap<String, Expect>,
     variables: HashMap<String, (bool, ExpressionType)>
 }
 
@@ -69,19 +69,18 @@ impl Environment {
 
     pub fn insert_new(&self, mutable: bool, var: &str, expect: &Expect) -> Environment {
         let mut vars = self.vars.clone();
-        vars.insert(String::from(var), (mutable, expect.clone()));
+        vars.insert(
+            String::from(var),
+            if mutable {
+                Expect::Mutable { expect: Box::from(expect.clone()) }
+            } else {
+                expect.clone()
+            }
+        );
         Environment { vars, ..self.clone() }
     }
 
-    pub fn get_var_new(&self, var: &str) -> Option<Expect> {
-        self.vars.get(var).cloned().map(|(mutable, expect)| {
-            if mutable {
-                Expect::Mutable { expect: Box::from(expect) }
-            } else {
-                expect
-            }
-        })
-    }
+    pub fn get_var_new(&self, var: &str) -> Option<Expect> { self.vars.get(var).cloned() }
 
     pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {
         self.variables.insert(String::from(var), (mutable, expr_ty.clone()));
