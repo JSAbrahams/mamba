@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, Type};
+use crate::type_checker::constraints::cons::{Constraints, Expected};
 use crate::type_checker::constraints::generate::definition::identifier_from_var;
 use crate::type_checker::constraints::generate::ty::constrain_ty;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
@@ -70,7 +70,8 @@ fn constrain_class_args(
                 res = match ty {
                     Some(ty) => constrain_ty(expr, ty, &res.1, ctx, &res.0)?,
                     None => {
-                        res.0 = res.0.add(&Expression { ast: *expr.clone() }, &ExpressionAny);
+                        let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+                        res.0 = res.0.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
                         generate(expr, &res.1, ctx, &res.0)?
                     }
                 }

@@ -1,13 +1,14 @@
+use std::convert::TryFrom;
+
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect::{Expression, Raises};
+use crate::type_checker::constraints::cons::{Constraints, Expected};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
 
 pub fn gen_resources(
     ast: &AST,
@@ -21,8 +22,10 @@ pub fn gen_resources(
             generate(expr_or_stmt, &env, ctx, &constr)
         }
         Node::With { resource, alias: Some(alias), expr } => {
-            let constr = constr
-                .add(&Expression { ast: *resource.clone() }, &Expression { ast: *alias.clone() });
+            let left = Expected::new(&resource.pos, &Expression { ast: *resource.clone() });
+            let constr =
+                constr.add(&left, &Expected::new(&alias.pos, &Expression { ast: *alias.clone() }));
+
             let (constr, env) = generate(resource, env, ctx, &constr)?;
             let (constr, env) = generate(alias, &env, ctx, &constr)?;
             generate(expr, &env, ctx, &constr)
@@ -46,8 +49,10 @@ pub fn constrain_raises(
     let mut res = (constr.clone(), env.clone());
     for error in errors {
         let type_name = TypeName::try_from(error)?;
-        res.0 = res.0.add(&Expression { ast: expr.clone() }, &Raises { type_name });
+        let left = Expected::new(&expr.pos, &Expression { ast: expr.clone() });
+        res.0 = res.0.add(&left, &Expected::new(&error.pos, &Raises { type_name }));
         res = generate(error, &res.1, ctx, &res.0)?;
     }
+
     Ok(res)
 }

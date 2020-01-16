@@ -1,10 +1,21 @@
 use std::cmp::{max, min};
+use std::fmt::{Display, Error, Formatter};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// A position represents a rectangle in the source code.
 pub struct Position {
     pub start: CaretPos,
     pub end:   CaretPos
+}
+
+impl Display for Position {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        if self.start == self.end {
+            write!(f, "({})", self.start)
+        } else {
+            write!(f, "({}-{})", self.start, self.end)
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -15,6 +26,12 @@ pub struct Position {
 pub struct CaretPos {
     pub line: i32,
     pub pos:  i32
+}
+
+impl Display for CaretPos {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}:{}", self.line, self.pos)
+    }
 }
 
 impl Position {

@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, Type};
+use crate::type_checker::constraints::cons::{Constraints, Expected};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::generate::resources::constrain_raises;
 use crate::type_checker::constraints::generate::ty::constrain_ty;
@@ -36,7 +36,8 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
             match ty {
                 Some(ty) => constrain_ty(expr, ty, &env, ctx, &constr),
                 None => {
-                    let constr = constr.add(&Expression { ast: *expr.clone() }, &ExpressionAny);
+                    let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+                    let constr = constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
                     generate(expr, &env, ctx, &constr)
                 }
             }
@@ -68,7 +69,8 @@ pub fn constrain_args(
                     }
 
                     res.1 = res.1.insert_new(*mutable, SELF, self_type);
-                    res.0 = res.0.add(&Expression { ast: *var.clone() }, self_type)
+                    let left = Expected::new(&var.pos, &Expression { ast: *var.clone() });
+                    res.0 = res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, *mutable, &res.0, &res.1)?;
                 }
@@ -93,12 +95,13 @@ pub fn identifier_from_var(
     constr: &Constraints,
     env: &Environment
 ) -> Constrained {
-    let constr = constr.clone();
+    let mut constr = constr.clone();
     let mut env = env.clone();
 
     if let Some(ty) = ty {
         let type_name = TypeName::try_from(ty.deref())?;
-        constr.add(&Expression { ast: var.clone() }, &Type { type_name: type_name.clone() });
+        let left = Expected::new(&var.pos, &Expression { ast: var.clone() });
+        constr = constr.add(&left, &Expected::new(&ty.pos, &Type { type_name: type_name.clone() }));
 
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, type_name)) in match_type(&identifier, &type_name, &var.pos)? {

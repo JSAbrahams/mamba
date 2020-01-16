@@ -9,7 +9,7 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Expect::{Expression, Function, HasField, HasFunction,
                                                      Mutable, Type};
-use crate::type_checker::constraints::cons::{Constraints, Expect};
+use crate::type_checker::constraints::cons::{Constraints, Expect, Expected};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
@@ -22,15 +22,17 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
     match &ast.node {
         Node::Reassign { left, right } => {
             let mutable = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
-            let constr = constr.add(&mutable, &Expression { ast: *right.clone() });
+            let l_exp = Expected::new(&left.pos, &mutable);
+            let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let constr = constr.add(&l_exp, &r_exp);
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
         Node::ConstructorCall { name, args } => {
             let c_name = TypeName::try_from(name.deref())?;
             let constr_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
-
             let self_arg = Some(Type { type_name: c_name });
+
             let constr = call_parameters(ast, &constr_args, &self_arg, args, constr)?;
             gen_vec(args, env, ctx, &constr)
         }
@@ -42,8 +44,12 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             Ok((
                 match env.get_var_new(&f_str_name) {
                     Some(function) => {
+                        let last_pos =
+                            args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
                         let args = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
-                        constr.add(&function, &Function { name: f_name, args })
+                        let left = Expected::new(&name.pos, &function);
+                        let right = Expected::new(&last_pos, &Function { name: f_name, args });
+                        constr.add(&left, &right)
                     }
                     None => {
                         // Resort to looking up in Context
@@ -91,7 +97,9 @@ fn call_parameters(
                 let ty = &fun_arg.ty.as_ref();
                 let type_name =
                     ty.ok_or_else(|| TypeErr::new(&pos, "Must have type parameters"))?.clone();
-                constr = constr.add(&arg, &Type { type_name })
+
+                let left = Expected::new(&pos, &arg);
+                constr = constr.add(&left, &Expected::new(&pos, &Type { type_name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&ast.pos.end, &ast.pos.end);
@@ -118,13 +126,15 @@ fn property_call(
             property_call(inner, property, &env, ctx, &constr)
         }
         Node::Id { lit } => {
-            let instance = Expression { ast: instance.clone() };
-            let constr = constr.add(&instance, &HasField { name: lit.clone() });
-            Ok((constr, env.clone()))
+            let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
+            let right = Expected::new(&property.pos, &HasField { name: lit.clone() });
+            Ok((constr.add(&left, &right), env.clone()))
         }
         Node::Reassign { left, right } => {
             let left_mut = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
-            let constr = constr.add(&left_mut, &Expression { ast: *right.clone() });
+            let l_exp = Expected::new(&left.pos, &left_mut);
+            let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let constr = constr.add(&l_exp, &r_exp);
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
@@ -132,11 +142,11 @@ fn property_call(
             let f_name = TypeName::try_from(name.deref())?;
             let (constr, env) = gen_vec(args, env, ctx, constr)?;
 
+            let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
             let args = args.iter().map(|arg| Expression { ast: arg.clone() }).collect();
-            let instance = Expression { ast: instance.clone() };
-            let constr = constr.add(&instance, &HasFunction { name: f_name, args });
-
-            Ok((constr, env))
+            let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
+            let right = Expected::new(&last_pos, &HasFunction { name: f_name, args });
+            Ok((constr.add(&left, &right), env))
         }
 
         _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")])

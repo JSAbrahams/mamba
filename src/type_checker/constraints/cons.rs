@@ -1,5 +1,6 @@
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::common::position::Position;
 use crate::parser::ast::AST;
 use crate::type_checker::constraints::cons::Expect::*;
 use crate::type_checker::type_name::TypeName;
@@ -24,7 +25,7 @@ impl Constraints {
         Constraints { constraints }
     }
 
-    pub fn add(&self, left: &Expect, right: &Expect) -> Constraints {
+    pub fn add(&self, left: &Expected, right: &Expected) -> Constraints {
         let mut constraints = self.constraints.clone();
         constraints.push(Constraint(left.clone(), right.clone()));
         Constraints { constraints }
@@ -38,7 +39,19 @@ impl From<&Constraint> for Constraints {
 }
 
 #[derive(Clone, Debug)]
-pub struct Constraint(pub Expect, pub Expect);
+pub struct Constraint(pub Expected, pub Expected);
+
+#[derive(Clone, Debug)]
+pub struct Expected {
+    pub pos:    Position,
+    pub expect: Expect
+}
+
+impl Expected {
+    pub fn new(pos: &Position, expect: &Expect) -> Expected {
+        Expected { pos: pos.clone(), expect: expect.clone() }
+    }
+}
 
 // TODO rework HasField
 

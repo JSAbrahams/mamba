@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Constraints;
 use crate::type_checker::constraints::cons::Expect::{Expression, Type};
+use crate::type_checker::constraints::cons::{Constraints, Expected};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -33,7 +33,11 @@ pub fn constrain_ty(
     ctx: &Context,
     constr: &Constraints
 ) -> Constrained {
+    let left = Expected::new(&expr.pos, &Expression { ast: expr.clone() });
+
     let type_name = TypeName::try_from(ty)?;
-    let constr = constr.add(&Expression { ast: expr.clone() }, &Type { type_name });
+    let right = Expected::new(&ty.pos, &Type { type_name });
+
+    let constr = constr.add(&left, &right);
     generate(expr, &env, ctx, &constr)
 }
