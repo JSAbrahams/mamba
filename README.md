@@ -44,7 +44,7 @@ For more extensive examples and explanations check out the [documentation](https
 
 We can write a simple script that computes the factorial of a value given by the user.
 ```mamba
-def factorial(x: Int) => match x
+def factorial(x: Int) -> Int => match x
     0 => 1
     n => n * factorial(n - 1)
 
@@ -321,7 +321,21 @@ In future we might want to add an option to compile down to Python bytecode, but
 
 ### Usage
 ```
-mamba [OPTIONS]
+mamba [FLAGS] [OPTIONS]
+```
+
+### FLAGS
+```
+-d, --debug             Add line numbers to log statements
+-h, --help              Prints help information
+-l, --level             Print log level
+    --no-module-path    Disable the module path in the log statements
+    --no-color          Disable colorized output
+-v                      Set level of verbosity
+                        -    : info, error, warning printed to sterr (Default)
+                        - v  : debug messages are printed
+                        - vv : trace messages are printed
+-V, --version           Prints version information
 ```
 
 ### Options

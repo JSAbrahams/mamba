@@ -1,4 +1,5 @@
 b = False
+e = "Hello world"
 while b:
     print(b)
 

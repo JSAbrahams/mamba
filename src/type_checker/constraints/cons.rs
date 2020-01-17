@@ -25,6 +25,10 @@ impl Constraints {
         Constraints { constraints }
     }
 
+    pub fn push(&mut self, left: &Expected, right: &Expected) {
+        self.constraints.push(Constraint(left.clone(), right.clone()))
+    }
+
     pub fn add(&self, left: &Expected, right: &Expected) -> Constraints {
         let mut constraints = self.constraints.clone();
         constraints.push(Constraint(left.clone(), right.clone()));

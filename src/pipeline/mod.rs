@@ -1,8 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use leg::*;
-
 use crate::core::to_source;
 use crate::desugar::desugar_all;
 use crate::lexer::tokenize_all;
@@ -33,7 +31,7 @@ pub fn transpile_directory(
 ) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
     let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));
-    info(format!("Input is '{}'", src_path.display()).as_str(), None, None);
+    info!("Input is '{}'", src_path.display());
 
     let relative_paths = io::relative_files(src_path.as_path()).map_err(|error| vec![error])?;
     let in_absolute_paths = if src_path.is_dir() {
@@ -44,15 +42,10 @@ pub fn transpile_directory(
     let out_absolute_paths: Vec<PathBuf> =
         relative_paths.iter().map(|os_string| out_dir.join(os_string)).collect();
 
-    info(
-        format!(
-            "Transpiling {} file{}",
-            out_absolute_paths.len(),
-            if out_absolute_paths.len() > 1 { "s" } else { "" }
-        )
-        .as_str(),
-        None,
-        None
+    info!(
+        "Transpiling {} file {}",
+        out_absolute_paths.len(),
+        if out_absolute_paths.len() > 1 { "s" } else { "" }
     );
 
     let mut sources = vec![];
@@ -71,7 +64,7 @@ pub fn transpile_directory(
         io::write_source(source, &out_path).map_err(|error| vec![error])?;
     }
 
-    success(format!("Output stored in '{}'", out_dir.display()).as_str(), None, None);
+    info!("Output stored in '{}'", out_dir.display());
     Ok(out_dir)
 }
 

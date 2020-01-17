@@ -2,10 +2,10 @@ use crate::core::construct::Core;
 
 pub mod construct;
 
-/// Convert [Core](crate::core::construct::Core) to a String which represent
+/// Convert [Core](mamba::core::construct::Core) to a String which represent
 /// python source code.
 ///
-/// Takes [Core](crate::core::construct::Core) nodes as-is, meaning that this
+/// Takes [Core](mamba::core::construct::Core) nodes as-is, meaning that this
 /// should never panic, unless a certain core construct can still not be
 /// converted.
 ///

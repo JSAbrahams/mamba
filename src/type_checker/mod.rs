@@ -23,14 +23,14 @@ pub mod type_result;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 
-/// Checks whether a given [AST](crate::parser::ast::AST) is well
+/// Checks whether a given [AST](mamba::parser::ast::AST) is well
 /// typed according to the specification of the language.
 ///
 /// Should never panic.
 ///
 /// # Failures
 ///
-/// Any ill-typed [AST](crate::parser::ast::AST) results in a
+/// Any ill-typed [AST](mamba::parser::ast::AST) results in a
 /// failure.
 pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
     let context = Context::try_from(inputs)?.into_with_primitives()?.into_with_std_lib()?;

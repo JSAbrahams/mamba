@@ -14,13 +14,9 @@ pub fn gen_expr(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let (constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &constr)
         }
+        Node::Id { lit } if env.get_var_new(lit).is_some() => Ok((constr.clone(), env.clone())),
         Node::Id { lit } =>
-            if let Some(expected) = env.get_var_new(lit) {
-                let left = Expected::new(&ast.pos, &Expression { ast: ast.clone() });
-                Ok((constr.add(&left, &Expected::new(&ast.pos, &expected)), env.clone()))
-            } else {
-                Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))])
-            },
+            Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))]),
         Node::Question { left, right } => {
             let nullable = Nullable { expect: Box::from(Expression { ast: *left.clone() }) };
             let l_exp = Expected::new(&left.pos, &nullable);

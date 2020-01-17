@@ -1,11 +1,17 @@
+use std::fmt::{Debug, Error, Formatter};
+
 use crate::common::position::Position;
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 /// Wrapper of Node, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
 pub struct AST {
     pub pos:  Position,
     pub node: Node
+}
+
+impl Debug for AST {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { write!(f, "{:?}", self.node) }
 }
 
 fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {

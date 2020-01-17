@@ -26,7 +26,7 @@ mod statement;
 
 pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 
-/// Parse input, which is a slice of [TokenPos](crate::lexer::token::TokenPos).
+/// Parse input, which is a slice of [TokenPos](mamba::lexer::token::TokenPos).
 ///
 /// Should never panic.
 ///

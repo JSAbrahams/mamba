@@ -16,6 +16,19 @@ pub type Unified = Result<Constraints, Vec<TypeErr>>;
 
 pub fn constraints(ast: &AST, ctx: &Context) -> Unified {
     let (constrained, _) = generate(ast, &Environment::default(), ctx, &Constraints::new())?;
+
+    debug!("CONSTRAINTS");
+    for constraint in &constrained.constraints {
+        debug!(
+            "{:width$} {:?} == {:?}",
+            format!("({},{})", constraint.0.pos, constraint.1.pos),
+            constraint.0.expect,
+            constraint.1.expect,
+            width = 30
+        );
+    }
+
+    debug!("UNIFICATION");
     let unified = unify(&constrained, ctx)?;
     Ok(unified)
 }

@@ -19,12 +19,12 @@ pub mod desugar_result;
 
 pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 
-/// Consumes the given [AST](crate::parser::ast::AST) and produces
-/// a [Core](crate::core::construct::Core) node.
+/// Consumes the given [AST](mamba::parser::ast::AST) and produces
+/// a [Core](mamba::core::construct::Core) node.
 ///
-/// Note that the given [AST](crate::parser::ast::AST) must be
+/// Note that the given [AST](mamba::parser::ast::AST) must be
 /// correctly formed. Therefore, malformed
-/// [AST](crate::parser::ast::AST)'s should be caught by either
+/// [AST](mamba::parser::ast::AST)'s should be caught by either
 /// the parser or the type checker.
 ///
 /// # Examples

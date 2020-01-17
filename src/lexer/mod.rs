@@ -16,8 +16,8 @@ mod tokenize;
 pub type TokenizeInput = (String, Option<PathBuf>);
 
 /// Convert a given string to a sequence of
-/// [TokenPos](crate::lexer::token::TokenPos), each containing a
-/// [Token](crate::lexer::token::Token), in addition to line number and
+/// [TokenPos](mamba::lexer::token::TokenPos), each containing a
+/// [Token](mamba::lexer::token::Token), in addition to line number and
 /// position. Note that line number and position are 1-indexed.
 ///
 /// Should never panic.

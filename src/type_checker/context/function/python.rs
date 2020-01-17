@@ -22,6 +22,8 @@ pub const NEQ: &str = "__neq__";
 pub const POW: &str = "__pow__";
 pub const SUB: &str = "__sub__";
 
+pub const TRUTHY: &str = "__bool__";
+
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
