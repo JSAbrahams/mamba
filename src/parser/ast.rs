@@ -127,9 +127,18 @@ impl AST {
                 Node::Handle { expr_or_stmt: res, cases: rc }
             ) => les.equal_structure(res) && equal_vec(lc, rc),
             (
-                Node::With { resource: lr, alias: la, expr: le },
-                Node::With { resource: rr, alias: ra, expr: re }
-            ) => lr.equal_structure(rr) && equal_optional(la, ra) && le.equal_structure(re),
+                Node::With { resource: lr, alias: Some((la, lmut, lty)), expr: le },
+                Node::With { resource: rr, alias: Some((ra, rmut, rty)), expr: re }
+            ) =>
+                lr.equal_structure(rr)
+                    && la.equal_structure(ra)
+                    && lmut == rmut
+                    && equal_optional(lty, rty)
+                    && le.equal_structure(re),
+            (
+                Node::With { resource: lr, alias: None, expr: le },
+                Node::With { resource: rr, alias: None, expr: re }
+            ) => lr.equal_structure(rr) && le.equal_structure(re),
             (
                 Node::ConstructorCall { name: ln, args: la },
                 Node::ConstructorCall { name: rn, args: ra }
@@ -377,7 +386,7 @@ pub enum Node {
     },
     With {
         resource: Box<AST>,
-        alias:    Option<Box<AST>>,
+        alias:    Option<(Box<AST>, bool, Option<Box<AST>>)>,
         expr:     Box<AST>
     },
     ConstructorCall {

@@ -13,8 +13,8 @@ use crate::type_checker::context::Context;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 
-/// Empties out constraints and puts them in a substituted list.
-///
+/// Unifies all constraints.
+
 /// We use a mutable reference to constraints for performance reasons.
 /// Otherwise, we have to make a entirely new copy of the list of all
 /// constraints each time we do a recursive call to unify link.
@@ -143,25 +143,24 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
 }
 
 fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
-    debug!(
+    trace!(
         "{:width$} subst {:?} with {:?}",
         format!("({}<={})", old.pos, new.pos),
         old.expect,
         new.expect,
         width = 28
     );
-    sub_inner(old, new, constr)
+    sub_inner(old, new, &mut constr.clone())
 }
 
-fn sub_inner(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
-    let mut constraints = constr.clone();
-    if let Some(constraint) = constraints.constraints.pop() {
+fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeResult<Constraints> {
+    if let Some(constraint) = constr.constraints.pop() {
         let (left, right) = (constraint.0, constraint.1);
         let left = if &left == old { Expected::new(&left.pos, &new.expect) } else { left };
         let right = if &right == old { Expected::new(&right.pos, &new.expect) } else { right };
         let mut unified = Constraints::new().add(&left, &right);
-        Ok(unified.append(&sub_inner(old, new, &constraints)?))
+        Ok(unified.append(&sub_inner(old, new, constr)?))
     } else {
-        Ok(constraints.clone())
+        Ok(constr.clone())
     }
 }

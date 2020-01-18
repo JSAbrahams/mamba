@@ -164,13 +164,25 @@ pub trait Modification {
                     m_expr_or_stmt || m_cases
                 ))
             }
-            Node::With { resource, alias, expr } => {
+            Node::With { resource, alias: Some((id, mutable, ty)), expr } => {
                 let (resource, m_resource) = modify!(resource);
-                let (alias, m_as) = optional!(alias);
+                let (id, m_id) = modify!(id);
+                let (ty, m_ty) = optional!(ty);
                 let (expr, m_expr) = modify!(expr);
                 Ok((
-                    AST { node: Node::With { resource, alias, expr }, ..ast.clone() },
-                    m_resource || m_as || m_expr
+                    AST {
+                        node: Node::With { resource, alias: Some((id, *mutable, ty)), expr },
+                        ..ast.clone()
+                    },
+                    m_resource || m_id || m_ty || m_expr
+                ))
+            }
+            Node::With { resource, alias: None, expr } => {
+                let (resource, m_resource) = modify!(resource);
+                let (expr, m_expr) = modify!(expr);
+                Ok((
+                    AST { node: Node::With { resource, alias: None, expr }, ..ast.clone() },
+                    m_resource || m_expr
                 ))
             }
             Node::ConstructorCall { name, args } => {

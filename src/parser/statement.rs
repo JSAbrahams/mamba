@@ -7,8 +7,8 @@ use crate::parser::definition::parse_definition;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
-use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::parse_result::{custom, expected_one_of};
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
@@ -63,7 +63,17 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("with")?;
     it.eat(&Token::With, "with")?;
     let resource = it.parse(&parse_expression, "with", &start)?;
+
     let alias = it.parse_if(&Token::As, &parse_expression_type, "with id", &start)?;
+    let alias = if let Some(alias) = &alias {
+        match alias.node.clone() {
+            Node::ExpressionType { expr, mutable, ty } => Some((expr, mutable, ty)),
+            _ => return Err(custom("Expected expression type", &alias.pos))
+        }
+    } else {
+        None
+    };
+
     it.eat(&Token::Do, "with")?;
     let expr = it.parse(&parse_expr_or_stmt, "with", &start)?;
 

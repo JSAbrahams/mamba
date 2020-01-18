@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Expect::{Expression, Raises};
 use crate::type_checker::constraints::cons::{Constraints, Expected};
+use crate::type_checker::constraints::generate::definition::identifier_from_var;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -21,13 +22,13 @@ pub fn gen_resources(
             let (constr, env) = constrain_raises(expr_or_stmt, errors, env, ctx, constr)?;
             generate(expr_or_stmt, &env, ctx, &constr)
         }
-        Node::With { resource, alias: Some(alias), expr } => {
+        Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             let left = Expected::new(&resource.pos, &Expression { ast: *resource.clone() });
             let constr =
                 constr.add(&left, &Expected::new(&alias.pos, &Expression { ast: *alias.clone() }));
 
-            let (constr, env) = generate(resource, env, ctx, &constr)?;
-            let (constr, env) = generate(alias, &env, ctx, &constr)?;
+            let (constr, env) = identifier_from_var(alias, ty, *mutable, &constr, env)?;
+            let (constr, env) = generate(resource, &env, ctx, &constr)?;
             generate(expr, &env, ctx, &constr)
         }
         Node::With { resource, expr, .. } => {

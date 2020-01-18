@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::iter::FromIterator;
 use std::ops::Deref;
 
@@ -12,7 +13,6 @@ use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 use crate::type_checker::util::comma_delimited;
-use std::convert::TryFrom;
 
 pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
     match &ast.node {
@@ -46,15 +46,13 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
         Node::With { resource, alias, expr } => {
             let (resource_ty, mut inner_env) = infer(resource, env, ctx)?;
 
-            if let Some(alias) = alias {
-                let (_as, mutable, type_name) = match &alias.node {
-                    Node::ExpressionType { expr, ty, mutable } => match (&expr.node, &ty) {
-                        (Node::Id { lit }, Some(ty)) =>
-                            (lit.clone(), mutable, Some(TypeName::try_from(ty.deref())?)),
-                        (Node::Id { lit }, None) => (lit.clone(), mutable, None),
-                        _ => return Err(vec![TypeErr::new(&alias.pos, "Expected identifier")])
-                    },
-                    _ => return Err(vec![TypeErr::new(&alias.pos, "Expected identifier")])
+            if let Some((alias, mutable, ty)) = alias {
+                let type_name =
+                    if let Some(ty) = ty { Some(TypeName::try_from(ty.deref())?) } else { None };
+                let alias = if let Node::Id { lit } = &alias.node {
+                    lit.clone()
+                } else {
+                    return Err(vec![TypeErr::new(&alias.pos, "Expected identifier")]);
                 };
 
                 let expr_ty = resource_ty.expr_ty(&resource.pos)?;
@@ -69,7 +67,7 @@ pub fn infer_error(ast: &AST, env: &Environment, ctx: &Context) -> InferResult {
                 if let Node::Id { lit } = &resource.node {
                     inner_env.remove(&lit);
                 }
-                inner_env.insert(&_as, *mutable, &expr_ty);
+                inner_env.insert(&alias, *mutable, &expr_ty);
             }
 
             let (infer_ty, _) = infer(expr, &inner_env, ctx)?;

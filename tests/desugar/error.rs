@@ -9,7 +9,7 @@ use mamba::parser::ast::AST;
 #[test]
 fn with_verify() {
     let resource = to_pos!(Node::Id { lit: String::from("my_resource") });
-    let alias = Some(to_pos!(Node::Id { lit: String::from("other") }));
+    let alias = Some((to_pos!(Node::Id { lit: String::from("other") }), false, None));
     let expr = to_pos!(Node::Int { lit: String::from("9") });
     let with = to_pos!(Node::With { resource, alias, expr });
 

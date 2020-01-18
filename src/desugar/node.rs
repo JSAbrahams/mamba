@@ -284,16 +284,14 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Comment { comment } => Core::Comment { comment: comment.clone() },
         Node::Pass => Core::Pass,
 
-        Node::With { resource, alias, expr } => match alias {
-            Some(alias) => Core::WithAs {
-                resource: Box::from(desugar_node(resource, imp, state)?),
-                alias:    Box::from(desugar_node(alias, imp, &state.expand_ty(false))?),
-                expr:     Box::from(desugar_node(expr, imp, state)?)
-            },
-            None => Core::With {
-                resource: Box::from(desugar_node(resource, imp, state)?),
-                expr:     Box::from(desugar_node(expr, imp, state)?)
-            }
+        Node::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
+            resource: Box::from(desugar_node(resource, imp, state)?),
+            alias:    Box::from(desugar_node(alias, imp, &state.expand_ty(false))?),
+            expr:     Box::from(desugar_node(expr, imp, state)?)
+        },
+        Node::With { resource, expr, .. } => Core::With {
+            resource: Box::from(desugar_node(resource, imp, state)?),
+            expr:     Box::from(desugar_node(expr, imp, state)?)
         },
 
         Node::Step { .. } => panic!("Step cannot be top level."),

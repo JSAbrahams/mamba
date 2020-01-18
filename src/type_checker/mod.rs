@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use crate::parser::ast::AST;
 use crate::type_checker::constraints::constraints;
 use crate::type_checker::context::Context;
-use crate::type_checker::infer::infer_all;
 use crate::type_checker::modify::modify;
 use crate::type_checker::type_result::TypeResults;
 
@@ -42,6 +41,9 @@ pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
         })
         .collect::<Result<_, _>>()?;
 
-    infer_all(&inputs, &context)?;
+    for (ast, ..) in &inputs {
+        constraints(ast, &context)?;
+    }
+
     Ok(inputs)
 }
