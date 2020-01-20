@@ -5,6 +5,8 @@ use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
+use crate::type_checker::util::comma_delimited;
+use std::fmt::{Display, Error, Formatter};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
@@ -79,10 +81,36 @@ pub enum Expect {
 
     Implements { type_name: TypeName, args: Vec<Expected> },
     Function { name: TypeName, args: Vec<Expected> },
-    HasFunction { name: TypeName, args: Vec<Expected> },
     HasField { name: String },
 
     Type { type_name: TypeName }
+}
+
+impl Display for Expect {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}", match &self {
+            Nullable { expect } => format!("Null: {}", expect),
+            Mutable { expect } => format!("Mut: {}", expect),
+            Expression { ast } => format!("Expr: {:?}", ast.node),
+            ExpressionAny => String::from("AnyExpression"),
+            Collection { ty } => format!("Coll: {}", ty),
+            Truthy => String::from("Truthy"),
+            RaisesAny => String::from("RaisesAny"),
+            Raises { type_name } => format!("Raises: {}", type_name),
+            Implements { type_name, args } => format!(
+                "Implements: {}({})",
+                type_name,
+                comma_delimited(args.iter().map(|e| e.expect.clone()))
+            ),
+            Function { name, args } => format!(
+                "Implements: {}({})",
+                name,
+                comma_delimited(args.iter().map(|e| e.expect.clone()))
+            ),
+            HasField { name } => format!("HasField: {}", name),
+            Type { type_name } => format!("Ty: {}", type_name)
+        })
+    }
 }
 
 impl PartialEq for Expect {
@@ -96,8 +124,7 @@ impl PartialEq for Expect {
             | (Type { type_name: l }, Type { type_name: r }) => l == r,
 
             (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
-            | (Function { name: l, args: la }, Function { name: r, args: ra })
-            | (HasFunction { name: l, args: la }, HasFunction { name: r, args: ra }) =>
+            | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                         if let EitherOrBoth::Both(left, right) = pair {

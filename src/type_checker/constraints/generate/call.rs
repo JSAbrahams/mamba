@@ -7,7 +7,7 @@ use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::{Expression, Function, HasField, HasFunction,
+use crate::type_checker::constraints::cons::Expect::{Expression, Function, HasField, Implements,
                                                      Mutable, Type};
 use crate::type_checker::constraints::cons::{Constraints, Expect, Expected};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
@@ -152,7 +152,7 @@ fn property_call(
                 .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
                 .collect();
             let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
-            let right = Expected::new(&last_pos, &HasFunction { name: f_name, args });
+            let right = Expected::new(&last_pos, &Implements { type_name: f_name, args });
             Ok((constr.add(&left, &right), env))
         }
 

@@ -119,18 +119,18 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
             }
 
             _ => panic!(
-                "Unexpected: {}={} : {:?} == {:?}",
+                "Unexpected: {}={} : {} == {}",
                 constraint.0.pos, constraint.1.pos, constraint.0.expect, constraint.1.expect
             )
         }?;
 
         for constraint in &constraint.constraints {
             println!(
-                "{:width$} {:?} == {:?}",
+                "{:width$} [unif] {} == {}",
                 format!("({},{})", constraint.0.pos, constraint.1.pos),
                 constraint.0.expect,
                 constraint.1.expect,
-                width = 35
+                width = 30
             );
         }
     }
@@ -140,11 +140,11 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
 
 fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
     println!(
-        "{:width$} subst {:?} with {:?}",
+        "{:width$} [subs] {} <= {}",
         format!("({}<={})", old.pos, new.pos),
         old.expect,
         new.expect,
-        width = 29
+        width = 30
     );
     sub_inner(old, new, &mut constr.clone())
 }
@@ -152,30 +152,26 @@ fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResul
 fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeResult<Constraints> {
     if let Some(constraint) = constr.constraints.pop() {
         let (left, right) = (constraint.0, constraint.1);
+        macro_rules! replace {
+            () => {{
+                let pos = format!("({}<={})", old.pos, new.pos);
+                println!("{:width$} [repl] {} <= {}", pos, old.expect, new.expect, width = 30);
+            }};
+        };
+
         let left = if &left == old {
-            println!(
-                "{:width$} replacing {:?} with {:?}",
-                format!("({}<={})", old.pos, new.pos),
-                old.expect,
-                new.expect,
-                width = 29
-            );
+            replace!();
             Expected::new(&left.pos, &new.expect)
         } else {
             left
         };
         let right = if &right == old {
-            println!(
-                "{:width$} replacing {:?} with {:?}",
-                format!("({}<={})", old.pos, new.pos),
-                old.expect,
-                new.expect,
-                width = 29
-            );
+            replace!();
             Expected::new(&right.pos, &new.expect)
         } else {
             right
         };
+
         let mut unified = Constraints::new().add(&left, &right);
         Ok(unified.append(&sub_inner(old, new, constr)?))
     } else {
