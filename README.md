@@ -344,7 +344,7 @@ mamba [FLAGS] [OPTIONS]
                          If file, file taken as input.
                          If directory, recursively search all sub-directories for *.mamba files.
                          If no input given, current directory used as input directory.
--o, --output <OUTPUT>    Output directory to store mamba files.
+-o, --output <OUTPUT>    Output directory to store Python files.
                          Output directory structure reflects input directory structure.
                          If no output given, 'target' directory created in current directory and is used as ouput.
 ```

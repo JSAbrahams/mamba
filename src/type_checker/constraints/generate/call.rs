@@ -25,6 +25,7 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let l_exp = Expected::new(&left.pos, &mutable);
             let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
             let constr = constr.add(&l_exp, &r_exp);
+
             let (constr, env) = generate(right, env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
@@ -41,27 +42,24 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
             let (constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            Ok((
-                match env.get_var_new(&f_str_name) {
-                    Some(function) => {
-                        let last_pos =
-                            args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-                        let args = args
-                            .iter()
-                            .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
-                            .collect();
-                        let left = Expected::new(&name.pos, &function);
-                        let right = Expected::new(&last_pos, &Function { name: f_name, args });
-                        constr.add(&left, &right)
-                    }
-                    None => {
-                        // Resort to looking up in Context
-                        let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
-                        call_parameters(ast, &possible_fun_args, &None, args, &constr)?
-                    }
-                },
-                env
-            ))
+            let constr = if let Some(function) = env.get_var_new(&f_str_name) {
+                let left = Expected::new(&name.pos, &function);
+
+                let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
+                let args = args
+                    .iter()
+                    .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
+                    .collect();
+                let right = Expected::new(&last_pos, &Function { name: f_name, args });
+
+                constr.add(&left, &right)
+            } else {
+                // Resort to looking up in Context
+                let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
+                call_parameters(ast, &possible_fun_args, &None, args, &constr)?
+            };
+
+            Ok((constr, env))
         }
         Node::PropertyCall { instance, property } =>
             property_call(instance, property, env, ctx, constr),

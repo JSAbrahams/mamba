@@ -19,7 +19,7 @@ args:
         long: output
         value_name: OUTPUT
         help: |
-          Output directory to store mamba files.
+          Output directory to store Python files.
           Output directory structure reflects input directory structure.
           If no output given, 'target' directory created in current directory and is used as ouput.
         takes_value: true

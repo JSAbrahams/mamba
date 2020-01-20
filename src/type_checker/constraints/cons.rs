@@ -1,8 +1,9 @@
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::common::position::Position;
-use crate::parser::ast::AST;
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::cons::Expect::*;
+use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
 
 #[derive(Clone, Debug)]
@@ -107,6 +108,29 @@ impl PartialEq for Expect {
                     }),
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
             (Truthy, Truthy) | (RaisesAny, RaisesAny) | (ExpressionAny, ExpressionAny) => true,
+
+            (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,
+            (Truthy, Expression { ast: AST { node: Node::And { .. }, .. } })
+            | (Expression { ast: AST { node: Node::And { .. }, .. } }, Truthy) => true,
+            (Truthy, Expression { ast: AST { node: Node::Or { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Or { .. }, .. } }, Truthy) => true,
+            (Truthy, Expression { ast: AST { node: Node::Not { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Not { .. }, .. } }, Truthy) => true,
+
+            (Type { type_name }, Expression { ast: AST { node: Node::Str { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { type_name })
+                if type_name == &TypeName::from(ty::concrete::STRING_PRIMITIVE) =>
+                true,
+            (Type { type_name }, Expression { ast: AST { node: Node::Real { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { type_name })
+                if type_name == &TypeName::from(ty::concrete::FLOAT_PRIMITIVE) =>
+                true,
+            (Type { type_name }, Expression { ast: AST { node: Node::Int { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { type_name })
+                if type_name == &TypeName::from(ty::concrete::INT_PRIMITIVE) =>
+                true,
+
             _ => false
         }
     }
