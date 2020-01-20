@@ -1,52 +1,12 @@
-use itertools::{EitherOrBoth, Itertools};
-
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::*;
+use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::util::comma_delimited;
-use std::fmt::{Display, Error, Formatter};
-
-#[derive(Clone, Debug)]
-pub struct Constraints {
-    pub constraints: Vec<Constraint>
-}
-
-impl Constraints {
-    pub fn new() -> Constraints { Constraints { constraints: vec![] } }
-
-    pub fn append(&mut self, constraints: &Constraints) -> Constraints {
-        let mut new_constr = self.constraints.clone();
-        new_constr.append(&mut constraints.constraints.clone());
-        Constraints { constraints: new_constr }
-    }
-
-    pub fn add_constraint(&self, constraint: &Constraint) -> Constraints {
-        let mut constraints = self.constraints.clone();
-        constraints.push(constraint.clone());
-        Constraints { constraints }
-    }
-
-    pub fn push(&mut self, left: &Expected, right: &Expected) {
-        self.constraints.push(Constraint(left.clone(), right.clone()))
-    }
-
-    pub fn add(&self, left: &Expected, right: &Expected) -> Constraints {
-        let mut constraints = self.constraints.clone();
-        constraints.push(Constraint(left.clone(), right.clone()));
-        Constraints { constraints }
-    }
-}
-
-impl From<&Constraint> for Constraints {
-    fn from(constraint: &Constraint) -> Self {
-        Constraints { constraints: vec![constraint.clone()] }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Constraint(pub Expected, pub Expected);
+use itertools::{EitherOrBoth, Itertools};
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug, Eq)]
 pub struct Expected {
@@ -87,7 +47,7 @@ pub enum Expect {
 }
 
 impl Display for Expect {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
             Nullable { expect } => format!("Null: {}", expect),
             Mutable { expect } => format!("Mut: {}", expect),

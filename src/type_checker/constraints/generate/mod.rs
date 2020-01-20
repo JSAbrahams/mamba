@@ -1,6 +1,6 @@
 use crate::parser::ast::Node::*;
 use crate::parser::ast::AST;
-use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::call::gen_call;
 use crate::type_checker::constraints::generate::class::gen_class;
 use crate::type_checker::constraints::generate::collection::gen_coll;

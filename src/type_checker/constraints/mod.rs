@@ -1,12 +1,12 @@
 use crate::parser::ast::AST;
-use crate::type_checker::constraints::cons::Constraints;
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::unify::unify;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::type_result::TypeErr;
 
-pub mod cons;
+pub mod constraint;
 
 mod generate;
 mod unify;

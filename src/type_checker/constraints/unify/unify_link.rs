@@ -4,14 +4,16 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::common::position::Position;
-use crate::type_checker::constraints::cons::Expect::*;
-use crate::type_checker::constraints::cons::{Constraint, Constraints, Expected};
+use crate::type_checker::constraints::constraint::expected::Expect::*;
+use crate::type_checker::constraints::constraint::expected::Expected;
+use crate::type_checker::constraints::constraint::{Constraint, Constraints};
+use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
 use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::type_result::TypeErr;
 
 /// Unifies all constraints.
 
@@ -136,45 +138,4 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
     }
 
     Ok(constr.clone())
-}
-
-fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
-    println!(
-        "{:width$} [subs] {} <= {}",
-        format!("({}<={})", old.pos, new.pos),
-        old.expect,
-        new.expect,
-        width = 30
-    );
-    sub_inner(old, new, &mut constr.clone())
-}
-
-fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeResult<Constraints> {
-    if let Some(constraint) = constr.constraints.pop() {
-        let (left, right) = (constraint.0, constraint.1);
-        macro_rules! replace {
-            () => {{
-                let pos = format!("({}<={})", old.pos, new.pos);
-                println!("{:width$} [repl] {} <= {}", pos, old.expect, new.expect, width = 30);
-            }};
-        };
-
-        let left = if &left == old {
-            replace!();
-            Expected::new(&left.pos, &new.expect)
-        } else {
-            left
-        };
-        let right = if &right == old {
-            replace!();
-            Expected::new(&right.pos, &new.expect)
-        } else {
-            right
-        };
-
-        let mut unified = Constraints::new().add(&left, &right);
-        Ok(unified.append(&sub_inner(old, new, constr)?))
-    } else {
-        Ok(constr.clone())
-    }
 }

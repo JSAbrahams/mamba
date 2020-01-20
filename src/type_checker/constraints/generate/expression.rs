@@ -1,6 +1,7 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::{Expression, Nullable};
-use crate::type_checker::constraints::cons::{Constraints, Expected};
+use crate::type_checker::constraints::constraint::expected::Expect::*;
+use crate::type_checker::constraints::constraint::expected::Expected;
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::definition::constrain_args;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;

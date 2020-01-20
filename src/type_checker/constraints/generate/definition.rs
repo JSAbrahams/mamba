@@ -2,8 +2,9 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::{Expression, ExpressionAny, Type};
-use crate::type_checker::constraints::cons::{Constraints, Expected};
+use crate::type_checker::constraints::constraint::expected::Expect::*;
+use crate::type_checker::constraints::constraint::expected::Expected;
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::generate::resources::constrain_raises;
 use crate::type_checker::constraints::generate::ty::constrain_ty;

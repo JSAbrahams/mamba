@@ -1,8 +1,9 @@
 use std::convert::TryFrom;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::{Expression, Raises};
-use crate::type_checker::constraints::cons::{Constraints, Expected};
+use crate::type_checker::constraints::constraint::expected::Expect::*;
+use crate::type_checker::constraints::constraint::expected::Expected;
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::definition::identifier_from_var;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;

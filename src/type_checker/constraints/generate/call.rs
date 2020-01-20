@@ -7,9 +7,9 @@ use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::cons::Expect::{Expression, Function, HasField, Implements,
-                                                     Mutable, Type};
-use crate::type_checker::constraints::cons::{Constraints, Expect, Expected};
+use crate::type_checker::constraints::constraint::expected::Expect::*;
+use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;

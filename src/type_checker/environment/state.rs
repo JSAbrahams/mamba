@@ -1,4 +1,4 @@
-use crate::type_checker::constraints::cons::Expect;
+use crate::type_checker::constraints::constraint::expected::Expect;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
