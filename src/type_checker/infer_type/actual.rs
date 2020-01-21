@@ -39,6 +39,16 @@ impl ActualType {
         }
     }
 
+    pub fn anon_fun_params(&self, pos: &Position) -> TypeResult<(Vec<TypeName>, TypeName)> {
+        match &self {
+            ActualType::AnonFun { args, ret_ty } => Ok((
+                args.iter().map(|a| TypeName::from(a)).collect(),
+                TypeName::from(ret_ty.deref())
+            )),
+            _ => Err(vec![TypeErr::new(pos, "Not an anonymous function")])
+        }
+    }
+
     pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
         match &self {
             ActualType::AnonFun { args: a, ret_ty } => {

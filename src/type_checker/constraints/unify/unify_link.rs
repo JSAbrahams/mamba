@@ -6,7 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::common::position::Position;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::{Constraint, Constraints};
+use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
@@ -97,7 +97,38 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
             (Type { type_name }, Function { name, args, ret_ty })
             | (Function { name, args, ret_ty }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
-                unimplemented!()
+                let functions = expr_ty.anon_fun_params(&constraint.0.pos)?;
+
+                for (f_args, f_ret_ty) in &functions {
+                    for possible in f_args.into_iter().zip_longest(args.iter()) {
+                        match possible {
+                            EitherOrBoth::Both(type_name, expected) => {
+                                let right = Expected::new(&constraint.0.pos, &Type {
+                                    type_name: type_name.clone()
+                                });
+                                constr.add(expected, &right);
+                            }
+                            EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
+                                return Err(vec![TypeErr::new(
+                                    &constraint.0.pos,
+                                    &format!(
+                                        "{} arguments given to function which takes {} arguments",
+                                        args.len(),
+                                        f_args.len()
+                                    )
+                                )]);
+                            }
+                        }
+                    }
+
+                    if let Some(ret_ty) = ret_ty {
+                        let expected =
+                            Expected::new(&constraint.0.pos, &Type { type_name: f_ret_ty.clone() });
+                        constr.add(ret_ty, &expected);
+                    }
+                }
+
+                unify_link(constr, sub, ctx)
             }
 
             _ => panic!(

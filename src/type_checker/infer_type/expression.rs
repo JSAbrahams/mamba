@@ -99,6 +99,21 @@ impl ExpressionType {
         }
     }
 
+    pub fn anon_fun_params(
+        &self,
+        pos: &Position
+    ) -> TypeResult<HashSet<(Vec<TypeName>, TypeName)>> {
+        match &self {
+            ExpressionType::Single { ty } => {
+                let mut set = HashSet::new();
+                set.insert(ty.actual_ty().anon_fun_params(pos)?);
+                Ok(set)
+            }
+            ExpressionType::Union { union } =>
+                union.iter().map(|ty| ty.actual_ty().anon_fun_params(pos)).collect::<Result<_, _>>(),
+        }
+    }
+
     pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
         match &self {
             ExpressionType::Single { ty } => ty.actual_ty().anon_fun(args, pos),
