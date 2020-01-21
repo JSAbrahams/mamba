@@ -1,11 +1,11 @@
-use crate::type_checker::constraints::constraint::expected::Expect;
+use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct State {
-    pub expect_expr:  bool,
+    pub expect_expr:  Option<Box<Expected>>,
     pub in_loop:      bool,
     pub in_handle:    bool,
     pub in_function:  bool,
@@ -16,7 +16,6 @@ pub struct State {
 }
 
 pub enum StateType {
-    Expression,
     InLoop,
     InHandle,
     InFunction
@@ -25,7 +24,7 @@ pub enum StateType {
 impl Default for State {
     fn default() -> Self {
         State {
-            expect_expr:  false,
+            expect_expr:  None,
             in_loop:      false,
             in_handle:    false,
             in_function:  false,
@@ -46,6 +45,10 @@ impl State {
         State { handling: Vec::from(handling), in_handle: true, ..self.clone() }
     }
 
+    pub fn expect_expression(&self, expr: &Expected) -> State {
+        State { expect_expr: Some(Box::from(expr.clone())), ..self.clone() }
+    }
+
     pub fn in_class_new(&self, in_class: &Expect) -> State {
         State { in_class_new: Some(in_class.clone()), ..self.clone() }
     }
@@ -58,8 +61,7 @@ impl State {
         match state_type {
             StateType::InLoop => State { in_loop: true, ..self.clone() },
             StateType::InHandle => State { in_handle: true, ..self.clone() },
-            StateType::InFunction => State { in_function: true, ..self.clone() },
-            StateType::Expression => State { expect_expr: true, ..self.clone() }
+            StateType::InFunction => State { in_function: true, ..self.clone() }
         }
     }
 
@@ -67,8 +69,7 @@ impl State {
         match state_type {
             StateType::InLoop => State { in_loop: false, ..self.clone() },
             StateType::InHandle => State { in_handle: false, ..self.clone() },
-            StateType::InFunction => State { in_function: false, ..self.clone() },
-            StateType::Expression => State { expect_expr: true, ..self.clone() }
+            StateType::InFunction => State { in_function: false, ..self.clone() }
         }
     }
 }

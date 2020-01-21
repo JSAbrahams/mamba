@@ -156,6 +156,25 @@ impl ExpressionType {
         }
     }
 
+    pub fn fun_ret_ty(&self, name: &TypeName, pos: &Position) -> TypeResult<HashSet<TypeName>> {
+        match &self {
+            ExpressionType::Single { ty } => {
+                let mut set = HashSet::new();
+                if let Some(ret_ty) = ty.actual_ty().fun_ret_ty(name, pos)? {
+                    set.insert(ret_ty);
+                }
+                Ok(set)
+            }
+            ExpressionType::Union { union } => Ok(union
+                .iter()
+                .map(|e_ty| e_ty.actual_ty().fun_ret_ty(name, pos))
+                .collect::<Result<Vec<Option<TypeName>>, Vec<TypeErr>>>()?
+                .into_iter()
+                .filter_map(|ret_ty: Option<TypeName>| ret_ty)
+                .collect())
+        }
+    }
+
     // TODO use ActualTypeName
     pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
         match &self {

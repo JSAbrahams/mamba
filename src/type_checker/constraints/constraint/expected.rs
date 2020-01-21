@@ -1,12 +1,14 @@
+use std::fmt;
+use std::fmt::{Display, Formatter};
+
+use itertools::{EitherOrBoth, Itertools};
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::util::comma_delimited;
-use itertools::{EitherOrBoth, Itertools};
-use std::fmt;
-use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug, Eq)]
 pub struct Expected {
@@ -39,8 +41,8 @@ pub enum Expect {
     RaisesAny,
     Raises { type_name: TypeName },
 
-    Implements { type_name: TypeName, args: Vec<Expected> },
-    Function { name: TypeName, args: Vec<Expected> },
+    Implements { type_name: TypeName, args: Vec<Expected>, ret_ty: Option<Box<Expected>> },
+    Function { name: TypeName, args: Vec<Expected>, ret_ty: Option<Box<Expected>> },
     HasField { name: String },
 
     Type { type_name: TypeName }
@@ -57,15 +59,17 @@ impl Display for Expect {
             Truthy => String::from("Truthy"),
             RaisesAny => String::from("RaisesAny"),
             Raises { type_name } => format!("Raises: {}", type_name),
-            Implements { type_name, args } => format!(
-                "Implements: {}({})",
+            Implements { type_name, args, ret_ty } => format!(
+                "Implements: {}({}){}",
                 type_name,
-                comma_delimited(args.iter().map(|e| e.expect.clone()))
+                comma_delimited(args.iter().map(|e| e.expect.clone())),
+                ret_ty.clone().map_or(String::new(), |ret| format!(" -> {}", ret.expect))
             ),
-            Function { name, args } => format!(
-                "Implements: {}({})",
+            Function { name, args, ret_ty } => format!(
+                "Fun: {}({}){}",
                 name,
-                comma_delimited(args.iter().map(|e| e.expect.clone()))
+                comma_delimited(args.iter().map(|e| e.expect.clone())),
+                ret_ty.clone().map_or(String::new(), |ret| format!(" -> {}", ret.expect))
             ),
             HasField { name } => format!("HasField: {}", name),
             Type { type_name } => format!("Ty: {}", type_name)
@@ -83,8 +87,14 @@ impl PartialEq for Expect {
             (Raises { type_name: l }, Raises { type_name: r })
             | (Type { type_name: l }, Type { type_name: r }) => l == r,
 
-            (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
-            | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
+            (
+                Implements { type_name: l, args: la, ret_ty: lr },
+                Implements { type_name: r, args: ra, ret_ty: rr }
+            )
+            | (
+                Function { name: l, args: la, ret_ty: lr },
+                Function { name: r, args: ra, ret_ty: rr }
+            ) =>
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                         if let EitherOrBoth::Both(left, right) = pair {

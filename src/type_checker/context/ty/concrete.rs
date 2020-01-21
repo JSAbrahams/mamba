@@ -122,6 +122,29 @@ impl Type {
         })
     }
 
+    pub fn fun_ret_ty(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Option<TypeName>> {
+        self.functions
+            .iter()
+            .find_map(|function| {
+                if TypeName::from(&function.name) == fun_name.clone() {
+                    Some(function.ty().clone())
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| {
+                vec![TypeErr::new(
+                    pos,
+                    &format!(
+                        "Type {} does not define function \"{}\", must be one of: \n{}",
+                        self,
+                        fun_name,
+                        newline_delimited(&self.functions)
+                    )
+                )]
+            })
+    }
+
     pub fn fun_args(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
         self.functions
             .iter()

@@ -6,7 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::common::position::Position;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::Constraints;
+use crate::type_checker::constraints::constraint::{Constraint, Constraints};
 use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
@@ -56,8 +56,8 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
                 &format!("Types not equal: {}, {}", left, right)
             )]),
 
-            (Type { type_name }, Implements { type_name: f_name, args })
-            | (Implements { type_name: f_name, args }, Type { type_name }) => {
+            (Type { type_name }, Implements { type_name: f_name, args, ret_ty })
+            | (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
                 let f_name = if f_name == type_name {
                     ctx.lookup(f_name, &constraint.0.pos)?;
@@ -65,8 +65,17 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
                 } else {
                     f_name.clone()
                 };
+
                 let possible = expr_ty.fun_args(&f_name, &constraint.0.pos)?;
                 let mut constr = unify_fun_arg(possible, args, constr, &constraint.0.pos)?;
+
+                if let Some(ret_ty) = ret_ty {
+                    for type_name in expr_ty.fun_ret_ty(&f_name, &constraint.0.pos)? {
+                        let right = Expected::new(&constraint.0.pos, &Type { type_name });
+                        constr.add(ret_ty, &right);
+                    }
+                }
+
                 unify_link(&mut constr, &sub, ctx)
             }
 
@@ -83,6 +92,12 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
             (_, Mutable { expect }) => {
                 constr.push(&constraint.0, &Expected::new(&constraint.1.pos, expect.deref()));
                 unify_link(constr, sub, ctx)
+            }
+
+            (Type { type_name }, Function { name, args, ret_ty })
+            | (Function { name, args, ret_ty }, Type { type_name }) => {
+                let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
+                unimplemented!()
             }
 
             _ => panic!(

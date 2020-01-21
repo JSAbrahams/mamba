@@ -12,6 +12,7 @@ use crate::type_checker::type_result::TypeErr;
 pub fn gen_expr(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
     match &ast.node {
         Node::AnonFun { args, body } => {
+            // TODO generate constraint for anonymous function itself
             let (constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &constr)
         }

@@ -26,7 +26,8 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
             let constr = constr.add(&l_exp, &r_exp);
 
-            let (constr, env) = generate(right, env, ctx, &constr)?;
+            let env = env.new_state(&env.state.expect_expression(&l_exp));
+            let (constr, env) = generate(right, &env, ctx, &constr)?;
             generate(left, &env, ctx, &constr)
         }
         Node::ConstructorCall { name, args } => {
@@ -50,7 +51,11 @@ pub fn gen_call(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
                     .iter()
                     .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
                     .collect();
-                let right = Expected::new(&last_pos, &Function { name: f_name, args });
+                let right = Expected::new(&last_pos, &Function {
+                    name: f_name,
+                    args,
+                    ret_ty: env.state.expect_expr.clone()
+                });
 
                 constr.add(&left, &right)
             } else {
@@ -139,8 +144,7 @@ fn property_call(
             let l_exp = Expected::new(&left.pos, &left_mut);
             let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
             let constr = constr.add(&l_exp, &r_exp);
-            let (constr, env) = generate(right, env, ctx, &constr)?;
-            generate(left, &env, ctx, &constr)
+            generate(right, env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
             let f_name = TypeName::try_from(name.deref())?;
@@ -151,8 +155,14 @@ fn property_call(
                 .iter()
                 .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
                 .collect();
+
             let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
-            let right = Expected::new(&last_pos, &Implements { type_name: f_name, args });
+            let right = Expected::new(&last_pos, &Implements {
+                type_name: f_name,
+                args,
+                ret_ty: env.state.expect_expr.clone()
+            });
+
             Ok((constr.add(&left, &right), env))
         }
 

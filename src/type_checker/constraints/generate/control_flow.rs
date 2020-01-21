@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
-use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
+use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::collection::constrain_collection;
 use crate::type_checker::constraints::generate::generate;
@@ -41,10 +41,9 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
                             res.0 = res.0.add(&left, &right);
 
                             if let Some(first_case) = &first_case_exp {
-                                let left = Expected::new(&case.pos, first_case);
-                                let right =
+                                let left =
                                     Expected::new(&case.pos, &Expression { ast: *body.clone() });
-                                res.0 = res.0.add(&left, &right);
+                                res.0 = res.0.add(&left, &first_case);
                             }
                             res = generate(body, &res.1, ctx, &res.0)?;
                         }
@@ -65,12 +64,12 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
             let constr = constr.add(&left, &Expected::new(&cond.pos, &Truthy));
 
-            let constr = if env.state.expect_expr {
+            let constr = if let Some(expected) = &env.state.expect_expr {
                 let left = Expected::new(&then.pos, &Expression { ast: *then.clone() });
                 let right = Expected::new(&el.pos, &Expression { ast: *el.clone() });
-                constr.add(&left, &right)
+                constr.add(&left, &expected).add(&right, &expected)
             } else {
-                constr.clone()
+                constr
             };
 
             let (constr, env) = generate(cond, env, ctx, &constr)?;
@@ -82,9 +81,9 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
             let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
             let constr = constr.add(&left, &Expected::new(&cond.pos, &Truthy));
 
-            let constr = if env.state.expect_expr {
+            let constr = if let Some(expected) = &env.state.expect_expr {
                 let left = Expected::new(&then.pos, &Expression { ast: *then.clone() });
-                constr.add(&left, &Expected::new(&then.pos, &ExpressionAny))
+                constr.add(&left, &expected)
             } else {
                 constr
             };
@@ -108,10 +107,8 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
                         res.0 = res.0.add(&left, &Expected::new(&cond.pos, &cond_expect));
 
                         if let Some(case_expectation) = &first_case_exp {
-                            let left = Expected::new(&case.pos, case_expectation);
-                            let right =
-                                Expected::new(&case.pos, &Expression { ast: *body.clone() });
-                            res.0 = res.0.add(&left, &right);
+                            let left = Expected::new(&case.pos, &Expression { ast: *body.clone() });
+                            res.0 = res.0.add(&left, &case_expectation);
                         }
                         res = generate(body, &res.1, ctx, &res.0)?;
                     }
@@ -144,14 +141,14 @@ pub fn gen_flow(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraint
     }
 }
 
-fn first_case_expect(cases: &Vec<AST>, env: &Environment) -> Option<Expect> {
-    if let Some(case) = cases.first() {
-        if env.state.expect_expr {
-            Some(Expression { ast: case.clone() })
+fn first_case_expect(cases: &Vec<AST>, env: &Environment) -> Option<Box<Expected>> {
+    if cases.is_empty() {
+        None
+    } else {
+        if let Some(expected) = &env.state.expect_expr {
+            Some(expected.clone())
         } else {
             None
         }
-    } else {
-        None
     }
 }
