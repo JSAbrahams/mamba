@@ -20,36 +20,62 @@ use crate::type_checker::type_result::TypeErr;
 /// We use a mutable reference to constraints for performance reasons.
 /// Otherwise, we have to make a entirely new copy of the list of all
 /// constraints each time we do a recursive call to unify link.
-pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) -> Unified {
+pub fn unify_link(
+    constr: &mut Constraints,
+    sub: &Constraints,
+    ctx: &Context,
+    total: usize
+) -> Unified {
     if let Some(constraint) = constr.constraints.pop() {
+        println!(
+            "{:width$} [solving {}/{}] {} = {}",
+            format!("({}={})", constraint.0.pos, constraint.1.pos),
+            total - constr.constraints.len(),
+            total,
+            constraint.0.expect,
+            constraint.1.expect,
+            width = 30
+        );
+
         match (&constraint.0.expect, &constraint.1.expect) {
             (ExpressionAny, ExpressionAny)
             | (Truthy, Truthy)
             | (RaisesAny, RaisesAny)
-            | (Expression { .. }, ExpressionAny)
-            | (ExpressionAny, Expression { .. })
             | (Truthy, ExpressionAny)
             | (ExpressionAny, Truthy)
             | (Type { .. }, ExpressionAny)
-            | (ExpressionAny, Type { .. }) => unify_link(constr, sub, ctx),
+            | (ExpressionAny, Type { .. }) => unify_link(constr, sub, ctx, total),
+
+            (Expression { .. }, ExpressionAny) | (ExpressionAny, Expression { .. }) =>
+                unify_link(constr, sub, ctx, total),
 
             (Expression { .. }, Expression { .. })
-            | (Type { .. }, Expression { .. })
-            | (Expression { .. }, Type { .. }) => {
-                let mut constr = substitute(&constraint.0, &constraint.1, &constr, false)?;
+            | (Expression { .. }, Type { .. })
+            | (Expression { .. }, Truthy)
+            | (Expression { .. }, HasField { .. }) => {
+                let mut constr = substitute(&constraint.0, &constraint.1, &constr)?;
                 let mut subst = Constraints::from(&constraint);
-                subst.append(&substitute(&constraint.0, &constraint.1, &sub, true)?);
-                unify_link(&mut constr, &subst, ctx)
+                subst.append(&substitute(&constraint.0, &constraint.1, &sub)?);
+                unify_link(&mut constr, &subst, ctx, total)
+            }
+
+            (Type { .. }, Expression { .. })
+            | (Truthy, Expression { .. })
+            | (HasField { .. }, Expression { .. }) => {
+                let mut constr = substitute(&constraint.1, &constraint.0, &constr)?;
+                let mut subst = Constraints::from(&constraint);
+                subst.append(&substitute(&constraint.1, &constraint.0, &sub)?);
+                unify_link(&mut constr, &subst, ctx, total)
             }
 
             (Type { type_name: left }, Type { type_name: right }) if left == right => {
                 ctx.lookup(left, &constraint.0.pos)?;
-                unify_link(constr, sub, ctx)
+                unify_link(constr, sub, ctx, total)
             }
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
                 expr_ty.fun_args(&TypeName::from(function::python::TRUTHY), &constraint.0.pos)?;
-                unify_link(constr, sub, ctx)
+                unify_link(constr, sub, ctx, total)
             }
             (Type { type_name: left }, Type { type_name: right }) => Err(vec![TypeErr::new(
                 &Position::default(),
@@ -76,22 +102,25 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
                     }
                 }
 
-                unify_link(&mut constr, &sub, ctx)
+                unify_link(&mut constr, &sub, ctx, total)
             }
 
-            (Truthy, Expression { .. }) | (Expression { .. }, Truthy) => unify_link(
-                &mut substitute(&constraint.0, &constraint.1, constr, false)?,
-                &substitute(&constraint.0, &constraint.1, &sub, true)?.add_constraint(&constraint),
-                ctx
-            ),
-
             (Mutable { expect }, _) => {
-                constr.push(&Expected::new(&constraint.0.pos, expect.deref()), &constraint.0);
-                unify_link(constr, sub, ctx)
+                constr.push(&Expected::new(&constraint.0.pos, expect.deref()), &constraint.1);
+                unify_link(constr, sub, ctx, total)
             }
             (_, Mutable { expect }) => {
                 constr.push(&constraint.0, &Expected::new(&constraint.1.pos, expect.deref()));
-                unify_link(constr, sub, ctx)
+                unify_link(constr, sub, ctx, total)
+            }
+
+            (Nullable { expect }, _) => {
+                constr.push(&Expected::new(&constraint.0.pos, expect.deref()), &constraint.1);
+                unify_link(constr, sub, ctx, total)
+            }
+            (_, Nullable { expect }) => {
+                constr.push(&constraint.0, &Expected::new(&constraint.1.pos, expect.deref()));
+                unify_link(constr, sub, ctx, total)
             }
 
             (Type { type_name }, Function { name, args, ret_ty })
@@ -128,7 +157,14 @@ pub fn unify_link(constr: &mut Constraints, sub: &Constraints, ctx: &Context) ->
                     }
                 }
 
-                unify_link(constr, sub, ctx)
+                unify_link(constr, sub, ctx, total)
+            }
+
+            (Type { type_name }, HasField { name }) | (HasField { name }, Type { type_name }) => {
+                panic!();
+                let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
+                expr_ty.field(name, &constraint.1.pos)?;
+                unify_link(constr, sub, ctx, total)
             }
 
             _ => panic!(

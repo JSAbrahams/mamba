@@ -51,28 +51,28 @@ pub enum Expect {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable { expect } => format!("Null: {}", expect),
-            Mutable { expect } => format!("Mut: {}", expect),
-            Expression { ast } => format!("Expr: {:?}", ast.node),
-            ExpressionAny => String::from("AnyExpression"),
-            Collection { ty } => format!("Coll: {}", ty),
-            Truthy => String::from("Truthy"),
-            RaisesAny => String::from("RaisesAny"),
-            Raises { type_name } => format!("Raises: {}", type_name),
+            Nullable { expect } => format!("<Nullable<{}>>", expect),
+            Mutable { expect } => format!("<Mutable<{}>>", expect),
+            Expression { ast } => format!("{:?}", ast.node),
+            ExpressionAny => String::from("?"),
+            Collection { ty } => format!("<Collection<{}>>", ty),
+            Truthy => String::from("<Bool>"),
+            RaisesAny => String::from("<Raises<?>>"),
+            Raises { type_name } => format!("<Raises<{}>>", type_name),
             Implements { type_name, args, ret_ty } => format!(
-                "Implements: {}({}){}",
+                "<?.{}({}){}>",
                 type_name,
                 comma_delimited(args.iter().map(|e| e.expect.clone())),
                 ret_ty.clone().map_or(String::new(), |ret| format!(" -> {}", ret.expect))
             ),
             Function { name, args, ret_ty } => format!(
-                "Fun: {}({}){}",
+                "<{}({}){}>",
                 name,
                 comma_delimited(args.iter().map(|e| e.expect.clone())),
                 ret_ty.clone().map_or(String::new(), |ret| format!(" -> {}", ret.expect))
             ),
-            HasField { name } => format!("HasField: {}", name),
-            Type { type_name } => format!("Ty: {}", type_name)
+            HasField { name } => format!("<?.{}>", name),
+            Type { type_name } => format!("<{}>", type_name)
         })
     }
 }

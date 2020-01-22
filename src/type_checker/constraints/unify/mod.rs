@@ -7,5 +7,5 @@ mod substitute;
 mod unify_link;
 
 pub fn unify(constr: &Constraints, ctx: &Context) -> Unified {
-    unify_link(&mut constr.clone(), &Constraints::new(), ctx)
+    unify_link(&mut constr.clone(), &Constraints::new(), ctx, constr.constraints.len())
 }
