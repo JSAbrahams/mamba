@@ -8,15 +8,17 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
 
 fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeResult<Constraints> {
     let mut substituted = Constraints::new();
+    let total = constr.constraints.len();
 
     while let Some(constraint) = constr.constraints.pop() {
         let (left, right) = (constraint.0, constraint.1);
         macro_rules! replace {
             () => {{
-                let pos = format!("({}={})", old.pos, new.pos);
                 println!(
-                    "{:width$} [substitute] {} <= {}",
-                    pos,
+                    "{:width$} [substitute {} of {}] {} <= {}",
+                    format!("({}={})", old.pos, new.pos),
+                    total - constr.constraints.len(),
+                    total,
                     old.expect,
                     new.expect,
                     width = 32

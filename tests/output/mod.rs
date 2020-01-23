@@ -13,12 +13,20 @@ fn test_directory(
     input: &[&str],
     output: &[&str],
     file_name: &str
-) -> Result<(), Vec<(String, String)>> {
+) -> Result<(), Vec<String>> {
     transpile_directory(
         &Path::new(&resource_path(valid, input, "")),
         Some(&format!("{}.mamba", file_name)),
         None
-    )?;
+    )
+    .map_err(|errs| {
+        errs.iter()
+            .map(|(ty, msg)| {
+                eprintln!("{}: {}", ty, msg);
+                format!("{}: {}", ty, msg)
+            })
+            .collect::<Vec<String>>()
+    })?;
 
     let cmd = Command::new(PYTHON)
         .arg("-m")

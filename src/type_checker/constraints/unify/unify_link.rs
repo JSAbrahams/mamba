@@ -6,7 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::common::position::Position;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::Constraints;
+use crate::type_checker::constraints::constraint::{Constraint, Constraints};
 use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
@@ -27,17 +27,18 @@ pub fn unify_link(
     total: usize
 ) -> Unified {
     if let Some(constraint) = constr.constraints.pop() {
+        let (left, right) = (constraint.0, constraint.1);
         println!(
-            "{:width$} [solving {}/{}] {} = {}",
-            format!("({}={})", constraint.0.pos, constraint.1.pos),
+            "{:width$} [solving {}\\{}] {} = {}",
+            format!("({}={})", left.pos, right.pos),
             total - constr.constraints.len(),
             total,
-            constraint.0.expect,
-            constraint.1.expect,
+            left.expect,
+            right.expect,
             width = 30
         );
 
-        match (&constraint.0.expect, &constraint.1.expect) {
+        match (&left.expect, &right.expect) {
             (ExpressionAny, ExpressionAny)
             | (Truthy, Truthy)
             | (RaisesAny, RaisesAny)
@@ -51,30 +52,31 @@ pub fn unify_link(
 
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
-            | (Expression { .. }, Truthy)
-            | (Expression { .. }, HasField { .. }) => {
-                let mut constr = substitute(&constraint.0, &constraint.1, &constr)?;
-                let mut subst = Constraints::from(&constraint);
-                subst.append(&substitute(&constraint.0, &constraint.1, &sub)?);
+            | (Expression { .. }, Truthy) => {
+                let mut constr = substitute(&left, &right, &constr)?;
+                let mut subst = Constraints::from(&Constraint(left.clone(), right.clone()));
+                subst.append(&substitute(&left, &right, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
-            (Type { .. }, Expression { .. })
-            | (Truthy, Expression { .. })
-            | (HasField { .. }, Expression { .. }) => {
-                let mut constr = substitute(&constraint.1, &constraint.0, &constr)?;
-                let mut subst = Constraints::from(&constraint);
-                subst.append(&substitute(&constraint.1, &constraint.0, &sub)?);
+            (Type { .. }, Expression { .. }) | (Truthy, Expression { .. }) => {
+                let mut constr = substitute(&right, &left, &constr)?;
+                let mut subst = Constraints::from(&Constraint(left.clone(), right.clone()));
+                subst.append(&substitute(&right, &left, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
-            (Type { type_name: left }, Type { type_name: right }) if left == right => {
-                ctx.lookup(left, &constraint.0.pos)?;
+            (Expression { ast }, HasField { name }) => unimplemented!(),
+            (HasField { name }, Expression { ast }) => unimplemented!(),
+
+            (Type { type_name: l_name }, Type { type_name: r_name }) if l_name == r_name => {
+                // TODO do something with child types
+                ctx.lookup(l_name, &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
-                let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
-                expr_ty.fun_args(&TypeName::from(function::python::TRUTHY), &constraint.0.pos)?;
+                let expr_ty = ctx.lookup(type_name, &left.pos)?;
+                expr_ty.fun_args(&TypeName::from(function::python::TRUTHY), &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
             (Type { type_name: left }, Type { type_name: right }) => Err(vec![TypeErr::new(
@@ -84,20 +86,20 @@ pub fn unify_link(
 
             (Type { type_name }, Implements { type_name: f_name, args, ret_ty })
             | (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {
-                let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
+                let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let f_name = if f_name == type_name {
-                    ctx.lookup(f_name, &constraint.0.pos)?;
+                    ctx.lookup(f_name, &left.pos)?;
                     TypeName::from(function::concrete::INIT)
                 } else {
                     f_name.clone()
                 };
 
-                let possible = expr_ty.fun_args(&f_name, &constraint.0.pos)?;
-                let mut constr = unify_fun_arg(possible, args, constr, &constraint.0.pos)?;
+                let possible = expr_ty.fun_args(&f_name, &left.pos)?;
+                let mut constr = unify_fun_arg(possible, args, constr, &left.pos)?;
 
                 if let Some(ret_ty) = ret_ty {
-                    for type_name in expr_ty.fun_ret_ty(&f_name, &constraint.0.pos)? {
-                        let right = Expected::new(&constraint.0.pos, &Type { type_name });
+                    for type_name in expr_ty.fun_ret_ty(&f_name, &left.pos)? {
+                        let right = Expected::new(&left.pos, &Type { type_name });
                         constr.add(ret_ty, &right);
                     }
                 }
@@ -106,53 +108,50 @@ pub fn unify_link(
             }
 
             (Mutable { expect }, _) => {
-                constr.push(&Expected::new(&constraint.0.pos, expect.deref()), &constraint.1);
+                constr.push(&Expected::new(&left.pos, expect.deref()), &right);
                 unify_link(constr, sub, ctx, total)
             }
             (_, Mutable { expect }) => {
-                constr.push(&constraint.0, &Expected::new(&constraint.1.pos, expect.deref()));
+                constr.push(&left, &Expected::new(&right.pos, expect.deref()));
                 unify_link(constr, sub, ctx, total)
             }
 
             (Nullable { expect }, _) => {
-                constr.push(&Expected::new(&constraint.0.pos, expect.deref()), &constraint.1);
+                constr.push(&Expected::new(&left.pos, expect.deref()), &right);
                 unify_link(constr, sub, ctx, total)
             }
             (_, Nullable { expect }) => {
-                constr.push(&constraint.0, &Expected::new(&constraint.1.pos, expect.deref()));
+                constr.push(&left, &Expected::new(&right.pos, expect.deref()));
                 unify_link(constr, sub, ctx, total)
             }
 
             (Type { type_name }, Function { name, args, ret_ty })
             | (Function { name, args, ret_ty }, Type { type_name }) => {
-                let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
-                let functions = expr_ty.anon_fun_params(&constraint.0.pos)?;
+                let expr_ty = ctx.lookup(type_name, &left.pos)?;
+                let functions = expr_ty.anon_fun_params(&left.pos)?;
 
                 for (f_args, f_ret_ty) in &functions {
                     for possible in f_args.into_iter().zip_longest(args.iter()) {
                         match possible {
                             EitherOrBoth::Both(type_name, expected) => {
-                                let right = Expected::new(&constraint.0.pos, &Type {
-                                    type_name: type_name.clone()
-                                });
+                                let ty = Type { type_name: type_name.clone() };
+                                let right = Expected::new(&left.pos, &ty);
                                 constr.add(expected, &right);
                             }
                             EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
-                                return Err(vec![TypeErr::new(
-                                    &constraint.0.pos,
-                                    &format!(
-                                        "{} arguments given to function which takes {} arguments",
-                                        args.len(),
-                                        f_args.len()
-                                    )
-                                )]);
+                                let msg = format!(
+                                    "{} arguments given to function which takes {} arguments",
+                                    args.len(),
+                                    f_args.len()
+                                );
+                                return Err(vec![TypeErr::new(&left.pos, &msg)]);
                             }
                         }
                     }
 
                     if let Some(ret_ty) = ret_ty {
                         let expected =
-                            Expected::new(&constraint.0.pos, &Type { type_name: f_ret_ty.clone() });
+                            Expected::new(&left.pos, &Type { type_name: f_ret_ty.clone() });
                         constr.add(ret_ty, &expected);
                     }
                 }
@@ -160,16 +159,35 @@ pub fn unify_link(
                 unify_link(constr, sub, ctx, total)
             }
 
-            (Type { type_name }, HasField { name }) | (HasField { name }, Type { type_name }) => {
-                panic!();
-                let expr_ty = ctx.lookup(type_name, &constraint.0.pos)?;
-                expr_ty.field(name, &constraint.1.pos)?;
-                unify_link(constr, sub, ctx, total)
+            (Type { type_name }, HasField { name }) => {
+                let expr_ty = ctx.lookup(type_name, &left.pos)?;
+                let field_ty = expr_ty.field(name, &right.pos)?.ty()?;
+                let field_type = Expected::new(&right.pos, &Type { type_name: field_ty });
+
+                let mut constr = substitute(&right, &field_type, constr)?;
+                unify_link(&mut constr, sub, ctx, total)
             }
+            (HasField { name }, Type { type_name }) => {
+                let expr_ty = ctx.lookup(type_name, &right.pos)?;
+                let field_ty = expr_ty.field(name, &left.pos)?.ty()?;
+                let field_type = Expected::new(&left.pos, &Type { type_name: field_ty });
+
+                let mut constr = substitute(&left, &field_type, constr)?;
+                unify_link(&mut constr, sub, ctx, total)
+            }
+
+            (HasField { name: l_name }, HasField { name: r_name }) =>
+                if l_name == r_name {
+                    unify_link(constr, sub, ctx, total)
+                } else {
+                    // This should in theory never occur however
+                    let msg = format!("Field access differs: {} != {}", left.expect, right.expect);
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                },
 
             _ => panic!(
                 "Unexpected: {}={} : {} == {}",
-                constraint.0.pos, constraint.1.pos, constraint.0.expect, constraint.1.expect
+                left.pos, right.pos, left.expect, right.expect
             )
         }
     } else {

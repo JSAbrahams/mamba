@@ -5,7 +5,7 @@ use crate::parser::ast::AST;
 use crate::type_checker::constraints::constraints;
 use crate::type_checker::context::Context;
 use crate::type_checker::modify::modify;
-use crate::type_checker::type_result::TypeResults;
+use crate::type_checker::type_result::{TypeErr, TypeResults};
 
 pub mod context;
 pub mod environment;
@@ -41,8 +41,10 @@ pub fn check_all(inputs: &[CheckInput]) -> TypeResults {
         })
         .collect::<Result<_, _>>()?;
 
-    for (ast, ..) in &inputs {
-        constraints(ast, &context)?;
+    for (ast, source, path) in &inputs {
+        constraints(ast, &context).map_err(|err| {
+            err.into_iter().map(|err| err.into_with_source(source, path)).collect::<Vec<TypeErr>>()
+        })?;
     }
 
     Ok(inputs)
