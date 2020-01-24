@@ -1,41 +1,36 @@
 use crate::type_checker::constraints::constraint::expected::Expected;
+use std::collections::VecDeque;
 
 pub mod expected;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    pub constraints: Vec<Constraint>
+    pub constraints: VecDeque<Constraint>
 }
 
 impl Constraints {
-    pub fn new() -> Constraints { Constraints { constraints: vec![] } }
+    pub fn new() -> Constraints { Constraints { constraints: VecDeque::new() } }
 
-    pub fn append(&mut self, constraints: &Constraints) -> Constraints {
+    pub fn add(&self, left: &Expected, right: &Expected) -> Constraints {
         let mut new_constr = self.constraints.clone();
-        new_constr.append(&mut constraints.constraints.clone());
+        new_constr.push_back(Constraint(left.clone(), right.clone()));
         Constraints { constraints: new_constr }
     }
 
-    pub fn add_constraint(&self, constraint: &Constraint) -> Constraints {
-        let mut constraints = self.constraints.clone();
-        constraints.push(constraint.clone());
-        Constraints { constraints }
+    pub fn append(&mut self, constraints: &Constraints) {
+        self.constraints.append(&mut constraints.constraints.clone());
     }
 
     pub fn push(&mut self, left: &Expected, right: &Expected) {
-        self.constraints.push(Constraint(left.clone(), right.clone()))
+        self.constraints.push_back(Constraint(left.clone(), right.clone()))
     }
 
-    pub fn add(&self, left: &Expected, right: &Expected) -> Constraints {
-        let mut constraints = self.constraints.clone();
-        constraints.push(Constraint(left.clone(), right.clone()));
-        Constraints { constraints }
-    }
+    pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
 }
 
 impl From<&Constraint> for Constraints {
     fn from(constraint: &Constraint) -> Self {
-        Constraints { constraints: vec![constraint.clone()] }
+        Constraints { constraints: VecDeque::from(vec![constraint.clone()]) }
     }
 }
 

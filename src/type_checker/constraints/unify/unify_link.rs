@@ -26,7 +26,7 @@ pub fn unify_link(
     ctx: &Context,
     total: usize
 ) -> Unified {
-    if let Some(constraint) = constr.constraints.pop() {
+    if let Some(constraint) = constr.pop_constr() {
         let (left, right) = (constraint.0, constraint.1);
         println!(
             "{:width$} [solving {}\\{}] {} = {}",
@@ -66,8 +66,11 @@ pub fn unify_link(
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
-            (Expression { ast }, HasField { name }) => unimplemented!(),
-            (HasField { name }, Expression { ast }) => unimplemented!(),
+            (Expression { ast }, HasField { name }) | (HasField { name }, Expression { ast }) => {
+                // Defer to later point
+                constr.push(&left, &right);
+                unify_link(constr, sub, ctx, total)
+            }
 
             (Type { type_name: l_name }, Type { type_name: r_name }) if l_name == r_name => {
                 // TODO do something with child types
@@ -100,7 +103,7 @@ pub fn unify_link(
                 if let Some(ret_ty) = ret_ty {
                     for type_name in expr_ty.fun_ret_ty(&f_name, &left.pos)? {
                         let right = Expected::new(&left.pos, &Type { type_name });
-                        constr.add(ret_ty, &right);
+                        constr.push(ret_ty, &right);
                     }
                 }
 
@@ -136,7 +139,7 @@ pub fn unify_link(
                             EitherOrBoth::Both(type_name, expected) => {
                                 let ty = Type { type_name: type_name.clone() };
                                 let right = Expected::new(&left.pos, &ty);
-                                constr.add(expected, &right);
+                                constr.push(expected, &right);
                             }
                             EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                                 let msg = format!(
@@ -152,7 +155,7 @@ pub fn unify_link(
                     if let Some(ret_ty) = ret_ty {
                         let expected =
                             Expected::new(&left.pos, &Type { type_name: f_ret_ty.clone() });
-                        constr.add(ret_ty, &expected);
+                        constr.push(ret_ty, &expected);
                     }
                 }
 

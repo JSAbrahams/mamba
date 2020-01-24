@@ -10,7 +10,7 @@ fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeRe
     let mut substituted = Constraints::new();
     let total = constr.constraints.len();
 
-    while let Some(constraint) = constr.constraints.pop() {
+    while let Some(constraint) = constr.pop_constr() {
         let (left, right) = (constraint.0, constraint.1);
         macro_rules! replace {
             () => {{
