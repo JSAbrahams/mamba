@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -11,7 +11,7 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn gen_ty(ast: &AST, _: &Environment, _: &Context, _: &Constraints) -> Constrained {
+pub fn gen_ty(ast: &AST, _: &Environment, _: &Context, _: &ConstraintConstructor) -> Constrained {
     match &ast.node {
         Node::QuestionOp { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Nullable type annotation cannot be top level")]),
@@ -32,14 +32,13 @@ pub fn constrain_ty(
     ty: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &Constraints
+    constr: &mut ConstraintConstructor
 ) -> Constrained {
     let left = Expected::new(&expr.pos, &Expression { ast: expr.clone() });
-
     let type_name = TypeName::try_from(ty)?;
     let right = Expected::new(&ty.pos, &Type { type_name });
 
-    let constr = constr.add(&left, &right);
+    constr.add(&left, &right);
     let env = env.new_state(&env.state.expect_expression(&right));
-    generate(expr, &env, ctx, &constr)
+    generate(expr, &env, ctx, constr)
 }

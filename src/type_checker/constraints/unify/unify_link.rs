@@ -6,7 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::common::position::Position;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::{Constraint, Constraints};
+use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
@@ -26,16 +26,12 @@ pub fn unify_link(
     ctx: &Context,
     total: usize
 ) -> Unified {
-    if let Some(constraint) = constr.pop_constr() {
-        if constraint.flagged {
-            panic!("INFINITE LOOOOOOP")
-        }
-
-        let (left, right) = (constraint.left, constraint.right);
+    if let Some(constraint) = &constr.pop_constr() {
+        let (left, right) = (constraint.left.clone(), constraint.right.clone());
         println!(
             "{:width$} [solving {}\\{}{}] {} = {}",
             format!("({}={})", left.pos, right.pos),
-            total - constr.constraints.len(),
+            total - constr.len(),
             total,
             if constraint.flagged { " (flagged)" } else { "" },
             left.expect,
@@ -59,14 +55,16 @@ pub fn unify_link(
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
                 let mut constr = substitute(&left, &right, &constr)?;
-                let mut subst = Constraints::from(&Constraint::new(left.clone(), right.clone()));
+                let mut subst = Constraints::default();
+                subst.push(&left, &right);
                 subst.append(&substitute(&left, &right, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
             (Type { .. }, Expression { .. }) | (Truthy, Expression { .. }) => {
                 let mut constr = substitute(&right, &left, &constr)?;
-                let mut subst = Constraints::from(&Constraint::new(left.clone(), right.clone()));
+                let mut subst = Constraints::default();
+                subst.push(&left, &right);
                 subst.append(&substitute(&right, &left, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
@@ -192,14 +190,14 @@ pub fn unify_link(
                 println!(
                     "{:width$} [reinserting {}\\{}] {} = {}",
                     format!("({}={})", left.pos, right.pos),
-                    total - constr.constraints.len(),
+                    total - constr.len(),
                     total,
                     left.expect,
                     right.expect,
                     width = 32
                 );
 
-                constr.reinsert(&Constraint::new(left, right))?;
+                constr.reinsert(&constraint)?;
                 unify_link(constr, sub, ctx, total)
             }
         }

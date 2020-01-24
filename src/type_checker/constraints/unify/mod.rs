@@ -1,4 +1,4 @@
-use crate::type_checker::constraints::constraint::Constraints;
+use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::unify::unify_link::unify_link;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::Context;
@@ -6,6 +6,14 @@ use crate::type_checker::context::Context;
 mod substitute;
 mod unify_link;
 
-pub fn unify(constr: &Constraints, ctx: &Context) -> Unified {
-    unify_link(&mut constr.clone(), &Constraints::new(), ctx, constr.constraints.len())
+pub fn unify(all_constraints: &Vec<Constraints>, ctx: &Context) -> Unified<Vec<Constraints>> {
+    let mut count = 1;
+    all_constraints
+        .into_iter()
+        .map(|constraints| {
+            println!("unifying {}\\{}", count, all_constraints.len());
+            count += 1;
+            unify_link(&mut constraints.clone(), &Constraints::default(), ctx, constraints.len())
+        })
+        .collect()
 }

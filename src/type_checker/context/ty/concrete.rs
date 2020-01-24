@@ -113,9 +113,10 @@ impl Type {
             vec![TypeErr::new(
                 pos,
                 &format!(
-                    "Type {} does not define field {}, must be one of:\n{}",
+                    "Type {} does not define field \"{}\"{}{}",
                     self.name,
                     name,
+                    if self.fields.is_empty() { "" } else { ", must be one of:\n" },
                     newline_delimited(&self.fields)
                 )
             )]
@@ -136,9 +137,10 @@ impl Type {
                 vec![TypeErr::new(
                     pos,
                     &format!(
-                        "Type {} does not define function \"{}\", must be one of: \n{}",
+                        "Type {} does not define function \"{}\"{}{}",
                         self,
                         fun_name,
+                        if self.functions.is_empty() { "" } else { ", must be one of:\n" },
                         newline_delimited(&self.functions)
                     )
                 )]
@@ -159,9 +161,10 @@ impl Type {
                 vec![TypeErr::new(
                     pos,
                     &format!(
-                        "Type {} does not define function \"{}\", must be one of: \n{}",
+                        "Type {} does not define function \"{}\"{}{}",
                         self,
                         fun_name,
+                        if self.functions.is_empty() { "" } else { ", must be one of: \n" },
                         newline_delimited(&self.functions)
                     )
                 )]

@@ -1,5 +1,5 @@
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::Constraints;
+use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::type_result::TypeResult;
 
 pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
@@ -7,17 +7,16 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
 }
 
 fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeResult<Constraints> {
-    let mut substituted = Constraints::new();
-    let total = constr.constraints.len();
+    let mut substituted = Constraints::default();
+    let total = constr.len();
 
-    while let Some(constraint) = constr.pop_constr() {
-        let (left, right) = (constraint.left, constraint.right);
+    while let Some(mut constraint) = constr.pop_constr() {
         macro_rules! replace {
             () => {{
                 println!(
                     "{:width$} [substitute {} of {}] {} <= {}",
                     format!("({}={})", old.pos, new.pos),
-                    total - constr.constraints.len(),
+                    total - constr.len(),
                     total,
                     old.expect,
                     new.expect,
@@ -26,21 +25,17 @@ fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeRe
             }};
         };
 
-        let left = if &left == old {
+        if &constraint.left == old {
             replace!();
-            Expected::new(&left.pos, &new.expect)
-        } else {
-            left
-        };
+            constraint.replace_left(&Expected::new(&constraint.left.pos, &new.expect));
+        }
 
-        let right = if &right == old {
+        if &constraint.right == old {
             replace!();
-            Expected::new(&right.pos, &new.expect)
-        } else {
-            right
-        };
+            constraint.replace_left(&Expected::new(&constraint.right.pos, &new.expect));
+        }
 
-        substituted.push(&left, &right);
+        substituted.push_constr(&constraint)
     }
 
     Ok(substituted)

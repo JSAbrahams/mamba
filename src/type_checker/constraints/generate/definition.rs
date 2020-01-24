@@ -2,9 +2,9 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::constraint::Constraints;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::generate::resources::constrain_raises;
 use crate::type_checker::constraints::generate::ty::constrain_ty;
@@ -16,16 +16,21 @@ use crate::type_checker::environment::Environment;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
 
-pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints) -> Constrained {
+pub fn gen_def(
+    ast: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstraintConstructor
+) -> Constrained {
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
-            let (constr, env) = constrain_args(fun_args, env, ctx, constr)?;
+            let (mut constr, env) = constrain_args(fun_args, env, ctx, constr)?;
             match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
-                    let (constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
-                    constrain_ty(body, ret_ty, &env, ctx, &constr)
+                    let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
+                    Ok((constrain_ty(body, ret_ty, &env, ctx, &mut constr)?.0, env.clone()))
                 }
-                (None, Some(body)) => generate(body, &env, ctx, &constr),
+                (None, Some(body)) => Ok((generate(body, &env, ctx, &mut constr)?.0, env.clone())),
                 _ => Ok((constr.clone(), env.clone()))
             }
         }
@@ -33,13 +38,13 @@ pub fn gen_def(ast: &AST, env: &Environment, ctx: &Context, constr: &Constraints
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
         Node::VariableDef { mutable, var, ty, expression: Some(expr), .. } => {
-            let (constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
+            let (mut constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
             match ty {
-                Some(ty) => constrain_ty(expr, ty, &env, ctx, &constr),
+                Some(ty) => constrain_ty(expr, ty, &env, ctx, &mut constr),
                 None => {
                     let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
-                    let constr = constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
-                    generate(expr, &env, ctx, &constr)
+                    constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
+                    generate(expr, &env, ctx, &mut constr)
                 }
             }
         }
@@ -54,7 +59,7 @@ pub fn constrain_args(
     args: &Vec<AST>,
     env: &Environment,
     ctx: &Context,
-    constr: &Constraints
+    constr: &ConstraintConstructor
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
     for arg in args {
@@ -71,14 +76,14 @@ pub fn constrain_args(
 
                     res.1 = res.1.insert_new(*mutable, SELF, self_type);
                     let left = Expected::new(&var.pos, &Expression { ast: *var.clone() });
-                    res.0 = res.0.add(&left, &Expected::new(&var.pos, self_type));
+                    res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
-                    res = identifier_from_var(var, ty, *mutable, &res.0, &res.1)?;
+                    res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
                 }
 
                 res = match (ty, default) {
-                    (Some(ty), Some(default)) => constrain_ty(default, ty, env, ctx, &constr)?,
-                    (None, Some(default)) => generate(default, &res.1, ctx, &res.0)?,
+                    (Some(ty), Some(default)) => constrain_ty(default, ty, env, ctx, &mut res.0)?,
+                    (None, Some(default)) => generate(default, &res.1, ctx, &mut res.0)?,
                     _ => res
                 }
             }
@@ -93,7 +98,7 @@ pub fn identifier_from_var(
     var: &AST,
     ty: &Option<Box<AST>>,
     mutable: bool,
-    constr: &Constraints,
+    constr: &mut ConstraintConstructor,
     env: &Environment
 ) -> Constrained {
     let mut constr = constr.clone();
@@ -102,7 +107,7 @@ pub fn identifier_from_var(
     if let Some(ty) = ty {
         let type_name = TypeName::try_from(ty.deref())?;
         let left = Expected::new(&var.pos, &Expression { ast: var.clone() });
-        constr = constr.add(&left, &Expected::new(&ty.pos, &Type { type_name: type_name.clone() }));
+        constr.add(&left, &Expected::new(&ty.pos, &Type { type_name: type_name.clone() }));
 
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, type_name)) in match_type(&identifier, &type_name, &var.pos)? {
