@@ -17,18 +17,18 @@ pub type Unified = Result<Constraints, Vec<TypeErr>>;
 pub fn constraints(ast: &AST, ctx: &Context) -> Unified {
     let (constrained, _) = generate(ast, &Environment::default(), ctx, &mut Constraints::new())?;
 
-    debug!("CONSTRAINTS");
+    trace!("CONSTRAINTS");
     for constraint in &constrained.constraints {
-        debug!(
+        trace!(
             "{:width$} {:?} == {:?}",
-            format!("({},{})", constraint.0.pos, constraint.1.pos),
-            constraint.0.expect,
-            constraint.1.expect,
+            format!("({},{})", constraint.left.pos, constraint.right.pos),
+            constraint.left.expect,
+            constraint.right.expect,
             width = 30
         );
     }
 
-    debug!("UNIFICATION");
+    trace!("UNIFICATION");
     let unified = unify(&constrained, ctx)?;
     Ok(unified)
 }

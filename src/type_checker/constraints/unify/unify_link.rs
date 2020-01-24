@@ -27,12 +27,17 @@ pub fn unify_link(
     total: usize
 ) -> Unified {
     if let Some(constraint) = constr.pop_constr() {
-        let (left, right) = (constraint.0, constraint.1);
+        if constraint.flagged {
+            panic!("INFINITE LOOOOOOP")
+        }
+
+        let (left, right) = (constraint.left, constraint.right);
         println!(
-            "{:width$} [solving {}\\{}] {} = {}",
+            "{:width$} [solving {}\\{}{}] {} = {}",
             format!("({}={})", left.pos, right.pos),
             total - constr.constraints.len(),
             total,
+            if constraint.flagged { " (flagged)" } else { "" },
             left.expect,
             right.expect,
             width = 30
@@ -54,22 +59,16 @@ pub fn unify_link(
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
                 let mut constr = substitute(&left, &right, &constr)?;
-                let mut subst = Constraints::from(&Constraint(left.clone(), right.clone()));
+                let mut subst = Constraints::from(&Constraint::new(left.clone(), right.clone()));
                 subst.append(&substitute(&left, &right, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
             (Type { .. }, Expression { .. }) | (Truthy, Expression { .. }) => {
                 let mut constr = substitute(&right, &left, &constr)?;
-                let mut subst = Constraints::from(&Constraint(left.clone(), right.clone()));
+                let mut subst = Constraints::from(&Constraint::new(left.clone(), right.clone()));
                 subst.append(&substitute(&right, &left, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
-            }
-
-            (Expression { ast }, HasField { name }) | (HasField { name }, Expression { ast }) => {
-                // Defer to later point
-                constr.push(&left, &right);
-                unify_link(constr, sub, ctx, total)
             }
 
             (Type { type_name: l_name }, Type { type_name: r_name }) if l_name == r_name => {
@@ -188,10 +187,21 @@ pub fn unify_link(
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 },
 
-            _ => panic!(
-                "Unexpected: {}={} : {} == {}",
-                left.pos, right.pos, left.expect, right.expect
-            )
+            _ => {
+                // Defer to later point
+                println!(
+                    "{:width$} [reinserting {}\\{}] {} = {}",
+                    format!("({}={})", left.pos, right.pos),
+                    total - constr.constraints.len(),
+                    total,
+                    left.expect,
+                    right.expect,
+                    width = 32
+                );
+
+                constr.reinsert(&Constraint::new(left, right))?;
+                unify_link(constr, sub, ctx, total)
+            }
         }
     } else {
         Ok(constr.clone())

@@ -11,7 +11,7 @@ fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeRe
     let total = constr.constraints.len();
 
     while let Some(constraint) = constr.pop_constr() {
-        let (left, right) = (constraint.0, constraint.1);
+        let (left, right) = (constraint.left, constraint.right);
         macro_rules! replace {
             () => {{
                 println!(
