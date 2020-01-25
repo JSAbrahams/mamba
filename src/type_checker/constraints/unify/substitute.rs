@@ -18,13 +18,13 @@ fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeRe
 
     let mut substituted = Constraints::default();
     while let Some(mut constraint) = constr.pop_constr() {
-        if &constraint.left == old {
+        if &constraint.parent == old {
             replace!();
-            constraint.replace_left(&Expected::new(&constraint.left.pos, &new.expect));
+            constraint.replace_left(&Expected::new(&constraint.parent.pos, &new.expect));
         }
-        if &constraint.right == old {
+        if &constraint.child == old {
             replace!();
-            constraint.replace_left(&Expected::new(&constraint.right.pos, &new.expect));
+            constraint.replace_left(&Expected::new(&constraint.child.pos, &new.expect));
         }
 
         substituted.push_constr(&constraint)

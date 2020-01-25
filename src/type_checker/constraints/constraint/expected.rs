@@ -54,7 +54,7 @@ impl Display for Expect {
             Nullable { expect } => format!("<Nullable<{}>>", expect),
             Mutable { expect } => format!("<Mutable<{}>>", expect),
             Expression { ast } => format!("{:?}", ast.node),
-            ExpressionAny => String::from("?"),
+            ExpressionAny => String::from("<Any>"),
             Collection { ty } => format!("<Collection<{}>>", ty),
             Truthy => String::from("<Bool>"),
             RaisesAny => String::from("<Raises<?>>"),

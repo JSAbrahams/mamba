@@ -32,7 +32,7 @@ impl Constraints {
     pub fn reinsert(&mut self, constraint: &Constraint) -> TypeResult<()> {
         if constraint.flagged {
             // Can only reinsert constraint once
-            return Err(vec![TypeErr::new(&constraint.left.pos, "Cannot infer type.")]);
+            return Err(vec![TypeErr::new(&constraint.parent.pos, "Cannot infer type.")]);
         }
 
         self.constraints.push_back(constraint.flag());

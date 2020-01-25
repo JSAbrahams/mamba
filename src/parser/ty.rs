@@ -70,7 +70,7 @@ fn parse_generic(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_type(it: &mut LexIterator) -> ParseResult {
     let start = &it.start_pos("type")?;
-    let _type = it.peek_or_err(
+    let ty = it.peek_or_err(
         &|it, lex| match lex.token {
             Token::Id(_) => {
                 let id = it.parse(&parse_id, "type", start)?;
@@ -97,20 +97,20 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
         "type"
     )?;
 
-    let _type = if it.peek_if(&|lex| lex.token == Token::Question) {
+    let ty = if it.peek_if(&|lex| lex.token == Token::Question) {
         it.eat(&Token::Question, "optional type")?;
-        Box::from(AST { pos: _type.pos.clone(), node: Node::QuestionOp { expr: _type } })
+        Box::from(AST { pos: ty.pos.clone(), node: Node::QuestionOp { expr: ty } })
     } else {
-        _type
+        ty
     };
 
     let res = it.parse_if(
         &Token::To,
         &|it| {
             let ret_ty = it.parse(&parse_type, "type", start)?;
-            let args = match &_type.node {
+            let args = match &ty.node {
                 Node::TypeTup { types } => types.clone(),
-                _ => vec![_type.deref().clone()]
+                _ => vec![ty.deref().clone()]
             };
 
             let node = Node::TypeFun { args, ret_ty: ret_ty.clone() };
@@ -121,8 +121,8 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
     )?;
 
     match res {
-        Some(ast_node_pos) => Ok(ast_node_pos),
-        None => Ok(_type)
+        Some(ast) => Ok(ast),
+        None => Ok(ty)
     }
 }
 

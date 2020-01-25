@@ -27,7 +27,7 @@ pub fn unify_link(
     total: usize
 ) -> Unified {
     if let Some(constraint) = &constr.pop_constr() {
-        let (left, right) = (constraint.left.clone(), constraint.right.clone());
+        let (left, right) = (constraint.parent.clone(), constraint.child.clone());
         println!(
             "{:width$} [solving {}\\{}{}] {} = {}",
             format!("({}={})", left.pos.start, right.pos.start),
@@ -69,22 +69,20 @@ pub fn unify_link(
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
-            (Type { type_name: l_name }, Type { type_name: r_name }) if l_name == r_name => {
-                // TODO do something with child types
-                ctx.lookup(l_name, &left.pos)?;
-                unify_link(constr, sub, ctx, total)
-            }
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 expr_ty.fun_args(&TypeName::from(function::python::TRUTHY), &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
-            (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
-                // TODO construct error based on type of constraint
-                // TODO handle nullable and non-nullable types
-                let msg = format!("Types not equal: {} != {}", l_ty, r_ty);
-                Err(vec![TypeErr::new(&left.pos, &msg)])
-            }
+            (Type { type_name: l_ty }, Type { type_name: r_ty }) =>
+                if l_ty.is_superset(r_ty) {
+                    ctx.lookup(l_ty, &left.pos)?;
+                    unify_link(constr, sub, ctx, total)
+                } else {
+                    // TODO construct error based on type of constraint
+                    let msg = format!("Types not equal: {} != {}", l_ty, r_ty);
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                },
 
             (Type { type_name }, Implements { type_name: f_name, args, ret_ty })
             | (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {
