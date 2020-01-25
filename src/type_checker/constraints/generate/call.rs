@@ -117,7 +117,7 @@ fn call_parameters(
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&ast.pos.end, &ast.pos.end);
-                return Err(vec![TypeErr::new(&pos, "Expected argument")]);
+                return Err(vec![TypeErr::new(&pos, "Expected argument: no default")]);
             }
             Right((pos, _)) => return Err(vec![TypeErr::new(&pos, "Unexpected argument")]),
             _ => {}

@@ -84,8 +84,7 @@ pub fn unify_link(
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 },
 
-            (Type { type_name }, Implements { type_name: f_name, args, ret_ty })
-            | (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {
+            (Type { type_name }, Implements { type_name: f_name, args, ret_ty }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let f_name = if f_name == type_name {
                     ctx.lookup(f_name, &left.pos)?;
@@ -94,8 +93,33 @@ pub fn unify_link(
                     f_name.clone()
                 };
 
+                let mut args_with_self = vec![left.clone()];
+                args_with_self.append(&mut args.clone());
                 let possible = expr_ty.fun_args(&f_name, &left.pos)?;
-                let mut constr = unify_fun_arg(possible, args, constr, &left.pos)?;
+                let mut constr = unify_fun_arg(possible, &args_with_self, constr, &right.pos)?;
+
+                if let Some(ret_ty) = ret_ty {
+                    for type_name in expr_ty.fun_ret_ty(&f_name, &left.pos)? {
+                        let right = Expected::new(&left.pos, &Type { type_name });
+                        constr.push(ret_ty, &right);
+                    }
+                }
+
+                unify_link(&mut constr, &sub, ctx, total)
+            }
+            (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {
+                let expr_ty = ctx.lookup(type_name, &left.pos)?;
+                let f_name = if f_name == type_name {
+                    ctx.lookup(f_name, &left.pos)?;
+                    TypeName::from(function::concrete::INIT)
+                } else {
+                    f_name.clone()
+                };
+
+                let mut args_with_self = vec![right.clone()];
+                args_with_self.append(&mut args.clone());
+                let possible = expr_ty.fun_args(&f_name, &left.pos)?;
+                let mut constr = unify_fun_arg(possible, &args_with_self, constr, &right.pos)?;
 
                 if let Some(ret_ty) = ret_ty {
                     for type_name in expr_ty.fun_ret_ty(&f_name, &left.pos)? {
@@ -162,18 +186,18 @@ pub fn unify_link(
             (Type { type_name }, HasField { name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let field_ty = expr_ty.field(name, &right.pos)?.ty()?;
-                let field_type = Expected::new(&right.pos, &Type { type_name: field_ty });
-
-                let mut constr = substitute(&right, &field_type, constr)?;
-                unify_link(&mut constr, sub, ctx, total)
+                //                let field_type = Expected::new(&right.pos, &Type { type_name:
+                // field_ty });                let mut constr =
+                // substitute(&right, &field_type, constr)?;
+                unify_link(constr, sub, ctx, total)
             }
             (HasField { name }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &right.pos)?;
                 let field_ty = expr_ty.field(name, &left.pos)?.ty()?;
-                let field_type = Expected::new(&left.pos, &Type { type_name: field_ty });
-
-                let mut constr = substitute(&left, &field_type, constr)?;
-                unify_link(&mut constr, sub, ctx, total)
+                //                let field_type = Expected::new(&left.pos, &Type { type_name:
+                // field_ty });                let mut constr =
+                // substitute(&left, &field_type, constr)?;
+                unify_link(constr, sub, ctx, total)
             }
 
             _ => {
@@ -215,9 +239,18 @@ fn unify_fun_arg(
                     constr.push(&expected, &Expected::new(&expected.pos, &Type { type_name }))
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
-                    return Err(vec![TypeErr::new(&pos, "Expected argument")]),
+                    return Err(vec![TypeErr::new(
+                        &pos,
+                        &format!("Expected argument: expected {}", fun_arg)
+                    )]),
                 EitherOrBoth::Right(expected) =>
-                    return Err(vec![TypeErr::new(&expected.pos, "Unexpected argument")]),
+                    return Err(vec![TypeErr::new(
+                        &pos,
+                        &format!(
+                            "Unexpected argument, function takes only {} arguments",
+                            f_args.len()
+                        )
+                    )]),
                 _ => {}
             }
         }

@@ -8,12 +8,18 @@ mod unify_link;
 
 pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Constraints>> {
     let mut count = 1;
-    all_constraints
+    let (oks, errs): (Vec<_>, Vec<_>) = all_constraints
         .iter()
         .map(|constraints| {
             println!("unifying set {}\\{}", count, all_constraints.len());
             count += 1;
             unify_link(&mut constraints.clone(), &Constraints::default(), ctx, constraints.len())
         })
-        .collect()
+        .partition(Result::is_ok);
+
+    if errs.is_empty() {
+        Ok(oks.into_iter().map(Result::unwrap).collect())
+    } else {
+        Err(errs.into_iter().flat_map(Result::unwrap_err).collect())
+    }
 }
