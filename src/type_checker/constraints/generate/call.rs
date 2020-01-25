@@ -7,7 +7,7 @@ use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
@@ -22,7 +22,7 @@ pub fn gen_call(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
@@ -82,9 +82,9 @@ fn call_parameters(
     ast: &AST,
     possible: &HashSet<Vec<FunctionArg>>,
     self_arg: &Option<Expect>,
-    args: &Vec<AST>,
-    constr: &ConstraintConstructor
-) -> Result<ConstraintConstructor, Vec<TypeErr>> {
+    args: &[AST],
+    constr: &ConstrBuilder
+) -> Result<ConstrBuilder, Vec<TypeErr>> {
     let mut constr = constr.clone();
     let possible_it = possible.iter();
 
@@ -101,7 +101,7 @@ fn call_parameters(
         args.iter().map(|arg| (arg.pos.clone(), Expression { ast: arg.clone() })).collect()
     };
 
-    let paired = possible_it.flat_map(|f_args| f_args.into_iter().zip_longest(args.iter()));
+    let paired = possible_it.flat_map(|f_args| f_args.iter().zip_longest(args.iter()));
     for either_or_both in paired {
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
@@ -132,7 +132,7 @@ fn property_call(
     property: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &property.node {
         Node::PropertyCall { instance: inner, property } => {
@@ -170,7 +170,7 @@ fn property_call(
             });
 
             constr.add(&left, &right);
-            Ok((constr.clone(), env))
+            Ok((constr, env))
         }
 
         _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")])

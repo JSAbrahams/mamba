@@ -128,7 +128,7 @@ impl Type {
             .iter()
             .find_map(|function| {
                 if TypeName::from(&function.name) == fun_name.clone() {
-                    Some(function.ty().clone())
+                    Some(function.ty())
                 } else {
                     None
                 }

@@ -1,6 +1,6 @@
 use crate::type_checker::constraints::constraint::expected::Expected;
 
-pub mod constructor;
+pub mod builder;
 pub mod expected;
 pub mod iterator;
 

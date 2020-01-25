@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::definition::constrain_args;
@@ -13,7 +13,7 @@ pub fn gen_expr(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::AnonFun { args, body } => {

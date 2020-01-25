@@ -10,21 +10,15 @@ fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeRe
     let mut substituted = Constraints::default();
     let total = constr.len();
 
-    while let Some(mut constraint) = constr.pop_constr() {
-        macro_rules! replace {
-            () => {{
-                println!(
-                    "{:width$} [substitute {} of {}] {} <= {}",
-                    format!("({}={})", old.pos, new.pos),
-                    total - constr.len(),
-                    total,
-                    old.expect,
-                    new.expect,
-                    width = 32
-                );
-            }};
-        };
+    macro_rules! replace {
+        () => {{
+            let pos = format!("({}={})", old.pos.start, new.pos.start);
+            let count = format!("[substitute {} of {}]", total - constr.len(), total);
+            println!("{:width$} {} {} <= {}", pos, count, old.expect, new.expect, width = 17);
+        }};
+    };
 
+    while let Some(mut constraint) = constr.pop_constr() {
         if &constraint.left == old {
             replace!();
             constraint.replace_left(&Expected::new(&constraint.left.pos, &new.expect));

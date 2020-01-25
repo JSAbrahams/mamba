@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::collection::constrain_collection;
@@ -17,7 +17,7 @@ pub fn gen_flow(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
@@ -125,7 +125,7 @@ pub fn gen_flow(
         Node::For { expr, col, body } => {
             let (mut constr, env) = constrain_collection(col, expr, env, ctx, constr)?;
             let (constr, _) = generate(body, &env, ctx, &mut constr)?;
-            Ok((constr, env.clone()))
+            Ok((constr, env))
         }
         Node::Step { amount } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
@@ -144,7 +144,7 @@ pub fn gen_flow(
     }
 }
 
-fn first_case_expect(cases: &Vec<AST>, env: &Environment) -> Option<Box<Expected>> {
+fn first_case_expect(cases: &[AST], env: &Environment) -> Option<Box<Expected>> {
     if cases.is_empty() {
         None
     } else {

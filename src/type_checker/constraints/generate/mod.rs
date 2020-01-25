@@ -1,6 +1,6 @@
 use crate::parser::ast::Node::*;
 use crate::parser::ast::AST;
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::generate::call::gen_call;
 use crate::type_checker::constraints::generate::class::gen_class;
 use crate::type_checker::constraints::generate::collection::gen_coll;
@@ -30,7 +30,7 @@ pub fn generate(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         File { modules, .. } => gen_vec(modules, env, ctx, constr),
@@ -106,10 +106,10 @@ pub fn generate(
 }
 
 pub fn gen_vec(
-    asts: &Vec<AST>,
+    asts: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstraintConstructor
+    constr: &ConstrBuilder
 ) -> Constrained {
     let mut constr_env = (constr.clone(), env.clone());
     for ast in asts {

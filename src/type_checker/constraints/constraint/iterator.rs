@@ -9,8 +9,8 @@ pub struct Constraints {
 }
 
 impl Constraints {
-    pub fn new(constraints: &Vec<Constraint>) -> Constraints {
-        Constraints { constraints: VecDeque::from(constraints.clone()) }
+    pub fn new(constraints: &[Constraint]) -> Constraints {
+        Constraints { constraints: VecDeque::from(Vec::from(constraints)) }
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }
@@ -31,6 +31,7 @@ impl Constraints {
 
     pub fn reinsert(&mut self, constraint: &Constraint) -> TypeResult<()> {
         if constraint.flagged {
+            // Can only reinsert constraint once
             return Err(vec![TypeErr::new(&constraint.left.pos, "Cannot infer type.")]);
         }
 
@@ -40,5 +41,5 @@ impl Constraints {
 }
 
 impl Default for Constraints {
-    fn default() -> Self { Constraints::new(&vec![]) }
+    fn default() -> Self { Constraints::new(&[]) }
 }

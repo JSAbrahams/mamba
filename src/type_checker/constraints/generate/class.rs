@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::definition::identifier_from_var;
@@ -18,15 +18,18 @@ pub fn gen_class(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Class { body: Some(body), args, ty, .. } => match &body.node {
             Node::Block { statements } => {
+                constr.new_set(true);
                 let (constr, env) = constrain_class_args(args, env, ctx, constr)?;
                 let type_name = TypeName::try_from(ty.deref())?;
                 let env = env.in_class_new(&Type { type_name });
-                Ok((gen_vec(statements, &env, ctx, &constr)?.0, env.clone()))
+                let (mut constr, env) = gen_vec(statements, &env, ctx, &constr)?;
+                constr.exit_set(&ast.pos)?;
+                Ok((constr, env))
             }
             _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
         },
@@ -55,10 +58,10 @@ pub fn gen_class(
 }
 
 fn constrain_class_args(
-    args: &Vec<AST>,
+    args: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstraintConstructor
+    constr: &ConstrBuilder
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
     for arg in args {

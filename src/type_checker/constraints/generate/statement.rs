@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::generate;
@@ -12,7 +12,7 @@ pub fn gen_stmt(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Raise { error } => generate(error, env, ctx, constr),

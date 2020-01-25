@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::definition::identifier_from_var;
@@ -16,7 +16,7 @@ pub fn gen_resources(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Raises { expr_or_stmt, errors } => {
@@ -42,10 +42,10 @@ pub fn gen_resources(
 
 pub fn constrain_raises(
     expr: &AST,
-    errors: &Vec<AST>,
+    errors: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstraintConstructor
+    constr: &ConstrBuilder
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
     for error in errors {

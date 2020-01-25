@@ -6,12 +6,12 @@ use crate::type_checker::context::Context;
 mod substitute;
 mod unify_link;
 
-pub fn unify(all_constraints: &Vec<Constraints>, ctx: &Context) -> Unified<Vec<Constraints>> {
+pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Constraints>> {
     let mut count = 1;
     all_constraints
-        .into_iter()
+        .iter()
         .map(|constraints| {
-            println!("unifying {}\\{}", count, all_constraints.len());
+            println!("unifying set {}\\{}", count, all_constraints.len());
             count += 1;
             unify_link(&mut constraints.clone(), &Constraints::default(), ctx, constraints.len())
         })

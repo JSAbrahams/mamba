@@ -1,5 +1,5 @@
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::collection::constrain_collection;
@@ -16,7 +16,7 @@ pub fn gen_op(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => constrain_collection(right, left, env, ctx, constr),
@@ -139,12 +139,7 @@ pub fn gen_op(
     }
 }
 
-fn primitive(
-    ast: &AST,
-    ty: &str,
-    env: &Environment,
-    constr: &mut ConstraintConstructor
-) -> Constrained {
+fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
     // Do not recursively check ast
     let type_name = TypeName::from(ty);
     let left = Expected::new(&ast.pos, &Expression { ast: ast.clone() });
@@ -158,7 +153,7 @@ fn implements(
     right: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     let l_exp = Expected::new(&left.pos, &Expression { ast: left.clone() });
     constr.add(&l_exp, &Expected::new(&right.pos, &Expression { ast: right.clone() }));

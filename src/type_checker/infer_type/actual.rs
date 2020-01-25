@@ -41,10 +41,8 @@ impl ActualType {
 
     pub fn anon_fun_params(&self, pos: &Position) -> TypeResult<(Vec<TypeName>, TypeName)> {
         match &self {
-            ActualType::AnonFun { args, ret_ty } => Ok((
-                args.iter().map(|a| TypeName::from(a)).collect(),
-                TypeName::from(ret_ty.deref())
-            )),
+            ActualType::AnonFun { args, ret_ty } =>
+                Ok((args.iter().map(TypeName::from).collect(), TypeName::from(ret_ty.deref()))),
             _ => Err(vec![TypeErr::new(pos, "Not an anonymous function")])
         }
     }

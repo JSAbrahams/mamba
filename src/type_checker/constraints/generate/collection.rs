@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
@@ -15,7 +15,7 @@ pub fn gen_coll(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &ConstraintConstructor
+    constr: &ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Set { elements } | Node::List { elements } =>
@@ -46,7 +46,7 @@ pub fn constrain_collection(
     lookup: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     let identifier = Identifier::try_from(lookup)?;
     let mut env = env.clone();

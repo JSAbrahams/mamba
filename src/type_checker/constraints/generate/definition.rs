@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::constraints::constraint::constructor::ConstraintConstructor;
+use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::generate;
@@ -20,7 +20,7 @@ pub fn gen_def(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstraintConstructor
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
@@ -28,10 +28,13 @@ pub fn gen_def(
             match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
-                    Ok((constrain_ty(body, ret_ty, &env, ctx, &mut constr)?.0, env.clone()))
+                    constr.new_set(true);
+                    let (mut constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
+                    constr.exit_set(&ast.pos)?;
+                    Ok((constr, env))
                 }
                 (None, Some(body)) => Ok((generate(body, &env, ctx, &mut constr)?.0, env.clone())),
-                _ => Ok((constr.clone(), env.clone()))
+                _ => Ok((constr, env))
             }
         }
         Node::FunArg { .. } =>
@@ -56,16 +59,16 @@ pub fn gen_def(
 }
 
 pub fn constrain_args(
-    args: &Vec<AST>,
+    args: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstraintConstructor
+    constr: &ConstrBuilder
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
     for arg in args {
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
-                if &var.node == &Node::_Self {
+                if var.node == Node::_Self {
                     let self_type = &env.state.in_class_new.clone().ok_or_else(|| {
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
                     })?;
@@ -98,7 +101,7 @@ pub fn identifier_from_var(
     var: &AST,
     ty: &Option<Box<AST>>,
     mutable: bool,
-    constr: &mut ConstraintConstructor,
+    constr: &mut ConstrBuilder,
     env: &Environment
 ) -> Constrained {
     let mut constr = constr.clone();

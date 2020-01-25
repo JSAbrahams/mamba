@@ -30,13 +30,13 @@ pub fn unify_link(
         let (left, right) = (constraint.left.clone(), constraint.right.clone());
         println!(
             "{:width$} [solving {}\\{}{}] {} = {}",
-            format!("({}={})", left.pos, right.pos),
+            format!("({}={})", left.pos.start, right.pos.start),
             total - constr.len(),
             total,
             if constraint.flagged { " (flagged)" } else { "" },
             left.expect,
             right.expect,
-            width = 30
+            width = 15
         );
 
         match (&left.expect, &right.expect) {
@@ -131,7 +131,7 @@ pub fn unify_link(
                 let functions = expr_ty.anon_fun_params(&left.pos)?;
 
                 for (f_args, f_ret_ty) in &functions {
-                    for possible in f_args.into_iter().zip_longest(args.iter()) {
+                    for possible in f_args.iter().zip_longest(args.iter()) {
                         match possible {
                             EitherOrBoth::Both(type_name, expected) => {
                                 let ty = Type { type_name: type_name.clone() };
@@ -176,27 +176,12 @@ pub fn unify_link(
                 unify_link(&mut constr, sub, ctx, total)
             }
 
-            (HasField { name: l_name }, HasField { name: r_name }) =>
-                if l_name == r_name {
-                    unify_link(constr, sub, ctx, total)
-                } else {
-                    // This should in theory never occur however
-                    let msg = format!("Field access differs: {} != {}", left.expect, right.expect);
-                    Err(vec![TypeErr::new(&left.pos, &msg)])
-                },
-
             _ => {
-                // Defer to later point
-                println!(
-                    "{:width$} [reinserting {}\\{}] {} = {}",
-                    format!("({}={})", left.pos, right.pos),
-                    total - constr.len(),
-                    total,
-                    left.expect,
-                    right.expect,
-                    width = 32
-                );
+                let pos = format!("({}={})", left.pos.start, right.pos.start);
+                let count = format!("[reinserting {}\\{}]", total - constr.len(), total);
+                println!("{:width$} {} {} = {}", pos, count, left.expect, right.expect, width = 17);
 
+                // Defer to later point
                 constr.reinsert(&constraint)?;
                 unify_link(constr, sub, ctx, total)
             }
@@ -208,7 +193,7 @@ pub fn unify_link(
 
 fn unify_fun_arg(
     possible: HashSet<Vec<FunctionArg>>,
-    args: &Vec<Expected>,
+    args: &[Expected],
     constr: &Constraints,
     pos: &Position
 ) -> Unified {
