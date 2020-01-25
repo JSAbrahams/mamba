@@ -28,6 +28,7 @@ pub fn gen_class(
                 let type_name = TypeName::try_from(ty.deref())?;
                 let env = env.in_class_new(&Type { type_name });
                 let (mut constr, env) = gen_vec(statements, &env, ctx, &constr)?;
+
                 constr.exit_set(&ast.pos)?;
                 Ok((constr, env))
             }

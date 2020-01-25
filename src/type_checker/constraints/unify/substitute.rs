@@ -7,9 +7,7 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
 }
 
 fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeResult<Constraints> {
-    let mut substituted = Constraints::default();
     let total = constr.len();
-
     macro_rules! replace {
         () => {{
             let pos = format!("({}={})", old.pos.start, new.pos.start);
@@ -18,12 +16,12 @@ fn sub_inner(old: &Expected, new: &Expected, constr: &mut Constraints) -> TypeRe
         }};
     };
 
+    let mut substituted = Constraints::default();
     while let Some(mut constraint) = constr.pop_constr() {
         if &constraint.left == old {
             replace!();
             constraint.replace_left(&Expected::new(&constraint.left.pos, &new.expect));
         }
-
         if &constraint.right == old {
             replace!();
             constraint.replace_left(&Expected::new(&constraint.right.pos, &new.expect));

@@ -79,10 +79,12 @@ pub fn unify_link(
                 expr_ty.fun_args(&TypeName::from(function::python::TRUTHY), &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
-            (Type { type_name: left }, Type { type_name: right }) => Err(vec![TypeErr::new(
-                &Position::default(),
-                &format!("Types not equal: {}, {}", left, right)
-            )]),
+            (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
+                // TODO construct error based on type of constraint
+                // TODO handle nullable and non-nullable types
+                let msg = format!("Types not equal: {} != {}", l_ty, r_ty);
+                Err(vec![TypeErr::new(&left.pos, &msg)])
+            }
 
             (Type { type_name }, Implements { type_name: f_name, args, ret_ty })
             | (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {

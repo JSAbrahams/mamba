@@ -24,18 +24,21 @@ pub fn gen_def(
 ) -> Constrained {
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
+            constr.new_set(true);
+
             let (mut constr, env) = constrain_args(fun_args, env, ctx, constr)?;
-            match (ret_ty, body) {
+            let (mut constr, env) = match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
-                    constr.new_set(true);
                     let (mut constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
-                    constr.exit_set(&ast.pos)?;
-                    Ok((constr, env))
+                    (constr, env)
                 }
-                (None, Some(body)) => Ok((generate(body, &env, ctx, &mut constr)?.0, env.clone())),
-                _ => Ok((constr, env))
-            }
+                (None, Some(body)) => (generate(body, &env, ctx, &mut constr)?.0, env.clone()),
+                _ => (constr, env)
+            };
+
+            constr.exit_set(&ast.pos)?;
+            Ok((constr, env))
         }
         Node::FunArg { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
