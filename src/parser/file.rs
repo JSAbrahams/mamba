@@ -1,8 +1,5 @@
 use crate::common::position::Position;
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_conditions;
-use crate::parser::_type::parse_id;
-use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
@@ -11,6 +8,9 @@ use crate::parser::class::parse_class;
 use crate::parser::iterator::LexIterator;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::parse_result::{custom, expected};
+use crate::parser::ty::parse_conditions;
+use crate::parser::ty::parse_id;
+use crate::parser::ty::parse_type;
 
 pub fn parse_from_import(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("from import")?;

@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_generics;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
@@ -9,6 +8,7 @@ use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::statement::is_start_statement;
 use crate::parser::statement::parse_statement;
+use crate::parser::ty::parse_generics;
 
 pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
     let result = it.peek_or_err(

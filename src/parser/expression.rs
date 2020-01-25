@@ -1,6 +1,5 @@
 use crate::lexer::token::Lex;
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_id;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::call::parse_anon_fun;
@@ -13,6 +12,7 @@ use crate::parser::operation::parse_expression;
 use crate::parser::parse_direct;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::ty::parse_id;
 use std::ops::Deref;
 
 pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {

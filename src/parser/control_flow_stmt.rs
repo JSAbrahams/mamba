@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_id;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -7,6 +6,7 @@ use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::ty::parse_id;
 
 pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(

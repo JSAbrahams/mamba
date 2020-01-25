@@ -1,8 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_expression_type;
-use crate::parser::_type::parse_generics;
-use crate::parser::_type::parse_id;
-use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expr_or_stmt::parse_expr_or_stmt;
@@ -10,6 +6,10 @@ use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::custom;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::ty::parse_expression_type;
+use crate::parser::ty::parse_generics;
+use crate::parser::ty::parse_id;
+use crate::parser::ty::parse_type;
 
 pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("definition")?;

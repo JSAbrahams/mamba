@@ -10,7 +10,6 @@ mod iterator;
 
 pub mod parse_result;
 
-mod _type;
 mod block;
 mod call;
 mod class;
@@ -23,6 +22,7 @@ mod expression;
 mod file;
 mod operation;
 mod statement;
+mod ty;
 
 pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 

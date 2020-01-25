@@ -1,7 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_generics;
-use crate::parser::_type::parse_id;
-use crate::parser::_type::parse_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::block::parse_block;
@@ -10,6 +7,9 @@ use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::parse_result::{expected, expected_one_of};
+use crate::parser::ty::parse_generics;
+use crate::parser::ty::parse_id;
+use crate::parser::ty::parse_type;
 
 pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("class")?;

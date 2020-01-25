@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_expression_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::control_flow_stmt::parse_cntrl_flow_stmt;
@@ -9,6 +8,7 @@ use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::ParseResult;
 use crate::parser::parse_result::{custom, expected_one_of};
+use crate::parser::ty::parse_expression_type;
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(

@@ -1,5 +1,4 @@
 use crate::lexer::token::Token;
-use crate::parser::_type::parse_expression_type;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
 use crate::parser::expression::parse_inner_expression;
@@ -7,6 +6,7 @@ use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
+use crate::parser::ty::parse_expression_type;
 
 pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("reassignment")?;
