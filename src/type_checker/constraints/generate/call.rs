@@ -157,16 +157,19 @@ fn property_call(
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
             let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-            let args = args
+            let args: Vec<Expected> = args
                 .iter()
                 .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
                 .collect();
 
             let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
+
+            let mut args_with_self = vec![left.clone()];
+            args_with_self.append(&mut args.clone());
             let right = Expected::new(&last_pos, &Implements {
                 type_name: f_name,
-                args,
-                ret_ty: env.state.expect_expr.clone()
+                args:      args_with_self,
+                ret_ty:    env.state.expect_expr.clone()
             });
 
             constr.add(&left, &right);

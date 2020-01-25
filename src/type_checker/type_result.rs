@@ -10,10 +10,12 @@ pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct TypeErr {
-    pub position:    Option<Position>,
-    pub msg:         String,
-    pub path:        Option<PathBuf>,
-    pub source_line: Option<String>
+    pub position:      Option<Position>,
+    pub msg:           String,
+    pub path:          Option<PathBuf>,
+    pub source_before: Option<String>,
+    pub source_after:  Option<String>,
+    pub source_line:   Option<String>
 }
 
 impl From<TypeErr> for Vec<TypeErr> {
@@ -23,37 +25,48 @@ impl From<TypeErr> for Vec<TypeErr> {
 impl TypeErr {
     pub fn new(position: &Position, msg: &str) -> TypeErr {
         TypeErr {
-            position:    Some(position.clone()),
-            msg:         String::from(msg),
-            path:        None,
-            source_line: None
+            position:      Some(position.clone()),
+            msg:           String::from(msg),
+            path:          None,
+            source_before: None,
+            source_after:  None,
+            source_line:   None
         }
     }
 
     pub fn new_no_pos(msg: &str) -> TypeErr {
         TypeErr {
-            position:    None,
-            msg:         String::from(msg),
-            path:        None,
-            source_line: None
+            position:      None,
+            msg:           String::from(msg),
+            path:          None,
+            source_before: None,
+            source_after:  None,
+            source_line:   None
         }
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
-        TypeErr {
-            position:    self.position.clone(),
-            msg:         self.msg.clone(),
-            source_line: if let Some(position) = self.position {
-                source.clone().map(|source| {
-                    source
-                        .lines()
-                        .nth(position.start.line as usize - 1)
-                        .map_or(String::from("unknown"), String::from)
-                })
+        let (source_before, source_line, source_after) = if let Some(position) = &self.position {
+            if let Some(source) = source {
+                (
+                    source.lines().nth(position.start.line as usize - 2),
+                    source.lines().nth(position.start.line as usize - 1),
+                    source.lines().nth(position.start.line as usize)
+                )
             } else {
-                Some(String::from("unknown"))
-            },
-            path:        path.clone()
+                (None, None, None)
+            }
+        } else {
+            (None, None, None)
+        };
+
+        TypeErr {
+            position:      self.position.clone(),
+            msg:           self.msg.clone(),
+            source_before: source_before.map(String::from),
+            source_line:   source_line.map(String::from),
+            source_after:  source_after.map(String::from),
+            path:          path.clone()
         }
     }
 }
@@ -73,15 +86,31 @@ impl Display for TypeErr {
         if let Some(position) = self.position.clone() {
             write!(
                 f,
-                "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     |  {}{}",
+                "--> {}:{}:{}\n     | {}\n{}{:3}  |- {}\n     |  {}{}{}",
                 path,
                 position.start.line,
                 position.start.pos,
                 msg,
+                self.source_before.clone().map_or_else(
+                    || String::new(),
+                    |src| if src.is_empty() {
+                        String::new()
+                    } else {
+                        format!("{:3}  |  {}\n", position.start.line - 1, src)
+                    }
+                ),
                 position.start.line,
                 self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
                 String::from_utf8(vec![b' '; position.start.pos as usize - 1]).unwrap(),
-                String::from_utf8(vec![b'^'; position.get_width() as usize]).unwrap()
+                String::from_utf8(vec![b'^'; position.get_width() as usize]).unwrap(),
+                self.source_after.clone().map_or_else(
+                    || String::new(),
+                    |src| if src.is_empty() {
+                        String::new()
+                    } else {
+                        format!("\n{:3}  |  {}\n", position.start.line + 1, src)
+                    }
+                )
             )
         } else {
             write!(f, "--> {}\n     | {}", path, msg)
