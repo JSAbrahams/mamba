@@ -103,8 +103,11 @@ impl PartialEq for Expect {
                             false
                         }
                     }),
+
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
             (Truthy, Truthy) | (RaisesAny, RaisesAny) | (ExpressionAny, ExpressionAny) => true,
+            (ExpressionAny, Expression { .. }) | (Expression { .. }, ExpressionAny) => true,
+            (ExpressionAny, Truthy) | (Truthy, ExpressionAny) => true,
 
             (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
             | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,

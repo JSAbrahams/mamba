@@ -30,7 +30,7 @@ pub fn gen_def(
             let (mut constr, env) = match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
-                    let (mut constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
+                    let (constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
                     (constr, env)
                 }
                 (None, Some(body)) => (generate(body, &env, ctx, &mut constr)?.0, env.clone()),
@@ -45,13 +45,13 @@ pub fn gen_def(
 
         Node::VariableDef { mutable, var, ty, expression: Some(expr), .. } => {
             let (mut constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
+            let var_expect = Expected::new(&var.pos, &Expression { ast: *var.clone() });
+            let expr_expect = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+            constr.add(&var_expect, &expr_expect);
+
             match ty {
                 Some(ty) => constrain_ty(expr, ty, &env, ctx, &mut constr),
-                None => {
-                    let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
-                    constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
-                    generate(expr, &env, ctx, &mut constr)
-                }
+                None => generate(expr, &env, ctx, &mut constr)
             }
         }
         Node::VariableDef { mutable, var, ty, .. } =>

@@ -34,7 +34,16 @@ pub fn constrain_ty(
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let left = Expected::new(&expr.pos, &Expression { ast: expr.clone() });
+    let left = match &expr.node {
+        Node::Block { statements } =>
+            if let Some(stmt) = statements.last() {
+                Expected::new(&expr.pos, &Expression { ast: stmt.clone() })
+            } else {
+                Expected::new(&expr.pos, &Expression { ast: expr.clone() })
+            },
+        _ => Expected::new(&expr.pos, &Expression { ast: expr.clone() })
+    };
+
     let type_name = TypeName::try_from(ty)?;
     let right = Expected::new(&ty.pos, &Type { type_name });
 

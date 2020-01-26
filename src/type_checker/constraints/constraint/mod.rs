@@ -16,9 +16,9 @@ impl Constraint {
         Constraint { parent: left, child: right, flagged: false }
     }
 
-    pub fn replace_left(&mut self, new: &Expected) { self.parent = new.clone(); }
+    pub fn replace_parent(&mut self, new: &Expected) { self.parent = new.clone(); }
 
-    pub fn replace_right(&mut self, new: &Expected) { self.child = new.clone(); }
+    pub fn replace_child(&mut self, new: &Expected) { self.child = new.clone(); }
 
     fn flag(&self) -> Constraint { Constraint { flagged: true, ..self.clone() } }
 }

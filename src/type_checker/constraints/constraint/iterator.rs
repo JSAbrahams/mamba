@@ -1,7 +1,8 @@
-use crate::type_checker::constraints::constraint::expected::Expected;
+use std::collections::VecDeque;
+
+use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::Constraint;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
-use std::collections::VecDeque;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
@@ -32,7 +33,13 @@ impl Constraints {
     pub fn reinsert(&mut self, constraint: &Constraint) -> TypeResult<()> {
         if constraint.flagged {
             // Can only reinsert constraint once
-            return Err(vec![TypeErr::new(&constraint.parent.pos, "Cannot infer type.")]);
+            let msg = match (&constraint.parent.expect, &constraint.child.expect) {
+                (Expect::Type { type_name }, _) | (_, Expect::Type { type_name }) =>
+                    format!("Cannot infer type: expected a {}", type_name),
+                _ => String::from("Cannot infer type")
+            };
+
+            return Err(vec![TypeErr::new(&constraint.parent.pos, &msg)]);
         }
 
         self.constraints.push_back(constraint.flag());

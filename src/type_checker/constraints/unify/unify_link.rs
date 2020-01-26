@@ -36,20 +36,12 @@ pub fn unify_link(
             if constraint.flagged { " (flagged)" } else { "" },
             left.expect,
             right.expect,
-            width = 15
+            width = 13
         );
 
         match (&left.expect, &right.expect) {
-            (ExpressionAny, ExpressionAny)
-            | (Truthy, Truthy)
-            | (RaisesAny, RaisesAny)
-            | (Truthy, ExpressionAny)
-            | (ExpressionAny, Truthy)
-            | (Type { .. }, ExpressionAny)
-            | (ExpressionAny, Type { .. }) => unify_link(constr, sub, ctx, total),
-
-            (Expression { .. }, ExpressionAny) | (ExpressionAny, Expression { .. }) =>
-                unify_link(constr, sub, ctx, total),
+            // trivially equal
+            (left, right) if left == right => unify_link(constr, sub, ctx, total),
 
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
@@ -62,10 +54,10 @@ pub fn unify_link(
             }
 
             (Type { .. }, Expression { .. }) | (Truthy, Expression { .. }) => {
-                let mut constr = substitute(&right, &left, &constr)?;
+                let mut constr = substitute(&left, &right, &constr)?;
                 let mut subst = Constraints::default();
                 subst.push(&left, &right);
-                subst.append(&substitute(&right, &left, &sub)?);
+                subst.append(&substitute(&left, &right, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
@@ -179,7 +171,7 @@ pub fn unify_link(
             _ => {
                 let pos = format!("({}={})", left.pos.start, right.pos.start);
                 let count = format!("[reinserting {}\\{}]", total - constr.len(), total);
-                println!("{:width$} {} {} = {}", pos, count, left.expect, right.expect, width = 17);
+                println!("{:width$} {} {} = {}", pos, count, left.expect, right.expect, width = 15);
 
                 // Defer to later point
                 constr.reinsert(&constraint)?;
