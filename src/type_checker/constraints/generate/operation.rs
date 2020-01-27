@@ -75,10 +75,7 @@ pub fn gen_op(
             let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
             let right = Expected::new(&expr.pos, &Implements {
                 type_name: TypeName::from(SQRT),
-                args:      vec![Expected::new(&expr.pos, &Expression { ast: *expr.clone() })],
-                ret_ty:    Some(Box::from(Expected::new(&expr.pos, &Type {
-                    type_name: TypeName::from(FLOAT_PRIMITIVE)
-                })))
+                args:      vec![Expected::new(&expr.pos, &Expression { ast: *expr.clone() })]
             });
             constr.add(&left, &right);
             generate(expr, &env, ctx, constr)
@@ -159,14 +156,12 @@ fn implements(
     constr.add(&l_exp, &Expected::new(&right.pos, &Expression { ast: right.clone() }));
 
     let l_exp = Expected::new(&left.pos, &Expression { ast: left.clone() });
-    // TODO get expected return type from Context for unification
     let r_exp = Expected::new(&left.pos, &Implements {
         type_name: TypeName::from(fun),
         args:      vec![
             Expected::new(&left.pos, &Expression { ast: left.clone() }),
             Expected::new(&right.pos, &Expression { ast: right.clone() }),
-        ],
-        ret_ty:    Some(Box::from(Expected::new(&left.pos, &ExpressionAny)))
+        ]
     });
 
     constr.add(&l_exp, &r_exp);

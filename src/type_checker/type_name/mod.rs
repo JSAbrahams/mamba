@@ -7,6 +7,7 @@ use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::context::ty;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::actual::ActualTypeName;
@@ -108,7 +109,7 @@ impl TypeName {
     pub fn new(lit: &str, generics: &[TypeName]) -> TypeName {
         TypeName::Single {
             ty: NullableTypeName {
-                is_nullable: false,
+                is_nullable: lit == ty::concrete::NONE,
                 actual:      ActualTypeName::new(lit, generics)
             }
         }
@@ -141,6 +142,30 @@ impl TypeName {
         match self {
             TypeName::Single { ty } => Ok(ty.actual),
             _ => Err(vec![TypeErr::new(pos, "Unions not supported here")])
+        }
+    }
+
+    pub fn as_nullable(&self) -> TypeName {
+        match self {
+            TypeName::Single { ty } => TypeName::Single {
+                ty: NullableTypeName { is_nullable: true, actual: ty.actual.clone() }
+            },
+            TypeName::Union { union } => TypeName::Union {
+                union: union
+                    .iter()
+                    .map(|ty| NullableTypeName {
+                        is_nullable: true,
+                        actual:      ty.actual.clone()
+                    })
+                    .collect()
+            }
+        }
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        match self {
+            TypeName::Single { ty } => ty.is_nullable,
+            TypeName::Union { union } => union.iter().all(|t| t.is_nullable)
         }
     }
 

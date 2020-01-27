@@ -22,7 +22,6 @@ pub fn gen_flow(
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
             let mut res = (constr.clone(), env.clone());
-            let first_case_exp = first_case_expect(cases, env);
             let cond_expect = Expression { ast: *expr_or_stmt.clone() };
 
             // TODO check that all raises are covered
@@ -44,12 +43,6 @@ pub fn gen_flow(
                                 )
                             };
                             res.0.add(&left, &right);
-
-                            if let Some(first_case) = &first_case_exp {
-                                let left =
-                                    Expected::new(&case.pos, &Expression { ast: *body.clone() });
-                                res.0.add(&left, &first_case);
-                            }
                             res = generate(body, &res.1, ctx, &mut res.0)?;
                         }
                         _ =>
@@ -69,12 +62,9 @@ pub fn gen_flow(
             let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
 
-            if let Some(expected) = &env.state.expect_expr {
-                let left = Expected::new(&then.pos, &Expression { ast: *then.clone() });
-                let right = Expected::new(&el.pos, &Expression { ast: *el.clone() });
-                constr.add(&left, &expected);
-                constr.add(&right, &expected);
-            }
+            let left = Expected::new(&then.pos, &Expression { ast: *then.clone() });
+            let right = Expected::new(&el.pos, &Expression { ast: *el.clone() });
+            constr.add(&left, &right);
 
             // TODO unify environments
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
@@ -86,11 +76,6 @@ pub fn gen_flow(
             let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
 
-            if let Some(expected) = &env.state.expect_expr {
-                let left = Expected::new(&then.pos, &Expression { ast: *then.clone() });
-                constr.add(&left, &expected)
-            }
-
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
             let (constr, _) = generate(then, &env, ctx, &mut constr)?;
             Ok((constr, env))
@@ -100,7 +85,6 @@ pub fn gen_flow(
         Node::Match { cond, cases } => {
             let mut res = (constr.clone(), env.clone());
             let cond_expect = Expression { ast: *cond.clone() };
-            let first_case_exp = first_case_expect(cases, env);
 
             // TODO check that all variants are covered
             for case in cases {
@@ -108,11 +92,6 @@ pub fn gen_flow(
                     Node::Case { cond, body } => {
                         let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
                         res.0.add(&left, &Expected::new(&cond.pos, &cond_expect));
-
-                        if let Some(case_expectation) = &first_case_exp {
-                            let left = Expected::new(&case.pos, &Expression { ast: *body.clone() });
-                            res.0.add(&left, &case_expectation);
-                        }
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
                     _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
@@ -141,17 +120,5 @@ pub fn gen_flow(
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])
-    }
-}
-
-fn first_case_expect(cases: &[AST], env: &Environment) -> Option<Box<Expected>> {
-    if cases.is_empty() {
-        None
-    } else {
-        if let Some(expected) = &env.state.expect_expr {
-            Some(expected.clone())
-        } else {
-            None
-        }
     }
 }

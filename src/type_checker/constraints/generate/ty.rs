@@ -48,6 +48,5 @@ pub fn constrain_ty(
     let right = Expected::new(&ty.pos, &Type { type_name });
 
     constr.add(&left, &right);
-    let env = env.new_state(&env.state.expect_expression(&right));
-    generate(expr, &env, ctx, constr)
+    generate(expr, env, ctx, constr)
 }

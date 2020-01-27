@@ -1,11 +1,10 @@
-use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
+use crate::type_checker::constraints::constraint::expected::Expect;
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct State {
-    pub expect_expr:  Option<Box<Expected>>,
     pub in_loop:      bool,
     pub in_handle:    bool,
     pub in_function:  bool,
@@ -24,7 +23,6 @@ pub enum StateType {
 impl Default for State {
     fn default() -> Self {
         State {
-            expect_expr:  None,
             in_loop:      false,
             in_handle:    false,
             in_function:  false,
@@ -43,10 +41,6 @@ impl State {
 
     pub fn handling(&self, handling: &[ActualTypeName]) -> State {
         State { handling: Vec::from(handling), in_handle: true, ..self.clone() }
-    }
-
-    pub fn expect_expression(&self, expr: &Expected) -> State {
-        State { expect_expr: Some(Box::from(expr.clone())), ..self.clone() }
     }
 
     pub fn in_class_new(&self, in_class: &Expect) -> State {

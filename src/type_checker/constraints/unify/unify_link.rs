@@ -4,6 +4,7 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::common::position::Position;
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
@@ -11,6 +12,7 @@ use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::ty;
 use crate::type_checker::context::Context;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
@@ -41,7 +43,29 @@ pub fn unify_link(
 
         match (&left.expect, &right.expect) {
             // trivially equal
-            (left, right) if left == right => unify_link(constr, sub, ctx, total),
+            (l_expect, r_expect) if l_expect == r_expect => {
+                let mut constr = substitute(&left, &right, constr)?;
+                unify_link(&mut constr, sub, ctx, total)
+            }
+            (Expression { .. }, ExpressionAny) | (ExpressionAny, Expression { .. }) =>
+                unify_link(constr, sub, ctx, total),
+            (Type { .. }, ExpressionAny) | (ExpressionAny, Type { .. }) =>
+                unify_link(constr, sub, ctx, total),
+            (Truthy, ExpressionAny) | (ExpressionAny, Truthy) =>
+                unify_link(constr, sub, ctx, total),
+
+            (Expression { ast: AST { node: Node::Undefined, .. } }, Type { type_name })
+                if !type_name.is_nullable() =>
+                Err(vec![TypeErr::new(
+                    &left.pos,
+                    &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
+                )]),
+            (Type { type_name }, Expression { ast: AST { node: Node::Undefined, .. } })
+                if !type_name.is_nullable() =>
+                Err(vec![TypeErr::new(
+                    &right.pos,
+                    &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
+                )]),
 
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
@@ -76,8 +100,8 @@ pub fn unify_link(
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 },
 
-            (Type { type_name }, Implements { type_name: f_name, args, ret_ty })
-            | (Implements { type_name: f_name, args, ret_ty }, Type { type_name }) => {
+            (Type { type_name }, Implements { type_name: f_name, args })
+            | (Implements { type_name: f_name, args }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let f_name = if f_name == type_name {
                     ctx.lookup(f_name, &left.pos)?;
@@ -88,14 +112,6 @@ pub fn unify_link(
 
                 let possible = expr_ty.fun_args(&f_name, &left.pos)?;
                 let mut constr = unify_fun_arg(possible, &args, constr, &right.pos)?;
-
-                if let Some(ret_ty) = ret_ty {
-                    for type_name in expr_ty.fun_ret_ty(&f_name, &left.pos)? {
-                        let right = Expected::new(&left.pos, &Type { type_name });
-                        constr.push(ret_ty, &right);
-                    }
-                }
-
                 unify_link(&mut constr, &sub, ctx, total)
             }
 
@@ -108,17 +124,25 @@ pub fn unify_link(
                 unify_link(constr, sub, ctx, total)
             }
 
-            (Nullable { expect }, _) => {
+            (Nullable { expect }, r_expect) => {
+                let type_name = TypeName::from(ty::concrete::NONE);
+                let nullable = Expected::new(&right.pos, &Type { type_name });
+
+                constr.push(&Expected::new(&right.pos, r_expect.deref()), &nullable);
                 constr.push(&Expected::new(&left.pos, expect.deref()), &right);
                 unify_link(constr, sub, ctx, total)
             }
-            (_, Nullable { expect }) => {
+            (l_expect, Nullable { expect }) => {
+                let type_name = TypeName::from(ty::concrete::NONE);
+                let nullable = Expected::new(&left.pos, &Type { type_name });
+
+                constr.push(&Expected::new(&left.pos, l_expect.deref()), &nullable);
                 constr.push(&left, &Expected::new(&right.pos, expect.deref()));
                 unify_link(constr, sub, ctx, total)
             }
 
-            (Type { type_name }, Function { name, args, ret_ty })
-            | (Function { name, args, ret_ty }, Type { type_name }) => {
+            (Type { type_name }, Function { name, args })
+            | (Function { name, args }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let functions = expr_ty.anon_fun_params(&left.pos)?;
 
@@ -140,12 +164,6 @@ pub fn unify_link(
                             }
                         }
                     }
-
-                    if let Some(ret_ty) = ret_ty {
-                        let expected =
-                            Expected::new(&left.pos, &Type { type_name: f_ret_ty.clone() });
-                        constr.push(ret_ty, &expected);
-                    }
                 }
 
                 unify_link(constr, sub, ctx, total)
@@ -154,17 +172,11 @@ pub fn unify_link(
             (Type { type_name }, HasField { name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let field_ty = expr_ty.field(name, &right.pos)?.ty()?;
-                //                let field_type = Expected::new(&right.pos, &Type { type_name:
-                // field_ty });                let mut constr =
-                // substitute(&right, &field_type, constr)?;
                 unify_link(constr, sub, ctx, total)
             }
             (HasField { name }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &right.pos)?;
                 let field_ty = expr_ty.field(name, &left.pos)?.ty()?;
-                //                let field_type = Expected::new(&left.pos, &Type { type_name:
-                // field_ty });                let mut constr =
-                // substitute(&left, &field_type, constr)?;
                 unify_link(constr, sub, ctx, total)
             }
 

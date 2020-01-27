@@ -17,7 +17,13 @@ pub struct Expected {
 }
 
 impl PartialEq for Expected {
-    fn eq(&self, other: &Self) -> bool { self.expect == other.expect }
+    fn eq(&self, other: &Self) -> bool {
+        let res = self.expect == other.expect;
+        if res {
+            //            println!("Equal!: {}, {}", self.expect, other.expect);
+        }
+        res
+    }
 }
 
 impl Expected {
@@ -41,8 +47,8 @@ pub enum Expect {
     RaisesAny,
     Raises { type_name: TypeName },
 
-    Implements { type_name: TypeName, args: Vec<Expected>, ret_ty: Option<Box<Expected>> },
-    Function { name: TypeName, args: Vec<Expected>, ret_ty: Option<Box<Expected>> },
+    Implements { type_name: TypeName, args: Vec<Expected> },
+    Function { name: TypeName, args: Vec<Expected> },
     HasField { name: String },
 
     Type { type_name: TypeName }
@@ -59,18 +65,13 @@ impl Display for Expect {
             Truthy => String::from("<Bool>"),
             RaisesAny => String::from("<Raises<?>>"),
             Raises { type_name } => format!("<Raises<{}>>", type_name),
-            Implements { type_name, args, ret_ty } => format!(
-                "<?.{}({}){}>",
+            Implements { type_name, args } => format!(
+                "<?.{}({})>",
                 type_name,
                 comma_delimited(args.iter().map(|e| e.expect.clone())),
-                ret_ty.clone().map_or(String::new(), |ret| format!(" -> {}", ret.expect))
             ),
-            Function { name, args, ret_ty } => format!(
-                "<{}({}){}>",
-                name,
-                comma_delimited(args.iter().map(|e| e.expect.clone())),
-                ret_ty.clone().map_or(String::new(), |ret| format!(" -> {}", ret.expect))
-            ),
+            Function { name, args } =>
+                format!("<{}({})>", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
             HasField { name } => format!("<?.{}>", name),
             Type { type_name } => format!("<{}>", type_name)
         })
@@ -87,14 +88,8 @@ impl PartialEq for Expect {
             (Raises { type_name: l }, Raises { type_name: r })
             | (Type { type_name: l }, Type { type_name: r }) => l == r,
 
-            (
-                Implements { type_name: l, args: la, ret_ty: lr },
-                Implements { type_name: r, args: ra, ret_ty: rr }
-            )
-            | (
-                Function { name: l, args: la, ret_ty: lr },
-                Function { name: r, args: ra, ret_ty: rr }
-            ) =>
+            (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
+            | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                         if let EitherOrBoth::Both(left, right) = pair {
@@ -106,8 +101,6 @@ impl PartialEq for Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
             (Truthy, Truthy) | (RaisesAny, RaisesAny) | (ExpressionAny, ExpressionAny) => true,
-            (ExpressionAny, Expression { .. }) | (Expression { .. }, ExpressionAny) => true,
-            (ExpressionAny, Truthy) | (Truthy, ExpressionAny) => true,
 
             (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
             | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,

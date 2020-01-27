@@ -31,8 +31,7 @@ pub fn gen_call(
             let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
             constr.add(&l_exp, &r_exp);
 
-            let env = env.new_state(&env.state.expect_expression(&l_exp));
-            let (mut constr, env) = generate(right, &env, ctx, constr)?;
+            let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::ConstructorCall { name, args } => {
@@ -56,11 +55,7 @@ pub fn gen_call(
                     .iter()
                     .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
                     .collect();
-                let right = Expected::new(&last_pos, &Function {
-                    name: f_name,
-                    args,
-                    ret_ty: env.state.expect_expr.clone()
-                });
+                let right = Expected::new(&last_pos, &Function { name: f_name, args });
 
                 constr.add(&left, &right);
             } else {
@@ -168,8 +163,7 @@ fn property_call(
             args_with_self.append(&mut args.clone());
             let right = Expected::new(&last_pos, &Implements {
                 type_name: f_name,
-                args:      args_with_self,
-                ret_ty:    env.state.expect_expr.clone()
+                args:      args_with_self
             });
 
             constr.add(&left, &right);
