@@ -6,30 +6,21 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
     let total = constr.len();
     let mut substituted = Constraints::default();
     let mut constr = constr.clone();
+    macro_rules! replace {
+        ($side:expr, $constr:expr) => {{
+            let pos = format!("({}={})", $constr.pos.start, new.pos.start);
+            let count = format!("[substitute {} of {} ({})]", total - constr.len(), total, $side);
+            println!("{:width$} {} {} <= {}", pos, count, $constr.expect, new.expect, width = 15);
+        }};
+    };
 
     while let Some(mut constraint) = constr.pop_constr() {
-        macro_rules! replace {
-            ($side:expr) => {{
-                let pos = format!("({}={})", constraint.parent.pos.start, new.pos.start);
-                let count =
-                    format!("[substitute {} of {} ({})]", total - constr.len(), total, $side);
-                println!(
-                    "{:width$} {} {} <= {}",
-                    pos,
-                    count,
-                    constraint.parent.expect,
-                    new.expect,
-                    width = 15
-                );
-            }};
-        };
-
         if &constraint.parent == old {
-            replace!("lhs");
+            replace!("lhs", constraint.parent);
             constraint.replace_parent(&Expected::new(&constraint.parent.pos, &new.expect));
         }
         if &constraint.child == old {
-            replace!("rhs");
+            replace!("rhs", constraint.child);
             constraint.replace_child(&Expected::new(&constraint.child.pos, &new.expect));
         }
 

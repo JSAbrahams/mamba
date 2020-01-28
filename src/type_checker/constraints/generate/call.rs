@@ -26,8 +26,11 @@ pub fn gen_call(
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
-            let mutable = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
-            let l_exp = Expected::new(&left.pos, &mutable);
+            let l_exp = Expected::new(&right.pos, &Expression { ast: *left.clone() });
+            let r_exp = Expected::new(&left.pos, &Mutable);
+            constr.add(&l_exp, &r_exp);
+
+            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
             let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
             constr.add(&l_exp, &r_exp);
 
@@ -47,7 +50,7 @@ pub fn gen_call(
             let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            if let Some(function) = env.get_var_new(&f_str_name) {
+            if let Some((_, function)) = env.get_var_new(&f_str_name) {
                 let left = Expected::new(&name.pos, &function);
 
                 let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
@@ -141,10 +144,14 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            let left_mut = Mutable { expect: Box::from(Expression { ast: *left.clone() }) };
-            let l_exp = Expected::new(&left.pos, &left_mut);
+            let l_exp = Expected::new(&right.pos, &Expression { ast: *left.clone() });
+            let r_exp = Expected::new(&left.pos, &Mutable);
+            constr.add(&l_exp, &r_exp);
+
+            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
             let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
             constr.add(&l_exp, &r_exp);
+
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {

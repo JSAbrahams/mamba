@@ -28,9 +28,9 @@ args:
         multiple: true
         help: |
           Set level of verbosity
-          -    : info, error, warning printed to sterr (Default)
-          - v  : debug messages are printed
-          - vv : trace messages are printed
+          - v   : info, error, warning printed to sterr (Default)
+          - vv  : debug messages are printed
+          - vvv : trace messages are printed
     - debug:
         short: d
         long: debug

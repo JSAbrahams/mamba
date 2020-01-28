@@ -17,13 +17,7 @@ pub struct Expected {
 }
 
 impl PartialEq for Expected {
-    fn eq(&self, other: &Self) -> bool {
-        let res = self.expect == other.expect;
-        if res {
-            //            println!("Equal!: {}, {}", self.expect, other.expect);
-        }
-        res
-    }
+    fn eq(&self, other: &Self) -> bool { self.expect == other.expect }
 }
 
 impl Expected {
@@ -36,8 +30,8 @@ impl Expected {
 
 #[derive(Clone, Debug, Eq)]
 pub enum Expect {
-    Nullable { expect: Box<Expect> },
-    Mutable { expect: Box<Expect> },
+    Nullable,
+    Mutable,
     Expression { ast: AST },
     ExpressionAny,
 
@@ -57,8 +51,8 @@ pub enum Expect {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable { expect } => format!("<Nullable<{}>>", expect),
-            Mutable { expect } => format!("<Mutable<{}>>", expect),
+            Nullable => format!("<None>"),
+            Mutable => format!("<Mut>"),
             Expression { ast } => format!("{:?}", ast.node),
             ExpressionAny => String::from("<Any>"),
             Collection { ty } => format!("<Collection<{}>>", ty),
@@ -81,8 +75,6 @@ impl Display for Expect {
 impl PartialEq for Expect {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Nullable { expect: l }, Nullable { expect: r })
-            | (Mutable { expect: l }, Mutable { expect: r }) => l == r,
             (Collection { ty: l }, Collection { ty: r }) => l == r,
             (HasField { name: l }, HasField { name: r }) => l == r,
             (Raises { type_name: l }, Raises { type_name: r })

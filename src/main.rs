@@ -21,7 +21,7 @@ pub fn main() -> Result<(), String> {
     let out_path = matches.value_of("output");
 
     loggerv::Logger::new()
-        .verbosity(1 + matches.occurrences_of("v"))
+        .verbosity(matches.occurrences_of("v"))
         .level(matches.is_present("level"))
         .line_numbers(matches.is_present("debug"))
         .module_path(!matches.is_present("no-module-path"))
