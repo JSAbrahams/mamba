@@ -28,11 +28,6 @@ pub fn gen_expr(
             let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
             let r_exp = Expected::new(&left.pos, &Nullable);
             constr.add(&l_exp, &r_exp);
-
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
-            let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
-            constr.add(&l_exp, &r_exp);
-
             let (mut constr, env) = generate(left, env, ctx, constr)?;
             generate(right, &env, ctx, &mut constr)
         }
