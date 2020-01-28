@@ -14,6 +14,8 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
+use std::convert::TryFrom;
+use std::ops::Deref;
 
 /// Unifies all constraints.
 
@@ -46,6 +48,21 @@ pub fn unify_link(
                 let mut constr = substitute(&left, &right, constr)?;
                 unify_link(&mut constr, sub, ctx, total)
             }
+            (
+                Type { type_name },
+                Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } }
+            ) if type_name == &TypeName::try_from(name.deref())? => {
+                let mut constr = substitute(&right, &left, constr)?;
+                unify_link(&mut constr, sub, ctx, total)
+            }
+            (
+                Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } },
+                Type { type_name }
+            ) if type_name == &TypeName::try_from(name.deref())? => {
+                let mut constr = substitute(&left, &right, constr)?;
+                unify_link(&mut constr, sub, ctx, total)
+            }
+
             (Expression { .. }, ExpressionAny) | (ExpressionAny, Expression { .. }) =>
                 unify_link(constr, sub, ctx, total),
             (Type { .. }, ExpressionAny) | (ExpressionAny, Type { .. }) =>
