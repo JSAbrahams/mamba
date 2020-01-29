@@ -22,13 +22,13 @@ pub fn gen_op(
         Node::In { left, right } => constrain_collection(right, left, env, ctx, constr),
         Node::Range { from, to, step: Some(step), .. } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
-            let l_exp = Expected::new(&from.pos, &Expression { ast: *from.clone() });
+            let l_exp = Expected::from(from);
             constr.add(&l_exp, &Expected::new(&from.pos, &Type { type_name: type_name.clone() }));
 
-            let l_exp = Expected::new(&to.pos, &Expression { ast: *to.clone() });
+            let l_exp = Expected::from(to);
             constr.add(&l_exp, &Expected::new(&to.pos, &Type { type_name: type_name.clone() }));
 
-            let l_exp = Expected::new(&step.pos, &Expression { ast: *step.clone() });
+            let l_exp = Expected::from(step);
             constr.add(&l_exp, &Expected::new(&step.pos, &Type { type_name }));
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
@@ -37,10 +37,10 @@ pub fn gen_op(
         }
         Node::Range { from, to, .. } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
-            let l_exp = Expected::new(&from.pos, &Expression { ast: *from.clone() });
+            let l_exp = Expected::from(from);
             constr.add(&l_exp, &Expected::new(&from.pos, &Type { type_name: type_name.clone() }));
 
-            let l_exp = Expected::new(&to.pos, &Expression { ast: *to.clone() });
+            let l_exp = Expected::from(to);
             constr.add(&l_exp, &Expected::new(&to.pos, &Type { type_name }));
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
@@ -72,35 +72,36 @@ pub fn gen_op(
         Node::Neq { left, right } => implements(NEQ, left, right, env, ctx, constr),
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+            let left = Expected::from(expr);
             let right = Expected::new(&expr.pos, &Implements {
                 type_name: TypeName::from(SQRT),
-                args:      vec![Expected::new(&expr.pos, &Expression { ast: *expr.clone() })]
+                args:      vec![Expected::from(expr)]
             });
             constr.add(&left, &right);
             generate(expr, &env, ctx, constr)
         }
 
         Node::BOneCmpl { expr } => {
-            let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+            let left = Expected::from(expr);
             constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
             generate(expr, &env, ctx, constr)
         }
         Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
+            let l_exp = Expected::from(left);
             constr.add(&l_exp, &Expected::new(&left.pos, &ExpressionAny));
 
-            let l_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let l_exp = Expected::from(right);
             constr.add(&l_exp, &Expected::new(&right.pos, &ExpressionAny));
+
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::BLShift { left, right } | Node::BRShift { left, right } => {
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
+            let l_exp = Expected::from(left);
             constr.add(&l_exp, &Expected::new(&right.pos, &ExpressionAny));
 
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
-            let l_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let l_exp = Expected::from(right);
             constr.add(&l_exp, &Expected::new(&right.pos, &Type { type_name }));
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
@@ -117,15 +118,15 @@ pub fn gen_op(
         }
 
         Node::Not { expr } => {
-            let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+            let left = Expected::from(expr);
             constr.add(&left, &Expected::new(&expr.pos, &Truthy));
             generate(expr, env, ctx, constr)
         }
         Node::And { left, right } | Node::Or { left, right } => {
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
+            let l_exp = Expected::from(left);
             constr.add(&l_exp, &Expected::new(&left.pos, &Truthy));
 
-            let l_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let l_exp = Expected::from(right);
             constr.add(&l_exp, &Expected::new(&right.pos, &Truthy));
 
             let (mut constr, env) = generate(left, env, ctx, constr)?;
@@ -139,7 +140,7 @@ pub fn gen_op(
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
     // Do not recursively check ast
     let type_name = TypeName::from(ty);
-    let left = Expected::new(&ast.pos, &Expression { ast: ast.clone() });
+    let left = Expected::from(ast);
     constr.add(&left, &Expected::new(&ast.pos, &Type { type_name }));
     Ok((constr.clone(), env.clone()))
 }
@@ -152,16 +153,10 @@ fn implements(
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let l_exp = Expected::new(&left.pos, &Expression { ast: left.clone() });
-    constr.add(&l_exp, &Expected::new(&right.pos, &Expression { ast: right.clone() }));
-
-    let l_exp = Expected::new(&left.pos, &Expression { ast: left.clone() });
+    let l_exp = Expected::from(left);
     let r_exp = Expected::new(&left.pos, &Implements {
         type_name: TypeName::from(fun),
-        args:      vec![
-            Expected::new(&left.pos, &Expression { ast: left.clone() }),
-            Expected::new(&right.pos, &Expression { ast: right.clone() }),
-        ]
+        args:      vec![Expected::from(left), Expected::from(right)]
     });
 
     constr.add(&l_exp, &r_exp);

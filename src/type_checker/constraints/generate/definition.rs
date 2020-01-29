@@ -45,8 +45,8 @@ pub fn gen_def(
 
         Node::VariableDef { mutable, var, ty, expression: Some(expr), .. } => {
             let (mut constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
-            let var_expect = Expected::new(&var.pos, &Expression { ast: *var.clone() });
-            let expr_expect = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+            let var_expect = Expected::from(var);
+            let expr_expect = Expected::from(expr);
             constr.add(&var_expect, &expr_expect);
 
             match ty {
@@ -81,7 +81,7 @@ pub fn constrain_args(
                     }
 
                     res.1 = res.1.insert_new(*mutable, SELF, self_type);
-                    let left = Expected::new(&var.pos, &Expression { ast: *var.clone() });
+                    let left = Expected::from(var);
                     res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
@@ -112,7 +112,7 @@ pub fn identifier_from_var(
 
     if let Some(ty) = ty {
         let type_name = TypeName::try_from(ty.deref())?;
-        let left = Expected::new(&var.pos, &Expression { ast: var.clone() });
+        let left = Expected::from(var);
         constr.add(&left, &Expected::new(&ty.pos, &Type { type_name: type_name.clone() }));
 
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);

@@ -1,11 +1,20 @@
+use crate::type_checker::constraints::constraint::expected::Expect::Type;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::type_result::TypeResult;
 
+/// Substitute old expect with new expect.
+///
+/// If old is a type, we do not substitute it with anything and return the
+/// given constraints.
 pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
     let total = constr.len();
     let mut substituted = Constraints::default();
     let mut constr = constr.clone();
+    if let Type { .. } = old.expect {
+        return Ok(constr);
+    }
+
     macro_rules! replace {
         ($side:expr, $constr:expr) => {{
             let pos = format!("({}={})", $constr.pos.start, new.pos.start);

@@ -25,7 +25,7 @@ pub fn gen_expr(
         Node::Id { lit } =>
             Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))]),
         Node::Question { left, right } => {
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
+            let l_exp = Expected::from(left);
             let r_exp = Expected::new(&left.pos, &Nullable);
             constr.add(&l_exp, &r_exp);
             let (mut constr, env) = generate(left, env, ctx, constr)?;

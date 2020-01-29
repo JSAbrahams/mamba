@@ -22,7 +22,7 @@ pub fn gen_stmt(
             generate(expr, env, ctx, constr)
         }
         Node::Print { expr } => {
-            let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+            let left = Expected::from(expr);
             constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
             generate(expr, env, ctx, constr)
         }

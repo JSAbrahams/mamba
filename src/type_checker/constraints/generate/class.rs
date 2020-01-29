@@ -81,7 +81,7 @@ fn constrain_class_args(
                 res = match ty {
                     Some(ty) => constrain_ty(expr, ty, &res.1, ctx, &mut res.0)?,
                     None => {
-                        let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+                        let left = Expected::from(expr);
                         res.0.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
                         generate(expr, &res.1, ctx, &mut res.0)?
                     }

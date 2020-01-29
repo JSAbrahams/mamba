@@ -9,6 +9,7 @@ use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::util::comma_delimited;
+use std::ops::Deref;
 
 #[derive(Clone, Debug, Eq)]
 pub struct Expected {
@@ -24,6 +25,14 @@ impl Expected {
     pub fn new(pos: &Position, expect: &Expect) -> Expected {
         Expected { pos: pos.clone(), expect: expect.clone() }
     }
+}
+
+impl From<&AST> for Expected {
+    fn from(ast: &AST) -> Self { Expected::new(&ast.pos, &Expression { ast: ast.clone() }) }
+}
+
+impl From<&Box<AST>> for Expected {
+    fn from(ast: &Box<AST>) -> Self { Expected::from(ast.deref()) }
 }
 
 // TODO rework HasField
@@ -51,23 +60,23 @@ pub enum Expect {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable => format!("<None>"),
-            Mutable => format!("<Mut>"),
+            Nullable => format!("None"),
+            Mutable => format!("Mut"),
+            ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{:?}", ast.node),
-            ExpressionAny => String::from("<Any>"),
-            Collection { ty } => format!("<Collection<{}>>", ty),
-            Truthy => String::from("<Bool>"),
-            RaisesAny => String::from("<Raises<?>>"),
-            Raises { type_name } => format!("<Raises<{}>>", type_name),
+            Collection { ty } => format!("[Collection[{}]]", ty),
+            Truthy => format!("[{}]", ty::concrete::BOOL_PRIMITIVE),
+            RaisesAny => String::from("[Raises[?]]"),
+            Raises { type_name } => format!("[Raises[{}]]", type_name),
             Implements { type_name, args } => format!(
-                "<?.{}({})>",
+                "[?.{}({})]",
                 type_name,
                 comma_delimited(args.iter().map(|e| e.expect.clone())),
             ),
             Function { name, args } =>
-                format!("<{}({})>", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
-            HasField { name } => format!("<?.{}>", name),
-            Type { type_name } => format!("<{}>", type_name)
+                format!("[{}({})]", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
+            HasField { name } => format!("[?.{}]", name),
+            Type { type_name } => format!("[{}]", type_name)
         })
     }
 }

@@ -14,8 +14,6 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
-use std::convert::TryFrom;
-use std::ops::Deref;
 
 /// Unifies all constraints.
 
@@ -45,20 +43,6 @@ pub fn unify_link(
         match (&left.expect, &right.expect) {
             // trivially equal
             (l_expect, r_expect) if l_expect == r_expect => {
-                let mut constr = substitute(&left, &right, constr)?;
-                unify_link(&mut constr, sub, ctx, total)
-            }
-            (
-                Type { type_name },
-                Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } }
-            ) if type_name == &TypeName::try_from(name.deref())? => {
-                let mut constr = substitute(&right, &left, constr)?;
-                unify_link(&mut constr, sub, ctx, total)
-            }
-            (
-                Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } },
-                Type { type_name }
-            ) if type_name == &TypeName::try_from(name.deref())? => {
                 let mut constr = substitute(&left, &right, constr)?;
                 unify_link(&mut constr, sub, ctx, total)
             }
@@ -127,9 +111,36 @@ pub fn unify_link(
                 };
 
                 let possible = expr_ty.fun_args(&f_name, &left.pos)?;
-                let mut constr = unify_fun_arg(possible, &args, constr, &right.pos)?;
-                unify_link(&mut constr, &sub, ctx, total)
+                let (mut constr, added) = unify_fun_arg(possible, &args, constr, &right.pos)?;
+                unify_link(&mut constr, &sub, ctx, total + added)
             }
+
+            (
+                Implements { type_name: l_name, args: l_args },
+                Implements { type_name: r_name, args: r_args }
+            ) =>
+                if l_name == r_name {
+                    let mut added = 0;
+                    for pair in l_args.iter().zip_longest(r_args) {
+                        match pair {
+                            EitherOrBoth::Both(l, r) => {
+                                added += 1;
+                                constr.push(l, r)
+                            }
+                            EitherOrBoth::Left(l) =>
+                                return Err(vec![TypeErr::new(&l.pos, "Unexpected argument")]),
+                            EitherOrBoth::Right(r) =>
+                                return Err(vec![TypeErr::new(&r.pos, "Unexpected argument")]),
+                        }
+                    }
+
+                    unify_link(constr, sub, ctx, total + added)
+                } else {
+                    Err(vec![TypeErr::new(
+                        &left.pos,
+                        &format!("{} not equal to {}", left.expect, right.expect)
+                    )])
+                },
 
             (Type { type_name }, Mutable) | (Mutable, Type { type_name }) => {
                 // TODO add mutable field to TypeName
@@ -141,7 +152,7 @@ pub fn unify_link(
                 } else {
                     Err(vec![TypeErr::new(
                         &left.pos,
-                        &format!("Expected {} but was: {}", type_name.as_nullable(), type_name)
+                        &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
                     )])
                 },
 
@@ -210,8 +221,9 @@ fn unify_fun_arg(
     args: &[Expected],
     constr: &Constraints,
     pos: &Position
-) -> Unified {
+) -> Unified<(Constraints, usize)> {
     let mut constr = constr.clone();
+    let mut added = 0;
 
     for f_args in possible {
         for either_or_both in f_args.iter().zip_longest(args.iter()) {
@@ -226,6 +238,8 @@ fn unify_fun_arg(
                             )
                         })?
                         .clone();
+
+                    added += 1;
                     constr.push(&expected, &Expected::new(&expected.pos, &Type { type_name }))
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
@@ -246,5 +260,5 @@ fn unify_fun_arg(
         }
     }
 
-    Ok(constr)
+    Ok((constr, added))
 }

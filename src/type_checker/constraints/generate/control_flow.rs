@@ -59,11 +59,11 @@ pub fn gen_flow(
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
-            let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
+            let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
 
-            let left = Expected::new(&then.pos, &Expression { ast: *then.clone() });
-            let right = Expected::new(&el.pos, &Expression { ast: *el.clone() });
+            let left = Expected::from(then);
+            let right = Expected::from(el);
             constr.add(&left, &right);
 
             // TODO unify environments
@@ -73,7 +73,7 @@ pub fn gen_flow(
             Ok((constr, env))
         }
         Node::IfElse { cond, then, .. } => {
-            let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
+            let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
 
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
@@ -90,7 +90,7 @@ pub fn gen_flow(
             for case in cases {
                 match &case.node {
                     Node::Case { cond, body } => {
-                        let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
+                        let left = Expected::from(cond);
                         res.0.add(&left, &Expected::new(&cond.pos, &cond_expect));
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
@@ -108,7 +108,7 @@ pub fn gen_flow(
         }
         Node::Step { amount } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
-            let left = Expected::new(&amount.pos, &Expression { ast: *amount.clone() });
+            let left = Expected::from(amount);
             constr.add(&left, &Expected::new(&amount.pos, &Type { type_name }));
             Ok((constr.clone(), env.clone()))
         }

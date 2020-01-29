@@ -37,11 +37,11 @@ pub fn constrain_ty(
     let left = match &expr.node {
         Node::Block { statements } =>
             if let Some(stmt) = statements.last() {
-                Expected::new(&expr.pos, &Expression { ast: stmt.clone() })
+                Expected::from(stmt)
             } else {
-                Expected::new(&expr.pos, &Expression { ast: expr.clone() })
+                Expected::from(expr)
             },
-        _ => Expected::new(&expr.pos, &Expression { ast: expr.clone() })
+        _ => Expected::from(expr)
     };
 
     let type_name = TypeName::try_from(ty)?;

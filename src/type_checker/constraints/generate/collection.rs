@@ -23,7 +23,7 @@ pub fn gen_coll(
                 let mut res = (constr.clone(), env.clone());
                 let first_exp = Expression { ast: first.clone() };
                 for element in elements {
-                    let left = Expected::new(&element.pos, &Expression { ast: element.clone() });
+                    let left = Expected::from(element);
                     res.0.add(&left, &Expected::new(&first.pos, &first_exp));
                     res = generate(element, &res.1, &ctx, &mut res.0)?;
                 }
@@ -55,7 +55,7 @@ pub fn constrain_collection(
     }
 
     let exp_collection = Collection { ty: Box::from(Expression { ast: lookup.clone() }) };
-    let left = Expected::new(&collection.pos, &Expression { ast: collection.clone() });
+    let left = Expected::from(collection);
     constr.add(&left, &Expected::new(&lookup.pos, &exp_collection));
     generate(collection, &env, ctx, constr)
 }

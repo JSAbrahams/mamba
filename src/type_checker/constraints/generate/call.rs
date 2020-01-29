@@ -26,12 +26,11 @@ pub fn gen_call(
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
-            let l_exp = Expected::new(&right.pos, &Expression { ast: *left.clone() });
+            let l_exp = Expected::from(left);
             let r_exp = Expected::new(&left.pos, &Mutable);
             constr.add(&l_exp, &r_exp);
 
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
-            let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let r_exp = Expected::from(right);
             constr.add(&l_exp, &r_exp);
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
@@ -40,8 +39,11 @@ pub fn gen_call(
         Node::ConstructorCall { name, args } => {
             let c_name = TypeName::try_from(name.deref())?;
             let constr_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
-            let self_arg = Some(Type { type_name: c_name });
+            let self_type = Type { type_name: c_name.clone() };
 
+            constr.add(&Expected::new(&ast.pos, &self_type), &Expected::from(ast));
+
+            let self_arg = Some(self_type);
             let constr = call_parameters(ast, &constr_args, &self_arg, args, constr)?;
             gen_vec(args, env, ctx, &constr)
         }
@@ -54,12 +56,8 @@ pub fn gen_call(
                 let left = Expected::new(&name.pos, &function);
 
                 let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-                let args = args
-                    .iter()
-                    .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
-                    .collect();
+                let args = args.iter().map(Expected::from).collect();
                 let right = Expected::new(&last_pos, &Function { name: f_name, args });
-
                 constr.add(&left, &right);
             } else {
                 // Resort to looking up in Context
@@ -138,20 +136,18 @@ fn property_call(
             property_call(inner, property, &env, ctx, &mut constr)
         }
         Node::Id { lit } => {
-            let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
+            let left = Expected::from(instance);
             let right = Expected::new(&property.pos, &HasField { name: lit.clone() });
             constr.add(&left, &right);
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            let l_exp = Expected::new(&right.pos, &Expression { ast: *left.clone() });
+            let l_exp = Expected::from(left);
             let r_exp = Expected::new(&left.pos, &Mutable);
             constr.add(&l_exp, &r_exp);
 
-            let l_exp = Expected::new(&left.pos, &Expression { ast: *left.clone() });
-            let r_exp = Expected::new(&right.pos, &Expression { ast: *right.clone() });
+            let r_exp = Expected::from(right);
             constr.add(&l_exp, &r_exp);
-
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
@@ -159,15 +155,10 @@ fn property_call(
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
             let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-            let args: Vec<Expected> = args
-                .iter()
-                .map(|arg| Expected::new(&arg.pos, &Expression { ast: arg.clone() }))
-                .collect();
+            let left = Expected::from(instance);
+            let mut args_with_self: Vec<Expected> = vec![left.clone()];
+            args_with_self.append(&mut args.iter().map(Expected::from).collect());
 
-            let left = Expected::new(&instance.pos, &Expression { ast: instance.clone() });
-
-            let mut args_with_self = vec![left.clone()];
-            args_with_self.append(&mut args.clone());
             let right = Expected::new(&last_pos, &Implements {
                 type_name: f_name,
                 args:      args_with_self
