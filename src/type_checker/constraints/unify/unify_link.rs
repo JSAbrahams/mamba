@@ -192,12 +192,12 @@ pub fn unify_link(
 
             (Type { type_name }, HasField { name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
-                let field_ty = expr_ty.field(name, &right.pos)?.ty()?;
+                expr_ty.field(name, &right.pos)?.ty()?;
                 unify_link(constr, sub, ctx, total)
             }
             (HasField { name }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &right.pos)?;
-                let field_ty = expr_ty.field(name, &left.pos)?.ty()?;
+                expr_ty.field(name, &left.pos)?.ty()?;
                 unify_link(constr, sub, ctx, total)
             }
 
@@ -247,7 +247,7 @@ fn unify_fun_arg(
                         &pos,
                         &format!("Expected argument: expected {}", fun_arg)
                     )]),
-                EitherOrBoth::Right(expected) =>
+                EitherOrBoth::Right(_) =>
                     return Err(vec![TypeErr::new(
                         &pos,
                         &format!(

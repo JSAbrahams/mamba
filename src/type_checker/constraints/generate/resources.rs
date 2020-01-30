@@ -24,9 +24,7 @@ pub fn gen_resources(
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
-            let left = Expected::new(&resource.pos, &Expression { ast: *resource.clone() });
-            constr.add(&left, &Expected::new(&alias.pos, &Expression { ast: *alias.clone() }));
-
+            constr.add(&Expected::from(resource), &Expected::from(alias));
             let (mut constr, env) = identifier_from_var(alias, ty, *mutable, constr, env)?;
             let (mut constr, env) = generate(resource, &env, ctx, &mut constr)?;
             generate(expr, &env, ctx, &mut constr)
@@ -50,7 +48,7 @@ pub fn constrain_raises(
     let mut res = (constr.clone(), env.clone());
     for error in errors {
         let type_name = TypeName::try_from(error)?;
-        let left = Expected::new(&expr.pos, &Expression { ast: expr.clone() });
+        let left = Expected::from(expr);
         res.0.add(&left, &Expected::new(&error.pos, &Raises { type_name }));
         res = generate(error, &res.1, ctx, &mut res.0)?;
     }

@@ -1,12 +1,12 @@
 use crate::lexer::token::Token;
 use crate::parser::ast::Node;
 use crate::parser::ast::AST;
+use crate::parser::definition::parse_fun_arg;
 use crate::parser::expression::parse_inner_expression;
 use crate::parser::iterator::LexIterator;
 use crate::parser::operation::parse_expression;
 use crate::parser::parse_result::expected_one_of;
 use crate::parser::parse_result::ParseResult;
-use crate::parser::ty::parse_expression_type;
 
 pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("reassignment")?;
@@ -23,7 +23,7 @@ pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
 
     let mut args: Vec<AST> = vec![];
     it.peek_while_not_token(&Token::BTo, &mut |it, _| {
-        args.push(*it.parse(&parse_expression_type, "anonymous function", &start)?);
+        args.push(*it.parse(&parse_fun_arg, "anonymous function", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())
     })?;

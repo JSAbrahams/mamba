@@ -84,14 +84,14 @@ pub fn gen_flow(
         Node::Case { .. } => Err(vec![TypeErr::new(&ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
             let mut res = (constr.clone(), env.clone());
-            let cond_expect = Expression { ast: *cond.clone() };
+            let cond_exp = Expected::from(cond);
 
             // TODO check that all variants are covered
             for case in cases {
                 match &case.node {
                     Node::Case { cond, body } => {
                         let left = Expected::from(cond);
-                        res.0.add(&left, &Expected::new(&cond.pos, &cond_expect));
+                        res.0.add(&left, &cond_exp);
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
                     _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
@@ -113,7 +113,7 @@ pub fn gen_flow(
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
-            let left = Expected::new(&cond.pos, &Expression { ast: *cond.clone() });
+            let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
             let (constr, _) = generate(body, env, ctx, constr)?;
             Ok((constr, env.clone()))

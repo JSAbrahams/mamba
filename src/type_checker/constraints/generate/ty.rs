@@ -34,16 +34,7 @@ pub fn constrain_ty(
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let left = match &expr.node {
-        Node::Block { statements } =>
-            if let Some(stmt) = statements.last() {
-                Expected::from(stmt)
-            } else {
-                Expected::from(expr)
-            },
-        _ => Expected::from(expr)
-    };
-
+    let left = Expected::from(expr);
     let type_name = TypeName::try_from(ty)?;
     let right = Expected::new(&ty.pos, &Type { type_name });
 

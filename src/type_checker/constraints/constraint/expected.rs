@@ -28,7 +28,18 @@ impl Expected {
 }
 
 impl From<&AST> for Expected {
-    fn from(ast: &AST) -> Self { Expected::new(&ast.pos, &Expression { ast: ast.clone() }) }
+    fn from(ast: &AST) -> Self {
+        match &ast.node {
+            Node::Block { statements } =>
+                if let Some(stmt) = statements.last() {
+                    Expected::from(stmt)
+                } else {
+                    // TODO Add expected for statements
+                    Expected::new(&ast.pos, &Expression { ast: ast.clone() })
+                },
+            _ => Expected::new(&ast.pos, &Expression { ast: ast.clone() })
+        }
+    }
 }
 
 impl From<&Box<AST>> for Expected {
@@ -43,17 +54,13 @@ pub enum Expect {
     Mutable,
     Expression { ast: AST },
     ExpressionAny,
-
     Collection { ty: Box<Expect> },
     Truthy,
-
     RaisesAny,
     Raises { type_name: TypeName },
-
     Implements { type_name: TypeName, args: Vec<Expected> },
     Function { name: TypeName, args: Vec<Expected> },
     HasField { name: String },
-
     Type { type_name: TypeName }
 }
 

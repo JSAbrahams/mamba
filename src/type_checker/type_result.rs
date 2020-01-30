@@ -94,7 +94,7 @@ impl Display for TypeErr {
         if let Some(position) = self.position.clone() {
             write!(
                 f,
-                "--> {}:{}:{}\n     | {}\n{}{:3}  |- {}\n     |  {}{}{}",
+                "--> {}:{}:{}\n     {}\n{}{:3}  |- {}\n     |  {}{}{}",
                 path,
                 position.start.line,
                 position.start.pos,

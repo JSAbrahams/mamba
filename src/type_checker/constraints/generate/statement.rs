@@ -18,7 +18,7 @@ pub fn gen_stmt(
         Node::Raise { error } => generate(error, env, ctx, constr),
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.state.ret_ty {
-                let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+                let left = Expected::from(expr);
                 constr.add(&left, &expected_ret_ty);
                 generate(expr, env, ctx, constr)
             } else {

@@ -52,7 +52,7 @@ pub fn gen_op(
         Node::ENum { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
         Node::Str { .. } => primitive(ast, STRING_PRIMITIVE, env, constr),
         Node::Bool { .. } => {
-            let left = Expected::new(&ast.pos, &Expression { ast: ast.clone() });
+            let left = Expected::from(ast);
             constr.add(&left, &Expected::new(&ast.pos, &Truthy));
             Ok((constr.clone(), env.clone()))
         }
