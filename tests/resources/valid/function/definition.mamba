@@ -1,4 +1,4 @@
-def fun_a() -> Int =>
+def fun_a() -> Int? =>
     print 11
     if True and True then print "hello"
     if False or True then print "world"

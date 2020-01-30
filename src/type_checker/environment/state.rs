@@ -1,4 +1,4 @@
-use crate::type_checker::constraints::constraint::expected::Expect;
+use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::infer_type::expression::ExpressionType;
 use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
@@ -9,6 +9,7 @@ pub struct State {
     pub in_handle:    bool,
     pub in_function:  bool,
     pub in_match:     Option<ExpressionType>,
+    pub ret_ty:       Option<Expected>,
     pub in_class:     Option<TypeName>,
     pub in_class_new: Option<Expect>,
     pub handling:     Vec<ActualTypeName>
@@ -28,6 +29,7 @@ impl Default for State {
             in_function:  false,
             in_match:     None,
             in_class:     None,
+            ret_ty:       None,
             in_class_new: None,
             handling:     vec![]
         }
@@ -37,6 +39,10 @@ impl Default for State {
 impl State {
     pub fn in_match(&self, expr_ty: &ExpressionType) -> State {
         State { in_match: Some(expr_ty.clone()), ..self.clone() }
+    }
+
+    pub fn ret_ty(&self, ret_ty: &Expected) -> State {
+        State { ret_ty: Some(ret_ty.clone()), ..self.clone() }
     }
 
     pub fn handling(&self, handling: &[ActualTypeName]) -> State {

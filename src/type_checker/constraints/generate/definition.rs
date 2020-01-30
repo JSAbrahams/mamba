@@ -29,6 +29,10 @@ pub fn gen_def(
             let (mut constr, env) = constrain_args(fun_args, env, ctx, constr)?;
             let (mut constr, env) = match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
+                    let type_name = TypeName::try_from(ret_ty)?;
+                    let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { type_name });
+
+                    let env = env.new_state(&env.state.ret_ty(&ret_ty_exp));
                     let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
                     let (constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
                     (constr, env)

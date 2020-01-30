@@ -16,11 +16,14 @@ pub fn gen_stmt(
 ) -> Constrained {
     match &ast.node {
         Node::Raise { error } => generate(error, env, ctx, constr),
-        Node::Return { expr } => {
-            let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
-            constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
-            generate(expr, env, ctx, constr)
-        }
+        Node::Return { expr } =>
+            if let Some(expected_ret_ty) = &env.state.ret_ty {
+                let left = Expected::new(&expr.pos, &Expression { ast: *expr.clone() });
+                constr.add(&left, &expected_ret_ty);
+                generate(expr, env, ctx, constr)
+            } else {
+                Err(vec![TypeErr::new(&ast.pos, "Return statement only possible in function body")])
+            },
         Node::Print { expr } => {
             let left = Expected::from(expr);
             constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
