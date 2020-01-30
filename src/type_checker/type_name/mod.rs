@@ -14,6 +14,7 @@ use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::nullable::NullableTypeName;
 use crate::type_checker::type_result::{TypeErr, TypeResult};
 use crate::type_checker::util::comma_delimited;
+use std::ops::Deref;
 
 // TODO make these private
 pub mod actual;
@@ -54,6 +55,12 @@ impl Display for TypeName {
             TypeName::Union { union } => write!(f, "{{{}}}", comma_delimited(union))
         }
     }
+}
+
+impl TryFrom<&Box<AST>> for TypeName {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(value: &Box<AST>) -> Result<Self, Self::Error> { TypeName::try_from(value.deref()) }
 }
 
 impl TryFrom<&AST> for TypeName {

@@ -36,7 +36,7 @@ impl ConstrBuilder {
     }
 
     pub fn add(&mut self, left: &Expected, right: &Expected) {
-        self.constraints[self.level].push(Constraint::new(left.clone(), right.clone()));
+        self.constraints[self.level].push(Constraint::new(left, right));
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {

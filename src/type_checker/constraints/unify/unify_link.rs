@@ -37,7 +37,7 @@ pub fn unify_link(
             if constraint.substitued { " (sub)" } else { "" },
             left.expect,
             right.expect,
-            width = 13
+            width = 15
         );
 
         match (&left.expect, &right.expect) {
@@ -72,7 +72,7 @@ pub fn unify_link(
             | (Expression { .. }, Truthy) => {
                 let mut constr = substitute(&left, &right, &constr)?;
                 let mut subst = Constraints::default();
-                subst.push(&left, &right);
+                subst.eager_push(&left, &right);
                 subst.append(&substitute(&left, &right, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
@@ -80,7 +80,7 @@ pub fn unify_link(
             (Type { .. }, Expression { .. }) | (Truthy, Expression { .. }) => {
                 let mut constr = substitute(&left, &right, &constr)?;
                 let mut subst = Constraints::default();
-                subst.push(&left, &right);
+                subst.eager_push(&left, &right);
                 subst.append(&substitute(&left, &right, &sub)?);
                 unify_link(&mut constr, &subst, ctx, total)
             }
@@ -125,7 +125,7 @@ pub fn unify_link(
                         match pair {
                             EitherOrBoth::Both(l, r) => {
                                 added += 1;
-                                constr.push(l, r)
+                                constr.eager_push(l, r)
                             }
                             EitherOrBoth::Left(l) =>
                                 return Err(vec![TypeErr::new(&l.pos, "Unexpected argument")]),
@@ -173,7 +173,7 @@ pub fn unify_link(
                                 count += 1;
                                 let ty = Type { type_name: type_name.clone() };
                                 let right = Expected::new(&left.pos, &ty);
-                                constr.push(expected, &right);
+                                constr.eager_push(expected, &right);
                             }
                             EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                                 let msg = format!(
@@ -204,7 +204,7 @@ pub fn unify_link(
             _ => {
                 let pos = format!("({}-{})", left.pos.start, right.pos.start);
                 let count = format!("[reinserting {}\\{}]", total - constr.len(), total);
-                println!("{:width$} {} {} = {}", pos, count, left.expect, right.expect, width = 15);
+                println!("{:width$} {} {} = {}", pos, count, left.expect, right.expect, width = 17);
 
                 // Defer to later point
                 constr.reinsert(&constraint)?;

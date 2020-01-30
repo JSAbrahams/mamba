@@ -137,34 +137,27 @@ fn property_call(
         }
         Node::Id { lit } => {
             let left = Expected::from(instance);
-            let right = Expected::new(&property.pos, &HasField { name: lit.clone() });
-            constr.add(&left, &right);
+            constr.add(&left, &Expected::new(&property.pos, &HasField { name: lit.clone() }));
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            let l_exp = Expected::from(left);
-            let r_exp = Expected::new(&left.pos, &Mutable);
-            constr.add(&l_exp, &r_exp);
-
-            let r_exp = Expected::from(right);
-            constr.add(&l_exp, &r_exp);
+            let l_exp = Expected::from(instance);
+            constr.add(&l_exp, &Expected::new(&left.pos, &Mutable));
+            constr.add(&l_exp, &Expected::from(right));
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
-            let f_name = TypeName::try_from(name.deref())?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
-
             let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-            let left = Expected::from(instance);
-            let mut args_with_self: Vec<Expected> = vec![left.clone()];
+            let instance_exp = Expected::from(instance);
+
+            let mut args_with_self: Vec<Expected> = vec![instance_exp.clone()];
             args_with_self.append(&mut args.iter().map(Expected::from).collect());
 
-            let right = Expected::new(&last_pos, &Implements {
-                type_name: f_name,
-                args:      args_with_self
-            });
-
-            constr.add(&left, &right);
+            let f_name = TypeName::try_from(name.deref())?;
+            let implements = Implements { type_name: f_name, args: args_with_self };
+            let right = Expected::new(&last_pos, &implements);
+            constr.add(&instance_exp, &right);
             Ok((constr, env))
         }
 

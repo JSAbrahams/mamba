@@ -13,8 +13,13 @@ pub struct Constraint {
 }
 
 impl Constraint {
-    pub fn new(left: Expected, right: Expected) -> Constraint {
-        Constraint { parent: left, child: right, flagged: false, substitued: false }
+    pub fn new(left: &Expected, right: &Expected) -> Constraint {
+        Constraint {
+            parent:     left.clone(),
+            child:      right.clone(),
+            flagged:    false,
+            substitued: false
+        }
     }
 
     pub fn replace_parent(&mut self, new: &Expected) {

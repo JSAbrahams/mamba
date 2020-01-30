@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
 
@@ -9,7 +10,6 @@ use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::util::comma_delimited;
-use std::ops::Deref;
 
 #[derive(Clone, Debug, Eq)]
 pub struct Expected {
@@ -88,7 +88,6 @@ impl PartialEq for Expect {
             (HasField { name: l }, HasField { name: r }) => l == r,
             (Raises { type_name: l }, Raises { type_name: r })
             | (Type { type_name: l }, Type { type_name: r }) => l == r,
-
             (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
             | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r
@@ -99,10 +98,8 @@ impl PartialEq for Expect {
                             false
                         }
                     }),
-
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
             (Truthy, Truthy) | (RaisesAny, RaisesAny) | (ExpressionAny, ExpressionAny) => true,
-
             (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
             | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::And { .. }, .. } })
@@ -111,20 +108,18 @@ impl PartialEq for Expect {
             | (Expression { ast: AST { node: Node::Or { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::Not { .. }, .. } })
             | (Expression { ast: AST { node: Node::Not { .. }, .. } }, Truthy) => true,
-
-            (Type { type_name }, Expression { ast: AST { node: Node::Str { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { type_name })
+            (Type { type_name, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { type_name, .. })
                 if type_name == &TypeName::from(ty::concrete::STRING_PRIMITIVE) =>
                 true,
-            (Type { type_name }, Expression { ast: AST { node: Node::Real { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { type_name })
+            (Type { type_name, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { type_name, .. })
                 if type_name == &TypeName::from(ty::concrete::FLOAT_PRIMITIVE) =>
                 true,
-            (Type { type_name }, Expression { ast: AST { node: Node::Int { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { type_name })
+            (Type { type_name, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { type_name, .. })
                 if type_name == &TypeName::from(ty::concrete::INT_PRIMITIVE) =>
                 true,
-
             _ => false
         }
     }
