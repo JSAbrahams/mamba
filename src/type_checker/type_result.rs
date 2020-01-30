@@ -49,8 +49,16 @@ impl TypeErr {
         let (source_before, source_line, source_after) = if let Some(position) = &self.position {
             if let Some(source) = source {
                 (
-                    source.lines().nth(position.start.line as usize - 2),
-                    source.lines().nth(position.start.line as usize - 1),
+                    if position.start.line >= 2 {
+                        source.lines().nth(position.start.line as usize - 2)
+                    } else {
+                        None
+                    },
+                    if position.start.line >= 1 {
+                        source.lines().nth(position.start.line as usize - 1)
+                    } else {
+                        None
+                    },
                     source.lines().nth(position.start.line as usize)
                 )
             } else {
