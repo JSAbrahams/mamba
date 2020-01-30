@@ -27,3 +27,5 @@ class complex:
 
     def __bool__(self) -> bool: pass
     def __str__(self) -> str: pass
+
+    def __eq__(self, other: complex) -> bool:  pass

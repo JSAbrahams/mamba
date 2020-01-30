@@ -69,8 +69,19 @@ fn constrain_class_args(
     let mut res = (constr.clone(), env.clone());
     for arg in args {
         match &arg.node {
-            Node::FunArg { mutable, var, ty, default, .. }
-            | Node::VariableDef { mutable, var, ty, expression: default, .. } => {
+            Node::FunArg { mutable, var, ty, default, .. } => {
+                res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
+                res = match (ty, default) {
+                    (Some(ty), Some(default)) =>
+                        constrain_ty(default, ty, &res.1, ctx, &mut res.0)?,
+                    (None, Some(default)) => generate(default, &res.1, ctx, &mut res.0)?,
+                    _ => {
+                        let right = Expected::new(&var.pos, &ExpressionAny);
+                        property_from_var(var, &right, &res.1, &mut res.0)?
+                    }
+                }
+            }
+            Node::VariableDef { mutable, var, ty, expression: default, .. } => {
                 res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
                 res = match (ty, default) {
                     (Some(ty), Some(default)) => {

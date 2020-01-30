@@ -18,7 +18,6 @@ pub const LE: &str = "__le__";
 pub const LEQ: &str = "__leq__";
 pub const MOD: &str = "__mod__";
 pub const MUL: &str = "__mul__";
-pub const NEQ: &str = "__neq__";
 pub const POW: &str = "__pow__";
 pub const SUB: &str = "__sub__";
 
@@ -62,9 +61,10 @@ fn convert_name(name: &str) -> String {
         LEQ => String::from(concrete::LEQ),
         MOD => String::from(concrete::MOD),
         MUL => String::from(concrete::MUL),
-        NEQ => String::from(concrete::NEQ),
         POW => String::from(concrete::POW),
         SUB => String::from(concrete::SUB),
+
+        TRUTHY => String::from(concrete::TRUTHY),
 
         other => String::from(other)
     }

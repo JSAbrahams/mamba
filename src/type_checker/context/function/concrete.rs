@@ -6,8 +6,8 @@ use std::hash::{Hash, Hasher};
 
 use crate::common::position::Position;
 use crate::type_checker::context::function::generic::GenericFunction;
-use crate::type_checker::context::function_arg;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::{function, function_arg};
 use crate::type_checker::type_name::actual::ActualTypeName;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::type_result::TypeErr;
@@ -29,6 +29,8 @@ pub const NEQ: &str = "/=";
 pub const POW: &str = "^";
 pub const SUB: &str = "-";
 pub const SQRT: &str = "sqrt";
+
+pub const TRUTHY: &str = function::python::TRUTHY;
 
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
