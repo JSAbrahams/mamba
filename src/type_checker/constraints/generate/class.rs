@@ -79,12 +79,20 @@ fn constrain_class_args(
                         let (mut constr, env) = property_from_var(var, &right, &res.1, &mut res.0)?;
                         constrain_ty(default, ty, &env, ctx, &mut constr)?
                     }
+                    (Some(ty), None) => {
+                        let type_name = TypeName::try_from(ty)?;
+                        let right = Expected::new(&ty.pos, &Type { type_name });
+                        property_from_var(var, &right, &res.1, &mut res.0)?
+                    }
                     (None, Some(default)) => {
                         let right = Expected::from(default);
                         let (mut constr, env) = property_from_var(var, &right, &res.1, &mut res.0)?;
                         generate(default, &env, ctx, &mut constr)?
                     }
-                    _ => res
+                    (None, None) => {
+                        let right = Expected::new(&var.pos, &ExpressionAny);
+                        property_from_var(var, &right, &res.1, &mut res.0)?
+                    }
                 }
             }
             _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
@@ -101,7 +109,6 @@ fn property_from_var(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     let identifier = Identifier::try_from(field)?;
-    panic!("constraining field:\n{:?}\n==\n{:?}", &identifier, arg_exp);
     for (_, f_name) in &identifier.fields() {
         let node = Node::PropertyCall {
             instance: Box::new(AST { pos: field.pos.clone(), node: Node::_Self }),
