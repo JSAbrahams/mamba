@@ -99,14 +99,11 @@ impl Display for TypeErr {
                 position.start.line,
                 position.start.pos,
                 msg,
-                self.source_before.clone().map_or_else(
-                    || String::new(),
-                    |src| if src.is_empty() {
-                        String::new()
-                    } else {
-                        format!("{:3}  |  {}\n", position.start.line - 1, src)
-                    },
-                ),
+                self.source_before.clone().map_or_else(String::new, |src| if src.is_empty() {
+                    String::new()
+                } else {
+                    format!("{:3}  |  {}\n", position.start.line - 1, src)
+                },),
                 position.start.line,
                 self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
                 String::from_utf8(vec![b' '; position.start.pos as usize - 1]).unwrap(),

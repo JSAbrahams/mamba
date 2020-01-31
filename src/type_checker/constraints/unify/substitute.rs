@@ -27,11 +27,11 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
     };
 
     while let Some(mut constraint) = constr.pop_constr() {
-        if constraint.parent.expect.trivially_eq(&old.expect) {
+        if constraint.parent.expect.structurally_eq(&old.expect) {
             replace!("lhs", constraint.parent);
             constraint.replace_parent(&Expected::new(&constraint.parent.pos, &new.expect));
         }
-        if constraint.child.expect.trivially_eq(&old.expect) {
+        if constraint.child.expect.structurally_eq(&old.expect) {
             replace!("rhs", constraint.child);
             constraint.replace_child(&Expected::new(&constraint.child.pos, &new.expect));
         }

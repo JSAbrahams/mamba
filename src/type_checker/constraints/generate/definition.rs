@@ -6,6 +6,7 @@ use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
+use crate::type_checker::constraints::generate::class::property_from_var;
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::generate::resources::constrain_raises;
 use crate::type_checker::constraints::generate::ty::constrain_ty;
@@ -47,19 +48,50 @@ pub fn gen_def(
         Node::FunArg { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
-        Node::VariableDef { mutable, var, ty, expression: Some(expr), .. } => {
+        Node::VariableDef { mutable, var, ty, expression, .. } => {
             let (mut constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
             let var_expect = Expected::from(var);
-            let expr_expect = Expected::from(expr);
-            constr.add(&var_expect, &expr_expect);
 
-            match ty {
-                Some(ty) => constrain_ty(expr, ty, &env, ctx, &mut constr),
-                None => generate(expr, &env, ctx, &mut constr)
+            match (ty, expression) {
+                (Some(ty), Some(expr)) => {
+                    let expr_expect = Expected::from(expr);
+                    constr.add(&var_expect, &expr_expect);
+
+                    let type_name = TypeName::try_from(ty)?;
+                    let ty_expect = Expected::new(&ty.pos, &Type { type_name });
+                    let (mut constr, env) = if env.state.in_class_new.is_some() {
+                        property_from_var(var, &ty_expect, &env, &mut constr)?
+                    } else {
+                        (constr, env)
+                    };
+
+                    constrain_ty(expr, ty, &env, ctx, &mut constr)
+                }
+                (Some(ty), None) => {
+                    let type_name = TypeName::try_from(ty)?;
+                    let ty_expect = Expected::new(&ty.pos, &Type { type_name });
+                    let (constr, env) = if env.state.in_class_new.is_some() {
+                        property_from_var(var, &ty_expect, &env, &mut constr)?
+                    } else {
+                        (constr, env)
+                    };
+
+                    Ok((constr, env))
+                }
+                (None, Some(expr)) => {
+                    let expr_expect = Expected::from(expr);
+                    constr.add(&var_expect, &expr_expect);
+                    let (mut constr, env) = if env.state.in_class_new.is_some() {
+                        property_from_var(var, &expr_expect, &env, &mut constr)?
+                    } else {
+                        (constr, env)
+                    };
+
+                    generate(expr, &env, ctx, &mut constr)
+                }
+                (None, None) => Ok((constr, env))
             }
         }
-        Node::VariableDef { mutable, var, ty, .. } =>
-            identifier_from_var(var, ty, *mutable, constr, env),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")])
     }

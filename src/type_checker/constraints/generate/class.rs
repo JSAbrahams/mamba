@@ -113,7 +113,7 @@ fn constrain_class_args(
     Ok(res)
 }
 
-fn property_from_var(
+pub fn property_from_var(
     field: &AST,
     arg_exp: &Expected,
     env: &Environment,
