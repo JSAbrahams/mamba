@@ -34,8 +34,7 @@ pub fn generate(
 ) -> Constrained {
     match &ast.node {
         File { modules, .. } => gen_vec(modules, env, ctx, constr),
-        Block { statements } => gen_vec(statements, env, ctx, constr),
-        Script { statements } => gen_vec(statements, env, ctx, constr),
+        Block { statements } | Script { statements } => gen_vec(statements, env, ctx, constr),
 
         Class { .. } | TypeDef { .. } => gen_class(ast, env, ctx, constr),
         TypeAlias { .. } | Condition { .. } => gen_class(ast, env, ctx, constr),

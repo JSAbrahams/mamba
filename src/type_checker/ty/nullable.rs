@@ -2,13 +2,13 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
+use crate::type_checker::checker_result::TypeResult;
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
-use crate::type_checker::infer_type::actual::ActualType;
-use crate::type_checker::infer_type::expression::ExpressionType;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::TypeResult;
+use crate::type_checker::ty::actual::ActualType;
+use crate::type_checker::ty::expression::ExpressionType;
+use crate::type_checker::ty_name::TypeName;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct NullableType {

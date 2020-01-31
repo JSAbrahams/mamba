@@ -1,4 +1,5 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
@@ -9,8 +10,7 @@ use crate::type_checker::context::function::concrete::*;
 use crate::type_checker::context::ty::concrete::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::Environment;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::ty_name::TypeName;
 
 pub fn gen_op(
     ast: &AST,
@@ -55,7 +55,7 @@ pub fn gen_op(
             let type_name = TypeName::from(STRING_PRIMITIVE);
             let left = Expected::from(ast);
             constr.add(&left, &Expected::new(&ast.pos, &Type { type_name }));
-            Ok((constr.clone(), env.clone()))
+            Ok((constr, env))
         }
         Node::Bool { .. } => {
             let left = Expected::from(ast);

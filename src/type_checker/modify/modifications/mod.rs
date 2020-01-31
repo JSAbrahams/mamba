@@ -1,6 +1,6 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::TypeResult;
 use crate::type_checker::context::Context;
-use crate::type_checker::type_result::TypeResult;
 
 pub mod constructor;
 

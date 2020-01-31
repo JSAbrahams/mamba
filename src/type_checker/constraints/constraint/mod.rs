@@ -6,29 +6,29 @@ pub mod iterator;
 
 #[derive(Clone, Debug)]
 pub struct Constraint {
-    pub flagged:    bool,
-    pub substitued: bool,
-    pub parent:     Expected,
-    pub child:      Expected
+    pub flagged:     bool,
+    pub substituted: bool,
+    pub parent:      Expected,
+    pub child:       Expected
 }
 
 impl Constraint {
     pub fn new(left: &Expected, right: &Expected) -> Constraint {
         Constraint {
-            parent:     left.clone(),
-            child:      right.clone(),
-            flagged:    false,
-            substitued: false
+            parent:      left.clone(),
+            child:       right.clone(),
+            flagged:     false,
+            substituted: false
         }
     }
 
     pub fn replace_parent(&mut self, new: &Expected) {
-        self.substitued = true;
+        self.substituted = true;
         self.parent = new.clone();
     }
 
     pub fn replace_child(&mut self, new: &Expected) {
-        self.substitued = true;
+        self.substituted = true;
         self.child = new.clone();
     }
 

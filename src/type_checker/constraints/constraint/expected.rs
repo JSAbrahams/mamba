@@ -8,10 +8,10 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
-use crate::type_checker::type_name::TypeName;
+use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expected {
     pub pos:    Position,
     pub expect: Expect
@@ -45,7 +45,7 @@ impl From<&Box<AST>> for Expected {
 
 // TODO rework HasField
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expect {
     Nullable,
     Mutable,
@@ -64,8 +64,8 @@ pub enum Expect {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable => format!("None"),
-            Mutable => format!("Mut"),
+            Nullable => String::from("None"),
+            Mutable => String::from("Mut"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{:?}", ast.node),
             Collection { ty } => format!("[Collection[{}]]", ty),
@@ -86,9 +86,9 @@ impl Display for Expect {
 }
 
 impl Expect {
-    pub fn trivially_eq(&self, other: &Self) -> bool {
+    pub fn structurally_eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l.trivially_eq(r),
+            (Collection { ty: l }, Collection { ty: r }) => l.structurally_eq(r),
             (HasField { name: l }, HasField { name: r }) => l == r,
             (Raises { type_name: l }, Raises { type_name: r })
             | (Type { type_name: l }, Type { type_name: r }) => l == r,
@@ -97,7 +97,7 @@ impl Expect {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                         if let EitherOrBoth::Both(left, right) = pair {
-                            left.expect.trivially_eq(&right.expect)
+                            left.expect.structurally_eq(&right.expect)
                         } else {
                             false
                         }

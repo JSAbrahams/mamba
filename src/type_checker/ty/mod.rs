@@ -3,9 +3,9 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
-use crate::type_checker::infer_type::expression::ExpressionType;
-use crate::type_checker::type_name::actual::ActualTypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
+use crate::type_checker::ty::expression::ExpressionType;
+use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::util::comma_delimited;
 
 // TODO make these private
@@ -77,8 +77,8 @@ impl InferType {
         InferType { raises, ..self }
     }
 
-    pub fn add_raises(self, infer_type: &InferType) -> InferType {
-        let raises = self.raises.union(&infer_type.raises).cloned().collect();
+    pub fn add_raises(self, ty: &InferType) -> InferType {
+        let raises = self.raises.union(&ty.raises).cloned().collect();
         InferType { raises, ..self }
     }
 

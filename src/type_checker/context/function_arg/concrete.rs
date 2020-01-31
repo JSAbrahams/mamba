@@ -4,9 +4,9 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty_name::TypeName;
 use itertools::{EitherOrBoth, Itertools};
 
 // TODO make ty private again

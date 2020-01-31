@@ -5,9 +5,9 @@ use std::hash::{Hash, Hasher};
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::parameter::generic::GenericParameter;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty_name::TypeName;
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericParent {

@@ -5,14 +5,14 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 use crate::common::position::Position;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::{args_compatible, FunctionArg};
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::context::ty::python;
-use crate::type_checker::type_name::actual::ActualTypeName;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty_name::actual::ActualTypeName;
+use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::{comma_delimited, newline_delimited};
 
 pub const ANY: &str = "Any";

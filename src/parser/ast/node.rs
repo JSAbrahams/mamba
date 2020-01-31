@@ -8,7 +8,7 @@ fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
     }
 }
 
-fn equal_vec(this: &Vec<AST>, other: &Vec<AST>) -> bool {
+fn equal_vec(this: &[AST], other: &[AST]) -> bool {
     if this.len() != other.len() {
         false
     } else {

@@ -1,10 +1,10 @@
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::TypeResult;
 use crate::type_checker::context::Context;
 use crate::type_checker::modify::modifications::Modification;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::TypeResult;
+use crate::type_checker::ty_name::TypeName;
 use std::convert::TryFrom;
 
 pub struct Constructor;

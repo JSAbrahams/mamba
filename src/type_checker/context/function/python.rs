@@ -2,8 +2,8 @@ use crate::common::position::Position;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
-use crate::type_checker::type_name::actual::ActualTypeName;
-use crate::type_checker::type_name::TypeName;
+use crate::type_checker::ty_name::actual::ActualTypeName;
+use crate::type_checker::ty_name::TypeName;
 use python_parser::ast::Funcdef;
 
 pub const INIT: &str = "__init__";

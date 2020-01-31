@@ -1,8 +1,8 @@
 use crate::parser::ast::AST;
+use crate::type_checker::checker_result::TypeResult;
 use crate::type_checker::context::Context;
 use crate::type_checker::modify::modifications::constructor::Constructor;
 use crate::type_checker::modify::modifications::Modification;
-use crate::type_checker::type_result::TypeResult;
 
 mod modifications;
 

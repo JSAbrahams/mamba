@@ -4,9 +4,9 @@ use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::environment::name::{match_type, Identifier};
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty_name::TypeName;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, Eq)]

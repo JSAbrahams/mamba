@@ -6,6 +6,7 @@ use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::field::generic::{GenericField, GenericFields};
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
@@ -13,9 +14,8 @@ use crate::type_checker::context::function_arg;
 use crate::type_checker::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::type_checker::context::parameter::generic::GenericParameter;
 use crate::type_checker::context::parent::generic::GenericParent;
-use crate::type_checker::type_name::actual::ActualTypeName;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty_name::actual::ActualTypeName;
+use crate::type_checker::ty_name::TypeName;
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericType {

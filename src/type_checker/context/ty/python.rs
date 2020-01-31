@@ -5,6 +5,7 @@ use std::ops::Deref;
 use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
 use crate::common::position::Position;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::field::generic::GenericFields;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function::generic::GenericFunction;
@@ -12,9 +13,8 @@ use crate::type_checker::context::parameter::python::GenericParameters;
 use crate::type_checker::context::parent::generic::GenericParent;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::generic::GenericType;
-use crate::type_checker::type_name::actual::ActualTypeName;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty_name::actual::ActualTypeName;
+use crate::type_checker::ty_name::TypeName;
 
 pub const INT_PRIMITIVE: &str = "int";
 pub const FLOAT_PRIMITIVE: &str = "float";

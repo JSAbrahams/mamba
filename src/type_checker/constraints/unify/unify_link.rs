@@ -4,6 +4,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
@@ -12,8 +13,7 @@ use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::ty_name::TypeName;
 
 /// Unifies all constraints.
 
@@ -29,12 +29,12 @@ pub fn unify_link(
     if let Some(constraint) = &constr.pop_constr() {
         let (left, right) = (constraint.parent.clone(), constraint.child.clone());
         println!(
-            "{:width$} [solving {}\\{}{}{}] {} = {}",
+            "{:width$} [unifying {}\\{}{}{}] {} = {}",
             format!("({}-{})", left.pos.start, right.pos.start),
             total - constr.len(),
             total,
             if constraint.flagged { " (fl)" } else { "" },
-            if constraint.substitued { " (sub)" } else { "" },
+            if constraint.substituted { " (sub)" } else { "" },
             left.expect,
             right.expect,
             width = 15
@@ -42,7 +42,7 @@ pub fn unify_link(
 
         match (&left.expect, &right.expect) {
             // trivially equal
-            (l_expect, r_expect) if l_expect.trivially_eq(r_expect) => {
+            (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
                 let mut constr = substitute(&left, &right, constr)?;
                 unify_link(&mut constr, sub, ctx, total)
             }
@@ -78,20 +78,21 @@ pub fn unify_link(
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
-                let mut constr = substitute(&left, &right, &constr)?;
-                let mut subst = Constraints::default();
-                subst.eager_push(&left, &right);
-                subst.append(&substitute(&left, &right, &sub)?);
-                unify_link(&mut constr, &subst, ctx, total)
-            }
+                let mut sub = sub.clone();
+                sub.eager_push(&left, &right);
+                sub.append(&substitute(&left, &right, &sub)?);
 
+                let mut constr = substitute(&left, &right, &constr)?;
+                unify_link(&mut constr, &sub, ctx, total)
+            }
             (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
+                    let mut sub = sub.clone();
+                    sub.eager_push(&left, &right);
+                    sub.append(&substitute(&left, &right, &sub)?);
+
                     let mut constr = substitute(&left, &right, &constr)?;
-                    let mut subst = Constraints::default();
-                    subst.eager_push(&left, &right);
-                    subst.append(&substitute(&left, &right, &sub)?);
-                    unify_link(&mut constr, &subst, ctx, total)
+                    unify_link(&mut constr, &sub, ctx, total)
                 } else {
                     Err(vec![TypeErr::new(
                         &ast.pos,

@@ -70,7 +70,7 @@ impl TypeErr {
 
         TypeErr {
             position:      self.position.clone(),
-            msg:           self.msg.clone(),
+            msg:           self.msg,
             source_before: source_before.map(String::from),
             source_line:   source_line.map(String::from),
             source_after:  source_after.map(String::from),
@@ -105,20 +105,17 @@ impl Display for TypeErr {
                         String::new()
                     } else {
                         format!("{:3}  |  {}\n", position.start.line - 1, src)
-                    }
+                    },
                 ),
                 position.start.line,
                 self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
                 String::from_utf8(vec![b' '; position.start.pos as usize - 1]).unwrap(),
                 String::from_utf8(vec![b'^'; position.get_width() as usize]).unwrap(),
-                self.source_after.clone().map_or_else(
-                    || String::new(),
-                    |src| if src.is_empty() {
-                        String::new()
-                    } else {
-                        format!("\n{:3}  |  {}\n", position.start.line + 1, src)
-                    }
-                )
+                self.source_after.clone().map_or(String::new(), |src| if src.is_empty() {
+                    String::new()
+                } else {
+                    format!("\n{:3}  |  {}\n", position.start.line + 1, src)
+                })
             )
         } else {
             write!(f, "--> {}\n     | {}", path, msg)

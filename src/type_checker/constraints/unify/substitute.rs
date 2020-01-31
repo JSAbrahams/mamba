@@ -1,7 +1,7 @@
+use crate::type_checker::checker_result::TypeResult;
 use crate::type_checker::constraints::constraint::expected::Expect::{Truthy, Type};
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
-use crate::type_checker::type_result::TypeResult;
 
 /// Substitute old expression with new
 ///
@@ -20,7 +20,7 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
 
     macro_rules! replace {
         ($side:expr, $constr:expr) => {{
-            let pos = format!("({}={})", $constr.pos.start, new.pos.start);
+            let pos = format!("({}-{})", $constr.pos.start, new.pos.start);
             let count = format!("[substitute {} of {} ({})]", total - constr.len(), total, $side);
             println!("{:width$} {} {} <= {}", pos, count, $constr.expect, new.expect, width = 17);
         }};

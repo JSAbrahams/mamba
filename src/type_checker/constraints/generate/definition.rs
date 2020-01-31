@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
@@ -13,8 +14,7 @@ use crate::type_checker::context::function_arg::concrete::SELF;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::name::{match_type, Identifier};
 use crate::type_checker::environment::Environment;
-use crate::type_checker::type_name::TypeName;
-use crate::type_checker::type_result::TypeErr;
+use crate::type_checker::ty_name::TypeName;
 
 pub fn gen_def(
     ast: &AST,

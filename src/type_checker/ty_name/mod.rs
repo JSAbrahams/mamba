@@ -7,12 +7,12 @@ use std::iter::FromIterator;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::ty;
 use crate::type_checker::context::ty::concrete;
-use crate::type_checker::infer_type::expression::ExpressionType;
-use crate::type_checker::type_name::actual::ActualTypeName;
-use crate::type_checker::type_name::nullable::NullableTypeName;
-use crate::type_checker::type_result::{TypeErr, TypeResult};
+use crate::type_checker::ty::expression::ExpressionType;
+use crate::type_checker::ty_name::actual::ActualTypeName;
+use crate::type_checker::ty_name::nullable::NullableTypeName;
 use crate::type_checker::util::comma_delimited;
 use std::ops::Deref;
 
