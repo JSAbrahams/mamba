@@ -3,7 +3,7 @@ use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::collection::constrain_collection;
-use crate::type_checker::constraints::generate::generate;
+use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function::concrete::*;
 use crate::type_checker::context::ty::concrete::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
@@ -50,7 +50,13 @@ pub fn gen_op(
         Node::Real { .. } => primitive(ast, FLOAT_PRIMITIVE, env, constr),
         Node::Int { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
         Node::ENum { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
-        Node::Str { .. } => primitive(ast, STRING_PRIMITIVE, env, constr),
+        Node::Str { expressions, .. } => {
+            let (mut constr, env) = gen_vec(expressions, env, ctx, constr)?;
+            let type_name = TypeName::from(STRING_PRIMITIVE);
+            let left = Expected::from(ast);
+            constr.add(&left, &Expected::new(&ast.pos, &Type { type_name }));
+            Ok((constr.clone(), env.clone()))
+        }
         Node::Bool { .. } => {
             let left = Expected::from(ast);
             constr.add(&left, &Expected::new(&ast.pos, &Truthy));
