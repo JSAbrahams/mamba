@@ -141,10 +141,11 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            let l_exp = Expected::from(instance);
+            let l_exp = Expected::from(left);
             constr.add(&l_exp, &Expected::new(&left.pos, &Mutable));
             constr.add(&l_exp, &Expected::from(right));
-            generate(right, env, ctx, constr)
+            let (mut constr, env) = generate(right, env, ctx, constr)?;
+            generate(left, &env, ctx, &mut constr)
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;

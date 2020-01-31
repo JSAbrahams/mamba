@@ -78,7 +78,7 @@ pub fn unify_link(
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
-                let mut sub = sub.clone();
+                let mut sub = Constraints::default();
                 sub.eager_push(&left, &right);
                 sub.append(&substitute(&left, &right, &sub)?);
 
@@ -87,7 +87,7 @@ pub fn unify_link(
             }
             (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
-                    let mut sub = sub.clone();
+                    let mut sub = Constraints::default();
                     sub.eager_push(&left, &right);
                     sub.append(&substitute(&left, &right, &sub)?);
 
@@ -206,13 +206,11 @@ pub fn unify_link(
             }
 
             (Type { type_name }, HasField { name }) => {
-                let expr_ty = ctx.lookup(type_name, &left.pos)?;
-                expr_ty.field(name, &right.pos)?.ty()?;
+                ctx.lookup(type_name, &left.pos)?.field(name, &right.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
             (HasField { name }, Type { type_name }) => {
-                let expr_ty = ctx.lookup(type_name, &right.pos)?;
-                expr_ty.field(name, &left.pos)?.ty()?;
+                ctx.lookup(type_name, &right.pos)?.field(name, &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
 

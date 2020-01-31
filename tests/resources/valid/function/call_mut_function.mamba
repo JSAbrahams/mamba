@@ -2,7 +2,8 @@ class MyClass
     def mut a <- 20
     def f(mut self, x: Int) -> Int =>
         self.a <- x
-        x + 230
+        def y <- x + 230
+        self.a + y
 
 
 def mut my_class <- MyClass()

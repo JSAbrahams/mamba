@@ -81,7 +81,7 @@ fn constrain_class_args(
                     }
                 }
             }
-            Node::VariableDef { mutable, var, ty, expression: default, .. } => {
+            Node::VariableDef { mutable, var, ty, expression: default, private, .. } => {
                 res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
                 res = match (ty, default) {
                     (Some(ty), Some(default)) => {
@@ -128,8 +128,9 @@ pub fn property_from_var(
                 node: Node::Id { lit: f_name.clone() }
             })
         };
+
         let property_exp = Expected::from(&AST::new(&field.pos, node));
-        constr.add(&property_exp, &arg_exp)
+        constr.add(&property_exp, &arg_exp);
     }
 
     Ok((constr.clone(), env.clone()))
