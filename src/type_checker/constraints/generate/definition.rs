@@ -92,7 +92,8 @@ pub fn constrain_args(
                 }
 
                 res = match (ty, default) {
-                    (Some(ty), Some(default)) => constrain_ty(default, ty, env, ctx, &mut res.0)?,
+                    (Some(ty), Some(default)) =>
+                        constrain_ty(default, ty, &res.1, ctx, &mut res.0)?,
                     (None, Some(default)) => generate(default, &res.1, ctx, &mut res.0)?,
                     _ => res
                 }
