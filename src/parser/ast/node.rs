@@ -295,4 +295,193 @@ impl Node {
             _ => false
         }
     }
+
+    pub fn is_expression(&self) -> bool {
+        match &self {
+            Node::AnonFun { .. }
+            | Node::Handle { .. }
+            | Node::ConstructorCall { .. }
+            | Node::FunctionCall { .. }
+            | Node::PropertyCall { .. }
+            | Node::Id { .. }
+            | Node::ExpressionType { .. }
+            | Node::Set { .. }
+            | Node::SetBuilder { .. }
+            | Node::List { .. }
+            | Node::ListBuilder { .. }
+            | Node::Tuple { .. }
+            | Node::Range { .. }
+            | Node::Real { .. }
+            | Node::Int { .. }
+            | Node::ENum { .. }
+            | Node::Str { .. }
+            | Node::Bool { .. }
+            | Node::Match { .. }
+            | Node::Underscore
+            | Node::Undefined
+            | Node::Pass
+            | Node::Question { .. }
+            | Node::QuestionOp { .. } => true,
+
+            Node::IfElse { el, .. } => el.is_some(),
+
+            Node::Script { statements } | Node::Block { statements } =>
+                if let Some(stmt) = statements.last() {
+                    stmt.node.is_expression()
+                } else {
+                    false
+                },
+
+            _ => self.is_operator()
+        }
+    }
+
+    fn is_operator(&self) -> bool {
+        match &self {
+            Node::Add { .. }
+            | Node::AddU { .. }
+            | Node::Sub { .. }
+            | Node::SubU { .. }
+            | Node::Mul { .. }
+            | Node::Div { .. }
+            | Node::FDiv { .. }
+            | Node::Mod { .. }
+            | Node::Pow { .. }
+            | Node::Sqrt { .. }
+            | Node::BAnd { .. }
+            | Node::BOr { .. }
+            | Node::BXOr { .. }
+            | Node::BOneCmpl { .. }
+            | Node::BLShift { .. }
+            | Node::BRShift { .. }
+            | Node::Le { .. }
+            | Node::Ge { .. }
+            | Node::Leq { .. }
+            | Node::Geq { .. }
+            | Node::Is { .. }
+            | Node::IsN { .. }
+            | Node::Eq { .. }
+            | Node::Neq { .. }
+            | Node::IsA { .. }
+            | Node::IsNA { .. }
+            | Node::Not { .. }
+            | Node::And { .. }
+            | Node::Or { .. }
+            | Node::In { .. } => true,
+            _ => false
+        }
+    }
+
+    pub fn name(&self) -> String {
+        let name = match &self {
+            Node::File { .. } => String::from("file"),
+            Node::Import { .. } => String::from("import"),
+            Node::FromImport { .. } => String::from("from import"),
+            Node::Class { .. } => String::from("class"),
+            Node::Generic { .. } => String::from("generic"),
+            Node::Parent { .. } => String::from("parent"),
+            Node::Script { .. } => String::from("script"),
+            Node::Init => String::from("constructor (init)"),
+            Node::Reassign { .. } => String::from("reassign"),
+            Node::VariableDef { .. } => String::from("variabe definition"),
+            Node::FunDef { .. } => String::from("function definition"),
+            Node::AnonFun { .. } => String::from("anonymous function"),
+            Node::Raises { .. } => String::from("raises"),
+            Node::Raise { .. } => String::from("raise"),
+            Node::Handle { .. } => String::from("handle"),
+            Node::With { .. } => String::from("with"),
+            Node::ConstructorCall { .. } => String::from("constructor call"),
+            Node::FunctionCall { .. } => String::from("function call"),
+            Node::PropertyCall { .. } => String::from("property call"),
+            Node::Id { .. } => String::from("identifier"),
+            Node::ExpressionType { .. } => String::from("expression type"),
+            Node::TypeDef { .. } => String::from("type definition"),
+            Node::TypeAlias { .. } => String::from("type alias"),
+            Node::TypeTup { .. } => String::from("type tuple"),
+            Node::TypeUnion { .. } => String::from("type union"),
+            Node::Type { .. } => String::from("type"),
+            Node::TypeFun { .. } => String::from("type function"),
+            Node::Condition { .. } => String::from("condition"),
+            Node::FunArg { .. } => String::from("function argument"),
+            Node::_Self => String::from("self"),
+            Node::AddOp => String::from("addition"),
+            Node::SubOp => String::from("subtraction"),
+            Node::SqrtOp => String::from("square root"),
+            Node::MulOp => String::from("multiply"),
+            Node::FDivOp => String::from("floor division"),
+            Node::DivOp => String::from("division"),
+            Node::PowOp => String::from("to the power"),
+            Node::ModOp => String::from("modulo"),
+            Node::EqOp => String::from("equal"),
+            Node::LeOp => String::from("less than"),
+            Node::GeOp => String::from("greater than"),
+            Node::Set { .. } => String::from("set"),
+            Node::SetBuilder { .. } => String::from("set builder"),
+            Node::List { .. } => String::from("list"),
+            Node::ListBuilder { .. } => String::from("list builder"),
+            Node::Tuple { .. } => String::from("tuple"),
+            Node::Range { .. } => String::from("range"),
+            Node::Block { .. } => String::from("Code block"),
+            Node::Real { .. } => String::from("float"),
+            Node::Int { .. } => String::from("integer"),
+            Node::ENum { .. } => String::from("E number"),
+            Node::Str { .. } => String::from("string"),
+            Node::DocStr { .. } => String::from("doc string"),
+            Node::Bool { .. } => String::from("boolean"),
+            Node::Add { .. } => String::from("addition"),
+            Node::AddU { .. } => String::from("addition unary"),
+            Node::Sub { .. } => String::from("subtract"),
+            Node::SubU { .. } => String::from("subtract unary"),
+            Node::Mul { .. } => String::from("multiply"),
+            Node::Div { .. } => String::from("division"),
+            Node::FDiv { .. } => String::from("floor div"),
+            Node::Mod { .. } => String::from("modulo"),
+            Node::Pow { .. } => String::from("power"),
+            Node::Sqrt { .. } => String::from("square root"),
+            Node::BAnd { .. } => String::from("binary and"),
+            Node::BOr { .. } => String::from("binary or"),
+            Node::BXOr { .. } => String::from("binary exclusive or"),
+            Node::BOneCmpl { .. } => String::from("binary ones compliment"),
+            Node::BLShift { .. } => String::from("binary left shift"),
+            Node::BRShift { .. } => String::from("binary right shift"),
+            Node::Le { .. } => String::from("less than"),
+            Node::Ge { .. } => String::from("greater than"),
+            Node::Leq { .. } => String::from("less than or equal to"),
+            Node::Geq { .. } => String::from("greater than or equal to"),
+            Node::Is { .. } => String::from("is"),
+            Node::IsN { .. } => String::from("is not"),
+            Node::Eq { .. } => String::from("equal"),
+            Node::Neq { .. } => String::from("not equal"),
+            Node::IsA { .. } => String::from("is a"),
+            Node::IsNA { .. } => String::from("is not a"),
+            Node::Not { .. } => String::from("not"),
+            Node::And { .. } => String::from("and"),
+            Node::Or { .. } => String::from("or"),
+            Node::IfElse { el, .. } => String::from(if el.is_some() { "if" } else { "if else" }),
+            Node::Match { .. } => String::from("match"),
+            Node::Case { .. } => String::from("case"),
+            Node::For { .. } => String::from("for loop"),
+            Node::In { .. } => String::from("in"),
+            Node::Step { .. } => String::from("step"),
+            Node::While { .. } => String::from("while"),
+            Node::Break => String::from("break"),
+            Node::Continue => String::from("continue"),
+            Node::Return { .. } => String::from("return"),
+            Node::ReturnEmpty => String::from("empty return"),
+            Node::Underscore => String::from("underscore"),
+            Node::Undefined => String::from("undefined"),
+            Node::Pass => String::from("pass"),
+            Node::Question { .. } => String::from("ternary operator"),
+            Node::QuestionOp { .. } => String::from("unsafe operator"),
+            Node::Print { .. } => String::from("print"),
+            Node::Comment { .. } => String::from("comment")
+        };
+
+        format!(
+            "{}{}{}",
+            name,
+            if self.is_operator() { " operator" } else { "" },
+            if self.is_expression() { "" } else { " statement" }
+        )
+    }
 }

@@ -42,13 +42,21 @@ pub fn unify_link(
 
         match (&left.expect, &right.expect) {
             // trivially equal
-            (l_expect, r_expect) if l_expect == r_expect => {
+            (l_expect, r_expect) if l_expect.trivially_eq(r_expect) => {
                 let mut constr = substitute(&left, &right, constr)?;
                 unify_link(&mut constr, sub, ctx, total)
             }
 
-            (Expression { .. }, ExpressionAny) | (ExpressionAny, Expression { .. }) =>
-                unify_link(constr, sub, ctx, total),
+            (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
+                if ast.node.is_expression() {
+                    unify_link(constr, sub, ctx, total)
+                } else {
+                    Err(vec![TypeErr::new(
+                        &ast.pos,
+                        &format!("Expected expression but was {}", ast.node.name())
+                    )])
+                },
+
             (Type { .. }, ExpressionAny) | (ExpressionAny, Type { .. }) =>
                 unify_link(constr, sub, ctx, total),
             (Truthy, ExpressionAny) | (ExpressionAny, Truthy) =>
@@ -77,13 +85,19 @@ pub fn unify_link(
                 unify_link(&mut constr, &subst, ctx, total)
             }
 
-            (Type { .. }, Expression { .. }) | (Truthy, Expression { .. }) => {
-                let mut constr = substitute(&left, &right, &constr)?;
-                let mut subst = Constraints::default();
-                subst.eager_push(&left, &right);
-                subst.append(&substitute(&left, &right, &sub)?);
-                unify_link(&mut constr, &subst, ctx, total)
-            }
+            (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
+                if ast.node.is_expression() {
+                    let mut constr = substitute(&left, &right, &constr)?;
+                    let mut subst = Constraints::default();
+                    subst.eager_push(&left, &right);
+                    subst.append(&substitute(&left, &right, &sub)?);
+                    unify_link(&mut constr, &subst, ctx, total)
+                } else {
+                    Err(vec![TypeErr::new(
+                        &ast.pos,
+                        &format!("Expected expression but was {}", ast.node.name())
+                    )])
+                },
 
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;

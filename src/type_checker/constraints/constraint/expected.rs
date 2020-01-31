@@ -11,14 +11,10 @@ use crate::type_checker::context::ty;
 use crate::type_checker::type_name::TypeName;
 use crate::type_checker::util::comma_delimited;
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug)]
 pub struct Expected {
     pub pos:    Position,
     pub expect: Expect
-}
-
-impl PartialEq for Expected {
-    fn eq(&self, other: &Self) -> bool { self.expect == other.expect }
 }
 
 impl Expected {
@@ -28,27 +24,28 @@ impl Expected {
 }
 
 impl From<&AST> for Expected {
-    fn from(ast: &AST) -> Self {
-        match &ast.node {
+    fn from(ast: &AST) -> Expected {
+        let ast = match &ast.node {
             Node::Block { statements } =>
                 if let Some(stmt) = statements.last() {
-                    Expected::from(stmt)
+                    stmt
                 } else {
-                    // TODO Add expected for statements
-                    Expected::new(&ast.pos, &Expression { ast: ast.clone() })
+                    ast
                 },
-            _ => Expected::new(&ast.pos, &Expression { ast: ast.clone() })
-        }
+            _ => ast
+        };
+
+        Expected::new(&ast.pos, &Expression { ast: ast.clone() })
     }
 }
 
 impl From<&Box<AST>> for Expected {
-    fn from(ast: &Box<AST>) -> Self { Expected::from(ast.deref()) }
+    fn from(ast: &Box<AST>) -> Expected { Expected::from(ast.deref()) }
 }
 
 // TODO rework HasField
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug)]
 pub enum Expect {
     Nullable,
     Mutable,
@@ -88,10 +85,10 @@ impl Display for Expect {
     }
 }
 
-impl PartialEq for Expect {
-    fn eq(&self, other: &Self) -> bool {
+impl Expect {
+    pub fn trivially_eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l == r,
+            (Collection { ty: l }, Collection { ty: r }) => l.trivially_eq(r),
             (HasField { name: l }, HasField { name: r }) => l == r,
             (Raises { type_name: l }, Raises { type_name: r })
             | (Type { type_name: l }, Type { type_name: r }) => l == r,
@@ -100,7 +97,7 @@ impl PartialEq for Expect {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                         if let EitherOrBoth::Both(left, right) = pair {
-                            left == right
+                            left.expect.trivially_eq(&right.expect)
                         } else {
                             false
                         }
