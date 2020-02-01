@@ -296,6 +296,10 @@ impl Node {
         }
     }
 
+    /// True if node is an expression
+    ///
+    /// Note that some a function call might not evaluate to a value of it
+    /// happens to be a function without a return type.
     pub fn is_expression(&self) -> bool {
         match &self {
             Node::AnonFun { .. }

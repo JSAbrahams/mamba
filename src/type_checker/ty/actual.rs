@@ -12,6 +12,7 @@ use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::ty::expression::ExpressionType;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
+use std::collections::HashSet;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
@@ -32,6 +33,13 @@ impl Display for ActualType {
 }
 
 impl ActualType {
+    pub fn fields(&self, pos: &Position) -> TypeResult<HashSet<Field>> {
+        match &self {
+            ActualType::Single { ty } => Ok(ty.fields.clone()),
+            _ => Err(vec![TypeErr::new(pos, &format!("{} does not have fields", &self))])
+        }
+    }
+
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         match &self {
             ActualType::Single { ty } => ty.field(field, pos),

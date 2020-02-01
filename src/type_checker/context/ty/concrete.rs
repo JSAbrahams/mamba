@@ -31,15 +31,16 @@ pub const LIST: &str = "List";
 pub const NONE: &str = "undefined";
 pub const EXCEPTION: &str = "Exception";
 
-// TODO change
-
+/// Concrete type.
+///
+/// Has fields and functions defined within and from parents for easy access.
 #[derive(Debug, Clone, Eq)]
 pub struct Type {
     pub is_py_type: bool,
     pub name:       ActualTypeName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
-    fields:         HashSet<Field>,
+    pub fields:     HashSet<Field>,
     functions:      HashSet<Function>
 }
 

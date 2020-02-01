@@ -84,6 +84,18 @@ impl ExpressionType {
         }
     }
 
+    pub fn fields(&self, pos: &Position) -> TypeResult<Vec<HashSet<Field>>> {
+        match &self {
+            ExpressionType::Single { ty } => {
+                let mut all_fields = Vec::new();
+                all_fields.push(ty.actual_ty().fields(pos)?);
+                Ok(all_fields)
+            }
+            ExpressionType::Union { union } =>
+                union.iter().map(|ty| ty.actual_ty().fields(pos)).collect(),
+        }
+    }
+
     pub fn single(&self, pos: &Position) -> TypeResult<NullableType> {
         match self {
             ExpressionType::Single { ty: mut_ty } => Ok(mut_ty.clone()),

@@ -6,8 +6,6 @@ use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::generate::definition::identifier_from_var;
-use crate::type_checker::constraints::generate::ty::constrain_ty;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -25,13 +23,44 @@ pub fn gen_class(
         Node::Class { body: Some(body), args, ty, .. } => match &body.node {
             Node::Block { statements } => {
                 constr.new_set(true);
+                let mut res = (constr.clone(), env.clone());
                 let type_name = TypeName::try_from(ty.deref())?;
-                let (constr, env) = constrain_class_args(&type_name, args, env, ctx, constr)?;
-                let env = env.in_class_new(&Type { type_name });
-                let (mut constr, env) = gen_vec(statements, &env, ctx, &constr)?;
+                let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
 
-                constr.exit_set(&ast.pos)?;
-                Ok((constr, env))
+                for fields in all_fields {
+                    for field in fields {
+                        let var = AST { pos: ty.pos.clone(), node: Node::Id { lit: field.name } };
+
+                        // TODO generate constraints are part of interface
+                        let field_ty = field.ty.ok_or_else(|| {
+                            TypeErr::new(
+                                &ty.pos,
+                                "Currently, all fields must have a type.\n In future, we will \
+                                 have infer these types."
+                            )
+                        })?;
+                        let field_ty_exp = Expected::new(&ty.pos, &Type { type_name: field_ty });
+                        res = property_from_field(
+                            field.mutable,
+                            &var,
+                            &type_name,
+                            &field_ty_exp,
+                            &res.1,
+                            &mut res.0
+                        )?;
+
+                        if field.mutable {
+                            let var_exp = Expected::from(&var);
+                            res.0.add(&var_exp, &Expected::new(&ty.pos, &Mutable))
+                        }
+                    }
+                }
+
+                res.1 = res.1.in_class_new(&Type { type_name });
+                res = gen_vec(statements, &res.1, ctx, &mut res.0)?;
+
+                res.0.exit_set(&ast.pos)?;
+                Ok(res)
             }
             _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
         },
@@ -59,67 +88,23 @@ pub fn gen_class(
     }
 }
 
-fn constrain_class_args(
-    class_name: &TypeName,
-    args: &[AST],
-    env: &Environment,
-    ctx: &Context,
-    constr: &ConstrBuilder
-) -> Constrained {
-    let mut res = (constr.clone(), env.clone());
-    for arg in args {
-        match &arg.node {
-            Node::FunArg { mutable, var, ty, default, .. } => {
-                res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
-                res = match (ty, default) {
-                    (Some(ty), Some(default)) =>
-                        constrain_ty(default, ty, &res.1, ctx, &mut res.0)?,
-                    (None, Some(default)) => generate(default, &res.1, ctx, &mut res.0)?,
-                    _ => {
-                        let right = Expected::new(&var.pos, &ExpressionAny);
-                        property_from_var(var, &right, &res.1, &mut res.0)?
-                    }
-                }
-            }
-            Node::VariableDef { mutable, var, ty, expression: default, private, .. } => {
-                res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
-                res = match (ty, default) {
-                    (Some(ty), Some(default)) => {
-                        let type_name = TypeName::try_from(ty)?;
-                        let right = Expected::new(&ty.pos, &Type { type_name });
-                        let (mut constr, env) = property_from_var(var, &right, &res.1, &mut res.0)?;
-                        constrain_ty(default, ty, &env, ctx, &mut constr)?
-                    }
-                    (Some(ty), None) => {
-                        let type_name = TypeName::try_from(ty)?;
-                        let right = Expected::new(&ty.pos, &Type { type_name });
-                        property_from_var(var, &right, &res.1, &mut res.0)?
-                    }
-                    (None, Some(default)) => {
-                        let right = Expected::from(default);
-                        let (mut constr, env) = property_from_var(var, &right, &res.1, &mut res.0)?;
-                        generate(default, &env, ctx, &mut constr)?
-                    }
-                    (None, None) => {
-                        let right = Expected::new(&var.pos, &ExpressionAny);
-                        property_from_var(var, &right, &res.1, &mut res.0)?
-                    }
-                }
-            }
-            _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
-        }
-    }
-
-    Ok(res)
-}
-
-pub fn property_from_var(
+/// Generate constraint for a given field.
+///
+/// arg_exp can be either expected type or the default value.
+/// Generates constraint such that a property access of self and the given field
+/// is constrained on the type. Also generates a constraint such that the type
+/// of self (given as class_ty) HasField with given name. Uses Identifier to
+/// generate fields from given AST.
+pub fn property_from_field(
+    mutable: bool,
     field: &AST,
+    class_ty: &TypeName,
     arg_exp: &Expected,
     env: &Environment,
     constr: &mut ConstrBuilder
 ) -> Constrained {
     let identifier = Identifier::try_from(field)?;
+    let mut res = (constr.clone(), env.clone());
     for (_, f_name) in &identifier.fields() {
         let node = Node::PropertyCall {
             instance: Box::new(AST { pos: field.pos.clone(), node: Node::_Self }),
@@ -130,8 +115,13 @@ pub fn property_from_var(
         };
 
         let property_exp = Expected::from(&AST::new(&field.pos, node));
-        constr.add(&property_exp, &arg_exp);
+        res.1 = res.1.insert_new(mutable, f_name, &property_exp.expect);
+        res.0.add(&arg_exp, &property_exp);
+        res.0.add(
+            &Expected::new(&field.pos, &Type { type_name: class_ty.clone() }),
+            &Expected::new(&field.pos, &HasField { name: f_name.clone() })
+        )
     }
 
-    Ok((constr.clone(), env.clone()))
+    Ok(res)
 }
