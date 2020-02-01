@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
+use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
@@ -8,8 +9,8 @@ use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
+use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::Context;
-use crate::type_checker::environment::name::Identifier;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
 
@@ -20,58 +21,36 @@ pub fn gen_class(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::Class { body: Some(body), args, ty, .. } => match &body.node {
-            Node::Block { statements } => {
-                constr.new_set(true);
-                let mut res = (constr.clone(), env.clone());
-                let type_name = TypeName::try_from(ty.deref())?;
-                let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
+        Node::Class { body: Some(body), ty, .. } | Node::TypeDef { body: Some(body), ty, .. } =>
+            match &body.node {
+                Node::Block { statements } => {
+                    constr.new_set(true);
+                    let mut res = (constr.clone(), env.clone());
+                    let type_name = TypeName::try_from(ty.deref())?;
+                    let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
 
-                for fields in all_fields {
-                    for field in fields {
-                        let var = AST { pos: ty.pos.clone(), node: Node::Id { lit: field.name } };
-
-                        // TODO generate constraints are part of interface
-                        let field_ty = field.ty.ok_or_else(|| {
-                            TypeErr::new(
-                                &ty.pos,
-                                "Currently, all fields must have a type.\n In future, we will \
-                                 have infer these types."
-                            )
-                        })?;
-                        let field_ty_exp = Expected::new(&ty.pos, &Type { type_name: field_ty });
-                        res = property_from_field(
-                            field.mutable,
-                            &var,
-                            &type_name,
-                            &field_ty_exp,
-                            &res.1,
-                            &mut res.0
-                        )?;
-
-                        if field.mutable {
-                            let var_exp = Expected::from(&var);
-                            res.0.add(&var_exp, &Expected::new(&ty.pos, &Mutable))
+                    for fields in all_fields {
+                        for field in fields {
+                            res = property_from_field(
+                                &ty.pos, &field, &type_name, &res.1, &mut res.0
+                            )?;
                         }
                     }
+
+                    let class_ty_exp = Type { type_name };
+                    res.1 = res.1.in_class_new(&class_ty_exp);
+                    res.0.add(
+                        &Expected::from(&AST { pos: ty.pos.clone(), node: Node::_Self }),
+                        &Expected::new(&ty.pos, &class_ty_exp)
+                    );
+                    res = gen_vec(statements, &res.1, ctx, &mut res.0)?;
+
+                    res.0.exit_set(&ast.pos)?;
+                    Ok(res)
                 }
-
-                res.1 = res.1.in_class_new(&Type { type_name });
-                res = gen_vec(statements, &res.1, ctx, &mut res.0)?;
-
-                res.0.exit_set(&ast.pos)?;
-                Ok(res)
-            }
-            _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
-        },
-        Node::Class { .. } => Ok((constr.clone(), env.clone())),
-
-        Node::TypeDef { body: Some(body), ty, .. } => {
-            let type_name = TypeName::try_from(ty.deref())?;
-            let env = env.in_class_new(&Type { type_name });
-            generate(body, &env, ctx, constr)
-        }
-        Node::TypeDef { .. } => Ok((constr.clone(), env.clone())),
+                _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
+            },
+        Node::Class { .. } | Node::TypeDef { .. } => Ok((constr.clone(), env.clone())),
 
         Node::TypeAlias { conditions, ty, .. } => {
             let type_name = TypeName::try_from(ty.deref())?;
@@ -89,39 +68,38 @@ pub fn gen_class(
 }
 
 /// Generate constraint for a given field.
-///
-/// arg_exp can be either expected type or the default value.
-/// Generates constraint such that a property access of self and the given field
-/// is constrained on the type. Also generates a constraint such that the type
-/// of self (given as class_ty) HasField with given name. Uses Identifier to
-/// generate fields from given AST.
 pub fn property_from_field(
-    mutable: bool,
-    field: &AST,
+    pos: &Position,
+    field: &Field,
     class_ty: &TypeName,
-    arg_exp: &Expected,
     env: &Environment,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let identifier = Identifier::try_from(field)?;
-    let mut res = (constr.clone(), env.clone());
-    for (_, f_name) in &identifier.fields() {
-        let node = Node::PropertyCall {
-            instance: Box::new(AST { pos: field.pos.clone(), node: Node::_Self }),
-            property: Box::new(AST {
-                pos:  field.pos.clone(),
-                node: Node::Id { lit: f_name.clone() }
-            })
-        };
+    // TODO generate constraints are part of interface
+    // TODO add constraint for mutable field
+    let field_ty = field.ty.clone().ok_or_else(|| {
+        let msg = format!(
+            "{} did not have a type annotation.\nCurrently, all fields must have a type.\nIn \
+             future, we will infer these types.",
+            field
+        );
+        TypeErr::new(&pos, &msg)
+    })?;
 
-        let property_exp = Expected::from(&AST::new(&field.pos, node));
-        res.1 = res.1.insert_new(mutable, f_name, &property_exp.expect);
-        res.0.add(&arg_exp, &property_exp);
-        res.0.add(
-            &Expected::new(&field.pos, &Type { type_name: class_ty.clone() }),
-            &Expected::new(&field.pos, &HasField { name: f_name.clone() })
-        )
-    }
+    let node = Node::PropertyCall {
+        instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
+        property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } })
+    };
+    let property_call = Expected::from(&AST::new(&pos, node));
+    let field_ty = Expected::new(&pos, &Type { type_name: field_ty });
 
-    Ok(res)
+    let env = env.insert_new(field.mutable, &field.name, &field_ty.expect);
+    constr.add(&field_ty, &property_call);
+
+    constr.add(
+        &Expected::new(&pos, &Type { type_name: class_ty.clone() }),
+        &Expected::new(&pos, &HasField { name: field.name.clone() })
+    );
+
+    Ok((constr.clone(), env))
 }

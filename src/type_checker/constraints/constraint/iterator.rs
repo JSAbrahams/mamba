@@ -38,9 +38,11 @@ impl Constraints {
         if constraint.flagged {
             // Can only reinsert constraint once
             let msg = match (&constraint.parent.expect, &constraint.child.expect) {
-                (Expect::Type { type_name, .. }, _) | (_, Expect::Type { type_name, .. }) =>
-                    format!("Cannot infer type: expected a {}", type_name),
-                _ => String::from("Cannot infer type")
+                (Expect::Expression { .. }, Expect::Expression { .. }) =>
+                    String::from("Cannot infer type"),
+                (other, Expect::Expression { .. }) | (Expect::Expression { .. }, other) =>
+                    format!("Cannot infer type: expected a {} expression", other),
+                _ => String::from("cannot infer type")
             };
 
             return Err(vec![TypeErr::new(&constraint.parent.pos, &msg)]);
