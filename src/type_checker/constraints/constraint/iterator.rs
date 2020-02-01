@@ -37,11 +37,12 @@ impl Constraints {
     pub fn reinsert(&mut self, constraint: &Constraint) -> TypeResult<()> {
         if constraint.flagged {
             // Can only reinsert constraint once
+            // TODO create pretty print for asts
             let msg = match (&constraint.parent.expect, &constraint.child.expect) {
                 (Expect::Expression { .. }, Expect::Expression { .. }) =>
                     String::from("Cannot infer type"),
-                (other, Expect::Expression { .. }) | (Expect::Expression { .. }, other) =>
-                    format!("Cannot infer type: expected a {} expression", other),
+                (other, Expect::Expression { ast }) | (Expect::Expression { ast }, other) =>
+                    format!("Cannot infer type: {} and {:?}", other, ast),
                 _ => String::from("cannot infer type")
             };
 

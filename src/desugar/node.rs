@@ -213,12 +213,16 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
             vararg:  *vararg,
             var:     Box::from(desugar_node(var, imp, state)?),
-            ty:      match ty {
-                Some(ty) => match &var.node {
-                    Node::_Self => None,
-                    _ => Some(Box::from(desugar_node(ty, imp, state)?))
-                },
-                None => None
+            ty:      if state.expand_ty {
+                match ty {
+                    Some(ty) => match &var.node {
+                        Node::_Self => None,
+                        _ => Some(Box::from(desugar_node(ty, imp, state)?))
+                    },
+                    None => None
+                }
+            } else {
+                None
             },
             default: match default {
                 Some(default) => Some(Box::from(desugar_node(default, imp, state)?)),

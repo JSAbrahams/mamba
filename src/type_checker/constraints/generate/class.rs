@@ -23,40 +23,14 @@ pub fn gen_class(
     match &ast.node {
         Node::Class { body: Some(body), ty, .. } | Node::TypeDef { body: Some(body), ty, .. } =>
             match &body.node {
-                Node::Block { statements } => {
-                    constr.new_set(true);
-                    let mut res = (constr.clone(), env.clone());
-                    let type_name = TypeName::try_from(ty.deref())?;
-                    let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
-
-                    for fields in all_fields {
-                        for field in fields {
-                            res = property_from_field(
-                                &ty.pos, &field, &type_name, &res.1, &mut res.0
-                            )?;
-                        }
-                    }
-
-                    let class_ty_exp = Type { type_name };
-                    res.1 = res.1.in_class_new(&class_ty_exp);
-                    res.0.add(
-                        &Expected::from(&AST { pos: ty.pos.clone(), node: Node::_Self }),
-                        &Expected::new(&ty.pos, &class_ty_exp)
-                    );
-                    res = gen_vec(statements, &res.1, ctx, &mut res.0)?;
-
-                    res.0.exit_set(&ast.pos)?;
-                    Ok(res)
-                }
+                Node::Block { statements } =>
+                    constrain_class_body(statements, ty, env, ctx, constr),
                 _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
             },
         Node::Class { .. } | Node::TypeDef { .. } => Ok((constr.clone(), env.clone())),
 
-        Node::TypeAlias { conditions, ty, .. } => {
-            let type_name = TypeName::try_from(ty.deref())?;
-            let env = env.in_class_new(&Type { type_name });
-            gen_vec(conditions, &env, ctx, constr)
-        }
+        Node::TypeAlias { conditions, ty, .. } =>
+            constrain_class_body(conditions, ty, env, ctx, constr),
         Node::Condition { cond, el: Some(el) } => {
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
             generate(el, &env, ctx, &mut constr)
@@ -65,6 +39,37 @@ pub fn gen_class(
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or type definition")])
     }
+}
+
+pub fn constrain_class_body(
+    statements: &[AST],
+    ty: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder
+) -> Constrained {
+    let mut res = (constr.clone(), env.clone());
+    res.0.new_set(true);
+
+    let type_name = TypeName::try_from(ty.deref())?;
+    let class_ty_exp = Type { type_name: type_name.clone() };
+    res.1 = res.1.in_class_new(&class_ty_exp);
+
+    let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
+    for fields in all_fields {
+        for field in fields {
+            res = property_from_field(&ty.pos, &field, &type_name, &res.1, &mut res.0)?;
+        }
+    }
+
+    res.0.add(
+        &Expected::from(&AST { pos: ty.pos.clone(), node: Node::_Self }),
+        &Expected::new(&ty.pos, &class_ty_exp)
+    );
+
+    res = gen_vec(statements, &res.1, ctx, &mut res.0)?;
+    res.0.exit_set(&ty.pos)?;
+    Ok((res.0, env.clone()))
 }
 
 /// Generate constraint for a given field.

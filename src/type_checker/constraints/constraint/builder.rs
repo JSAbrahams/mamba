@@ -17,17 +17,13 @@ impl ConstrBuilder {
     }
 
     pub fn new_set(&mut self, inherit: bool) {
+        self.constraints.push(if inherit { self.constraints[self.level].clone() } else { vec![] });
         self.level += 1;
-        self.constraints.push(if inherit {
-            self.constraints[self.level - 1].clone()
-        } else {
-            vec![]
-        });
     }
 
     pub fn exit_set(&mut self, pos: &Position) -> TypeResult<()> {
         if self.level == 0 {
-            return Err(vec![TypeErr::new(pos, "Something went wrong")]);
+            return Err(vec![TypeErr::new(pos, "Cannot exit top-level set")]);
         }
 
         self.finished.push(self.constraints.remove(self.level));

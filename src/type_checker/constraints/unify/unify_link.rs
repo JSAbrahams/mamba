@@ -78,8 +78,7 @@ pub fn unify_link(
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
-                let mut sub = Constraints::default();
-                sub.eager_push(&left, &right);
+                let mut sub = Constraints::new(&vec![constraint.clone()]);
                 sub.append(&substitute(&left, &right, &sub)?);
 
                 let mut constr = substitute(&left, &right, &constr)?;
@@ -87,8 +86,7 @@ pub fn unify_link(
             }
             (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
-                    let mut sub = Constraints::default();
-                    sub.eager_push(&left, &right);
+                    let mut sub = Constraints::new(&vec![constraint.clone()]);
                     sub.append(&substitute(&left, &right, &sub)?);
 
                     let mut constr = substitute(&left, &right, &constr)?;
