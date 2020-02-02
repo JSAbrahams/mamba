@@ -28,7 +28,7 @@ pub fn gen_flow(
             for case in cases {
                 match &case.node {
                     Node::Case { cond: case_cond, body } => match &case_cond.node {
-                        Node::ExpressionType { expr: _, mutable: _, ty } => {
+                        Node::ExpressionType { ty, .. } => {
                             // TODO use expr and mutable
                             let (left, right) = if let Some(ty) = ty {
                                 let type_name = TypeName::try_from(ty.deref())?;
@@ -103,21 +103,28 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             let (mut constr, env) = constrain_collection(col, expr, env, ctx, constr)?;
-            let (constr, _) = generate(body, &env, ctx, &mut constr)?;
+            let (constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             Ok((constr, env))
         }
         Node::Step { amount } => {
-            let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             let left = Expected::from(amount);
+            let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             constr.add(&left, &Expected::new(&amount.pos, &Type { type_name }));
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
             let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
-            let (constr, _) = generate(body, env, ctx, constr)?;
+            let (constr, _) = generate(body, &env.in_loop(), ctx, constr)?;
             Ok((constr, env.clone()))
         }
+
+        Node::Break | Node::Continue =>
+            if env.in_loop {
+                Ok((constr.clone(), env.clone()))
+            } else {
+                Err(vec![TypeErr::new(&ast.pos, "Cannot be outside loop")])
+            },
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])
     }

@@ -95,6 +95,7 @@ pub fn generate(
         Case { .. } => gen_flow(ast, env, ctx, constr),
         For { .. } | Step { .. } => gen_flow(ast, env, ctx, constr),
         While { .. } => gen_flow(ast, env, ctx, constr),
+        Break | Continue => gen_flow(ast, env, ctx, constr),
 
         Return { .. } => gen_stmt(ast, env, ctx, constr),
         Print { .. } => gen_stmt(ast, env, ctx, constr),

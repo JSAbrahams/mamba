@@ -32,7 +32,7 @@ pub fn gen_def(
                     let type_name = TypeName::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { type_name });
 
-                    let env = env.new_state(&env.state.ret_ty(&ret_ty_exp));
+                    let env = env.return_type(&ret_ty_exp);
                     let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
                     let (constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
                     (constr, env)
@@ -80,7 +80,7 @@ pub fn constrain_args(
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
                 if var.node == Node::_Self {
-                    let self_type = &env.state.in_class_new.clone().ok_or_else(|| {
+                    let self_type = &env.class_type.clone().ok_or_else(|| {
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
                     })?;
                     if default.is_some() {
@@ -88,7 +88,7 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(&arg.pos, &msg)]);
                     }
 
-                    res.1 = res.1.insert_new(*mutable, SELF, self_type);
+                    res.1 = res.1.insert_var(*mutable, SELF, self_type);
                     let left = Expected::from(var);
                     res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
@@ -126,12 +126,12 @@ pub fn identifier_from_var(
 
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, type_name)) in match_type(&identifier, &type_name, &var.pos)? {
-            env = env.insert_new(mutable && f_mut, &f_name, &Type { type_name });
+            env = env.insert_var(mutable && f_mut, &f_name, &Type { type_name });
         }
     } else {
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_mut, f_name) in identifier.fields() {
-            env = env.insert_new(mutable && f_mut, &f_name, &ExpressionAny);
+            env = env.insert_var(mutable && f_mut, &f_name, &ExpressionAny);
         }
     };
 

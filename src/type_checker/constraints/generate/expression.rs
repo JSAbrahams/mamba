@@ -21,7 +21,7 @@ pub fn gen_expr(
             let (mut constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &mut constr)
         }
-        Node::Id { lit } if env.get_var_new(lit).is_some() => Ok((constr.clone(), env.clone())),
+        Node::Id { lit } if env.get_var(lit).is_some() => Ok((constr.clone(), env.clone())),
         Node::Id { lit } =>
             Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))]),
         Node::Question { left, right } => {

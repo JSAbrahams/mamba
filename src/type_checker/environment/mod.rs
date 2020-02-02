@@ -1,90 +1,76 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use crate::common::position::Position;
-use crate::type_checker::checker_result::{TypeErr, TypeResult};
-use crate::type_checker::constraints::constraint::expected::Expect;
-use crate::type_checker::context::function_arg;
-use crate::type_checker::environment::state::State;
-use crate::type_checker::ty::expression::ExpressionType;
-use crate::type_checker::ty_name::TypeName;
+use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
+use crate::type_checker::context::function_arg::concrete::SELF;
+use std::iter::FromIterator;
 
 pub mod name;
-pub mod state;
 
 // TODO use name in lookup functions
 
 #[derive(Clone, Debug)]
 pub struct Environment {
-    pub state: State,
-    pub vars:  HashMap<String, (bool, Expect)>,
-    variables: HashMap<String, (bool, ExpressionType)>
+    pub in_loop:     bool,
+    pub return_type: Option<Expected>,
+    pub class_type:  Option<Expect>,
+    pub vars:        HashMap<String, HashSet<(bool, Expect)>>
 }
 
 impl Default for Environment {
     fn default() -> Self {
         Environment {
-            state:     State::default(),
-            vars:      HashMap::new(),
-            variables: HashMap::new()
+            in_loop:     false,
+            return_type: None,
+            class_type:  None,
+            vars:        HashMap::new()
         }
     }
 }
 
 impl Environment {
-    pub fn lookup_indirect(&self, var: &str, pos: &Position) -> TypeResult<(bool, ExpressionType)> {
-        self.variables
-            .get(var)
-            .cloned()
-            .ok_or_else(|| vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
+    /// Specify that we are in a class
+    ///
+    /// This adds a self variable with the class expected, and class_type is set
+    /// to the expected class type.
+    pub fn in_class(&self, class: &Expect) -> Environment {
+        let env = self.insert_var(false, &String::from(SELF), class);
+        Environment { class_type: Some(class.clone()), ..env }
     }
 
-    pub fn lookup(&self, var: &str, pos: &Position) -> TypeResult<ExpressionType> {
-        self.variables
-            .get(var)
-            .cloned()
-            .map(|(_, expr_ty)| expr_ty)
-            .ok_or_else(|| vec![TypeErr::new(pos, &format!("Undefined variable: {}", var))])
-    }
-
-    pub fn in_class_new(&self, class: &Expect) -> Environment {
-        let state = self.state.in_class_new(class);
-        Environment { state, ..self.clone() }
-    }
-
-    pub fn in_class(&self, mutable: bool, class: &ExpressionType) -> Environment {
-        let mut variables = self.variables.clone();
-        variables.insert(String::from(function_arg::concrete::SELF), (mutable, class.clone()));
-
-        let state = self.state.in_class(&TypeName::from(class));
-        Environment { state, vars: self.vars.clone(), variables }
-    }
-
-    pub fn new_state(&self, state: &State) -> Self {
-        Environment { state: state.clone(), ..self.clone() }
-    }
-
-    pub fn remove(&mut self, var: &str) -> Option<(bool, ExpressionType)> {
-        self.variables.remove(var)
-    }
-
-    pub fn insert_new(&self, mutable: bool, var: &str, expect: &Expect) -> Environment {
+    /// Insert a variable.
+    ///
+    /// If it has a previous expected type then this is overwritten
+    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expect) -> Environment {
         let mut vars = self.vars.clone();
-        vars.insert(String::from(var), (mutable, expect.clone()));
+        let expected_set = HashSet::from_iter(vec![(mutable, expect.clone())].into_iter());
+        vars.insert(String::from(var), expected_set);
         Environment { vars, ..self.clone() }
     }
 
-    pub fn get_var_new(&self, var: &str) -> Option<(bool, Expect)> { self.vars.get(var).cloned() }
+    /// Specify that we are in a loop.
+    ///
+    /// Useful for checking if a break or continue statement is correctly
+    /// placed.
+    pub fn in_loop(&self) -> Environment { Environment { in_loop: true, ..self.clone() } }
 
-    pub fn insert(&mut self, var: &str, mutable: bool, expr_ty: &ExpressionType) {
-        self.variables.insert(String::from(var), (mutable, expr_ty.clone()));
+    /// Specify the return type of function body.
+    pub fn return_type(&self, return_type: &Expected) -> Environment {
+        Environment { return_type: Some(return_type.clone()), ..self.clone() }
     }
 
-    // TODO implement properly
-    pub fn difference(self, env: Environment) -> Environment {
-        let mut variables = self.variables;
-        let mut vars = self.vars;
-        variables.extend(env.variables);
-        vars.extend(env.vars);
-        Environment { variables, vars, ..self }
+    /// Gets a variable.
+    ///
+    /// Is Some, Vector wil usually contain only one expected.
+    /// It can contain multiple if the environment was unioned or intersected at
+    /// one point.
+    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expect)>> {
+        self.vars.get(var).cloned()
     }
+
+    /// Intersection between two environments.
+    ///
+    /// If both environments contain the same variable, variable gets assigned
+    /// both the expected. Variables that are only present in one of the
+    /// environments are discarded.
+    pub fn intersect(&self, env: &Environment) -> Environment { Environment { ..self.clone() } }
 }

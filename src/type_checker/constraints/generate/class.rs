@@ -53,7 +53,7 @@ pub fn constrain_class_body(
 
     let type_name = TypeName::try_from(ty.deref())?;
     let class_ty_exp = Type { type_name: type_name.clone() };
-    res.1 = res.1.in_class_new(&class_ty_exp);
+    res.1 = res.1.in_class(&class_ty_exp);
 
     let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
     for fields in all_fields {
@@ -98,7 +98,7 @@ pub fn property_from_field(
     let property_call = Expected::from(&AST::new(&pos, node));
     let field_ty = Expected::new(&pos, &Type { type_name: field_ty });
 
-    let env = env.insert_new(field.mutable, &field.name, &field_ty.expect);
+    let env = env.insert_var(field.mutable, &field.name, &field_ty.expect);
     constr.add(&field_ty, &property_call);
 
     constr.add(

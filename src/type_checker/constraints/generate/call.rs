@@ -52,13 +52,15 @@ pub fn gen_call(
             let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            if let Some((_, function)) = env.get_var_new(&f_str_name) {
-                let left = Expected::new(&name.pos, &function);
+            if let Some(return_types) = env.get_var(&f_str_name) {
+                for (_, function) in return_types {
+                    let left = Expected::new(&name.pos, &function);
 
-                let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-                let args = args.iter().map(Expected::from).collect();
-                let right = Expected::new(&last_pos, &Function { name: f_name, args });
-                constr.add(&left, &right);
+                    let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
+                    let args = args.iter().map(Expected::from).collect();
+                    let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
+                    constr.add(&left, &right);
+                }
             } else {
                 // Resort to looking up in Context
                 let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;

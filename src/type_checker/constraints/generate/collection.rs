@@ -51,7 +51,7 @@ pub fn constrain_collection(
     let identifier = Identifier::try_from(lookup)?;
     let mut env = env.clone();
     for (mutable, var) in identifier.fields() {
-        env = env.insert_new(mutable, &var, &ExpressionAny);
+        env = env.insert_var(mutable, &var, &ExpressionAny);
     }
 
     let exp_collection = Collection { ty: Box::from(Expression { ast: lookup.clone() }) };

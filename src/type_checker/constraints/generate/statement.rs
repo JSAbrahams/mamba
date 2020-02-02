@@ -17,7 +17,7 @@ pub fn gen_stmt(
     match &ast.node {
         Node::Raise { error } => generate(error, env, ctx, constr),
         Node::Return { expr } =>
-            if let Some(expected_ret_ty) = &env.state.ret_ty {
+            if let Some(expected_ret_ty) = &env.return_type {
                 let left = Expected::from(expr);
                 constr.add(&left, &expected_ret_ty);
                 generate(expr, env, ctx, constr)

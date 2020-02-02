@@ -11,7 +11,7 @@ use crate::type_checker::context::ty;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
     pub pos:    Position,
     pub expect: Expect
@@ -45,7 +45,7 @@ impl From<&Box<AST>> for Expected {
 
 // TODO rework HasField
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
     Nullable,
     Mutable,
