@@ -1,6 +1,3 @@
-use std::convert::TryFrom;
-use std::ops::Deref;
-
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
@@ -25,35 +22,6 @@ pub fn gen_flow(
             let cond_expect = Expression { ast: *expr_or_stmt.clone() };
 
             // TODO check that all raises are covered
-            for case in cases {
-                match &case.node {
-                    Node::Case { cond: case_cond, body } => match &case_cond.node {
-                        Node::ExpressionType { ty, .. } => {
-                            // TODO use expr and mutable
-                            let (left, right) = if let Some(ty) = ty {
-                                let type_name = TypeName::try_from(ty.deref())?;
-                                (
-                                    Expected::new(&body.pos, &Raises { type_name }),
-                                    Expected::new(&body.pos, &cond_expect)
-                                )
-                            } else {
-                                (
-                                    Expected::new(&body.pos, &RaisesAny),
-                                    Expected::new(&body.pos, &cond_expect)
-                                )
-                            };
-                            res.0.add(&left, &right);
-                            res = generate(body, &res.1, ctx, &mut res.0)?;
-                        }
-                        _ =>
-                            return Err(vec![TypeErr::new(
-                                &case_cond.pos,
-                                "Expected expression type"
-                            )]),
-                    },
-                    _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
-                }
-            }
 
             generate(expr_or_stmt, &res.1, ctx, &mut res.0)
         }
@@ -61,23 +29,29 @@ pub fn gen_flow(
         Node::IfElse { cond, then, el: Some(el) } => {
             let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
+            let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
             let left = Expected::from(then);
             let right = Expected::from(el);
             constr.add(&left, &right);
 
-            // TODO unify environments
-            let (mut constr, env) = generate(cond, env, ctx, constr)?;
-            let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
-            let (constr, _) = generate(el, &env, ctx, &mut constr)?;
-            Ok((constr, env))
+            constr.new_set(true);
+            let (mut constr, then_env) = generate(then, &env, ctx, &mut constr)?;
+            constr.exit_set(&then.pos)?;
+            constr.new_set(true);
+            let (mut constr, else_env) = generate(el, &env, ctx, &mut constr)?;
+            constr.exit_set(&el.pos)?;
+            // TODO apply union to constraints
+            Ok((constr, env.union(&then_env.intersect(&else_env))))
         }
         Node::IfElse { cond, then, .. } => {
             let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
-
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
-            let (constr, _) = generate(then, &env, ctx, &mut constr)?;
+
+            constr.new_set(true);
+            let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
+            constr.exit_set(&then.pos)?;
             Ok((constr, env))
         }
 

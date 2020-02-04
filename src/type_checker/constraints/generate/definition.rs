@@ -7,11 +7,10 @@ use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::generate;
-use crate::type_checker::constraints::generate::resources::constrain_raises;
 use crate::type_checker::constraints::generate::ty::constrain_ty;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::SELF;
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::name::{match_type, Identifier};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
@@ -32,8 +31,24 @@ pub fn gen_def(
                     let type_name = TypeName::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { type_name });
 
-                    let env = env.return_type(&ret_ty_exp);
-                    let (mut constr, env) = constrain_raises(body, raises, &env, ctx, &constr)?;
+                    for (pos, raise) in
+                        raises.iter().map(|r| (r.pos.clone(), TypeName::try_from(r)))
+                    {
+                        let raise = raise?;
+                        if !ctx.lookup(&raise, &pos)?.has_parent(
+                            &TypeName::from(ty::concrete::EXCEPTION),
+                            ctx,
+                            &pos
+                        )? {
+                            let msg = format!("{} is not an {}", raise, ty::concrete::EXCEPTION);
+                            return Err(vec![TypeErr::new(&pos, &msg)]);
+                        }
+                    }
+
+                    let r_tys =
+                        raises.into_iter().map(TypeName::try_from).collect::<Result<_, _>>()?;
+                    let env = env.return_type(&ret_ty_exp).insert_raises(&r_tys, &ast.pos);
+
                     let (constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
                     (constr, env)
                 }

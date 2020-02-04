@@ -77,6 +77,19 @@ fn non_mutable_in_call_chain() {
 }
 
 #[test]
+fn raises_unmentioned_exception() {
+    let source =
+        resource_content(false, &["type", "definition"], "raises_unmentioned_exception.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn raises_non_exception() {
+    let source = resource_content(false, &["type", "definition"], "raises_non_exception.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn reassign_non_mut_field() {
     let source = resource_content(false, &["type", "definition"], "reassign_non_mut_field.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

@@ -10,6 +10,8 @@ use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
+use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
@@ -45,7 +47,7 @@ impl From<&Box<AST>> for Expected {
 
 // TODO rework HasField
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expect {
     Nullable,
     Mutable,
@@ -54,11 +56,36 @@ pub enum Expect {
     Collection { ty: Box<Expect> },
     Truthy,
     RaisesAny,
-    Raises { type_name: TypeName },
+    Raises { raises: HashSet<TypeName> },
     Implements { type_name: TypeName, args: Vec<Expected> },
     Function { name: TypeName, args: Vec<Expected> },
     HasField { name: String },
     Type { type_name: TypeName }
+}
+
+impl Hash for Expect {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match &self {
+            Raises { raises } => raises.iter().for_each(|t| t.hash(state)),
+            Nullable => state.write_i8(0),
+            Mutable => state.write_i8(1),
+            Expression { ast } => ast.hash(state),
+            ExpressionAny => state.write_i8(2),
+            Collection { ty } => ty.hash(state),
+            Truthy => state.write_i8(3),
+            RaisesAny => state.write_i8(4),
+            Implements { type_name, args } => {
+                type_name.hash(state);
+                args.iter().for_each(|a| a.hash(state))
+            }
+            Function { name, args } => {
+                name.hash(state);
+                args.iter().for_each(|a| a.hash(state));
+            }
+            HasField { name } => name.hash(state),
+            Type { type_name } => type_name.hash(state)
+        }
+    }
 }
 
 impl Display for Expect {
@@ -71,7 +98,7 @@ impl Display for Expect {
             Collection { ty } => format!("[Collection[{}]]", ty),
             Truthy => format!("[{}]", ty::concrete::BOOL_PRIMITIVE),
             RaisesAny => String::from("[Raises[?]]"),
-            Raises { type_name } => format!("[Raises[{}]]", type_name),
+            Raises { raises: type_name } => format!("[Raises{{{}}}]]", comma_delimited(type_name)),
             Implements { type_name, args } => format!(
                 "[?.{}({})]",
                 type_name,
@@ -90,8 +117,8 @@ impl Expect {
         match (self, other) {
             (Collection { ty: l }, Collection { ty: r }) => l.structurally_eq(r),
             (HasField { name: l }, HasField { name: r }) => l == r,
-            (Raises { type_name: l }, Raises { type_name: r })
-            | (Type { type_name: l }, Type { type_name: r }) => l == r,
+            (Raises { raises: l }, Raises { raises: r }) => l == r,
+            (Type { type_name: l }, Type { type_name: r }) => l == r,
             (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
             | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r

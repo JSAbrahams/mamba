@@ -13,7 +13,10 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
     let mut substituted = Constraints::default();
     let mut constr = constr.clone();
     let (old, new) = match (&old.expect, &new.expect) {
-        (Type { .. }, Type { .. }) => return Ok(constr),
+        (Type { .. }, Type { .. })
+        | (Truthy, Type { .. })
+        | (Type { .. }, Truthy)
+        | (Truthy, Truthy) => return Ok(constr),
         (Type { .. }, _) | (Truthy, _) => (new, old),
         _ => (old, new)
     };
@@ -27,13 +30,22 @@ pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeR
     };
 
     while let Some(mut constraint) = constr.pop_constr() {
-        if constraint.parent.expect.structurally_eq(&old.expect) {
-            replace!("lhs", constraint.parent);
-            constraint.replace_parent(&Expected::new(&constraint.parent.pos, &new.expect));
+        if constraint.parent.expect.structurally_eq(&old.expect)
+            && constraint.parent.expect != Truthy
+        {
+            if let Type { .. } = constraint.parent.expect {
+            } else {
+                replace!("lhs", constraint.parent);
+                constraint.replace_parent(&Expected::new(&constraint.parent.pos, &new.expect));
+            }
         }
-        if constraint.child.expect.structurally_eq(&old.expect) {
-            replace!("rhs", constraint.child);
-            constraint.replace_child(&Expected::new(&constraint.child.pos, &new.expect));
+        if constraint.child.expect.structurally_eq(&old.expect) && constraint.child.expect != Truthy
+        {
+            if let Type { .. } = constraint.child.expect {
+            } else {
+                replace!("rhs", constraint.child);
+                constraint.replace_child(&Expected::new(&constraint.child.pos, &new.expect));
+            }
         }
 
         substituted.push_constr(&constraint)

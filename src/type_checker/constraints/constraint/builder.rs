@@ -4,9 +4,18 @@ use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::constraint::Constraint;
 
+/// Constraint Builder.
+///
+/// Allows us to build sets of constraints.
+/// This allows us to constrain different parts of the program which may rely on
+/// the same logic, without interfering with each other. E.g. different
+/// functions within the same class.
+///
+/// The level indicates how deep we are. A level of 0 indicates that we are at
+/// the top-level of a script.
 #[derive(Clone, Debug)]
 pub struct ConstrBuilder {
-    level:       usize,
+    pub level:   usize,
     finished:    Vec<Vec<Constraint>>,
     constraints: Vec<Vec<Constraint>>
 }

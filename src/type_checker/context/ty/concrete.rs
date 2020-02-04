@@ -34,6 +34,8 @@ pub const EXCEPTION: &str = "Exception";
 /// Concrete type.
 ///
 /// Has fields and functions defined within and from parents for easy access.
+///
+/// Parents are immediate parents.
 #[derive(Debug, Clone, Eq)]
 pub struct Type {
     pub is_py_type: bool,
@@ -41,6 +43,7 @@ pub struct Type {
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
     pub fields:     HashSet<Field>,
+    pub parents:    HashSet<TypeName>,
     functions:      HashSet<Function>
 }
 
@@ -80,6 +83,7 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
             .map(|fun| Function::try_from((fun, generics, pos)))
             .collect::<Result<_, _>>()?;
 
+        let mut parents: HashSet<TypeName> = HashSet::new();
         for parent in &generic.parents {
             let name = TypeName::from(parent.name.as_str()).single(pos)?;
             let ty = types
@@ -90,6 +94,7 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
             let ty = Type::try_from((ty, generics, types, pos))?;
             fields = fields.union(&ty.fields).cloned().collect();
             functions = functions.union(&ty.functions).cloned().collect();
+            parents.insert(TypeName::from(&name));
         }
 
         Ok(Type {
@@ -101,6 +106,7 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
                 .iter()
                 .map(|a| FunctionArg::try_from((a, generics, pos)))
                 .collect::<Result<_, _>>()?,
+            parents,
             fields,
             functions
         })

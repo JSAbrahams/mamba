@@ -1,5 +1,5 @@
 class MyClass
-    def mut a <- 20
+    def mut a: Int <- 20
     def f(mut self, x: Int) -> Int =>
         self.a <- x
         def y <- x + 230

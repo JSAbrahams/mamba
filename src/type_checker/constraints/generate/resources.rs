@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::checker_result::TypeErr;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
-use crate::type_checker::constraints::constraint::expected::Expect::*;
+use crate::type_checker::constraints::constraint::expected::Expect::Type;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::definition::identifier_from_var;
 use crate::type_checker::constraints::generate::generate;
@@ -20,7 +20,11 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::Raises { expr_or_stmt, errors } => {
-            let (mut constr, env) = constrain_raises(expr_or_stmt, errors, env, ctx, constr)?;
+            let mut constr = constr.clone();
+            for error in errors {
+                let exp = Expected::new(&error.pos, &Type { type_name: TypeName::try_from(ast)? });
+                constr = constrain_raises(&exp, &env.raises, &mut constr)?;
+            }
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
@@ -38,20 +42,24 @@ pub fn gen_resources(
     }
 }
 
+/// Constrain expected to raises
+///
+/// This indicates that the type should be contained within the set of the
+/// raises constraint. Does not constrain if top-level in constr builder,
+/// meaning that we do not constrain raises in top-level scripts.
 pub fn constrain_raises(
-    expr: &AST,
-    errors: &[AST],
-    env: &Environment,
-    ctx: &Context,
-    constr: &ConstrBuilder
-) -> Constrained {
-    let mut res = (constr.clone(), env.clone());
-    for error in errors {
-        let type_name = TypeName::try_from(error)?;
-        let left = Expected::from(expr);
-        res.0.add(&left, &Expected::new(&error.pos, &Raises { type_name }));
-        res = generate(error, &res.1, ctx, &mut res.0)?;
+    exp: &Expected,
+    raises: &Option<Expected>,
+    constr: &mut ConstrBuilder
+) -> TypeResult<ConstrBuilder> {
+    if constr.level == 0 {
+        return Ok(constr.clone());
     }
 
-    Ok(res)
+    if let Some(raises) = raises {
+        constr.add(&exp, raises);
+        Ok(constr.clone())
+    } else {
+        Err(vec![TypeErr::new(&exp.pos, "Unexpected raise")])
+    }
 }

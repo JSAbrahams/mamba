@@ -10,6 +10,7 @@ use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::concrete;
+use crate::type_checker::context::Context;
 use crate::type_checker::ty::nullable::NullableType;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::nullable::NullableTypeName;
@@ -62,6 +63,24 @@ impl Display for ExpressionType {
 }
 
 impl ExpressionType {
+    pub fn has_parent(
+        &self,
+        type_name: &TypeName,
+        ctx: &Context,
+        pos: &Position
+    ) -> TypeResult<bool> {
+        match &self {
+            ExpressionType::Single { ty } => ty.actual_ty().has_parent(type_name, ctx, pos),
+            ExpressionType::Union { union } => {
+                let bools: Vec<bool> = union
+                    .iter()
+                    .map(|t| t.actual_ty().has_parent(type_name, ctx, pos))
+                    .collect::<Result<_, _>>()?;
+                Ok(bools.iter().all(|b| *b))
+            }
+        }
+    }
+
     pub fn union(self, other: &ExpressionType) -> ExpressionType {
         let union: HashSet<NullableType> = match (&self, other) {
             (ExpressionType::Single { ty: mut_ty }, ExpressionType::Single { ty: other }) =>

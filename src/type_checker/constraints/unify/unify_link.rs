@@ -14,6 +14,7 @@ use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
 use crate::type_checker::ty_name::TypeName;
+use crate::type_checker::util::comma_delimited;
 
 /// Unifies all constraints.
 
@@ -109,7 +110,7 @@ pub fn unify_link(
                     unify_link(constr, sub, ctx, total)
                 } else {
                     // TODO construct error based on type of constraint
-                    let msg = format!("Types not equal: {} != {}", l_ty, r_ty);
+                    let msg = format!("Expected a {} but got {}", l_ty, r_ty);
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 },
 
@@ -155,6 +156,29 @@ pub fn unify_link(
                     )])
                 },
 
+            (Type { type_name }, Raises { raises }) =>
+                if raises.contains(type_name) {
+                    unify_link(constr, sub, ctx, total)
+                } else {
+                    let msg = format!(
+                        "Unexpected raises {}, must be one of: {}",
+                        type_name,
+                        comma_delimited(raises)
+                    );
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                },
+            (Raises { raises }, Type { type_name }) =>
+                if raises.contains(type_name) {
+                    unify_link(constr, sub, ctx, total)
+                } else {
+                    let msg = format!(
+                        "Unexpected raises {}, must be one of: {}",
+                        type_name,
+                        comma_delimited(raises)
+                    );
+                    Err(vec![TypeErr::new(&right.pos, &msg)])
+                },
+
             (Type { type_name }, Mutable) | (Mutable, Type { type_name }) => {
                 // TODO add mutable field to TypeName
                 unify_link(constr, sub, ctx, total)
@@ -179,7 +203,7 @@ pub fn unify_link(
                 let functions = expr_ty.anon_fun_params(&left.pos)?;
 
                 let mut count = 0;
-                for (f_args, f_ret_ty) in &functions {
+                for (f_args, _) in &functions {
                     for possible in f_args.iter().zip_longest(args.iter()) {
                         match possible {
                             EitherOrBoth::Both(type_name, expected) => {

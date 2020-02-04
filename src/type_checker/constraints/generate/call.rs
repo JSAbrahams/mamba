@@ -52,8 +52,8 @@ pub fn gen_call(
             let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            if let Some(return_types) = env.get_var(&f_str_name) {
-                for (_, function) in return_types {
+            if let Some(functions) = env.get_var(&f_str_name) {
+                for (_, function) in functions {
                     let left = Expected::new(&name.pos, &function);
 
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());

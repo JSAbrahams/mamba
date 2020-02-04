@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
@@ -9,10 +10,10 @@ use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::args_compatible;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::concrete::Type;
+use crate::type_checker::context::Context;
 use crate::type_checker::ty::expression::ExpressionType;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
-use std::collections::HashSet;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ActualType {
@@ -33,6 +34,31 @@ impl Display for ActualType {
 }
 
 impl ActualType {
+    pub fn has_parent(
+        &self,
+        type_name: &TypeName,
+        ctx: &Context,
+        pos: &Position
+    ) -> TypeResult<bool> {
+        match &self {
+            ActualType::Single { ty } => {
+                let immediate_parents = ty.parents.clone();
+                Ok(immediate_parents.contains(type_name) || {
+                    let parent_tys: Vec<ExpressionType> = immediate_parents
+                        .iter()
+                        .map(|p| ctx.lookup(p, pos))
+                        .collect::<Result<_, _>>()?;
+                    let bools: Vec<bool> = parent_tys
+                        .iter()
+                        .map(|p_ty| p_ty.has_parent(type_name, ctx, pos))
+                        .collect::<Result<_, _>>()?;
+                    bools.iter().any(|b| *b)
+                })
+            }
+            _ => Err(vec![TypeErr::new(pos, &format!("{} does not have parents", &self))])
+        }
+    }
+
     pub fn fields(&self, pos: &Position) -> TypeResult<HashSet<Field>> {
         match &self {
             ActualType::Single { ty } => Ok(ty.fields.clone()),

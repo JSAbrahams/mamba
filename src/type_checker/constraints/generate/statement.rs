@@ -4,6 +4,7 @@ use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::generate;
+use crate::type_checker::constraints::generate::resources::constrain_raises;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
@@ -15,7 +16,10 @@ pub fn gen_stmt(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::Raise { error } => generate(error, env, ctx, constr),
+        Node::Raise { error } => {
+            let mut constr = constrain_raises(&Expected::from(error), &env.raises, constr)?;
+            generate(error, env, ctx, &mut constr)
+        }
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.return_type {
                 let left = Expected::from(expr);
