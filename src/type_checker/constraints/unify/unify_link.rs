@@ -4,7 +4,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::checker_result::TypeErr;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
@@ -13,6 +13,7 @@ use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
+use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
 
@@ -127,20 +128,13 @@ pub fn unify_link(
                 let possible = expr_ty.function(&f_name, &left.pos)?;
                 for function in &possible {
                     if function.private {
-                        let mut in_a_parent = false;
-                        for in_class in &constr.in_class {
-                            in_a_parent = in_a_parent
-                                || ctx
-                                    .lookup(&in_class, &right.pos)?
-                                    .has_parent(type_name, ctx, &right.pos)?;
-                        }
-                        if !in_a_parent {
-                            let msg = format!(
-                                "Cannot access private function {} of a {}",
-                                function.name, type_name
-                            );
-                            return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                        }
+                        check_if_parent(
+                            &function.name,
+                            &constr.in_class,
+                            &type_name,
+                            ctx,
+                            &right.pos
+                        )?;
                     }
                 }
 
@@ -247,23 +241,10 @@ pub fn unify_link(
             (Type { type_name }, HasField { name }) | (HasField { name }, Type { type_name }) => {
                 let field = ctx.lookup(type_name, &right.pos)?.field(name, &left.pos)?;
                 if field.private {
-                    let mut in_a_parent = false;
-                    for in_class in &constr.in_class {
-                        in_a_parent = in_a_parent
-                            || ctx
-                                .lookup(&in_class, &right.pos)?
-                                .has_parent(type_name, ctx, &right.pos)?;
-                    }
-
-                    if in_a_parent {
-                        unify_link(constr, sub, ctx, total)
-                    } else {
-                        let msg = format!("Cannot access private field {} of {}", name, type_name);
-                        Err(vec![TypeErr::new(&left.pos, &msg)])
-                    }
-                } else {
-                    unify_link(constr, sub, ctx, total)
+                    let name = ActualTypeName::new(&field.name, &[]);
+                    check_if_parent(&name, &constr.in_class, type_name, ctx, &left.pos)?;
                 }
+                unify_link(constr, sub, ctx, total)
             }
 
             _ => {
@@ -326,4 +307,28 @@ fn unify_fun_arg(
     }
 
     Ok((constr, added))
+}
+
+fn check_if_parent(
+    name: &ActualTypeName,
+    in_class: &Vec<TypeName>,
+    type_name: &TypeName,
+    ctx: &Context,
+    pos: &Position
+) -> TypeResult<()> {
+    let mut in_a_parent = false;
+    for class in in_class {
+        let is_parent = ctx.lookup(&class, pos)?.has_parent(type_name, ctx, pos)?;
+        in_a_parent = in_a_parent || is_parent;
+        if in_a_parent {
+            break;
+        }
+    }
+
+    if in_a_parent {
+        Ok(())
+    } else {
+        let msg = format!("Cannot access private function {} of a {}", name, type_name);
+        Err(vec![TypeErr::new(pos, &msg)])
+    }
 }

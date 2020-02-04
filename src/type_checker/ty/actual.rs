@@ -41,6 +41,7 @@ impl ActualType {
     pub fn has_parent(
         &self,
         type_name: &TypeName,
+        checked: &HashSet<TypeName>,
         ctx: &Context,
         pos: &Position
     ) -> TypeResult<bool> {
@@ -56,7 +57,7 @@ impl ActualType {
                             .collect::<Result<_, _>>()?;
                         let bools: Vec<bool> = parent_tys
                             .iter()
-                            .map(|p_ty| p_ty.has_parent(type_name, ctx, pos))
+                            .map(|p_ty| p_ty.has_parent_checked(type_name, checked, ctx, pos))
                             .collect::<Result<_, _>>()?;
                         bools.iter().any(|b| *b)
                     })

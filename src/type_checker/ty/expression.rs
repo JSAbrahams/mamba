@@ -69,12 +69,33 @@ impl ExpressionType {
         ctx: &Context,
         pos: &Position
     ) -> TypeResult<bool> {
+        // As an extra precaution
+        self.has_parent_checked(type_name, &HashSet::new(), ctx, pos)
+    }
+
+    pub fn has_parent_checked(
+        &self,
+        type_name: &TypeName,
+        checked: &HashSet<TypeName>,
+        ctx: &Context,
+        pos: &Position
+    ) -> TypeResult<bool> {
+        if checked.contains(type_name) {
+            // Should be checked during pass of context
+            let msg = format!("Circular dependency detected. {} is a parent of itself", type_name);
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
+
+        let mut checked = checked.clone();
+        checked.insert(type_name.clone());
+
         match &self {
-            ExpressionType::Single { ty } => ty.actual_ty().has_parent(type_name, ctx, pos),
+            ExpressionType::Single { ty } =>
+                ty.actual_ty().has_parent(type_name, &checked, ctx, pos),
             ExpressionType::Union { union } => {
                 let bools: Vec<bool> = union
                     .iter()
-                    .map(|t| t.actual_ty().has_parent(type_name, ctx, pos))
+                    .map(|t| t.actual_ty().has_parent(type_name, &checked, ctx, pos))
                     .collect::<Result<_, _>>()?;
                 Ok(bools.iter().all(|b| *b))
             }
