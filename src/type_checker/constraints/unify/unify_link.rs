@@ -179,10 +179,6 @@ pub fn unify_link(
                     Err(vec![TypeErr::new(&right.pos, &msg)])
                 },
 
-            (Type { type_name }, Mutable) | (Mutable, Type { type_name }) => {
-                // TODO add mutable field to TypeName
-                unify_link(constr, sub, ctx, total)
-            }
             (Type { type_name }, Nullable) | (Nullable, Type { type_name }) =>
                 if type_name.is_nullable() {
                     unify_link(constr, sub, ctx, total)

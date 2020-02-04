@@ -50,7 +50,6 @@ impl From<&Box<AST>> for Expected {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expect {
     Nullable,
-    Mutable,
     Expression { ast: AST },
     ExpressionAny,
     Collection { ty: Box<Expect> },
@@ -67,8 +66,7 @@ impl Hash for Expect {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match &self {
             Raises { raises } => raises.iter().for_each(|t| t.hash(state)),
-            Nullable => state.write_i8(0),
-            Mutable => state.write_i8(1),
+            Nullable => state.write_i8(1),
             Expression { ast } => ast.hash(state),
             ExpressionAny => state.write_i8(2),
             Collection { ty } => ty.hash(state),
@@ -92,7 +90,6 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
             Nullable => String::from("None"),
-            Mutable => String::from("Mutable"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{:?}", ast.node),
             Collection { ty } => format!("[Collection[{}]]", ty),

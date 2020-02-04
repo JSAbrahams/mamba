@@ -26,13 +26,7 @@ pub fn gen_call(
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
-            let l_exp = Expected::from(left);
-            let r_exp = Expected::new(&left.pos, &Mutable);
-            constr.add(&l_exp, &r_exp);
-
-            let r_exp = Expected::from(right);
-            constr.add(&l_exp, &r_exp);
-
+            constr.add(&Expected::from(left), &Expected::from(right));
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
@@ -143,9 +137,7 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            let l_exp = Expected::from(left);
-            constr.add(&l_exp, &Expected::new(&left.pos, &Mutable));
-            constr.add(&l_exp, &Expected::from(right));
+            constr.add(&Expected::from(left), &Expected::from(right));
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
