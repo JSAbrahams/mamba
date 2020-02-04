@@ -139,7 +139,7 @@ fn property_call(
         Node::Reassign { left, right } => {
             constr.add(&Expected::from(left), &Expected::from(right));
             let (mut constr, env) = generate(right, env, ctx, constr)?;
-            generate(left, &env, ctx, &mut constr)
+            property_call(property, left, &env, ctx, &mut constr)
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;

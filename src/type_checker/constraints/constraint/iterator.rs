@@ -3,15 +3,20 @@ use std::collections::VecDeque;
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::Constraint;
+use crate::type_checker::ty_name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    constraints: VecDeque<Constraint>
+    pub in_class: Vec<TypeName>,
+    constraints:  VecDeque<Constraint>
 }
 
 impl Constraints {
-    pub fn new(constraints: &[Constraint]) -> Constraints {
-        Constraints { constraints: VecDeque::from(Vec::from(constraints)) }
+    pub fn new(constraints: &[Constraint], in_class: &[TypeName]) -> Constraints {
+        Constraints {
+            in_class:    Vec::from(in_class),
+            constraints: VecDeque::from(Vec::from(constraints))
+        }
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }
@@ -55,5 +60,5 @@ impl Constraints {
 }
 
 impl Default for Constraints {
-    fn default() -> Self { Constraints::new(&[]) }
+    fn default() -> Self { Constraints::new(&[], &[]) }
 }

@@ -28,7 +28,7 @@ fn assign_to_function_call() {
 #[test]
 fn assign_to_inner_non_mut() {
     let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut.mamba");
-    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
 }
 
 #[test]

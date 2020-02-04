@@ -3,6 +3,7 @@ use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::constraint::Constraint;
+use crate::type_checker::ty_name::TypeName;
 
 /// Constraint Builder.
 ///
@@ -16,17 +17,26 @@ use crate::type_checker::constraints::constraint::Constraint;
 #[derive(Clone, Debug)]
 pub struct ConstrBuilder {
     pub level:   usize,
-    finished:    Vec<Vec<Constraint>>,
-    constraints: Vec<Vec<Constraint>>
+    finished:    Vec<(Vec<TypeName>, Vec<Constraint>)>,
+    constraints: Vec<(Vec<TypeName>, Vec<Constraint>)>
 }
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { level: 0, finished: vec![], constraints: vec![vec![]] }
+        ConstrBuilder { level: 0, finished: vec![], constraints: vec![(vec![], vec![])] }
+    }
+
+    pub fn new_set_in_class(&mut self, inherit: bool, class: &TypeName) {
+        self.new_set(inherit);
+        self.constraints[self.level - 1].0.push(class.clone())
     }
 
     pub fn new_set(&mut self, inherit: bool) {
-        self.constraints.push(if inherit { self.constraints[self.level].clone() } else { vec![] });
+        self.constraints.push(if inherit {
+            (self.constraints[self.level].0.clone(), self.constraints[self.level].1.clone())
+        } else {
+            (vec![], vec![])
+        });
         self.level += 1;
     }
 
@@ -41,7 +51,7 @@ impl ConstrBuilder {
     }
 
     pub fn add(&mut self, left: &Expected, right: &Expected) {
-        self.constraints[self.level].push(Constraint::new(left, right));
+        self.constraints[self.level].1.push(Constraint::new(left, right));
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
@@ -50,6 +60,9 @@ impl ConstrBuilder {
             finished.push(self.constraints[level].clone())
         }
 
-        finished.iter().map(|constraints| Constraints::new(constraints)).collect()
+        finished
+            .iter()
+            .map(|(in_class, constraints)| Constraints::new(constraints, in_class))
+            .collect()
     }
 }

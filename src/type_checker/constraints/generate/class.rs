@@ -49,16 +49,16 @@ pub fn constrain_class_body(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
-    res.0.new_set(true);
+    let class_name = TypeName::try_from(ty.deref())?;
+    res.0.new_set_in_class(true, &class_name);
 
-    let type_name = TypeName::try_from(ty.deref())?;
-    let class_ty_exp = Type { type_name: type_name.clone() };
+    let class_ty_exp = Type { type_name: class_name.clone() };
     res.1 = res.1.in_class(&class_ty_exp);
 
-    let all_fields = ctx.lookup(&type_name, &ty.pos)?.fields(&ty.pos)?;
+    let all_fields = ctx.lookup(&class_name, &ty.pos)?.fields(&ty.pos)?;
     for fields in all_fields {
         for field in fields {
-            res = property_from_field(&ty.pos, &field, &type_name, &res.1, &mut res.0)?;
+            res = property_from_field(&ty.pos, &field, &class_name, &res.1, &mut res.0)?;
         }
     }
 

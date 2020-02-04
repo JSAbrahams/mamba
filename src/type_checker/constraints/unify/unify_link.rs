@@ -79,7 +79,7 @@ pub fn unify_link(
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
-                let mut sub = Constraints::new(&vec![constraint.clone()]);
+                let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
                 sub.append(&substitute(&left, &right, &sub)?);
 
                 let mut constr = substitute(&left, &right, &constr)?;
@@ -87,7 +87,7 @@ pub fn unify_link(
             }
             (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
-                    let mut sub = Constraints::new(&vec![constraint.clone()]);
+                    let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
                     sub.append(&substitute(&left, &right, &sub)?);
 
                     let mut constr = substitute(&left, &right, &constr)?;
@@ -223,13 +223,26 @@ pub fn unify_link(
                 unify_link(constr, sub, ctx, total + count)
             }
 
-            (Type { type_name }, HasField { name }) => {
-                ctx.lookup(type_name, &left.pos)?.field(name, &right.pos)?;
-                unify_link(constr, sub, ctx, total)
-            }
-            (HasField { name }, Type { type_name }) => {
-                ctx.lookup(type_name, &right.pos)?.field(name, &left.pos)?;
-                unify_link(constr, sub, ctx, total)
+            (Type { type_name }, HasField { name }) | (HasField { name }, Type { type_name }) => {
+                let field = ctx.lookup(type_name, &right.pos)?.field(name, &left.pos)?;
+                if field.private {
+                    let mut in_a_parent = false;
+                    for in_class in &constr.in_class {
+                        in_a_parent = in_a_parent
+                            || ctx
+                                .lookup(&in_class, &right.pos)?
+                                .has_parent(type_name, ctx, &right.pos)?;
+                    }
+
+                    if in_a_parent {
+                        unify_link(constr, sub, ctx, total)
+                    } else {
+                        let msg = format!("Cannot access private field {} of {}", name, type_name);
+                        Err(vec![TypeErr::new(&left.pos, &msg)])
+                    }
+                } else {
+                    unify_link(constr, sub, ctx, total)
+                }
             }
 
             _ => {

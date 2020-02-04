@@ -34,6 +34,10 @@ impl Display for ActualType {
 }
 
 impl ActualType {
+    /// Has parent if:
+    /// - Self name is `type_name`
+    /// - Immediate parent is `type_name`
+    /// - One of parents has `type_name` as parent
     pub fn has_parent(
         &self,
         type_name: &TypeName,
@@ -43,17 +47,19 @@ impl ActualType {
         match &self {
             ActualType::Single { ty } => {
                 let immediate_parents = ty.parents.clone();
-                Ok(immediate_parents.contains(type_name) || {
-                    let parent_tys: Vec<ExpressionType> = immediate_parents
-                        .iter()
-                        .map(|p| ctx.lookup(p, pos))
-                        .collect::<Result<_, _>>()?;
-                    let bools: Vec<bool> = parent_tys
-                        .iter()
-                        .map(|p_ty| p_ty.has_parent(type_name, ctx, pos))
-                        .collect::<Result<_, _>>()?;
-                    bools.iter().any(|b| *b)
-                })
+                Ok(TypeName::from(&ty.name) == type_name.clone()
+                    || immediate_parents.contains(type_name)
+                    || {
+                        let parent_tys: Vec<ExpressionType> = immediate_parents
+                            .iter()
+                            .map(|p| ctx.lookup(p, pos))
+                            .collect::<Result<_, _>>()?;
+                        let bools: Vec<bool> = parent_tys
+                            .iter()
+                            .map(|p_ty| p_ty.has_parent(type_name, ctx, pos))
+                            .collect::<Result<_, _>>()?;
+                        bools.iter().any(|b| *b)
+                    })
             }
             _ => Err(vec![TypeErr::new(pos, &format!("{} does not have parents", &self))])
         }
