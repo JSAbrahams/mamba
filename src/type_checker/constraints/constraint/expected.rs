@@ -93,7 +93,7 @@ impl Display for Expect {
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{:?}", ast.node),
             Collection { ty } => format!("[Collection[{}]]", ty),
-            Truthy => format!("[{}]", ty::concrete::BOOL_PRIMITIVE),
+            Truthy => format!("Truthy"),
             RaisesAny => String::from("[Raises[?]]"),
             Raises { raises: type_name } => format!("[Raises{{{}}}]]", comma_delimited(type_name)),
             Implements { type_name, args } => format!(

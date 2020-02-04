@@ -25,7 +25,6 @@ class complex:
     # def __pow__(self, power: float, modulo=None) -> float: pass
     def __pow__(self, power: complex, modulo=None) -> complex: pass
 
-    def __bool__(self) -> bool: pass
     def __str__(self) -> str: pass
 
     def __eq__(self, other: complex) -> bool:  pass

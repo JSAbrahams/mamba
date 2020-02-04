@@ -1,4 +1,5 @@
-use crate::type_checker::checker_result::TypeResult;
+use crate::common::position::Position;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::{Truthy, Type};
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
@@ -8,11 +9,20 @@ use crate::type_checker::constraints::constraint::iterator::Constraints;
 /// If old is a type, and new is an expression, we instead substitute new with
 /// old. This is done to prevent substituting back in expressions after for
 /// instance we conclude two sides of a constraint are trivially equal.
-pub fn substitute(old: &Expected, new: &Expected, constr: &Constraints) -> TypeResult<Constraints> {
+pub fn substitute(
+    old: &Expected,
+    new: &Expected,
+    constr: &Constraints,
+    pos: &Position
+) -> TypeResult<Constraints> {
     let total = constr.len();
     let mut substituted = Constraints::default();
     let mut constr = constr.clone();
     let (old, new) = match (&old.expect, &new.expect) {
+        (Type { type_name: lt }, Type { type_name: rt }) if lt != rt => {
+            let msg = format!("Tried to substitute {} with {}", lt, rt);
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
         (Type { .. }, Type { .. })
         | (Truthy, Type { .. })
         | (Type { .. }, Truthy)

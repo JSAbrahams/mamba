@@ -45,7 +45,7 @@ pub fn unify_link(
         match (&left.expect, &right.expect) {
             // trivially equal
             (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
-                let mut constr = substitute(&left, &right, constr)?;
+                let mut constr = substitute(&left, &right, constr, &left.pos)?;
                 unify_link(&mut constr, sub, ctx, total)
             }
 
@@ -81,17 +81,17 @@ pub fn unify_link(
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy) => {
                 let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
-                sub.append(&substitute(&left, &right, &sub)?);
+                sub.append(&substitute(&left, &right, &sub, &left.pos)?);
 
-                let mut constr = substitute(&left, &right, &constr)?;
+                let mut constr = substitute(&left, &right, &constr, &right.pos)?;
                 unify_link(&mut constr, &sub, ctx, total)
             }
             (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
                     let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
-                    sub.append(&substitute(&left, &right, &sub)?);
+                    sub.append(&substitute(&left, &right, &sub, &left.pos)?);
 
-                    let mut constr = substitute(&left, &right, &constr)?;
+                    let mut constr = substitute(&left, &right, &constr, &left.pos)?;
                     unify_link(&mut constr, &sub, ctx, total)
                 } else {
                     Err(vec![TypeErr::new(
@@ -105,7 +105,7 @@ pub fn unify_link(
                 expr_ty.function(&TypeName::from(function::python::TRUTHY), &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
-            (Type { type_name: l_ty }, Type { type_name: r_ty }) =>
+            (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
                 if l_ty.is_superset(r_ty) {
                     ctx.lookup(l_ty, &left.pos)?;
                     unify_link(constr, sub, ctx, total)
@@ -113,7 +113,8 @@ pub fn unify_link(
                     // TODO construct error based on type of constraint
                     let msg = format!("Expected a {} but got {}", l_ty, r_ty);
                     Err(vec![TypeErr::new(&left.pos, &msg)])
-                },
+                }
+            }
 
             (Type { type_name }, Implements { type_name: f_name, args })
             | (Implements { type_name: f_name, args }, Type { type_name }) => {
