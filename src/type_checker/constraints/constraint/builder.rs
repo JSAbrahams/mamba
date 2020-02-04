@@ -56,10 +56,7 @@ impl ConstrBuilder {
 
     pub fn all_constr(self) -> Vec<Constraints> {
         let mut finished = self.finished.clone();
-        for level in 0..self.level {
-            finished.push(self.constraints[level].clone())
-        }
-
+        finished.append(&mut self.constraints.clone());
         finished
             .iter()
             .map(|(in_class, constraints)| Constraints::new(constraints, in_class))

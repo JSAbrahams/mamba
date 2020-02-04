@@ -154,12 +154,12 @@ impl Type {
             })
     }
 
-    pub fn fun_args(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+    pub fn function(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Function> {
         self.functions
             .iter()
             .find_map(|function| {
                 if TypeName::from(&function.name) == fun_name.clone() {
-                    Some(function.arguments.clone())
+                    Some(function.clone())
                 } else {
                     None
                 }

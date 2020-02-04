@@ -184,20 +184,16 @@ impl ExpressionType {
         }
     }
 
-    pub fn fun_args(
-        &self,
-        name: &TypeName,
-        pos: &Position
-    ) -> TypeResult<HashSet<Vec<FunctionArg>>> {
+    pub fn function(&self, name: &TypeName, pos: &Position) -> TypeResult<HashSet<Function>> {
         match &self {
             ExpressionType::Single { ty } => {
                 let mut set = HashSet::new();
-                set.insert(ty.actual_ty().fun_args(name, pos)?);
+                set.insert(ty.actual_ty().function(name, pos)?);
                 Ok(set)
             }
             ExpressionType::Union { union } => union
                 .iter()
-                .map(|e_ty| e_ty.actual_ty().fun_args(name, pos))
+                .map(|e_ty| e_ty.actual_ty().function(name, pos))
                 .collect::<Result<_, Vec<TypeErr>>>()
         }
     }

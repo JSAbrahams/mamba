@@ -101,7 +101,7 @@ pub fn unify_link(
 
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
-                expr_ty.fun_args(&TypeName::from(function::python::TRUTHY), &left.pos)?;
+                expr_ty.function(&TypeName::from(function::python::TRUTHY), &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
             (Type { type_name: l_ty }, Type { type_name: r_ty }) =>
@@ -124,8 +124,29 @@ pub fn unify_link(
                     f_name.clone()
                 };
 
-                let possible = expr_ty.fun_args(&f_name, &left.pos)?;
-                let (mut constr, added) = unify_fun_arg(possible, &args, constr, &right.pos)?;
+                let possible = expr_ty.function(&f_name, &left.pos)?;
+                for function in &possible {
+                    if function.private {
+                        let mut in_a_parent = false;
+                        for in_class in &constr.in_class {
+                            in_a_parent = in_a_parent
+                                || ctx
+                                    .lookup(&in_class, &right.pos)?
+                                    .has_parent(type_name, ctx, &right.pos)?;
+                        }
+                        if !in_a_parent {
+                            let msg = format!(
+                                "Cannot access private function {} of a {}",
+                                function.name, type_name
+                            );
+                            return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                        }
+                    }
+                }
+
+                let possible_args: HashSet<Vec<FunctionArg>> =
+                    possible.iter().map(|f| f.arguments.clone()).collect();
+                let (mut constr, added) = unify_fun_arg(&possible_args, &args, constr, &right.pos)?;
                 unify_link(&mut constr, &sub, ctx, total + added)
             }
 
@@ -261,7 +282,7 @@ pub fn unify_link(
 }
 
 fn unify_fun_arg(
-    possible: HashSet<Vec<FunctionArg>>,
+    possible: &HashSet<Vec<FunctionArg>>,
     args: &[Expected],
     constr: &Constraints,
     pos: &Position

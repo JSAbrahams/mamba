@@ -14,6 +14,7 @@ fn function_argument_no_type() {
     let source = resource_content(false, &["type", "function"], "no_type.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }
+
 #[test]
 fn as_statement() {
     let source = resource_content(false, &["type", "function"], "no_type.mamba");
