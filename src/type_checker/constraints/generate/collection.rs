@@ -18,10 +18,8 @@ pub fn gen_coll(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
-            let (mut constr, _) = gen_collection(ast, constr);
-            gen_vec(elements, env, ctx, &mut constr)
-        }
+        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
+            gen_vec(elements, env, ctx, constr),
 
         Node::SetBuilder { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")]),
@@ -34,7 +32,7 @@ pub fn gen_coll(
 /// Generate constraint for collection by taking first element
 ///
 /// The assumption here being that every element in the set has the same type.
-pub fn gen_collection(collection: &AST, constr: &mut ConstrBuilder) -> (ConstrBuilder, Expected) {
+pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> (ConstrBuilder, Expected) {
     let col = match &collection.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
             if let Some(first) = elements.first() {

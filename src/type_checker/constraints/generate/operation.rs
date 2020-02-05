@@ -3,7 +3,7 @@ use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::generate::collection::{gen_collection, gen_collection_lookup};
+use crate::type_checker::constraints::generate::collection::{constr_col, gen_collection_lookup};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function::concrete::*;
@@ -20,9 +20,10 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            let (mut constr, col) = gen_collection(right, constr);
-            let (constr, env) = gen_collection_lookup(left, &col, env, &mut constr)?;
-            Ok((constr, env))
+            let (mut constr, col) = constr_col(right, constr);
+            let (mut constr, env) = gen_collection_lookup(left, &col, env, &mut constr)?;
+            let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
+            generate(left, &env, ctx, &mut constr)
         }
         Node::Range { from, to, step: Some(step), .. } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);

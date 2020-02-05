@@ -363,7 +363,11 @@ fn check_if_parent(
     if in_a_parent {
         Ok(())
     } else {
-        let msg = format!("Cannot access private {} of a {}", name, type_name);
+        let msg = if let Some(class) = in_class.last() {
+            format!("Cannot access private {} of a {} while in a {}", name, type_name, class)
+        } else {
+            format!("Cannot access private {} of a {}", name, type_name)
+        };
         Err(vec![TypeErr::new(pos, &msg)])
     }
 }

@@ -29,8 +29,8 @@ pub fn gen_class(
             },
         Node::Class { .. } | Node::TypeDef { .. } => Ok((constr.clone(), env.clone())),
 
-        Node::TypeAlias { conditions, ty, .. } =>
-            constrain_class_body(conditions, ty, env, ctx, constr),
+        Node::TypeAlias { conditions, isa, .. } =>
+            constrain_class_body(conditions, isa, env, ctx, constr),
         Node::Condition { cond, el: Some(el) } => {
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
             generate(el, &env, ctx, &mut constr)
@@ -49,9 +49,9 @@ pub fn constrain_class_body(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
+
     let class_name = TypeName::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
-
     let class_ty_exp = Type { type_name: class_name.clone() };
     res.1 = res.1.in_class(&class_ty_exp);
 

@@ -37,9 +37,13 @@ impl ConstrBuilder {
         self.constraints.push(current);
     }
 
-    pub fn new_set_in_class(&mut self, inherit: bool, class: &TypeName) {
-        self.new_set(inherit);
-        self.constraints[self.level - 1].0.push(class.clone())
+    pub fn new_set_in_class(&mut self, inherit_class: bool, class: &TypeName) {
+        self.new_set(false);
+        if self.level > 0 && inherit_class {
+            let mut previous = self.constraints[self.level - 1].0.clone();
+            self.constraints[self.level].0.append(&mut previous);
+        }
+        self.constraints[self.level].0.push(class.clone());
     }
 
     pub fn new_set(&mut self, inherit: bool) {
