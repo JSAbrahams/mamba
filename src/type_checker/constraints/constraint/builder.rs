@@ -26,6 +26,17 @@ impl ConstrBuilder {
         ConstrBuilder { level: 0, finished: vec![], constraints: vec![(vec![], vec![])] }
     }
 
+    pub fn new_set_same_level(&mut self, inherit: bool) {
+        if self.constraints[self.level].0.is_empty() && self.constraints[self.level].1.is_empty() {
+            return;
+        }
+
+        let current = if inherit { self.constraints[self.level].clone() } else { (vec![], vec![]) };
+
+        self.finished.push(self.constraints.remove(self.level));
+        self.constraints.push(current);
+    }
+
     pub fn new_set_in_class(&mut self, inherit: bool, class: &TypeName) {
         self.new_set(inherit);
         self.constraints[self.level - 1].0.push(class.clone())

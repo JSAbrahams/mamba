@@ -63,6 +63,8 @@ pub fn gen_def(
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
         Node::VariableDef { mutable, var, ty, expression, .. } => {
+            // in case we define variable with same name with different type
+            constr.new_set_same_level(true);
             let (mut constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
             let var_expect = Expected::from(var);
 
