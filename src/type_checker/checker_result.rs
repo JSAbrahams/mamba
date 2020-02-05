@@ -84,11 +84,11 @@ impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
         let msg = {
-            let mut string = self.msg.replace("\n", "\n     | |  ");
-            if string.ends_with('|') {
-                string.remove(string.len() - 2);
+            let mut string = String::from(self.msg.trim());
+            if string.ends_with('\n') {
+                string.remove(string.len() - 1);
             }
-            string
+            string.replace("\n", "\n     >  ")
         };
 
         if let Some(position) = self.position.clone() {
@@ -103,7 +103,7 @@ impl Display for TypeErr {
                     String::new()
                 } else {
                     format!("{:3}  |  {}\n", position.start.line - 1, src)
-                },),
+                }),
                 position.start.line,
                 self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
                 String::from_utf8(vec![b' '; position.start.pos as usize - 1]).unwrap(),
