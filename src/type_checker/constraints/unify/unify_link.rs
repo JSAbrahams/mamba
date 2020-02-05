@@ -6,7 +6,7 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
-use crate::type_checker::constraints::constraint::expected::Expected;
+use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
@@ -79,6 +79,7 @@ pub fn unify_link(
 
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
+            | (Expression { .. }, Collection { .. })
             | (Expression { .. }, Truthy) => {
                 let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
                 sub.append(&substitute(&left, &right, &sub, &left.pos)?);
@@ -86,7 +87,9 @@ pub fn unify_link(
                 let mut constr = substitute(&left, &right, &constr, &right.pos)?;
                 unify_link(&mut constr, &sub, ctx, total)
             }
-            (Type { .. }, Expression { ast }) | (Truthy, Expression { ast }) =>
+            (Collection { .. }, Expression { ast })
+            | (Type { .. }, Expression { ast })
+            | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
                     let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
                     sub.append(&substitute(&left, &right, &sub, &left.pos)?);
@@ -209,8 +212,8 @@ pub fn unify_link(
             | (Nullable, Expression { ast: AST { node: Node::Undefined, .. } }) =>
                 unify_link(constr, sub, ctx, total),
 
-            (Type { type_name }, Function { name, args })
-            | (Function { name, args }, Type { type_name }) => {
+            (Type { type_name }, Function { args, .. })
+            | (Function { args, .. }, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 let functions = expr_ty.anon_fun_params(&left.pos)?;
 
@@ -246,6 +249,15 @@ pub fn unify_link(
                     check_if_parent(&name, &constr.in_class, type_name, ctx, &left.pos)?;
                 }
                 unify_link(constr, sub, ctx, total)
+            }
+
+            (Type { type_name }, Collection { ty }) | (Collection { ty }, Type { type_name }) => {
+                check_iter(type_name, ty, ctx, constr, &left.pos)?;
+                unify_link(constr, sub, ctx, total)
+            }
+            (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
+                constr.push(&Expected::new(&left.pos, l_ty), &Expected::new(&right.pos, r_ty));
+                unify_link(constr, sub, ctx, total + 1)
             }
 
             _ => {
@@ -310,6 +322,28 @@ fn unify_fun_arg(
     Ok((constr, added))
 }
 
+fn check_iter(
+    type_name: &TypeName,
+    ty: &Expect,
+    ctx: &Context,
+    constr: &mut Constraints,
+    pos: &Position
+) -> TypeResult<Constraints> {
+    let f_name = TypeName::from(function::concrete::ITER);
+    for fun in ctx.lookup(type_name, pos)?.function(&f_name, pos)? {
+        let msg = format!("{} __iter__ type undefined", type_name);
+        let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
+
+        constr.push(
+            &Expected::new(&pos, &Type { type_name: type_name.clone() }),
+            &Expected::new(&pos, &Type { type_name: f_ret_ty.clone() })
+        );
+        constr.push(&Expected::new(&pos, &ty), &Expected::new(&pos, &Type { type_name: f_ret_ty }));
+    }
+
+    Ok(constr.clone())
+}
+
 fn check_if_parent(
     name: &ActualTypeName,
     in_class: &Vec<TypeName>,
@@ -329,7 +363,7 @@ fn check_if_parent(
     if in_a_parent {
         Ok(())
     } else {
-        let msg = format!("Cannot access private function {} of a {}", name, type_name);
+        let msg = format!("Cannot access private {} of a {}", name, type_name);
         Err(vec![TypeErr::new(pos, &msg)])
     }
 }

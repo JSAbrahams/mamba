@@ -3,7 +3,7 @@ use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::generate::collection::constrain_collection;
+use crate::type_checker::constraints::generate::collection::{gen_collection, gen_collection_lookup};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function::concrete::*;
@@ -19,7 +19,11 @@ pub fn gen_op(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::In { left, right } => constrain_collection(right, left, env, ctx, constr),
+        Node::In { left, right } => {
+            let (mut constr, col) = gen_collection(right, constr);
+            let (constr, env) = gen_collection_lookup(left, &col, env, &mut constr)?;
+            Ok((constr, env))
+        }
         Node::Range { from, to, step: Some(step), .. } => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             let l_exp = Expected::from(from);
@@ -144,10 +148,8 @@ pub fn gen_op(
 }
 
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
-    // Do not recursively check ast
     let type_name = TypeName::from(ty);
-    let left = Expected::from(ast);
-    constr.add(&left, &Expected::new(&ast.pos, &Type { type_name }));
+    constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &Type { type_name }));
     Ok((constr.clone(), env.clone()))
 }
 
@@ -159,13 +161,12 @@ fn implements(
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let l_exp = Expected::from(left);
     let r_exp = Expected::new(&left.pos, &Implements {
         type_name: TypeName::from(fun),
         args:      vec![Expected::from(left), Expected::from(right)]
     });
+    constr.add(&Expected::from(left), &r_exp);
 
-    constr.add(&l_exp, &r_exp);
     let (mut constr, env) = generate(left, env, ctx, constr)?;
     generate(right, &env, ctx, &mut constr)
 }

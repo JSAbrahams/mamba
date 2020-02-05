@@ -92,9 +92,14 @@ impl Display for Expect {
             Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{:?}", ast.node),
-            Collection { ty } => format!("[Collection[{}]]", ty),
+            Collection { ty } =>
+                if let Expression { .. } = &ty.deref() {
+                    format!("[Collection{{{}}}]", ty)
+                } else {
+                    format!("[Collection{}]", ty)
+                },
             Truthy => format!("Truthy"),
-            RaisesAny => String::from("[Raises[?]]"),
+            RaisesAny => String::from("[RaisesAny]"),
             Raises { raises: type_name } => format!("[Raises{{{}}}]]", comma_delimited(type_name)),
             Implements { type_name, args } => format!(
                 "[?.{}({})]",

@@ -22,15 +22,5 @@ impl Constraint {
         }
     }
 
-    pub fn replace_parent(&mut self, new: &Expected) {
-        self.substituted = true;
-        self.parent = new.clone();
-    }
-
-    pub fn replace_child(&mut self, new: &Expected) {
-        self.substituted = true;
-        self.child = new.clone();
-    }
-
     fn flag(&self) -> Constraint { Constraint { flagged: true, ..self.clone() } }
 }

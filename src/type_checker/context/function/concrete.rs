@@ -31,6 +31,7 @@ pub const SUB: &str = "-";
 pub const SQRT: &str = "sqrt";
 
 pub const TRUTHY: &str = function::python::TRUTHY;
+pub const ITER: &str = function::python::ITER;
 
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
@@ -72,7 +73,7 @@ impl Display for Function {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            "{: >5} : ({}){}{}",
+            "{: >8} : ({}){}{}",
             self.name,
             comma_delimited(&self.arguments),
             if let Some(ret_ty) = &self.ret_ty { format!(" -> {}", ret_ty) } else { String::new() },

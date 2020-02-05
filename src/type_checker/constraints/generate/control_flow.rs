@@ -3,7 +3,7 @@ use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::generate::collection::constrain_collection;
+use crate::type_checker::constraints::generate::collection::{gen_collection, gen_collection_lookup};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::{ty, Context};
@@ -76,7 +76,8 @@ pub fn gen_flow(
         }
 
         Node::For { expr, col, body } => {
-            let (mut constr, env) = constrain_collection(col, expr, env, ctx, constr)?;
+            let (mut constr, col) = gen_collection(col, constr);
+            let (mut constr, env) = gen_collection_lookup(expr, &col, env, &mut constr)?;
             let (constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             Ok((constr, env))
         }

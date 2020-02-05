@@ -22,6 +22,7 @@ pub const POW: &str = "__pow__";
 pub const SUB: &str = "__sub__";
 
 pub const TRUTHY: &str = "__bool__";
+pub const ITER: &str = "__iter__";
 
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
