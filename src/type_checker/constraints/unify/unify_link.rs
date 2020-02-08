@@ -126,7 +126,9 @@ pub fn unify_link(
                 unify_link(constr, sub, ctx, total)
             }
             (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
-                if l_ty.is_superset(r_ty) {
+                if l_ty.is_superset(r_ty)
+                    || ctx.lookup(&r_ty, &right.pos)?.has_parent(&l_ty, ctx, &left.pos)?
+                {
                     ctx.lookup(l_ty, &left.pos)?;
                     unify_link(constr, sub, ctx, total)
                 } else {

@@ -28,7 +28,7 @@ impl Expected {
 impl From<&AST> for Expected {
     fn from(ast: &AST) -> Expected {
         let ast = match &ast.node {
-            Node::Block { statements } =>
+            Node::Block { statements } | Node::Script { statements } =>
                 if let Some(stmt) = statements.last() {
                     stmt
                 } else {

@@ -48,25 +48,25 @@ impl ActualType {
         match &self {
             ActualType::Single { ty } => {
                 let immediate_parents = ty.parents.clone();
-                Ok(TypeName::from(&ty.name) == type_name.clone()
+                Ok(type_name == &TypeName::from(&ty.name)
                     || immediate_parents.contains(type_name)
                     || {
                         let parent_tys: Vec<ExpressionType> = immediate_parents
                             .iter()
                             .map(|p| ctx.lookup(p, pos))
                             .collect::<Result<_, _>>()?;
-                        let bools: Vec<bool> = parent_tys
+                        let a_parent_has_parent: Vec<bool> = parent_tys
                             .iter()
                             .map(|p_ty| p_ty.has_parent_checked(type_name, checked, ctx, pos))
                             .collect::<Result<_, _>>()?;
-                        bools.iter().any(|b| *b)
+                        a_parent_has_parent.iter().any(|b| *b)
                     })
             }
             ActualType::Tuple { .. } =>
                 Err(vec![TypeErr::new(pos, &format!("A tuple {} does not have parents", &self))]),
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
                 pos,
-                &format!("A anonymous function {} does not have parents", &self)
+                &format!("An anonymous function {} does not have parents", &self)
             )])
         }
     }
@@ -78,7 +78,7 @@ impl ActualType {
                 Err(vec![TypeErr::new(pos, &format!("A tuple {} does not have fields", &self))]),
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
                 pos,
-                &format!("A anonymous function {} does not have fields", &self)
+                &format!("An anonymous function {} does not have fields", &self)
             )])
         }
     }
@@ -92,7 +92,7 @@ impl ActualType {
             )]),
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
                 pos,
-                &format!("A anonymous function {} cannot have field: {}", &self, field)
+                &format!("An anonymous function {} cannot have field: {}", &self, field)
             )])
         }
     }
@@ -136,7 +136,7 @@ impl ActualType {
                 },
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
                 pos,
-                &format!("A anonymous function {} cannot define function {}", &self, name)
+                &format!("An anonymous function {} cannot define function {}", &self, name)
             )])
         }
     }
@@ -150,7 +150,7 @@ impl ActualType {
             )]),
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
                 pos,
-                &format!("A anonymous function {} does not have constructor arguments", &self)
+                &format!("An anonymous function {} does not have constructor arguments", &self)
             )])
         }
     }
