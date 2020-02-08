@@ -18,8 +18,21 @@ impl From<&Expression> for TypeName {
                     Expression::Name(name) => name.clone(),
                     _ => String::new()
                 };
-                let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
-                TypeName::new(&lit, &generics)
+
+                if lit == String::from("Union") {
+                    let names: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
+                    if let Some(mut first) = names.first().cloned() {
+                        for name in names {
+                            first = first.union(&name).clone()
+                        }
+                        first
+                    } else {
+                        TypeName::from("")
+                    }
+                } else {
+                    let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
+                    TypeName::new(&lit, &generics)
+                }
             }
             _ => TypeName::from("")
         }

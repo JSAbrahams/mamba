@@ -23,7 +23,7 @@ impl Display for ActualTypeName {
         match self {
             ActualTypeName::Single { lit, generics } if generics.is_empty() => write!(f, "{}", lit),
             ActualTypeName::Single { lit, generics } =>
-                write!(f, "{}<{}>", lit, comma_delimited(generics)),
+                write!(f, "{}[{}]", lit, comma_delimited(generics)),
             ActualTypeName::AnonFun { args, ret_ty } =>
                 write!(f, "({}) -> {}", comma_delimited(args), ret_ty),
             ActualTypeName::Tuple { ty_names } => write!(f, "({})", comma_delimited(ty_names))

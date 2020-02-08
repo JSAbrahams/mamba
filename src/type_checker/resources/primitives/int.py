@@ -1,4 +1,4 @@
-class int:
+class int(float):
     def __init__(self, arg: int): pass
 
     def __add__(self, other: int) -> int: pass
@@ -39,10 +39,8 @@ class int:
     def __gt__(self, other: int) -> bool: pass
     # def __gt__(self, other: float) -> bool: pass
 
-    def __le__(self, other: int) -> bool: pass
-    # def __le__(self, other: float) -> bool: pass
-    def __lt__(self, other: int) -> bool: pass
-    # def __lt__(self, other: float) -> bool: pass
+    def __le__(self, other: Union[int, float]) -> bool: pass
+    def __lt__(self, other: Union[int, float]) -> bool: pass
 
     def __str__(self) -> str: pass
 

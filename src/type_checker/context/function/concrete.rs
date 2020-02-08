@@ -31,6 +31,7 @@ pub const SUB: &str = "-";
 pub const SQRT: &str = "sqrt";
 
 pub const TRUTHY: &str = function::python::TRUTHY;
+pub const NEXT: &str = function::python::NEXT;
 pub const ITER: &str = function::python::ITER;
 
 #[derive(Debug, Clone, Eq)]

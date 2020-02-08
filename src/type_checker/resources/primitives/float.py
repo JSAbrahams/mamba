@@ -1,4 +1,6 @@
-class float:
+from typing import Union
+
+class float(complex):
     def __init__(self, arg: float): pass
 
     # def __add__(self, other: int) -> float: pass
@@ -40,10 +42,8 @@ class float:
     # def __gt__(self, other: int) -> bool: pass
     def __gt__(self, other: float) -> bool: pass
 
-    # def __le__(self, other: int) -> bool: pass
-    def __le__(self, other: float) -> bool: pass
-    # def __lt__(self, other: int) -> bool: pass
-    def __lt__(self, other: float) -> bool: pass
+    def __le__(self, other: Union[int, float]) -> bool: pass
+    def __lt__(self, other: Union[int, float]) -> bool: pass
 
     def __str__(self) -> str: pass
 

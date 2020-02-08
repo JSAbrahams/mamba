@@ -4,17 +4,16 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
+use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::ty;
-use crate::type_checker::context::ty::concrete;
 use crate::type_checker::ty::expression::ExpressionType;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::nullable::NullableTypeName;
 use crate::type_checker::util::comma_delimited;
-use std::ops::Deref;
 
 // TODO make these private
 pub mod actual;
@@ -177,16 +176,16 @@ impl TypeName {
     }
 
     pub fn is_superset(&self, other: &TypeName) -> bool {
-        self == &TypeName::from(concrete::EXCEPTION)
-            || match (self, other) {
-                (TypeName::Single { ty }, TypeName::Single { ty: other_ty }) =>
-                    ty.is_superset(other_ty),
-                (TypeName::Single { ty }, TypeName::Union { union })
-                | (TypeName::Union { union }, TypeName::Single { ty }) =>
-                    union.iter().all(|u_ty| u_ty.is_superset(ty)),
-                (TypeName::Union { union }, TypeName::Union { union: other }) =>
-                    other.iter().all(|o_ty| union.iter().any(|u_ty| u_ty.is_superset(o_ty))),
-            }
+        match (self, other) {
+            (TypeName::Single { ty }, TypeName::Single { ty: other_ty }) =>
+                ty.is_superset(other_ty),
+            (TypeName::Single { ty }, TypeName::Union { union }) =>
+                union.iter().all(|u_ty| u_ty.is_superset(ty)),
+            (TypeName::Union { union }, TypeName::Single { ty }) =>
+                union.iter().any(|u_ty| u_ty.is_superset(ty)),
+            (TypeName::Union { union }, TypeName::Union { union: other }) =>
+                other.iter().all(|o_ty| union.iter().any(|u_ty| u_ty.is_superset(o_ty))),
+        }
     }
 
     pub fn substitute(
