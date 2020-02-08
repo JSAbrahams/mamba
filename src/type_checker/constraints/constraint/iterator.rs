@@ -31,10 +31,6 @@ impl Constraints {
         self.constraints.push_back(constr.clone())
     }
 
-    pub fn push(&mut self, left: &Expected, right: &Expected) {
-        self.constraints.push_back(Constraint::new(left, right))
-    }
-
     pub fn reinsert(&mut self, constraint: &Constraint) -> TypeResult<()> {
         if constraint.flagged {
             // Can only reinsert constraint once

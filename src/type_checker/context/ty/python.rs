@@ -39,7 +39,7 @@ impl TryFrom<&Classdef> for GenericType {
         let mut fields = HashSet::new();
         let generics = GenericParameters::from(&class_def.arguments).parameters;
         let generic_names: Vec<TypeName> =
-            generics.iter().map(|g| TypeName::from(g.name.as_str())).collect();
+            generics.iter().map(|g| TypeName::from(python_to_concrete(&g.name).as_str())).collect();
 
         for statement in &class_def.code {
             match statement {

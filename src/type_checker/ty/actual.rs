@@ -73,7 +73,8 @@ impl ActualType {
 
     pub fn fields(&self, pos: &Position) -> TypeResult<HashSet<Field>> {
         match &self {
-            ActualType::Single { ty } => Ok(ty.fields.clone()),
+            ActualType::Single { ty } =>
+                Ok(ty.fields.iter().flatten().cloned().collect::<HashSet<Field>>()),
             ActualType::Tuple { .. } =>
                 Err(vec![TypeErr::new(pos, &format!("A tuple {} does not have fields", &self))]),
             ActualType::AnonFun { .. } => Err(vec![TypeErr::new(

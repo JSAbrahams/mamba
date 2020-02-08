@@ -264,7 +264,8 @@ pub fn unify_link(
                 unify_link(constr, sub, ctx, total)
             }
             (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
-                constr.push(&Expected::new(&left.pos, l_ty), &Expected::new(&right.pos, r_ty));
+                constr
+                    .eager_push(&Expected::new(&left.pos, l_ty), &Expected::new(&right.pos, r_ty));
                 unify_link(constr, sub, ctx, total + 1)
             }
 
@@ -307,7 +308,12 @@ fn unify_fun_arg(
                         .clone();
 
                     added += 1;
-                    constr.push(&Expected::new(&expected.pos, &Type { type_name }), &expected)
+                    println!(
+                        "unifying {:?}, {:?}",
+                        &Expected::new(&expected.pos, &Type { type_name: type_name.clone() }),
+                        &expected
+                    );
+                    constr.eager_push(&Expected::new(&expected.pos, &Type { type_name }), &expected)
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
                     return Err(vec![TypeErr::new(
@@ -345,12 +351,15 @@ fn check_iter(
         let f_name = TypeName::from(function::concrete::NEXT);
         for fun in ctx.lookup(&f_ret_ty, pos)?.function(&f_name, pos)? {
             let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
-            constr.push(
+            constr.eager_push(
                 &Expected::new(&pos, &Type { type_name: type_name.clone() }),
                 &Expected::new(&pos, &Type { type_name: f_ret_ty.clone() })
             );
         }
-        constr.push(&Expected::new(&pos, &ty), &Expected::new(&pos, &Type { type_name: f_ret_ty }));
+        constr.eager_push(
+            &Expected::new(&pos, &ty),
+            &Expected::new(&pos, &Type { type_name: f_ret_ty })
+        );
     }
 
     Ok(constr.clone())

@@ -33,6 +33,8 @@ pub fn substitute(
         | (Stringy, Type { .. })
         | (Type { .. }, Stringy)
         | (Truthy, Truthy)
+        | (Truthy, Stringy)
+        | (Stringy, Truthy)
         | (Stringy, Stringy) => return Ok(constr),
         (Type { .. }, _)
         | (Truthy, _)

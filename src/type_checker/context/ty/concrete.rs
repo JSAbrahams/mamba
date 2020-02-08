@@ -36,15 +36,18 @@ pub const EXCEPTION: &str = "Exception";
 /// Has fields and functions defined within and from parents for easy access.
 ///
 /// Parents are immediate parents.
+///
+/// Vector of fields signifies the fields of self, followed by fields of
+/// consecutive parents and their parents. The same goes for functions.
 #[derive(Debug, Clone, Eq)]
 pub struct Type {
     pub is_py_type: bool,
     pub name:       ActualTypeName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
-    pub fields:     HashSet<Field>,
+    pub fields:     Vec<HashSet<Field>>,
     pub parents:    HashSet<TypeName>,
-    functions:      HashSet<Function>
+    functions:      Vec<HashSet<Function>>
 }
 
 impl Hash for Type {
@@ -72,16 +75,19 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
             &Position
         )
     ) -> Result<Self, Self::Error> {
-        let mut fields: HashSet<Field> = generic
+        let self_name = generic.name.substitute(generics, pos)?;
+        let self_fields: HashSet<Field> = generic
             .fields
             .iter()
             .map(|field| Field::try_from((field, generics, pos)))
             .collect::<Result<_, _>>()?;
-        let mut functions: HashSet<Function> = generic
+        let mut fields = vec![self_fields.clone()];
+        let self_functions: HashSet<Function> = generic
             .functions
             .iter()
             .map(|fun| Function::try_from((fun, generics, pos)))
             .collect::<Result<_, _>>()?;
+        let mut functions = vec![self_functions.clone()];
 
         let mut parents: HashSet<TypeName> = HashSet::new();
         for parent in &generic.parents {
@@ -92,14 +98,14 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
                 .ok_or_else(|| TypeErr::new(pos, &format!("Unknown parent type: {}", name)))?;
 
             let ty = Type::try_from((ty, generics, types, pos))?;
-            fields = fields.union(&ty.fields).cloned().collect();
-            functions = functions.union(&ty.functions).cloned().collect();
+            fields.append(&mut ty.fields.clone());
+            functions.append(&mut ty.functions.clone());
             parents.insert(TypeName::from(&name));
         }
 
         Ok(Type {
             is_py_type: generic.is_py_type,
-            name: generic.name.substitute(generics, pos)?,
+            name: self_name,
             concrete: generic.concrete,
             args: generic
                 .args
@@ -115,7 +121,7 @@ impl TryFrom<(&GenericType, &HashMap<String, TypeName>, &HashSet<GenericType>, &
 
 impl Type {
     pub fn field(&self, name: &str, pos: &Position) -> TypeResult<Field> {
-        let field = self.fields.iter().find(|field| field.name.as_str() == name).cloned();
+        let field = self.fields.iter().flatten().find(|field| field.name.as_str() == name).cloned();
         field.ok_or_else(|| {
             vec![TypeErr::new(
                 pos,
@@ -124,7 +130,7 @@ impl Type {
                     self.name,
                     name,
                     if self.fields.is_empty() { "" } else { ", must be one of:\n" },
-                    newline_delimited(&self.fields)
+                    newline_delimited(&self.fields.iter().flatten().collect::<Vec<&Field>>())
                 )
             )]
         })
@@ -133,12 +139,14 @@ impl Type {
     pub fn fun_ret_ty(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Option<TypeName>> {
         self.functions
             .iter()
-            .find_map(|function| {
-                if TypeName::from(&function.name) == fun_name.clone() {
-                    Some(function.ty())
-                } else {
-                    None
-                }
+            .find_map(|functions| {
+                functions.iter().find_map(|function| {
+                    if TypeName::from(&function.name) == fun_name.clone() {
+                        Some(function.ty())
+                    } else {
+                        None
+                    }
+                })
             })
             .ok_or_else(|| {
                 vec![TypeErr::new(
@@ -148,7 +156,9 @@ impl Type {
                         self,
                         fun_name,
                         if self.functions.is_empty() { "" } else { ", must be one of:\n" },
-                        newline_delimited(&self.functions)
+                        newline_delimited(
+                            &self.functions.iter().flatten().collect::<Vec<&Function>>()
+                        )
                     )
                 )]
             })
@@ -157,12 +167,14 @@ impl Type {
     pub fn function(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Function> {
         self.functions
             .iter()
-            .find_map(|function| {
-                if TypeName::from(&function.name) == fun_name.clone() {
-                    Some(function.clone())
-                } else {
-                    None
-                }
+            .find_map(|functions| {
+                functions.iter().find_map(|function| {
+                    if TypeName::from(&function.name) == fun_name.clone() {
+                        Some(function.clone())
+                    } else {
+                        None
+                    }
+                })
             })
             .ok_or_else(|| {
                 vec![TypeErr::new(
@@ -172,7 +184,9 @@ impl Type {
                         self,
                         fun_name,
                         if self.functions.is_empty() { "" } else { ", must be one of: \n" },
-                        newline_delimited(&self.functions)
+                        newline_delimited(
+                            &self.functions.iter().flatten().collect::<Vec<&Function>>()
+                        )
                     )
                 )]
             })
@@ -188,14 +202,17 @@ impl Type {
         // TODO accept if arguments passed is union that is subset of argument union
         self.functions
             .iter()
-            .find_map(|function| match function.name.name(pos) {
-                Err(err) => Some(Err(err)),
-                Ok(name) =>
-                    if name.as_str() == fun_name && args_compatible(&function.arguments, &args) {
-                        Some(Ok(function.clone()))
-                    } else {
-                        None
-                    },
+            .find_map(|functions| {
+                functions.iter().find_map(|function| match function.name.name(pos) {
+                    Err(err) => Some(Err(err)),
+                    Ok(name) =>
+                        if name.as_str() == fun_name && args_compatible(&function.arguments, &args)
+                        {
+                            Some(Ok(function.clone()))
+                        } else {
+                            None
+                        },
+                })
             })
             .ok_or_else(|| {
                 // TODO when type inference is more advanced insert expected type
@@ -206,7 +223,9 @@ impl Type {
                         self,
                         fun_name,
                         comma_delimited(args),
-                        newline_delimited(&self.functions)
+                        newline_delimited(
+                            &self.functions.iter().flatten().collect::<Vec<&Function>>()
+                        )
                     )
                 )]
             })?
