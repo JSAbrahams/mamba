@@ -1,7 +1,8 @@
 use crate::common::position::Position;
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::{Collection, Expression,
-                                                                     ExpressionAny, Truthy, Type};
+                                                                     ExpressionAny, Stringy,
+                                                                     Truthy, Type};
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 
@@ -29,11 +30,15 @@ pub fn substitute(
         (Type { .. }, Type { .. })
         | (Truthy, Type { .. })
         | (Type { .. }, Truthy)
-        | (Truthy, Truthy) => return Ok(constr),
+        | (Stringy, Type { .. })
+        | (Type { .. }, Stringy)
+        | (Truthy, Truthy)
+        | (Stringy, Stringy) => return Ok(constr),
         (Type { .. }, _)
         | (Truthy, _)
         | (Collection { .. }, _)
-        | (ExpressionAny, Expression { .. }) => (new, old),
+        | (ExpressionAny, Expression { .. })
+        | (Stringy, _) => (new, old),
         _ => (old, new)
     };
 

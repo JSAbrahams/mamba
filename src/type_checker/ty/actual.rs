@@ -1,16 +1,16 @@
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::iter::FromIterator;
 use std::ops::Deref;
 
 use crate::common::position::Position;
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::field::concrete::Field;
 use crate::type_checker::context::function::concrete::Function;
-use crate::type_checker::context::function_arg::concrete::args_compatible;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::concrete::Type;
-use crate::type_checker::context::Context;
+use crate::type_checker::context::{function, Context};
 use crate::type_checker::ty::expression::ExpressionType;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
@@ -62,21 +62,38 @@ impl ActualType {
                         bools.iter().any(|b| *b)
                     })
             }
-            _ => Err(vec![TypeErr::new(pos, &format!("{} does not have parents", &self))])
+            ActualType::Tuple { .. } =>
+                Err(vec![TypeErr::new(pos, &format!("A tuple {} does not have parents", &self))]),
+            ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A anonymous function {} does not have parents", &self)
+            )])
         }
     }
 
     pub fn fields(&self, pos: &Position) -> TypeResult<HashSet<Field>> {
         match &self {
             ActualType::Single { ty } => Ok(ty.fields.clone()),
-            _ => Err(vec![TypeErr::new(pos, &format!("{} does not have fields", &self))])
+            ActualType::Tuple { .. } =>
+                Err(vec![TypeErr::new(pos, &format!("A tuple {} does not have fields", &self))]),
+            ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A anonymous function {} does not have fields", &self)
+            )])
         }
     }
 
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         match &self {
             ActualType::Single { ty } => ty.field(field, pos),
-            _ => Err(vec![TypeErr::new(pos, &format!("{} cannot have field: {}", &self, field))])
+            ActualType::Tuple { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A tuple {} cannot have field: {}", &self, field)
+            )]),
+            ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A anonymous function {} cannot have field: {}", &self, field)
+            )])
         }
     }
 
@@ -84,78 +101,57 @@ impl ActualType {
         match &self {
             ActualType::AnonFun { args, ret_ty } =>
                 Ok((args.iter().map(TypeName::from).collect(), TypeName::from(ret_ty.deref()))),
-            _ => Err(vec![TypeErr::new(pos, "Not an anonymous function")])
+            ActualType::Single { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("Expected an anonymous function but was {}", &self)
+            )]),
+            ActualType::Tuple { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("Expected an anonymous function but was a tuple {}", &self)
+            )])
         }
     }
 
-    pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
+    /// Check if a type implements a a function.
+    ///
+    /// [STR](function::concrete::STR) is a special case.
+    /// For tuples, we proceed to check if every item in the tuple implements
+    /// [STR](function::concrete::STR).
+    pub fn function(&self, name: &TypeName, pos: &Position) -> TypeResult<HashSet<Function>> {
         match &self {
-            ActualType::AnonFun { args: a, ret_ty } => {
-                let fun_args = a.iter().map(TypeName::from).collect::<Vec<TypeName>>();
-                if fun_args == args {
-                    Ok(ret_ty.deref().clone())
+            ActualType::Single { ty } =>
+                Ok(HashSet::from_iter(vec![ty.function(name, pos)?].into_iter())),
+            ActualType::Tuple { types } =>
+                if name == &TypeName::from(function::concrete::STR) {
+                    let ty: Vec<HashSet<Function>> = types
+                        .into_iter()
+                        .map(|ty| ty.function(name, pos))
+                        .collect::<Result<_, _>>()?;
+                    Ok(ty.into_iter().flatten().collect())
                 } else {
-                    let msg = format!(
-                        "Anonymous function expected ({}), but got ({})",
-                        comma_delimited(fun_args),
-                        comma_delimited(args)
-                    );
-                    Err(vec![TypeErr::new(pos, &msg)])
-                }
-            }
-            _ => Err(vec![TypeErr::new(pos, "Not an anonymous function")])
-        }
-    }
-
-    pub fn function(&self, name: &TypeName, pos: &Position) -> TypeResult<Function> {
-        match &self {
-            ActualType::Single { ty } => ty.function(name, pos),
-            _ => Err(vec![TypeErr::new(pos, &format!("Undefined function: {}", name))])
-        }
-    }
-
-    pub fn fun_ret_ty(&self, name: &TypeName, pos: &Position) -> TypeResult<Option<TypeName>> {
-        match &self {
-            ActualType::Single { ty } => ty.fun_ret_ty(name, pos),
-            _ => Err(vec![TypeErr::new(pos, &format!("Undefined function: {}", name))])
-        }
-    }
-
-    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
-        match &self {
-            ActualType::Single { ty } => ty.fun(name, args, pos),
-            _ => Err(vec![TypeErr::new(pos, &format!("Undefined function: {}", name))])
+                    Err(vec![TypeErr::new(
+                        pos,
+                        &format!("A tuple {} cannot define function {}", &self, name)
+                    )])
+                },
+            ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A anonymous function {} cannot define function {}", &self, name)
+            )])
         }
     }
 
     pub fn constructor_args(&self, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
         match &self {
             ActualType::Single { ty } => Ok(ty.args.clone()),
-            _ => Err(vec![TypeErr::new(pos, "Type does not have constructor arguments")])
-        }
-    }
-
-    pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ActualType> {
-        match &self {
-            ActualType::Single { ty } => {
-                let mut new_args = vec![TypeName::from(&ty.name)];
-                new_args.append(&mut args.to_vec());
-
-                if args_compatible(&ty.args, &new_args) {
-                    Ok(self.clone())
-                } else {
-                    Err(vec![TypeErr::new(
-                        pos,
-                        &format!(
-                            "{} only takes arguments ({}). Was given: ({}).",
-                            ty.clone(),
-                            comma_delimited(&ty.args),
-                            comma_delimited(new_args)
-                        )
-                    )])
-                }
-            }
-            _ => Err(vec![TypeErr::new(pos, "Type does not have constructor arguments")])
+            ActualType::Tuple { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A tuple {} does not have constructor arguments", &self)
+            )]),
+            ActualType::AnonFun { .. } => Err(vec![TypeErr::new(
+                pos,
+                &format!("A anonymous function {} does not have constructor arguments", &self)
+            )])
         }
     }
 }

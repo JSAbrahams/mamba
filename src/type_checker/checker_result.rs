@@ -94,7 +94,7 @@ impl Display for TypeErr {
         if let Some(position) = self.position.clone() {
             write!(
                 f,
-                "--> {}:{}:{}\n  {}\n{}{:3}   || {}\n      || {}{}{}",
+                "--> {}:{}:{}\n  {}\n{}{:3}  || {}\n     || {}{}{}",
                 path,
                 position.start.line,
                 position.start.pos,
@@ -102,7 +102,7 @@ impl Display for TypeErr {
                 self.source_before.clone().map_or_else(String::new, |src| if src.is_empty() {
                     String::new()
                 } else {
-                    format!("{:3}   || {}\n", position.start.line - 1, src)
+                    format!("{:3}  || {}\n", position.start.line - 1, src)
                 }),
                 position.start.line,
                 self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
@@ -111,11 +111,11 @@ impl Display for TypeErr {
                 self.source_after.clone().map_or(String::new(), |src| if src.is_empty() {
                     String::new()
                 } else {
-                    format!("\n{:3}   || {}\n", position.start.line + 1, src)
+                    format!("\n{:3}  || {}\n", position.start.line + 1, src)
                 })
             )
         } else {
-            write!(f, "--> {}\n     | {}", path, msg)
+            write!(f, "--> {}\n  {}", path, msg)
         }
     }
 }

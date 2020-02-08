@@ -1,10 +1,11 @@
+use python_parser::ast::Funcdef;
+
 use crate::common::position::Position;
 use crate::type_checker::context::function::concrete;
 use crate::type_checker::context::function::generic::GenericFunction;
 use crate::type_checker::context::function_arg::generic::GenericFunctionArg;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::TypeName;
-use python_parser::ast::Funcdef;
 
 pub const INIT: &str = "__init__";
 
@@ -21,6 +22,7 @@ pub const MUL: &str = "__mul__";
 pub const POW: &str = "__pow__";
 pub const SUB: &str = "__sub__";
 
+pub const STR: &str = "__str__";
 pub const TRUTHY: &str = "__bool__";
 pub const NEXT: &str = "__next__";
 pub const ITER: &str = "__iter__";

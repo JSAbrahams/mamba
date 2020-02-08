@@ -19,7 +19,6 @@ pub fn gen_flow(
     match &ast.node {
         Node::Handle { expr_or_stmt, .. } => {
             let mut res = (constr.clone(), env.clone());
-            let cond_expect = Expression { ast: *expr_or_stmt.clone() };
 
             // TODO check that all raises are covered
 

@@ -166,26 +166,6 @@ impl ExpressionType {
         }
     }
 
-    pub fn anon_fun(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
-        match &self {
-            ExpressionType::Single { ty } => ty.actual_ty().anon_fun(args, pos),
-            ExpressionType::Union { union } => {
-                let ret_tys: Vec<ExpressionType> = union
-                    .iter()
-                    .map(|ty| ty.actual_ty().anon_fun(args, pos))
-                    .collect::<Result<_, _>>()?;
-                let mut ret_ty = ret_tys
-                    .first()
-                    .ok_or_else(|| vec![TypeErr::new(pos, "Union is empty")])?
-                    .clone();
-                for ty in ret_tys {
-                    ret_ty = ret_ty.union(&ty);
-                }
-                Ok(ret_ty)
-            }
-        }
-    }
-
     pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
         match &self {
             ExpressionType::Single { ty: mut_ty } => mut_ty.actual_ty().field(field, pos),
@@ -207,68 +187,14 @@ impl ExpressionType {
 
     pub fn function(&self, name: &TypeName, pos: &Position) -> TypeResult<HashSet<Function>> {
         match &self {
-            ExpressionType::Single { ty } => {
-                let mut set = HashSet::new();
-                set.insert(ty.actual_ty().function(name, pos)?);
-                Ok(set)
-            }
-            ExpressionType::Union { union } => union
-                .iter()
-                .map(|e_ty| e_ty.actual_ty().function(name, pos))
-                .collect::<Result<_, Vec<TypeErr>>>()
-        }
-    }
-
-    pub fn fun_ret_ty(&self, name: &TypeName, pos: &Position) -> TypeResult<HashSet<TypeName>> {
-        match &self {
-            ExpressionType::Single { ty } => {
-                let mut set = HashSet::new();
-                if let Some(ret_ty) = ty.actual_ty().fun_ret_ty(name, pos)? {
-                    set.insert(ret_ty);
-                }
-                Ok(set)
-            }
-            ExpressionType::Union { union } => Ok(union
-                .iter()
-                .map(|e_ty| e_ty.actual_ty().fun_ret_ty(name, pos))
-                .collect::<Result<Vec<Option<TypeName>>, Vec<TypeErr>>>()?
-                .into_iter()
-                .filter_map(|ret_ty: Option<TypeName>| ret_ty)
-                .collect())
-        }
-    }
-
-    // TODO use ActualTypeName
-    pub fn fun(&self, name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
-        match &self {
-            ExpressionType::Single { ty } => ty.actual_ty().fun(name, args, pos),
+            ExpressionType::Single { ty } => ty.actual_ty().function(name, pos),
             ExpressionType::Union { union } => {
-                let union: Vec<Function> = union
-                    .iter()
-                    .map(|e_ty| e_ty.actual_ty().fun(name, args, pos))
-                    .collect::<Result<_, Vec<TypeErr>>>()?;
-                let first = union.get(0);
-
-                if union.iter().all(|e_ty| Some(e_ty) == first) {
-                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, "Unknown function")])?)
-                } else {
-                    Err(vec![TypeErr::new(pos, "Unknown field")])
-                }
+                let funs: Vec<Result<HashSet<_>, _>> =
+                    union.into_iter().map(|t| t.actual_ty().function(name, pos)).collect();
+                let res: Vec<HashSet<Function>> = funs.into_iter().collect::<Result<_, _>>()?;
+                Ok(res.into_iter().flatten().collect())
             }
         }
-    }
-
-    pub fn constructor(&self, args: &[TypeName], pos: &Position) -> TypeResult<ExpressionType> {
-        Ok(match &self {
-            ExpressionType::Single { ty } =>
-                ExpressionType::Single { ty: ty.constructor(args, pos)? },
-            ExpressionType::Union { union } => ExpressionType::Union {
-                union: union
-                    .iter()
-                    .map(|ty| ty.constructor(args, pos))
-                    .collect::<Result<_, _>>()?
-            }
-        })
     }
 
     pub fn constructor_args(&self, pos: &Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {

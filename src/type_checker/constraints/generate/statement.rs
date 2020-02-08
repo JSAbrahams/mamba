@@ -30,7 +30,7 @@ pub fn gen_stmt(
             },
         Node::Print { expr } => {
             let left = Expected::from(expr);
-            constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
+            constr.add(&left, &Expected::new(&expr.pos, &Stringy));
             generate(expr, env, ctx, constr)
         }
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected statement")])

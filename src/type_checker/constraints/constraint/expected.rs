@@ -54,6 +54,7 @@ pub enum Expect {
     ExpressionAny,
     Collection { ty: Box<Expect> },
     Truthy,
+    Stringy,
     RaisesAny,
     Raises { raises: HashSet<TypeName> },
     Implements { type_name: TypeName, args: Vec<Expected> },
@@ -72,6 +73,7 @@ impl Hash for Expect {
             Collection { ty } => ty.hash(state),
             Truthy => state.write_i8(3),
             RaisesAny => state.write_i8(4),
+            Stringy => state.write_i8(5),
             Implements { type_name, args } => {
                 type_name.hash(state);
                 args.iter().for_each(|a| a.hash(state))
@@ -99,6 +101,7 @@ impl Display for Expect {
                     format!("[Collection{}]", ty)
                 },
             Truthy => format!("Truthy"),
+            Stringy => format!("Stringy"),
             RaisesAny => String::from("[RaisesAny]"),
             Raises { raises: type_name } => format!("[Raises{{{}}}]]", comma_delimited(type_name)),
             Implements { type_name, args } => format!(
@@ -132,7 +135,10 @@ impl Expect {
                         }
                     }),
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
-            (Truthy, Truthy) | (RaisesAny, RaisesAny) | (ExpressionAny, ExpressionAny) => true,
+            (Truthy, Truthy)
+            | (RaisesAny, RaisesAny)
+            | (ExpressionAny, ExpressionAny)
+            | (Stringy, Stringy) => true,
             (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
             | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::And { .. }, .. } })

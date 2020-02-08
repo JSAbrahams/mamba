@@ -69,8 +69,10 @@ pub fn unify_link(
 
             (Type { .. }, ExpressionAny) | (ExpressionAny, Type { .. }) =>
                 unify_link(constr, sub, ctx, total),
-            (Truthy, ExpressionAny) | (ExpressionAny, Truthy) =>
-                unify_link(constr, sub, ctx, total),
+            (Truthy, ExpressionAny)
+            | (ExpressionAny, Truthy)
+            | (Stringy, ExpressionAny)
+            | (ExpressionAny, Stringy) => unify_link(constr, sub, ctx, total),
 
             (Expression { ast: AST { node: Node::Undefined, .. } }, Type { type_name })
                 if !type_name.is_nullable() =>
@@ -88,7 +90,8 @@ pub fn unify_link(
             (Expression { .. }, Expression { .. })
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Collection { .. })
-            | (Expression { .. }, Truthy) => {
+            | (Expression { .. }, Truthy)
+            | (Expression { .. }, Stringy) => {
                 let mut sub = substitute(&left, &right, &sub, &left.pos)?;
                 sub.push_constr(constraint);
 
@@ -97,7 +100,8 @@ pub fn unify_link(
             }
             (Collection { .. }, Expression { ast })
             | (Type { .. }, Expression { ast })
-            | (Truthy, Expression { ast }) =>
+            | (Truthy, Expression { ast })
+            | (Stringy, Expression { ast }) =>
                 if ast.node.is_expression() {
                     let mut sub = substitute(&left, &right, &sub, &left.pos)?;
                     sub.push_constr(constraint);
@@ -113,7 +117,12 @@ pub fn unify_link(
 
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
-                expr_ty.function(&TypeName::from(function::python::TRUTHY), &left.pos)?;
+                expr_ty.function(&TypeName::from(function::concrete::TRUTHY), &left.pos)?;
+                unify_link(constr, sub, ctx, total)
+            }
+            (Type { type_name }, Stringy) | (Stringy, Type { type_name }) => {
+                let expr_ty = ctx.lookup(type_name, &left.pos)?;
+                expr_ty.function(&TypeName::from(function::concrete::STR), &left.pos)?;
                 unify_link(constr, sub, ctx, total)
             }
             (Type { type_name: l_ty }, Type { type_name: r_ty }) => {

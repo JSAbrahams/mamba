@@ -57,6 +57,9 @@ pub fn gen_op(
         Node::ENum { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
         Node::Str { expressions, .. } => {
             let (mut constr, env) = gen_vec(expressions, env, ctx, constr)?;
+            for expr in expressions {
+                constr.add(&Expected::from(expr), &Expected::new(&expr.pos, &Stringy))
+            }
             let type_name = TypeName::from(STRING_PRIMITIVE);
             let left = Expected::from(ast);
             constr.add(&left, &Expected::new(&ast.pos, &Type { type_name }));
