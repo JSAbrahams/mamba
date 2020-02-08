@@ -308,11 +308,6 @@ fn unify_fun_arg(
                         .clone();
 
                     added += 1;
-                    println!(
-                        "unifying {:?}, {:?}",
-                        &Expected::new(&expected.pos, &Type { type_name: type_name.clone() }),
-                        &expected
-                    );
                     constr.eager_push(&Expected::new(&expected.pos, &Type { type_name }), &expected)
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>

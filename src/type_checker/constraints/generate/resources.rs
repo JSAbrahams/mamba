@@ -28,13 +28,17 @@ pub fn gen_resources(
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
+            constr.new_set(true);
             constr.add(&Expected::from(resource), &Expected::from(alias));
             let (mut constr, env) = identifier_from_var(alias, ty, *mutable, constr, env)?;
             let (mut constr, env) = generate(resource, &env, ctx, &mut constr)?;
+            constr.exit_set(&ast.pos)?;
             generate(expr, &env, ctx, &mut constr)
         }
         Node::With { resource, expr, .. } => {
+            constr.new_set(true);
             let (mut constr, env) = generate(resource, env, ctx, constr)?;
+            constr.exit_set(&ast.pos)?;
             generate(expr, &env, ctx, &mut constr)
         }
 
