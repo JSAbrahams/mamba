@@ -1,6 +1,7 @@
 use crate::common::position::Position;
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
-use crate::type_checker::constraints::constraint::expected::Expect::{Truthy, Type};
+use crate::type_checker::constraints::constraint::expected::Expect::{Collection, Expression,
+                                                                     ExpressionAny, Truthy, Type};
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 
@@ -18,7 +19,7 @@ pub fn substitute(
     constr: &Constraints,
     pos: &Position
 ) -> TypeResult<Constraints> {
-    let mut substituted = Constraints::default();
+    let mut substituted = Constraints::new(&[], &constr.in_class);
     let mut constr = constr.clone();
     let (old, new) = match (&old.expect, &new.expect) {
         (Type { type_name: lt }, Type { type_name: rt }) if lt != rt => {
@@ -29,7 +30,10 @@ pub fn substitute(
         | (Truthy, Type { .. })
         | (Type { .. }, Truthy)
         | (Truthy, Truthy) => return Ok(constr),
-        (Type { .. }, _) | (Truthy, _) => (new, old),
+        (Type { .. }, _)
+        | (Truthy, _)
+        | (Collection { .. }, _)
+        | (ExpressionAny, Expression { .. }) => (new, old),
         _ => (old, new)
     };
 
@@ -113,13 +117,8 @@ fn recursive_substitute(
 }
 
 fn structurally_eq_not_type(inspected: &Expect, old: &Expect) -> bool {
-    if inspected.structurally_eq(&old) && inspected != &Truthy {
-        if let Type { .. } = inspected {
-            false
-        } else {
-            true
-        }
-    } else {
-        false
+    match inspected {
+        Type { .. } => false,
+        inspected => inspected.structurally_eq(&old) && inspected != &Truthy
     }
 }

@@ -45,13 +45,21 @@ pub fn unify_link(
         match (&left.expect, &right.expect) {
             // trivially equal
             (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
-                let mut constr = substitute(&left, &right, constr, &left.pos)?;
-                unify_link(&mut constr, sub, ctx, total)
+                let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                sub.push_constr(constraint);
+
+                let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                unify_link(&mut constr, &mut sub, ctx, total)
             }
 
             (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
                 if ast.node.is_expression() {
-                    unify_link(constr, sub, ctx, total)
+                    // TODO if function call check if return type expression
+                    let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                    sub.push_constr(constraint);
+
+                    let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                    unify_link(&mut constr, &mut sub, ctx, total)
                 } else {
                     Err(vec![TypeErr::new(
                         &ast.pos,
@@ -81,8 +89,8 @@ pub fn unify_link(
             | (Expression { .. }, Type { .. })
             | (Expression { .. }, Collection { .. })
             | (Expression { .. }, Truthy) => {
-                let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
-                sub.append(&substitute(&left, &right, &sub, &left.pos)?);
+                let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                sub.push_constr(constraint);
 
                 let mut constr = substitute(&left, &right, &constr, &right.pos)?;
                 unify_link(&mut constr, &sub, ctx, total)
@@ -91,8 +99,8 @@ pub fn unify_link(
             | (Type { .. }, Expression { ast })
             | (Truthy, Expression { ast }) =>
                 if ast.node.is_expression() {
-                    let mut sub = Constraints::new(&vec![constraint.clone()], &constr.in_class);
-                    sub.append(&substitute(&left, &right, &sub, &left.pos)?);
+                    let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                    sub.push_constr(constraint);
 
                     let mut constr = substitute(&left, &right, &constr, &left.pos)?;
                     unify_link(&mut constr, &sub, ctx, total)
@@ -114,7 +122,7 @@ pub fn unify_link(
                     unify_link(constr, sub, ctx, total)
                 } else {
                     // TODO construct error based on type of constraint
-                    let msg = format!("Expected a {} but got {}", l_ty, r_ty);
+                    let msg = format!("Expected a {} but was a {}", l_ty, r_ty);
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 }
             }
@@ -175,7 +183,7 @@ pub fn unify_link(
                     )])
                 },
 
-            (Type { type_name }, Raises { raises }) =>
+            (Type { type_name }, Raises { raises }) | (Raises { raises }, Type { type_name }) =>
                 if raises.contains(type_name) {
                     unify_link(constr, sub, ctx, total)
                 } else {
@@ -185,17 +193,6 @@ pub fn unify_link(
                         comma_delimited(raises)
                     );
                     Err(vec![TypeErr::new(&left.pos, &msg)])
-                },
-            (Raises { raises }, Type { type_name }) =>
-                if raises.contains(type_name) {
-                    unify_link(constr, sub, ctx, total)
-                } else {
-                    let msg = format!(
-                        "Unexpected raises {}, must be one of: {}",
-                        type_name,
-                        comma_delimited(raises)
-                    );
-                    Err(vec![TypeErr::new(&right.pos, &msg)])
                 },
 
             (Type { type_name }, Nullable) | (Nullable, Type { type_name }) =>
@@ -299,7 +296,7 @@ fn unify_fun_arg(
                         .clone();
 
                     added += 1;
-                    constr.push(&expected, &Expected::new(&expected.pos, &Type { type_name }))
+                    constr.push(&Expected::new(&expected.pos, &Type { type_name }), &expected)
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
                     return Err(vec![TypeErr::new(
@@ -334,10 +331,14 @@ fn check_iter(
         let msg = format!("{} __iter__ type undefined", type_name);
         let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
 
-        constr.push(
-            &Expected::new(&pos, &Type { type_name: type_name.clone() }),
-            &Expected::new(&pos, &Type { type_name: f_ret_ty.clone() })
-        );
+        let f_name = TypeName::from(function::concrete::NEXT);
+        for fun in ctx.lookup(&f_ret_ty, pos)?.function(&f_name, pos)? {
+            let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
+            constr.push(
+                &Expected::new(&pos, &Type { type_name: type_name.clone() }),
+                &Expected::new(&pos, &Type { type_name: f_ret_ty.clone() })
+            );
+        }
         constr.push(&Expected::new(&pos, &ty), &Expected::new(&pos, &Type { type_name: f_ret_ty }));
     }
 
@@ -345,15 +346,15 @@ fn check_iter(
 }
 
 fn check_if_parent(
-    name: &ActualTypeName,
+    field: &ActualTypeName,
     in_class: &Vec<TypeName>,
-    type_name: &TypeName,
+    object_class: &TypeName,
     ctx: &Context,
     pos: &Position
 ) -> TypeResult<()> {
     let mut in_a_parent = false;
     for class in in_class {
-        let is_parent = ctx.lookup(&class, pos)?.has_parent(type_name, ctx, pos)?;
+        let is_parent = ctx.lookup(&class, pos)?.has_parent(object_class, ctx, pos)?;
         in_a_parent = in_a_parent || is_parent;
         if in_a_parent {
             break;
@@ -364,9 +365,9 @@ fn check_if_parent(
         Ok(())
     } else {
         let msg = if let Some(class) = in_class.last() {
-            format!("Cannot access private {} of a {} while in a {}", name, type_name, class)
+            format!("Cannot access private {} of a {} while in a {}", field, object_class, class)
         } else {
-            format!("Cannot access private {} of a {}", name, type_name)
+            format!("Cannot access private {} of a {}", field, object_class)
         };
         Err(vec![TypeErr::new(pos, &msg)])
     }

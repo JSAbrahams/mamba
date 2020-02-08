@@ -17,7 +17,7 @@ pub fn gen_flow(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::Handle { expr_or_stmt, cases } => {
+        Node::Handle { expr_or_stmt, .. } => {
             let mut res = (constr.clone(), env.clone());
             let cond_expect = Expression { ast: *expr_or_stmt.clone() };
 
@@ -27,6 +27,7 @@ pub fn gen_flow(
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
+            constr.new_set(true);
             let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
@@ -41,15 +42,17 @@ pub fn gen_flow(
             constr.new_set(true);
             let (mut constr, else_env) = generate(el, &env, ctx, &mut constr)?;
             constr.exit_set(&el.pos)?;
+
             // TODO apply union to constraints
+            constr.exit_set(&ast.pos)?;
             Ok((constr, env.union(&then_env.intersect(&else_env))))
         }
         Node::IfElse { cond, then, .. } => {
+            constr.new_set(true);
             let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
-            constr.new_set(true);
             let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
             constr.exit_set(&then.pos)?;
             Ok((constr, env))
@@ -76,10 +79,12 @@ pub fn gen_flow(
         }
 
         Node::For { expr, col, body } => {
+            constr.new_set(true);
             let (mut constr, col_exp) = constr_col(col, constr);
             let (mut constr, env) = gen_collection_lookup(expr, &col_exp, env, &mut constr)?;
             let (mut constr, env) = generate(col, &env, ctx, &mut constr)?;
-            let (constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
+            let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
+            constr.exit_set(&ast.pos)?;
             Ok((constr, env))
         }
         Node::Step { amount } => {
@@ -89,10 +94,12 @@ pub fn gen_flow(
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
+            constr.new_set(true);
             let left = Expected::from(cond);
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
             let (mut constr, env) = generate(cond, &env, ctx, constr)?;
-            let (constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
+            let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
+            constr.exit_set(&ast.pos)?;
             Ok((constr, env.clone()))
         }
 

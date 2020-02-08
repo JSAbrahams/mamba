@@ -139,7 +139,10 @@ pub fn identifier_from_var(
     if let Some(ty) = ty {
         let type_name = TypeName::try_from(ty.deref())?;
         let left = Expected::from(var);
-        constr.add(&left, &Expected::new(&ty.pos, &Type { type_name: type_name.clone() }));
+        constr.add(
+            &left,
+            &Expected::new(&var.pos.union(&ty.pos), &Type { type_name: type_name.clone() })
+        );
 
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, type_name)) in match_type(&identifier, &type_name, &var.pos)? {

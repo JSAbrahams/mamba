@@ -2,6 +2,7 @@ use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::unify::unify_link::unify_link;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::Context;
+use crate::type_checker::util::custom_delimited;
 
 mod substitute;
 mod unify_link;
@@ -11,7 +12,16 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Cons
     //    let (oks, errs): (Vec<_>, Vec<_>) = all_constraints
     //        .iter()
     //        .map(|constraints| {
-    //            println!("[unifying set {}\\{}]", count, all_constraints.len());
+    //            println!(
+    //                "[unifying set {}\\{}{}]",
+    //                count,
+    //                all_constraints.len(),
+    //                if constraints.in_class.is_empty() {
+    //                    String::new()
+    //                } else {
+    //                    format!(" in {}", custom_delimited(&constraints.in_class,
+    // " in "))                }
+    //            );
     //            count += 1;
     //            unify_link(&mut constraints.clone(), &Constraints::default(), ctx,
     // constraints.len())        })
@@ -25,7 +35,12 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Cons
     all_constraints
         .iter()
         .map(|constraints| {
-            println!("[unifying set {}\\{}]", count, all_constraints.len());
+            println!(
+                "[unifying set {}\\{}{}]",
+                count,
+                all_constraints.len(),
+                custom_delimited(&constraints.in_class, " in ", " in ")
+            );
             count += 1;
             unify_link(&mut constraints.clone(), &Constraints::default(), ctx, constraints.len())
         })
