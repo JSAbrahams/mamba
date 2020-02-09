@@ -24,8 +24,8 @@ pub fn gen_def(
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
             constr.new_set(true);
-
             let (mut constr, env) = constrain_args(fun_args, env, ctx, constr)?;
+
             let (mut constr, env) = match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let type_name = TypeName::try_from(ret_ty)?;
@@ -134,18 +134,34 @@ pub fn identifier_from_var(
         (Some(ty), Some(expr)) => {
             let type_name = TypeName::try_from(ty.deref())?;
             constr.add_with_identifier(
-                &Expected::from(var),
+                &var_expect,
                 &Expected::new(&ty.pos, &Type { type_name }),
                 &names
             );
             let expr_expect = Expected::from(expr);
             constr.add(&var_expect, &expr_expect);
-            constrain_ty(expr, ty, &env, ctx, &mut constr)
+            generate(expr, &env, ctx, &mut constr)
+        }
+        (Some(ty), None) => {
+            let type_name = TypeName::try_from(ty.deref())?;
+            constr.add_with_identifier(
+                &var_expect,
+                &Expected::new(&ty.pos, &Type { type_name }),
+                &names
+            );
+            Ok((constr, env))
         }
         (None, Some(expr)) => {
             constr.add_with_identifier(&var_expect, &Expected::from(expr), &names);
             generate(expr, &env, ctx, &mut constr)
         }
-        _ => Ok((constr, env))
+        (None, None) => {
+            constr.add_with_identifier(
+                &var_expect,
+                &Expected::new(&var.pos, &ExpressionAny),
+                &names
+            );
+            Ok((constr, env))
+        }
     }
 }
