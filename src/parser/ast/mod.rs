@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Error, Formatter};
+use std::fmt::Debug;
 
 use crate::common::position::Position;
 
@@ -6,14 +6,10 @@ pub mod node;
 
 /// Wrapper of Node, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct AST {
     pub pos:  Position,
     pub node: Node
-}
-
-impl Debug for AST {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { write!(f, "{:?}", self.node) }
 }
 
 impl AST {

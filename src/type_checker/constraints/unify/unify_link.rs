@@ -83,22 +83,22 @@ pub fn unify_link(
 
             (Expression { .. }, Expression { ast: AST { node: Node::Bool { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
-                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
                 unify_link(constr, sub, ctx, total + 1)
             }
             (Expression { .. }, Expression { ast: AST { node: Node::Real { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::FLOAT_PRIMITIVE);
-                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
                 unify_link(constr, sub, ctx, total + 1)
             }
             (Expression { .. }, Expression { ast: AST { node: Node::Int { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
-                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
                 unify_link(constr, sub, ctx, total + 1)
             }
             (Expression { .. }, Expression { ast: AST { node: Node::Str { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::STRING_PRIMITIVE);
-                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
                 unify_link(constr, sub, ctx, total + 1)
             }
             (
@@ -106,7 +106,7 @@ pub fn unify_link(
                 Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } }
             ) => {
                 let type_name = TypeName::try_from(name)?;
-                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
                 unify_link(constr, sub, ctx, total + 1)
             }
 
@@ -133,7 +133,7 @@ pub fn unify_link(
                 } else {
                     Err(vec![TypeErr::new(
                         &ast.pos,
-                        &format!("Expected expression but was {}", ast.node.name())
+                        &format!("Expected expression but was {}", ast.node)
                     )])
                 },
 
@@ -213,7 +213,7 @@ pub fn unify_link(
                 } else {
                     Err(vec![TypeErr::new(
                         &ast.pos,
-                        &format!("Expected expression but was {}", ast.node.name())
+                        &format!("Expected expression but was {}", ast.node)
                     )])
                 },
 
@@ -249,7 +249,7 @@ pub fn unify_link(
                         } else {
                             Err(vec![TypeErr::new(
                                 &ast.pos,
-                                &format!("Expected expression but was {}", ast.node.name())
+                                &format!("Expected expression but was {}", ast.node)
                             )])
                         },
                 },

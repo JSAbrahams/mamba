@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
-use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
+use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::Constraint;
 use crate::type_checker::ty_name::TypeName;
 
@@ -34,15 +34,10 @@ impl Constraints {
     pub fn reinsert(&mut self, constraint: &Constraint) -> TypeResult<()> {
         if constraint.flagged {
             // Can only reinsert constraint once
-            // TODO create pretty print for asts
-            let msg = match (&constraint.parent.expect, &constraint.child.expect) {
-                (Expect::Expression { .. }, Expect::Expression { .. }) =>
-                    String::from("Cannot infer type"),
-                (other, Expect::Expression { ast }) | (Expect::Expression { ast }, other) =>
-                    format!("Cannot infer type: {} and {:?}", other, ast),
-                _ => String::from("cannot infer type")
-            };
-
+            let msg = format!(
+                "Cannot infer type, expected {} but was {}",
+                &constraint.parent.expect, &constraint.child.expect
+            );
             return Err(vec![TypeErr::new(&constraint.parent.pos, &msg)]);
         }
 

@@ -93,7 +93,7 @@ impl Display for Expect {
         write!(f, "{}", match &self {
             Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
-            Expression { ast } => format!("{:?}", ast.node),
+            Expression { ast } => format!("{}", ast.node),
             Collection { ty } =>
                 if let Expression { .. } = &ty.deref() {
                     format!("[Collection{{{}}}]", ty)
