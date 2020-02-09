@@ -39,16 +39,24 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> (ConstrBuilde
                 for element in elements {
                     constr.add(&Expected::from(element), &Expected::from(first))
                 }
-                Expect::Collection { ty: Box::from(Expression { ast: first.clone() }) }
+                Some(Expect::Collection { ty: Box::from(Expression { ast: first.clone() }) })
             } else {
-                Expect::Collection { ty: Box::from(ExpressionAny) }
+                Some(Expect::Collection { ty: Box::from(ExpressionAny) })
             },
 
-        _ => Expect::Collection { ty: Box::from(ExpressionAny) }
+        _ => None
     };
 
-    let col_exp = Expected::new(&collection.pos, &col);
-    constr.add(&Expected::from(collection), &col_exp);
+    let col_exp = if let Some(col) = &col {
+        let col_exp = Expected::new(&collection.pos, &col);
+        constr.add(&Expected::from(collection), &col_exp);
+        col_exp
+    } else {
+        let col_exp =
+            Expected::new(&collection.pos, &Expect::Collection { ty: Box::from(ExpressionAny) });
+        col_exp
+    };
+
     (constr.clone(), col_exp.clone())
 }
 
@@ -59,7 +67,7 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> (ConstrBuilde
 /// the type of the given collection's parameter must be the same.
 pub fn gen_collection_lookup(
     lookup: &AST,
-    col: &Expected,
+    col: &AST,
     env: &Environment,
     constr: &mut ConstrBuilder
 ) -> Constrained {
@@ -70,6 +78,6 @@ pub fn gen_collection_lookup(
     }
 
     let exp_collection = Collection { ty: Box::from(Expression { ast: lookup.clone() }) };
-    constr.add(&Expected::new(&lookup.pos, &exp_collection), &col);
+    constr.add(&Expected::new(&lookup.pos, &exp_collection), &Expected::from(col));
     Ok((constr.clone(), env.clone()))
 }

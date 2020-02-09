@@ -20,8 +20,8 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            let (mut constr, col) = constr_col(right, constr);
-            let (mut constr, env) = gen_collection_lookup(left, &col, env, &mut constr)?;
+            let (mut constr, _) = constr_col(right, constr);
+            let (mut constr, env) = gen_collection_lookup(left, &right, env, &mut constr)?;
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }

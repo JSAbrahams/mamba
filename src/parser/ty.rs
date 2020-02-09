@@ -190,13 +190,11 @@ pub fn parse_type_tuple(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression no type")?;
-    let mutable = it.eat_if(&Token::Mut).is_some();
     let expr = it.parse(&parse_id, "expression no type", &start)?;
     if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
         Err(custom("Type annotation not allowed here", &annotation_pos))
     } else {
-        let node = Node::ExpressionType { expr: expr.clone(), mutable, ty: None };
-        Ok(Box::from(AST::new(&start.union(&expr.pos), node)))
+        Ok(expr)
     }
 }
 

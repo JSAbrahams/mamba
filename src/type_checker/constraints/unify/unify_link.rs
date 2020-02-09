@@ -12,10 +12,12 @@ use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
+use crate::type_checker::context::ty;
 use crate::type_checker::context::Context;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
+use std::convert::TryFrom;
 
 /// Unifies all constraints.
 
@@ -43,6 +45,66 @@ pub fn unify_link(
         );
 
         match (&left.expect, &right.expect) {
+            // primitive and constructor substitutions
+            // sometimes necessary when generating new constraints during unification
+            (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Expression { .. }) => {
+                let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (Expression { ast: AST { node: Node::Real { .. }, .. } }, Expression { .. }) => {
+                let type_name = TypeName::from(ty::concrete::FLOAT_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (Expression { ast: AST { node: Node::Int { .. }, .. } }, Expression { .. }) => {
+                let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (Expression { ast: AST { node: Node::Str { .. }, .. } }, Expression { .. }) => {
+                let type_name = TypeName::from(ty::concrete::STRING_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (
+                Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } },
+                Expression { .. }
+            ) => {
+                let type_name = TypeName::try_from(name)?;
+                constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+
+            (Expression { .. }, Expression { ast: AST { node: Node::Bool { .. }, .. } }) => {
+                let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (Expression { .. }, Expression { ast: AST { node: Node::Real { .. }, .. } }) => {
+                let type_name = TypeName::from(ty::concrete::FLOAT_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (Expression { .. }, Expression { ast: AST { node: Node::Int { .. }, .. } }) => {
+                let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (Expression { .. }, Expression { ast: AST { node: Node::Str { .. }, .. } }) => {
+                let type_name = TypeName::from(ty::concrete::STRING_PRIMITIVE);
+                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+            (
+                Expression { .. },
+                Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } }
+            ) => {
+                let type_name = TypeName::try_from(name)?;
+                constr.eager_push(&right, &Expected::new(&right.pos, &Type { type_name }));
+                unify_link(constr, sub, ctx, total + 1)
+            }
+
             // trivially equal
             (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
                 let mut sub = substitute(&left, &right, &sub, &left.pos)?;
@@ -87,9 +149,32 @@ pub fn unify_link(
                     &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
                 )]),
 
-            (Expression { .. }, Expression { .. })
-            | (Expression { .. }, Type { .. })
-            | (Expression { .. }, Collection { .. })
+            (Expression { ast: l_ast }, Expression { ast: r_ast }) => {
+                match (&l_ast.node, &r_ast.node) {
+                    (Node::Set { elements: l_e }, Node::Set { elements: r_e })
+                    | (Node::List { elements: l_e }, Node::List { elements: r_e })
+                    | (Node::Tuple { elements: l_e }, Node::Tuple { elements: r_e }) => {
+                        for pair in l_e.iter().zip_longest(r_e.iter()) {
+                            match pair {
+                                EitherOrBoth::Both(l, r) =>
+                                    constr.eager_push(&Expected::from(l), &Expected::from(r)),
+                                EitherOrBoth::Left(e) | EitherOrBoth::Right(e) =>
+                                    return Err(vec![TypeErr::new(&e.pos, "Unexpected element")]),
+                            }
+                        }
+                        unify_link(constr, &sub, ctx, total + l_e.len())
+                    }
+                    _ => {
+                        let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                        sub.push_constr(constraint);
+
+                        let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                        unify_link(&mut constr, &sub, ctx, total)
+                    }
+                }
+            }
+
+            (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy)
             | (Expression { .. }, Stringy) => {
                 let mut sub = substitute(&left, &right, &sub, &left.pos)?;
@@ -98,8 +183,8 @@ pub fn unify_link(
                 let mut constr = substitute(&left, &right, &constr, &right.pos)?;
                 unify_link(&mut constr, &sub, ctx, total)
             }
-            (Collection { .. }, Expression { ast })
-            | (Type { .. }, Expression { ast })
+
+            (Type { .. }, Expression { ast })
             | (Truthy, Expression { ast })
             | (Stringy, Expression { ast }) =>
                 if ast.node.is_expression() {
@@ -113,6 +198,31 @@ pub fn unify_link(
                         &ast.pos,
                         &format!("Expected expression but was {}", ast.node.name())
                     )])
+                },
+
+            (Expression { ast }, Collection { ty }) | (Collection { ty }, Expression { ast }) =>
+                match &ast.node {
+                    Node::Set { elements } | Node::Tuple { elements } | Node::List { elements } => {
+                        for element in elements {
+                            constr.eager_push(
+                                &Expected::from(element),
+                                &Expected::new(&element.pos, &ty)
+                            );
+                        }
+                        unify_link(constr, &sub, ctx, total + elements.len())
+                    }
+                    _ =>
+                        if ast.node.is_expression() {
+                            let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                            sub.push_constr(constraint);
+                            let mut constr = substitute(&left, &right, &constr, &left.pos)?;
+                            unify_link(&mut constr, &sub, ctx, total)
+                        } else {
+                            Err(vec![TypeErr::new(
+                                &ast.pos,
+                                &format!("Expected expression but was {}", ast.node.name())
+                            )])
+                        },
                 },
 
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
@@ -260,14 +370,16 @@ pub fn unify_link(
             }
 
             (Type { type_name }, Collection { ty }) | (Collection { ty }, Type { type_name }) => {
-                check_iter(type_name, ty, ctx, constr, &left.pos)?;
-                unify_link(constr, sub, ctx, total)
+                let (mut constr, added) = check_iter(type_name, ty, ctx, constr, &left.pos)?;
+                unify_link(&mut constr, sub, ctx, total + added)
             }
             (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
                 constr
                     .eager_push(&Expected::new(&left.pos, l_ty), &Expected::new(&right.pos, r_ty));
                 unify_link(constr, sub, ctx, total + 1)
             }
+
+            (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, sub, ctx, total),
 
             _ => {
                 let pos = format!("({}-{})", left.pos.start, right.pos.start);
@@ -337,8 +449,10 @@ fn check_iter(
     ctx: &Context,
     constr: &mut Constraints,
     pos: &Position
-) -> TypeResult<Constraints> {
+) -> TypeResult<(Constraints, usize)> {
     let f_name = TypeName::from(function::concrete::ITER);
+    let mut added = 0;
+
     for fun in ctx.lookup(type_name, pos)?.function(&f_name, pos)? {
         let msg = format!("{} __iter__ type undefined", type_name);
         let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
@@ -346,18 +460,20 @@ fn check_iter(
         let f_name = TypeName::from(function::concrete::NEXT);
         for fun in ctx.lookup(&f_ret_ty, pos)?.function(&f_name, pos)? {
             let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
+            added += 1;
             constr.eager_push(
                 &Expected::new(&pos, &Type { type_name: type_name.clone() }),
                 &Expected::new(&pos, &Type { type_name: f_ret_ty.clone() })
             );
         }
+        added += 1;
         constr.eager_push(
             &Expected::new(&pos, &ty),
             &Expected::new(&pos, &Type { type_name: f_ret_ty })
         );
     }
 
-    Ok(constr.clone())
+    Ok((constr.clone(), added))
 }
 
 fn check_if_parent(

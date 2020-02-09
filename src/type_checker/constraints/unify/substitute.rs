@@ -1,4 +1,5 @@
 use crate::common::position::Position;
+use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::{Collection, Expression,
                                                                      ExpressionAny, Stringy,
@@ -40,6 +41,7 @@ pub fn substitute(
         | (Truthy, _)
         | (Collection { .. }, _)
         | (ExpressionAny, Expression { .. })
+        | (_, Expression { ast: AST { node: Node::Id { .. }, .. } })
         | (Stringy, _) => (new, old),
         _ => (old, new)
     };
