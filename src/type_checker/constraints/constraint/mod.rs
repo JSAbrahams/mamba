@@ -8,6 +8,7 @@ pub mod iterator;
 pub struct Constraint {
     pub flagged:     bool,
     pub substituted: bool,
+    pub identifiers: Vec<String>,
     pub parent:      Expected,
     pub child:       Expected
 }
@@ -17,6 +18,7 @@ impl Constraint {
         Constraint {
             parent:      left.clone(),
             child:       right.clone(),
+            identifiers: vec![],
             flagged:     false,
             substituted: false
         }

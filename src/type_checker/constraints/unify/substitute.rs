@@ -9,6 +9,8 @@ use crate::type_checker::constraints::constraint::iterator::Constraints;
 
 /// Substitute old expression with new
 ///
+/// Identifiers signals when we should stop substituting variables.
+///
 /// If old is a type, and new is an expression, we instead substitute new with
 /// old. This is done to prevent substituting back in expressions after for
 /// instance we conclude two sides of a constraint are trivially equal.
@@ -16,6 +18,7 @@ use crate::type_checker::constraints::constraint::iterator::Constraints;
 /// Also checks for expected nested within expected.
 /// Does not, however, recursively traverse AST to check if they contain an AST.
 pub fn substitute(
+    identifiers: &[String],
     old: &Expected,
     new: &Expected,
     constr: &Constraints,
@@ -37,8 +40,7 @@ pub fn substitute(
         | (Truthy, Stringy)
         | (Stringy, Truthy)
         | (Stringy, Stringy) => return Ok(constr),
-        (Type { .. }, _)
-        | (Truthy, _)
+        (Truthy, _)
         | (Collection { .. }, _)
         | (ExpressionAny, Expression { .. })
         | (_, Expression { ast: AST { node: Node::Id { .. }, .. } })
@@ -46,13 +48,23 @@ pub fn substitute(
         _ => (old, new)
     };
 
-    while let Some(mut constraint) = constr.pop_constr() {
-        let (sub_l, parent) = recursive_substitute("l", &constraint.parent, old, new);
-        let (sub_r, child) = recursive_substitute("r", &constraint.child, old, new);
+    let (old, new) = if let Type { .. } = &old.expect { (new, old) } else { (old, new) };
 
-        constraint.parent = parent;
-        constraint.child = child;
-        constraint.substituted = constraint.substituted || sub_l || sub_r;
+    // TODO deal with tuples of identifiers
+    let mut encountered = false;
+    while let Some(mut constraint) = constr.pop_constr() {
+        encountered = encountered
+            || !constraint.identifiers.is_empty()
+                && constraint.identifiers == Vec::from(identifiers);
+        if !encountered {
+            let (sub_l, parent) = recursive_substitute("l", &constraint.parent, old, new);
+            let (sub_r, child) = recursive_substitute("r", &constraint.child, old, new);
+
+            constraint.parent = parent;
+            constraint.child = child;
+            constraint.substituted = constraint.substituted || sub_l || sub_r;
+        }
+
         substituted.push_constr(&constraint)
     }
 

@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::convert::TryFrom;
 
 use itertools::{EitherOrBoth, Itertools};
 
@@ -17,7 +18,6 @@ use crate::type_checker::context::Context;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
-use std::convert::TryFrom;
 
 /// Unifies all constraints.
 
@@ -33,12 +33,17 @@ pub fn unify_link(
     if let Some(constraint) = &constr.pop_constr() {
         let (left, right) = (constraint.parent.clone(), constraint.child.clone());
         println!(
-            "{:width$} [unifying {}\\{}{}{}] {} = {}",
+            "{:width$} [unifying {}\\{}{}{}]{} {} = {}",
             format!("({}-{})", left.pos.start, right.pos.start),
             total - constr.len(),
             total,
             if constraint.flagged { " (fl)" } else { "" },
             if constraint.substituted { " (sub)" } else { "" },
+            if constraint.identifiers.is_empty() {
+                String::new()
+            } else {
+                format!(" [iden: {}]", comma_delimited(&constraint.identifiers))
+            },
             left.expect,
             right.expect,
             width = 15
@@ -107,20 +112,23 @@ pub fn unify_link(
 
             // trivially equal
             (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
-                let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                 sub.push_constr(constraint);
 
-                let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                let mut constr =
+                    substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
                 unify_link(&mut constr, &mut sub, ctx, total)
             }
 
             (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
                 if ast.node.is_expression() {
                     // TODO if function call check if return type expression
-                    let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                    let mut sub =
+                        substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                     sub.push_constr(constraint);
 
-                    let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                    let mut constr =
+                        substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
                     unify_link(&mut constr, &mut sub, ctx, total)
                 } else {
                     Err(vec![TypeErr::new(
@@ -149,7 +157,7 @@ pub fn unify_link(
                     &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
                 )]),
 
-            (Expression { ast: l_ast }, Expression { ast: r_ast }) => {
+            (Expression { ast: l_ast }, Expression { ast: r_ast }) =>
                 match (&l_ast.node, &r_ast.node) {
                     (Node::Set { elements: l_e }, Node::Set { elements: r_e })
                     | (Node::List { elements: l_e }, Node::List { elements: r_e })
@@ -165,22 +173,29 @@ pub fn unify_link(
                         unify_link(constr, &sub, ctx, total + l_e.len())
                     }
                     _ => {
-                        let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                        let mut sub =
+                            substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                         sub.push_constr(constraint);
 
-                        let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                        let mut constr = substitute(
+                            &constraint.identifiers,
+                            &left,
+                            &right,
+                            &constr,
+                            &right.pos
+                        )?;
                         unify_link(&mut constr, &sub, ctx, total)
                     }
-                }
-            }
+                },
 
             (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy)
             | (Expression { .. }, Stringy) => {
-                let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                 sub.push_constr(constraint);
 
-                let mut constr = substitute(&left, &right, &constr, &right.pos)?;
+                let mut constr =
+                    substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
                 unify_link(&mut constr, &sub, ctx, total)
             }
 
@@ -188,10 +203,12 @@ pub fn unify_link(
             | (Truthy, Expression { ast })
             | (Stringy, Expression { ast }) =>
                 if ast.node.is_expression() {
-                    let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                    let mut sub =
+                        substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                     sub.push_constr(constraint);
 
-                    let mut constr = substitute(&left, &right, &constr, &left.pos)?;
+                    let mut constr =
+                        substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
                     unify_link(&mut constr, &sub, ctx, total)
                 } else {
                     Err(vec![TypeErr::new(
@@ -213,9 +230,21 @@ pub fn unify_link(
                     }
                     _ =>
                         if ast.node.is_expression() {
-                            let mut sub = substitute(&left, &right, &sub, &left.pos)?;
+                            let mut sub = substitute(
+                                &constraint.identifiers,
+                                &left,
+                                &right,
+                                &sub,
+                                &left.pos
+                            )?;
                             sub.push_constr(constraint);
-                            let mut constr = substitute(&left, &right, &constr, &left.pos)?;
+                            let mut constr = substitute(
+                                &constraint.identifiers,
+                                &left,
+                                &right,
+                                &constr,
+                                &left.pos
+                            )?;
                             unify_link(&mut constr, &sub, ctx, total)
                         } else {
                             Err(vec![TypeErr::new(

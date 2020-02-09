@@ -62,25 +62,8 @@ pub fn gen_def(
         Node::FunArg { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
-        Node::VariableDef { mutable, var, ty, expression, .. } => {
-            // in case we define variable with same name with different type
-            constr.new_set_same_level(true);
-            let (mut constr, env) = identifier_from_var(var, ty, *mutable, constr, env)?;
-            let var_expect = Expected::from(var);
-
-            match (ty, expression) {
-                (Some(ty), Some(expr)) => {
-                    let expr_expect = Expected::from(expr);
-                    constr.add(&var_expect, &expr_expect);
-                    constrain_ty(expr, ty, &env, ctx, &mut constr)
-                }
-                (None, Some(expr)) => {
-                    constr.add(&var_expect, &Expected::from(expr));
-                    generate(expr, &env, ctx, &mut constr)
-                }
-                _ => Ok((constr, env))
-            }
-        }
+        Node::VariableDef { mutable, var, ty, expression, .. } =>
+            identifier_from_var(var, ty, expression, *mutable, ctx, constr, env),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")])
     }
@@ -95,7 +78,7 @@ pub fn constrain_args(
     let mut res = (constr.clone(), env.clone());
     for arg in args {
         match &arg.node {
-            Node::FunArg { mutable, var, ty, default, .. } => {
+            Node::FunArg { mutable, var, ty, default, .. } =>
                 if var.node == Node::_Self {
                     let self_type = &env.class_type.clone().ok_or_else(|| {
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
@@ -109,16 +92,8 @@ pub fn constrain_args(
                     let left = Expected::from(var);
                     res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
-                    res = identifier_from_var(var, ty, *mutable, &mut res.0, &res.1)?;
-                }
-
-                res = match (ty, default) {
-                    (Some(ty), Some(default)) =>
-                        constrain_ty(default, ty, &res.1, ctx, &mut res.0)?,
-                    (None, Some(default)) => generate(default, &res.1, ctx, &mut res.0)?,
-                    _ => res
-                }
-            }
+                    res = identifier_from_var(var, ty, default, *mutable, ctx, &mut res.0, &res.1)?;
+                },
             _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
         }
     }
@@ -129,31 +104,48 @@ pub fn constrain_args(
 pub fn identifier_from_var(
     var: &AST,
     ty: &Option<Box<AST>>,
+    expression: &Option<Box<AST>>,
     mutable: bool,
+    ctx: &Context,
     constr: &mut ConstrBuilder,
     env: &Environment
 ) -> Constrained {
     let mut constr = constr.clone();
     let mut env = env.clone();
+    let mut names = vec![];
 
     if let Some(ty) = ty {
         let type_name = TypeName::try_from(ty.deref())?;
-        let left = Expected::from(var);
-        constr.add(
-            &left,
-            &Expected::new(&var.pos.union(&ty.pos), &Type { type_name: type_name.clone() })
-        );
-
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, type_name)) in match_type(&identifier, &type_name, &var.pos)? {
-            env = env.insert_var(mutable && f_mut, &f_name, &Type { type_name });
+            env = env.insert_var(mutable && f_mut, &f_name, &Type { type_name: type_name.clone() });
+            names.push(f_name);
         }
     } else {
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_mut, f_name) in identifier.fields() {
             env = env.insert_var(mutable && f_mut, &f_name, &ExpressionAny);
+            names.push(f_name);
         }
     };
 
-    Ok((constr, env))
+    let var_expect = Expected::from(var);
+    match (ty, expression) {
+        (Some(ty), Some(expr)) => {
+            let type_name = TypeName::try_from(ty.deref())?;
+            constr.add_with_identifier(
+                &Expected::from(var),
+                &Expected::new(&ty.pos, &Type { type_name }),
+                &names
+            );
+            let expr_expect = Expected::from(expr);
+            constr.add(&var_expect, &expr_expect);
+            constrain_ty(expr, ty, &env, ctx, &mut constr)
+        }
+        (None, Some(expr)) => {
+            constr.add_with_identifier(&var_expect, &Expected::from(expr), &names);
+            generate(expr, &env, ctx, &mut constr)
+        }
+        _ => Ok((constr, env))
+    }
 }
