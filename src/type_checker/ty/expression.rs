@@ -81,8 +81,8 @@ impl ExpressionType {
         pos: &Position
     ) -> TypeResult<bool> {
         if checked.contains(type_name) {
-            // Should be checked during pass of context
-            let msg = format!("Circular dependency detected. {} is a parent of itself", type_name);
+            // Should be checked during a pass of context
+            let msg = format!("Circular dependency detected: {} is a parent of itself", type_name);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
 

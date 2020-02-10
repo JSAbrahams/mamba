@@ -29,12 +29,26 @@ pub fn gen_resources(
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             constr.new_set(true);
-            constr.add(&Expected::from(resource), &Expected::from(alias));
-            let (mut constr, env) =
-                identifier_from_var(alias, ty, &Some(alias.clone()), *mutable, ctx, constr, env)?;
-            let (mut constr, env) = generate(resource, &env, ctx, &mut constr)?;
+            let resource_exp = Expected::from(resource);
+            constr.add(&resource_exp, &Expected::from(alias));
+            let (mut constr, env) = generate(resource, &env, ctx, constr)?;
+
+            constr.new_set(true);
+            constr.remove_expected(&resource_exp);
+            let (mut constr, env) = identifier_from_var(
+                alias,
+                ty,
+                &Some(alias.clone()),
+                *mutable,
+                ctx,
+                &mut constr,
+                &env
+            )?;
+            let (mut constr, env) = generate(expr, &env, ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;
-            generate(expr, &env, ctx, &mut constr)
+
+            constr.exit_set(&ast.pos)?;
+            Ok((constr, env))
         }
         Node::With { resource, expr, .. } => {
             constr.new_set(true);

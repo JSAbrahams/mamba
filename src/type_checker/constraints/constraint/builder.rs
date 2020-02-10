@@ -35,6 +35,18 @@ impl ConstrBuilder {
         self.constraints[self.level].0.push(class.clone());
     }
 
+    /// Remove all constraints with where either parent or child is expected
+    pub fn remove_expected(&mut self, expected: &Expected) {
+        self.constraints[self.level].1 = self.constraints[self.level]
+            .1
+            .clone()
+            .drain_filter(|con| {
+                !con.parent.expect.structurally_eq(&expected.expect)
+                    && !con.child.expect.structurally_eq(&expected.expect)
+            })
+            .collect()
+    }
+
     pub fn new_set(&mut self, inherit: bool) {
         self.constraints.push(if inherit {
             (self.constraints[self.level].0.clone(), self.constraints[self.level].1.clone())

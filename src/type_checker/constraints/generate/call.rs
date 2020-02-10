@@ -137,9 +137,15 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            constr.add(&Expected::from(left), &Expected::from(right));
-            let (mut constr, env) = generate(right, env, ctx, constr)?;
-            property_call(property, left, &env, ctx, &mut constr)
+            let left = AST {
+                pos:  left.pos.clone(),
+                node: Node::PropertyCall {
+                    instance: Box::from(instance.clone()),
+                    property: Box::from(AST { pos: left.pos.clone(), node: left.clone().node })
+                }
+            };
+            constr.add(&Expected::from(&left), &Expected::from(right));
+            generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;

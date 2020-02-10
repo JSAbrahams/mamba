@@ -44,5 +44,5 @@ fn test_directory(
     let out_ast = python_src_to_stmts(&out_src);
 
     assert_eq!(out_ast, python_ast);
-    Ok(assert!(exists_and_delete(true, output, &format!("{}.py", file_name))))
+    exists_and_delete(true, output, &format!("{}.py", file_name)).map_err(|_| vec![])
 }

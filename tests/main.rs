@@ -1,4 +1,3 @@
-use std::prelude::v1::Result::Ok;
 use std::process::Command;
 use std::process::Stdio;
 
@@ -20,22 +19,20 @@ mod type_checker;
 #[test]
 fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    cmd.current_dir(resource_path(true, &["operation"], ""));
+    cmd.current_dir(resource_path(true, &["class"], ""));
 
-    let input = resource_path(true, &["operation"], "boolean.mamba");
+    let input = resource_path(true, &["class"], "simple_class.mamba");
     cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
-
-    assert!(exists_and_delete(true, &["operation", "target"], "boolean.py"));
-    Ok(())
+    exists_and_delete(true, &["class", "target"], "simple_class.py")
 }
 
 #[test]
 fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::main_binary()?;
-    cmd.current_dir(resource_path(true, &["operation"], ""));
+    cmd.current_dir(resource_path(true, &["class"], ""));
 
-    let input = resource_path(true, &["operation"], "boolean.mamba");
-    let output = resource_path(true, &["operation"], "my_target");
+    let input = resource_path(true, &["class"], "simple_class.mamba");
+    let output = resource_path(true, &["class"], "my_target");
     cmd.arg("-i")
         .arg(input)
         .arg("-o")
@@ -43,7 +40,5 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
         .stderr(Stdio::inherit())
         .stdout(Stdio::inherit())
         .output()?;
-
-    assert!(exists_and_delete(true, &["operation", "my_target"], "boolean.py"));
-    Ok(())
+    exists_and_delete(true, &["operation", "my_target"], "simple_class.py")
 }

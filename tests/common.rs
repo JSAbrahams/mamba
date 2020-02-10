@@ -1,11 +1,12 @@
 extern crate python_parser;
 
-use python_parser::ast::Statement;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
+
+use python_parser::ast::Statement;
 
 #[allow(dead_code)]
 pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
@@ -38,16 +39,20 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
 }
 
 #[allow(dead_code)]
-pub fn exists_and_delete(valid: bool, subdirs: &[&str], file: &str) -> bool {
+pub fn exists_and_delete(
+    valid: bool,
+    subdirs: &[&str],
+    file: &str
+) -> Result<(), Box<dyn std::error::Error>> {
     let resource_path = resource_path(valid, subdirs, file);
     let path = Path::new(&resource_path);
     if !path.exists() {
-        return false;
-    }
-
-    match fs::remove_file(path) {
-        Ok(_) => true,
-        Err(err) => panic!("{}: {}", err, path.display())
+        panic!("{} does not exist", path.display())
+    } else {
+        match fs::remove_file(path) {
+            Ok(_) => Ok(()),
+            Err(err) => panic!("{}: {}", err, path.display())
+        }
     }
 }
 

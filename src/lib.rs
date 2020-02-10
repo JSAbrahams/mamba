@@ -1,3 +1,5 @@
+#![feature(drain_filter)]
+
 extern crate ansi_term;
 #[macro_use]
 extern crate log;
