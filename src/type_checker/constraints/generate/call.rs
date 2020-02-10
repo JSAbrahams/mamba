@@ -1,6 +1,9 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
+use itertools::EitherOrBoth::{Both, Left, Right};
+use itertools::Itertools;
+
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::TypeErr;
@@ -13,8 +16,6 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
-use itertools::EitherOrBoth::{Both, Left, Right};
-use itertools::Itertools;
 
 pub fn gen_call(
     ast: &AST,
@@ -56,8 +57,16 @@ pub fn gen_call(
                 }
             } else {
                 // Resort to looking up in Context
-                let possible_fun_args = ctx.lookup_fun_args(&f_name, &ast.pos)?;
-                call_parameters(ast, &possible_fun_args, &None, args, &constr)?;
+                let possible_fun = ctx.lookup_function(&f_name, &ast.pos)?;
+                for fun in possible_fun {
+                    constr = call_parameters(ast, &fun.arguments, &None, args, &constr)?;
+                    let fun_ret_exp = if let Some(type_name) = fun.ty() {
+                        Expected::new(&ast.pos, &Type { type_name })
+                    } else {
+                        Expected::new(&ast.pos, &Statement)
+                    };
+                    constr.add(&Expected::from(ast), &fun_ret_exp);
+                }
             }
 
             Ok((constr, env))

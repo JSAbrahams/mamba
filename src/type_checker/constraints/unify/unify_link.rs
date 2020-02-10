@@ -123,7 +123,14 @@ pub fn unify_link(
             (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) => match &ast
                 .node
             {
-                node if node.is_expression() => {
+                Node::ConstructorCall { .. }
+                | Node::FunctionCall { .. }
+                | Node::PropertyCall { .. } => {
+                    // may be expression, defer in case substituted
+                    constr.reinsert(constraint)?;
+                    unify_link(constr, sub, ctx, total)
+                }
+                node if node.trivially_expression() => {
                     let mut sub =
                         substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                     sub.eager_push_constr(constraint);
@@ -134,7 +141,7 @@ pub fn unify_link(
                 }
                 _ => Err(vec![TypeErr::new(
                     &ast.pos,
-                    &format!("Expected expression but was {}", ast.node)
+                    &format!("Expected an expression but was {}", ast.node)
                 )])
             },
 
@@ -200,23 +207,16 @@ pub fn unify_link(
                 unify_link(&mut constr, &sub, ctx, total)
             }
 
-            (Type { .. }, Expression { ast })
-            | (Truthy, Expression { ast })
-            | (Stringy, Expression { ast }) =>
-                if ast.node.is_expression() {
-                    let mut sub =
-                        substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                    sub.eager_push_constr(constraint);
+            (Type { .. }, Expression { .. })
+            | (Truthy, Expression { .. })
+            | (Stringy, Expression { .. }) => {
+                let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
+                sub.eager_push_constr(constraint);
 
-                    let mut constr =
-                        substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
-                    unify_link(&mut constr, &sub, ctx, total)
-                } else {
-                    Err(vec![TypeErr::new(
-                        &ast.pos,
-                        &format!("Expected expression but was {}", ast.node)
-                    )])
-                },
+                let mut constr =
+                    substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
+                unify_link(&mut constr, &sub, ctx, total)
+            }
 
             (Expression { ast }, Collection { ty }) | (Collection { ty }, Expression { ast }) =>
                 match &ast.node {
@@ -229,30 +229,14 @@ pub fn unify_link(
                         }
                         unify_link(constr, &sub, ctx, total + elements.len())
                     }
-                    _ =>
-                        if ast.node.is_expression() {
-                            let mut sub = substitute(
-                                &constraint.identifiers,
-                                &left,
-                                &right,
-                                &sub,
-                                &left.pos
-                            )?;
-                            sub.eager_push_constr(constraint);
-                            let mut constr = substitute(
-                                &constraint.identifiers,
-                                &left,
-                                &right,
-                                &constr,
-                                &left.pos
-                            )?;
-                            unify_link(&mut constr, &sub, ctx, total)
-                        } else {
-                            Err(vec![TypeErr::new(
-                                &ast.pos,
-                                &format!("Expected expression but was {}", ast.node)
-                            )])
-                        },
+                    _ => {
+                        let mut sub =
+                            substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
+                        sub.eager_push_constr(constraint);
+                        let mut constr =
+                            substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
+                        unify_link(&mut constr, &sub, ctx, total)
+                    }
                 },
 
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
@@ -410,6 +394,25 @@ pub fn unify_link(
             }
 
             (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, sub, ctx, total),
+
+            (Expression { .. }, Statement) => {
+                let mut constr =
+                    substitute(&constraint.identifiers, &left, &right, constr, &left.pos)?;
+                unify_link(&mut constr, sub, ctx, total)
+            }
+            (other, Statement) => {
+                let msg = format!("Expected {} but was {}", left.expect, right.expect);
+                Err(vec![TypeErr::new(&right.pos, &msg)])
+            }
+            (Statement, Expression { .. }) => {
+                let mut constr =
+                    substitute(&constraint.identifiers, &right, &left, constr, &left.pos)?;
+                unify_link(&mut constr, sub, ctx, total)
+            }
+            (Statement, other) => {
+                let msg = format!("Expected {} but was {}", right.expect, left.expect);
+                Err(vec![TypeErr::new(&left.pos, &msg)])
+            }
 
             _ => {
                 let pos = format!("({}-{})", left.pos.start, right.pos.start);

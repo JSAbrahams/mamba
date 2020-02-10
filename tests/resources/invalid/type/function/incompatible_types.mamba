@@ -1,0 +1,5 @@
+def always_int() -> Int => 10
+
+def always_bool() -> Bool => True
+
+always_int() + always_bool()

@@ -139,7 +139,7 @@ impl Display for Node {
             "{}{}{}",
             name,
             if self.is_operator() { " operator" } else { "" },
-            if self.is_expression() { "" } else { " statement" }
+            if self.trivially_expression() { "" } else { " statement" }
         )
     }
 }
@@ -419,17 +419,13 @@ impl Node {
         }
     }
 
-    /// True if node is an expression with certainty
-    ///
-    /// This means that function calls are omitted.
-    pub fn is_expression(&self) -> bool {
+    /// True if node is an expression with certainty.
+    pub fn trivially_expression(&self) -> bool {
         match &self {
             Node::AnonFun { .. }
-            | Node::Handle { .. }
             | Node::ConstructorCall { .. }
             | Node::PropertyCall { .. }
             | Node::Id { .. }
-            | Node::ExpressionType { .. }
             | Node::Set { .. }
             | Node::SetBuilder { .. }
             | Node::List { .. }
@@ -452,7 +448,7 @@ impl Node {
 
             Node::Script { statements } | Node::Block { statements } =>
                 if let Some(stmt) = statements.last() {
-                    stmt.node.is_expression()
+                    stmt.node.trivially_expression()
                 } else {
                     false
                 },

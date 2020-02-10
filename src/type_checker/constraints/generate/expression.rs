@@ -35,6 +35,6 @@ pub fn gen_expr(
             generate(right, &env, ctx, &mut constr)
         }
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected expression")])
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected an expression")])
     }
 }

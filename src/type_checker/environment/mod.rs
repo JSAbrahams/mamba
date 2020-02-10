@@ -6,11 +6,8 @@ use crate::type_checker::constraints::constraint::expected::Expect::Raises;
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::context::function_arg::concrete::SELF;
 use crate::type_checker::ty_name::TypeName;
-use crate::type_checker::environment::name::Identifier;
 
 pub mod name;
-
-// TODO use name in lookup functions
 
 #[derive(Clone, Debug)]
 pub struct Environment {
@@ -18,7 +15,7 @@ pub struct Environment {
     pub return_type: Option<Expected>,
     pub raises:      Option<Expected>,
     pub class_type:  Option<Expect>,
-    pub vars: HashMap<String, HashSet<(bool, Expected)>>
+    pub vars:        HashMap<String, HashSet<(bool, Expected)>>
 }
 
 impl Default for Environment {

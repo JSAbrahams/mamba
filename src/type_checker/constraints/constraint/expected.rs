@@ -49,6 +49,7 @@ impl From<&Box<AST>> for Expected {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expect {
+    Statement,
     Nullable,
     Expression { ast: AST },
     ExpressionAny,
@@ -74,6 +75,7 @@ impl Hash for Expect {
             Truthy => state.write_i8(3),
             RaisesAny => state.write_i8(4),
             Stringy => state.write_i8(5),
+            Statement => state.write_i8(6),
             Implements { type_name, args } => {
                 type_name.hash(state);
                 args.iter().for_each(|a| a.hash(state))
@@ -91,6 +93,7 @@ impl Hash for Expect {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
+            Statement => String::from("()"),
             Nullable => String::from("[None]"),
             ExpressionAny => String::from("[Any]"),
             Expression { ast } => format!("{}", ast.node),

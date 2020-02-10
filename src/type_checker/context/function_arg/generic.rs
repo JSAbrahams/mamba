@@ -87,8 +87,8 @@ impl TryFrom<&AST> for ClassArgument {
 impl TryFrom<&AST> for GenericFunctionArg {
     type Error = Vec<TypeErr>;
 
-    fn try_from(node_pos: &AST) -> TypeResult<GenericFunctionArg> {
-        match &node_pos.node {
+    fn try_from(ast: &AST) -> TypeResult<GenericFunctionArg> {
+        match &ast.node {
             Node::FunArg { vararg, var, mutable, ty, default, .. } => {
                 let name = argument_name(var.deref())?;
                 Ok(GenericFunctionArg {
@@ -97,9 +97,9 @@ impl TryFrom<&AST> for GenericFunctionArg {
                     has_default: default.is_some(),
                     vararg:      *vararg,
                     mutable:     *mutable,
-                    pos:         node_pos.pos.clone(),
+                    pos:         ast.pos.clone(),
                     ty:          match ty {
-                        Some(_type) => Some(TypeName::try_from(_type.deref())?),
+                        Some(ty) => Some(TypeName::try_from(ty.deref())?),
                         None if name.as_str() == SELF => None,
                         None =>
                             if let Some(default) = default {
@@ -118,13 +118,13 @@ impl TryFrom<&AST> for GenericFunctionArg {
                             } else {
                                 return Err(vec![TypeErr::new(
                                     &var.pos,
-                                    "Non-self argument must have type if no inferrable default"
+                                    "Non-self argument must have type if no default present"
                                 )]);
                             },
                     }
                 })
             }
-            _ => Err(vec![TypeErr::new(&node_pos.pos, "Expected function argument")])
+            _ => Err(vec![TypeErr::new(&ast.pos, "Expected function argument")])
         }
     }
 }

@@ -51,7 +51,7 @@ pub fn exists_and_delete(
     } else {
         match fs::remove_file(path) {
             Ok(_) => Ok(()),
-            Err(err) => panic!("{}: {}", err, path.display())
+            Err(err) => panic!("[{}] {}", err, path.display())
         }
     }
 }
