@@ -113,7 +113,7 @@ pub fn unify_link(
             // trivially equal
             (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
                 let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                sub.push_constr(constraint);
+                sub.eager_push_constr(constraint);
 
                 let mut constr =
                     substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
@@ -125,7 +125,7 @@ pub fn unify_link(
                     // TODO if function call check if return type expression
                     let mut sub =
                         substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                    sub.push_constr(constraint);
+                    sub.eager_push_constr(constraint);
 
                     let mut constr =
                         substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
@@ -175,7 +175,7 @@ pub fn unify_link(
                     _ => {
                         let mut sub =
                             substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                        sub.push_constr(constraint);
+                        sub.eager_push_constr(constraint);
 
                         let mut constr = substitute(
                             &constraint.identifiers,
@@ -192,7 +192,7 @@ pub fn unify_link(
             | (Expression { .. }, Truthy)
             | (Expression { .. }, Stringy) => {
                 let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                sub.push_constr(constraint);
+                sub.eager_push_constr(constraint);
 
                 let mut constr =
                     substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
@@ -205,7 +205,7 @@ pub fn unify_link(
                 if ast.node.is_expression() {
                     let mut sub =
                         substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                    sub.push_constr(constraint);
+                    sub.eager_push_constr(constraint);
 
                     let mut constr =
                         substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
@@ -237,7 +237,7 @@ pub fn unify_link(
                                 &sub,
                                 &left.pos
                             )?;
-                            sub.push_constr(constraint);
+                            sub.eager_push_constr(constraint);
                             let mut constr = substitute(
                                 &constraint.identifiers,
                                 &left,

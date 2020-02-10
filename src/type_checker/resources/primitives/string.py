@@ -1,11 +1,9 @@
+from typing import Union
+
 class str:
     def __init__(self, arg: str): pass
 
-    def __add__(self, other: int) -> str: pass
-    def __add__(self, other: float) -> str: pass
-    def __add__(self, other: complex) -> str: pass
-    def __add__(self, other: bool) -> str: pass
-    def __add__(self, other: string) -> str: pass
+    def __add__(self, other: Union[int, float, complex, bool, str]) -> str: pass
     def __str__(self) -> str: pass
 
     def __eq__(self, other: str) -> bool: pass

@@ -91,8 +91,8 @@ impl Hash for Expect {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable => String::from("None"),
-            ExpressionAny => String::from("Any"),
+            Nullable => String::from("[None]"),
+            ExpressionAny => String::from("[Any]"),
             Expression { ast } => format!("{}", ast.node),
             Collection { ty } =>
                 if let Expression { .. } = &ty.deref() {
@@ -100,8 +100,8 @@ impl Display for Expect {
                 } else {
                     format!("[Collection{}]", ty)
                 },
-            Truthy => format!("Truthy"),
-            Stringy => format!("Stringy"),
+            Truthy => format!("[Truthy]"),
+            Stringy => format!("[Stringy]"),
             RaisesAny => String::from("[RaisesAny]"),
             Raises { raises: type_name } => format!("[Raises{{{}}}]]", comma_delimited(type_name)),
             Implements { type_name, args } => format!(

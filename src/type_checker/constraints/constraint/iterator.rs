@@ -23,6 +23,10 @@ impl Constraints {
 
     pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
 
+    pub fn eager_push_constr(&mut self, constr: &Constraint) {
+        self.constraints.push_front(constr.clone())
+    }
+
     pub fn eager_push(&mut self, left: &Expected, right: &Expected) {
         self.constraints.push_front(Constraint::new(left, right))
     }

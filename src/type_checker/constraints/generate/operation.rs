@@ -71,27 +71,33 @@ pub fn gen_op(
             Ok((constr.clone(), env.clone()))
         }
 
-        Node::Add { left, right } => implements(ADD, left, right, env, ctx, constr),
-        Node::Sub { left, right } => implements(SUB, left, right, env, ctx, constr),
-        Node::Mul { left, right } => implements(MUL, left, right, env, ctx, constr),
-        Node::Div { left, right } => implements(DIV, left, right, env, ctx, constr),
-        Node::FDiv { left, right } => implements(FDIV, left, right, env, ctx, constr),
-        Node::Pow { left, right } => implements(POW, left, right, env, ctx, constr),
-        Node::Le { left, right } => implements(LE, left, right, env, ctx, constr),
-        Node::Ge { left, right } => implements(GE, left, right, env, ctx, constr),
-        Node::Leq { left, right } => implements(LEQ, left, right, env, ctx, constr),
-        Node::Geq { left, right } => implements(GEQ, left, right, env, ctx, constr),
-        Node::Eq { left, right } => implements(EQ, left, right, env, ctx, constr),
-        Node::Mod { left, right } => implements(MOD, left, right, env, ctx, constr),
-        Node::Neq { left, right } => implements(NEQ, left, right, env, ctx, constr),
+        Node::Add { left, right } => impl_magic(ADD, ast, left, right, env, ctx, constr),
+        Node::Sub { left, right } => impl_magic(SUB, ast, left, right, env, ctx, constr),
+        Node::Mul { left, right } => impl_magic(MUL, ast, left, right, env, ctx, constr),
+        Node::Div { left, right } => impl_magic(DIV, ast, left, right, env, ctx, constr),
+        Node::FDiv { left, right } => impl_magic(FDIV, ast, left, right, env, ctx, constr),
+        Node::Pow { left, right } => impl_magic(POW, ast, left, right, env, ctx, constr),
+        Node::Mod { left, right } => impl_magic(MOD, ast, left, right, env, ctx, constr),
+        Node::Neq { left, right } => impl_magic(NEQ, ast, left, right, env, ctx, constr),
+
+        Node::Le { left, right } => impl_bool_op(LE, ast, left, right, env, ctx, constr),
+        Node::Ge { left, right } => impl_bool_op(GE, ast, left, right, env, ctx, constr),
+        Node::Leq { left, right } => impl_bool_op(LEQ, ast, left, right, env, ctx, constr),
+        Node::Geq { left, right } => impl_bool_op(GEQ, ast, left, right, env, ctx, constr),
+        Node::Eq { left, right } => impl_bool_op(EQ, ast, left, right, env, ctx, constr),
+
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let left = Expected::from(expr);
-            let right = Expected::new(&expr.pos, &Implements {
+            let expr_expt = Expected::from(expr);
+            let implements = Expected::new(&expr.pos, &Implements {
                 type_name: TypeName::from(SQRT),
                 args:      vec![Expected::from(expr)]
             });
-            constr.add(&left, &right);
+
+            let ty = Type { type_name: TypeName::from(ty::concrete::FLOAT_PRIMITIVE) };
+            constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
+            constr.add(&expr_expt, &implements);
+
             generate(expr, &env, ctx, constr)
         }
 
@@ -157,19 +163,45 @@ fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder)
     Ok((constr.clone(), env.clone()))
 }
 
-fn implements(
+fn impl_magic(
     fun: &str,
+    ast: &AST,
     left: &AST,
     right: &AST,
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let r_exp = Expected::new(&left.pos, &Implements {
+    let exp_implements = Expected::new(&left.pos, &Implements {
         type_name: TypeName::from(fun),
         args:      vec![Expected::from(left), Expected::from(right)]
     });
-    constr.add(&Expected::from(left), &r_exp);
+    // type of first arg and return of operator
+    constr.add(&Expected::from(left), &exp_implements);
+    // type of whole expression and first arg the same
+    constr.add(&Expected::from(ast), &Expected::from(left));
+
+    let (mut constr, env) = generate(left, env, ctx, constr)?;
+    generate(right, &env, ctx, &mut constr)
+}
+
+fn impl_bool_op(
+    fun: &str,
+    ast: &AST,
+    left: &AST,
+    right: &AST,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder
+) -> Constrained {
+    let exp_implements = Expected::new(&left.pos, &Implements {
+        type_name: TypeName::from(fun),
+        args:      vec![Expected::from(left), Expected::from(right)]
+    });
+    // type of first arg and return of operator
+    constr.add(&Expected::from(left), &exp_implements);
+    let ty = Type { type_name: TypeName::from(ty::concrete::BOOL_PRIMITIVE) };
+    constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;
     generate(right, &env, ctx, &mut constr)

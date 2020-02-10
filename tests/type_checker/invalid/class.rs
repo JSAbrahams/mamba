@@ -4,11 +4,33 @@ use mamba::type_checker::check_all;
 
 use crate::common::resource_content;
 
-// TODO implement generics fully in type checker
-
 #[test]
 fn access_private_field() {
     let source = resource_content(false, &["type", "class"], "access_private_field.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn reassign_non_existent() {
+    let source = resource_content(false, &["type", "class"], "reassign_non_existent.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn reassign_wrong_type() {
+    let source = resource_content(false, &["type", "class"], "reassign_wrong_type.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn reassign_function() {
+    let source = resource_content(false, &["type", "class"], "reassign_function.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn access_field_wrong_type() {
+    let source = resource_content(false, &["type", "class"], "access_field_wrong_type.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }
 
