@@ -1,9 +1,5 @@
-use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
-
-use itertools::EitherOrBoth::{Both, Left, Right};
-use itertools::Itertools;
 
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
@@ -17,6 +13,8 @@ use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
+use itertools::EitherOrBoth::{Both, Left, Right};
+use itertools::Itertools;
 
 pub fn gen_call(
     ast: &AST,
@@ -32,13 +30,16 @@ pub fn gen_call(
         }
         Node::ConstructorCall { name, args } => {
             let c_name = TypeName::try_from(name.deref())?;
-            let constr_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
+            let possible_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
             let self_type = Type { type_name: c_name };
 
             constr.add(&Expected::new(&ast.pos, &self_type), &Expected::from(ast));
 
             let self_arg = Some(self_type);
-            let constr = call_parameters(ast, &constr_args, &self_arg, args, constr)?;
+            let mut constr = constr.clone();
+            for constr_args in possible_args {
+                constr = call_parameters(ast, &constr_args, &self_arg, args, &constr)?;
+            }
             gen_vec(args, env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
@@ -47,13 +48,11 @@ pub fn gen_call(
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
             if let Some(functions) = env.get_var(&f_str_name) {
-                for (_, function) in functions {
-                    let left = Expected::new(&name.pos, &function);
-
+                for (_, fun_exp) in functions {
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
                     let args = args.iter().map(Expected::from).collect();
                     let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
-                    constr.add(&left, &right);
+                    constr.add(&right, &fun_exp);
                 }
             } else {
                 // Resort to looking up in Context
@@ -71,17 +70,15 @@ pub fn gen_call(
 }
 
 fn call_parameters(
-    ast: &AST,
-    possible: &HashSet<Vec<FunctionArg>>,
+    self_ast: &AST,
+    possible: &Vec<FunctionArg>,
     self_arg: &Option<Expect>,
     args: &[AST],
     constr: &ConstrBuilder
 ) -> Result<ConstrBuilder, Vec<TypeErr>> {
     let mut constr = constr.clone();
-    let possible_it = possible.iter();
-
     let args = if let Some(self_arg) = self_arg {
-        let mut new_args = vec![(ast.pos.clone(), self_arg.clone())];
+        let mut new_args = vec![(self_ast.pos.clone(), self_arg.clone())];
         new_args.append(
             &mut args
                 .iter()
@@ -93,8 +90,7 @@ fn call_parameters(
         args.iter().map(|arg| (arg.pos.clone(), Expression { ast: arg.clone() })).collect()
     };
 
-    let paired = possible_it.flat_map(|f_args| f_args.iter().zip_longest(args.iter()));
-    for either_or_both in paired {
+    for either_or_both in possible.iter().zip_longest(args.iter()) {
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
                 let ty = &fun_arg.ty.as_ref();
@@ -108,7 +104,7 @@ fn call_parameters(
                 constr.add(&left, &Expected::new(&pos, &Type { type_name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {
-                let pos = Position::new(&ast.pos.end, &ast.pos.end);
+                let pos = Position::new(&self_ast.pos.end, &self_ast.pos.end);
                 return Err(vec![TypeErr::new(&pos, "Expected argument: no default")]);
             }
             Right((pos, _)) => return Err(vec![TypeErr::new(&pos, "Unexpected argument")]),

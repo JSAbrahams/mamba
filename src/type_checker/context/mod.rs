@@ -8,16 +8,14 @@ use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::field::generic::GenericField;
 use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function::generic::GenericFunction;
-use crate::type_checker::context::function_arg::concrete::{args_compatible, FunctionArg};
 use crate::type_checker::context::generics::generics;
 use crate::type_checker::context::python::python_files;
 use crate::type_checker::context::ty::concrete;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::ty::generic::GenericType;
 use crate::type_checker::ty::actual::ActualType;
-use crate::type_checker::ty::expression::ExpressionType;
 use crate::type_checker::ty::nullable::NullableType;
-use crate::type_checker::ty::InferType;
+use crate::type_checker::ty::ExpressionType;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::nullable::NullableTypeName;
 use crate::type_checker::ty_name::TypeName;
@@ -120,53 +118,16 @@ impl Context {
         ))
     }
 
-    fn lookup_actual_fun_args(
+    fn lookup_actual_function(
         &self,
         name: &ActualTypeName,
         pos: &Position
-    ) -> TypeResult<Vec<FunctionArg>> {
+    ) -> TypeResult<Function> {
         let fun =
             self.functions.iter().find(|f| f.name == name.clone()).ok_or_else(|| {
                 vec![TypeErr::new(pos, &format!("Function {} is undefined", name))]
             })?;
-
-        let fun = Function::try_from((fun, &HashMap::new(), pos))?;
-        Ok(fun.arguments)
-    }
-
-    fn lookup_actual_fun(
-        &self,
-        fun_name: &ActualTypeName,
-        fun_args: &[TypeName],
-        pos: &Position
-    ) -> TypeResult<InferType> {
-        // TODO do something with generics
-        let (name, ..) = match fun_name {
-            ActualTypeName::Single { lit, generics } => (lit.clone(), generics.clone()),
-            _ => return Err(vec![TypeErr::new(pos, "Must be type name")])
-        };
-
-        let name = ActualTypeName::new(&name, &[]);
-
-        // TODO deal with arguments that have no type (in unsafe mode)
-        // TODO use generics for arguments
-        let fun =
-            self.functions.iter().find(|f| f.name == name).ok_or_else(|| {
-                vec![TypeErr::new(pos, &format!("Function {} is undefined", name))]
-            })?;
-
-        let fun = Function::try_from((fun, &HashMap::new(), pos))?;
-        if !args_compatible(&fun.arguments, &fun_args) {
-            return Err(vec![TypeErr::new(pos, "arguments not compatible")]);
-        }
-
-        let raises = fun.raises.clone().into_iter().collect();
-        if let Some(ret_ty) = &fun.ty() {
-            let infer_ty = InferType::from(&self.lookup(&ret_ty, pos)?);
-            Ok(infer_ty.union_raises(&raises))
-        } else {
-            Ok(InferType::default().union_raises(&raises))
-        }
+        Function::try_from((fun, &HashMap::new(), pos))
     }
 
     pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<ExpressionType> {
@@ -183,46 +144,21 @@ impl Context {
         }
     }
 
-    pub fn lookup_fun_args(
+    pub fn lookup_function(
         &self,
         name: &TypeName,
         pos: &Position
-    ) -> TypeResult<HashSet<Vec<FunctionArg>>> {
+    ) -> TypeResult<HashSet<Function>> {
         match name {
             TypeName::Single { ty } => {
-                let mut function_arg_set: HashSet<Vec<FunctionArg>> = HashSet::new();
-                function_arg_set.insert(self.lookup_actual_fun_args(&ty.actual, pos)?);
+                let mut function_arg_set: HashSet<Function> = HashSet::new();
+                function_arg_set.insert(self.lookup_actual_function(&ty.actual, pos)?);
                 Ok(function_arg_set)
             }
             TypeName::Union { union } => union
                 .iter()
-                .map(|ty| self.lookup_actual_fun_args(&ty.actual, pos))
+                .map(|ty| self.lookup_actual_function(&ty.actual, pos))
                 .collect::<Result<_, Vec<TypeErr>>>()
-        }
-    }
-
-    pub fn lookup_fun(
-        &self,
-        fun_name: &TypeName,
-        args: &[TypeName],
-        pos: &Position
-    ) -> TypeResult<InferType> {
-        match fun_name {
-            TypeName::Single { ty } => self.lookup_actual_fun(&ty.actual, args, pos),
-            TypeName::Union { union } => {
-                let union: Vec<InferType> = union
-                    .iter()
-                    .map(|ty| self.lookup_actual_fun(&ty.actual, args, pos))
-                    .collect::<Result<_, Vec<TypeErr>>>()?;
-
-                let mut first =
-                    union.first().ok_or_else(|| TypeErr::new(pos, "Union is empty"))?.clone();
-                for infer_ty in union {
-                    first = first.union(&infer_ty, pos)?
-                }
-
-                Ok(first)
-            }
         }
     }
 

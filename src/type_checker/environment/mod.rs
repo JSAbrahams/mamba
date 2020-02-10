@@ -6,6 +6,7 @@ use crate::type_checker::constraints::constraint::expected::Expect::Raises;
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::context::function_arg::concrete::SELF;
 use crate::type_checker::ty_name::TypeName;
+use crate::type_checker::environment::name::Identifier;
 
 pub mod name;
 
@@ -17,7 +18,7 @@ pub struct Environment {
     pub return_type: Option<Expected>,
     pub raises:      Option<Expected>,
     pub class_type:  Option<Expect>,
-    pub vars:        HashMap<String, HashSet<(bool, Expect)>>
+    pub vars: HashMap<String, HashSet<(bool, Expected)>>
 }
 
 impl Default for Environment {
@@ -37,15 +38,15 @@ impl Environment {
     ///
     /// This adds a self variable with the class expected, and class_type is set
     /// to the expected class type.
-    pub fn in_class(&self, class: &Expect) -> Environment {
+    pub fn in_class(&self, class: &Expected) -> Environment {
         let env = self.insert_var(false, &String::from(SELF), class);
-        Environment { class_type: Some(class.clone()), ..env }
+        Environment { class_type: Some(class.expect.clone()), ..env }
     }
 
     /// Insert a variable.
     ///
     /// If it has a previous expected type then this is overwritten
-    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expect) -> Environment {
+    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected) -> Environment {
         let mut vars = self.vars.clone();
         let expected_set = HashSet::from_iter(vec![(mutable, expect.clone())].into_iter());
         vars.insert(String::from(var), expected_set);
@@ -74,7 +75,7 @@ impl Environment {
     /// Is Some, Vector wil usually contain only one expected.
     /// It can contain multiple if the environment was unioned or intersected at
     /// one point.
-    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expect)>> {
+    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
         self.vars.get(var).cloned()
     }
 
@@ -104,8 +105,7 @@ impl Environment {
     /// discarded.
     pub fn intersect(&self, other: &Environment) -> Environment {
         let keys = self.vars.keys().filter(|key| other.vars.contains_key(*key));
-
-        let mut vars: HashMap<String, HashSet<(bool, Expect)>> = HashMap::new();
+        let mut vars = HashMap::new();
         for key in keys {
             match (self.vars.get(key), other.vars.get(key)) {
                 (Some(l_exp), Some(r_exp)) => {

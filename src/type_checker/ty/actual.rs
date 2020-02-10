@@ -11,7 +11,7 @@ use crate::type_checker::context::function::concrete::Function;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::ty::concrete::Type;
 use crate::type_checker::context::{function, Context};
-use crate::type_checker::ty::expression::ExpressionType;
+use crate::type_checker::ty::ExpressionType;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
 

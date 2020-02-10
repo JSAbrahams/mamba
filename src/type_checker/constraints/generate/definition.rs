@@ -24,9 +24,9 @@ pub fn gen_def(
     match &ast.node {
         Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
             constr.new_set(true);
-            let (mut constr, env) = constrain_args(fun_args, env, ctx, constr)?;
 
-            let (mut constr, env) = match (ret_ty, body) {
+            let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
+            let (mut constr, _) = match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let type_name = TypeName::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { type_name });
@@ -47,17 +47,18 @@ pub fn gen_def(
 
                     let r_tys =
                         raises.into_iter().map(TypeName::try_from).collect::<Result<_, _>>()?;
-                    let env = env.return_type(&ret_ty_exp).insert_raises(&r_tys, &ast.pos);
+                    let env = inner_env.return_type(&ret_ty_exp).insert_raises(&r_tys, &ast.pos);
 
                     let (constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
-                    (constr, env)
+                    (constr, env.clone())
                 }
-                (None, Some(body)) => (generate(body, &env, ctx, &mut constr)?.0, env.clone()),
-                _ => (constr, env)
+                (None, Some(body)) =>
+                    (generate(body, &inner_env, ctx, &mut constr)?.0, env.clone()),
+                _ => (constr, env.clone())
             };
 
             constr.exit_set(&ast.pos)?;
-            Ok((constr, env))
+            Ok((constr, env.clone()))
         }
         Node::FunArg { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
@@ -88,7 +89,8 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(&arg.pos, &msg)]);
                     }
 
-                    res.1 = res.1.insert_var(*mutable, SELF, self_type);
+                    let self_exp = Expected::new(&var.pos, &self_type);
+                    res.1 = res.1.insert_var(*mutable, SELF, &self_exp);
                     let left = Expected::from(var);
                     res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
@@ -118,13 +120,15 @@ pub fn identifier_from_var(
         let type_name = TypeName::try_from(ty.deref())?;
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, type_name)) in match_type(&identifier, &type_name, &var.pos)? {
-            env = env.insert_var(mutable && f_mut, &f_name, &Type { type_name: type_name.clone() });
+            let ty = Expected::new(&var.pos, &Type { type_name: type_name.clone() });
+            env = env.insert_var(mutable && f_mut, &f_name, &ty);
             names.push(f_name);
         }
     } else {
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
+        let any = Expected::new(&var.pos, &ExpressionAny);
         for (f_mut, f_name) in identifier.fields() {
-            env = env.insert_var(mutable && f_mut, &f_name, &ExpressionAny);
+            env = env.insert_var(mutable && f_mut, &f_name, &any);
             names.push(f_name);
         }
     };

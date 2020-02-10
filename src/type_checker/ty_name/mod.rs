@@ -10,12 +10,11 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::context::ty;
-use crate::type_checker::ty::expression::ExpressionType;
+use crate::type_checker::ty::ExpressionType;
 use crate::type_checker::ty_name::actual::ActualTypeName;
 use crate::type_checker::ty_name::nullable::NullableTypeName;
 use crate::type_checker::util::comma_delimited;
 
-// TODO make these private
 pub mod actual;
 pub mod nullable;
 

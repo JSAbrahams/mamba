@@ -120,9 +120,10 @@ pub fn unify_link(
                 unify_link(&mut constr, &mut sub, ctx, total)
             }
 
-            (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
-                if ast.node.is_expression() {
-                    // TODO if function call check if return type expression
+            (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) => match &ast
+                .node
+            {
+                node if node.is_expression() => {
                     let mut sub =
                         substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
                     sub.eager_push_constr(constraint);
@@ -130,12 +131,12 @@ pub fn unify_link(
                     let mut constr =
                         substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
                     unify_link(&mut constr, &mut sub, ctx, total)
-                } else {
-                    Err(vec![TypeErr::new(
-                        &ast.pos,
-                        &format!("Expected expression but was {}", ast.node)
-                    )])
-                },
+                }
+                _ => Err(vec![TypeErr::new(
+                    &ast.pos,
+                    &format!("Expected expression but was {}", ast.node)
+                )])
+            },
 
             (Type { .. }, ExpressionAny) | (ExpressionAny, Type { .. }) =>
                 unify_link(constr, sub, ctx, total),

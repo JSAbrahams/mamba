@@ -73,8 +73,9 @@ pub fn gen_collection_lookup(
 ) -> Constrained {
     let identifier = Identifier::try_from(lookup)?;
     let mut env = env.clone();
+    let any = Expected::new(&lookup.pos, &ExpressionAny);
     for (mutable, var) in identifier.fields() {
-        env = env.insert_var(mutable, &var, &ExpressionAny);
+        env = env.insert_var(mutable, &var, &any);
     }
 
     let exp_collection = Collection { ty: Box::from(Expression { ast: lookup.clone() }) };

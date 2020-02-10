@@ -419,16 +419,14 @@ impl Node {
         }
     }
 
-    /// True if node is an expression
+    /// True if node is an expression with certainty
     ///
-    /// Note that some a function call might not evaluate to a value of it
-    /// happens to be a function without a return type.
+    /// This means that function calls are omitted.
     pub fn is_expression(&self) -> bool {
         match &self {
             Node::AnonFun { .. }
             | Node::Handle { .. }
             | Node::ConstructorCall { .. }
-            | Node::FunctionCall { .. }
             | Node::PropertyCall { .. }
             | Node::Id { .. }
             | Node::ExpressionType { .. }
