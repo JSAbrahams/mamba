@@ -53,12 +53,11 @@ pub enum Expect {
     Nullable,
     Expression { ast: AST },
     ExpressionAny,
-    Collection { ty: Box<Expect> },
+    Collection { ty: Box<Expected> },
     Truthy,
     Stringy,
     RaisesAny,
     Raises { raises: HashSet<TypeName> },
-    Implements { type_name: TypeName, args: Vec<Expected> },
     Function { name: TypeName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
@@ -81,10 +80,6 @@ impl Hash for Expect {
                 entity.hash(state);
                 name.hash(state);
             }
-            Implements { type_name, args } => {
-                type_name.hash(state);
-                args.iter().for_each(|a| a.hash(state))
-            }
             Function { name, args } => {
                 name.hash(state);
                 args.iter().for_each(|a| a.hash(state));
@@ -99,20 +94,15 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
             Statement => String::from("()"),
-            Nullable => String::from("None"),
+            Nullable => String::from("undefined"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
-            Collection { ty } => format!("Collection[{}]", ty),
+            Collection { ty } => format!("Collection[{}]", ty.expect),
             Truthy => format!("Truthy"),
             Stringy => format!("Stringy"),
             RaisesAny => String::from("RaisesAny"),
             Raises { raises: type_name } => format!("Raises[{{{}}}]", comma_delimited(type_name)),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
-            Implements { type_name, args } => format!(
-                "?.{}({})",
-                type_name,
-                comma_delimited(args.iter().map(|e| e.expect.clone())),
-            ),
             Function { name, args } =>
                 format!("{}({})", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
             Field { name } => name.clone(),
@@ -124,14 +114,13 @@ impl Display for Expect {
 impl Expect {
     pub fn structurally_eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l.structurally_eq(r),
+            (Collection { ty: l }, Collection { ty: r }) => l.expect.structurally_eq(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
             (Raises { raises: l }, Raises { raises: r }) => l == r,
             (Type { type_name: l }, Type { type_name: r }) => l == r,
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) =>
                 le == re && ln == rn,
-            (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
-            | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
+            (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                         if let EitherOrBoth::Both(left, right) = pair {

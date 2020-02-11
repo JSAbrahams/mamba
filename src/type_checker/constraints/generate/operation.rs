@@ -6,7 +6,8 @@ use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::collection::{constr_col, gen_collection_lookup};
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
-use crate::type_checker::context::function::concrete::*;
+use crate::type_checker::context::function::concrete::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD,
+                                                       MUL, NEQ, POW, SQRT, SUB};
 use crate::type_checker::context::ty::concrete::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::Environment;
@@ -20,7 +21,7 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            let (mut constr, _) = constr_col(right, constr);
+            let mut constr = constr_col(right, constr);
             let (mut constr, env) = gen_collection_lookup(left, &right, env, &mut constr)?;
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
@@ -60,6 +61,7 @@ pub fn gen_op(
             for expr in expressions {
                 constr.add(&Expected::from(expr), &Expected::new(&expr.pos, &Stringy))
             }
+
             let type_name = TypeName::from(STRING_PRIMITIVE);
             let left = Expected::from(ast);
             constr.add(&left, &Expected::new(&ast.pos, &Type { type_name }));
@@ -88,15 +90,17 @@ pub fn gen_op(
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let expr_expt = Expected::from(expr);
-            let implements = Expected::new(&expr.pos, &Implements {
-                type_name: TypeName::from(SQRT),
-                args:      vec![Expected::from(expr)]
-            });
-
             let ty = Type { type_name: TypeName::from(ty::concrete::FLOAT_PRIMITIVE) };
             constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
-            constr.add(&expr_expt, &implements);
+
+            let access = Expected::new(&expr.pos, &Access {
+                entity: Box::new(Expected::from(expr)),
+                name:   Box::from(Expected::new(&expr.pos, &Function {
+                    name: TypeName::from(SQRT),
+                    args: vec![Expected::from(expr)]
+                }))
+            });
+            constr.add(&Expected::from(ast), &access);
 
             generate(expr, &env, ctx, constr)
         }
@@ -172,14 +176,16 @@ fn impl_magic(
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let exp_implements = Expected::new(&left.pos, &Implements {
-        type_name: TypeName::from(fun),
-        args:      vec![Expected::from(left), Expected::from(right)]
-    });
-    // type of first arg and return of operator
-    constr.add(&Expected::from(left), &exp_implements);
-    // type of whole expression and first arg the same
-    constr.add(&Expected::from(ast), &Expected::from(left));
+    constr.add(
+        &Expected::from(ast),
+        &Expected::new(&left.pos, &Access {
+            entity: Box::new(Expected::from(left)),
+            name:   Box::new(Expected::new(&left.pos, &Function {
+                name: TypeName::from(fun),
+                args: vec![Expected::from(left), Expected::from(right)]
+            }))
+        })
+    );
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;
     generate(right, &env, ctx, &mut constr)
@@ -194,12 +200,16 @@ fn impl_bool_op(
     ctx: &Context,
     constr: &mut ConstrBuilder
 ) -> Constrained {
-    let exp_implements = Expected::new(&left.pos, &Implements {
-        type_name: TypeName::from(fun),
-        args:      vec![Expected::from(left), Expected::from(right)]
-    });
-    // type of first arg and return of operator
-    constr.add(&Expected::from(left), &exp_implements);
+    constr.add(
+        &Expected::from(ast),
+        &Expected::new(&left.pos, &Access {
+            entity: Box::new(Expected::from(left)),
+            name:   Box::new(Expected::new(&left.pos, &Function {
+                name: TypeName::from(fun),
+                args: vec![Expected::from(left), Expected::from(right)]
+            }))
+        })
+    );
     let ty = Type { type_name: TypeName::from(ty::concrete::BOOL_PRIMITIVE) };
     constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
 

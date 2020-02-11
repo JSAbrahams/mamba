@@ -32,32 +32,26 @@ pub fn gen_coll(
 /// Generate constraint for collection by taking first element
 ///
 /// The assumption here being that every element in the set has the same type.
-pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> (ConstrBuilder, Expected) {
+pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> ConstrBuilder {
     let col = match &collection.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
             if let Some(first) = elements.first() {
                 for element in elements {
                     constr.add(&Expected::from(element), &Expected::from(first))
                 }
-                Some(Expect::Collection { ty: Box::from(Expression { ast: first.clone() }) })
+                Expect::Collection {
+                    ty: Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
+                }
             } else {
-                Some(Expect::Collection { ty: Box::from(ExpressionAny) })
+                Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &ExpressionAny)) }
             },
 
-        _ => None
+        _ => Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &ExpressionAny)) }
     };
 
-    let col_exp = if let Some(col) = &col {
-        let col_exp = Expected::new(&collection.pos, &col);
-        constr.add(&Expected::from(collection), &col_exp);
-        col_exp
-    } else {
-        let col_exp =
-            Expected::new(&collection.pos, &Expect::Collection { ty: Box::from(ExpressionAny) });
-        col_exp
-    };
-
-    (constr.clone(), col_exp.clone())
+    let col_exp = Expected::new(&collection.pos, &col);
+    constr.add(&Expected::from(collection), &col_exp);
+    constr.clone()
 }
 
 /// Constrain lookup an collection.
@@ -78,7 +72,7 @@ pub fn gen_collection_lookup(
         env = env.insert_var(mutable, &var, &any);
     }
 
-    let exp_collection = Collection { ty: Box::from(Expression { ast: lookup.clone() }) };
+    let exp_collection = Collection { ty: Box::from(Expected::from(lookup)) };
     constr.add(&Expected::new(&lookup.pos, &exp_collection), &Expected::from(col));
     Ok((constr.clone(), env.clone()))
 }

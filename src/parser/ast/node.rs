@@ -46,7 +46,7 @@ impl Display for Node {
             Node::ConstructorCall { .. } => String::from("constructor call"),
             Node::FunctionCall { .. } => String::from("function call"),
             Node::PropertyCall { .. } => String::from("property call"),
-            Node::Id { lit } => format!("identifier ({})", lit),
+            Node::Id { lit } => format!("id: '{}'", lit),
             Node::ExpressionType { .. } => String::from("expression type"),
             Node::TypeDef { .. } => String::from("type definition"),
             Node::TypeAlias { .. } => String::from("type alias"),
@@ -78,7 +78,7 @@ impl Display for Node {
             Node::Real { lit } => lit.clone(),
             Node::Int { lit } => lit.clone(),
             Node::ENum { num, exp } => format!("{}E{}", num, exp),
-            Node::Str { lit, .. } => lit.clone(),
+            Node::Str { lit, .. } => format!("\"{}\"", lit),
             Node::DocStr { .. } => String::from("doc string"),
             Node::Bool { .. } => String::from("boolean"),
             Node::Add { .. } => String::from("addition"),
@@ -131,10 +131,10 @@ impl Display for Node {
 
         write!(
             f,
-            "{}{} {}",
+            "{}{}{}",
             name,
             if self.is_operator() { " operator" } else { "" },
-            if self.trivially_expression() { "expression" } else { "statement" }
+            if self.trivially_expression() { "" } else { " statement" }
         )
     }
 }

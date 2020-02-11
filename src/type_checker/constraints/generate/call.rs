@@ -165,16 +165,26 @@ fn property_call(
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
-            let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
             let instance_exp = Expected::from(instance);
-
             let mut args_with_self: Vec<Expected> = vec![instance_exp.clone()];
             args_with_self.append(&mut args.iter().map(Expected::from).collect());
 
-            let f_name = TypeName::try_from(name.deref())?;
-            let implements = Implements { type_name: f_name, args: args_with_self };
-            let right = Expected::new(&last_pos, &implements);
-            constr.add(&instance_exp, &right);
+            let instance_exp = Expected::from(&AST {
+                pos:  instance.pos.union(&property.pos),
+                node: Node::PropertyCall {
+                    instance: Box::from(instance.clone()),
+                    property: Box::from(property.clone())
+                }
+            });
+            let access = Expected::new(&property.pos, &Access {
+                entity: Box::new(Expected::from(instance)),
+                name:   Box::new(Expected::new(&property.pos, &Function {
+                    name: TypeName::try_from(name.deref())?,
+                    args: args_with_self
+                }))
+            });
+
+            constr.add(&instance_exp, &access);
             Ok((constr, env))
         }
 

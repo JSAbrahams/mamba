@@ -7,7 +7,7 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
-use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
+use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::constraint::Constraint;
 use crate::type_checker::constraints::unify::substitute::substitute;
@@ -185,10 +185,7 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                 match &ast.node {
                     Node::Set { elements } | Node::Tuple { elements } | Node::List { elements } => {
                         for element in elements {
-                            constr.eager_push(
-                                &Expected::from(element),
-                                &Expected::new(&element.pos, &ty)
-                            );
+                            constr.eager_push(&Expected::from(element), &ty);
                         }
                         unify_link(constr, ctx, total + elements.len())
                     }
@@ -221,62 +218,6 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 }
             }
-
-            (Type { type_name }, Implements { type_name: f_name, args })
-            | (Implements { type_name: f_name, args }, Type { type_name }) => {
-                let expr_ty = ctx.lookup(type_name, &left.pos)?;
-                let f_name = if f_name == type_name {
-                    ctx.lookup(f_name, &left.pos)?;
-                    TypeName::from(function::concrete::INIT)
-                } else {
-                    f_name.clone()
-                };
-
-                let possible = expr_ty.function(&f_name, &left.pos)?;
-                for function in &possible {
-                    if function.private {
-                        check_if_parent(
-                            &function.name,
-                            &constr.in_class,
-                            &type_name,
-                            ctx,
-                            &right.pos
-                        )?;
-                    }
-                }
-
-                let possible_args: HashSet<Vec<FunctionArg>> =
-                    possible.iter().map(|f| f.arguments.clone()).collect();
-                let (mut constr, added) = unify_fun_arg(&possible_args, &args, constr, &right.pos)?;
-                unify_link(&mut constr, ctx, total + added)
-            }
-
-            (
-                Implements { type_name: l_name, args: l_args },
-                Implements { type_name: r_name, args: r_args }
-            ) =>
-                if l_name == r_name {
-                    let mut added = 0;
-                    for pair in l_args.iter().zip_longest(r_args) {
-                        match pair {
-                            EitherOrBoth::Both(l, r) => {
-                                added += 1;
-                                constr.eager_push(l, r)
-                            }
-                            EitherOrBoth::Left(l) =>
-                                return Err(vec![TypeErr::new(&l.pos, "Unexpected argument")]),
-                            EitherOrBoth::Right(r) =>
-                                return Err(vec![TypeErr::new(&r.pos, "Unexpected argument")]),
-                        }
-                    }
-
-                    unify_link(constr, ctx, total + added)
-                } else {
-                    Err(vec![TypeErr::new(
-                        &left.pos,
-                        &format!("{} not equal to {}", left.expect, right.expect)
-                    )])
-                },
 
             (Type { type_name }, Raises { raises }) | (Raises { raises }, Type { type_name }) =>
                 if raises.contains(type_name) {
@@ -335,8 +276,7 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                 unify_link(&mut constr, ctx, total + added)
             }
             (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
-                constr
-                    .eager_push(&Expected::new(&left.pos, l_ty), &Expected::new(&right.pos, r_ty));
+                constr.eager_push(&l_ty, &r_ty);
                 unify_link(constr, ctx, total + 1)
             }
 
@@ -368,6 +308,38 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                             );
                             unify_link(constr, ctx, total)
                         }
+                        Function { name, args } => {
+                            let expr_ty = ctx.lookup(entity_name, &left.pos)?;
+                            let possible_fun = expr_ty.function(&name, &left.pos)?;
+
+                            for function in &possible_fun {
+                                if function.private {
+                                    check_if_parent(
+                                        &function.name,
+                                        &constr.in_class,
+                                        &entity_name,
+                                        ctx,
+                                        &right.pos
+                                    )?;
+                                }
+                                constr.eager_push(
+                                    &Expected::new(&left.pos, &Type {
+                                        type_name: type_name.clone()
+                                    }),
+                                    &if let Some(ty) = function.ty() {
+                                        Expected::new(&left.pos, &Type { type_name: ty })
+                                    } else {
+                                        Expected::new(&left.pos, &Statement)
+                                    }
+                                )
+                            }
+
+                            let possible_args: HashSet<Vec<FunctionArg>> =
+                                possible_fun.iter().map(|f| f.arguments.clone()).collect();
+                            let (mut constr, added) =
+                                unify_fun_arg(&possible_args, &args, &constr, &right.pos)?;
+                            unify_link(&mut constr, ctx, total + added)
+                        }
                         _ => {
                             let mut constr = reinsert(constr, &constraint, total)?;
                             unify_link(&mut constr, ctx, total + 1)
@@ -378,6 +350,7 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                     unify_link(&mut constr, ctx, total + 1)
                 },
 
+            (Nullable, Nullable) => unify_link(constr, ctx, total),
             (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, ctx, total),
             (Stringy, Nullable) | (Nullable, Stringy) => unify_link(constr, ctx, total),
 
@@ -457,7 +430,7 @@ fn unify_fun_arg(
 
 fn check_iter(
     type_name: &TypeName,
-    ty: &Expect,
+    ty: &Expected,
     ctx: &Context,
     constr: &mut Constraints,
     pos: &Position
@@ -479,10 +452,7 @@ fn check_iter(
             );
         }
         added += 1;
-        constr.eager_push(
-            &Expected::new(&pos, &ty),
-            &Expected::new(&pos, &Type { type_name: f_ret_ty })
-        );
+        constr.eager_push(&ty, &Expected::new(&pos, &Type { type_name: f_ret_ty }));
     }
 
     Ok((constr.clone(), added))

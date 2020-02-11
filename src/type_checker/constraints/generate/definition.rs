@@ -47,8 +47,7 @@ pub fn gen_def(
                     }
 
                     let env = inner_env.return_type(&ret_ty_exp).insert_raises(&r_res, &ast.pos);
-                    generate(body, &env, ctx, &mut constr)?.0;
-                    constr
+                    generate(body, &env, ctx, &mut constr)?.0
                 }
                 (None, Some(body)) => generate(body, &inner_env, ctx, &mut constr)?.0,
                 _ => constr

@@ -91,16 +91,11 @@ fn recursive_substitute(
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(&expected.pos, &expect))
         }
-        Expect::Collection { ty } =>
-            if structurally_eq_not_type(ty, &old.expect) {
-                let new = Expected::new(&expected.pos, &Expect::Collection {
-                    ty: Box::from(new.clone().expect)
-                });
-                replace!(true, new);
-                (true, new)
-            } else {
-                (false, expected.clone())
-            },
+        Expect::Collection { ty } => {
+            let (subs_ty, ty) = recursive_substitute(side, ty, old, new);
+            let expect = Expect::Collection { ty: Box::from(ty.clone()) };
+            (subs_ty, Expected::new(&expected.pos, &expect))
+        }
         Expect::Function { name, args } => {
             let mut any_substituted = false;
             let mut new_args = vec![];
