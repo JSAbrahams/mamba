@@ -1,5 +1,7 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
@@ -10,8 +12,6 @@ use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::context::ty;
 use crate::type_checker::ty_name::TypeName;
 use crate::type_checker::util::comma_delimited;
-use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
@@ -60,7 +60,8 @@ pub enum Expect {
     Raises { raises: HashSet<TypeName> },
     Implements { type_name: TypeName, args: Vec<Expected> },
     Function { name: TypeName, args: Vec<Expected> },
-    HasField { name: String },
+    Field { name: String },
+    Access { entity: Box<Expected>, name: Box<Expected> },
     Type { type_name: TypeName }
 }
 
@@ -76,6 +77,10 @@ impl Hash for Expect {
             RaisesAny => state.write_i8(4),
             Stringy => state.write_i8(5),
             Statement => state.write_i8(6),
+            Access { entity, name } => {
+                entity.hash(state);
+                name.hash(state);
+            }
             Implements { type_name, args } => {
                 type_name.hash(state);
                 args.iter().for_each(|a| a.hash(state))
@@ -84,7 +89,7 @@ impl Hash for Expect {
                 name.hash(state);
                 args.iter().for_each(|a| a.hash(state));
             }
-            HasField { name } => name.hash(state),
+            Field { name } => name.hash(state),
             Type { type_name } => type_name.hash(state)
         }
     }
@@ -94,28 +99,24 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
             Statement => String::from("()"),
-            Nullable => String::from("[None]"),
-            ExpressionAny => String::from("[Any]"),
+            Nullable => String::from("None"),
+            ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
-            Collection { ty } =>
-                if let Expression { .. } = &ty.deref() {
-                    format!("[Collection{{{}}}]", ty)
-                } else {
-                    format!("[Collection{}]", ty)
-                },
-            Truthy => format!("[Truthy]"),
-            Stringy => format!("[Stringy]"),
-            RaisesAny => String::from("[RaisesAny]"),
-            Raises { raises: type_name } => format!("[Raises{{{}}}]]", comma_delimited(type_name)),
+            Collection { ty } => format!("Collection[{}]", ty),
+            Truthy => format!("Truthy"),
+            Stringy => format!("Stringy"),
+            RaisesAny => String::from("RaisesAny"),
+            Raises { raises: type_name } => format!("Raises[{{{}}}]", comma_delimited(type_name)),
+            Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Implements { type_name, args } => format!(
-                "[?.{}({})]",
+                "?.{}({})",
                 type_name,
                 comma_delimited(args.iter().map(|e| e.expect.clone())),
             ),
             Function { name, args } =>
-                format!("[{}({})]", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
-            HasField { name } => format!("[?.{}]", name),
-            Type { type_name } => format!("[{}]", type_name)
+                format!("{}({})", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
+            Field { name } => name.clone(),
+            Type { type_name } => format!("{}", type_name)
         })
     }
 }
@@ -124,9 +125,11 @@ impl Expect {
     pub fn structurally_eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Collection { ty: l }, Collection { ty: r }) => l.structurally_eq(r),
-            (HasField { name: l }, HasField { name: r }) => l == r,
+            (Field { name: l }, Field { name: r }) => l == r,
             (Raises { raises: l }, Raises { raises: r }) => l == r,
             (Type { type_name: l }, Type { type_name: r }) => l == r,
+            (Access { entity: le, name: ln }, Access { entity: re, name: rn }) =>
+                le == re && ln == rn,
             (Implements { type_name: l, args: la }, Implements { type_name: r, args: ra })
             | (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r
@@ -138,10 +141,14 @@ impl Expect {
                         }
                     }),
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
+
             (Truthy, Truthy)
             | (RaisesAny, RaisesAny)
             | (ExpressionAny, ExpressionAny)
-            | (Stringy, Stringy) => true,
+            | (Stringy, Stringy)
+            | (Statement, Statement)
+            | (Nullable, Nullable) => true,
+
             (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
             | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::And { .. }, .. } })

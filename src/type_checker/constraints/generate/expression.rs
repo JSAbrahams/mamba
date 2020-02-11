@@ -21,18 +21,27 @@ pub fn gen_expr(
             let (mut constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &mut constr)
         }
+        Node::Id { lit } if env.get_var(lit).is_some() => Ok((constr.clone(), env.clone())),
         Node::Id { lit } =>
-            if let Some(_) = env.get_var(lit) {
-                Ok((constr.clone(), env.clone()))
-            } else {
-                Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))])
-            },
+            Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))]),
         Node::Question { left, right } => {
-            let l_exp = Expected::from(left);
-            let r_exp = Expected::new(&left.pos, &Nullable);
-            constr.add(&l_exp, &r_exp);
+            constr.add(&Expected::from(left), &Expected::new(&left.pos, &Nullable));
             let (mut constr, env) = generate(left, env, ctx, constr)?;
             generate(right, &env, ctx, &mut constr)
+        }
+        Node::Pass =>
+            if let Some(expected_ret_ty) = &env.return_type {
+                if env.last_stmt_in_function {
+                    constr.add(&Expected::new(&ast.pos, &Nullable), &expected_ret_ty);
+                }
+                Ok((constr.clone(), env.clone()))
+            } else {
+                Ok((constr.clone(), env.clone()))
+            },
+
+        Node::Undefined => {
+            constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &Nullable));
+            Ok((constr.clone(), env.clone()))
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected an expression")])

@@ -11,21 +11,23 @@ pub mod name;
 
 #[derive(Clone, Debug)]
 pub struct Environment {
-    pub in_loop:     bool,
+    pub in_loop: bool,
+    pub last_stmt_in_function: bool,
     pub return_type: Option<Expected>,
-    pub raises:      Option<Expected>,
-    pub class_type:  Option<Expect>,
-    pub vars:        HashMap<String, HashSet<(bool, Expected)>>
+    pub raises: Option<Expected>,
+    pub class_type: Option<Expect>,
+    pub vars: HashMap<String, HashSet<(bool, Expected)>>
 }
 
 impl Default for Environment {
     fn default() -> Self {
         Environment {
-            in_loop:     false,
+            in_loop: false,
+            last_stmt_in_function: false,
             return_type: None,
-            raises:      None,
-            class_type:  None,
-            vars:        HashMap::new()
+            raises: None,
+            class_type: None,
+            vars: HashMap::new()
         }
     }
 }
@@ -64,7 +66,11 @@ impl Environment {
 
     /// Specify the return type of function body.
     pub fn return_type(&self, return_type: &Expected) -> Environment {
-        Environment { return_type: Some(return_type.clone()), ..self.clone() }
+        Environment {
+            return_type: Some(return_type.clone()),
+            last_stmt_in_function: true,
+            ..self.clone()
+        }
     }
 
     /// Gets a variable.

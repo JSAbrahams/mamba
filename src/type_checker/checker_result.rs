@@ -4,11 +4,12 @@ use std::path::PathBuf;
 
 use crate::common::position::Position;
 use crate::type_checker::CheckInput;
+use std::hash::{Hash, Hasher};
 
 pub type TypeResult<T> = std::result::Result<T, Vec<TypeErr>>;
 pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
 
-#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct TypeErr {
     pub position:      Option<Position>,
     pub msg:           String,
@@ -16,6 +17,20 @@ pub struct TypeErr {
     pub source_before: Option<String>,
     pub source_after:  Option<String>,
     pub source_line:   Option<String>
+}
+
+impl Hash for TypeErr {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.position.hash(state);
+        self.msg.hash(state);
+        self.path.hash(state);
+    }
+}
+
+impl PartialEq for TypeErr {
+    fn eq(&self, other: &Self) -> bool {
+        self.position == other.position && self.msg == other.msg && self.path == other.path
+    }
 }
 
 impl From<TypeErr> for Vec<TypeErr> {

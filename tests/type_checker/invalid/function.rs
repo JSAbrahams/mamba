@@ -28,6 +28,24 @@ fn as_statement() {
 }
 
 #[test]
+fn return_illegal() {
+    let source = resource_content(false, &["type", "function"], "return_illegal.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn statement_as_param() {
+    let source = resource_content(false, &["type", "function"], "statement_as_param.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn unexpected_pass() {
+    let source = resource_content(false, &["type", "function"], "unexpected_pass.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn wrong_exception() {
     let source = resource_content(false, &["type", "function"], "wrong_exception.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

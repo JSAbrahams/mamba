@@ -25,6 +25,8 @@ pub fn gen_resources(
                 let exp = Expected::new(&error.pos, &Type { type_name: TypeName::try_from(ast)? });
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
+            // raises expression has type of contained expression
+            constr.add(&Expected::from(ast), &Expected::from(expr_or_stmt));
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {

@@ -35,6 +35,12 @@ fn access_field_wrong_type() {
 }
 
 #[test]
+fn access_function_wrong_type() {
+    let source = resource_content(false, &["type", "class"], "access_function_wrong_type.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn access_private_function() {
     let source = resource_content(false, &["type", "class"], "access_private_function.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

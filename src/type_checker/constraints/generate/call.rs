@@ -65,6 +65,7 @@ pub fn gen_call(
                     } else {
                         Expected::new(&ast.pos, &Statement)
                     };
+                    // entire AST is either fun ret ty or statement
                     constr.add(&Expected::from(ast), &fun_ret_exp);
                 }
             }
@@ -137,8 +138,18 @@ fn property_call(
             property_call(inner, property, &env, ctx, &mut constr)
         }
         Node::Id { lit } => {
-            let left = Expected::from(instance);
-            constr.add(&left, &Expected::new(&property.pos, &HasField { name: lit.clone() }));
+            let access = Expected::new(&property.pos, &Access {
+                entity: Box::new(Expected::from(instance)),
+                name:   Box::new(Expected::new(&property.pos, &Field { name: lit.clone() }))
+            });
+            let instance = Expected::from(&AST {
+                pos:  instance.pos.union(&property.pos),
+                node: Node::PropertyCall {
+                    instance: Box::from(instance.clone()),
+                    property: Box::from(property.clone())
+                }
+            });
+            constr.add(&instance, &access);
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {

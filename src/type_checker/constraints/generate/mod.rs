@@ -54,6 +54,7 @@ pub fn generate(
 
         Id { .. } | Question { .. } => gen_expr(ast, env, ctx, constr),
         AnonFun { .. } => gen_expr(ast, env, ctx, constr),
+        Pass | Undefined => gen_expr(ast, env, ctx, constr),
 
         Raises { .. } => gen_resources(ast, env, ctx, constr),
         With { .. } => gen_resources(ast, env, ctx, constr),
@@ -97,7 +98,7 @@ pub fn generate(
         While { .. } => gen_flow(ast, env, ctx, constr),
         Break | Continue => gen_flow(ast, env, ctx, constr),
 
-        Return { .. } => gen_stmt(ast, env, ctx, constr),
+        Return { .. } | ReturnEmpty => gen_stmt(ast, env, ctx, constr),
         Print { .. } => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
@@ -112,8 +113,18 @@ pub fn gen_vec(
     constr: &ConstrBuilder
 ) -> Constrained {
     let mut constr_env = (constr.clone(), env.clone());
+    let mut asts = Vec::from(asts);
+    let last = asts.pop();
+
     for ast in asts {
-        constr_env = generate(ast, &constr_env.1, ctx, &mut constr_env.0)?;
+        let mut env = constr_env.1;
+        env.last_stmt_in_function = false;
+        constr_env = generate(&ast, &env, ctx, &mut constr_env.0)?;
     }
+
+    if let Some(last) = last {
+        constr_env = generate(&last, &constr_env.1, ctx, &mut constr_env.0)?;
+    }
+
     Ok(constr_env)
 }

@@ -1,6 +1,5 @@
 use std::fmt::{Display, Error, Formatter};
 
-use crate::common::delimit::comma_delimited;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::context::function_arg;
 
@@ -47,7 +46,7 @@ impl Display for Node {
             Node::ConstructorCall { .. } => String::from("constructor call"),
             Node::FunctionCall { .. } => String::from("function call"),
             Node::PropertyCall { .. } => String::from("property call"),
-            Node::Id { lit } => lit.clone(),
+            Node::Id { lit } => format!("identifier ({})", lit),
             Node::ExpressionType { .. } => String::from("expression type"),
             Node::TypeDef { .. } => String::from("type definition"),
             Node::TypeAlias { .. } => String::from("type alias"),
@@ -69,14 +68,11 @@ impl Display for Node {
             Node::EqOp => String::from("equal"),
             Node::LeOp => String::from("less than"),
             Node::GeOp => String::from("greater than"),
-            Node::Set { elements } =>
-                format!("{{{}}}", comma_delimited(elements.iter().map(|e| e.node.clone()))),
+            Node::Set { .. } => String::from("set"),
             Node::SetBuilder { .. } => String::from("set builder"),
-            Node::List { elements } =>
-                format!("[{}]", comma_delimited(elements.iter().map(|e| e.node.clone()))),
+            Node::List { .. } => String::from("list"),
             Node::ListBuilder { .. } => String::from("list builder"),
-            Node::Tuple { elements } =>
-                format!("({})", comma_delimited(elements.iter().map(|e| e.node.clone()))),
+            Node::Tuple { .. } => String::from("tuple"),
             Node::Range { .. } => String::from("range"),
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
@@ -123,23 +119,22 @@ impl Display for Node {
             Node::While { .. } => String::from("while loop"),
             Node::Break => String::from("break"),
             Node::Continue => String::from("continue"),
-            Node::Return { expr } => format!("return {}", expr.node),
-            Node::ReturnEmpty => String::from("empty return"),
+            Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
             Node::Underscore => String::from("underscore"),
             Node::Undefined => String::from("undefined"),
             Node::Pass => String::from("pass"),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),
-            Node::Print { expr } => format!("print {}", expr.node),
+            Node::Print { .. } => String::from("print"),
             Node::Comment { .. } => String::from("comment")
         };
 
         write!(
             f,
-            "{}{}{}",
+            "{}{} {}",
             name,
             if self.is_operator() { " operator" } else { "" },
-            if self.trivially_expression() { "" } else { " statement" }
+            if self.trivially_expression() { "expression" } else { "statement" }
         )
     }
 }

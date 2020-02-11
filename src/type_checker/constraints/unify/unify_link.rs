@@ -9,6 +9,7 @@ use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
+use crate::type_checker::constraints::constraint::Constraint;
 use crate::type_checker::constraints::unify::substitute::substitute;
 use crate::type_checker::constraints::Unified;
 use crate::type_checker::context::function;
@@ -24,12 +25,7 @@ use crate::type_checker::util::comma_delimited;
 /// We use a mutable reference to constraints for performance reasons.
 /// Otherwise, we have to make a entirely new copy of the list of all
 /// constraints each time we do a recursive call to unify link.
-pub fn unify_link(
-    constr: &mut Constraints,
-    sub: &Constraints,
-    ctx: &Context,
-    total: usize
-) -> Unified {
+pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unified {
     if let Some(constraint) = &constr.pop_constr() {
         let (left, right) = (constraint.parent.clone(), constraint.child.clone());
         println!(
@@ -55,22 +51,22 @@ pub fn unify_link(
             (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Expression { .. }) => {
                 let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
                 constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (Expression { ast: AST { node: Node::Real { .. }, .. } }, Expression { .. }) => {
                 let type_name = TypeName::from(ty::concrete::FLOAT_PRIMITIVE);
                 constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (Expression { ast: AST { node: Node::Int { .. }, .. } }, Expression { .. }) => {
                 let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
                 constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (Expression { ast: AST { node: Node::Str { .. }, .. } }, Expression { .. }) => {
                 let type_name = TypeName::from(ty::concrete::STRING_PRIMITIVE);
                 constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (
                 Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } },
@@ -78,28 +74,28 @@ pub fn unify_link(
             ) => {
                 let type_name = TypeName::try_from(name)?;
                 constr.eager_push(&right, &Expected::new(&left.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
 
             (Expression { .. }, Expression { ast: AST { node: Node::Bool { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
                 constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (Expression { .. }, Expression { ast: AST { node: Node::Real { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::FLOAT_PRIMITIVE);
                 constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (Expression { .. }, Expression { ast: AST { node: Node::Int { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
                 constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (Expression { .. }, Expression { ast: AST { node: Node::Str { .. }, .. } }) => {
                 let type_name = TypeName::from(ty::concrete::STRING_PRIMITIVE);
                 constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
             (
                 Expression { .. },
@@ -107,17 +103,14 @@ pub fn unify_link(
             ) => {
                 let type_name = TypeName::try_from(name)?;
                 constr.eager_push(&left, &Expected::new(&right.pos, &Type { type_name }));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
 
             // trivially equal
             (l_expect, r_expect) if l_expect.structurally_eq(r_expect) => {
-                let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                sub.eager_push_constr(constraint);
-
                 let mut constr =
                     substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
-                unify_link(&mut constr, &mut sub, ctx, total)
+                unify_link(&mut constr, ctx, total)
             }
 
             (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) => match &ast
@@ -128,16 +121,12 @@ pub fn unify_link(
                 | Node::PropertyCall { .. } => {
                     // may be expression, defer in case substituted
                     constr.reinsert(constraint)?;
-                    unify_link(constr, sub, ctx, total)
+                    unify_link(constr, ctx, total)
                 }
                 node if node.trivially_expression() => {
-                    let mut sub =
-                        substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                    sub.eager_push_constr(constraint);
-
                     let mut constr =
                         substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
-                    unify_link(&mut constr, &mut sub, ctx, total)
+                    unify_link(&mut constr, ctx, total)
                 }
                 _ => Err(vec![TypeErr::new(
                     &ast.pos,
@@ -146,24 +135,11 @@ pub fn unify_link(
             },
 
             (Type { .. }, ExpressionAny) | (ExpressionAny, Type { .. }) =>
-                unify_link(constr, sub, ctx, total),
+                unify_link(constr, ctx, total),
             (Truthy, ExpressionAny)
             | (ExpressionAny, Truthy)
             | (Stringy, ExpressionAny)
-            | (ExpressionAny, Stringy) => unify_link(constr, sub, ctx, total),
-
-            (Expression { ast: AST { node: Node::Undefined, .. } }, Type { type_name })
-                if !type_name.is_nullable() =>
-                Err(vec![TypeErr::new(
-                    &left.pos,
-                    &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
-                )]),
-            (Type { type_name }, Expression { ast: AST { node: Node::Undefined, .. } })
-                if !type_name.is_nullable() =>
-                Err(vec![TypeErr::new(
-                    &right.pos,
-                    &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
-                )]),
+            | (ExpressionAny, Stringy) => unify_link(constr, ctx, total),
 
             (Expression { ast: l_ast }, Expression { ast: r_ast }) =>
                 match (&l_ast.node, &r_ast.node) {
@@ -178,13 +154,9 @@ pub fn unify_link(
                                     return Err(vec![TypeErr::new(&e.pos, "Unexpected element")]),
                             }
                         }
-                        unify_link(constr, &sub, ctx, total + l_e.len())
+                        unify_link(constr, ctx, total + l_e.len())
                     }
                     _ => {
-                        let mut sub =
-                            substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                        sub.eager_push_constr(constraint);
-
                         let mut constr = substitute(
                             &constraint.identifiers,
                             &left,
@@ -192,30 +164,21 @@ pub fn unify_link(
                             &constr,
                             &right.pos
                         )?;
-                        unify_link(&mut constr, &sub, ctx, total)
+                        unify_link(&mut constr, ctx, total)
                     }
                 },
 
             (Expression { .. }, Type { .. })
             | (Expression { .. }, Truthy)
-            | (Expression { .. }, Stringy) => {
-                let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                sub.eager_push_constr(constraint);
-
-                let mut constr =
-                    substitute(&constraint.identifiers, &left, &right, &constr, &right.pos)?;
-                unify_link(&mut constr, &sub, ctx, total)
-            }
-
-            (Type { .. }, Expression { .. })
+            | (Expression { .. }, Stringy)
+            | (Type { .. }, Expression { .. })
             | (Truthy, Expression { .. })
-            | (Stringy, Expression { .. }) => {
-                let mut sub = substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                sub.eager_push_constr(constraint);
-
+            | (Stringy, Expression { .. })
+            | (Statement, Expression { .. })
+            | (Expression { .. }, Statement) => {
                 let mut constr =
                     substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
-                unify_link(&mut constr, &sub, ctx, total)
+                unify_link(&mut constr, ctx, total)
             }
 
             (Expression { ast }, Collection { ty }) | (Collection { ty }, Expression { ast }) =>
@@ -227,37 +190,34 @@ pub fn unify_link(
                                 &Expected::new(&element.pos, &ty)
                             );
                         }
-                        unify_link(constr, &sub, ctx, total + elements.len())
+                        unify_link(constr, ctx, total + elements.len())
                     }
                     _ => {
-                        let mut sub =
-                            substitute(&constraint.identifiers, &left, &right, &sub, &left.pos)?;
-                        sub.eager_push_constr(constraint);
                         let mut constr =
                             substitute(&constraint.identifiers, &left, &right, &constr, &left.pos)?;
-                        unify_link(&mut constr, &sub, ctx, total)
+                        unify_link(&mut constr, ctx, total)
                     }
                 },
 
             (Type { type_name }, Truthy) | (Truthy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 expr_ty.function(&TypeName::from(function::concrete::TRUTHY), &left.pos)?;
-                unify_link(constr, sub, ctx, total)
+                unify_link(constr, ctx, total)
             }
             (Type { type_name }, Stringy) | (Stringy, Type { type_name }) => {
                 let expr_ty = ctx.lookup(type_name, &left.pos)?;
                 expr_ty.function(&TypeName::from(function::concrete::STR), &left.pos)?;
-                unify_link(constr, sub, ctx, total)
+                unify_link(constr, ctx, total)
             }
             (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
                 if l_ty.is_superset(r_ty)
                     || ctx.lookup(&r_ty, &right.pos)?.has_parent(&l_ty, ctx, &left.pos)?
                 {
                     ctx.lookup(l_ty, &left.pos)?;
-                    unify_link(constr, sub, ctx, total)
+                    unify_link(constr, ctx, total)
                 } else {
                     // TODO construct error based on type of constraint
-                    let msg = format!("Expected a {} but was a {}", l_ty, r_ty);
+                    let msg = format!("Expected '{}', found '{}'", l_ty, r_ty);
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 }
             }
@@ -288,7 +248,7 @@ pub fn unify_link(
                 let possible_args: HashSet<Vec<FunctionArg>> =
                     possible.iter().map(|f| f.arguments.clone()).collect();
                 let (mut constr, added) = unify_fun_arg(&possible_args, &args, constr, &right.pos)?;
-                unify_link(&mut constr, &sub, ctx, total + added)
+                unify_link(&mut constr, ctx, total + added)
             }
 
             (
@@ -310,7 +270,7 @@ pub fn unify_link(
                         }
                     }
 
-                    unify_link(constr, sub, ctx, total + added)
+                    unify_link(constr, ctx, total + added)
                 } else {
                     Err(vec![TypeErr::new(
                         &left.pos,
@@ -320,10 +280,10 @@ pub fn unify_link(
 
             (Type { type_name }, Raises { raises }) | (Raises { raises }, Type { type_name }) =>
                 if raises.contains(type_name) {
-                    unify_link(constr, sub, ctx, total)
+                    unify_link(constr, ctx, total)
                 } else {
                     let msg = format!(
-                        "Unexpected raises {}, must be one of: {}",
+                        "Unexpected raises '{}', must be one of: {}",
                         type_name,
                         comma_delimited(raises)
                     );
@@ -332,17 +292,13 @@ pub fn unify_link(
 
             (Type { type_name }, Nullable) | (Nullable, Type { type_name }) =>
                 if type_name.is_nullable() {
-                    unify_link(constr, sub, ctx, total)
+                    unify_link(constr, ctx, total)
                 } else {
                     Err(vec![TypeErr::new(
                         &left.pos,
-                        &format!("Expected {} but was {}", type_name.as_nullable(), type_name)
+                        &format!("Expected '{}', found '{}'", type_name.as_nullable(), type_name)
                     )])
                 },
-
-            (Expression { ast: AST { node: Node::Undefined, .. } }, Nullable)
-            | (Nullable, Expression { ast: AST { node: Node::Undefined, .. } }) =>
-                unify_link(constr, sub, ctx, total),
 
             (Type { type_name }, Function { args, .. })
             | (Function { args, .. }, Type { type_name }) => {
@@ -371,62 +327,85 @@ pub fn unify_link(
                     }
                 }
 
-                unify_link(constr, sub, ctx, total + count)
-            }
-
-            (Type { type_name }, HasField { name }) | (HasField { name }, Type { type_name }) => {
-                let field = ctx.lookup(type_name, &right.pos)?.field(name, &left.pos)?;
-                if field.private {
-                    let name = ActualTypeName::new(&field.name, &[]);
-                    check_if_parent(&name, &constr.in_class, type_name, ctx, &left.pos)?;
-                }
-                unify_link(constr, sub, ctx, total)
+                unify_link(constr, ctx, total + count)
             }
 
             (Type { type_name }, Collection { ty }) | (Collection { ty }, Type { type_name }) => {
                 let (mut constr, added) = check_iter(type_name, ty, ctx, constr, &left.pos)?;
-                unify_link(&mut constr, sub, ctx, total + added)
+                unify_link(&mut constr, ctx, total + added)
             }
             (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
                 constr
                     .eager_push(&Expected::new(&left.pos, l_ty), &Expected::new(&right.pos, r_ty));
-                unify_link(constr, sub, ctx, total + 1)
+                unify_link(constr, ctx, total + 1)
             }
 
-            (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, sub, ctx, total),
+            (Type { type_name }, Access { entity, name })
+            | (Access { entity, name }, Type { type_name }) =>
+                if let Type { type_name: entity_name } = &entity.expect {
+                    match &name.expect {
+                        Field { name } => {
+                            let field =
+                                ctx.lookup(entity_name, &right.pos)?.field(name, &left.pos)?;
+                            if field.private {
+                                let name = ActualTypeName::new(&field.name, &[]);
+                                check_if_parent(
+                                    &name,
+                                    &constr.in_class,
+                                    entity_name,
+                                    ctx,
+                                    &left.pos
+                                )?;
+                            }
+                            let field_ty_exp = if let Some(ty) = field.ty {
+                                Expected::new(&right.pos, &Type { type_name: ty.clone() })
+                            } else {
+                                Expected::new(&right.pos, &Statement)
+                            };
+                            constr.eager_push(
+                                &Expected::new(&left.pos, &Type { type_name: type_name.clone() }),
+                                &field_ty_exp
+                            );
+                            unify_link(constr, ctx, total)
+                        }
+                        _ => {
+                            let mut constr = reinsert(constr, &constraint, total)?;
+                            unify_link(&mut constr, ctx, total + 1)
+                        }
+                    }
+                } else {
+                    let mut constr = reinsert(constr, &constraint, total)?;
+                    unify_link(&mut constr, ctx, total + 1)
+                },
 
-            (Expression { .. }, Statement) => {
-                let mut constr =
-                    substitute(&constraint.identifiers, &left, &right, constr, &left.pos)?;
-                unify_link(&mut constr, sub, ctx, total)
-            }
-            (other, Statement) => {
-                let msg = format!("Expected {} but was {}", left.expect, right.expect);
-                Err(vec![TypeErr::new(&right.pos, &msg)])
-            }
-            (Statement, Expression { .. }) => {
-                let mut constr =
-                    substitute(&constraint.identifiers, &right, &left, constr, &left.pos)?;
-                unify_link(&mut constr, sub, ctx, total)
-            }
-            (Statement, other) => {
-                let msg = format!("Expected {} but was {}", right.expect, left.expect);
-                Err(vec![TypeErr::new(&left.pos, &msg)])
-            }
+            (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, ctx, total),
+            (Stringy, Nullable) | (Nullable, Stringy) => unify_link(constr, ctx, total),
 
             _ => {
-                let pos = format!("({}-{})", left.pos.start, right.pos.start);
-                let count = format!("[reinserting {}\\{}]", total - constr.len(), total);
-                println!("{:width$} {} {} = {}", pos, count, left.expect, right.expect, width = 17);
-
-                // Defer to later point
-                constr.reinsert(&constraint)?;
-                unify_link(constr, sub, ctx, total + 1)
+                let mut constr = reinsert(constr, &constraint, total)?;
+                unify_link(&mut constr, ctx, total + 1)
             }
         }
     } else {
         Ok(constr.clone())
     }
+}
+
+fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
+    let pos = format!("({}-{})", constraint.parent.pos.start, constraint.child.pos.start);
+    let count = format!("[reinserting {}\\{}]", total - constr.len(), total);
+    println!(
+        "{:width$} {} {} = {}",
+        pos,
+        count,
+        constraint.parent.expect,
+        constraint.child.expect,
+        width = 17
+    );
+
+    // Defer to later point
+    constr.reinsert(&constraint)?;
+    Ok(constr.clone())
 }
 
 fn unify_fun_arg(

@@ -5,4 +5,4 @@ class MyClass
 def my_class <- MyClass()
 def b <- my_class.something
 
-def c <- b
+def c: Int <- b

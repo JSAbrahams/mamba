@@ -1,0 +1,8 @@
+class MyClass
+    def something(self) -> String => return "my string"
+
+
+def my_class <- MyClass()
+def b <- my_class.something()
+
+def c: Int <- b

@@ -1,15 +1,9 @@
-use std::convert::TryFrom;
-
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
-use crate::type_checker::constraints::constraint::expected::Expect::*;
-use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
-use crate::type_checker::ty_name::TypeName;
 
 pub fn gen_ty(ast: &AST, _: &Environment, _: &Context, _: &ConstrBuilder) -> Constrained {
     match &ast.node {
@@ -25,19 +19,4 @@ pub fn gen_ty(ast: &AST, _: &Environment, _: &Context, _: &ConstrBuilder) -> Con
             Err(vec![TypeErr::new(&ast.pos, "Type annotation function cannot be top level")]),
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected type annotation")])
     }
-}
-
-pub fn constrain_ty(
-    expr: &AST,
-    ty: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &mut ConstrBuilder
-) -> Constrained {
-    let left = Expected::from(expr);
-    let type_name = TypeName::try_from(ty)?;
-    let right = Expected::new(&ty.pos, &Type { type_name });
-
-    constr.add(&left, &right);
-    generate(expr, env, ctx, constr)
 }

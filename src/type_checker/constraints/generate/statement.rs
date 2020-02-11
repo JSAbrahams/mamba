@@ -20,13 +20,14 @@ pub fn gen_stmt(
             let mut constr = constrain_raises(&Expected::from(error), &env.raises, constr)?;
             generate(error, env, ctx, &mut constr)
         }
+        Node::ReturnEmpty => Ok((constr.clone(), env.clone())),
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.return_type {
                 let left = Expected::from(expr);
                 constr.add(&left, &expected_ret_ty);
                 generate(expr, env, ctx, constr)
             } else {
-                Err(vec![TypeErr::new(&ast.pos, "Return statement only possible in function body")])
+                Err(vec![TypeErr::new(&ast.pos, "Return outside function with return type")])
             },
         Node::Print { expr } => {
             let left = Expected::from(expr);

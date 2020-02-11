@@ -2,8 +2,9 @@ use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::{Collection, Expression,
-                                                                     ExpressionAny, Stringy,
-                                                                     Truthy, Type};
+                                                                     ExpressionAny, Nullable,
+                                                                     Statement, Stringy, Truthy,
+                                                                     Type};
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 
@@ -24,27 +25,19 @@ pub fn substitute(
     constr: &Constraints,
     pos: &Position
 ) -> TypeResult<Constraints> {
-    let mut substituted = Constraints::new(&[], &constr.in_class);
     let mut constr = constr.clone();
     let (old, new) = match (&old.expect, &new.expect) {
         (Type { type_name: lt }, Type { type_name: rt }) if lt != rt => {
             let msg = format!("Tried to substitute {} with {}", lt, rt);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
-        (Type { .. }, Type { .. })
-        | (Truthy, Type { .. })
-        | (Type { .. }, Truthy)
-        | (Stringy, Type { .. })
-        | (Type { .. }, Stringy)
-        | (Truthy, Truthy)
-        | (Truthy, Stringy)
-        | (Stringy, Truthy)
-        | (Stringy, Stringy) => return Ok(constr),
         (Truthy, _)
         | (Collection { .. }, _)
         | (ExpressionAny, Expression { .. })
         | (_, Expression { ast: AST { node: Node::Id { .. }, .. } })
-        | (Stringy, _) => (new, old),
+        | (Stringy, _)
+        | (Nullable, _)
+        | (Statement, _) => (new, old),
         _ => (old, new)
     };
 
@@ -52,6 +45,7 @@ pub fn substitute(
 
     // TODO deal with tuples of identifiers
     let mut encountered = false;
+    let mut substituted = Constraints::new(&[], &constr.in_class);
     while let Some(mut constraint) = constr.pop_constr() {
         encountered = encountered
             || !constraint.identifiers.is_empty()
@@ -91,6 +85,12 @@ fn recursive_substitute(
     }
 
     match &expected.expect {
+        Expect::Access { entity, name } => {
+            let (subs_e, entity) = recursive_substitute(side, entity, old, new);
+            let (sub_n, name) = recursive_substitute(side, name, old, new);
+            let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
+            (subs_e || sub_n, Expected::new(&expected.pos, &expect))
+        }
         Expect::Collection { ty } =>
             if structurally_eq_not_type(ty, &old.expect) {
                 let new = Expected::new(&expected.pos, &Expect::Collection {
@@ -114,22 +114,6 @@ fn recursive_substitute(
                 Expected::new(&expected.pos, &Expect::Function {
                     name: name.clone(),
                     args: new_args
-                })
-            )
-        }
-        Expect::Implements { type_name: name, args } => {
-            let mut any_substituted = false;
-            let mut new_args = vec![];
-            for arg in args {
-                let (subs, arg) = recursive_substitute(side, arg, old, new);
-                new_args.push(arg);
-                any_substituted = any_substituted || subs;
-            }
-            (
-                any_substituted,
-                Expected::new(&expected.pos, &Expect::Implements {
-                    type_name: name.clone(),
-                    args:      new_args
                 })
             )
         }

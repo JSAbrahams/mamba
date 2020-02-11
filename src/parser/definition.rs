@@ -25,7 +25,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
         }};
     };
 
-    if pure {
+    let res = if pure {
         let id = it.parse(&parse_expression_type, "definition", &start)?;
         parse_fun_def(&id, pure, private, it)
     } else {
@@ -65,7 +65,9 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
             ],
             "definition"
         )
-    }
+    }?;
+
+    Ok(Box::new(AST { pos: res.pos.union(&start), node: res.node.clone() }))
 }
 
 fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {

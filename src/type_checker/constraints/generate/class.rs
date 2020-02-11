@@ -9,7 +9,7 @@ use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
-use crate::type_checker::context::field::concrete::Field;
+use crate::type_checker::context::field;
 use crate::type_checker::context::Context;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
@@ -75,7 +75,7 @@ pub fn constrain_class_body(
 /// Generate constraint for a given field.
 pub fn property_from_field(
     pos: &Position,
-    field: &Field,
+    field: &field::concrete::Field,
     class_ty: &TypeName,
     env: &Environment,
     constr: &mut ConstrBuilder
@@ -101,10 +101,11 @@ pub fn property_from_field(
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
     constr.add(&field_ty, &property_call);
 
-    constr.add(
-        &Expected::new(&pos, &Type { type_name: class_ty.clone() }),
-        &Expected::new(&pos, &HasField { name: field.name.clone() })
-    );
+    let access = Expected::new(&pos, &Access {
+        entity: Box::new(Expected::new(&pos, &Type { type_name: class_ty.clone() })),
+        name:   Box::new(Expected::new(&pos, &Field { name: field.name.clone() }))
+    });
 
+    constr.add(&property_call, &access);
     Ok((constr.clone(), env))
 }

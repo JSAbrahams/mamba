@@ -7,13 +7,13 @@ use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::generate::generate;
-use crate::type_checker::constraints::generate::ty::constrain_ty;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::SELF;
 use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::name::{match_type, Identifier};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
+use std::collections::HashSet;
 
 pub fn gen_def(
     ast: &AST,
@@ -26,35 +26,32 @@ pub fn gen_def(
             constr.new_set(true);
 
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
-            let (mut constr, _) = match (ret_ty, body) {
+            let mut constr = match (ret_ty, body) {
                 (Some(ret_ty), Some(body)) => {
                     let type_name = TypeName::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { type_name });
 
-                    for (pos, raise) in
-                        raises.iter().map(|r| (r.pos.clone(), TypeName::try_from(r)))
-                    {
+                    let r_tys: Vec<_> = raises
+                        .into_iter()
+                        .map(|r| (r.pos.clone(), TypeName::try_from(r)))
+                        .collect();
+                    let mut r_res: HashSet<TypeName> = HashSet::new();
+                    let exception_ty = TypeName::from(ty::concrete::EXCEPTION);
+                    for (pos, raise) in r_tys {
                         let raise = raise?;
-                        if !ctx.lookup(&raise, &pos)?.has_parent(
-                            &TypeName::from(ty::concrete::EXCEPTION),
-                            ctx,
-                            &pos
-                        )? {
+                        if !ctx.lookup(&raise, &pos)?.has_parent(&exception_ty, ctx, &pos)? {
                             let msg = format!("{} is not an {}", raise, ty::concrete::EXCEPTION);
                             return Err(vec![TypeErr::new(&pos, &msg)]);
                         }
+                        r_res.insert(raise);
                     }
 
-                    let r_tys =
-                        raises.into_iter().map(TypeName::try_from).collect::<Result<_, _>>()?;
-                    let env = inner_env.return_type(&ret_ty_exp).insert_raises(&r_tys, &ast.pos);
-
-                    let (constr, _) = constrain_ty(body, ret_ty, &env, ctx, &mut constr)?;
-                    (constr, env.clone())
+                    let env = inner_env.return_type(&ret_ty_exp).insert_raises(&r_res, &ast.pos);
+                    generate(body, &env, ctx, &mut constr)?.0;
+                    constr
                 }
-                (None, Some(body)) =>
-                    (generate(body, &inner_env, ctx, &mut constr)?.0, env.clone()),
-                _ => (constr, env.clone())
+                (None, Some(body)) => generate(body, &inner_env, ctx, &mut constr)?.0,
+                _ => constr
             };
 
             constr.exit_set(&ast.pos)?;
