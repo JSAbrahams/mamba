@@ -53,9 +53,15 @@ impl Environment {
     }
 
     /// Insert raises
+    ///
+    /// If the set is empty, ignored
     pub fn insert_raises(&self, raises: &HashSet<TypeName>, pos: &Position) -> Environment {
-        let raises = Expected::new(pos, &Raises { raises: raises.clone() });
-        Environment { raises: Some(raises), ..self.clone() }
+        if raises.is_empty() {
+            self.clone()
+        } else {
+            let raises = Expected::new(pos, &Raises { raises: raises.clone() });
+            Environment { raises: Some(raises), ..self.clone() }
+        }
     }
 
     /// Specify that we are in a loop.

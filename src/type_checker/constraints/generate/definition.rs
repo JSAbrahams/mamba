@@ -26,31 +26,31 @@ pub fn gen_def(
             constr.new_set(true);
 
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
-            let mut constr = match (ret_ty, body) {
-                (Some(ret_ty), Some(body)) => {
+            let mut constr = if let Some(body) = body {
+                let r_tys: Vec<_> =
+                    raises.into_iter().map(|r| (r.pos.clone(), TypeName::try_from(r))).collect();
+                let mut r_res: HashSet<TypeName> = HashSet::new();
+                let exception_ty = TypeName::from(ty::concrete::EXCEPTION);
+                for (pos, raise) in r_tys {
+                    let raise = raise?;
+                    if !ctx.lookup(&raise, &pos)?.has_parent(&exception_ty, ctx, &pos)? {
+                        let msg = format!("{} is not an {}", raise, ty::concrete::EXCEPTION);
+                        return Err(vec![TypeErr::new(&pos, &msg)]);
+                    }
+                    r_res.insert(raise);
+                }
+
+                let inner_env = inner_env.insert_raises(&r_res, &ast.pos);
+                if let Some(ret_ty) = ret_ty {
                     let type_name = TypeName::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { type_name });
-
-                    let r_tys: Vec<_> = raises
-                        .into_iter()
-                        .map(|r| (r.pos.clone(), TypeName::try_from(r)))
-                        .collect();
-                    let mut r_res: HashSet<TypeName> = HashSet::new();
-                    let exception_ty = TypeName::from(ty::concrete::EXCEPTION);
-                    for (pos, raise) in r_tys {
-                        let raise = raise?;
-                        if !ctx.lookup(&raise, &pos)?.has_parent(&exception_ty, ctx, &pos)? {
-                            let msg = format!("{} is not an {}", raise, ty::concrete::EXCEPTION);
-                            return Err(vec![TypeErr::new(&pos, &msg)]);
-                        }
-                        r_res.insert(raise);
-                    }
-
-                    let env = inner_env.return_type(&ret_ty_exp).insert_raises(&r_res, &ast.pos);
-                    generate(body, &env, ctx, &mut constr)?.0
+                    let inner_env = inner_env.return_type(&ret_ty_exp);
+                    generate(body, &inner_env, ctx, &mut constr)?.0
+                } else {
+                    generate(body, &inner_env, ctx, &mut constr)?.0
                 }
-                (None, Some(body)) => generate(body, &inner_env, ctx, &mut constr)?.0,
-                _ => constr
+            } else {
+                constr
             };
 
             constr.exit_set(&ast.pos)?;

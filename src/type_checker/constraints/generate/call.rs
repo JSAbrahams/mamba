@@ -67,6 +67,10 @@ pub fn gen_call(
                     };
                     // entire AST is either fun ret ty or statement
                     constr.add(&Expected::from(ast), &fun_ret_exp);
+
+                    let raises = fun.raises.iter().map(TypeName::from).collect();
+                    let raises_exp = Expected::new(&ast.pos, &Raises { raises });
+                    constr.add(&Expected::from(ast), &raises_exp);
                 }
             }
 

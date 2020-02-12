@@ -46,6 +46,12 @@ fn unexpected_pass() {
 }
 
 #[test]
+fn unmentioned_exception() {
+    let source = resource_content(false, &["type", "function"], "unmentioned_exception.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn wrong_exception() {
     let source = resource_content(false, &["type", "function"], "wrong_exception.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

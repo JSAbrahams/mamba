@@ -120,7 +120,7 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                 | Node::FunctionCall { .. }
                 | Node::PropertyCall { .. } => {
                     // may be expression, defer in case substituted
-                    constr.reinsert(constraint)?;
+                    reinsert(constr, constraint, total)?;
                     unify_link(constr, ctx, total)
                 }
                 node if node.trivially_expression() => {
@@ -280,75 +280,10 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                 unify_link(constr, ctx, total + 1)
             }
 
-            (Type { type_name }, Access { entity, name })
-            | (Access { entity, name }, Type { type_name }) =>
-                if let Type { type_name: entity_name } = &entity.expect {
-                    match &name.expect {
-                        Field { name } => {
-                            let field =
-                                ctx.lookup(entity_name, &right.pos)?.field(name, &left.pos)?;
-                            if field.private {
-                                let name = ActualTypeName::new(&field.name, &[]);
-                                check_if_parent(
-                                    &name,
-                                    &constr.in_class,
-                                    entity_name,
-                                    ctx,
-                                    &left.pos
-                                )?;
-                            }
-                            let field_ty_exp = if let Some(ty) = field.ty {
-                                Expected::new(&right.pos, &Type { type_name: ty.clone() })
-                            } else {
-                                Expected::new(&right.pos, &Statement)
-                            };
-                            constr.eager_push(
-                                &Expected::new(&left.pos, &Type { type_name: type_name.clone() }),
-                                &field_ty_exp
-                            );
-                            unify_link(constr, ctx, total)
-                        }
-                        Function { name, args } => {
-                            let expr_ty = ctx.lookup(entity_name, &left.pos)?;
-                            let possible_fun = expr_ty.function(&name, &left.pos)?;
-
-                            for function in &possible_fun {
-                                if function.private {
-                                    check_if_parent(
-                                        &function.name,
-                                        &constr.in_class,
-                                        &entity_name,
-                                        ctx,
-                                        &right.pos
-                                    )?;
-                                }
-                                constr.eager_push(
-                                    &Expected::new(&left.pos, &Type {
-                                        type_name: type_name.clone()
-                                    }),
-                                    &if let Some(ty) = function.ty() {
-                                        Expected::new(&left.pos, &Type { type_name: ty })
-                                    } else {
-                                        Expected::new(&left.pos, &Statement)
-                                    }
-                                )
-                            }
-
-                            let possible_args: HashSet<Vec<FunctionArg>> =
-                                possible_fun.iter().map(|f| f.arguments.clone()).collect();
-                            let (mut constr, added) =
-                                unify_fun_arg(&possible_args, &args, &constr, &right.pos)?;
-                            unify_link(&mut constr, ctx, total + added)
-                        }
-                        _ => {
-                            let mut constr = reinsert(constr, &constraint, total)?;
-                            unify_link(&mut constr, ctx, total + 1)
-                        }
-                    }
-                } else {
-                    let mut constr = reinsert(constr, &constraint, total)?;
-                    unify_link(&mut constr, ctx, total + 1)
-                },
+            (_, Access { entity, name }) =>
+                unify_access(constraint, &left, entity, name, &left.pos, constr, ctx, total),
+            (Access { entity, name }, _) =>
+                unify_access(constraint, &right, entity, name, &right.pos, constr, ctx, total),
 
             (Nullable, Nullable) => unify_link(constr, ctx, total),
             (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, ctx, total),
@@ -364,6 +299,74 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
     }
 }
 
+fn unify_access(
+    constraint: &Constraint,
+    expected: &Expected,
+    entity: &Expected,
+    name: &Expected,
+    pos: &Position,
+    constr: &mut Constraints,
+    ctx: &Context,
+    total: usize
+) -> Unified {
+    if let Type { type_name: entity_name } = &entity.expect {
+        match &name.expect {
+            Field { name } => {
+                let field = ctx.lookup(entity_name, pos)?.field(name, pos)?;
+                if field.private {
+                    let name = ActualTypeName::new(&field.name, &[]);
+                    check_if_parent(&name, &constr.in_class, entity_name, ctx, pos)?;
+                }
+                let field_ty_exp = if let Some(ty) = field.ty {
+                    Expected::new(pos, &Type { type_name: ty.clone() })
+                } else {
+                    Expected::new(pos, &Statement)
+                };
+                constr.eager_push(&expected, &field_ty_exp);
+                unify_link(constr, ctx, total)
+            }
+            Function { name, args } => {
+                let expr_ty = ctx.lookup(entity_name, pos)?;
+                let possible_fun = expr_ty.function(&name, pos)?;
+
+                for function in &possible_fun {
+                    if function.private {
+                        check_if_parent(&function.name, &constr.in_class, &entity_name, ctx, pos)?;
+                    }
+
+                    constr.eager_push(
+                        &expected,
+                        &Expected::new(
+                            pos,
+                            &if let Some(ty) = function.ty() {
+                                Type { type_name: ty }
+                            } else {
+                                Statement
+                            }
+                        )
+                    );
+                }
+
+                let possible_args: HashSet<Vec<FunctionArg>> =
+                    possible_fun.iter().map(|f| f.arguments.clone()).collect();
+                let (mut constr, added) = unify_fun_arg(&possible_args, &args, &constr, pos)?;
+                unify_link(&mut constr, ctx, total + added)
+            }
+            _ => {
+                let mut constr = reinsert(constr, &constraint, total)?;
+                unify_link(&mut constr, ctx, total + 1)
+            }
+        }
+    } else {
+        let mut constr = reinsert(constr, &constraint, total)?;
+        unify_link(&mut constr, ctx, total + 1)
+    }
+}
+
+/// Reinsert constraint
+///
+/// The amount of attempts is a counter which states how often we allow
+/// reinserts.
 fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
     let pos = format!("({}-{})", constraint.parent.pos.start, constraint.child.pos.start);
     let count = format!("[reinserting {}\\{}]", total - constr.len(), total);

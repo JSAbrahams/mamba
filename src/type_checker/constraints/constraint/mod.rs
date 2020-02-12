@@ -24,5 +24,6 @@ impl Constraint {
         }
     }
 
+    /// Flag constraint iff flagged is 0, else ignored.
     fn flag(&self) -> Constraint { Constraint { flagged: true, ..self.clone() } }
 }
