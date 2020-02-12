@@ -94,7 +94,7 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
             Statement => String::from("()"),
-            Nullable => String::from("undefined"),
+            Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
             Collection { ty } => format!("Collection[{}]", ty.expect),

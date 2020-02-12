@@ -26,6 +26,8 @@ impl ConstrBuilder {
         ConstrBuilder { level: 0, finished: vec![], constraints: vec![(vec![], vec![])] }
     }
 
+    pub fn is_top_level(&self) -> bool { self.level == 0 }
+
     pub fn new_set_in_class(&mut self, inherit_class: bool, class: &TypeName) {
         self.new_set(false);
         if self.level > 0 && inherit_class {

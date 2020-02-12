@@ -4,6 +4,7 @@ use std::ops::Deref;
 use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
 use crate::type_checker::checker_result::TypeErr;
@@ -68,9 +69,18 @@ pub fn gen_call(
                     // entire AST is either fun ret ty or statement
                     constr.add(&Expected::from(ast), &fun_ret_exp);
 
-                    let raises = fun.raises.iter().map(TypeName::from).collect();
-                    let raises_exp = Expected::new(&ast.pos, &Raises { raises });
-                    constr.add(&Expected::from(ast), &raises_exp);
+                    if !fun.raises.is_empty() {
+                        if let Some(raises) = &env.raises {
+                            let raises_exp =
+                                Raises { raises: fun.raises.iter().map(TypeName::from).collect() };
+                            let raises_exp = Expected::new(&ast.pos, &raises_exp);
+                            constr.add(&raises, &raises_exp);
+                        } else if !constr.is_top_level() {
+                            let msg =
+                                format!("Exceptions not covered: {}", comma_delimited(&fun.raises));
+                            return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                        }
+                    }
                 }
             }
 

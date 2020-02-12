@@ -286,6 +286,11 @@ pub fn unify_link(constr: &mut Constraints, ctx: &Context, total: usize) -> Unif
                 unify_access(constraint, &right, entity, name, &right.pos, constr, ctx, total),
 
             (Nullable, Nullable) => unify_link(constr, ctx, total),
+            (Nullable, Expression { ast: AST { node: Node::Undefined, .. } }) =>
+                unify_link(constr, ctx, total),
+            (Expression { ast: AST { node: Node::Undefined, .. } }, Nullable) =>
+                unify_link(constr, ctx, total),
+
             (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constr, ctx, total),
             (Stringy, Nullable) | (Nullable, Stringy) => unify_link(constr, ctx, total),
 
