@@ -119,7 +119,10 @@ pub fn unify_function(
                 unify_link(&mut constr, ctx, total + 1)
             },
 
-        other => panic!("function {:?}", other)
+        (l_exp, r_exp) => {
+            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            Err(vec![TypeErr::new(&left.pos, &msg)])
+        }
     }
 }
 

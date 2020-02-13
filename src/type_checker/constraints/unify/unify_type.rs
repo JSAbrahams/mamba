@@ -2,8 +2,8 @@ use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::expected::Expect::{Collection, ExpressionAny,
-                                                                     Nullable, Raises, Stringy,
-                                                                     Truthy, Type};
+                                                                     Nullable, Raises, Statement,
+                                                                     Stringy, Truthy, Type};
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::unify::unify_link::unify_link;
@@ -61,10 +61,8 @@ pub fn unify_type(
             if type_name.is_nullable() {
                 unify_link(constraints, ctx, total)
             } else {
-                Err(vec![TypeErr::new(
-                    &left.pos,
-                    &format!("Expected '{}', found '{}'", type_name.as_nullable(), type_name)
-                )])
+                let msg = format!("Expected '{}', found '{}'", type_name.as_nullable(), type_name);
+                Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
         (Type { type_name }, Collection { ty }) => {
@@ -78,9 +76,14 @@ pub fn unify_type(
 
         (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constraints, ctx, total),
         (Stringy, Nullable) | (Nullable, Stringy) => unify_link(constraints, ctx, total),
+        (Stringy, Stringy) => unify_link(constraints, ctx, total),
         (Nullable, Nullable) => unify_link(constraints, ctx, total),
+        (Statement, Statement) => unify_link(constraints, ctx, total),
 
-        other => panic!("type {:?}", other)
+        (l_exp, r_exp) => {
+            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            Err(vec![TypeErr::new(&left.pos, &msg)])
+        }
     }
 }
 

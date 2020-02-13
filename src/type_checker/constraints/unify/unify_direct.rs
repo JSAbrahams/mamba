@@ -1,4 +1,5 @@
 use crate::parser::ast::{Node, AST};
+use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::expected::Expect::{Expression, Type};
 use crate::type_checker::constraints::constraint::expected::Expected;
 use crate::type_checker::constraints::constraint::iterator::Constraints;
@@ -26,36 +27,43 @@ pub fn unify_direct(
     ctx: &Context,
     total: usize
 ) -> Unified {
-    match (&direct.expect, &expt.expect) {
-        (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Expression { .. }) => {
+    let node = if let Expression { ast } = &direct.expect {
+        ast.node.clone()
+    } else {
+        let msg = format!("Expected expression, found '{}'", &direct.expect);
+        return Err(vec![TypeErr::new(&direct.pos, &msg)]);
+    };
+
+    match (&node, &expt.expect) {
+        (Node::Bool { .. }, Expression { .. }) => {
             let type_name = TypeName::from(ty::concrete::BOOL_PRIMITIVE);
             constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
             unify_link(constraints, ctx, total + 1)
         }
-        (Expression { ast: AST { node: Node::Real { .. }, .. } }, Expression { .. }) => {
+        (Node::Real { .. }, Expression { .. }) => {
             let type_name = TypeName::from(ty::concrete::FLOAT_PRIMITIVE);
             constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
             unify_link(constraints, ctx, total + 1)
         }
-        (Expression { ast: AST { node: Node::Int { .. }, .. } }, Expression { .. }) => {
+        (Node::Int { .. }, Expression { .. }) => {
             let type_name = TypeName::from(ty::concrete::INT_PRIMITIVE);
             constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
             unify_link(constraints, ctx, total + 1)
         }
-        (Expression { ast: AST { node: Node::Str { .. }, .. } }, Expression { .. }) => {
+        (Node::Str { .. }, Expression { .. }) => {
             let type_name = TypeName::from(ty::concrete::STRING_PRIMITIVE);
             constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
             unify_link(constraints, ctx, total + 1)
         }
-        (
-            Expression { ast: AST { node: Node::ConstructorCall { name, .. }, .. } },
-            Expression { .. }
-        ) => {
+        (Node::ConstructorCall { name, .. }, Expression { .. }) => {
             let type_name = TypeName::try_from(name)?;
             constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
             unify_link(constraints, ctx, total + 1)
         }
 
-        other => panic!("direct {:?}", other)
+        (l_exp, r_exp) => {
+            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            Err(vec![TypeErr::new(&direct.pos, &msg)])
+        }
     }
 }

@@ -79,6 +79,9 @@ pub fn unify_expression(
             unify_link(&mut constr, ctx, total)
         }
 
-        other => panic!("expression {:?}", other)
+        (l_exp, r_exp) => {
+            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            Err(vec![TypeErr::new(&left.pos, &msg)])
+        }
     }
 }
