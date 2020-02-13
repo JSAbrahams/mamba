@@ -5,8 +5,8 @@ use std::ops::Deref;
 use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::context::function::concrete;
 use crate::check::context::function_arg::generic::GenericFunctionArg;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 

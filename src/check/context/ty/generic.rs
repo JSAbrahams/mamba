@@ -12,8 +12,8 @@ use crate::check::context::function_arg;
 use crate::check::context::function_arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 

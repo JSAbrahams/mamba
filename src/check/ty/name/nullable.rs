@@ -6,9 +6,9 @@ use std::ops::Deref;
 
 use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::context::ty::concrete;
-use crate::check::ty::nullable::NullableType;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::concrete::nullable::NullableType;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -56,29 +56,10 @@ impl From<&NullableType> for NullableTypeName {
 }
 
 impl NullableTypeName {
-    pub fn new(lit: &str, generics: &[TypeName]) -> NullableTypeName {
-        NullableTypeName {
-            is_nullable: false,
-            actual:      ActualTypeName::Single {
-                lit:      String::from(lit),
-                generics: generics.to_vec()
-            }
-        }
-    }
-
-    pub fn name(&self, pos: &Position) -> TypeResult<String> { self.actual.name(pos) }
-
     // TODO make more readable
     #[allow(clippy::nonminimal_bool)]
     pub fn is_superset(&self, other: &NullableTypeName) -> bool {
         self.is_nullable || (!self.is_nullable && !other.is_nullable) && self.actual == other.actual
-    }
-
-    pub fn as_single(&self, pos: &Position) -> TypeResult<(String, Vec<TypeName>)> {
-        match &self.actual {
-            ActualTypeName::Single { lit, generics } => Ok((lit.clone(), generics.clone())),
-            _ => Err(vec![TypeErr::new(pos, &format!("Expected single but was {}", self))])
-        }
     }
 
     pub fn substitute(

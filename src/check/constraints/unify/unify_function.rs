@@ -8,7 +8,7 @@ use crate::check::constraints::unify::unify_link::{reinsert, unify_link};
 use crate::check::constraints::Unified;
 use crate::check::context::function_arg::concrete::FunctionArg;
 use crate::check::context::{check_if_parent, Context};
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use itertools::{EitherOrBoth, Itertools};
 use std::collections::HashSet;

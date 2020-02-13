@@ -8,8 +8,8 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constraints::constraint::expected::Expect::*;
 use crate::check::context::ty;
-use crate::check::ty_name::TypeName;
-use crate::check::util::comma_delimited;
+use crate::check::ty::name::TypeName;
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 

@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 
-use crate::check::checker_result::{TypeErr, TypeResult};
+use crate::check::checker_result::TypeErr;
 use crate::check::context::field::generic::GenericField;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use std::fmt;
 
@@ -26,12 +26,6 @@ impl Display for Field {
             &self.name,
             if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() }
         )
-    }
-}
-
-impl Field {
-    pub fn ty(&self) -> TypeResult<TypeName> {
-        self.ty.clone().ok_or_else(|| vec![TypeErr::new_no_pos("Cannot infer type of field")])
     }
 }
 

@@ -2,7 +2,7 @@ use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::constraints::constraint::expected::Expected;
 use crate::check::constraints::constraint::iterator::Constraints;
 use crate::check::constraints::constraint::Constraint;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 
 /// Constraint Builder.

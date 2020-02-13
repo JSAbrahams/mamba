@@ -5,9 +5,9 @@ use std::fmt::Display;
 use std::ops::Deref;
 
 use crate::check::checker_result::{TypeErr, TypeResult};
-use crate::check::ty::actual::ActualType;
-use crate::check::ty_name::TypeName;
-use crate::check::util::comma_delimited;
+use crate::check::ty::concrete::actual::ActualType;
+use crate::check::ty::name::TypeName;
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -81,13 +81,6 @@ impl ActualTypeName {
         match self {
             ActualTypeName::Single { lit, .. } => Ok(lit.clone()),
             _ => Err(vec![TypeErr::new(pos, &format!("{} does not have name", self))])
-        }
-    }
-
-    pub fn as_single(&self, pos: &Position) -> TypeResult<(String, Vec<TypeName>)> {
-        match &self {
-            ActualTypeName::Single { lit, generics } => Ok((lit.clone(), generics.clone())),
-            _ => Err(vec![TypeErr::new(pos, &format!("Expected single but was {}", self))])
         }
     }
 

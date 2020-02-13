@@ -1,3 +1,4 @@
+use crate::check::ty::name::TypeName;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::fmt;
@@ -8,9 +9,8 @@ use crate::check::checker_result::TypeErr;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function_arg::concrete::FunctionArg;
 use crate::check::context::{function, function_arg};
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::TypeName;
-use crate::check::util::comma_delimited;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
 pub const INIT: &str = "init";

@@ -7,7 +7,7 @@ use crate::check::constraints::constraint::iterator::Constraints;
 use crate::check::constraints::unify::unify_link::unify_link;
 use crate::check::constraints::Unified;
 use crate::check::context::{function, Context};
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 

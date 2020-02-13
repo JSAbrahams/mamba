@@ -9,7 +9,7 @@ use crate::check::constraints::generate::generate;
 use crate::check::constraints::Constrained;
 use crate::check::context::Context;
 use crate::check::environment::Environment;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_resources(

@@ -8,10 +8,10 @@ use std::ops::Deref;
 
 use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::context::ty;
-use crate::check::ty::ExpressionType;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::nullable::NullableTypeName;
-use crate::check::util::comma_delimited;
+use crate::check::ty::concrete::ExpressionType;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::nullable::NullableTypeName;
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -117,13 +117,6 @@ impl TypeName {
                 is_nullable: lit == ty::concrete::NONE,
                 actual:      ActualTypeName::new(lit, generics)
             }
-        }
-    }
-
-    pub fn names(&self) -> HashSet<ActualTypeName> {
-        match &self {
-            TypeName::Single { ty } => HashSet::from_iter(vec![ty.actual.clone()].into_iter()),
-            TypeName::Union { union } => union.iter().map(|ty| ty.actual.clone()).collect()
         }
     }
 

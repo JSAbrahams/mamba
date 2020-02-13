@@ -3,13 +3,10 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use crate::check::checker_result::{TypeErr, TypeResult};
+use crate::check::checker_result::TypeErr;
 use crate::check::context::function_arg::generic::GenericFunctionArg;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
-use itertools::{EitherOrBoth, Itertools};
-
-// TODO make ty private again
 
 pub const SELF: &str = "self";
 
@@ -32,37 +29,6 @@ impl Display for FunctionArg {
             if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() },
             if self.has_default { "?" } else { "" }
         )
-    }
-}
-
-pub fn args_compatible(fun_args: &[FunctionArg], args: &[TypeName]) -> bool {
-    for pair in fun_args.iter().zip_longest(args.iter()) {
-        match pair {
-            EitherOrBoth::Both(fun_arg, arg) =>
-                if fun_arg.ty != Some(arg.clone()) {
-                    return false;
-                },
-            EitherOrBoth::Left(fun_arg) =>
-                if !fun_arg.has_default {
-                    return false;
-                },
-            EitherOrBoth::Right(_) => return false
-        }
-    }
-    true
-}
-
-impl FunctionArg {
-    pub fn ty(&self) -> TypeResult<Option<TypeName>> {
-        if self.is_py_type {
-            Ok(self.ty.clone())
-        } else {
-            Ok(Some(
-                self.ty
-                    .clone()
-                    .ok_or_else(|| vec![TypeErr::new_no_pos("Function argument type not given")])?
-            ))
-        }
     }
 }
 

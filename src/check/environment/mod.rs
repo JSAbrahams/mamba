@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 use crate::check::constraints::constraint::expected::Expect::Raises;
 use crate::check::constraints::constraint::expected::{Expect, Expected};
 use crate::check::context::function_arg::concrete::SELF;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 
 pub mod name;

@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::constraints::constraint::expected::Expected;
 use crate::check::constraints::constraint::Constraint;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {

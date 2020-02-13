@@ -5,7 +5,7 @@ use crate::check::constraints::constraint::iterator::Constraints;
 use crate::check::constraints::unify::unify_link::unify_link;
 use crate::check::constraints::Unified;
 use crate::check::context::{ty, Context};
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 use std::convert::TryFrom;
 

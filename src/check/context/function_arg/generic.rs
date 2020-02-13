@@ -5,7 +5,7 @@ use std::ops::Deref;
 use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::type_name::python;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 

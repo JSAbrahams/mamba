@@ -4,20 +4,16 @@ use std::path::PathBuf;
 use crate::check::checker_result::{TypeErr, TypeResults};
 use crate::check::constraints::constraints;
 use crate::check::context::Context;
-use crate::check::modify::modify;
+use crate::check::pass::modify;
 use crate::parse::ast::AST;
 
-pub mod context;
-pub mod environment;
-
-mod ty;
-pub mod ty_name;
-
 mod constraints;
-mod modify;
-mod util;
+mod environment;
+mod pass;
 
 pub mod checker_result;
+pub mod context;
+pub mod ty;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 

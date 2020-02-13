@@ -12,8 +12,8 @@ use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::ty::concrete;
 use crate::check::context::ty::generic::GenericType;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 
 pub const INT_PRIMITIVE: &str = "int";

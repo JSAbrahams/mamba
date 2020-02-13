@@ -10,7 +10,7 @@ use crate::check::context::function::concrete::{ADD, DIV, EQ, FDIV, GE, GEQ, LE,
 use crate::check::context::ty::concrete::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::{ty, Context};
 use crate::check::environment::Environment;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_op(

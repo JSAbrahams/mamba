@@ -1,5 +1,5 @@
 use crate::check::context::ty::python::python_to_concrete;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use python_parser::ast::{Expression, Subscript};
 use std::ops::Deref;
 

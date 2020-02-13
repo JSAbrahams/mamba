@@ -12,14 +12,14 @@ use crate::check::context::python::python_files;
 use crate::check::context::ty::concrete;
 use crate::check::context::ty::concrete::Type;
 use crate::check::context::ty::generic::GenericType;
-use crate::check::ty::actual::ActualType;
-use crate::check::ty::nullable::NullableType;
-use crate::check::ty::ExpressionType;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::nullable::NullableTypeName;
-use crate::check::ty_name::TypeName;
-use crate::check::util::comma_delimited;
+use crate::check::ty::concrete::actual::ActualType;
+use crate::check::ty::concrete::nullable::NullableType;
+use crate::check::ty::concrete::ExpressionType;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::nullable::NullableTypeName;
+use crate::check::ty::name::TypeName;
 use crate::check::CheckInput;
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
 pub mod field;
@@ -55,11 +55,6 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
-    pub fn lookup_name(&self, name: &TypeName, pos: &Position) -> TypeResult<TypeName> {
-        let expr_type = self.lookup(name, pos)?;
-        Ok(TypeName::from(&expr_type))
-    }
-
     fn find_type_name(&self, name: &str, pos: &Position) -> TypeResult<GenericType> {
         for ty in &self.types {
             if ty.name.name(pos)? == name {

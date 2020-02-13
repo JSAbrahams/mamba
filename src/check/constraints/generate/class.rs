@@ -10,7 +10,7 @@ use crate::check::constraints::Constrained;
 use crate::check::context::field;
 use crate::check::context::Context;
 use crate::check::environment::Environment;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 

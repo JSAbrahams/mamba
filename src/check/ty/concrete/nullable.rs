@@ -2,9 +2,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::check::checker_result::TypeResult;
-use crate::check::context::field::concrete::Field;
 use crate::check::context::function_arg::concrete::FunctionArg;
-use crate::check::ty::actual::ActualType;
+use crate::check::ty::concrete::actual::ActualType;
 use crate::common::position::Position;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -25,15 +24,7 @@ impl NullableType {
         NullableType { is_nullable, actual_ty: actual_ty.clone() }
     }
 
-    pub fn as_nullable(&self) -> NullableType {
-        NullableType { is_nullable: true, actual_ty: self.actual_ty.clone() }
-    }
-
     pub fn actual_ty(&self) -> ActualType { self.actual_ty.clone() }
-
-    pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
-        self.actual_ty.field(field, pos)
-    }
 
     pub fn constructor_args(&self, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
         self.actual_ty.constructor_args(pos)

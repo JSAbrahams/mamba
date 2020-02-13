@@ -7,15 +7,13 @@ use std::hash::{Hash, Hasher};
 use crate::check::checker_result::{TypeErr, TypeResult};
 use crate::check::context::field::concrete::Field;
 use crate::check::context::function::concrete::Function;
-use crate::check::context::function_arg::concrete::{args_compatible, FunctionArg};
+use crate::check::context::function_arg::concrete::FunctionArg;
 use crate::check::context::ty::generic::GenericType;
 use crate::check::context::ty::python;
-use crate::check::ty_name::actual::ActualTypeName;
-use crate::check::ty_name::TypeName;
-use crate::check::util::{comma_delimited, newline_delimited};
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::TypeName;
+use crate::common::delimit::newline_delimited;
 use crate::common::position::Position;
-
-pub const ANY: &str = "Any";
 
 pub const INT_PRIMITIVE: &str = "Int";
 pub const FLOAT_PRIMITIVE: &str = "Float";
@@ -136,34 +134,6 @@ impl Type {
         })
     }
 
-    pub fn fun_ret_ty(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Option<TypeName>> {
-        self.functions
-            .iter()
-            .find_map(|functions| {
-                functions.iter().find_map(|function| {
-                    if TypeName::from(&function.name) == fun_name.clone() {
-                        Some(function.ty())
-                    } else {
-                        None
-                    }
-                })
-            })
-            .ok_or_else(|| {
-                vec![TypeErr::new(
-                    pos,
-                    &format!(
-                        "Type {} does not define function \"{}\"{}{}",
-                        self,
-                        fun_name,
-                        if self.functions.is_empty() { "" } else { ", must be one of:\n" },
-                        newline_delimited(
-                            &self.functions.iter().flatten().collect::<Vec<&Function>>()
-                        )
-                    )
-                )]
-            })
-    }
-
     pub fn function(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Function> {
         self.functions
             .iter()
@@ -190,45 +160,6 @@ impl Type {
                     )
                 )]
             })
-    }
-
-    // TODO add boolean for unsafe operator so we can ignore if type is None
-    // TODO handle default arguments
-    pub fn fun(&self, fun_name: &str, args: &[TypeName], pos: &Position) -> TypeResult<Function> {
-        let args: Vec<TypeName> = vec![vec![TypeName::from(&self.name.clone())], args.to_vec()]
-            .into_iter()
-            .flatten()
-            .collect();
-        // TODO accept if arguments passed is union that is subset of argument union
-        self.functions
-            .iter()
-            .find_map(|functions| {
-                functions.iter().find_map(|function| match function.name.name(pos) {
-                    Err(err) => Some(Err(err)),
-                    Ok(name) =>
-                        if name.as_str() == fun_name && args_compatible(&function.arguments, &args)
-                        {
-                            Some(Ok(function.clone()))
-                        } else {
-                            None
-                        },
-                })
-            })
-            .ok_or_else(|| {
-                // TODO when type inference is more advanced insert expected type
-                vec![TypeErr::new(
-                    pos,
-                    &format!(
-                        "Type {} does not have function \"{}: ({}) -> ?\", must be one of: \n{}",
-                        self,
-                        fun_name,
-                        comma_delimited(args),
-                        newline_delimited(
-                            &self.functions.iter().flatten().collect::<Vec<&Function>>()
-                        )
-                    )
-                )]
-            })?
     }
 }
 

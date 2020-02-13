@@ -12,7 +12,7 @@ use crate::check::context::function_arg::concrete::SELF;
 use crate::check::context::{ty, Context};
 use crate::check::environment::name::{match_type, Identifier};
 use crate::check::environment::Environment;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_def(

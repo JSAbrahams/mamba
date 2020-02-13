@@ -10,9 +10,9 @@ use crate::check::context::function::concrete::Function;
 use crate::check::context::function_arg::concrete::FunctionArg;
 use crate::check::context::ty::concrete::Type;
 use crate::check::context::{function, Context};
-use crate::check::ty::ExpressionType;
-use crate::check::ty_name::TypeName;
-use crate::check::util::comma_delimited;
+use crate::check::ty::concrete::ExpressionType;
+use crate::check::ty::name::TypeName;
+use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]

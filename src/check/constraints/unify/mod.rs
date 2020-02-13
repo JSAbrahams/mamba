@@ -3,8 +3,7 @@ use crate::check::constraints::constraint::iterator::Constraints;
 use crate::check::constraints::unify::unify_link::unify_link;
 use crate::check::constraints::Unified;
 use crate::check::context::Context;
-use crate::check::util::custom_delimited;
-use crate::common::delimit::newline_delimited;
+use crate::common::delimit::{custom_delimited, newline_delimited};
 use itertools::Itertools;
 
 mod unify_link;

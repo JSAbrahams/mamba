@@ -14,7 +14,7 @@ use crate::check::context::function_arg::concrete::FunctionArg;
 use crate::check::context::Context;
 use crate::check::environment::name::Identifier;
 use crate::check::environment::Environment;
-use crate::check::ty_name::TypeName;
+use crate::check::ty::name::TypeName;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
