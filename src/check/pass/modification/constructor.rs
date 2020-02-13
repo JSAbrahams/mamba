@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
-use crate::check::checker_result::TypeResult;
 use crate::check::context::Context;
 use crate::check::pass::modification::Modification;
+use crate::check::result::TypeResult;
 use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 use std::convert::TryFrom;

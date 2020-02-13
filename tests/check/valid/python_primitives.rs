@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use mamba::check::context::Context;
-use mamba::check::ty::concrete::ExpressionType;
 use mamba::check::ty::name::TypeName;
 use mamba::check::CheckInput;
 use mamba::common::position::Position;

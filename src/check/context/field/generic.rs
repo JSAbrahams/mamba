@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
-use crate::check::environment::name::{match_type, Identifier};
+use crate::check::ident::{match_type, Identifier};
+use crate::check::result::{TypeErr, TypeResult};
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};

@@ -1,4 +1,4 @@
-use crate::check::context::ty::concrete::concrete_to_python;
+use crate::check::context::clss::concrete_to_python;
 use crate::core::construct::Core;
 use crate::desugar::call::desugar_call;
 use crate::desugar::class::desugar_class;

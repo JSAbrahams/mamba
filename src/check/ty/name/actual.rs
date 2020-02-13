@@ -4,8 +4,8 @@ use std::fmt;
 use std::fmt::Display;
 use std::ops::Deref;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
-use crate::check::ty::concrete::actual::ActualType;
+use crate::check::result::{TypeErr, TypeResult};
+use crate::check::ty::actual::ActualType;
 use crate::check::ty::name::TypeName;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;

@@ -1,6 +1,5 @@
 use crate::common::resource_content;
 use mamba::check::context::Context;
-use mamba::check::ty::concrete::ExpressionType;
 use mamba::check::ty::name::TypeName;
 use mamba::check::{check_all, CheckInput};
 use mamba::common::position::Position;

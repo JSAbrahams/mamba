@@ -2,9 +2,9 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
-use crate::check::context::function::concrete;
-use crate::check::context::function_arg::generic::GenericFunctionArg;
+use crate::check::context::arg::generic::GenericFunctionArg;
+use crate::check::context::function;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
@@ -131,16 +131,16 @@ pub fn function_name(ast: &AST) -> TypeResult<ActualTypeName> {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),
             Node::SqrtOp => String::from("sqrt"),
-            Node::GeOp => String::from(concrete::GE),
-            Node::LeOp => String::from(concrete::LE),
-            Node::EqOp => String::from(concrete::EQ),
-            Node::AddOp => String::from(concrete::ADD),
-            Node::SubOp => String::from(concrete::SUB),
-            Node::PowOp => String::from(concrete::POW),
-            Node::MulOp => String::from(concrete::MUL),
-            Node::ModOp => String::from(concrete::MOD),
-            Node::DivOp => String::from(concrete::DIV),
-            Node::FDivOp => String::from(concrete::FDIV),
+            Node::GeOp => String::from(function::GE),
+            Node::LeOp => String::from(function::LE),
+            Node::EqOp => String::from(function::EQ),
+            Node::AddOp => String::from(function::ADD),
+            Node::SubOp => String::from(function::SUB),
+            Node::PowOp => String::from(function::POW),
+            Node::MulOp => String::from(function::MUL),
+            Node::ModOp => String::from(function::MOD),
+            Node::DivOp => String::from(function::DIV),
+            Node::FDivOp => String::from(function::FDIV),
 
             _ => return Err(vec![TypeErr::new(&ast.pos, "Expected valid function name")])
         }

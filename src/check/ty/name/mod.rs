@@ -6,11 +6,11 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
-use crate::check::context::ty;
-use crate::check::ty::concrete::ExpressionType;
+use crate::check::context::clss;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::nullable::NullableTypeName;
+use crate::check::ty::Type;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -95,16 +95,16 @@ impl From<&ActualTypeName> for TypeName {
     }
 }
 
-impl From<&ExpressionType> for TypeName {
-    fn from(expression_type: &ExpressionType) -> TypeName {
+impl From<&Type> for TypeName {
+    fn from(expression_type: &Type) -> TypeName {
         match &expression_type {
-            ExpressionType::Single { ty } => TypeName::Single {
+            Type::Single { ty } => TypeName::Single {
                 ty: NullableTypeName {
                     is_nullable: ty.is_nullable,
                     actual:      ActualTypeName::from(&ty.actual_ty())
                 }
             },
-            ExpressionType::Union { union } =>
+            Type::Union { union } =>
                 TypeName::Union { union: union.iter().map(NullableTypeName::from).collect() },
         }
     }
@@ -114,7 +114,7 @@ impl TypeName {
     pub fn new(lit: &str, generics: &[TypeName]) -> TypeName {
         TypeName::Single {
             ty: NullableTypeName {
-                is_nullable: lit == ty::concrete::NONE,
+                is_nullable: lit == clss::NONE,
                 actual:      ActualTypeName::new(lit, generics)
             }
         }

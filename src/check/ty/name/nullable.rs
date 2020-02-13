@@ -4,11 +4,11 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
-use crate::check::context::ty::concrete;
-use crate::check::ty::concrete::nullable::NullableType;
+use crate::check::context::clss::NONE;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
+use crate::check::ty::nullable::NullableType;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -24,7 +24,7 @@ impl Display for NullableTypeName {
             f,
             "{}{}",
             self.actual,
-            if self.is_nullable && self.actual != ActualTypeName::new(concrete::NONE, &[]) {
+            if self.is_nullable && self.actual != ActualTypeName::new(NONE, &[]) {
                 "?"
             } else {
                 ""

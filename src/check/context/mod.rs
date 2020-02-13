@@ -3,35 +3,34 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
+use crate::check::context::clss::generic::GenericClass;
+use crate::check::context::clss::{Class, NONE};
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::function::concrete::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::generics::generics;
+use crate::check::context::function::Function;
+use crate::check::context::generic::generics;
 use crate::check::context::python::python_files;
-use crate::check::context::ty::concrete;
-use crate::check::context::ty::concrete::Type;
-use crate::check::context::ty::generic::GenericType;
-use crate::check::ty::concrete::actual::ActualType;
-use crate::check::ty::concrete::nullable::NullableType;
-use crate::check::ty::concrete::ExpressionType;
+use crate::check::result::{TypeErr, TypeResult};
+use crate::check::ty::actual::ActualType;
 use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::nullable::NullableTypeName;
 use crate::check::ty::name::TypeName;
+use crate::check::ty::nullable::NullableType;
+use crate::check::ty::Type;
 use crate::check::CheckInput;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
+pub mod arg;
+pub mod clss;
 pub mod field;
 pub mod function;
-pub mod function_arg;
+pub mod name;
 pub mod parameter;
 pub mod parent;
 pub mod python;
-pub mod ty;
-pub mod type_name;
 
-mod generics;
+mod generic;
 
 /// A context stores all information of all identified types of the current
 /// application.
@@ -40,7 +39,7 @@ mod generics;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug)]
 pub struct Context {
-    types:     HashSet<GenericType>,
+    types:     HashSet<GenericClass>,
     functions: HashSet<GenericFunction>,
     fields:    HashSet<GenericField>
 }
@@ -55,7 +54,7 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
-    fn find_type_name(&self, name: &str, pos: &Position) -> TypeResult<GenericType> {
+    fn find_type_name(&self, name: &str, pos: &Position) -> TypeResult<GenericClass> {
         for ty in &self.types {
             if ty.name.name(pos)? == name {
                 return Ok(ty.clone());
@@ -64,8 +63,13 @@ impl Context {
         Err(vec![TypeErr::new(pos, &format!("Unknown type: {}", name))])
     }
 
-    fn lookup_direct(&self, name: &str, generics: &[TypeName], pos: &Position) -> TypeResult<Type> {
-        let generic_type: GenericType = self.find_type_name(name, pos)?;
+    fn lookup_direct(
+        &self,
+        name: &str,
+        generics: &[TypeName],
+        pos: &Position
+    ) -> TypeResult<Class> {
+        let generic_type: GenericClass = self.find_type_name(name, pos)?;
         if generic_type.generics.len() != generics.len() {
             let msg = format!(
                 "{} takes {} generic arguments: [{}],\nbut given {}: [{}]",
@@ -82,7 +86,7 @@ impl Context {
         let paired = type_generics.into_iter().zip(generics);
         let generics =
             paired.map(|(parameter, type_name)| (parameter.name, type_name.clone())).collect();
-        Type::try_from((&generic_type, &generics, &self.types, pos))
+        Class::try_from((&generic_type, &generics, &self.types, pos))
     }
 
     fn lookup_actual(
@@ -91,7 +95,7 @@ impl Context {
         pos: &Position
     ) -> TypeResult<NullableType> {
         Ok(NullableType::new(
-            ty_name.is_nullable || ty_name.actual == ActualTypeName::new(concrete::NONE, &[]),
+            ty_name.is_nullable || ty_name.actual == ActualTypeName::new(NONE, &[]),
             &match &ty_name.actual {
                 ActualTypeName::Single { lit, generics } =>
                     ActualType::Single { ty: self.lookup_direct(lit, generics, pos)? },
@@ -125,17 +129,15 @@ impl Context {
         Function::try_from((fun, &HashMap::new(), pos))
     }
 
-    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<ExpressionType> {
+    pub fn lookup(&self, type_name: &TypeName, pos: &Position) -> TypeResult<Type> {
         match type_name {
-            TypeName::Single { ty } =>
-                Ok(ExpressionType::Single { ty: self.lookup_actual(ty, pos)? }),
-            TypeName::Union { union } => {
-                let union: HashSet<_> = union
+            TypeName::Single { ty } => Ok(Type::Single { ty: self.lookup_actual(ty, pos)? }),
+            TypeName::Union { union } => Ok(Type::Union {
+                union: union
                     .iter()
                     .map(|a_t| self.lookup_actual(a_t, pos))
-                    .collect::<Result<_, Vec<TypeErr>>>()?;
-                Ok(ExpressionType::Union { union })
-            }
+                    .collect::<Result<_, Vec<TypeErr>>>()?
+            })
         }
     }
 
@@ -159,7 +161,7 @@ impl Context {
 
     /// Loads pre-defined Python primitives into context for easy lookup
     pub fn into_with_primitives(self) -> TypeResult<Self> {
-        let python_dir = resource("primitives");
+        let python_dir = resource("primitive");
         let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
 
         let types = self.types.union(&py_types).cloned().collect();
@@ -169,7 +171,7 @@ impl Context {
     }
 
     pub fn into_with_std_lib(self) -> TypeResult<Self> {
-        let python_dir = resource("std_lib");
+        let python_dir = resource("std");
         let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
 
         let types = self.types.union(&py_types).cloned().collect();
@@ -183,7 +185,7 @@ fn resource(resource: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("src")
         .join("check")
-        .join("resources")
+        .join("resource")
         .join(resource)
 }
 

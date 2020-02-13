@@ -1,7 +1,7 @@
-use crate::check::checker_result::TypeResult;
 use crate::check::context::Context;
 use crate::check::pass::modification::constructor::Constructor;
 use crate::check::pass::modification::Modification;
+use crate::check::result::TypeResult;
 use crate::parse::ast::AST;
 
 mod modification;

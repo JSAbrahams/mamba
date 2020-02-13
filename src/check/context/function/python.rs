@@ -1,8 +1,8 @@
 use python_parser::ast::Funcdef;
 
-use crate::check::context::function::concrete;
+use crate::check::context::arg::generic::GenericFunctionArg;
+use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::function_arg::generic::GenericFunctionArg;
 use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
@@ -53,22 +53,22 @@ impl From<&Funcdef> for GenericFunction {
 
 fn convert_name(name: &str) -> String {
     match name {
-        INIT => String::from(concrete::INIT),
+        INIT => String::from(function::INIT),
 
-        ADD => String::from(concrete::ADD),
-        DIV => String::from(concrete::DIV),
-        EQ => String::from(concrete::EQ),
-        FDIV => String::from(concrete::FDIV),
-        GE => String::from(concrete::GE),
-        GEQ => String::from(concrete::GEQ),
-        LE => String::from(concrete::LE),
-        LEQ => String::from(concrete::LEQ),
-        MOD => String::from(concrete::MOD),
-        MUL => String::from(concrete::MUL),
-        POW => String::from(concrete::POW),
-        SUB => String::from(concrete::SUB),
+        ADD => String::from(function::ADD),
+        DIV => String::from(function::DIV),
+        EQ => String::from(function::EQ),
+        FDIV => String::from(function::FDIV),
+        GE => String::from(function::GE),
+        GEQ => String::from(function::GEQ),
+        LE => String::from(function::LE),
+        LEQ => String::from(function::LEQ),
+        MOD => String::from(function::MOD),
+        MUL => String::from(function::MUL),
+        POW => String::from(function::POW),
+        SUB => String::from(function::SUB),
 
-        TRUTHY => String::from(concrete::TRUTHY),
+        TRUTHY => String::from(function::TRUTHY),
 
         other => String::from(other)
     }

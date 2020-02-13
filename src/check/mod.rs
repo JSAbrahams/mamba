@@ -1,18 +1,19 @@
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
-use crate::check::checker_result::{TypeErr, TypeResults};
-use crate::check::constraints::constraints;
+use crate::check::constrain::constraints;
 use crate::check::context::Context;
 use crate::check::pass::modify;
+use crate::check::result::{TypeErr, TypeResults};
 use crate::parse::ast::AST;
 
-mod constraints;
-mod environment;
+mod constrain;
+mod env;
+mod ident;
 mod pass;
 
-pub mod checker_result;
 pub mod context;
+pub mod result;
 pub mod ty;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);

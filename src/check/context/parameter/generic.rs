@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Error, Formatter};
 use std::ops::Deref;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
+use crate::check::result::{TypeErr, TypeResult};
 use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 

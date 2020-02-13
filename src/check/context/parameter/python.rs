@@ -3,8 +3,8 @@ use std::ops::Deref;
 use python_parser::ast::Subscript::Simple;
 use python_parser::ast::{Argument, Expression, Subscript};
 
+use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parameter::generic::GenericParameter;
-use crate::check::context::ty::python::python_to_concrete;
 
 pub struct GenericParameters {
     pub parameters: Vec<GenericParameter>

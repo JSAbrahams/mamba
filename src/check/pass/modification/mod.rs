@@ -1,5 +1,5 @@
-use crate::check::checker_result::TypeResult;
 use crate::check::context::Context;
+use crate::check::result::TypeResult;
 use crate::parse::ast::{Node, AST};
 
 pub mod constructor;

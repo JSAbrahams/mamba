@@ -1,6 +1,6 @@
 use std::fmt::{Display, Error, Formatter};
 
-use crate::check::context::function_arg;
+use crate::check::context::arg;
 use crate::parse::ast::{Node, AST};
 
 fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
@@ -56,7 +56,7 @@ impl Display for Node {
             Node::TypeFun { .. } => String::from("type function"),
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),
-            Node::_Self => String::from(function_arg::concrete::SELF),
+            Node::_Self => String::from(arg::SELF),
             Node::AddOp => String::from("addition"),
             Node::SubOp => String::from("subtraction"),
             Node::SqrtOp => String::from("square root"),

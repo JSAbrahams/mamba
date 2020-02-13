@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::check::context::{function, function_arg};
+use crate::check::context::{arg, function};
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::desugar_result::DesugarResult;
@@ -91,7 +91,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                             arg:     vec![Core::FunArg {
                                 vararg:  false,
                                 var:     Box::new(Core::Id {
-                                    lit: String::from(function_arg::python::SELF)
+                                    lit: String::from(arg::python::SELF)
                                 }),
                                 ty:      None,
                                 default: None
@@ -255,7 +255,7 @@ fn extract_parents(
                     object:   Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("super") }),
                         args:     vec![parent_name, Core::Id {
-                            lit: String::from(function_arg::python::SELF)
+                            lit: String::from(arg::python::SELF)
                         }]
                     }),
                     property: Box::from(Core::FunctionCall {

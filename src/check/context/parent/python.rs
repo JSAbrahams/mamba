@@ -1,8 +1,8 @@
 use python_parser::ast::{Argument, Expression};
 
+use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::context::ty::python::python_to_concrete;
 use crate::common::position::Position;
 use std::ops::Deref;
 

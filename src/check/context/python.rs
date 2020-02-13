@@ -4,10 +4,10 @@ use std::io::Read;
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use crate::check::checker_result::{TypeErr, TypeResult};
+use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::ty::generic::GenericType;
+use crate::check::result::{TypeErr, TypeResult};
 use python_parser::ast::{CompoundStatement, Statement};
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -15,7 +15,7 @@ use std::iter::FromIterator;
 
 pub fn python_files(
     python_dir: &PathBuf
-) -> TypeResult<(HashSet<GenericType>, HashSet<GenericField>, HashSet<GenericFunction>)> {
+) -> TypeResult<(HashSet<GenericClass>, HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut types = vec![];
     let mut fields = vec![];
     let mut functions = vec![];
@@ -51,7 +51,7 @@ pub fn python_files(
                     CompoundStatement::Funcdef(func_def) =>
                         functions.push(GenericFunction::from(func_def)),
                     CompoundStatement::Classdef(class_def) =>
-                        types.push(GenericType::try_from(class_def)?),
+                        types.push(GenericClass::try_from(class_def)?),
                     _ => {}
                 },
                 _ => {}
