@@ -29,8 +29,8 @@ pub mod construct;
 /// # use mamba::core::to_source;
 /// let core_node = Core::IfElse {
 ///     cond:  Box::from(Core::Id { lit: String::from("a") }),
-///     then:  Box::from(Core::Str { _str: String::from("b") }),
-///     el: Box::from(Core::Str { _str: String::from("c") })
+///     then:  Box::from(Core::Str { string: String::from("b") }),
+///     el: Box::from(Core::Str { string: String::from("c") })
 /// };
 ///
 /// assert_eq!(to_source(&core_node), "if a: \"b\"\nelse: \"c\"\n");
@@ -42,8 +42,8 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::FromImport { from, import } =>
             format!("from {} {}", to_py(from, ind), to_py(import, ind)),
         Core::Import { imports } => format!("import {}", comma_delimited(imports, ind)),
-        Core::ImportAs { imports, _as } =>
-            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(_as, ind)),
+        Core::ImportAs { imports, alias } =>
+            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(alias, ind)),
 
         Core::Id { lit } => lit.clone(),
         Core::Type { lit, generics } =>
@@ -53,15 +53,15 @@ fn to_py(core: &Core, ind: usize) -> String {
                 format!("{}[{}]", lit, comma_delimited(generics, ind))
             },
         Core::ExpressionType { expr, ty } => format!("{}: {}", to_py(expr, ind), to_py(ty, ind)),
-        Core::DocStr { _str } => format!("\"\"\"{}\"\"\"", _str),
-        Core::Str { _str } => format!("\"{}\"", _str),
-        Core::FStr { _str } => format!("f\"{}\"", _str),
+        Core::DocStr { string } => format!("\"\"\"{}\"\"\"", string),
+        Core::Str { string } => format!("\"{}\"", string),
+        Core::FStr { string } => format!("f\"{}\"", string),
         Core::Int { int } => int.clone(),
         Core::ENum { num, exp } => format!("({} * 10 ** {})", num, exp),
         Core::Float { float } => float.clone(),
-        Core::Bool { _bool } => String::from(if *_bool { "True" } else { "False" }),
+        Core::Bool { boolean } => String::from(if *boolean { "True" } else { "False" }),
 
-        Core::FunDef { id, args, ret_ty, body, .. } => {
+        Core::FunDef { id, arg, ty, body, .. } => {
             let name = match id.as_ref() {
                 Core::GeOp => String::from("__gt__"),
                 Core::GeqOp => String::from("__ge__"),
@@ -90,8 +90,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!(
                 "def {}({}){}:{}\n",
                 name,
-                comma_delimited(args, ind),
-                if let Some(ret_ty) = ret_ty {
+                comma_delimited(arg, ind),
+                if let Some(ret_ty) = ty {
                     format!(" -> {}", to_py(ret_ty.as_ref(), ind))
                 } else {
                     String::new()
@@ -251,11 +251,11 @@ fn to_py(core: &Core, ind: usize) -> String {
             indent(ind),
             newline_if_body(el, ind)
         ),
-        Core::Ternary { cond, then, _else } => format!(
+        Core::Ternary { cond, then, el } => format!(
             "{} if {} else {}",
             to_py(then.as_ref(), ind),
             to_py(cond.as_ref(), ind + 1),
-            to_py(_else.as_ref(), ind + 1)
+            to_py(el.as_ref(), ind + 1)
         ),
         Core::While { cond, body } =>
             format!("while {}:{}", to_py(cond.as_ref(), ind), newline_if_body(body, ind)),
@@ -287,14 +287,14 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_if_body(expr, ind)
         ),
 
-        Core::TryExcept { setup, _try, except } => format!(
+        Core::TryExcept { setup, attempt, except } => format!(
             "{}try:{}\n{}",
             if let Some(setup) = setup {
                 format!("{}\n{}", to_py(setup, ind), indent(ind))
             } else {
                 String::from("")
             },
-            newline_if_body(_try, ind + 1),
+            newline_if_body(attempt, ind + 1),
             newline_delimited(except, ind)
         ),
         Core::Except { id, class, body } => format!(

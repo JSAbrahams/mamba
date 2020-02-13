@@ -4,8 +4,8 @@ use crate::desugar::desugar_result::UnimplementedErr;
 use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {

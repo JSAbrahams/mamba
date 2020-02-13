@@ -1,8 +1,8 @@
 use crate::common::*;
 use mamba::core::to_source;
 use mamba::desugar::desugar;
-use mamba::lexer::tokenize;
-use mamba::parser::parse;
+use mamba::lex::tokenize;
+use mamba::parse::parse;
 
 #[test]
 fn core_for_statements() {

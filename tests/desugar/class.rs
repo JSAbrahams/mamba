@@ -1,8 +1,8 @@
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::Node;
-use mamba::parser::ast::AST;
+use mamba::parse::ast::Node;
+use mamba::parse::ast::AST;
 use std::ops::Deref;
 
 #[test]
@@ -34,7 +34,7 @@ fn import_as_verify() {
     let import = to_pos!(Node::Import { import, _as });
 
     let (core_import, core_as) = match desugar(&import) {
-        Ok(Core::ImportAs { imports, _as }) => (imports, _as),
+        Ok(Core::ImportAs { imports, alias }) => (imports, alias),
         other => panic!("Expected import but got {:?}", other)
     };
 

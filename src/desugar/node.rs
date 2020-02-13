@@ -1,3 +1,4 @@
+use crate::check::context::ty::concrete::concrete_to_python;
 use crate::core::construct::Core;
 use crate::desugar::call::desugar_call;
 use crate::desugar::class::desugar_class;
@@ -9,9 +10,8 @@ use crate::desugar::desugar_result::UnimplementedErr;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
-use crate::type_checker::context::ty::concrete::concrete_to_python;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
@@ -25,7 +25,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             } else {
                 Core::ImportAs {
                     imports: desugar_vec(import, imp, state)?,
-                    _as:     desugar_vec(_as, imp, state)?
+                    alias:   desugar_vec(_as, imp, state)?
                 }
             },
         Node::FromImport { id, import } => Core::FromImport {
@@ -49,12 +49,12 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             num: num.clone(),
             exp: if exp.is_empty() { String::from("0") } else { exp.clone() }
         },
-        Node::DocStr { lit } => Core::DocStr { _str: lit.clone() },
+        Node::DocStr { lit } => Core::DocStr { string: lit.clone() },
         Node::Str { lit, expressions } =>
             if expressions.is_empty() {
-                Core::Str { _str: lit.clone() }
+                Core::Str { string: lit.clone() }
             } else {
-                Core::FStr { _str: lit.clone() }
+                Core::FStr { string: lit.clone() }
             },
 
         Node::AddOp => Core::AddOp,
@@ -77,7 +77,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         },
         Node::_Self => Core::Id { lit: String::from("self") },
         Node::Init => Core::Id { lit: String::from("init") },
-        Node::Bool { lit } => Core::Bool { _bool: *lit },
+        Node::Bool { lit } => Core::Bool { boolean: *lit },
 
         Node::Tuple { elements } => Core::Tuple { elements: desugar_vec(elements, imp, state)? },
         Node::List { elements } => Core::List { elements: desugar_vec(elements, imp, state)? },
@@ -320,13 +320,13 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             let assign_state = state.assign_to(var.as_deref());
 
             Core::TryExcept {
-                setup:  if let Some(var) = var {
+                setup:   if let Some(var) = var {
                     Some(Box::from(Core::VarDef { private, var, ty, expr: None }))
                 } else {
                     None
                 },
-                _try:   Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
-                except: {
+                attempt: Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
+                except:  {
                     let mut except = Vec::new();
                     for case in cases {
                         let (cond, body) = match &case.node {

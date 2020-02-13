@@ -9,14 +9,13 @@ pub enum Core {
     },
     ImportAs {
         imports: Vec<Core>,
-        _as:     Vec<Core>
+        alias:   Vec<Core>
     },
     ClassDef {
         name:        Box<Core>,
         parents:     Vec<Core>,
         definitions: Vec<Core>
     },
-
     FunctionCall {
         function: Box<Core>,
         args:     Vec<Core>
@@ -25,7 +24,6 @@ pub enum Core {
         object:   Box<Core>,
         property: Box<Core>
     },
-
     Id {
         lit: String
     },
@@ -50,8 +48,8 @@ pub enum Core {
     FunDef {
         private: bool,
         id:      Box<Core>,
-        args:    Vec<Core>,
-        ret_ty:  Option<Box<Core>>,
+        arg:     Vec<Core>,
+        ty:      Option<Box<Core>>,
         body:    Box<Core>
     },
     FunArg {
@@ -64,11 +62,9 @@ pub enum Core {
         args: Vec<Core>,
         body: Box<Core>
     },
-
     Block {
         statements: Vec<Core>
     },
-
     Float {
         float: String
     },
@@ -80,18 +76,17 @@ pub enum Core {
         exp: String
     },
     DocStr {
-        _str: String
+        string: String
     },
     Str {
-        _str: String
+        string: String
     },
     FStr {
-        _str: String
+        string: String
     },
     Bool {
-        _bool: bool
+        boolean: bool
     },
-
     Tuple {
         elements: Vec<Core>
     },
@@ -101,14 +96,12 @@ pub enum Core {
     List {
         elements: Vec<Core>
     },
-
     GeOp,
     Ge {
         left:  Box<Core>,
         right: Box<Core>
     },
     GeqOp,
-
     Geq {
         left:  Box<Core>,
         right: Box<Core>
@@ -123,7 +116,6 @@ pub enum Core {
         left:  Box<Core>,
         right: Box<Core>
     },
-
     Not {
         expr: Box<Core>
     },
@@ -157,7 +149,6 @@ pub enum Core {
         left:  Box<Core>,
         right: Box<Core>
     },
-
     AddOp,
     Add {
         left:  Box<Core>,
@@ -202,7 +193,6 @@ pub enum Core {
     Sqrt {
         expr: Box<Core>
     },
-
     BAnd {
         left:  Box<Core>,
         right: Box<Core>
@@ -226,7 +216,6 @@ pub enum Core {
         left:  Box<Core>,
         right: Box<Core>
     },
-
     For {
         expr: Box<Core>,
         col:  Box<Core>,
@@ -247,9 +236,9 @@ pub enum Core {
         el:   Box<Core>
     },
     Ternary {
-        cond:  Box<Core>,
-        then:  Box<Core>,
-        _else: Box<Core>
+        cond: Box<Core>,
+        then: Box<Core>,
+        el:   Box<Core>
     },
     Dictionary {
         expr:  Box<Core>,
@@ -274,7 +263,6 @@ pub enum Core {
     },
     Break,
     Continue,
-
     Return {
         expr: Box<Core>
     },
@@ -282,18 +270,16 @@ pub enum Core {
         expr: Box<Core>
     },
     UnderScore,
-
     Pass,
     None,
     Empty,
     Comment {
         comment: String
     },
-
     TryExcept {
-        setup:  Option<Box<Core>>,
-        _try:   Box<Core>,
-        except: Vec<Core>
+        setup:   Option<Box<Core>>,
+        attempt: Box<Core>,
+        except:  Vec<Core>
     },
     Except {
         id:    Box<Core>,
@@ -303,7 +289,6 @@ pub enum Core {
     Raise {
         error: Box<Core>
     },
-
     With {
         resource: Box<Core>,
         expr:     Box<Core>

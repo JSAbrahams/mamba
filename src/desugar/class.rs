@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use crate::check::context::{function, function_arg};
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::desugar_result::DesugarResult;
@@ -7,9 +8,8 @@ use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
-use crate::type_checker::context::{function, function_arg};
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 /// Desugar a class.
 ///
@@ -88,7 +88,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                             id:      Box::new(Core::Id {
                                 lit: String::from(function::python::INIT)
                             }),
-                            args:    vec![Core::FunArg {
+                            arg:     vec![Core::FunArg {
                                 vararg:  false,
                                 var:     Box::new(Core::Id {
                                     lit: String::from(function_arg::python::SELF)
@@ -96,7 +96,7 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
                                 ty:      None,
                                 default: None
                             }],
-                            ret_ty:  None,
+                            ty:      None,
                             body:    Box::new(Core::Pass)
                         }]
                     } else {
@@ -132,13 +132,13 @@ fn constructor_from_inline(
     definitions: &[Core]
 ) -> DesugarResult<Vec<Core>> {
     let mut final_definitions = vec![];
-    let mut args = vec![Core::Id { lit: String::from("self") }];
+    let mut arg = vec![Core::Id { lit: String::from("self") }];
     let mut statements = Vec::from(super_calls);
 
     for inline_arg in inline_args {
         match inline_arg {
             Core::FunArg { var, .. } => {
-                args.push(inline_arg.clone());
+                arg.push(inline_arg.clone());
                 if !parent_args.contains(&var) {
                     final_definitions
                         .push(Core::Assign { left: var.clone(), right: Box::from(Core::None) })
@@ -146,7 +146,7 @@ fn constructor_from_inline(
             }
 
             Core::VarDef { var, ty, expr, .. } => {
-                args.push(Core::FunArg {
+                arg.push(Core::FunArg {
                     vararg:  false,
                     var:     var.clone(),
                     ty:      ty.clone(),
@@ -173,7 +173,7 @@ fn constructor_from_inline(
 
     let id = Box::from(Core::Id { lit: String::from("init") });
     let body = Box::from(Core::Block { statements });
-    let core_init = Core::FunDef { private: false, id, args, ret_ty: None, body };
+    let core_init = Core::FunDef { private: false, id, arg, ty: None, body };
 
     final_definitions.push(core_init);
     final_definitions.append(&mut Vec::from(definitions));
@@ -189,7 +189,7 @@ fn add_parent_to_constructor(
 
     for definition in core_definitions {
         final_definitions.push(
-            if let Core::FunDef { private, id, args, body: old_body, .. } = definition {
+            if let Core::FunDef { private, id, arg, body: old_body, .. } = definition {
                 if let Core::Id { lit, .. } = id.clone().deref() {
                     if lit == "init" {
                         if found_constructor {
@@ -213,8 +213,8 @@ fn add_parent_to_constructor(
                         Core::FunDef {
                             private: *private,
                             id: id.clone(),
-                            args: args.clone(),
-                            ret_ty: None,
+                            arg: arg.clone(),
+                            ty: None,
                             body
                         }
                     } else {

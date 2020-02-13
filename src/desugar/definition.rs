@@ -4,8 +4,8 @@ use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     // TODO augment function definition in type checker so that it has return type
@@ -36,8 +36,8 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
         Node::FunDef { id, fun_args, body: expression, private, ret_ty, .. } => Core::FunDef {
             private: *private,
             id:      Box::from(desugar_node(&id, imp, state)?),
-            args:    desugar_vec(&fun_args, imp, state)?,
-            ret_ty:  match ret_ty {
+            arg:     desugar_vec(&fun_args, imp, state)?,
+            ty:      match ret_ty {
                 Some(ret_ty) => Some(Box::from(desugar_node(ret_ty, imp, state)?)),
                 None => None
             },

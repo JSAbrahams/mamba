@@ -1,8 +1,8 @@
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::Node;
-use mamba::parser::ast::AST;
+use mamba::parse::ast::Node;
+use mamba::parse::ast::AST;
 
 #[test]
 fn tuple_verify() {
@@ -37,7 +37,7 @@ fn set_verify() {
     };
 
     assert_eq!(core_elements[0], Core::Id { lit: String::from("a") });
-    assert_eq!(core_elements[1], Core::Bool { _bool: true });
+    assert_eq!(core_elements[1], Core::Bool { boolean: true });
 }
 
 #[test]

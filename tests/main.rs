@@ -9,12 +9,12 @@ use crate::common::resource_path;
 #[macro_use]
 mod common;
 
+mod check;
 mod core;
 mod desugar;
-mod lexer;
+mod lex;
 mod output;
-mod parser;
-mod type_checker;
+mod parse;
 
 #[test]
 fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {

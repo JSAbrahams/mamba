@@ -3,7 +3,7 @@ use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::AST;
+use crate::parse::ast::AST;
 
 pub fn desugar_vec(node_vec: &[AST], imp: &mut Imports, state: &State) -> DesugarResult<Vec<Core>> {
     let mut result = vec![];

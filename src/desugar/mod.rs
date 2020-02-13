@@ -4,7 +4,7 @@ use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::AST;
+use crate::parse::ast::AST;
 
 mod call;
 mod class;
@@ -30,8 +30,8 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// # Examples
 ///
 /// ```
-/// # use mamba::parser::ast::Node;
-/// # use mamba::parser::ast::AST;
+/// # use mamba::parse::ast::Node;
+/// # use mamba::parse::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
 /// # use mamba::common::position::{CaretPos, Position};
@@ -47,8 +47,8 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// Fails if desugaring a construct which has not been implemented yet.
 ///
 /// ```rust
-/// # use mamba::parser::ast::Node;
-/// # use mamba::parser::ast::AST;
+/// # use mamba::parse::ast::Node;
+/// # use mamba::parse::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
 /// use mamba::common::position::{CaretPos, Position};

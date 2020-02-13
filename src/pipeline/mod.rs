@@ -1,11 +1,11 @@
 use std::path::Path;
 use std::path::PathBuf;
 
+use crate::check::check_all;
 use crate::core::to_source;
 use crate::desugar::desugar_all;
-use crate::lexer::tokenize_all;
-use crate::parser::parse_all;
-use crate::type_checker::check_all;
+use crate::lex::tokenize_all;
+use crate::parse::parse_all;
 
 mod io;
 

@@ -1,12 +1,12 @@
+use crate::check::context::ty::concrete::concrete_to_python;
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
-use crate::type_checker::context::ty::concrete::concrete_to_python;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {

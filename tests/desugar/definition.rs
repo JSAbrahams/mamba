@@ -1,8 +1,8 @@
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::Node;
-use mamba::parser::ast::AST;
+use mamba::parse::ast::Node;
+use mamba::parse::ast::AST;
 use std::panic;
 
 #[test]
@@ -174,7 +174,7 @@ fn fun_def_verify() {
     });
 
     let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, args, body, .. }) => (private, id, args, body),
+        Ok(Core::FunDef { private, id, arg, body, .. }) => (private, id, arg, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -219,7 +219,7 @@ fn fun_def_default_arg_verify() {
     });
 
     let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, args, body, .. }) => (private, id, args, body),
+        Ok(Core::FunDef { private, id, arg, body, .. }) => (private, id, arg, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -231,7 +231,7 @@ fn fun_def_default_arg_verify() {
         vararg:  false,
         var:     Box::from(Core::Id { lit: String::from("arg1") }),
         ty:      None,
-        default: Some(Box::from(Core::Str { _str: String::from("asdf") }))
+        default: Some(Box::from(Core::Str { string: String::from("asdf") }))
     });
     assert_eq!(*body, Core::Empty);
 }
@@ -252,7 +252,7 @@ fn fun_def_with_body_verify() {
     });
 
     let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, args, body, .. }) => (private, id, args, body),
+        Ok(Core::FunDef { private, id, arg, body, .. }) => (private, id, arg, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
@@ -283,5 +283,5 @@ fn anon_fun_verify() {
     assert_eq!(args.len(), 2);
     assert_eq!(args[0], Core::Id { lit: String::from("first") });
     assert_eq!(args[1], Core::Id { lit: String::from("second") });
-    assert_eq!(*body, Core::Str { _str: String::from("this_string") });
+    assert_eq!(*body, Core::Str { string: String::from("this_string") });
 }

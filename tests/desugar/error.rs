@@ -3,8 +3,8 @@ use std::panic;
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::Node;
-use mamba::parser::ast::AST;
+use mamba::parse::ast::Node;
+use mamba::parse::ast::AST;
 
 #[test]
 fn with_verify() {
@@ -44,8 +44,8 @@ fn handle_empty_verify() {
     let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
 
     let (setup, _try, except) = match desugar(&handle) {
-        Ok(Core::TryExcept { setup, _try, except }) =>
-            (setup.clone(), _try.clone(), except.clone()),
+        Ok(Core::TryExcept { setup, attempt, except }) =>
+            (setup.clone(), attempt.clone(), except.clone()),
         other => panic!("Expected try except but was {:?}", other)
     };
 
@@ -70,8 +70,8 @@ fn handle_verify() {
     let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
     let (setup, _try, except) = match desugar(&handle) {
-        Ok(Core::TryExcept { setup, _try, except }) =>
-            (setup.clone(), _try.clone(), except.clone()),
+        Ok(Core::TryExcept { setup, attempt, except }) =>
+            (setup.clone(), attempt.clone(), except.clone()),
         other => panic!("Expected try except but was {:?}", other)
     };
 

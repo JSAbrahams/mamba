@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::common::position::Position;
 use crate::core::construct::Core;
-use crate::parser::ast::AST;
+use crate::parse::ast::AST;
 
 pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
 pub type DesugarResults =
