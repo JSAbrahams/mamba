@@ -15,6 +15,7 @@ use crate::type_checker::constraints::generate::{gen_vec, generate};
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::function_arg::concrete::FunctionArg;
 use crate::type_checker::context::Context;
+use crate::type_checker::environment::name::Identifier;
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
 
@@ -26,6 +27,11 @@ pub fn gen_call(
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
+            if !is_reassignable(left) {
+                let msg = format!("Cannot reassign to a {}", &left.node);
+                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+            }
+
             constr.add(&Expected::from(left), &Expected::from(right));
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
@@ -167,6 +173,11 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
+            if !is_reassignable(left) {
+                let msg = format!("Cannot reassign to a {}", &left.node);
+                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+            }
+
             let left = AST {
                 pos:  left.pos.clone(),
                 node: Node::PropertyCall {
@@ -205,3 +216,6 @@ fn property_call(
         _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")])
     }
 }
+
+/// Check if AST is reassignable
+fn is_reassignable(ast: &AST) -> bool { Identifier::try_from(ast).is_ok() }
