@@ -20,22 +20,20 @@ use crate::type_checker::context::Context;
 pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {
     if let Some(constr) = &constraints.pop_constr() {
         let (left, right) = (constr.parent.clone(), constr.child.clone());
-        println!(
-            "{:width$} [unifying {}\\{}{}{}]{} {} = {}",
-            format!("({}-{})", left.pos.start, right.pos.start),
+        let pos = format!("({}-{})", left.pos.start, right.pos.start);
+        let unify = format!(
+            "[unifying {}\\{}{}{}] ",
             total - constraints.len(),
             total,
             if constr.is_flag { " (fl)" } else { "" },
-            if constr.is_sub { " (sub)" } else { "" },
-            if constr.idents.is_empty() {
-                String::new()
-            } else {
-                format!(" [iden: {}]", comma_delimited(&constr.idents))
-            },
-            left.expect,
-            right.expect,
-            width = 15
+            if constr.is_sub { " (sub)" } else { "" }
         );
+        let idens = if constr.idents.is_empty() {
+            String::new()
+        } else {
+            format!(" [iden: {}] ", comma_delimited(&constr.idents))
+        };
+        println!("{:width$} {}{}{} = {}", pos, unify, idens, left.expect, right.expect, width = 15);
 
         match (&left.expect, &right.expect) {
             // trivially equal

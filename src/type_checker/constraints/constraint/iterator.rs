@@ -13,10 +13,8 @@ pub struct Constraints {
 
 impl Constraints {
     pub fn new(constraints: &[Constraint], in_class: &[TypeName]) -> Constraints {
-        Constraints {
-            in_class:    Vec::from(in_class),
-            constraints: VecDeque::from(Vec::from(constraints))
-        }
+        let constraints = VecDeque::from(Vec::from(constraints));
+        Constraints { in_class: Vec::from(in_class), constraints }
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }

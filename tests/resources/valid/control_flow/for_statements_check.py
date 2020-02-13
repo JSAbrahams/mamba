@@ -1,6 +1,9 @@
 b = {1,2}
-for first in b:
-    print(first)
+for b in b:
+    print(b + 5)
+    new = b + 1
+    new = 30
+    print(new)
 
 b = {(1, 4), (2, 5)}
 for (first, second) in b:

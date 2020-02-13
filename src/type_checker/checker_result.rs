@@ -109,7 +109,7 @@ impl Display for TypeErr {
         if let Some(position) = self.position.clone() {
             write!(
                 f,
-                "{}\n --> {}:{}:{}\n{}{:4} | {}\n     | {}{}{}",
+                "{}\n --> {}:{}:{}\n{}{:4} | {}\n       {}{}{}",
                 msg,
                 path,
                 position.start.line,

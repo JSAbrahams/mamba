@@ -20,6 +20,11 @@ pub fn is_direct(node: &AST) -> bool {
     }
 }
 
+/// Unify expression directly.
+///
+/// Most of these constraints are generated during the generation stage.
+/// However, for newly generated constraints during the unification stage,
+/// this is necessary.
 pub fn unify_direct(
     direct: &Expected,
     expt: &Expected,

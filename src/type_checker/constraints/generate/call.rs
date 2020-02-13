@@ -7,7 +7,7 @@ use itertools::Itertools;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parser::ast::{Node, AST};
-use crate::type_checker::checker_result::TypeErr;
+use crate::type_checker::checker_result::{TypeErr, TypeResult};
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
@@ -27,11 +27,7 @@ pub fn gen_call(
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right } => {
-            if !is_reassignable(left) {
-                let msg = format!("Cannot reassign to a {}", &left.node);
-                return Err(vec![TypeErr::new(&left.pos, &msg)]);
-            }
-
+            check_reassignable(left)?;
             constr.add(&Expected::from(left), &Expected::from(right));
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
@@ -173,11 +169,7 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
-            if !is_reassignable(left) {
-                let msg = format!("Cannot reassign to a {}", &left.node);
-                return Err(vec![TypeErr::new(&left.pos, &msg)]);
-            }
-
+            check_reassignable(left)?;
             let left = AST {
                 pos:  left.pos.clone(),
                 node: Node::PropertyCall {
@@ -217,5 +209,16 @@ fn property_call(
     }
 }
 
-/// Check if AST is reassignable
-fn is_reassignable(ast: &AST) -> bool { Identifier::try_from(ast).is_ok() }
+/// Check if AST is reassignable: is reassignable if valid identifier.
+fn check_reassignable(ast: &AST) -> TypeResult<()> {
+    match &ast.node {
+        Node::PropertyCall { property, .. } => check_reassignable(property),
+        _ =>
+            if Identifier::try_from(ast).is_ok() {
+                Ok(())
+            } else {
+                let msg = format!("Cannot reassign to {}", &ast.node);
+                Err(vec![TypeErr::new(&ast.pos, &msg)])
+            },
+    }
+}
