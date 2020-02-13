@@ -1,6 +1,8 @@
 use crate::common::delimit::comma_delimited;
 use crate::type_checker::constraints::constraint::expected::Expect::{Access, Collection,
-                                                                     Expression, Function, Type};
+                                                                     Expression, Function,
+                                                                     Nullable, Stringy, Truthy,
+                                                                     Type};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 use crate::type_checker::constraints::constraint::Constraint;
 use crate::type_checker::constraints::unify::unify_direct::{is_direct, unify_direct};
@@ -56,9 +58,12 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             (_, Expression { .. }) =>
                 unify_expression(constr, &right, &left, constraints, ctx, total),
 
-            (Type { .. }, _) | (Collection { .. }, Collection { .. }) =>
+            (Type { .. }, _) | (_, Stringy) | (_, Truthy) | (_, Nullable) =>
                 unify_type(&left, &right, constraints, ctx, total),
-            (_, Type { .. }) => unify_type(&right, &left, constraints, ctx, total),
+            (_, Type { .. }) | (Stringy, _) | (Truthy, _) | (Nullable, _) =>
+                unify_type(&right, &left, constraints, ctx, total),
+            (Collection { .. }, Collection { .. }) =>
+                unify_type(&right, &left, constraints, ctx, total),
 
             _ => {
                 let mut constr = reinsert(constraints, &constr, total)?;

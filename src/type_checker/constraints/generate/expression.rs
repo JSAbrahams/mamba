@@ -3,7 +3,7 @@ use crate::type_checker::checker_result::TypeErr;
 use crate::type_checker::constraints::constraint::builder::ConstrBuilder;
 use crate::type_checker::constraints::constraint::expected::Expect::*;
 use crate::type_checker::constraints::constraint::expected::Expected;
-use crate::type_checker::constraints::generate::definition::constrain_args;
+use crate::type_checker::constraints::generate::definition::{constrain_args, identifier_from_var};
 use crate::type_checker::constraints::generate::generate;
 use crate::type_checker::constraints::Constrained;
 use crate::type_checker::context::Context;
@@ -21,9 +21,14 @@ pub fn gen_expr(
             let (mut constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &mut constr)
         }
-        Node::Id { lit } if env.get_var(lit).is_some() => Ok((constr.clone(), env.clone())),
         Node::Id { lit } =>
-            Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))]),
+            if env.is_define_mode {
+                identifier_from_var(ast, &None, &None, false, ctx, constr, env)
+            } else if env.get_var(lit).is_some() {
+                Ok((constr.clone(), env.clone()))
+            } else {
+                Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))])
+            },
         Node::Question { left, right } => {
             constr.add(&Expected::from(left), &Expected::new(&left.pos, &Nullable));
             let (mut constr, env) = generate(left, env, ctx, constr)?;

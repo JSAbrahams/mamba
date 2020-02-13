@@ -46,7 +46,7 @@ impl Display for Node {
             Node::ConstructorCall { .. } => String::from("constructor call"),
             Node::FunctionCall { .. } => String::from("function call"),
             Node::PropertyCall { .. } => String::from("property call"),
-            Node::Id { lit } => format!("id: '{}'", lit),
+            Node::Id { lit } => format!("id:'{}'", lit),
             Node::ExpressionType { .. } => String::from("expression type"),
             Node::TypeDef { .. } => String::from("type definition"),
             Node::TypeAlias { .. } => String::from("type alias"),

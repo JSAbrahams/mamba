@@ -13,6 +13,7 @@ pub mod name;
 pub struct Environment {
     pub in_loop: bool,
     pub last_stmt_in_function: bool,
+    pub is_define_mode: bool,
     pub return_type: Option<Expected>,
     pub raises: Option<Expected>,
     pub class_type: Option<Expect>,
@@ -23,6 +24,7 @@ impl Default for Environment {
     fn default() -> Self {
         Environment {
             in_loop: false,
+            is_define_mode: false,
             last_stmt_in_function: false,
             return_type: None,
             raises: None,
@@ -40,6 +42,13 @@ impl Environment {
     pub fn in_class(&self, class: &Expected) -> Environment {
         let env = self.insert_var(false, &String::from(SELF), class);
         Environment { class_type: Some(class.expect.clone()), ..env }
+    }
+
+    /// Sets environment into define mode.
+    ///
+    /// Causes all identifiers to be treated as definitions.
+    pub fn define_mode(&self) -> Environment {
+        Environment { is_define_mode: true, ..self.clone() }
     }
 
     /// Insert a variable.

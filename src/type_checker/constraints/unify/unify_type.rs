@@ -19,8 +19,8 @@ pub fn unify_type(
     total: usize
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (Type { .. }, ExpressionAny) | (Truthy, ExpressionAny) | (Stringy, ExpressionAny) =>
-            unify_link(constraints, ctx, total),
+        (_, ExpressionAny) => unify_link(constraints, ctx, total),
+        (ExpressionAny, _) => unify_link(constraints, ctx, total),
 
         (Type { type_name }, Truthy) => {
             let expr_ty = ctx.lookup(type_name, &left.pos)?;

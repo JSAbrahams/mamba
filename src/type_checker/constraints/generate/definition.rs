@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -13,7 +14,6 @@ use crate::type_checker::context::{ty, Context};
 use crate::type_checker::environment::name::{match_type, Identifier};
 use crate::type_checker::environment::Environment;
 use crate::type_checker::ty_name::TypeName;
-use std::collections::HashSet;
 
 pub fn gen_def(
     ast: &AST,
@@ -132,23 +132,15 @@ pub fn identifier_from_var(
     let var_expect = Expected::from(var);
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
-            let type_name = TypeName::try_from(ty.deref())?;
-            constr.add_with_identifier(
-                &var_expect,
-                &Expected::new(&ty.pos, &Type { type_name }),
-                &names
-            );
+            let ty_exp = Type { type_name: TypeName::try_from(ty.deref())? };
+            constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
             let expr_expect = Expected::from(expr);
             constr.add(&var_expect, &expr_expect);
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
-            let type_name = TypeName::try_from(ty.deref())?;
-            constr.add_with_identifier(
-                &var_expect,
-                &Expected::new(&ty.pos, &Type { type_name }),
-                &names
-            );
+            let ty_exp = Type { type_name: TypeName::try_from(ty.deref())? };
+            constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
             Ok((constr, env))
         }
         (None, Some(expr)) => {

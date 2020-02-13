@@ -80,7 +80,8 @@ pub fn gen_flow(
         Node::For { expr, col, body } => {
             constr.new_set(true);
             let mut constr = constr_col(col, constr);
-            let (mut constr, env) = gen_collection_lookup(expr, &col, env, &mut constr)?;
+            let (mut constr, env) =
+                gen_collection_lookup(expr, &col, &env.define_mode(), &mut constr)?;
             let (mut constr, env) = generate(col, &env, ctx, &mut constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;
