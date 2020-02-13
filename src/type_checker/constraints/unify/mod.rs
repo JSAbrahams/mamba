@@ -7,8 +7,12 @@ use crate::type_checker::context::Context;
 use crate::type_checker::util::custom_delimited;
 use itertools::Itertools;
 
-mod substitute;
 mod unify_link;
+
+mod unify_direct;
+mod unify_expression;
+mod unify_function;
+mod unify_type;
 
 pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Constraints>> {
     let mut count = 1;

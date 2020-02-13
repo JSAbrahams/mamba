@@ -1,62 +1,33 @@
-use crate::common::position::Position;
-use crate::parser::ast::{Node, AST};
-use crate::type_checker::checker_result::{TypeErr, TypeResult};
-use crate::type_checker::constraints::constraint::expected::Expect::{Collection, Expression,
-                                                                     ExpressionAny, Nullable,
-                                                                     Statement, Stringy, Truthy,
-                                                                     Type};
+use crate::type_checker::checker_result::TypeResult;
 use crate::type_checker::constraints::constraint::expected::{Expect, Expected};
 use crate::type_checker::constraints::constraint::iterator::Constraints;
 
 /// Substitute old expression with new
 ///
-/// Identifiers signals when we should stop substituting variables.
-///
-/// If old is a type, and new is an expression, we instead substitute new with
-/// old. This is done to prevent substituting back in expressions after for
-/// instance we conclude two sides of a constraint are trivially equal.
-///
-/// Also checks for expected nested within expected.
-/// Does not, however, recursively traverse AST to check if they contain an AST.
+/// identifiers is used to signal when we should stop substituting.
+/// Namely, if we encounter an indentifier in a constraint, we abort
+/// substitution and copy over all remaining constraints.
 pub fn substitute(
     identifiers: &[String],
     old: &Expected,
     new: &Expected,
-    constr: &Constraints,
-    pos: &Position
+    constr: &Constraints
 ) -> TypeResult<Constraints> {
-    let mut constr = constr.clone();
-    let (old, new) = match (&old.expect, &new.expect) {
-        (Type { type_name: lt }, Type { type_name: rt }) if lt != rt => {
-            let msg = format!("Tried to substitute {} with {}", lt, rt);
-            return Err(vec![TypeErr::new(pos, &msg)]);
-        }
-        (Truthy, _)
-        | (Collection { .. }, _)
-        | (ExpressionAny, Expression { .. })
-        | (_, Expression { ast: AST { node: Node::Id { .. }, .. } })
-        | (Stringy, _)
-        | (Nullable, _)
-        | (Statement, _) => (new, old),
-        _ => (old, new)
-    };
-
-    let (old, new) = if let Type { .. } = &old.expect { (new, old) } else { (old, new) };
-
     // TODO deal with tuples of identifiers
+    let mut constr = constr.clone();
     let mut encountered = false;
     let mut substituted = Constraints::new(&[], &constr.in_class);
+
     while let Some(mut constraint) = constr.pop_constr() {
         encountered = encountered
-            || !constraint.identifiers.is_empty()
-                && constraint.identifiers == Vec::from(identifiers);
+            || !constraint.idents.is_empty() && constraint.idents == Vec::from(identifiers);
         if !encountered {
             let (sub_l, parent) = recursive_substitute("l", &constraint.parent, old, new);
             let (sub_r, child) = recursive_substitute("r", &constraint.child, old, new);
 
             constraint.parent = parent;
             constraint.child = child;
-            constraint.substituted = constraint.substituted || sub_l || sub_r;
+            constraint.is_sub = constraint.is_sub || sub_l || sub_r;
         }
 
         substituted.push_constr(&constraint)
@@ -118,7 +89,7 @@ fn recursive_substitute(
 
 fn structurally_eq_not_type(inspected: &Expect, old: &Expect) -> bool {
     match inspected {
-        Type { .. } => false,
-        inspected => inspected.structurally_eq(&old) && inspected != &Truthy
+        Expect::Type { .. } => false,
+        inspected => inspected.structurally_eq(&old) && inspected != &Expect::Truthy
     }
 }

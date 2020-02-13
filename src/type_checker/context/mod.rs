@@ -191,3 +191,31 @@ fn resource(resource: &str) -> PathBuf {
         .join("resources")
         .join(resource)
 }
+
+pub fn check_if_parent(
+    field: &TypeName,
+    in_class: &Vec<TypeName>,
+    object_class: &TypeName,
+    ctx: &Context,
+    pos: &Position
+) -> TypeResult<()> {
+    let mut in_a_parent = false;
+    for class in in_class {
+        let is_parent = ctx.lookup(&class, pos)?.has_parent(object_class, ctx, pos)?;
+        in_a_parent = in_a_parent || is_parent;
+        if in_a_parent {
+            break;
+        }
+    }
+
+    if in_a_parent {
+        Ok(())
+    } else {
+        let msg = if let Some(class) = in_class.last() {
+            format!("Cannot access private {} of a {} while in a {}", field, object_class, class)
+        } else {
+            format!("Cannot access private {} of a {}", field, object_class)
+        };
+        Err(vec![TypeErr::new(pos, &msg)])
+    }
+}

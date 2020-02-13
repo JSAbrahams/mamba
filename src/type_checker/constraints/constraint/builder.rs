@@ -70,7 +70,7 @@ impl ConstrBuilder {
 
     pub fn add_with_identifier(&mut self, left: &Expected, right: &Expected, iden: &[String]) {
         let mut constr = Constraint::new(left, right);
-        constr.identifiers.append(&mut Vec::from(iden));
+        constr.idents.append(&mut Vec::from(iden));
         self.constraints[self.level].1.push(constr);
     }
 
