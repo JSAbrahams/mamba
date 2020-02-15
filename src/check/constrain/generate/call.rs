@@ -10,6 +10,7 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::generate::{gen_vec, generate};
 use crate::check::constrain::Constrained;
 use crate::check::context::arg::FunctionArg;
+use crate::check::context::name::Name;
 use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
@@ -33,7 +34,7 @@ pub fn gen_call(
             generate(left, &env, ctx, &mut constr)
         }
         Node::ConstructorCall { name, args } => {
-            let c_name = ty::Type::try_from(name.deref())?;
+            let c_name = Name::try_from(name.deref())?;
             let possible_args = ctx.lookup_class(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
             let self_type = Type { ty: c_name };
 

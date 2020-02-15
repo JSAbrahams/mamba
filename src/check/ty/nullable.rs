@@ -54,7 +54,7 @@ impl NullableType {
             Single(..) => {
                 let class = ctx.lookup_class(&self.name, pos)?;
                 let function = class.function(name, pos)?;
-                function.args_compatible(args, pos)?;
+                function.args_compatible(args, ctx, pos)?;
                 Ok((function.raises, function.ret_ty))
             }
             Tuple(..) => {

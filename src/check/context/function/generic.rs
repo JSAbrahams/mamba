@@ -20,7 +20,7 @@ pub struct GenericFunction {
     pub arguments:  Vec<GenericFunctionArg>,
     pub raises:     NameUnion,
     pub in_class:   Option<Name>,
-    pub ret_ty:     NameUnion
+    pub ret_ty:     Option<NameUnion>
 }
 
 impl Hash for GenericFunction {

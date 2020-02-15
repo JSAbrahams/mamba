@@ -7,11 +7,12 @@ use std::hash::{Hash, Hasher};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::name::{Name, NameUnion};
-use crate::check::context::{arg, function};
+use crate::check::context::{arg, function, Context};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::check::ty::Type;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
+use itertools::{EitherOrBoth, Itertools};
 
 pub const INIT: &str = "init";
 
@@ -132,7 +133,39 @@ impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function
 }
 
 impl Function {
-    pub fn args_compatible(&self, args: &[Type], pos: &Position) -> TypeResult<()> {
-        unimplemented!()
+    pub fn args_compatible(&self, args: &[Type], ctx: &Context, pos: &Position) -> TypeResult<()> {
+        for pair in self.arguments.iter().zip_longest(args) {
+            match pair {
+                EitherOrBoth::Both(fun_param, arg) =>
+                    if let Some(param_ty_name) = &fun_param.ty {
+                        let arg_ty = Type::from(&ctx.lookup_union(param_ty_name, pos)?);
+                        if !arg_ty.is_superset(arg) {
+                            let msg = format!(
+                                "'{}' given to argument {}, which expected a '{}'",
+                                arg, fun_param, arg_ty
+                            );
+                            return Err(vec![TypeErr::new(pos, &msg)]);
+                        }
+                    } else {
+                        let msg = format!("Type of function parameter {} unknown.", fun_param);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    },
+                EitherOrBoth::Left(fun_param) =>
+                    if !fun_param.has_default {
+                        let msg = format!("Expected an argument for {}.", fun_param);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    },
+                EitherOrBoth::Right(_) => {
+                    let msg = format!(
+                        "{} arguments given to {}\nExpected at most {} arguments.",
+                        args.len(),
+                        self,
+                        self.arguments.len()
+                    );
+                    return Err(vec![TypeErr::new(pos, &msg)]);
+                }
+            }
+        }
+        Ok(())
     }
 }
