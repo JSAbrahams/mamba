@@ -58,7 +58,7 @@ pub fn parse_generics(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     Ok(generics)
 }
 
-fn parse_generic(it: &mut LexIterator) -> ParseResult {
+pub fn parse_generic(it: &mut LexIterator) -> ParseResult {
     let start = &it.start_pos("generic")?;
     let id = it.parse(&parse_id, "generic", start)?;
     let isa = it.parse_if(&Token::IsA, &parse_id, "generic", start)?;

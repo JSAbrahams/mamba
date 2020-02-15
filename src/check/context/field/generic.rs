@@ -2,8 +2,10 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::ident::{match_type, Identifier};
+use crate::check::context::name::{Name, NameUnion};
+use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::check::ty::name::util::match_type;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -16,20 +18,20 @@ pub struct GenericField {
     pub pos:        Position,
     pub private:    bool,
     pub mutable:    bool,
-    pub in_class:   Option<TypeName>,
-    pub type_name:  Option<TypeName>
+    pub in_class:   Option<Name>,
+    pub type_name:  Option<NameUnion>
 }
 
 pub struct GenericFields {
     pub fields: HashSet<GenericField>
 }
 
-impl PartialEq for GenericField {
-    fn eq(&self, other: &Self) -> bool { self.name == other.name }
-}
-
 impl Hash for GenericField {
     fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+}
+
+impl PartialEq for GenericField {
+    fn eq(&self, other: &Self) -> bool { self.name == other.name }
 }
 
 impl TryFrom<&AST> for GenericField {

@@ -6,7 +6,8 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::unify_link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::{check_if_parent, Context};
+use crate::check::context::util::check_is_parent;
+use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
@@ -23,7 +24,7 @@ pub fn unify_function(
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { type_name }) => {
-            let expr_ty = ctx.lookup(type_name, &left.pos)?;
+            let expr_ty = ctx.lookup_class(type_name, &left.pos)?;
             let functions = expr_ty.anon_fun_params(&left.pos)?;
 
             let mut count = 0;
@@ -55,10 +56,11 @@ pub fn unify_function(
             if let Type { type_name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
-                        let field = ctx.lookup(entity_name, &left.pos)?.field(name, &left.pos)?;
+                        let field =
+                            ctx.lookup_class(entity_name, &left.pos)?.field(name, &left.pos)?;
                         if field.private {
                             let name = TypeName::new(&field.name, &[]);
-                            check_if_parent(
+                            check_is_parent(
                                 &name,
                                 &constraints.in_class,
                                 entity_name,
@@ -75,13 +77,13 @@ pub fn unify_function(
                         unify_link(constraints, ctx, total)
                     }
                     Function { name, args } => {
-                        let expr_ty = ctx.lookup(entity_name, &left.pos)?;
+                        let expr_ty = ctx.lookup_class(entity_name, &left.pos)?;
                         let possible_fun = expr_ty.function(&name, &left.pos)?;
 
                         for function in &possible_fun {
                             if function.private {
                                 let name = TypeName::from(&function.name);
-                                check_if_parent(
+                                check_is_parent(
                                     &name,
                                     &constraints.in_class,
                                     &entity_name,

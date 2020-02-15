@@ -3,22 +3,25 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::field::generic::GenericField;
+use crate::check::context::name::Name;
 use crate::check::result::TypeErr;
-use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use std::fmt;
 
 pub mod generic;
 pub mod python;
 
+/// A Field, which may either be top-level, or optionally within a class.
+///
+/// May have a type.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Field {
     pub is_py_type: bool,
     pub name:       String,
     pub private:    bool,
     pub mutable:    bool,
-    pub in_class:   Option<TypeName>,
-    pub ty:         Option<TypeName>
+    pub in_class:   Option<Name>,
+    pub ty:         Option<Name>
 }
 
 impl Display for Field {
@@ -32,11 +35,11 @@ impl Display for Field {
     }
 }
 
-impl TryFrom<(&GenericField, &HashMap<String, TypeName>, &Position)> for Field {
+impl TryFrom<(&GenericField, &HashMap<String, Name>, &Position)> for Field {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (field, generics, pos): (&GenericField, &HashMap<String, TypeName>, &Position)
+        (field, generics, pos): (&GenericField, &HashMap<String, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,

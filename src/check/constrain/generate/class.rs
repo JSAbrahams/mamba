@@ -55,7 +55,7 @@ pub fn constrain_class_body(
     let class_ty_exp = Type { type_name: class_name.clone() };
     res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
 
-    let all_fields = ctx.lookup(&class_name, &ty.pos)?.fields(&ty.pos)?;
+    let all_fields = ctx.lookup_class(&class_name, &ty.pos)?.fields(&ty.pos)?;
     for fields in all_fields {
         for field in fields {
             res = property_from_field(&ty.pos, &field, &class_name, &res.1, &mut res.0)?;

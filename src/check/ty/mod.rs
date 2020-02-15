@@ -1,173 +1,103 @@
-use std::fmt;
+use core::fmt;
+use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
+use std::ops::Deref;
 
-use crate::check::context::arg::FunctionArg;
-use crate::check::context::field::Field;
-use crate::check::context::function::Function;
-use crate::check::context::Context;
+use crate::check::context::name::{Name, NameUnion};
+use crate::check::context::{clss, Context};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
+use crate::check::ty::actual::ActualType;
+use crate::check::ty::name::actual::ActualTypeName;
+use crate::check::ty::name::nullable::NullableTypeName;
 use crate::check::ty::nullable::NullableType;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
-use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
+use crate::parse::ast::{Node, AST};
 
-pub mod name;
+pub mod util;
 
-pub mod actual;
-pub mod nullable;
+mod actual;
+mod nullable;
 
-#[derive(Clone, Eq, Debug)]
-pub enum Type {
-    Single { ty: NullableType },
-    Union { union: HashSet<NullableType> }
+/// A Type is the actual type of an expression.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Type {
+    union: HashSet<NullableType>
 }
 
 impl Hash for Type {
-    /// Hash ExpressionType
-    ///
-    /// Due to ExpressionTypes containing HashSets, the runtime is O(n) instead
-    /// of O(1).
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match &self {
-            Type::Single { ty } => ty.hash(state),
-            Type::Union { union } => union.iter().for_each(|ty| ty.hash(state))
-        }
-    }
-}
-
-impl PartialEq for Type {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Type::Single { ty }, Type::Single { ty: other }) => ty == other,
-            (Type::Union { union }, Type::Union { union: other }) => union == other,
-            _ => false
-        }
-    }
-}
-
-impl From<&NullableType> for Type {
-    fn from(nullable_type: &NullableType) -> Self { Type::Single { ty: nullable_type.clone() } }
+    fn hash<H: Hasher>(&self, state: &mut H) { self.union.iter().for_each(|ty| ty.hash(state)) }
 }
 
 impl Display for Type {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Type::Single { ty } => write!(f, "{}", ty),
-            Type::Union { union } => write!(f, "{{{}}}", comma_delimited(union))
+        if self.union.is_empty() {
+            write!(f, "()")
+        } else if self.union.len() == 1 {
+            write!(f, "{}", self.union[0])
+        } else {
+            write!(f, "{{{}}}", comma_delimited(self.union))
         }
     }
 }
 
+impl TryFrom<&Box<AST>> for Type {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(value: &Box<AST>) -> Result<Self, Self::Error> { Type::try_from(value.deref()) }
+}
+
+impl TryFrom<&AST> for Type {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(ast: &AST) -> TypeResult<Type> {
+        let union = if let Node::TypeUnion { types } = &ast.node {
+            types.iter().map(NullableType::try_from).collect()?
+        } else {
+            HashSet::from_iter(vec![NullableType::try_from(ast)?])
+        };
+        Ok(Type { union })
+    }
+}
+
+impl From<&str> for Type {
+    fn from(name: &str) -> Type { Type::new(name, &[]) }
+}
+
 impl Type {
-    pub fn has_parent(
+    pub fn new(lit: &str, generics: &[Type]) -> Type {
+        let nullable_type = NullableType {
+            is_nullable: lit == clss::NONE,
+            actual:      ActualType::Single { name: Name::new(lit, generics) }
+        };
+        Type { union: HashSet::from_iter(vec![nullable]) }
+    }
+
+    pub fn union(&self, other: &Type) -> Type {
+        Type { union: self.union.union(&other.union).collect() }
+    }
+
+    pub fn is_nullable(&self) -> bool { self.union.iter().all(|t| t.is_nullable) }
+
+    pub fn is_superset(&self, other: &Type) -> bool {
+        self.union.iter().all(|t| other.union.iter().all(|ot| t.is_superset(ot)))
+    }
+
+    /// Check if type implements a certain function.
+    ///
+    /// If type does implement function, set of all possible NameUnions returned
+    /// of the function raises and return types. The first item in the tuple
+    /// is what the function may raise. The second item is what the function
+    /// may return.
+    pub fn function(
         &self,
-        type_name: &TypeName,
+        args: &[Type],
         ctx: &Context,
         pos: &Position
-    ) -> TypeResult<bool> {
-        // As an extra precaution
-        self.has_parent_checked(type_name, &HashSet::new(), ctx, pos)
-    }
-
-    pub fn has_parent_checked(
-        &self,
-        type_name: &TypeName,
-        checked: &HashSet<TypeName>,
-        ctx: &Context,
-        pos: &Position
-    ) -> TypeResult<bool> {
-        if checked.contains(type_name) {
-            // Should be checked during a pass of context
-            let msg = format!("Circular dependency detected: {} is a parent of itself", type_name);
-            return Err(vec![TypeErr::new(pos, &msg)]);
-        }
-
-        let mut checked = checked.clone();
-        checked.insert(type_name.clone());
-
-        match &self {
-            Type::Single { ty } => ty.actual_ty().has_parent(type_name, &checked, ctx, pos),
-            Type::Union { union } => {
-                let bools: Vec<bool> = union
-                    .iter()
-                    .map(|t| t.actual_ty().has_parent(type_name, &checked, ctx, pos))
-                    .collect::<Result<_, _>>()?;
-                Ok(bools.iter().all(|b| *b))
-            }
-        }
-    }
-
-    pub fn fields(&self, pos: &Position) -> TypeResult<Vec<HashSet<Field>>> {
-        match &self {
-            Type::Single { ty } => {
-                let mut all_fields = Vec::new();
-                all_fields.push(ty.actual_ty().fields(pos)?);
-                Ok(all_fields)
-            }
-            Type::Union { union } => union.iter().map(|ty| ty.actual_ty().fields(pos)).collect()
-        }
-    }
-
-    pub fn anon_fun_params(
-        &self,
-        pos: &Position
-    ) -> TypeResult<HashSet<(Vec<TypeName>, TypeName)>> {
-        match &self {
-            Type::Single { ty } => {
-                let mut set = HashSet::new();
-                set.insert(ty.actual_ty().anon_fun_params(pos)?);
-                Ok(set)
-            }
-            Type::Union { union } =>
-                union.iter().map(|ty| ty.actual_ty().anon_fun_params(pos)).collect::<Result<_, _>>(),
-        }
-    }
-
-    pub fn field(&self, field: &str, pos: &Position) -> TypeResult<Field> {
-        match &self {
-            Type::Single { ty: mut_ty } => mut_ty.actual_ty().field(field, pos),
-            Type::Union { union } => {
-                let union: Vec<Field> = union
-                    .iter()
-                    .map(|e_ty| e_ty.actual_ty().field(field, pos))
-                    .collect::<Result<_, _>>()?;
-                let first = union.get(0);
-                let msg = format!("Unknown field, {} does not have field {}", self, field);
-                if union.iter().all(|e_ty| Some(e_ty) == first) {
-                    Ok(first.cloned().ok_or_else(|| vec![TypeErr::new(pos, &msg)])?)
-                } else {
-                    Err(vec![TypeErr::new(pos, &msg)])
-                }
-            }
-        }
-    }
-
-    pub fn function(&self, name: &TypeName, pos: &Position) -> TypeResult<HashSet<Function>> {
-        match &self {
-            Type::Single { ty } => ty.actual_ty().function(name, pos),
-            Type::Union { union } => {
-                let funs: Vec<Result<HashSet<_>, _>> =
-                    union.into_iter().map(|t| t.actual_ty().function(name, pos)).collect();
-                let res: Vec<HashSet<Function>> = funs.into_iter().collect::<Result<_, _>>()?;
-                Ok(res.into_iter().flatten().collect())
-            }
-        }
-    }
-
-    pub fn constructor_args(&self, pos: &Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
-        match &self {
-            Type::Single { ty } => {
-                let mut possible_args: HashSet<Vec<FunctionArg>> = HashSet::new();
-                possible_args.insert(ty.constructor_args(pos)?);
-                Ok(possible_args)
-            }
-            Type::Union { union } => {
-                let constructor: HashSet<Vec<FunctionArg>> =
-                    union.iter().map(|ty| ty.constructor_args(pos)).collect::<Result<_, _>>()?;
-                Ok(constructor)
-            }
-        }
+    ) -> TypeResult<HashSet<(NameUnion, Option<NameUnion>)>> {
+        unimplemented!()
     }
 }

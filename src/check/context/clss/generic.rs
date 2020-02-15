@@ -9,10 +9,10 @@ use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
+use crate::check::context::name::Name;
 use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -20,7 +20,7 @@ use crate::parse::ast::{Node, AST};
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
     pub is_py_type: bool,
-    pub name:       ActualTypeName,
+    pub name:       Name,
     pub pos:        Position,
     pub concrete:   bool,
     pub args:       Vec<GenericFunctionArg>,
@@ -98,7 +98,7 @@ impl TryFrom<&AST> for GenericClass {
 
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
                 if let Some(function) =
-                    functions.iter().find(|f| f.name == ActualTypeName::new(INIT, &[]))
+                    functions.iter().find(|f| f.name == TypeName::new(INIT, &[]))
                 {
                     if class_args.is_empty() {
                         class_args.append(&mut function.arguments.clone())
@@ -195,9 +195,7 @@ impl TryFrom<&AST> for GenericClass {
     }
 }
 
-fn get_name_and_generics(
-    _type: &AST
-) -> Result<(ActualTypeName, Vec<GenericParameter>), Vec<TypeErr>> {
+fn get_name_and_generics(_type: &AST) -> Result<(TypeName, Vec<GenericParameter>), Vec<TypeErr>> {
     match &_type.node {
         Node::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
@@ -209,7 +207,7 @@ fn get_name_and_generics(
             let generics = generics.into_iter().map(Result::unwrap).collect::<Vec<_>>();
             let names: Vec<TypeName> =
                 generics.iter().map(|g| TypeName::from(g.name.as_str())).collect();
-            let name = ActualTypeName::new(
+            let name = TypeName::new(
                 match &id.node {
                     Node::Id { lit } => lit.clone(),
                     _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
@@ -225,7 +223,7 @@ fn get_name_and_generics(
 }
 
 fn get_fields_and_functions(
-    class: &ActualTypeName,
+    class: &TypeName,
     statements: &[AST],
     type_def: bool
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {

@@ -1,7 +1,7 @@
 use python_parser::ast::Expression;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::ty::name::TypeName;
+use crate::check::context::name::NameUnion;
 
 pub const SELF: &str = "self";
 
@@ -16,7 +16,7 @@ impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFuncti
             pos:         Default::default(),
             vararg:      false,
             mutable:     false,
-            ty:          ty.clone().map(|e| TypeName::from(&e))
+            ty:          ty.clone().map(|e| NameUnion::from(&e))
         }
     }
 }

@@ -23,20 +23,20 @@ pub fn unify_type(
         (ExpressionAny, _) => unify_link(constraints, ctx, total),
 
         (Type { type_name }, Truthy) => {
-            let expr_ty = ctx.lookup(type_name, &left.pos)?;
+            let expr_ty = ctx.lookup_class(type_name, &left.pos)?;
             expr_ty.function(&TypeName::from(function::TRUTHY), &left.pos)?;
             unify_link(constraints, ctx, total)
         }
         (Type { type_name }, Stringy) => {
-            let expr_ty = ctx.lookup(type_name, &left.pos)?;
+            let expr_ty = ctx.lookup_class(type_name, &left.pos)?;
             expr_ty.function(&TypeName::from(function::STR), &left.pos)?;
             unify_link(constraints, ctx, total)
         }
         (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
             if l_ty.is_superset(r_ty)
-                || ctx.lookup(&r_ty, &right.pos)?.has_parent(&l_ty, ctx, &left.pos)?
+                || ctx.lookup_class(&r_ty, &right.pos)?.has_parent(&l_ty, ctx, &left.pos)?
             {
-                ctx.lookup(l_ty, &left.pos)?;
+                ctx.lookup_class(l_ty, &left.pos)?;
                 unify_link(constraints, ctx, total)
             } else {
                 // TODO construct error based on type of constraint
@@ -97,12 +97,12 @@ fn check_iter(
     let f_name = TypeName::from(function::ITER);
     let mut added = 0;
 
-    for fun in ctx.lookup(type_name, pos)?.function(&f_name, pos)? {
+    for fun in ctx.lookup_class(type_name, pos)?.function(&f_name, pos)? {
         let msg = format!("{} __iter__ type undefined", type_name);
         let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
 
         let f_name = TypeName::from(function::NEXT);
-        for fun in ctx.lookup(&f_ret_ty, pos)?.function(&f_name, pos)? {
+        for fun in ctx.lookup_class(&f_ret_ty, pos)?.function(&f_name, pos)? {
             let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
             added += 1;
             constr.eager_push(

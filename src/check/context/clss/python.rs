@@ -11,7 +11,6 @@ use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::{clss, function};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 
@@ -58,21 +57,19 @@ impl TryFrom<&Classdef> for GenericClass {
             }
         }
 
-        let name =
-            ActualTypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
-        let class = TypeName::from(&name);
+        let class = TypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
             .map(|f| f.in_class(Some(&class), false, &Position::default()))
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
-            .find(|f| f.name == ActualTypeName::new(function::INIT, &[]))
+            .find(|f| f.name == TypeName::new(function::INIT, &[]))
             .map_or(vec![], |f| f.arguments.clone());
 
         Ok(GenericClass {
             is_py_type: true,
-            name: name.clone(),
+            name: class.clone(),
             pos: Position::default(),
             concrete: false,
             args,
@@ -80,7 +77,7 @@ impl TryFrom<&Classdef> for GenericClass {
             fields,
             functions: functions
                 .into_iter()
-                .map(|f| f.in_class(Some(&TypeName::from(&name)), false, &Position::default()))
+                .map(|f| f.in_class(Some(&class), false, &Position::default()))
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect()

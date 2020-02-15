@@ -2,15 +2,15 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Error, Formatter};
 use std::ops::Deref;
 
+use crate::check::context::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GenericParameter {
     pub is_py_type: bool,
     pub name:       String,
-    pub parent:     Option<TypeName>
+    pub parent:     Option<Name>
 }
 
 impl Display for GenericParameter {
@@ -37,7 +37,7 @@ impl TryFrom<&AST> for GenericParameter {
                 Some(isa) => Ok(GenericParameter {
                     is_py_type: false,
                     name:       parameter_name(id.deref())?,
-                    parent:     Some(TypeName::try_from(isa.deref())?)
+                    parent:     Some(Name::try_from(isa.deref())?)
                 }),
                 None => Ok(GenericParameter {
                     is_py_type: false,

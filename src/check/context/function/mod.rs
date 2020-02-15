@@ -1,5 +1,4 @@
-use crate::check::ty::name::TypeName;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -7,9 +6,9 @@ use std::hash::{Hash, Hasher};
 
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::name::{Name, NameUnion};
 use crate::check::context::{arg, function};
 use crate::check::result::TypeErr;
-use crate::check::ty::name::actual::ActualTypeName;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
@@ -38,39 +37,34 @@ pub const ITER: &str = function::python::ITER;
 pub mod generic;
 pub mod python;
 
+/// A Function, which may either be top-level, or optionally within a class.
+///
+/// May return any Name within ret_ty.
+/// May raise any Name within raises.
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
     pub is_py_type:   bool,
-    pub name:         ActualTypeName,
+    pub name:         Name,
     pub self_mutable: Option<bool>,
     pub private:      bool,
     pub pure:         bool,
     pub arguments:    Vec<FunctionArg>,
-    pub raises:       HashSet<ActualTypeName>,
-    pub in_class:     Option<TypeName>,
-    ret_ty:           Option<TypeName>
+    pub raises:       NameUnion,
+    pub in_class:     Option<Name>,
+    pub ret_ty:       NameUnion
 }
 
 impl Hash for Function {
-    /// Hash Function, which ignores whether function is Python type or not.
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
-        self.self_mutable.hash(state);
-        self.pure.hash(state);
         self.arguments.hash(state);
-        self.raises.iter().for_each(|a| a.hash(state));
-        self.ret_ty.hash(state);
+        self.ret_ty.hash(state)
     }
 }
 
 impl PartialEq for Function {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-            && self.self_mutable == other.self_mutable
-            && self.pure == other.pure
-            && self.arguments == other.arguments
-            && self.raises == other.raises
-            && self.ret_ty == other.ret_ty
+        self.name == other.name && self.arguments == other.arguments && self.ret_ty == other.ret_ty
     }
 }
 
@@ -91,15 +85,11 @@ impl Display for Function {
     }
 }
 
-impl Function {
-    pub fn ty(&self) -> Option<TypeName> { self.ret_ty.clone() }
-}
-
-impl TryFrom<(&GenericFunction, &HashMap<String, TypeName>, &Position)> for Function {
+impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<String, TypeName>, &Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<String, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         let arguments: Vec<FunctionArg> = fun
             .arguments
@@ -126,14 +116,14 @@ impl TryFrom<(&GenericFunction, &HashMap<String, TypeName>, &Position)> for Func
             raises: fun
                 .raises
                 .iter()
-                .map(|raise| raise.substitute(generics, pos))
+                .map(|raise| raise.substitute(generics))
                 .collect::<Result<_, _>>()?,
             in_class: match &fun.in_class {
-                Some(in_class) => Some(in_class.substitute(generics, pos)?),
+                Some(in_class) => Some(in_class.substitute(generics)?),
                 None => None
             },
             ret_ty: match &fun.ret_ty {
-                Some(ty) => Some(ty.substitute(generics, pos)?),
+                Some(ty) => Some(ty.substitute(generics)?),
                 None => None
             }
         })

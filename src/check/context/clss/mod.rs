@@ -8,8 +8,8 @@ use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::Field;
 use crate::check::context::function::Function;
+use crate::check::context::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
 use crate::common::delimit::newline_delimited;
 use crate::common::position::Position;
@@ -42,11 +42,11 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name:       ActualTypeName,
+    pub name:       Name,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
     pub fields:     Vec<HashSet<Field>>,
-    pub parents:    HashSet<TypeName>,
+    pub parents:    HashSet<Name>,
     functions:      Vec<HashSet<Function>>
 }
 
@@ -62,20 +62,18 @@ impl Display for Class {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericClass, &HashMap<String, TypeName>, &HashSet<GenericClass>, &Position)>
-    for Class
-{
+impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Position)> for Class {
     type Error = Vec<TypeErr>;
 
     fn try_from(
         (generic, generics, types, pos): (
             &GenericClass,
-            &HashMap<String, TypeName>,
+            &HashMap<String, Name>,
             &HashSet<GenericClass>,
             &Position
         )
     ) -> Result<Self, Self::Error> {
-        let self_name = generic.name.substitute(generics, pos)?;
+        let self_name = generic.name.substitute(generics);
         let self_fields: HashSet<Field> = generic
             .fields
             .iter()

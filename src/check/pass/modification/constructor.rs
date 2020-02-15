@@ -23,7 +23,7 @@ impl Modification for Constructor {
                 let (args, m_args): (Vec<AST>, Vec<bool>) = args.into_iter().unzip();
                 let m_args = m_args.iter().any(|b| *b);
 
-                match ctx.lookup(&type_name, &ast.pos) {
+                match ctx.lookup_class(&type_name, &ast.pos) {
                     Ok(_) => Ok((
                         AST {
                             node: Node::ConstructorCall { name: name.clone(), args },

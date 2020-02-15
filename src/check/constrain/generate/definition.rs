@@ -10,8 +10,9 @@ use crate::check::constrain::Constrained;
 use crate::check::context::arg::SELF;
 use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
-use crate::check::ident::{match_type, Identifier};
+use crate::check::ident::Identifier;
 use crate::check::result::TypeErr;
+use crate::check::ty::name::util::match_type;
 use crate::check::ty::name::TypeName;
 use crate::parse::ast::{Node, AST};
 
@@ -33,7 +34,7 @@ pub fn gen_def(
                 let exception_ty = TypeName::from(clss::EXCEPTION);
                 for (pos, raise) in r_tys {
                     let raise = raise?;
-                    if !ctx.lookup(&raise, &pos)?.has_parent(&exception_ty, ctx, &pos)? {
+                    if !ctx.lookup_class(&raise, &pos)?.has_parent(&exception_ty, ctx, &pos)? {
                         let msg = format!("{} is not an {}", raise, clss::EXCEPTION);
                         return Err(vec![TypeErr::new(&pos, &msg)]);
                     }

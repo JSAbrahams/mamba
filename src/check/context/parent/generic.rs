@@ -3,9 +3,9 @@
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
+use crate::check::context::name::NameUnion;
 use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -15,7 +15,7 @@ pub struct GenericParent {
     pub name:       String,
     pub pos:        Position,
     pub generics:   Vec<GenericParameter>,
-    pub args:       Vec<TypeName>
+    pub args:       Vec<NameUnion>
 }
 
 impl Hash for GenericParent {

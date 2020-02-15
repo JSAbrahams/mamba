@@ -1,47 +1,59 @@
-use crate::check::context::clss::python::python_to_concrete;
-use crate::check::ty::name::TypeName;
-use python_parser::ast::{Expression, Subscript};
 use std::ops::Deref;
 
-pub const INTEGER: &str = "int";
-pub const FLOAT: &str = "float";
-pub const STRING: &str = "str";
-pub const BOOLEAN: &str = "bool";
+use python_parser::ast::{Expression, SetItem, Subscript};
 
-// TODO handle type unions
-impl From<&Expression> for TypeName {
-    fn from(value: &Expression) -> TypeName {
+use crate::check::context::clss::python::python_to_concrete;
+use crate::check::context::name::{Name, NameUnion};
+
+impl From<&Expression> for NameUnion {
+    fn from(value: &Expression) -> Self {
         match value {
-            Expression::Name(id) => TypeName::from(python_to_concrete(&id.clone()).as_str()),
+            Expression::Name(_) => NameUnion::from(&Name::from(value)),
+            Expression::TupleLiteral(_) => NameUnion::from(&Name::from(value)),
+            Expression::Subscript(id, exprs) =>
+                if id == Expression::Name(String::from("Union")) {
+                    NameUnion::new(&exprs.iter().map(|e| to_ty_name(e)).collect())
+                } else {
+                    NameUnion::from(&Name::from(value))
+                },
+            _ => NameUnion::from(&Name::empty())
+        }
+    }
+}
+
+impl From<&Expression> for Name {
+    fn from(value: &Expression) -> Name {
+        match value {
+            Expression::Name(id) => Name::from(python_to_concrete(&id.clone()).as_str()),
+            Expression::TupleLiteral(items) => {
+                let expressions = items.iter().filter_map(|setitem| match setitem {
+                    SetItem::Star(_) => None,
+                    SetItem::Unique(expr) => Some(expr)
+                });
+                Name::Tuple(expressions.map(|expr| Name::from(expr)).collect())
+            }
             Expression::Subscript(id, exprs) => {
                 let lit = match &id.deref() {
                     Expression::Name(name) => name.clone(),
                     _ => String::new()
                 };
 
+                // Union not expected
                 if lit == String::from("Union") {
-                    let names: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
-                    if let Some(mut first) = names.first().cloned() {
-                        for name in names {
-                            first = first.union(&name).clone()
-                        }
-                        first
-                    } else {
-                        TypeName::from("")
-                    }
+                    Name::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
-                    TypeName::new(&lit, &generics)
+                    Name::new(&lit, &generics)
                 }
             }
-            _ => TypeName::from("")
+            _ => Name::empty()
         }
     }
 }
 
-fn to_ty_name(sub_script: &Subscript) -> TypeName {
+fn to_ty_name(sub_script: &Subscript) -> Name {
     match sub_script {
-        Subscript::Simple(expr) => TypeName::from(expr),
-        _ => TypeName::from("")
+        Subscript::Simple(expr) => Name::from(expr),
+        _ => Name::empty()
     }
 }

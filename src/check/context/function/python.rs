@@ -3,7 +3,6 @@ use python_parser::ast::Funcdef;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::ty::name::actual::ActualTypeName;
 use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 
@@ -31,7 +30,7 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       ActualTypeName::new(&convert_name(&func_def.name), &[]),
+            name:       TypeName::new(&convert_name(&func_def.name), &[]),
             pure:       false,
             private:    false,
             pos:        Position::default(),
@@ -41,7 +40,7 @@ impl From<&Funcdef> for GenericFunction {
                 .iter()
                 .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
                 .collect(),
-            raises:     vec![],
+            raises:     None,
             in_class:   None,
             ret_ty:     match &func_def.return_type {
                 Some(ret_ty) => Some(TypeName::from(ret_ty)),

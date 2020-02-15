@@ -34,7 +34,7 @@ pub fn gen_call(
         }
         Node::ConstructorCall { name, args } => {
             let c_name = TypeName::try_from(name.deref())?;
-            let possible_args = ctx.lookup(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
+            let possible_args = ctx.lookup_class(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
             let self_type = Type { type_name: c_name };
 
             constr.add(&Expected::new(&ast.pos, &self_type), &Expected::from(ast));
@@ -60,7 +60,7 @@ pub fn gen_call(
                 }
             } else {
                 // Resort to looking up in Context
-                let possible_fun = ctx.lookup_function(&f_name, &ast.pos)?;
+                let possible_fun = ctx.lookup_fun(&f_name, &ast.pos)?;
                 for fun in possible_fun {
                     constr = call_parameters(ast, &fun.arguments, &None, args, &constr)?;
                     let fun_ret_exp = if let Some(type_name) = fun.ty() {
@@ -71,7 +71,7 @@ pub fn gen_call(
                     // entire AST is either fun ret ty or statement
                     constr.add(&Expected::from(ast), &fun_ret_exp);
 
-                    if !fun.raises.is_empty() {
+                    if !fun.raises.is_none() {
                         if let Some(raises) = &env.raises {
                             let raises_exp =
                                 Raises { raises: fun.raises.iter().map(TypeName::from).collect() };

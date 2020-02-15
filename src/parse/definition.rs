@@ -6,10 +6,9 @@ use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
 use crate::parse::parse_result::custom;
 use crate::parse::parse_result::ParseResult;
-use crate::parse::ty::parse_expression_type;
-use crate::parse::ty::parse_generics;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
+use crate::parse::ty::{parse_expression_type, parse_generic};
 
 pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("definition")?;
@@ -146,9 +145,16 @@ fn parse_fun_def(id: &AST, pure: bool, private: bool, it: &mut LexIterator) -> P
 
 pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.eat(&Token::LSBrack, "raises")?;
-    let args = it.parse_vec(&parse_generics, "raises", &start)?;
-    it.eat(&Token::RSBrack, "raises")?;
-    Ok(args)
+
+    let mut raises: Vec<AST> = Vec::new();
+    let args = it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
+        raises.push(*it.parse(&parse_generic, "raises", &start)?);
+        it.eat_if(&Token::Comma);
+        Ok(())
+    })?;
+
+    it.eat(&Token::RCBrack, "raises")?;
+    Ok(raises)
 }
 
 pub fn parse_fun_args(it: &mut LexIterator) -> ParseResult<Vec<AST>> {

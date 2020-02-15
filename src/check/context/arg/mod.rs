@@ -4,8 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::arg::generic::GenericFunctionArg;
+use crate::check::context::name::{Name, NameUnion};
 use crate::check::result::TypeErr;
-use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 
 pub const SELF: &str = "self";
@@ -13,6 +13,9 @@ pub const SELF: &str = "self";
 pub mod generic;
 pub mod python;
 
+/// A Function argument.
+///
+/// May have a type.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {
     pub is_py_type:  bool,
@@ -20,7 +23,7 @@ pub struct FunctionArg {
     pub has_default: bool,
     pub vararg:      bool,
     pub mutable:     bool,
-    pub ty:          Option<TypeName>
+    pub ty:          Option<NameUnion>
 }
 
 impl Display for FunctionArg {
@@ -35,11 +38,11 @@ impl Display for FunctionArg {
     }
 }
 
-impl TryFrom<(&GenericFunctionArg, &HashMap<String, TypeName>, &Position)> for FunctionArg {
+impl TryFrom<(&GenericFunctionArg, &HashMap<String, Name>, &Position)> for FunctionArg {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, TypeName>, &Position)
+        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
             is_py_type:  fun_arg.is_py_type,

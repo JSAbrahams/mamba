@@ -2,10 +2,10 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
+use crate::check::context::clss;
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::python;
+use crate::check::context::name::{Name, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -25,7 +25,7 @@ pub struct GenericFunctionArg {
     pub has_default: bool,
     pub vararg:      bool,
     pub mutable:     bool,
-    pub ty:          Option<TypeName>
+    pub ty:          Option<NameUnion>
 }
 
 impl PartialEq for GenericFunctionArg {
@@ -43,15 +43,11 @@ impl Hash for GenericFunctionArg {
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(
-        self,
-        class: Option<&TypeName>,
-        _: &Position
-    ) -> TypeResult<GenericFunctionArg> {
+    pub fn in_class(self, class: Option<&Name>, _: &Position) -> TypeResult<GenericFunctionArg> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(vec![TypeErr::new(&self.pos, "Cannot have self argument outside class")])
         } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
-            Ok(GenericFunctionArg { ty: class.cloned(), ..self })
+            Ok(GenericFunctionArg { ty: NameUnion::from(class), ..self })
         // TODO if self has type, check that class is parent of type
         } else {
             Ok(self)
@@ -99,16 +95,21 @@ impl TryFrom<&AST> for GenericFunctionArg {
                     mutable:     *mutable,
                     pos:         ast.pos.clone(),
                     ty:          match ty {
-                        Some(ty) => Some(TypeName::try_from(ty.deref())?),
+                        Some(ty) => Some(NameUnion::try_from(ty.deref())?),
                         None if name.as_str() == SELF => None,
                         None =>
                             if let Some(default) = default {
                                 Some(match &default.deref().node {
-                                    Node::Str { .. } => TypeName::from(python::STRING),
-                                    Node::Bool { .. } => TypeName::from(python::BOOLEAN),
-                                    Node::Int { .. } => TypeName::from(python::INTEGER),
-                                    Node::Real { .. } => TypeName::from(python::FLOAT),
-                                    Node::ENum { .. } => TypeName::from(python::INTEGER),
+                                    Node::Str { .. } =>
+                                        NameUnion::from(clss::python::STRING_PRIMITIVE),
+                                    Node::Bool { .. } =>
+                                        NameUnion::from(clss::python::BOOL_PRIMITIVE),
+                                    Node::Int { .. } =>
+                                        NameUnion::from(clss::python::INT_PRIMITIVE),
+                                    Node::Real { .. } =>
+                                        NameUnion::from(clss::python::FLOAT_PRIMITIVE),
+                                    Node::ENum { .. } =>
+                                        NameUnion::from(clss::python::INT_PRIMITIVE),
                                     _ =>
                                         return Err(vec![TypeErr::new(
                                             &default.pos,
