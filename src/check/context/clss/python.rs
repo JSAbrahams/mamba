@@ -11,7 +11,7 @@ use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::{clss, function};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
+use crate::check::ty::Type;
 use crate::common::position::Position;
 
 pub const INT_PRIMITIVE: &str = "int";
@@ -36,8 +36,8 @@ impl TryFrom<&Classdef> for GenericClass {
         let mut functions = HashSet::new();
         let mut fields = HashSet::new();
         let generics = GenericParameters::from(&class_def.arguments).parameters;
-        let generic_names: Vec<TypeName> =
-            generics.iter().map(|g| TypeName::from(python_to_concrete(&g.name).as_str())).collect();
+        let generic_names: Vec<Type> =
+            generics.iter().map(|g| Type::from(python_to_concrete(&g.name).as_str())).collect();
 
         for statement in &class_def.code {
             match statement {
@@ -57,14 +57,14 @@ impl TryFrom<&Classdef> for GenericClass {
             }
         }
 
-        let class = TypeName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
+        let class = Type::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
             .map(|f| f.in_class(Some(&class), false, &Position::default()))
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
-            .find(|f| f.name == TypeName::new(function::INIT, &[]))
+            .find(|f| f.name == Type::new(function::INIT, &[]))
             .map_or(vec![], |f| f.arguments.clone());
 
         Ok(GenericClass {

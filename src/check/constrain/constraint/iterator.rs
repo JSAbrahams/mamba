@@ -2,17 +2,17 @@ use std::collections::VecDeque;
 
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::context::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    pub in_class: Vec<TypeName>,
+    pub in_class: Vec<Name>,
     constraints:  VecDeque<Constraint>
 }
 
 impl Constraints {
-    pub fn new(constraints: &[Constraint], in_class: &[TypeName]) -> Constraints {
+    pub fn new(constraints: &[Constraint], in_class: &[Name]) -> Constraints {
         let constraints = VecDeque::from(Vec::from(constraints));
         Constraints { in_class: Vec::from(in_class), constraints }
     }

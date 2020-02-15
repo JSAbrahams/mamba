@@ -5,6 +5,7 @@ use std::iter::FromIterator;
 use crate::check::context::name::{Name, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{Node, AST};
+use std::ops::Deref;
 
 impl TryFrom<&AST> for NameUnion {
     type Error = Vec<TypeErr>;
@@ -26,7 +27,7 @@ impl TryFrom<&AST> for Name {
         match &ast.node {
             Node::Id { lit } => Ok(Name::Single(lit.clone(), vec![])),
             Node::Tuple { elements } => {
-                let names = elements.iter().map(|e| Name::try_from(e)).collect()?;
+                let names = elements.iter().map(|e| Name::try_from(e)).collect::<Result<_, _>>()?;
                 Ok(Name::Tuple(names))
             }
             Node::Type { id, generics } => match &id.node {
@@ -36,6 +37,12 @@ impl TryFrom<&AST> for Name {
                 }
                 _ => Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
             },
+            Node::TypeTup { types } =>
+                Ok(Name::Tuple(types.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?)),
+            Node::TypeFun { args, ret_ty } => Ok(Name::Fun(
+                args.iter().map(Name::try_from).collect::<Result<_, _>>()?,
+                Box::from(NameUnion::try_from(ret_ty.deref())?)
+            )),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected name")])
         }
     }

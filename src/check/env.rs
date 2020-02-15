@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
-use crate::check::ty::name::TypeName;
+use crate::check::ty::Type;
 use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
@@ -62,7 +62,7 @@ impl Environment {
     /// Insert raises
     ///
     /// If the set is empty, ignored
-    pub fn insert_raises(&self, raises: &HashSet<TypeName>, pos: &Position) -> Environment {
+    pub fn insert_raises(&self, raises: &HashSet<Type>, pos: &Position) -> Environment {
         if raises.is_empty() {
             self.clone()
         } else {

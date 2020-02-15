@@ -13,7 +13,7 @@ use crate::check::context::name::Name;
 use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
+use crate::check::ty::Type;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -90,16 +90,14 @@ impl TryFrom<&AST> for GenericClass {
                         pos:         Default::default(),
                         vararg:      false,
                         mutable:     false,
-                        ty:          Some(TypeName::from(&name))
+                        ty:          Some(Type::from(&name))
                     }];
                     new_args.append(&mut class_args);
                     new_args
                 };
 
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
-                if let Some(function) =
-                    functions.iter().find(|f| f.name == TypeName::new(INIT, &[]))
-                {
+                if let Some(function) = functions.iter().find(|f| f.name == Type::new(INIT, &[])) {
                     if class_args.is_empty() {
                         class_args.append(&mut function.arguments.clone())
                     } else {
@@ -118,7 +116,7 @@ impl TryFrom<&AST> for GenericClass {
                         has_default: false,
                         vararg:      false,
                         mutable:     false,
-                        ty:          Option::from(TypeName::from(&name))
+                        ty:          Option::from(Type::from(&name))
                     })
                 }
 
@@ -195,7 +193,7 @@ impl TryFrom<&AST> for GenericClass {
     }
 }
 
-fn get_name_and_generics(_type: &AST) -> Result<(TypeName, Vec<GenericParameter>), Vec<TypeErr>> {
+fn get_name_and_generics(_type: &AST) -> Result<(Type, Vec<GenericParameter>), Vec<TypeErr>> {
     match &_type.node {
         Node::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
@@ -205,9 +203,8 @@ fn get_name_and_generics(_type: &AST) -> Result<(TypeName, Vec<GenericParameter>
             }
 
             let generics = generics.into_iter().map(Result::unwrap).collect::<Vec<_>>();
-            let names: Vec<TypeName> =
-                generics.iter().map(|g| TypeName::from(g.name.as_str())).collect();
-            let name = TypeName::new(
+            let names: Vec<Type> = generics.iter().map(|g| Type::from(g.name.as_str())).collect();
+            let name = Type::new(
                 match &id.node {
                     Node::Id { lit } => lit.clone(),
                     _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
@@ -223,13 +220,13 @@ fn get_name_and_generics(_type: &AST) -> Result<(TypeName, Vec<GenericParameter>
 }
 
 fn get_fields_and_functions(
-    class: &TypeName,
+    class: &Type,
     statements: &[AST],
     type_def: bool
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
     let mut fields = HashSet::new();
     let mut functions = HashSet::new();
-    let class = TypeName::from(class);
+    let class = Type::from(class);
 
     for statement in statements {
         match &statement.node {

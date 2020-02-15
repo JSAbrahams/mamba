@@ -8,7 +8,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
-use crate::check::ty::name::TypeName;
+use crate::check::ty;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -57,11 +57,11 @@ pub enum Expect {
     Truthy,
     Stringy,
     RaisesAny,
-    Raises { raises: HashSet<TypeName> },
-    Function { name: TypeName, args: Vec<Expected> },
+    Raises { raises: HashSet<ty::Type> },
+    Function { name: ty::Type, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
-    Type { type_name: TypeName }
+    Type { ty: ty::Type }
 }
 
 impl Hash for Expect {
@@ -85,7 +85,7 @@ impl Hash for Expect {
                 args.iter().for_each(|a| a.hash(state));
             }
             Field { name } => name.hash(state),
-            Type { type_name } => type_name.hash(state)
+            Type { ty } => ty.hash(state)
         }
     }
 }
@@ -101,12 +101,12 @@ impl Display for Expect {
             Truthy => format!("Truthy"),
             Stringy => format!("Stringy"),
             RaisesAny => String::from("RaisesAny"),
-            Raises { raises: type_name } => format!("Raises[{{{}}}]", comma_delimited(type_name)),
+            Raises { raises: ty } => format!("Raises[{{{}}}]", comma_delimited(ty)),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } =>
                 format!("{}({})", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
             Field { name } => name.clone(),
-            Type { type_name } => format!("{}", type_name)
+            Type { ty } => format!("{}", ty)
         })
     }
 }
@@ -117,7 +117,7 @@ impl Expect {
             (Collection { ty: l }, Collection { ty: r }) => l.expect.structurally_eq(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
             (Raises { raises: l }, Raises { raises: r }) => l == r,
-            (Type { type_name: l }, Type { type_name: r }) => l == r,
+            (Type { ty: l }, Type { ty: r }) => l == r,
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) =>
                 le == re && ln == rn,
             (Function { name: l, args: la }, Function { name: r, args: ra }) =>
@@ -146,17 +146,17 @@ impl Expect {
             | (Expression { ast: AST { node: Node::Or { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::Not { .. }, .. } })
             | (Expression { ast: AST { node: Node::Not { .. }, .. } }, Truthy) => true,
-            (Type { type_name, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { type_name, .. })
-                if type_name == &TypeName::from(clss::STRING_PRIMITIVE) =>
+            (Type { ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { ty, .. })
+                if ty == &ty::Type::from(clss::STRING_PRIMITIVE) =>
                 true,
-            (Type { type_name, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { type_name, .. })
-                if type_name == &TypeName::from(clss::FLOAT_PRIMITIVE) =>
+            (Type { ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { ty, .. })
+                if ty == &ty::Type::from(clss::FLOAT_PRIMITIVE) =>
                 true,
-            (Type { type_name, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { type_name, .. })
-                if type_name == &TypeName::from(clss::INT_PRIMITIVE) =>
+            (Type { ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { ty, .. })
+                if ty == &ty::Type::from(clss::INT_PRIMITIVE) =>
                 true,
             _ => false
         }

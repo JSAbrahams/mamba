@@ -5,8 +5,8 @@ use std::ops::Deref;
 use crate::check::context::name::{Name, NameUnion};
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::util::match_type;
-use crate::check::ty::name::TypeName;
+use crate::check::ty::util::match_type;
+use crate::check::ty::Type;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 use std::collections::HashSet;
@@ -19,7 +19,7 @@ pub struct GenericField {
     pub private:    bool,
     pub mutable:    bool,
     pub in_class:   Option<Name>,
-    pub type_name:  Option<NameUnion>
+    pub ty:         Option<NameUnion>
 }
 
 pub struct GenericFields {
@@ -42,8 +42,8 @@ impl TryFrom<&AST> for GenericField {
             // TODO do something with forward
             Node::VariableDef { private, var, mutable, ty, .. } => {
                 let name = field_name(var.deref())?;
-                let type_name = match ty {
-                    Some(ty) => Some(TypeName::try_from(ty.deref())?),
+                let ty = match ty {
+                    Some(ty) => Some(Type::try_from(ty.deref())?),
                     None => None
                 };
 
@@ -55,7 +55,7 @@ impl TryFrom<&AST> for GenericField {
                     pos,
                     in_class: None,
                     private: *private,
-                    type_name
+                    ty
                 })
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
@@ -75,16 +75,16 @@ impl TryFrom<&AST> for GenericFields {
                     // TODO infer type if not present
                     match &ty {
                         Some(ty) => {
-                            let type_name = TypeName::try_from(ty.deref())?;
-                            Ok(match_type(&identifier, &type_name, &ast.pos)?
+                            let ty = Type::try_from(ty.deref())?;
+                            Ok(match_type(&identifier, &ty, &ast.pos)?
                                 .iter()
-                                .map(|(id, (inner_mut, type_name))| GenericField {
+                                .map(|(id, (inner_mut, ty))| GenericField {
                                     is_py_type: false,
                                     name:       id.clone(),
                                     mutable:    *mutable || *inner_mut,
                                     pos:        ast.pos.clone(),
                                     private:    *private,
-                                    type_name:  Some(type_name.clone()),
+                                    ty:         Some(ty.clone()),
                                     in_class:   None
                                 })
                                 .collect())
@@ -99,7 +99,7 @@ impl TryFrom<&AST> for GenericFields {
                                 private:    *private,
                                 mutable:    *mutable || *inner_mut,
                                 in_class:   None,
-                                type_name:  None
+                                ty:         None
                             })
                             .collect())
                     }
@@ -113,7 +113,7 @@ impl TryFrom<&AST> for GenericFields {
 impl GenericField {
     pub fn in_class(
         self,
-        class: Option<&TypeName>,
+        class: Option<&Type>,
         type_def: bool,
         pos: &Position
     ) -> TypeResult<GenericField> {

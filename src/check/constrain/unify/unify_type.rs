@@ -7,7 +7,7 @@ use crate::check::constrain::unify::unify_link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::{function, Context};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
+use crate::check::ty;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
@@ -22,17 +22,17 @@ pub fn unify_type(
         (_, ExpressionAny) => unify_link(constraints, ctx, total),
         (ExpressionAny, _) => unify_link(constraints, ctx, total),
 
-        (Type { type_name }, Truthy) => {
-            let expr_ty = ctx.lookup_class(type_name, &left.pos)?;
-            expr_ty.function(&TypeName::from(function::TRUTHY), &left.pos)?;
+        (Type { ty }, Truthy) => {
+            let expr_ty = ctx.lookup_class(ty, &left.pos)?;
+            expr_ty.function(&ty::Type::from(function::TRUTHY), &left.pos)?;
             unify_link(constraints, ctx, total)
         }
-        (Type { type_name }, Stringy) => {
-            let expr_ty = ctx.lookup_class(type_name, &left.pos)?;
-            expr_ty.function(&TypeName::from(function::STR), &left.pos)?;
+        (Type { ty }, Stringy) => {
+            let expr_ty = ctx.lookup_class(ty, &left.pos)?;
+            expr_ty.function(&ty::Type::from(function::STR), &left.pos)?;
             unify_link(constraints, ctx, total)
         }
-        (Type { type_name: l_ty }, Type { type_name: r_ty }) => {
+        (Type { ty: l_ty }, Type { ty: r_ty }) => {
             if l_ty.is_superset(r_ty)
                 || ctx.lookup_class(&r_ty, &right.pos)?.has_parent(&l_ty, ctx, &left.pos)?
             {
@@ -45,28 +45,28 @@ pub fn unify_type(
             }
         }
 
-        (Type { type_name }, Raises { raises }) =>
-            if raises.contains(type_name) {
+        (Type { ty }, Raises { raises }) =>
+            if raises.contains(ty) {
                 unify_link(constraints, ctx, total)
             } else {
                 let msg = format!(
                     "Unexpected raises '{}', must be one of: {}",
-                    type_name,
+                    ty,
                     comma_delimited(raises)
                 );
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { type_name }, Nullable) =>
-            if type_name.is_nullable() {
+        (Type { ty }, Nullable) =>
+            if ty.is_nullable() {
                 unify_link(constraints, ctx, total)
             } else {
-                let msg = format!("Expected '{}', found '{}'", type_name.as_nullable(), type_name);
+                let msg = format!("Expected '{}', found '{}'", ty.as_nullable(), ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { type_name }, Collection { ty }) => {
-            let (mut constr, added) = check_iter(type_name, ty, ctx, constraints, &left.pos)?;
+        (Type { ty }, Collection { ty: col_ty }) => {
+            let (mut constr, added) = check_iter(ty, col_ty, ctx, constraints, &left.pos)?;
             unify_link(&mut constr, ctx, total + added)
         }
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
@@ -88,30 +88,30 @@ pub fn unify_type(
 }
 
 fn check_iter(
-    type_name: &TypeName,
-    ty: &Expected,
+    ty: &ty::Type,
+    ty_exp: &Expected,
     ctx: &Context,
     constr: &mut Constraints,
     pos: &Position
 ) -> TypeResult<(Constraints, usize)> {
-    let f_name = TypeName::from(function::ITER);
+    let f_name = ty::Type::from(function::ITER);
     let mut added = 0;
 
-    for fun in ctx.lookup_class(type_name, pos)?.function(&f_name, pos)? {
-        let msg = format!("{} __iter__ type undefined", type_name);
+    for fun in ctx.lookup_class(ty, pos)?.function(&f_name, pos)? {
+        let msg = format!("{} __iter__ type undefined", ty);
         let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
 
-        let f_name = TypeName::from(function::NEXT);
+        let f_name = ty::Type::from(function::NEXT);
         for fun in ctx.lookup_class(&f_ret_ty, pos)?.function(&f_name, pos)? {
             let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
             added += 1;
             constr.eager_push(
-                &Expected::new(&pos, &Type { type_name: type_name.clone() }),
-                &Expected::new(&pos, &Type { type_name: f_ret_ty.clone() })
+                &Expected::new(&pos, &Type { ty: ty.clone() }),
+                &Expected::new(&pos, &Type { ty: f_ret_ty.clone() })
             );
         }
         added += 1;
-        constr.eager_push(&ty, &Expected::new(&pos, &Type { type_name: f_ret_ty }));
+        constr.eager_push(&ty, &Expected::new(&pos, &Type { ty: f_ret_ty }));
     }
 
     Ok((constr.clone(), added))

@@ -4,7 +4,7 @@ use crate::check::result::TypeResult;
 use std::path::PathBuf;
 
 impl Context {
-    /// Loads pre-defined Python primitives into context for easy lookup
+    /// Loads pre-defined Python primitives into Context.
     pub fn into_with_primitives(self) -> TypeResult<Self> {
         let python_dir = resource("primitive");
         let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
@@ -15,6 +15,7 @@ impl Context {
         Ok(Context { classes: types, functions, fields })
     }
 
+    /// Loads pre-defined Python standard library into Context.
     pub fn into_with_std_lib(self) -> TypeResult<Self> {
         let python_dir = resource("std");
         let (py_types, py_fields, py_functions) = python_files(&python_dir)?;

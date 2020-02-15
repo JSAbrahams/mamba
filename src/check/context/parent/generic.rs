@@ -23,7 +23,7 @@ impl Hash for GenericParent {
         self.is_py_type.hash(state);
         self.name.hash(state);
         self.generics.hash(state);
-        self.args.hash(state);
+        self.args.iter().for_each(|a| a.hash(state));
     }
 }
 

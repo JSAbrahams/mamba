@@ -11,8 +11,8 @@ impl From<&Expression> for NameUnion {
             Expression::Name(_) => NameUnion::from(&Name::from(value)),
             Expression::TupleLiteral(_) => NameUnion::from(&Name::from(value)),
             Expression::Subscript(id, exprs) =>
-                if id == Expression::Name(String::from("Union")) {
-                    NameUnion::new(&exprs.iter().map(|e| to_ty_name(e)).collect())
+                if id.deref() == &Expression::Name(String::from("Union")) {
+                    NameUnion::new(exprs.iter().map(|e| to_ty_name(e)).collect())
                 } else {
                     NameUnion::from(&Name::from(value))
                 },

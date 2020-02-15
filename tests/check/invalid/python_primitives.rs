@@ -1,6 +1,6 @@
 use crate::common::resource_content;
 use mamba::check::context::Context;
-use mamba::check::ty::name::TypeName;
+use mamba::check::ty::Type;
 use mamba::check::{check_all, CheckInput};
 use mamba::common::position::Position;
 use mamba::lex::tokenize;
@@ -19,5 +19,5 @@ pub fn non_existent_primitive() {
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_primitives().unwrap();
 
-    context.lookup_class(&TypeName::new("nothing", &vec![]), &Position::default()).unwrap_err();
+    context.lookup_class(&Type::new("nothing", &vec![]), &Position::default()).unwrap_err();
 }

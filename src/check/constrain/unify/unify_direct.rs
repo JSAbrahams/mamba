@@ -5,7 +5,7 @@ use crate::check::constrain::unify::unify_link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::{clss, Context};
 use crate::check::result::TypeErr;
-use crate::check::ty::name::TypeName;
+use crate::check::ty;
 use crate::parse::ast::{Node, AST};
 use std::convert::TryFrom;
 
@@ -41,28 +41,28 @@ pub fn unify_direct(
 
     match (&node, &expt.expect) {
         (Node::Bool { .. }, Expression { .. }) => {
-            let type_name = TypeName::from(clss::BOOL_PRIMITIVE);
-            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
+            let ty = ty::Type::from(clss::BOOL_PRIMITIVE);
+            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { ty }));
             unify_link(constraints, ctx, total + 1)
         }
         (Node::Real { .. }, Expression { .. }) => {
-            let type_name = TypeName::from(clss::FLOAT_PRIMITIVE);
-            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
+            let ty = ty::Type::from(clss::FLOAT_PRIMITIVE);
+            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { ty }));
             unify_link(constraints, ctx, total + 1)
         }
         (Node::Int { .. }, Expression { .. }) => {
-            let type_name = TypeName::from(clss::INT_PRIMITIVE);
-            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
+            let ty = ty::Type::from(clss::INT_PRIMITIVE);
+            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { ty }));
             unify_link(constraints, ctx, total + 1)
         }
         (Node::Str { .. }, Expression { .. }) => {
-            let type_name = TypeName::from(clss::STRING_PRIMITIVE);
-            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
+            let ty = ty::Type::from(clss::STRING_PRIMITIVE);
+            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { ty }));
             unify_link(constraints, ctx, total + 1)
         }
         (Node::ConstructorCall { name, .. }, Expression { .. }) => {
-            let type_name = TypeName::try_from(name)?;
-            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { type_name }));
+            let ty = ty::Type::try_from(name)?;
+            constraints.eager_push(&expt, &Expected::new(&direct.pos, &Type { ty }));
             unify_link(constraints, ctx, total + 1)
         }
 

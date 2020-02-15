@@ -1,7 +1,6 @@
 use crate::check::context::name::Name;
 use crate::check::context::Context;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
 use crate::check::ty::Type;
 use crate::common::position::Position;
 

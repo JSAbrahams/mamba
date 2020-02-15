@@ -8,9 +8,8 @@ use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::Function;
 use crate::check::context::generic::generics;
-use crate::check::context::name::Name;
+use crate::check::context::name::{Name, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
 use crate::check::CheckInput;
 use crate::common::position::Position;
 
@@ -50,7 +49,13 @@ impl TryFrom<&[CheckInput]> for Context {
 }
 
 impl Context {
-    /// Look up GenericClass and substitute generics to yield a Class
+    /// Lookup union of GenericClass and substitute generics to yield set of
+    /// Classes.
+    pub fn lookup_union(&self, name: &NameUnion, pos: &Position) -> TypeResult<HashSet<Class>> {
+        name.names.iter().map(|n| self.lookup_class(n, pos)).collect::<Result<_, _>>()
+    }
+
+    /// Look up GenericClass and substitute generics to yield a Class.
     pub fn lookup_class(&self, name: &Name, pos: &Position) -> TypeResult<Class> {
         if let Some(generic_class) = self.classes.iter().find(|c| c.name == name) {
             let generics = HashMap::new();

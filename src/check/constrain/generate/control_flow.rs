@@ -7,7 +7,7 @@ use crate::check::constrain::Constrained;
 use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
-use crate::check::ty::name::TypeName;
+use crate::check::ty;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_flow(
@@ -89,8 +89,8 @@ pub fn gen_flow(
         }
         Node::Step { amount } => {
             let left = Expected::from(amount);
-            let type_name = TypeName::from(clss::INT_PRIMITIVE);
-            constr.add(&left, &Expected::new(&amount.pos, &Type { type_name }));
+            let ty = ty::Type::from(clss::INT_PRIMITIVE);
+            constr.add(&left, &Expected::new(&amount.pos, &Type { ty }));
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {

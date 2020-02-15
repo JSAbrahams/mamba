@@ -10,7 +10,7 @@ use crate::check::context::field::Field;
 use crate::check::context::function::Function;
 use crate::check::context::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
+use crate::check::ty::Type;
 use crate::common::delimit::newline_delimited;
 use crate::common::position::Position;
 
@@ -87,9 +87,9 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Po
             .collect::<Result<_, _>>()?;
         let mut functions = vec![self_functions.clone()];
 
-        let mut parents: HashSet<TypeName> = HashSet::new();
+        let mut parents: HashSet<Type> = HashSet::new();
         for parent in &generic.parents {
-            let name = TypeName::from(parent.name.as_str()).single(pos)?;
+            let name = Type::from(parent.name.as_str()).single(pos)?;
             let ty = types
                 .iter()
                 .find(|ty| ty.name == name)
@@ -98,7 +98,7 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Po
             let ty = Class::try_from((ty, generics, types, pos))?;
             fields.append(&mut ty.fields.clone());
             functions.append(&mut ty.functions.clone());
-            parents.insert(TypeName::from(&name));
+            parents.insert(Type::from(&name));
         }
 
         Ok(Class {
@@ -134,12 +134,12 @@ impl Class {
         })
     }
 
-    pub fn function(&self, fun_name: &TypeName, pos: &Position) -> TypeResult<Function> {
+    pub fn function(&self, fun_name: &Name, pos: &Position) -> TypeResult<Function> {
         self.functions
             .iter()
             .find_map(|functions| {
                 functions.iter().find_map(|function| {
-                    if TypeName::from(&function.name) == fun_name.clone() {
+                    if Type::from(&function.name) == fun_name.clone() {
                         Some(function.clone())
                     } else {
                         None

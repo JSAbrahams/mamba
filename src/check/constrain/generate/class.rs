@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
@@ -10,9 +9,10 @@ use crate::check::context::field;
 use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
-use crate::check::ty::name::TypeName;
+use crate::check::ty;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
+use std::convert::TryFrom;
 
 pub fn gen_class(
     ast: &AST,
@@ -50,9 +50,9 @@ pub fn constrain_class_body(
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
 
-    let class_name = TypeName::try_from(ty.deref())?;
+    let class_name = ty::Type::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
-    let class_ty_exp = Type { type_name: class_name.clone() };
+    let class_ty_exp = Type { ty: class_name.clone() };
     res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
 
     let all_fields = ctx.lookup_class(&class_name, &ty.pos)?.fields(&ty.pos)?;
@@ -76,7 +76,7 @@ pub fn constrain_class_body(
 pub fn property_from_field(
     pos: &Position,
     field: &field::Field,
-    class_ty: &TypeName,
+    class_ty: &ty::Type,
     env: &Environment,
     constr: &mut ConstrBuilder
 ) -> Constrained {
@@ -96,13 +96,13 @@ pub fn property_from_field(
         property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } })
     };
     let property_call = Expected::from(&AST::new(&pos, node));
-    let field_ty = Expected::new(&pos, &Type { type_name: field_ty });
+    let field_ty = Expected::new(&pos, &Type { ty: field_ty });
 
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
     constr.add(&field_ty, &property_call);
 
     let access = Expected::new(&pos, &Access {
-        entity: Box::new(Expected::new(&pos, &Type { type_name: class_ty.clone() })),
+        entity: Box::new(Expected::new(&pos, &Type { ty: class_ty.clone() })),
         name:   Box::new(Expected::new(&pos, &Field { name: field.name.clone() }))
     });
 

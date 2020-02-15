@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::Name;
+use crate::check::context::name::{Name, NameUnion};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use std::fmt;
@@ -21,7 +21,7 @@ pub struct Field {
     pub private:    bool,
     pub mutable:    bool,
     pub in_class:   Option<Name>,
-    pub ty:         Option<Name>
+    pub ty:         Option<NameUnion>
 }
 
 impl Display for Field {
@@ -50,7 +50,7 @@ impl TryFrom<(&GenericField, &HashMap<String, Name>, &Position)> for Field {
                 Some(in_class) => Some(in_class.substitute(generics, pos)?),
                 None => None
             },
-            ty:         match &field.type_name {
+            ty:         match &field.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
             }

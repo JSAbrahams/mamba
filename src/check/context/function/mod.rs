@@ -8,7 +8,8 @@ use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::name::{Name, NameUnion};
 use crate::check::context::{arg, function};
-use crate::check::result::TypeErr;
+use crate::check::result::{TypeErr, TypeResult};
+use crate::check::ty::Type;
 use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
@@ -51,7 +52,7 @@ pub struct Function {
     pub arguments:    Vec<FunctionArg>,
     pub raises:       NameUnion,
     pub in_class:     Option<Name>,
-    pub ret_ty:       NameUnion
+    pub ret_ty:       Option<NameUnion>
 }
 
 impl Hash for Function {
@@ -127,5 +128,11 @@ impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function
                 None => None
             }
         })
+    }
+}
+
+impl Function {
+    pub fn args_compatible(&self, args: &[Type], pos: &Position) -> TypeResult<()> {
+        unimplemented!()
     }
 }

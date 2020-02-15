@@ -6,7 +6,7 @@ use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::context::name::{Name, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::name::TypeName;
+use crate::check::ty::Type;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -42,7 +42,7 @@ impl GenericFunction {
 
     pub fn in_class(
         self,
-        class: Option<&TypeName>,
+        class: Option<&Type>,
         type_def: bool,
         pos: &Position
     ) -> TypeResult<GenericFunction> {
@@ -107,13 +107,12 @@ impl TryFrom<&AST> for GenericFunction {
                         args
                     },
                     ret_ty:     match ret_ty {
-                        Some(ty) => Some(TypeName::try_from(ty.as_ref())?),
+                        Some(ty) => Some(Type::try_from(ty.as_ref())?),
                         None => None
                     },
                     in_class:   None,
                     raises:     {
-                        let raises =
-                            raises.iter().map(TypeName::try_from).collect::<Result<_, _>>()?;
+                        let raises = raises.iter().map(Type::try_from).collect::<Result<_, _>>()?;
                         if let Some(first) = raises.first() {
                             let mut union = first;
                             raises.iter().for_each(|raise| union.union(raise));
@@ -128,8 +127,8 @@ impl TryFrom<&AST> for GenericFunction {
     }
 }
 
-pub fn function_name(ast: &AST) -> TypeResult<TypeName> {
-    Ok(TypeName::new(
+pub fn function_name(ast: &AST) -> TypeResult<Type> {
+    Ok(Type::new(
         match &ast.node {
             Node::Id { lit } => lit.clone(),
             Node::Init => String::from("init"),

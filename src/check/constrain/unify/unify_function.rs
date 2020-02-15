@@ -9,7 +9,7 @@ use crate::check::context::arg::FunctionArg;
 use crate::check::context::util::check_is_parent;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::check::ty::name::TypeName;
+use crate::check::ty;
 use crate::common::position::Position;
 use itertools::{EitherOrBoth, Itertools};
 use std::collections::HashSet;
@@ -23,17 +23,17 @@ pub fn unify_function(
     total: usize
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (Function { args, .. }, Type { type_name }) => {
-            let expr_ty = ctx.lookup_class(type_name, &left.pos)?;
+        (Function { args, .. }, Type { ty }) => {
+            let expr_ty = ctx.lookup_class(ty, &left.pos)?;
             let functions = expr_ty.anon_fun_params(&left.pos)?;
 
             let mut count = 0;
             for (f_args, _) in &functions {
                 for possible in f_args.iter().zip_longest(args.iter()) {
                     match possible {
-                        EitherOrBoth::Both(type_name, expected) => {
+                        EitherOrBoth::Both(ty, expected) => {
                             count += 1;
-                            let ty = Type { type_name: type_name.clone() };
+                            let ty = Type { ty: ty.clone() };
                             let right = Expected::new(&left.pos, &ty);
                             constraints.eager_push(expected, &right);
                         }
@@ -53,13 +53,13 @@ pub fn unify_function(
         }
 
         (Access { entity, name }, _) =>
-            if let Type { type_name: entity_name } = &entity.expect {
+            if let Type { ty: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
                         let field =
                             ctx.lookup_class(entity_name, &left.pos)?.field(name, &left.pos)?;
                         if field.private {
-                            let name = TypeName::new(&field.name, &[]);
+                            let name = ty::Type::new(&field.name, &[]);
                             check_is_parent(
                                 &name,
                                 &constraints.in_class,
@@ -69,7 +69,7 @@ pub fn unify_function(
                             )?;
                         }
                         let field_ty_exp = if let Some(ty) = field.ty {
-                            Expected::new(&left.pos, &Type { type_name: ty.clone() })
+                            Expected::new(&left.pos, &Type { ty: ty.clone() })
                         } else {
                             Expected::new(&left.pos, &Statement)
                         };
@@ -82,7 +82,7 @@ pub fn unify_function(
 
                         for function in &possible_fun {
                             if function.private {
-                                let name = TypeName::from(&function.name);
+                                let name = ty::Type::from(&function.name);
                                 check_is_parent(
                                     &name,
                                     &constraints.in_class,
@@ -97,7 +97,7 @@ pub fn unify_function(
                                 &Expected::new(
                                     &left.pos,
                                     &if let Some(ty) = function.ty() {
-                                        Type { type_name: ty }
+                                        Type { ty }
                                     } else {
                                         Statement
                                     }
@@ -142,7 +142,7 @@ fn unify_fun_arg(
             match either_or_both {
                 EitherOrBoth::Both(fun_arg, expected) => {
                     let ty = &fun_arg.ty.as_ref();
-                    let type_name = ty
+                    let ty = ty
                         .ok_or_else(|| {
                             TypeErr::new(
                                 &expected.pos,
@@ -152,7 +152,7 @@ fn unify_fun_arg(
                         .clone();
 
                     added += 1;
-                    constr.eager_push(&Expected::new(&expected.pos, &Type { type_name }), &expected)
+                    constr.eager_push(&Expected::new(&expected.pos, &Type { ty }), &expected)
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
                     return Err(vec![TypeErr::new(
