@@ -16,7 +16,7 @@ pub fn substitute(
     constraints: &mut Constraints
 ) -> TypeResult<Constraints> {
     // TODO deal with tuples of identifiers
-    let mut substituted = Constraints::new(&[], &constraints.in_class);
+    let mut substituted = Constraints::new(&constraints.in_class);
     let identifiers = Vec::from(identifiers);
 
     while let Some(mut constr) = constraints.pop_constr() {

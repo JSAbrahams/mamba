@@ -4,6 +4,7 @@ use python_parser::ast::Subscript::Simple;
 use python_parser::ast::{Argument, Expression, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
+use crate::check::context::name::DirectName;
 use crate::check::context::parameter::generic::GenericParameter;
 
 pub struct GenericParameters {
@@ -23,7 +24,7 @@ impl From<&Vec<Argument>> for GenericParameters {
                     if let Some(Simple(Expression::Name(name))) = name {
                         parameters.push(GenericParameter {
                             is_py_type: true,
-                            name:       python_to_concrete(&name.clone()),
+                            name:       DirectName::from(python_to_concrete(name).as_ref()),
                             parent:     None
                         })
                     }
@@ -47,7 +48,7 @@ impl From<&Vec<Subscript>> for GenericParameters {
                 if let Expression::Name(name) = expr {
                     parameters.push(GenericParameter {
                         is_py_type: true,
-                        name:       python_to_concrete(&name.clone()),
+                        name:       DirectName::from(python_to_concrete(name).as_ref()),
                         parent:     None
                     })
                 }

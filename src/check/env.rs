@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
-use crate::check::ty::Type;
+use crate::check::context::name::NameUnion;
 use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
@@ -59,22 +59,17 @@ impl Environment {
         Environment { vars, ..self.clone() }
     }
 
-    /// Insert raises
-    ///
-    /// If the set is empty, ignored
-    pub fn insert_raises(&self, raises: &HashSet<Type>, pos: &Position) -> Environment {
+    /// Insert raises.
+    pub fn insert_raises(&self, raises: &NameUnion, pos: &Position) -> Environment {
         if raises.is_empty() {
             self.clone()
         } else {
-            let raises = Expected::new(pos, &Raises { raises: raises.clone() });
+            let raises = Expected::new(pos, &Raises { name: raises.clone() });
             Environment { raises: Some(raises), ..self.clone() }
         }
     }
 
     /// Specify that we are in a loop.
-    ///
-    /// Useful for checking if a break or continue statement is correctly
-    /// placed.
     pub fn in_loop(&self) -> Environment { Environment { in_loop: true, ..self.clone() } }
 
     /// Specify the return type of function body.

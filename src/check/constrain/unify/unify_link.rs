@@ -9,7 +9,7 @@ use crate::check::constrain::unify::unify_function::unify_function;
 use crate::check::constrain::unify::unify_type::unify_type;
 use crate::check::constrain::Unified;
 use crate::check::context::Context;
-use crate::common::delimit::comma_delimited;
+use crate::common::delimit::comma_delm;
 
 /// Unifies all constraints.
 ///
@@ -28,7 +28,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         let idents = if constr.idents.is_empty() {
             String::new()
         } else {
-            format!("[idents: {}] ", comma_delimited(&constr.idents))
+            format!("[idents: {}] ", comma_delm(&constr.idents))
         };
         println!(
             "{:width$} {}{}{} = {}",

@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::{Name, NameUnion};
+use crate::check::context::name::{DirectName, Name, NameUnion};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use std::fmt;
@@ -20,18 +20,14 @@ pub struct Field {
     pub name:       String,
     pub private:    bool,
     pub mutable:    bool,
-    pub in_class:   Option<Name>,
-    pub ty:         Option<NameUnion>
+    pub in_class:   Option<DirectName>,
+    pub ty:         NameUnion
 }
 
 impl Display for Field {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}{}",
-            &self.name,
-            if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() }
-        )
+        let ty = if self.ty.is_empty() { String::new() } else { format!(": {}", self.ty) };
+        write!(f, "{}{}", &self.name, ty)
     }
 }
 
@@ -51,8 +47,8 @@ impl TryFrom<(&GenericField, &HashMap<String, Name>, &Position)> for Field {
                 None => None
             },
             ty:         match &field.ty {
-                Some(ty) => Some(ty.substitute(generics, pos)?),
-                None => None
+                Some(ty) => ty.substitute(generics, pos)?,
+                None => NameUnion::empty()
             }
         })
     }

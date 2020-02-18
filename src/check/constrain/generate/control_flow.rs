@@ -4,10 +4,10 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::Constrained;
+use crate::check::context::name::NameUnion;
 use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
-use crate::check::ty;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_flow(
@@ -88,9 +88,8 @@ pub fn gen_flow(
             Ok((constr, env))
         }
         Node::Step { amount } => {
-            let left = Expected::from(amount);
-            let ty = ty::Type::from(clss::INT_PRIMITIVE);
-            constr.add(&left, &Expected::new(&amount.pos, &Type { ty }));
+            let name = NameUnion::from(clss::INT_PRIMITIVE);
+            constr.add(&Expected::from(amount), &Expected::new(&amount.pos, &Type { name }));
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {

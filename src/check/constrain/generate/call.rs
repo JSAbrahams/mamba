@@ -10,13 +10,11 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::generate::{gen_vec, generate};
 use crate::check::constrain::Constrained;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::name::Name;
-use crate::check::context::Context;
+use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::{Context, LookupClass, LookupFunction};
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty;
-use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -34,55 +32,51 @@ pub fn gen_call(
             generate(left, &env, ctx, &mut constr)
         }
         Node::ConstructorCall { name, args } => {
-            let c_name = Name::try_from(name.deref())?;
-            let possible_args = ctx.lookup_class(&c_name, &ast.pos)?.constructor_args(&ast.pos)?;
-            let self_type = Type { ty: c_name };
+            let c_name = NameUnion::try_from(name.deref())?;
+            let self_type = Type { name: c_name.clone() };
 
             constr.add(&Expected::new(&ast.pos, &self_type), &Expected::from(ast));
 
             let self_arg = Some(self_type);
             let mut constr = constr.clone();
+            let c_type_union = ctx.class(&c_name, &ast.pos)?;
+            let possible_args = c_type_union.constructor();
             for constr_args in possible_args {
-                constr = call_parameters(ast, &constr_args, &self_arg, args, &constr)?;
+                constr = call_parameters(ast, &constr_args, &self_arg, args, ctx, &constr)?;
             }
             gen_vec(args, env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
-            let f_name = ty::Type::try_from(name.deref())?;
-            let f_str_name = f_name.clone().single(&name.pos)?.name(&name.pos)?;
+            let f_name = DirectName::try_from(name)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            if let Some(functions) = env.get_var(&f_str_name) {
+            if let Some(functions) = env.get_var(&f_name.name) {
+                if !f_name.generics.is_empty() {
+                    let msg = "Anonymous function call cannot have generics";
+                    return Err(vec![TypeErr::new(&name.pos, &msg)]);
+                }
+
                 for (_, fun_exp) in functions {
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
                     let args = args.iter().map(Expected::from).collect();
-                    let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
+                    let right = Expected::new(&last_pos, &Function { name: f_name, args });
                     constr.add(&right, &fun_exp);
                 }
             } else {
                 // Resort to looking up in Context
-                let possible_fun = ctx.lookup_fun(&f_name, &ast.pos)?;
-                for fun in possible_fun {
-                    constr = call_parameters(ast, &fun.arguments, &None, args, &constr)?;
-                    let fun_ret_exp = if let Some(ty) = fun.ty() {
-                        Expected::new(&ast.pos, &Type { ty })
-                    } else {
-                        Expected::new(&ast.pos, &Statement)
-                    };
-                    // entire AST is either fun ret ty or statement
-                    constr.add(&Expected::from(ast), &fun_ret_exp);
+                let fun = ctx.function(&f_name, &ast.pos)?;
+                constr = call_parameters(ast, &fun.arguments, &None, args, ctx, &constr)?;
+                let fun_ret_exp = Expected::new(&ast.pos, &Type { name: fun.ret_ty });
+                // entire AST is either fun ret ty or statement
+                constr.add(&Expected::from(ast), &fun_ret_exp);
 
-                    if !fun.raises.is_none() {
-                        if let Some(raises) = &env.raises {
-                            let raises_exp =
-                                Raises { raises: fun.raises.iter().map(ty::Type::from).collect() };
-                            let raises_exp = Expected::new(&ast.pos, &raises_exp);
-                            constr.add(&raises, &raises_exp);
-                        } else if !constr.is_top_level() {
-                            let msg =
-                                format!("Exceptions not covered: {}", comma_delimited(&fun.raises));
-                            return Err(vec![TypeErr::new(&ast.pos, &msg)]);
-                        }
+                if !fun.raises.is_empty() {
+                    if let Some(raises) = &env.raises {
+                        let raises_exp = Expected::new(&ast.pos, &Raises { name: fun.raises });
+                        constr.add(&raises, &raises_exp);
+                    } else if !constr.is_top_level() {
+                        let msg = format!("Exceptions not covered: {}", &fun.raises);
+                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
                     }
                 }
             }
@@ -101,6 +95,7 @@ fn call_parameters(
     possible: &Vec<FunctionArg>,
     self_arg: &Option<Expect>,
     args: &[AST],
+    ctx: &Context,
     constr: &ConstrBuilder
 ) -> Result<ConstrBuilder, Vec<TypeErr>> {
     let mut constr = constr.clone();
@@ -120,15 +115,16 @@ fn call_parameters(
     for either_or_both in possible.iter().zip_longest(args.iter()) {
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
-                let ty = &fun_arg.ty.as_ref();
-                let ty = ty
+                let ty = &fun_arg
+                    .ty
                     .ok_or_else(|| {
                         TypeErr::new(&pos, "Function argument must have type parameters")
                     })?
                     .clone();
 
-                let left = Expected::new(&pos, &arg);
-                constr.add(&left, &Expected::new(&pos, &Type { ty }))
+                let arg_exp = Expected::new(&pos, &arg);
+                let name = ctx.class(ty, pos)?.name();
+                constr.add(&arg_exp, &Expected::new(&pos, &Type { name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&self_ast.pos.end, &self_ast.pos.end);
@@ -197,7 +193,7 @@ fn property_call(
             let access = Expected::new(&property.pos, &Access {
                 entity: Box::new(Expected::from(instance)),
                 name:   Box::new(Expected::new(&property.pos, &Function {
-                    name: ty::Type::try_from(name.deref())?,
+                    name: DirectName::try_from(name.deref())?,
                     args: args_with_self
                 }))
             });

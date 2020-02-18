@@ -8,9 +8,9 @@ use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::Field;
 use crate::check::context::function::Function;
-use crate::check::context::name::Name;
+use crate::check::context::name::{DirectName, Name, NameUnion};
+use crate::check::context::{Context, LookupClass};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::Type;
 use crate::common::delimit::newline_delimited;
 use crate::common::position::Position;
 
@@ -42,12 +42,51 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name:       Name,
+    pub name:       DirectName,
     pub concrete:   bool,
     pub args:       Vec<FunctionArg>,
-    pub fields:     Vec<HashSet<Field>>,
-    pub parents:    HashSet<Name>,
-    functions:      Vec<HashSet<Function>>
+    pub fields:     HashSet<Field>,
+    pub parents:    HashSet<DirectName>,
+    pub functions:  HashSet<Function>
+}
+
+pub trait HasParent<T> {
+    /// Has name as parent.
+    ///
+    /// Does recursive search. Is true if any ancestor is equal to name.
+    fn has_parent(&self, name: T, ctx: &Context, pos: &Position) -> TypeResult<bool>;
+}
+
+impl HasParent<&DirectName> for Class {
+    fn has_parent(
+        &self,
+        name: &DirectName,
+        ctx: &Context,
+        pos: &Position
+    ) -> Result<bool, Vec<TypeErr>> {
+        Ok(self.parents.contains(name) || {
+            let res: Vec<bool> = self
+                .parents
+                .iter()
+                .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+                .collect::<Result<_, _>>()?;
+            res.iter().any(|b| *b)
+        })
+    }
+}
+
+impl HasParent<&NameUnion> for Class {
+    fn has_parent(
+        &self,
+        name: &NameUnion,
+        ctx: &Context,
+        pos: &Position
+    ) -> Result<bool, Vec<TypeErr>> {
+        let name = name.as_direct("class", pos)?;
+        let res: Vec<bool> =
+            name.iter().map(|p| self.has_parent(p, ctx, pos)).collect::<Result<_, _>>()?;
+        Ok(res.iter().all(|b| *b))
+    }
 }
 
 impl Hash for Class {
@@ -73,32 +112,28 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Po
             &Position
         )
     ) -> Result<Self, Self::Error> {
-        let self_name = generic.name.substitute(generics);
-        let self_fields: HashSet<Field> = generic
+        let self_name = generic.name.substitute(generics, pos)?;
+        let mut fields: HashSet<Field> = generic
             .fields
             .iter()
             .map(|field| Field::try_from((field, generics, pos)))
             .collect::<Result<_, _>>()?;
-        let mut fields = vec![self_fields.clone()];
-        let self_functions: HashSet<Function> = generic
+        let mut functions: HashSet<Function> = generic
             .functions
             .iter()
             .map(|fun| Function::try_from((fun, generics, pos)))
             .collect::<Result<_, _>>()?;
-        let mut functions = vec![self_functions.clone()];
 
-        let mut parents: HashSet<Type> = HashSet::new();
+        let mut parents: HashSet<DirectName> = HashSet::new();
         for parent in &generic.parents {
-            let name = Type::from(parent.name.as_str()).single(pos)?;
-            let ty = types
-                .iter()
-                .find(|ty| ty.name == name)
-                .ok_or_else(|| TypeErr::new(pos, &format!("Unknown parent type: {}", name)))?;
+            let ty = types.iter().find(|ty| ty.name == parent.name).ok_or_else(|| {
+                TypeErr::new(pos, &format!("Unknown parent type: {}", parent.name))
+            })?;
 
             let ty = Class::try_from((ty, generics, types, pos))?;
-            fields.append(&mut ty.fields.clone());
-            functions.append(&mut ty.functions.clone());
-            parents.insert(Type::from(&name));
+            fields = fields.union(&ty.fields).cloned().collect();
+            functions = functions.union(&ty.functions).cloned().collect();
+            parents.insert(parent.name.clone());
         }
 
         Ok(Class {
@@ -119,7 +154,7 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Po
 
 impl Class {
     pub fn field(&self, name: &str, pos: &Position) -> TypeResult<Field> {
-        let field = self.fields.iter().flatten().find(|field| field.name.as_str() == name).cloned();
+        let field = self.fields.iter().find(|field| field.name.as_str() == name).cloned();
         field.ok_or_else(|| {
             vec![TypeErr::new(
                 pos,
@@ -128,24 +163,24 @@ impl Class {
                     self.name,
                     name,
                     if self.fields.is_empty() { "" } else { ", must be one of:\n" },
-                    newline_delimited(&self.fields.iter().flatten().collect::<Vec<&Field>>())
+                    newline_delimited(&self.fields)
                 )
             )]
         })
     }
 
-    pub fn function(&self, fun_name: &Name, pos: &Position) -> TypeResult<Function> {
+    pub fn function(&self, fun_name: &DirectName, pos: &Position) -> TypeResult<Function> {
         self.functions
             .iter()
-            .find_map(|functions| {
-                functions.iter().find_map(|function| {
-                    if Type::from(&function.name) == fun_name.clone() {
+            .find_map(
+                |function| {
+                    if function.name == fun_name.clone() {
                         Some(function.clone())
                     } else {
                         None
                     }
-                })
-            })
+                }
+            )
             .ok_or_else(|| {
                 vec![TypeErr::new(
                     pos,
@@ -154,9 +189,7 @@ impl Class {
                         self,
                         fun_name,
                         if self.functions.is_empty() { "" } else { ", must be one of: \n" },
-                        newline_delimited(
-                            &self.functions.iter().flatten().collect::<Vec<&Function>>()
-                        )
+                        newline_delimited(&self.functions)
                     )
                 )]
             })

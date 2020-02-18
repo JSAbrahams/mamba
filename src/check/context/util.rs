@@ -1,19 +1,19 @@
-use crate::check::context::name::Name;
-use crate::check::context::Context;
+use crate::check::context::clss::HasParent;
+use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::{Context, LookupClass};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::Type;
 use crate::common::position::Position;
 
 pub fn check_is_parent(
-    field: &Type,
-    in_class: &Vec<Name>,
-    object_class: &Type,
+    field: &NameUnion,
+    in_class: &Vec<DirectName>,
+    object_class: &NameUnion,
     ctx: &Context,
     pos: &Position
 ) -> TypeResult<()> {
     let mut in_a_parent = false;
     for class in in_class {
-        let is_parent = ctx.lookup_class(&class, pos)?.has_parent(object_class, ctx, pos)?;
+        let is_parent = ctx.class(class, pos)?.has_parent(object_class, ctx, pos)?;
         in_a_parent = in_a_parent || is_parent;
         if in_a_parent {
             break;

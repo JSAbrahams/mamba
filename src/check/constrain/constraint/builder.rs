@@ -1,7 +1,7 @@
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
-use crate::check::context::name::Name;
+use crate::check::context::name::DirectName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -17,8 +17,8 @@ use crate::common::position::Position;
 #[derive(Clone, Debug)]
 pub struct ConstrBuilder {
     pub level:   usize,
-    finished:    Vec<(Vec<Name>, Vec<Constraint>)>,
-    constraints: Vec<(Vec<Name>, Vec<Constraint>)>
+    finished:    Vec<(Vec<DirectName>, Vec<Constraint>)>,
+    constraints: Vec<(Vec<DirectName>, Vec<Constraint>)>
 }
 
 impl ConstrBuilder {
@@ -28,7 +28,7 @@ impl ConstrBuilder {
 
     pub fn is_top_level(&self) -> bool { self.level == 0 }
 
-    pub fn new_set_in_class(&mut self, inherit_class: bool, class: &Name) {
+    pub fn new_set_in_class(&mut self, inherit_class: bool, class: &DirectName) {
         self.new_set(false);
         if self.level > 0 && inherit_class {
             let mut previous = self.constraints[self.level - 1].0.clone();
@@ -81,9 +81,6 @@ impl ConstrBuilder {
     pub fn all_constr(self) -> Vec<Constraints> {
         let mut finished = self.finished.clone();
         finished.append(&mut self.constraints.clone());
-        finished
-            .iter()
-            .map(|(in_class, constraints)| Constraints::new(constraints, in_class))
-            .collect()
+        finished.iter().map(Constraints::from).collect()
     }
 }

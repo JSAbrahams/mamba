@@ -81,13 +81,13 @@ pub fn mamba_to_python(
             .collect::<Vec<(String, String)>>()
     })?;
 
-    let ast_trees = parse_all(tokens.as_slice()).map_err(|errs| {
+    let asts = parse_all(tokens.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("syntax"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
 
-    let modified_trees = check_all(ast_trees.as_slice()).map_err(|errs| {
+    let modified_trees = check_all(asts.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("type"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()

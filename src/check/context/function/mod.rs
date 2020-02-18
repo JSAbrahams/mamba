@@ -4,15 +4,15 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+use itertools::{EitherOrBoth, Itertools};
+
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::{Name, NameUnion};
-use crate::check::context::{arg, function, Context};
+use crate::check::context::name::{DirectName, IsSuperSet, Name, NameUnion};
+use crate::check::context::{arg, function, Context, LookupClass};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::Type;
-use crate::common::delimit::comma_delimited;
+use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use itertools::{EitherOrBoth, Itertools};
 
 pub const INIT: &str = "init";
 
@@ -46,14 +46,14 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
     pub is_py_type:   bool,
-    pub name:         Name,
+    pub name:         DirectName,
     pub self_mutable: Option<bool>,
     pub private:      bool,
     pub pure:         bool,
     pub arguments:    Vec<FunctionArg>,
     pub raises:       NameUnion,
-    pub in_class:     Option<Name>,
-    pub ret_ty:       Option<NameUnion>
+    pub in_class:     Option<DirectName>,
+    pub ret_ty:       NameUnion
 }
 
 impl Hash for Function {
@@ -72,18 +72,14 @@ impl PartialEq for Function {
 
 impl Display for Function {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{: >8} : ({}){}{}",
-            self.name,
-            comma_delimited(&self.arguments),
-            if let Some(ret_ty) = &self.ret_ty { format!(" -> {}", ret_ty) } else { String::new() },
-            if self.raises.is_empty() {
-                String::from("")
-            } else {
-                format!(" raises [{}]", comma_delimited(&self.raises))
-            }
-        )
+        let ret =
+            if self.ret_ty.is_empty() { String::new() } else { format!(" -> {}", self.ret_ty) };
+        let raises = if self.raises.is_empty() {
+            String::new()
+        } else {
+            format!(" raises [{}]", &self.raises)
+        };
+        write!(f, "{: >8} : ({}){}{}", self.name, comma_delm(&self.arguments), ret, raises)
     }
 }
 
@@ -115,31 +111,32 @@ impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function
             pure: fun.pure,
             private: fun.private,
             arguments,
-            raises: fun
-                .raises
-                .iter()
-                .map(|raise| raise.substitute(generics))
-                .collect::<Result<_, _>>()?,
+            raises: fun.raises.substitute(generics, pos)?,
             in_class: match &fun.in_class {
-                Some(in_class) => Some(in_class.substitute(generics)?),
+                Some(in_class) => Some(in_class.substitute(generics, pos)?),
                 None => None
             },
             ret_ty: match &fun.ret_ty {
-                Some(ty) => Some(ty.substitute(generics)?),
-                None => None
+                Some(ty) => ty.substitute(generics, pos)?,
+                None => NameUnion::empty()
             }
         })
     }
 }
 
 impl Function {
-    pub fn args_compatible(&self, args: &[Type], ctx: &Context, pos: &Position) -> TypeResult<()> {
+    pub fn args_compatible(
+        &self,
+        args: &[NameUnion],
+        ctx: &Context,
+        pos: &Position
+    ) -> TypeResult<()> {
         for pair in self.arguments.iter().zip_longest(args) {
             match pair {
                 EitherOrBoth::Both(fun_param, arg) =>
                     if let Some(param_ty_name) = &fun_param.ty {
-                        let arg_ty = Type::from(&ctx.lookup_union(param_ty_name, pos)?);
-                        if !arg_ty.is_superset(arg) {
+                        let arg_ty = ctx.class(param_ty_name, pos)?.name();
+                        if !arg_ty.is_superset_of(arg, ctx, &pos)? {
                             let msg = format!(
                                 "'{}' given to argument {}, which expected a '{}'",
                                 arg, fun_param, arg_ty

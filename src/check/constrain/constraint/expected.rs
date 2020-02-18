@@ -1,15 +1,14 @@
-use std::collections::HashSet;
 use std::fmt;
-use std::fmt::{Display, Formatter};
-use std::hash::{Hash, Hasher};
+use std::fmt::{Display, Error, Formatter};
+use std::hash::Hash;
 use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
-use crate::check::ty;
-use crate::common::delimit::comma_delimited;
+use crate::check::context::name::{DirectName, NameUnion};
+use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
@@ -45,11 +44,8 @@ impl From<&Box<AST>> for Expected {
     fn from(ast: &Box<AST>) -> Expected { Expected::from(ast.deref()) }
 }
 
-// TODO rework HasField
-
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
-    Statement,
     Nullable,
     Expression { ast: AST },
     ExpressionAny,
@@ -57,43 +53,20 @@ pub enum Expect {
     Truthy,
     Stringy,
     RaisesAny,
-    Raises { raises: HashSet<ty::Type> },
-    Function { name: ty::Type, args: Vec<Expected> },
+    Raises { name: NameUnion },
+    Function { name: DirectName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
-    Type { ty: ty::Type }
+    Type { name: NameUnion }
 }
 
-impl Hash for Expect {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match &self {
-            Raises { raises } => raises.iter().for_each(|t| t.hash(state)),
-            Nullable => state.write_i8(1),
-            Expression { ast } => ast.hash(state),
-            ExpressionAny => state.write_i8(2),
-            Collection { ty } => ty.hash(state),
-            Truthy => state.write_i8(3),
-            RaisesAny => state.write_i8(4),
-            Stringy => state.write_i8(5),
-            Statement => state.write_i8(6),
-            Access { entity, name } => {
-                entity.hash(state);
-                name.hash(state);
-            }
-            Function { name, args } => {
-                name.hash(state);
-                args.iter().for_each(|a| a.hash(state));
-            }
-            Field { name } => name.hash(state),
-            Type { ty } => ty.hash(state)
-        }
-    }
+impl Display for Expected {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { write!(f, "{}", self.expect) }
 }
 
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Statement => String::from("()"),
             Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
@@ -101,12 +74,11 @@ impl Display for Expect {
             Truthy => format!("Truthy"),
             Stringy => format!("Stringy"),
             RaisesAny => String::from("RaisesAny"),
-            Raises { raises: ty } => format!("Raises[{{{}}}]", comma_delimited(ty)),
+            Raises { name: ty } => format!("Raises[{}]", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
-            Function { name, args } =>
-                format!("{}({})", name, comma_delimited(args.iter().map(|e| e.expect.clone())),),
+            Function { name, args } => format!("{}({})", name, comma_delm(args)),
             Field { name } => name.clone(),
-            Type { ty } => format!("{}", ty)
+            Type { name: ty } => format!("{}", ty)
         })
     }
 }
@@ -116,8 +88,8 @@ impl Expect {
         match (self, other) {
             (Collection { ty: l }, Collection { ty: r }) => l.expect.structurally_eq(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
-            (Raises { raises: l }, Raises { raises: r }) => l == r,
-            (Type { ty: l }, Type { ty: r }) => l == r,
+            (Raises { name: l }, Raises { name: r }) => l == r,
+            (Type { name: l }, Type { name: r }) => l == r,
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) =>
                 le == re && ln == rn,
             (Function { name: l, args: la }, Function { name: r, args: ra }) =>
@@ -135,7 +107,6 @@ impl Expect {
             | (RaisesAny, RaisesAny)
             | (ExpressionAny, ExpressionAny)
             | (Stringy, Stringy)
-            | (Statement, Statement)
             | (Nullable, Nullable) => true,
 
             (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
@@ -146,17 +117,17 @@ impl Expect {
             | (Expression { ast: AST { node: Node::Or { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::Not { .. }, .. } })
             | (Expression { ast: AST { node: Node::Not { .. }, .. } }, Truthy) => true,
-            (Type { ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { ty, .. })
-                if ty == &ty::Type::from(clss::STRING_PRIMITIVE) =>
+            (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
+                if ty == &NameUnion::from(clss::STRING_PRIMITIVE) =>
                 true,
-            (Type { ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { ty, .. })
-                if ty == &ty::Type::from(clss::FLOAT_PRIMITIVE) =>
+            (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
+                if ty == &NameUnion::from(clss::FLOAT_PRIMITIVE) =>
                 true,
-            (Type { ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { ty, .. })
-                if ty == &ty::Type::from(clss::INT_PRIMITIVE) =>
+            (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
+            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
+                if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
                 true,
             _ => false
         }

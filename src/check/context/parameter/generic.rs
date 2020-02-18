@@ -1,15 +1,14 @@
 use std::convert::TryFrom;
 use std::fmt::{Display, Error, Formatter};
-use std::ops::Deref;
 
-use crate::check::context::name::Name;
+use crate::check::context::name::{DirectName, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GenericParameter {
     pub is_py_type: bool,
-    pub name:       String,
+    pub name:       DirectName,
     pub parent:     Option<Name>
 }
 
@@ -33,26 +32,12 @@ impl TryFrom<&AST> for GenericParameter {
 
     fn try_from(ast: &AST) -> TypeResult<GenericParameter> {
         match &ast.node {
-            Node::Generic { id, isa } => match isa {
-                Some(isa) => Ok(GenericParameter {
-                    is_py_type: false,
-                    name:       parameter_name(id.deref())?,
-                    parent:     Some(Name::try_from(isa.deref())?)
-                }),
-                None => Ok(GenericParameter {
-                    is_py_type: false,
-                    name:       parameter_name(id.deref())?,
-                    parent:     None
-                })
-            },
+            Node::Generic { id, isa } => {
+                let name = DirectName::try_from(id)?;
+                let parent = if let Some(isa) = isa { Some(Name::try_from(isa)?) } else { None };
+                Ok(GenericParameter { is_py_type: false, name, parent })
+            }
             _ => Err(vec![TypeErr::new(&ast.pos.clone(), "Expected generic")])
         }
-    }
-}
-
-fn parameter_name(ast: &AST) -> Result<String, TypeErr> {
-    match &ast.node {
-        Node::Id { lit } => Ok(lit.clone()),
-        _ => Err(TypeErr::new(&ast.pos, "Expected parameter name"))
     }
 }

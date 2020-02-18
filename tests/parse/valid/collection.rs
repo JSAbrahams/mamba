@@ -13,10 +13,10 @@ fn list_expression() {
 #[test]
 fn list_verify() {
     let source = String::from("[a, b]");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let elements = match ast_tree.node {
+    let elements = match ast.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
@@ -24,7 +24,7 @@ fn list_verify() {
                 _ => panic!("first element script was not list.")
             }
         }
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(elements[0].node, Node::Id { lit: String::from("a") });
@@ -34,14 +34,14 @@ fn list_verify() {
 #[test]
 fn list_builder_verify() {
     let source = String::from("[a | c, d]");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (items, conditions) = match ast_tree.node {
+    let (items, conditions) = match ast.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
             Node::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
             _ => panic!("first element script was not list builder.")
         },
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(items.node, Node::Id { lit: String::from("a") });
@@ -67,10 +67,10 @@ fn parse_set() {
 #[test]
 fn set_verify() {
     let source = String::from("{a, b}");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let elements = match ast_tree.node {
+    let elements = match ast.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
@@ -78,7 +78,7 @@ fn set_verify() {
                 _ => panic!("first element script was not set.")
             }
         }
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(elements[0].node, Node::Id { lit: String::from("a") });
@@ -88,14 +88,14 @@ fn set_verify() {
 #[test]
 fn set_builder_verify() {
     let source = String::from("{a | c, d}");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (items, conditions) = match ast_tree.node {
+    let (items, conditions) = match ast.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
             Node::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
             _ => panic!("first element script was not set builder.")
         },
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(items.node, Node::Id { lit: String::from("a") });
@@ -114,10 +114,10 @@ fn parse_tuple() {
 #[test]
 fn tuple_empty_verify() {
     let source = String::from("()");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let elements = match ast_tree.node {
+    let elements = match ast.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
@@ -125,7 +125,7 @@ fn tuple_empty_verify() {
                 _ => panic!("first element script was not tuple.")
             }
         }
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(elements.len(), 0);
@@ -134,10 +134,10 @@ fn tuple_empty_verify() {
 #[test]
 fn tuple_single_is_expr_verify() {
     let source = String::from("(a)");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let lit = match ast_tree.node {
+    let lit = match ast.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
@@ -145,7 +145,7 @@ fn tuple_single_is_expr_verify() {
                 _ => panic!("first element script was not tuple.")
             }
         }
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(lit.as_str(), "a");
@@ -154,10 +154,10 @@ fn tuple_single_is_expr_verify() {
 #[test]
 fn tuple_multiple_verify() {
     let source = String::from("(d, c)");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let _statements;
-    let elements = match ast_tree.node {
+    let elements = match ast.node {
         Node::Script { statements, .. } => {
             _statements = statements;
             match &_statements.first().expect("script empty.").node {
@@ -165,7 +165,7 @@ fn tuple_multiple_verify() {
                 _ => panic!("first element script was not tuple.")
             }
         }
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(elements.len(), 2);

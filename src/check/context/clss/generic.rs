@@ -9,18 +9,17 @@ use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
-use crate::check::context::name::Name;
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::Type;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
     pub is_py_type: bool,
-    pub name:       Name,
+    pub name:       DirectName,
     pub pos:        Position,
     pub concrete:   bool,
     pub args:       Vec<GenericFunctionArg>,
@@ -90,14 +89,15 @@ impl TryFrom<&AST> for GenericClass {
                         pos:         Default::default(),
                         vararg:      false,
                         mutable:     false,
-                        ty:          Some(Type::from(&name))
+                        ty:          Some(NameUnion::from(&name))
                     }];
                     new_args.append(&mut class_args);
                     new_args
                 };
 
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
-                if let Some(function) = functions.iter().find(|f| f.name == Type::new(INIT, &[])) {
+                if let Some(function) = functions.iter().find(|f| f.name == DirectName::from(INIT))
+                {
                     if class_args.is_empty() {
                         class_args.append(&mut function.arguments.clone())
                     } else {
@@ -116,7 +116,7 @@ impl TryFrom<&AST> for GenericClass {
                         has_default: false,
                         vararg:      false,
                         mutable:     false,
-                        ty:          Option::from(Type::from(&name))
+                        ty:          Option::from(NameUnion::from(&name))
                     })
                 }
 
@@ -193,8 +193,8 @@ impl TryFrom<&AST> for GenericClass {
     }
 }
 
-fn get_name_and_generics(_type: &AST) -> Result<(Type, Vec<GenericParameter>), Vec<TypeErr>> {
-    match &_type.node {
+fn get_name_and_generics(ast: &AST) -> Result<(DirectName, Vec<GenericParameter>), Vec<TypeErr>> {
+    match &ast.node {
         Node::Type { id, generics } => {
             let (generics, generic_errs): (Vec<_>, Vec<_>) =
                 generics.iter().map(GenericParameter::try_from).partition(Result::is_ok);
@@ -203,36 +203,35 @@ fn get_name_and_generics(_type: &AST) -> Result<(Type, Vec<GenericParameter>), V
             }
 
             let generics = generics.into_iter().map(Result::unwrap).collect::<Vec<_>>();
-            let names: Vec<Type> = generics.iter().map(|g| Type::from(g.name.as_str())).collect();
-            let name = Type::new(
+            let names: Vec<NameUnion> = generics.iter().map(|g| NameUnion::from(&g.name)).collect();
+            let name = DirectName::new(
                 match &id.node {
                     Node::Id { lit } => lit.clone(),
                     _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
                 }
                 .as_str(),
-                &names.to_vec()
+                &names
             );
 
             Ok((name, generics))
         }
-        _ => Err(vec![TypeErr::new(&_type.pos, "Expected class name")])
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected class name")])
     }
 }
 
 fn get_fields_and_functions(
-    class: &Type,
+    class: &DirectName,
     statements: &[AST],
     type_def: bool
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
     let mut fields = HashSet::new();
     let mut functions = HashSet::new();
-    let class = Type::from(class);
 
     for statement in statements {
         match &statement.node {
             Node::FunDef { .. } => {
                 let function = GenericFunction::try_from(statement)?;
-                let function = function.in_class(Some(&class), type_def, &statement.pos)?;
+                let function = function.in_class(Some(&class), type_def)?;
                 functions.insert(function);
             }
             Node::VariableDef { .. } => {

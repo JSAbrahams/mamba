@@ -36,8 +36,8 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// # use mamba::core::construct::Core;
 /// # use mamba::common::position::{CaretPos, Position};
 /// let node = Node::ReturnEmpty;
-/// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
-/// let core_result = desugar(&ast_node_pos).unwrap();
+/// let ast = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
+/// let core_result = desugar(&ast).unwrap();
 ///
 /// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
 /// ```
@@ -55,8 +55,8 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// let cond_node = Node::Int { lit: String::from("56") };
 /// let cond_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), cond_node);
 /// let node = Node::Condition { cond: Box::from(cond_pos), el: None };
-/// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
-/// let core_result = desugar(&ast_node_pos);
+/// let ast = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
+/// let core_result = desugar(&ast);
 ///
 /// assert!(core_result.is_err());
 /// ```
@@ -72,7 +72,7 @@ pub fn desugar(input: &AST) -> DesugarResult {
 pub fn desugar_all(inputs: &[DesugarInput]) -> DesugarResults {
     let inputs: Vec<_> = inputs
         .iter()
-        .map(|(node_pos, source, path)| (desugar(node_pos), source, path))
+        .map(|(ast, source, path)| (desugar(ast), source, path))
         .map(|(result, source, path)| {
             (result.map_err(|err| err.into_with_source(source, path)), source.clone(), path.clone())
         })

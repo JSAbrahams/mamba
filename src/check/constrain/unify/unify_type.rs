@@ -1,14 +1,12 @@
 use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Nullable,
-                                                            Raises, Statement, Stringy, Truthy,
-                                                            Type};
+                                                            Raises, Stringy, Truthy, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::unify::unify_link::unify_link;
 use crate::check::constrain::Unified;
-use crate::check::context::{function, Context};
+use crate::check::context::name::{AsNullable, DirectName, IsNullable, IsSuperSet, NameUnion};
+use crate::check::context::{function, Context, LookupClass};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty;
-use crate::common::delimit::comma_delimited;
 use crate::common::position::Position;
 
 pub fn unify_type(
@@ -22,21 +20,19 @@ pub fn unify_type(
         (_, ExpressionAny) => unify_link(constraints, ctx, total),
         (ExpressionAny, _) => unify_link(constraints, ctx, total),
 
-        (Type { ty }, Truthy) => {
-            let expr_ty = ctx.lookup_class(ty, &left.pos)?;
-            expr_ty.function(&ty::Type::from(function::TRUTHY), &left.pos)?;
+        (Type { name }, Truthy) => {
+            let class = ctx.class(name, &left.pos)?;
+            class.function(&DirectName::from(function::TRUTHY), &left.pos)?;
             unify_link(constraints, ctx, total)
         }
-        (Type { ty }, Stringy) => {
-            let expr_ty = ctx.lookup_class(ty, &left.pos)?;
-            expr_ty.function(&ty::Type::from(function::STR), &left.pos)?;
+        (Type { name }, Stringy) => {
+            let expr_ty = ctx.class(name, &left.pos)?;
+            expr_ty.function(&DirectName::from(function::STR), &left.pos)?;
             unify_link(constraints, ctx, total)
         }
-        (Type { ty: l_ty }, Type { ty: r_ty }) => {
-            if l_ty.is_superset(r_ty)
-                || ctx.lookup_class(&r_ty, &right.pos)?.has_parent(&l_ty, ctx, &left.pos)?
-            {
-                ctx.lookup_class(l_ty, &left.pos)?;
+        (Type { name: l_ty }, Type { name: r_ty }) => {
+            if l_ty.is_superset_of(r_ty, ctx, &left.pos)? {
+                ctx.class(l_ty, &left.pos)?;
                 unify_link(constraints, ctx, total)
             } else {
                 // TODO construct error based on type of constraint
@@ -45,28 +41,24 @@ pub fn unify_type(
             }
         }
 
-        (Type { ty }, Raises { raises }) =>
-            if raises.contains(ty) {
+        (Type { name }, Raises { name: raises }) =>
+            if raises.is_superset_of(name, ctx, &left.pos)? {
                 unify_link(constraints, ctx, total)
             } else {
-                let msg = format!(
-                    "Unexpected raises '{}', must be one of: {}",
-                    ty,
-                    comma_delimited(raises)
-                );
+                let msg = format!("Unexpected raises '{}', may only be `{}`", name, raises);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { ty }, Nullable) =>
-            if ty.is_nullable() {
+        (Type { name }, Nullable) =>
+            if name.is_nullable() {
                 unify_link(constraints, ctx, total)
             } else {
-                let msg = format!("Expected '{}', found '{}'", ty.as_nullable(), ty);
+                let msg = format!("Expected '{}', found '{}'", name.as_nullable(), name);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { ty }, Collection { ty: col_ty }) => {
-            let (mut constr, added) = check_iter(ty, col_ty, ctx, constraints, &left.pos)?;
+        (Type { name }, Collection { ty: col_ty }) => {
+            let (mut constr, added) = check_iter(name, col_ty, ctx, constraints, &left.pos)?;
             unify_link(&mut constr, ctx, total + added)
         }
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
@@ -78,7 +70,6 @@ pub fn unify_type(
         (Stringy, Nullable) | (Nullable, Stringy) => unify_link(constraints, ctx, total),
         (Stringy, Stringy) => unify_link(constraints, ctx, total),
         (Nullable, Nullable) => unify_link(constraints, ctx, total),
-        (Statement, Statement) => unify_link(constraints, ctx, total),
 
         (l_exp, r_exp) => {
             let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
@@ -88,30 +79,26 @@ pub fn unify_type(
 }
 
 fn check_iter(
-    ty: &ty::Type,
-    ty_exp: &Expected,
+    ty: &NameUnion,
+    col_ty: &Expected,
     ctx: &Context,
     constr: &mut Constraints,
     pos: &Position
 ) -> TypeResult<(Constraints, usize)> {
-    let f_name = ty::Type::from(function::ITER);
+    let f_name = DirectName::from(function::ITER);
     let mut added = 0;
 
-    for fun in ctx.lookup_class(ty, pos)?.function(&f_name, pos)? {
-        let msg = format!("{} __iter__ type undefined", ty);
-        let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
-
-        let f_name = ty::Type::from(function::NEXT);
-        for fun in ctx.lookup_class(&f_ret_ty, pos)?.function(&f_name, pos)? {
-            let f_ret_ty = fun.ty().ok_or_else(|| TypeErr::new(&pos, &msg))?;
+    for fun in ctx.class(ty, pos)?.function(&f_name, pos)?.union {
+        let f_name = DirectName::from(function::NEXT);
+        for fun in ctx.class(&fun.ret_ty, pos)?.function(&f_name, pos)?.union {
             added += 1;
             constr.eager_push(
-                &Expected::new(&pos, &Type { ty: ty.clone() }),
-                &Expected::new(&pos, &Type { ty: f_ret_ty.clone() })
+                &Expected::new(&pos, &Type { name: ty.clone() }),
+                &Expected::new(&pos, &Type { name: fun.ret_ty })
             );
         }
         added += 1;
-        constr.eager_push(&ty, &Expected::new(&pos, &Type { ty: f_ret_ty }));
+        constr.eager_push(&col_ty, &Expected::new(&pos, &Type { name: fun.ret_ty }));
     }
 
     Ok((constr.clone(), added))

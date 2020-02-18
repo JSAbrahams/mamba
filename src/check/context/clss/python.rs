@@ -7,11 +7,11 @@ use python_parser::ast::{Classdef, CompoundStatement, Statement};
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericFields;
 use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::context::{clss, function};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::Type;
 use crate::common::position::Position;
 
 pub const INT_PRIMITIVE: &str = "int";
@@ -36,8 +36,6 @@ impl TryFrom<&Classdef> for GenericClass {
         let mut functions = HashSet::new();
         let mut fields = HashSet::new();
         let generics = GenericParameters::from(&class_def.arguments).parameters;
-        let generic_names: Vec<Type> =
-            generics.iter().map(|g| Type::from(python_to_concrete(&g.name).as_str())).collect();
 
         for statement in &class_def.code {
             match statement {
@@ -57,14 +55,16 @@ impl TryFrom<&Classdef> for GenericClass {
             }
         }
 
-        let class = Type::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
+        let generic_names: Vec<NameUnion> =
+            generics.iter().map(|g| NameUnion::from(&g.name)).collect();
+        let class = DirectName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
-            .map(|f| f.in_class(Some(&class), false, &Position::default()))
+            .map(|f| f.in_class(Some(&class), false))
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
-            .find(|f| f.name == Type::new(function::INIT, &[]))
+            .find(|f| f.name == DirectName::from(function::INIT))
             .map_or(vec![], |f| f.arguments.clone());
 
         Ok(GenericClass {
@@ -77,7 +77,7 @@ impl TryFrom<&Classdef> for GenericClass {
             fields,
             functions: functions
                 .into_iter()
-                .map(|f| f.in_class(Some(&class), false, &Position::default()))
+                .map(|f| f.in_class(Some(&class), false))
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect()

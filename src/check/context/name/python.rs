@@ -3,7 +3,7 @@ use std::ops::Deref;
 use python_parser::ast::{Expression, SetItem, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::context::name::{Name, NameUnion};
+use crate::check::context::name::{Name, NameUnion, NameVariant};
 
 impl From<&Expression> for NameUnion {
     fn from(value: &Expression) -> Self {
@@ -12,7 +12,8 @@ impl From<&Expression> for NameUnion {
             Expression::TupleLiteral(_) => NameUnion::from(&Name::from(value)),
             Expression::Subscript(id, exprs) =>
                 if id.deref() == &Expression::Name(String::from("Union")) {
-                    NameUnion::new(exprs.iter().map(|e| to_ty_name(e)).collect())
+                    let names: Vec<Name> = exprs.iter().map(|e| to_ty_name(e)).collect();
+                    NameUnion::new(&names)
                 } else {
                     NameUnion::from(&Name::from(value))
                 },
@@ -30,12 +31,14 @@ impl From<&Expression> for Name {
                     SetItem::Star(_) => None,
                     SetItem::Unique(expr) => Some(expr)
                 });
-                Name::Tuple(expressions.map(|expr| Name::from(expr)).collect())
+                let variant =
+                    NameVariant::Tuple(expressions.map(|expr| NameUnion::from(expr)).collect());
+                Name { is_nullable: false, variant }
             }
             Expression::Subscript(id, exprs) => {
                 let lit = match &id.deref() {
                     Expression::Name(name) => name.clone(),
-                    _ => String::new()
+                    _ => return Name::empty()
                 };
 
                 // Union not expected
@@ -43,6 +46,8 @@ impl From<&Expression> for Name {
                     Name::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
+                    let generics: Vec<NameUnion> =
+                        generics.iter().map(|n| NameUnion::from(n)).collect();
                     Name::new(&lit, &generics)
                 }
             }

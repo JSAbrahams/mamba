@@ -4,7 +4,7 @@ use std::ops::Deref;
 
 use crate::check::context::clss;
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::{Name, NameUnion};
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -43,12 +43,16 @@ impl Hash for GenericFunctionArg {
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<&Name>, _: &Position) -> TypeResult<GenericFunctionArg> {
+    pub fn in_class(self, class: Option<&DirectName>) -> TypeResult<GenericFunctionArg> {
         if class.is_none() && self.name.as_str() == SELF {
             Err(vec![TypeErr::new(&self.pos, "Cannot have self argument outside class")])
-        } else if class.is_some() && self.name.as_str() == SELF && self.ty.is_none() {
-            Ok(GenericFunctionArg { ty: NameUnion::from(class), ..self })
-        // TODO if self has type, check that class is parent of type
+        } else if self.name.as_str() == SELF && self.ty.is_none() {
+            if let Some(class) = class {
+                // TODO if self has type, check that class is parent of type
+                Ok(GenericFunctionArg { ty: Some(NameUnion::from(class)), ..self })
+            } else {
+                Ok(self)
+            }
         } else {
             Ok(self)
         }

@@ -7,10 +7,10 @@ use crate::check::constrain::Constrained;
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW,
                                       SQRT, SUB};
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
-use crate::check::ty;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_op(
@@ -27,27 +27,27 @@ pub fn gen_op(
             generate(left, &env, ctx, &mut constr)
         }
         Node::Range { from, to, step: Some(step), .. } => {
-            let ty = ty::Type::from(clss::INT_PRIMITIVE);
+            let name = NameUnion::from(clss::INT_PRIMITIVE);
             let l_exp = Expected::from(from);
-            constr.add(&l_exp, &Expected::new(&from.pos, &Type { ty: ty.clone() }));
+            constr.add(&l_exp, &Expected::new(&from.pos, &Type { name }));
 
             let l_exp = Expected::from(to);
-            constr.add(&l_exp, &Expected::new(&to.pos, &Type { ty: ty.clone() }));
+            constr.add(&l_exp, &Expected::new(&to.pos, &Type { name }));
 
             let l_exp = Expected::from(step);
-            constr.add(&l_exp, &Expected::new(&step.pos, &Type { ty }));
+            constr.add(&l_exp, &Expected::new(&step.pos, &Type { name }));
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
             let (mut constr, env) = generate(to, &env, ctx, &mut constr)?;
             generate(step, &env, ctx, &mut constr)
         }
         Node::Range { from, to, .. } => {
-            let ty = ty::Type::from(clss::INT_PRIMITIVE);
+            let name = NameUnion::from(clss::INT_PRIMITIVE);
             let l_exp = Expected::from(from);
-            constr.add(&l_exp, &Expected::new(&from.pos, &Type { ty: ty.clone() }));
+            constr.add(&l_exp, &Expected::new(&from.pos, &Type { name }));
 
             let l_exp = Expected::from(to);
-            constr.add(&l_exp, &Expected::new(&to.pos, &Type { ty }));
+            constr.add(&l_exp, &Expected::new(&to.pos, &Type { name }));
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
             generate(to, &env, ctx, &mut constr)
@@ -62,9 +62,9 @@ pub fn gen_op(
                 constr.add(&Expected::from(expr), &Expected::new(&expr.pos, &Stringy))
             }
 
-            let ty = ty::Type::from(STRING_PRIMITIVE);
+            let name = NameUnion::from(STRING_PRIMITIVE);
             let left = Expected::from(ast);
-            constr.add(&left, &Expected::new(&ast.pos, &Type { ty }));
+            constr.add(&left, &Expected::new(&ast.pos, &Type { name }));
             Ok((constr, env))
         }
         Node::Bool { .. } => {
@@ -90,13 +90,13 @@ pub fn gen_op(
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let ty = Type { ty: ty::Type::from(clss::FLOAT_PRIMITIVE) };
+            let ty = Type { name: NameUnion::from(clss::FLOAT_PRIMITIVE) };
             constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
 
             let access = Expected::new(&expr.pos, &Access {
                 entity: Box::new(Expected::from(expr)),
                 name:   Box::from(Expected::new(&expr.pos, &Function {
-                    name: ty::Type::from(SQRT),
+                    name: DirectName::from(SQRT),
                     args: vec![Expected::from(expr)]
                 }))
             });
@@ -124,9 +124,9 @@ pub fn gen_op(
             let l_exp = Expected::from(left);
             constr.add(&l_exp, &Expected::new(&right.pos, &ExpressionAny));
 
-            let ty = ty::Type::from(clss::INT_PRIMITIVE);
+            let name = NameUnion::from(clss::INT_PRIMITIVE);
             let l_exp = Expected::from(right);
-            constr.add(&l_exp, &Expected::new(&right.pos, &Type { ty }));
+            constr.add(&l_exp, &Expected::new(&right.pos, &Type { name }));
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
@@ -162,8 +162,8 @@ pub fn gen_op(
 }
 
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
-    let ty = ty::Type::from(ty);
-    constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &Type { ty }));
+    let name = NameUnion::from(ty);
+    constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &Type { name }));
     Ok((constr.clone(), env.clone()))
 }
 
@@ -181,7 +181,7 @@ fn impl_magic(
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::from(left)),
             name:   Box::new(Expected::new(&left.pos, &Function {
-                name: ty::Type::from(fun),
+                name: DirectName::from(fun),
                 args: vec![Expected::from(left), Expected::from(right)]
             }))
         })
@@ -205,12 +205,12 @@ fn impl_bool_op(
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::from(left)),
             name:   Box::new(Expected::new(&left.pos, &Function {
-                name: ty::Type::from(fun),
+                name: DirectName::from(fun),
                 args: vec![Expected::from(left), Expected::from(right)]
             }))
         })
     );
-    let ty = Type { ty: ty::Type::from(clss::BOOL_PRIMITIVE) };
+    let ty = Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) };
     constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;

@@ -14,7 +14,6 @@ mod pass;
 
 pub mod context;
 pub mod result;
-pub mod ty;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 

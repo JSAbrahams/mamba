@@ -21,9 +21,9 @@ pub struct UnimplementedErr {
 }
 
 impl UnimplementedErr {
-    pub fn new(node_pos: &AST, msg: &str) -> UnimplementedErr {
+    pub fn new(ast: &AST, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            position:    node_pos.pos.clone(),
+            position:    ast.pos.clone(),
             msg:         format!(
                 "The {} construct has not yet been implemented as of v{}.",
                 msg, VERSION

@@ -13,7 +13,7 @@ where
     }
 }
 
-pub fn comma_delimited<I, D>(iterable: I) -> String
+pub fn comma_delm<I, D>(iterable: I) -> String
 where
     I: IntoIterator<Item = D>,
     D: Display {

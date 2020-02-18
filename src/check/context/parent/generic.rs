@@ -1,9 +1,7 @@
-// TODO args should be literals or identifiers
-
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
-use crate::check::context::name::NameUnion;
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -12,7 +10,7 @@ use crate::parse::ast::{Node, AST};
 #[derive(Debug, Clone, Eq)]
 pub struct GenericParent {
     pub is_py_type: bool,
-    pub name:       String,
+    pub name:       DirectName,
     pub pos:        Position,
     pub generics:   Vec<GenericParameter>,
     pub args:       Vec<NameUnion>
@@ -45,10 +43,7 @@ impl TryFrom<&AST> for GenericParent {
             // TODO use arguments
             Node::Parent { id, generics, .. } | Node::Type { id, generics } => Ok(GenericParent {
                 is_py_type: false,
-                name:       match &id.node {
-                    Node::Id { lit } => lit.clone(),
-                    _ => return Err(vec![TypeErr::new(&id.pos.clone(), "Expected identifier")])
-                },
+                name:       DirectName::try_from(id)?,
                 pos:        ast.pos.clone(),
                 generics:   generics
                     .iter()

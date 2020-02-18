@@ -6,14 +6,14 @@ use mamba::parse::parse_direct;
 #[test]
 fn anon_fun_no_args_verify() {
     let source = String::from("\\ => c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (args, body) = match ast_tree.node {
+    let (args, body) = match ast.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
             Node::AnonFun { args, body } => (args.clone(), body.clone()),
             _ => panic!("first element script was anon fun.")
         },
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(args.len(), 0);
@@ -23,14 +23,14 @@ fn anon_fun_no_args_verify() {
 #[test]
 fn anon_fun_verify() {
     let source = String::from("\\a,b => c");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (args, body) = match ast_tree.node {
+    let (args, body) = match ast.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
             Node::AnonFun { args, body } => (args.clone(), body.clone()),
             _ => panic!("first element script was anon fun.")
         },
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(args.len(), 2);
@@ -51,14 +51,14 @@ fn anon_fun_verify() {
 #[test]
 fn direct_call_verify() {
     let source = String::from("a(b, c)");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (name, args) = match ast_tree.node {
+    let (name, args) = match ast.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
             Node::FunctionCall { name, args } => (name.clone(), args.clone()),
             _ => panic!("first element script was anon fun.")
         },
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(name.node, Node::Id { lit: String::from("a") });
@@ -70,9 +70,9 @@ fn direct_call_verify() {
 #[test]
 fn method_call_verify() {
     let source = String::from("instance.a(b, c)");
-    let ast_tree = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (instance, name, args) = match ast_tree.node {
+    let (instance, name, args) = match ast.node {
         Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
             Node::PropertyCall { instance, property } => match &property.node {
                 Node::FunctionCall { name, args } => (instance.clone(), name.clone(), args.clone()),
@@ -80,7 +80,7 @@ fn method_call_verify() {
             },
             other => panic!("first element script was property call {:?}", other)
         },
-        other => panic!("ast_tree was not script {:?}", other)
+        other => panic!("ast was not script {:?}", other)
     };
 
     assert_eq!(instance.node, Node::Id { lit: String::from("instance") });

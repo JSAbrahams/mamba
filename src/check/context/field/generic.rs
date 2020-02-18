@@ -2,11 +2,9 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::context::name::{Name, NameUnion};
+use crate::check::context::name::{match_name, DirectName, NameUnion};
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty::util::match_type;
-use crate::check::ty::Type;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 use std::collections::HashSet;
@@ -18,7 +16,7 @@ pub struct GenericField {
     pub pos:        Position,
     pub private:    bool,
     pub mutable:    bool,
-    pub in_class:   Option<Name>,
+    pub in_class:   Option<DirectName>,
     pub ty:         Option<NameUnion>
 }
 
@@ -40,24 +38,18 @@ impl TryFrom<&AST> for GenericField {
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
             // TODO do something with forward
-            Node::VariableDef { private, var, mutable, ty, .. } => {
-                let name = field_name(var.deref())?;
-                let ty = match ty {
-                    Some(ty) => Some(Type::try_from(ty.deref())?),
+            Node::VariableDef { private, var, mutable, ty, .. } => Ok(GenericField {
+                is_py_type: false,
+                name:       field_name(var.deref())?,
+                mutable:    *mutable,
+                pos:        ast.pos.clone(),
+                in_class:   None,
+                private:    *private,
+                ty:         match ty {
+                    Some(ty) => Some(NameUnion::try_from(ty.deref())?),
                     None => None
-                };
-
-                let pos = ast.pos.clone();
-                Ok(GenericField {
-                    is_py_type: false,
-                    name,
-                    mutable: *mutable,
-                    pos,
-                    in_class: None,
-                    private: *private,
-                    ty
-                })
-            }
+                }
+            }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
         }
     }
@@ -75,8 +67,8 @@ impl TryFrom<&AST> for GenericFields {
                     // TODO infer type if not present
                     match &ty {
                         Some(ty) => {
-                            let ty = Type::try_from(ty.deref())?;
-                            Ok(match_type(&identifier, &ty, &ast.pos)?
+                            let ty = NameUnion::try_from(ty.deref())?;
+                            Ok(match_name(&identifier, &ty, &ast.pos)?
                                 .iter()
                                 .map(|(id, (inner_mut, ty))| GenericField {
                                     is_py_type: false,
@@ -113,7 +105,7 @@ impl TryFrom<&AST> for GenericFields {
 impl GenericField {
     pub fn in_class(
         self,
-        class: Option<&Type>,
+        class: Option<&DirectName>,
         type_def: bool,
         pos: &Position
     ) -> TypeResult<GenericField> {

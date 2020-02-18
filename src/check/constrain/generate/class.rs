@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
@@ -5,14 +6,13 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{gen_vec, generate};
 use crate::check::constrain::Constrained;
-use crate::check::context::field;
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::Context;
+use crate::check::context::{field, LookupClass};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
-use crate::check::ty;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
-use std::convert::TryFrom;
 
 pub fn gen_class(
     ast: &AST,
@@ -50,16 +50,13 @@ pub fn constrain_class_body(
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
 
-    let class_name = ty::Type::try_from(ty.deref())?;
+    let class_name = DirectName::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
-    let class_ty_exp = Type { ty: class_name.clone() };
+    let class_ty_exp = Type { name: NameUnion::from(&class_name) };
     res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
 
-    let all_fields = ctx.lookup_class(&class_name, &ty.pos)?.fields(&ty.pos)?;
-    for fields in all_fields {
-        for field in fields {
-            res = property_from_field(&ty.pos, &field, &class_name, &res.1, &mut res.0)?;
-        }
+    for field in ctx.class(&class_name, &ty.pos)?.fields {
+        res = property_from_field(&ty.pos, &field, &class_name, &res.1, &mut res.0)?;
     }
 
     res.0.add(
@@ -76,33 +73,24 @@ pub fn constrain_class_body(
 pub fn property_from_field(
     pos: &Position,
     field: &field::Field,
-    class_ty: &ty::Type,
+    class: &DirectName,
     env: &Environment,
     constr: &mut ConstrBuilder
 ) -> Constrained {
     // TODO generate constraints are part of interface
     // TODO add constraint for mutable field
-    let field_ty = field.ty.clone().ok_or_else(|| {
-        let msg = format!(
-            "{} did not have a type annotation.\nCurrently, all fields must have a type.\nIn \
-             future, we will infer these types.",
-            field
-        );
-        TypeErr::new(&pos, &msg)
-    })?;
-
     let node = Node::PropertyCall {
         instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
         property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } })
     };
     let property_call = Expected::from(&AST::new(&pos, node));
-    let field_ty = Expected::new(&pos, &Type { ty: field_ty });
+    let field_ty = Expected::new(&pos, &Type { name: field.ty.clone() });
 
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
     constr.add(&field_ty, &property_call);
 
     let access = Expected::new(&pos, &Access {
-        entity: Box::new(Expected::new(&pos, &Type { ty: class_ty.clone() })),
+        entity: Box::new(Expected::new(&pos, &Type { name: NameUnion::from(class) })),
         name:   Box::new(Expected::new(&pos, &Field { name: field.name.clone() }))
     });
 

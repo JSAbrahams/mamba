@@ -1,16 +1,15 @@
-use std::convert::TryFrom;
-
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::{ExpressionAny, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::Constrained;
+use crate::check::context::name::NameUnion;
 use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::ty;
 use crate::parse::ast::{Node, AST};
+use std::convert::TryFrom;
 
 pub fn gen_resources(
     ast: &AST,
@@ -22,7 +21,7 @@ pub fn gen_resources(
         Node::Raises { expr_or_stmt, errors } => {
             let mut constr = constr.clone();
             for error in errors {
-                let exp = Expected::new(&error.pos, &Type { ty: ty::Type::try_from(ast)? });
+                let exp = Expected::new(&error.pos, &Type { name: NameUnion::try_from(ast)? });
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
@@ -36,7 +35,7 @@ pub fn gen_resources(
             constr.add(&resource_exp, &Expected::new(&resource.pos, &ExpressionAny));
 
             if let Some(ty) = ty {
-                let ty_exp = Type { ty: ty::Type::try_from(ty)? };
+                let ty_exp = Type { name: NameUnion::try_from(ty)? };
                 constr.add(&resource_exp, &Expected::new(&ty.pos, &ty_exp));
             }
 

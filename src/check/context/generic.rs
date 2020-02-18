@@ -60,7 +60,7 @@ fn get_functions_and_fields(
         match &stmt.node {
             Node::FunDef { .. } => {
                 let generic_function: Result<_, Vec<TypeErr>> = GenericFunction::try_from(stmt)
-                    .and_then(|f| f.in_class(None, false, &stmt.pos))
+                    .and_then(|f| f.in_class(None, false))
                     .map_err(|e| e.into_iter().map(|e| e.into_with_source(source, path)).collect());
                 functions.insert(generic_function?);
             }

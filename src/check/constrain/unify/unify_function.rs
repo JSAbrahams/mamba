@@ -1,18 +1,19 @@
-use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Statement,
-                                                            Type};
+use std::collections::HashSet;
+
+use itertools::{EitherOrBoth, Itertools};
+
+use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::unify_link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
 use crate::check::context::arg::FunctionArg;
+use crate::check::context::name::NameUnion;
 use crate::check::context::util::check_is_parent;
-use crate::check::context::Context;
+use crate::check::context::{Context, LookupClass, LookupFunction};
 use crate::check::result::TypeErr;
-use crate::check::ty;
 use crate::common::position::Position;
-use itertools::{EitherOrBoth, Itertools};
-use std::collections::HashSet;
 
 pub fn unify_function(
     constr: &Constraint,
@@ -23,25 +24,28 @@ pub fn unify_function(
     total: usize
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (Function { args, .. }, Type { ty }) => {
-            let expr_ty = ctx.lookup_class(ty, &left.pos)?;
-            let functions = expr_ty.anon_fun_params(&left.pos)?;
-
+        (Function { args, .. }, Type { name }) => {
+            let functions = ctx.function(name, &left.pos)?;
             let mut count = 0;
-            for (f_args, _) in &functions {
-                for possible in f_args.iter().zip_longest(args.iter()) {
+            for function in &functions.union {
+                for possible in function.arguments.iter().zip_longest(args.iter()) {
                     match possible {
-                        EitherOrBoth::Both(ty, expected) => {
+                        EitherOrBoth::Both(arg, expected) => {
                             count += 1;
-                            let ty = Type { ty: ty.clone() };
-                            let right = Expected::new(&left.pos, &ty);
-                            constraints.eager_push(expected, &right);
+                            if let Some(name) = arg.ty.clone() {
+                                let ty = Type { name };
+                                let right = Expected::new(&left.pos, &ty);
+                                constraints.eager_push(expected, &right);
+                            } else {
+                                let msg = format!("Argument '{}' type unknown.", arg);
+                                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                            }
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
                                 "{} arguments given to function which takes {} arguments",
                                 args.len(),
-                                f_args.len()
+                                function.arguments.len()
                             );
                             return Err(vec![TypeErr::new(&left.pos, &msg)]);
                         }
@@ -53,60 +57,47 @@ pub fn unify_function(
         }
 
         (Access { entity, name }, _) =>
-            if let Type { ty: entity_name } = &entity.expect {
+            if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
-                        let field =
-                            ctx.lookup_class(entity_name, &left.pos)?.field(name, &left.pos)?;
-                        if field.private {
-                            let name = ty::Type::new(&field.name, &[]);
-                            check_is_parent(
-                                &name,
-                                &constraints.in_class,
-                                entity_name,
-                                ctx,
-                                &left.pos
-                            )?;
+                        let fields = ctx.class(entity_name, &left.pos)?.field(name, &left.pos)?;
+                        for field in fields.union {
+                            if field.private {
+                                check_is_parent(
+                                    &field.ty,
+                                    &constraints.in_class,
+                                    entity_name,
+                                    ctx,
+                                    &left.pos
+                                )?;
+                            }
+                            let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
+                            constraints.eager_push(&right, &field_ty_exp);
                         }
-                        let field_ty_exp = if let Some(ty) = field.ty {
-                            Expected::new(&left.pos, &Type { ty: ty.clone() })
-                        } else {
-                            Expected::new(&left.pos, &Statement)
-                        };
-                        constraints.eager_push(&right, &field_ty_exp);
                         unify_link(constraints, ctx, total)
                     }
                     Function { name, args } => {
-                        let expr_ty = ctx.lookup_class(entity_name, &left.pos)?;
-                        let possible_fun = expr_ty.function(&name, &left.pos)?;
+                        let class = ctx.class(entity_name, &left.pos)?;
+                        let function_union = class.function(&name, &left.pos)?;
 
-                        for function in &possible_fun {
+                        for function in &function_union.union {
                             if function.private {
-                                let name = ty::Type::from(&function.name);
                                 check_is_parent(
-                                    &name,
+                                    &NameUnion::from(&function.name),
                                     &constraints.in_class,
-                                    &entity_name,
+                                    entity_name,
                                     ctx,
                                     &left.pos
                                 )?;
                             }
 
-                            constraints.eager_push(
-                                &right,
-                                &Expected::new(
-                                    &left.pos,
-                                    &if let Some(ty) = function.ty() {
-                                        Type { ty }
-                                    } else {
-                                        Statement
-                                    }
-                                )
-                            );
+                            let fun_ty_exp =
+                                Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
+                            constraints.eager_push(&right, &fun_ty_exp);
                         }
 
                         let possible_args: HashSet<Vec<FunctionArg>> =
-                            possible_fun.iter().map(|f| f.arguments.clone()).collect();
+                            function_union.union.iter().map(|f| f.arguments.clone()).collect();
                         let (mut constr, added) =
                             unify_fun_arg(&possible_args, &args, &constraints, &left.pos)?;
                         unify_link(&mut constr, ctx, total + added)
@@ -141,18 +132,14 @@ fn unify_fun_arg(
         for either_or_both in f_args.iter().zip_longest(args.iter()) {
             match either_or_both {
                 EitherOrBoth::Both(fun_arg, expected) => {
-                    let ty = &fun_arg.ty.as_ref();
-                    let ty = ty
-                        .ok_or_else(|| {
-                            TypeErr::new(
-                                &expected.pos,
-                                "Function argument must have type parameters"
-                            )
-                        })?
-                        .clone();
-
+                    let name = &fun_arg.ty.ok_or_else(|| {
+                        TypeErr::new(&expected.pos, "Function argument must have type parameters")
+                    })?;
                     added += 1;
-                    constr.eager_push(&Expected::new(&expected.pos, &Type { ty }), &expected)
+                    constr.eager_push(
+                        &Expected::new(&expected.pos, &Type { name: name.clone() }),
+                        &expected
+                    )
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
                     return Err(vec![TypeErr::new(

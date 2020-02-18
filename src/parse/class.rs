@@ -95,8 +95,8 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     }
 
     let end = match (generics.last(), args.last()) {
-        (_, Some(node_pos)) => node_pos.pos.clone(),
-        (Some(node_pos), _) => node_pos.pos.clone(),
+        (_, Some(ast)) => ast.pos.clone(),
+        (Some(ast), _) => ast.pos.clone(),
         _ => id.pos.clone()
     };
     let node = Node::Parent { id, generics, args };

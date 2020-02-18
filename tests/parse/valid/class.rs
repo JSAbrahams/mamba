@@ -19,14 +19,14 @@ fn parse_imports_class() {
 #[test]
 fn import_verify() {
     let source = String::from("import d");
-    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
-    let (import, _as) = match ast_tree.node {
+    let (import, _as) = match ast.node {
         Node::File { modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, _as } => (import.clone(), _as.clone()),
             _ => panic!("first element script was not list.")
         },
-        _ => panic!("ast_tree was not script.")
+        _ => panic!("ast was not script.")
     };
 
     assert_eq!(import.len(), 1);
@@ -37,14 +37,14 @@ fn import_verify() {
 #[test]
 fn import_as_verify() {
     let source = String::from("import d as e");
-    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
-    let (import, _as) = match ast_tree.node {
+    let (import, _as) = match ast.node {
         Node::File { modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, _as } => (import.clone(), _as.clone()),
             other => panic!("first element script was not import: {:?}.", other)
         },
-        other => panic!("ast_tree was not script: {:?}", other)
+        other => panic!("ast was not script: {:?}", other)
     };
 
     assert_eq!(import.len(), 1);
@@ -56,9 +56,9 @@ fn import_as_verify() {
 #[test]
 fn from_import_as_verify() {
     let source = String::from("from c import d,f as e,g");
-    let ast_tree = parse(&tokenize(&source).unwrap()).unwrap();
+    let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
-    let (from, import, _as) = match ast_tree.node {
+    let (from, import, _as) = match ast.node {
         Node::File { modules, .. } => match &modules.first().expect("script empty.").node {
             Node::FromImport { id, import } => match &import.node {
                 Node::Import { import, _as } => (id.clone(), import.clone(), _as.clone()),
@@ -66,7 +66,7 @@ fn from_import_as_verify() {
             },
             other => panic!("first element script was not from: {:?}.", other)
         },
-        other => panic!("ast_tree was not script: {:?}", other)
+        other => panic!("ast was not script: {:?}", other)
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("c") });

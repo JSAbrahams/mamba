@@ -2,19 +2,25 @@ use std::collections::VecDeque;
 
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::Constraint;
-use crate::check::context::name::Name;
+use crate::check::context::name::DirectName;
 use crate::check::result::{TypeErr, TypeResult};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    pub in_class: Vec<Name>,
+    pub in_class: Vec<DirectName>,
     constraints:  VecDeque<Constraint>
 }
 
+impl From<&(Vec<DirectName>, Vec<Constraint>)> for Constraints {
+    fn from((in_class, constraints): &(Vec<DirectName>, Vec<Constraint>)) -> Self {
+        let constraints = VecDeque::from(constraints.clone());
+        Constraints { in_class: in_class.clone(), constraints }
+    }
+}
+
 impl Constraints {
-    pub fn new(constraints: &[Constraint], in_class: &[Name]) -> Constraints {
-        let constraints = VecDeque::from(Vec::from(constraints));
-        Constraints { in_class: Vec::from(in_class), constraints }
+    pub fn new(in_class: &[DirectName]) -> Constraints {
+        Constraints { in_class: Vec::from(in_class), constraints: VecDeque::new() }
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }
@@ -51,5 +57,5 @@ impl Constraints {
 }
 
 impl Default for Constraints {
-    fn default() -> Self { Constraints::new(&[], &[]) }
+    fn default() -> Self { Constraints::new(&[]) }
 }

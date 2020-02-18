@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -8,12 +7,12 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::Constrained;
 use crate::check::context::arg::SELF;
-use crate::check::context::{clss, Context};
+use crate::check::context::clss::HasParent;
+use crate::check::context::name::{match_name, DirectName, NameUnion, Union};
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::TypeErr;
-use crate::check::ty;
-use crate::check::ty::util::match_type;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_def(
@@ -29,22 +28,23 @@ pub fn gen_def(
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
             let mut constr = if let Some(body) = body {
                 let r_tys: Vec<_> =
-                    raises.into_iter().map(|r| (r.pos.clone(), ty::Type::try_from(r))).collect();
-                let mut r_res: HashSet<ty::Type> = HashSet::new();
-                let exception_ty = ty::Type::from(clss::EXCEPTION);
+                    raises.into_iter().map(|r| (r.pos.clone(), DirectName::try_from(r))).collect();
+                let mut r_res = NameUnion::empty();
+                // TODO check this during Context check
+                let exception_name = NameUnion::from(clss::EXCEPTION);
                 for (pos, raise) in r_tys {
                     let raise = raise?;
-                    if !ctx.lookup_class(&raise, &pos)?.has_parent(&exception_ty, ctx, &pos)? {
-                        let msg = format!("{} is not an {}", raise, clss::EXCEPTION);
+                    if !ctx.class(&raise, &pos)?.has_parent(&exception_name, ctx, &pos)? {
+                        let msg = format!("`{}` is not an `{}`", raise, exception_name);
                         return Err(vec![TypeErr::new(&pos, &msg)]);
                     }
-                    r_res.insert(raise);
+                    r_res = r_res.union(&raise)
                 }
 
                 let inner_env = inner_env.insert_raises(&r_res, &ast.pos);
                 if let Some(ret_ty) = ret_ty {
-                    let ty = ty::Type::try_from(ret_ty)?;
-                    let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { ty });
+                    let name = NameUnion::try_from(ret_ty)?;
+                    let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { name });
                     let inner_env = inner_env.return_type(&ret_ty_exp);
                     generate(body, &inner_env, ctx, &mut constr)?.0
                 } else {
@@ -114,10 +114,10 @@ pub fn identifier_from_var(
     let mut names = vec![];
 
     if let Some(ty) = ty {
-        let ty = ty::Type::try_from(ty.deref())?;
+        let name = NameUnion::try_from(ty.deref())?;
         let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
-        for (f_name, (f_mut, ty)) in match_type(&identifier, &ty, &var.pos)? {
-            let ty = Expected::new(&var.pos, &Type { ty: ty.clone() });
+        for (f_name, (f_mut, name)) in match_name(&identifier, &name, &var.pos)? {
+            let ty = Expected::new(&var.pos, &Type { name: name.clone() });
             env = env.insert_var(mutable && f_mut, &f_name, &ty);
             names.push(f_name);
         }
@@ -133,14 +133,14 @@ pub fn identifier_from_var(
     let var_expect = Expected::from(var);
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
-            let ty_exp = Type { ty: ty::Type::try_from(ty.deref())? };
+            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
             let expr_expect = Expected::from(expr);
             constr.add(&var_expect, &expr_expect);
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
-            let ty_exp = Type { ty: ty::Type::try_from(ty.deref())? };
+            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
             Ok((constr, env))
         }

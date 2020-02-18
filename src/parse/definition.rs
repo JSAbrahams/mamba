@@ -19,8 +19,8 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     macro_rules! op {
         ($it:expr, $token:ident, $node:ident) => {{
             let end = $it.eat(&Token::$token, "definition")?;
-            let node_pos = AST::new(&start.union(&end), Node::$node);
-            parse_fun_def(&node_pos, pure, private, $it)
+            let ast = AST::new(&start.union(&end), Node::$node);
+            parse_fun_def(&ast, pure, private, $it)
         }};
     };
 

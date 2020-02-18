@@ -69,7 +69,7 @@ pub fn parse(input: &[Lex]) -> ParseResult {
 pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
     let inputs: Vec<_> = inputs
         .iter()
-        .map(|(node_pos, source, path)| (parse(node_pos), source, path))
+        .map(|(ast, source, path)| (parse(ast), source, path))
         .map(|(result, source, path)| {
             (result.map_err(|err| err.into_with_source(source, path)), source.clone(), path.clone())
         })
