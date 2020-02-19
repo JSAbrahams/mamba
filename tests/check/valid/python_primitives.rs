@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
-use mamba::check::context::Context;
-use mamba::check::ty::Type;
+use mamba::check::context::name::{DirectName, NameUnion};
+use mamba::check::context::{Context, LookupClass};
 use mamba::check::CheckInput;
 use mamba::common::position::Position;
 
@@ -11,11 +11,11 @@ pub fn primitives_present() {
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_primitives().unwrap();
 
-    context.class(&Type::new("String", &vec![]), &Position::default()).unwrap();
-    context.class(&Type::new("Bool", &vec![]), &Position::default()).unwrap();
-    context.class(&Type::new("Float", &vec![]), &Position::default()).unwrap();
-    context.class(&Type::new("Int", &vec![]), &Position::default()).unwrap();
-    context.class(&Type::new("Complex", &vec![]), &Position::default()).unwrap();
+    context.class(&DirectName::from("String"), &Position::default()).unwrap();
+    context.class(&DirectName::from("Bool"), &Position::default()).unwrap();
+    context.class(&DirectName::from("Float"), &Position::default()).unwrap();
+    context.class(&DirectName::from("Int"), &Position::default()).unwrap();
+    context.class(&DirectName::from("Complex"), &Position::default()).unwrap();
 }
 
 #[test]
@@ -24,11 +24,13 @@ pub fn std_lib_present() {
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_std_lib().unwrap();
 
-    context.class(&Type::new("Set", &vec![Type::from("Int")]), &Position::default()).unwrap();
     context
-        .class(&Type::new("List", &vec![Type::from("Something")]), &Position::default())
+        .class(&DirectName::new("Set", &vec![NameUnion::from("Int")]), &Position::default())
         .unwrap();
-    context.class(&Type::new("Range", &vec![]), &Position::default()).unwrap();
-    context.class(&Type::new("undefined", &vec![]), &Position::default()).unwrap();
-    context.class(&Type::new("Exception", &vec![]), &Position::default()).unwrap();
+    context
+        .class(&DirectName::new("List", &vec![NameUnion::from("Something")]), &Position::default())
+        .unwrap();
+    context.class(&DirectName::from("Range"), &Position::default()).unwrap();
+    context.class(&DirectName::from("undefined"), &Position::default()).unwrap();
+    context.class(&DirectName::from("Exception"), &Position::default()).unwrap();
 }

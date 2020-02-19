@@ -59,7 +59,7 @@ pub fn gen_call(
                 for (_, fun_exp) in functions {
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
                     let args = args.iter().map(Expected::from).collect();
-                    let right = Expected::new(&last_pos, &Function { name: f_name, args });
+                    let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
                     constr.add(&right, &fun_exp);
                 }
             } else {
@@ -115,12 +115,9 @@ fn call_parameters(
     for either_or_both in possible.iter().zip_longest(args.iter()) {
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
-                let ty = &fun_arg
-                    .ty
-                    .ok_or_else(|| {
-                        TypeErr::new(&pos, "Function argument must have type parameters")
-                    })?
-                    .clone();
+                let ty = &fun_arg.ty.clone().ok_or_else(|| {
+                    TypeErr::new(&pos, "Function argument must have type parameters")
+                })?;
 
                 let arg_exp = Expected::new(&pos, &arg);
                 let name = ctx.class(ty, pos)?.name();

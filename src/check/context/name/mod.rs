@@ -184,18 +184,18 @@ impl IsSuperSet<NameVariant> for NameVariant {
                 left.is_superset_of(right, ctx, pos),
             (NameVariant::Tuple(left), NameVariant::Tuple(right)) => left
                 .iter()
-                .map(|l| right.iter().map(|r| l.is_superset_of(r, ctx, pos)))
+                .map(|l| right.iter().map(move |r| l.is_superset_of(r, ctx, pos)))
                 .flatten()
                 .collect::<Result<Vec<bool>, _>>()
                 .map(|b| b.iter().all(|b| *b)),
-            (NameVariant::Fun(left_a, left), NameVariant::Fun(right_a, right)) => Ok(left_a
-                .iter()
-                .map(|la| right_a.iter().map(|ra| la.is_superset_of(ra, ctx, pos)))
-                .flatten()
-                .collect::<Result<Vec<bool>, _>>()?
-                .iter()
-                .all(|b| *b)
-                && left.is_superset_of(right, ctx, pos)?),
+            (NameVariant::Fun(left_a, left), NameVariant::Fun(right_a, right)) =>
+                Ok(left_a.len() == right_a.len() && left.is_superset_of(right, ctx, pos)? && {
+                    let mut all = true;
+                    for (left_a, right_a) in left_a.iter().zip(right_a) {
+                        all = all && left_a.is_superset_of(right_a, ctx, pos)?;
+                    }
+                    all
+                }),
             _ => Ok(false)
         }
     }
@@ -208,12 +208,11 @@ impl IsSuperSet<DirectName> for DirectName {
         ctx: &Context,
         pos: &Position
     ) -> TypeResult<bool> {
-        let class = ctx.class(other, pos)?.has_parent(other, ctx, pos);
-        Ok(self.name == other.name
+        Ok(ctx.class(other, pos)?.has_parent(self, ctx, pos)?
             && self
                 .generics
                 .iter()
-                .map(|n| other.generics.iter().map(|o| n.is_superset_of(o, ctx, pos)))
+                .map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
                 .flatten()
                 .collect::<Result<Vec<bool>, _>>()?
                 .iter()
@@ -308,7 +307,7 @@ impl IsSuperSet<NameUnion> for NameUnion {
         let res: Vec<bool> = self
             .names
             .iter()
-            .map(|n| other.names.iter().map(|o| n.is_superset_of(o, ctx, pos)))
+            .map(|n| other.names.iter().map(move |o| n.clone().is_superset_of(o, ctx, pos)))
             .flatten()
             .collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -363,11 +362,11 @@ pub fn match_name(
     let mut final_union: HashMap<String, (bool, NameUnion)> = HashMap::new();
     for union in unions {
         for (id, (mutable, name)) in union {
-            if let Some((current_mutable, current_name)) = &final_union.get(&id) {
-                let new_name = current_name.clone().union(&name);
-                final_union.insert(id, (mutable && *current_mutable, new_name));
-            } else {
-                final_union.insert(id, (mutable, name));
+            if let Some((current_mutable, current_name)) =
+                final_union.insert(id.clone(), (mutable, name.clone()))
+            {
+                final_union
+                    .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
             }
         }
     }

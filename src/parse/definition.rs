@@ -147,7 +147,7 @@ pub fn parse_raises(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.eat(&Token::LSBrack, "raises")?;
 
     let mut raises: Vec<AST> = Vec::new();
-    let args = it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
+    it.peek_while_not_token(&Token::RCBrack, &mut |it, _| {
         raises.push(*it.parse(&parse_generic, "raises", &start)?);
         it.eat_if(&Token::Comma);
         Ok(())

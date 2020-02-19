@@ -132,7 +132,7 @@ fn unify_fun_arg(
         for either_or_both in f_args.iter().zip_longest(args.iter()) {
             match either_or_both {
                 EitherOrBoth::Both(fun_arg, expected) => {
-                    let name = &fun_arg.ty.ok_or_else(|| {
+                    let name = &fun_arg.ty.clone().ok_or_else(|| {
                         TypeErr::new(&expected.pos, "Function argument must have type parameters")
                     })?;
                     added += 1;

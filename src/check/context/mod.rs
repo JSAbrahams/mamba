@@ -158,15 +158,16 @@ impl HasParent<&NameUnion> for ClassUnion {
 
 impl ClassUnion {
     pub fn name(&self) -> NameUnion {
-        NameUnion { names: self.union.iter().map(|u| Name::from(&u.name)).collect() }
+        let names: Vec<Name> = self.union.iter().map(|u| Name::from(&u.name)).collect();
+        NameUnion::new(&names)
     }
 
     pub fn constructor(&self) -> HashSet<Vec<FunctionArg>> {
         // TODO check raises of constructor
-        self.union.iter().map(|c| c.args).collect()
+        self.union.iter().map(|c| c.args.clone()).collect()
     }
 
-    pub fn classes(&self) -> IntoIter<Class> { self.union.into_iter() }
+    pub fn classes(&self) -> IntoIter<Class> { self.union.clone().into_iter() }
 
     pub fn function(&self, fun_name: &DirectName, pos: &Position) -> TypeResult<FunctionUnion> {
         let union =

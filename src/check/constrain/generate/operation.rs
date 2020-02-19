@@ -29,10 +29,10 @@ pub fn gen_op(
         Node::Range { from, to, step: Some(step), .. } => {
             let name = NameUnion::from(clss::INT_PRIMITIVE);
             let l_exp = Expected::from(from);
-            constr.add(&l_exp, &Expected::new(&from.pos, &Type { name }));
+            constr.add(&l_exp, &Expected::new(&from.pos, &Type { name: name.clone() }));
 
             let l_exp = Expected::from(to);
-            constr.add(&l_exp, &Expected::new(&to.pos, &Type { name }));
+            constr.add(&l_exp, &Expected::new(&to.pos, &Type { name: name.clone() }));
 
             let l_exp = Expected::from(step);
             constr.add(&l_exp, &Expected::new(&step.pos, &Type { name }));
@@ -44,7 +44,7 @@ pub fn gen_op(
         Node::Range { from, to, .. } => {
             let name = NameUnion::from(clss::INT_PRIMITIVE);
             let l_exp = Expected::from(from);
-            constr.add(&l_exp, &Expected::new(&from.pos, &Type { name }));
+            constr.add(&l_exp, &Expected::new(&from.pos, &Type { name: name.clone() }));
 
             let l_exp = Expected::from(to);
             constr.add(&l_exp, &Expected::new(&to.pos, &Type { name }));
