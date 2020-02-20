@@ -64,7 +64,7 @@ impl HasParent<&DirectName> for Class {
         ctx: &Context,
         pos: &Position
     ) -> Result<bool, Vec<TypeErr>> {
-        Ok(self.parents.contains(name) || {
+        Ok(&self.name == name || {
             let res: Vec<bool> = self
                 .parents
                 .iter()
@@ -83,6 +83,10 @@ impl HasParent<&NameUnion> for Class {
         pos: &Position
     ) -> Result<bool, Vec<TypeErr>> {
         let name = name.as_direct("class", pos)?;
+        if name.contains(&self.name) {
+            return Ok(true);
+        }
+
         let res: Vec<bool> =
             name.iter().map(|p| self.has_parent(p, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))

@@ -20,7 +20,7 @@ pub mod clss;
 pub mod field;
 pub mod function;
 pub mod name;
-pub mod parameter;
+mod parameter;
 pub mod parent;
 
 mod resource;
@@ -94,18 +94,6 @@ impl LookupFunction<&DirectName, Function> for Context {
             let msg = format!("Function {} is undefined.", function);
             Err(vec![TypeErr::new(pos, &msg)])
         }
-    }
-}
-
-impl LookupFunction<&NameUnion, FunctionUnion> for Context {
-    /// Look up a function and substitutes generics to yield a Function.
-    fn function(&self, name: &NameUnion, pos: &Position) -> Result<FunctionUnion, Vec<TypeErr>> {
-        let union = name
-            .as_direct("function", pos)?
-            .iter()
-            .map(|f| self.function(f, pos))
-            .collect::<Result<_, _>>()?;
-        Ok(FunctionUnion { union })
     }
 }
 

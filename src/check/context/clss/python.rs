@@ -73,7 +73,6 @@ impl TryFrom<&Classdef> for GenericClass {
             pos: Position::default(),
             concrete: false,
             args,
-            generics,
             fields,
             functions: functions
                 .into_iter()

@@ -4,10 +4,9 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::unify::unify_link::unify_link;
 use crate::check::constrain::Unified;
-use crate::check::context::name::{AsNullable, DirectName, IsNullable, IsSuperSet, NameUnion};
+use crate::check::context::name::{AsNullable, DirectName, IsNullable, IsSuperSet, NameVariant};
 use crate::check::context::{function, Context, LookupClass};
-use crate::check::result::{TypeErr, TypeResult};
-use crate::common::position::Position;
+use crate::check::result::TypeErr;
 
 pub fn unify_type(
     left: &Expected,
@@ -26,8 +25,25 @@ pub fn unify_type(
             unify_link(constraints, ctx, total)
         }
         (Type { name }, Stringy) => {
-            let expr_ty = ctx.class(name, &left.pos)?;
-            expr_ty.function(&DirectName::from(function::STR), &left.pos)?;
+            for name in name.names() {
+                match &name.variant {
+                    NameVariant::Single(name) => {
+                        let class = ctx.class(name, &left.pos)?;
+                        class.function(&DirectName::from(function::STR), &left.pos)?;
+                    }
+                    NameVariant::Tuple(names) =>
+                        for name in names {
+                            // Tuples are the exception, they can be printed
+                            let class = ctx.class(name, &left.pos)?;
+                            class.function(&DirectName::from(function::STR), &left.pos)?;
+                        },
+                    NameVariant::Fun(..) => {
+                        let msg = format!("Cannot print '{}'", &left);
+                        return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                    }
+                }
+            }
+
             unify_link(constraints, ctx, total)
         }
         (Type { name: l_ty }, Type { name: r_ty }) => {
@@ -57,10 +73,6 @@ pub fn unify_type(
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { name }, Collection { ty: col_ty }) => {
-            let (mut constr, added) = check_iter(name, col_ty, ctx, constraints, &left.pos)?;
-            unify_link(&mut constr, ctx, total + added)
-        }
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
             constraints.eager_push(&l_ty, &r_ty);
             unify_link(constraints, ctx, total + 1)
@@ -76,30 +88,4 @@ pub fn unify_type(
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }
-}
-
-fn check_iter(
-    ty: &NameUnion,
-    col_ty: &Expected,
-    ctx: &Context,
-    constr: &mut Constraints,
-    pos: &Position
-) -> TypeResult<(Constraints, usize)> {
-    let f_name = DirectName::from(function::ITER);
-    let mut added = 0;
-
-    for fun in ctx.class(ty, pos)?.function(&f_name, pos)?.union {
-        let f_name = DirectName::from(function::NEXT);
-        for fun in ctx.class(&fun.ret_ty, pos)?.function(&f_name, pos)?.union {
-            added += 1;
-            constr.eager_push(
-                &Expected::new(&pos, &Type { name: ty.clone() }),
-                &Expected::new(&pos, &Type { name: fun.ret_ty })
-            );
-        }
-        added += 1;
-        constr.eager_push(&col_ty, &Expected::new(&pos, &Type { name: fun.ret_ty }));
-    }
-
-    Ok((constr.clone(), added))
 }

@@ -9,7 +9,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::name::{DirectName, IsSuperSet, Name, NameUnion};
-use crate::check::context::{arg, function, Context, LookupClass};
+use crate::check::context::{arg, function, Context};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -134,8 +134,7 @@ impl Function {
         for pair in self.arguments.iter().zip_longest(args) {
             match pair {
                 EitherOrBoth::Both(fun_param, arg) =>
-                    if let Some(param_ty_name) = &fun_param.ty {
-                        let arg_ty = ctx.class(param_ty_name, pos)?.name();
+                    if let Some(arg_ty) = &fun_param.ty {
                         if !arg_ty.is_superset_of(arg, ctx, &pos)? {
                             let msg = format!(
                                 "'{}' given to argument {}, which expected a '{}'",

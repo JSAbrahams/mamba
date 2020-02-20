@@ -3,9 +3,8 @@ use std::convert::TryFrom;
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::context::name::{DirectName, Name, NameUnion, NameVariant};
+use crate::check::context::name::{AsNullable, DirectName, Name, NameUnion, NameVariant};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
 impl TryFrom<&Box<AST>> for DirectName {
@@ -19,6 +18,8 @@ impl TryFrom<&AST> for DirectName {
 
     fn try_from(ast: &AST) -> Result<Self, Self::Error> {
         match &ast.node {
+            Node::Id { lit } => Ok(DirectName::from(lit.as_str())),
+            Node::Parent { ty, .. } => DirectName::try_from(ty),
             Node::Type { id, generics } => match &id.node {
                 Node::Id { lit } => {
                     let generics: Vec<NameUnion> =
@@ -27,7 +28,10 @@ impl TryFrom<&AST> for DirectName {
                 }
                 _ => Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
             },
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected name")])
+            _ => {
+                let msg = format!("Expected class name, was {}", ast.node);
+                Err(vec![TypeErr::new(&ast.pos, &msg)])
+            }
         }
     }
 }
@@ -43,21 +47,23 @@ impl TryFrom<&AST> for Name {
 
     fn try_from(ast: &AST) -> TypeResult<Name> {
         match &ast.node {
+            Node::Id { lit } => Ok(Name::from(&DirectName::from(lit.as_str()))),
+            Node::QuestionOp { expr } => Ok(Name::try_from(expr)?.as_nullable()),
             Node::Type { .. } => Ok(Name::from(&DirectName::try_from(ast)?)),
             Node::TypeTup { types } => {
                 let names = types.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?;
-                Ok(Name { is_nullable: false, variant: NameVariant::Tuple(names) })
+                Ok(Name::from(&NameVariant::Tuple(names)))
             }
-            Node::TypeFun { args, ret_ty } => {
-                let variant = NameVariant::Fun(
-                    args.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?,
-                    Box::from(NameUnion::try_from(ret_ty.deref())?)
-                );
-                Ok(Name { is_nullable: false, variant })
-            }
+            Node::TypeFun { args, ret_ty } => Ok(Name::from(&NameVariant::Fun(
+                args.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?,
+                Box::from(NameUnion::try_from(ret_ty.deref())?)
+            ))),
             Node::TypeUnion { .. } =>
                 Err(vec![TypeErr::new(&ast.pos, "Expected single name but was union")]),
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected name")])
+            _ => {
+                let msg = format!("Expected name, was {}", ast.node);
+                Err(vec![TypeErr::new(&ast.pos, &msg)])
+            }
         }
     }
 }
@@ -94,7 +100,7 @@ impl TryFrom<&Vec<AST>> for NameUnion {
             });
             Ok(name_union)
         } else {
-            Err(vec![TypeErr::new(&Position::default(), "Empty union")])
+            Ok(NameUnion::empty())
         }
     }
 }

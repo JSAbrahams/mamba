@@ -9,9 +9,9 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::unify_link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::name::NameUnion;
+use crate::check::context::name::{NameUnion, NameVariant};
 use crate::check::context::util::check_is_parent;
-use crate::check::context::{Context, LookupClass, LookupFunction};
+use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -25,27 +25,32 @@ pub fn unify_function(
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) => {
-            let functions = ctx.function(name, &left.pos)?;
+            let arguments_union: Vec<Vec<NameUnion>> = name
+                .names()
+                .map(|n| match n.variant {
+                    NameVariant::Fun(arguments, _) => Ok(arguments),
+                    other => {
+                        let msg = format!("A '{}' does not take arguments", other);
+                        Err(vec![TypeErr::new(&right.pos, &msg)])
+                    }
+                })
+                .collect::<Result<_, _>>()?;
+
             let mut count = 0;
-            for function in &functions.union {
-                for possible in function.arguments.iter().zip_longest(args.iter()) {
+            for arguments in arguments_union {
+                for possible in arguments.iter().zip_longest(args.iter()) {
                     match possible {
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
-                            if let Some(name) = arg.ty.clone() {
-                                let ty = Type { name };
-                                let right = Expected::new(&left.pos, &ty);
-                                constraints.eager_push(expected, &right);
-                            } else {
-                                let msg = format!("Argument '{}' type unknown.", arg);
-                                return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                            }
+                            let right = Expected::new(&left.pos, &Type { name: arg.clone() });
+                            constraints.eager_push(expected, &right)
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
-                                "{} arguments given to function which takes {} arguments",
+                                "{} arguments given to function '{}', which takes {} arguments",
                                 args.len(),
-                                function.arguments.len()
+                                &left.expect,
+                                arguments.len()
                             );
                             return Err(vec![TypeErr::new(&left.pos, &msg)]);
                         }

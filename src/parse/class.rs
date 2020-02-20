@@ -62,10 +62,15 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
 
     let id = it.parse(&parse_id, "parent", &start)?;
     let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "parent generics", &start)?;
-    it.eat_if(&Token::RSBrack);
+    let generics_end =
+        if let Some(end) = it.eat_if(&Token::RSBrack) { end } else { id.pos.clone() };
+    let ty = Box::from(AST {
+        pos:  start.union(&generics_end),
+        node: Node::Type { id, generics: generics.clone() }
+    });
 
     let mut args = vec![];
-    if it.eat_if(&Token::LRBrack).is_some() {
+    let end = if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match &lex.token {
             Token::Id { .. } => {
                 args.push(*it.parse(&parse_id, "parent arguments", &start)?);
@@ -91,14 +96,11 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                 "parent arguments"
             ))
         })?;
-        it.eat(&Token::RRBrack, "parent arguments")?;
-    }
-
-    let end = match (generics.last(), args.last()) {
-        (_, Some(ast)) => ast.pos.clone(),
-        (Some(ast), _) => ast.pos.clone(),
-        _ => id.pos.clone()
+        it.eat(&Token::RRBrack, "parent arguments")?
+    } else {
+        ty.pos.clone()
     };
-    let node = Node::Parent { id, generics, args };
+
+    let node = Node::Parent { ty, args };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }

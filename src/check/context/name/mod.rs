@@ -27,7 +27,7 @@ pub struct DirectName {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum NameVariant {
+pub enum NameVariant {
     Single(DirectName),
     Tuple(Vec<NameUnion>),
     Fun(Vec<NameUnion>, Box<NameUnion>)
@@ -37,7 +37,8 @@ enum NameVariant {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Name {
     is_nullable: bool,
-    variant:     NameVariant
+    is_mutable:  bool,
+    pub variant: NameVariant
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,6 +60,20 @@ pub trait IsNullable {
 
 pub trait AsNullable {
     fn as_nullable(&self) -> Self;
+}
+
+pub trait AsMutable {
+    fn as_mutable(&self) -> Self;
+}
+
+impl AsMutable for NameUnion {
+    fn as_mutable(&self) -> Self {
+        NameUnion { names: self.names.iter().map(|n| n.as_mutable()).collect() }
+    }
+}
+
+impl AsMutable for Name {
+    fn as_mutable(&self) -> Self { Name { is_mutable: true, ..self.clone() } }
 }
 
 impl Union<NameUnion> for NameUnion {
@@ -115,9 +130,16 @@ impl Display for DirectName {
     }
 }
 
+impl From<&NameVariant> for Name {
+    fn from(variant: &NameVariant) -> Self {
+        Name { is_mutable: false, is_nullable: false, variant: variant.clone() }
+    }
+}
+
 impl Display for Name {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}{}", self.variant, if self.is_nullable { "?" } else { "" })
+        let mutable = if self.is_mutable { "mut " } else { "" };
+        write!(f, "{}{}{}", mutable, self.variant, if self.is_nullable { "?" } else { "" })
     }
 }
 
@@ -158,13 +180,21 @@ impl From<&str> for DirectName {
 
 impl From<&DirectName> for Name {
     fn from(name: &DirectName) -> Self {
-        Name { is_nullable: false, variant: NameVariant::Single(name.clone()) }
+        Name {
+            is_nullable: false,
+            is_mutable:  false,
+            variant:     NameVariant::Single(name.clone())
+        }
     }
 }
 
 impl From<&str> for Name {
     fn from(name: &str) -> Self {
-        Name { is_nullable: false, variant: NameVariant::Single(DirectName::from(name)) }
+        Name {
+            is_nullable: false,
+            is_mutable:  false,
+            variant:     NameVariant::Single(DirectName::from(name))
+        }
     }
 }
 
@@ -279,7 +309,8 @@ impl Name {
     pub fn as_direct(&self, exp: &str, pos: &Position) -> TypeResult<DirectName> {
         match &self.variant {
             NameVariant::Single(name) => Ok(name.clone()),
-            other => Err(vec![TypeErr::new(pos, &format!("'{}' not valid {}", other, exp))])
+            other =>
+                Err(vec![TypeErr::new(pos, &format!("'{}' is not a valid {} name", other, exp))]),
         }
     }
 
@@ -298,19 +329,24 @@ impl Name {
             )
         };
 
-        Ok(Name { is_nullable: self.is_nullable, variant })
+        Ok(Name { variant, ..self.clone() })
     }
 }
 
 impl IsSuperSet<NameUnion> for NameUnion {
     fn is_superset_of(&self, other: &NameUnion, ctx: &Context, pos: &Position) -> TypeResult<bool> {
-        let res: Vec<bool> = self
-            .names
-            .iter()
-            .map(|n| other.names.iter().map(move |o| n.clone().is_superset_of(o, ctx, pos)))
-            .flatten()
-            .collect::<Result<_, _>>()?;
-        Ok(res.iter().all(|b| *b))
+        for name in &other.names {
+            let res: Vec<bool> = self
+                .names
+                .iter()
+                .map(|s_name| s_name.is_superset_of(&name, ctx, pos))
+                .collect::<Result<_, _>>()?;
+            let any_other_subset_of_a_self = res.iter().any(|b| *b);
+            if !any_other_subset_of_a_self {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 }
 

@@ -43,9 +43,8 @@ pub enum Node {
         isa: Option<Box<AST>>
     },
     Parent {
-        id:       Box<AST>,
-        generics: Vec<AST>,
-        args:     Vec<AST>
+        ty:   Box<AST>,
+        args: Vec<AST>
     },
     Script {
         statements: Vec<AST>

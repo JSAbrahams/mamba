@@ -76,10 +76,10 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
                 let id = it.parse(&parse_id, "type", start)?;
                 let generics =
                     it.parse_vec_if(&Token::LSBrack, &parse_generics, "type generic", start)?;
-                let end = match (it.eat_if(&Token::RSBrack), generics.last()) {
-                    (Some(end), _) => end,
-                    (_, Some(generic)) => generic.pos.clone(),
-                    _ => id.pos.clone()
+                let end = if generics.last().is_some() {
+                    it.eat(&Token::RSBrack, "type generics")?
+                } else {
+                    id.pos.clone()
                 };
 
                 let node = Node::Type { id, generics };

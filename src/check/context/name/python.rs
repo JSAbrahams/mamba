@@ -33,7 +33,7 @@ impl From<&Expression> for Name {
                 });
                 let variant =
                     NameVariant::Tuple(expressions.map(|expr| NameUnion::from(expr)).collect());
-                Name { is_nullable: false, variant }
+                Name::from(&variant)
             }
             Expression::Subscript(id, exprs) => {
                 let lit = match &id.deref() {

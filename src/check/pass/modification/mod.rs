@@ -78,14 +78,10 @@ pub trait Modification {
                 let (isa, m_isa) = optional!(isa);
                 Ok((AST { node: Node::Generic { id, isa }, ..ast.clone() }, m_id || m_isa))
             }
-            Node::Parent { id, generics, args } => {
-                let (id, m_id) = modify!(id);
-                let (generics, m_generics) = vec_recursion!(generics);
+            Node::Parent { ty, args } => {
+                let (ty, m_ty) = modify!(ty);
                 let (args, m_args) = vec_recursion!(args);
-                Ok((
-                    AST { node: Node::Parent { id, generics, args }, ..ast.clone() },
-                    m_id || m_generics || m_args
-                ))
+                Ok((AST { node: Node::Parent { ty, args }, ..ast.clone() }, m_ty || m_args))
             }
             Node::Script { statements } => {
                 let (statements, m_statements) = vec_recursion!(statements);

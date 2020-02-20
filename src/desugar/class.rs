@@ -243,8 +243,8 @@ fn extract_parents(
 
     for parent in parents {
         match &parent.node {
-            Node::Parent { ref id, args: old_args, .. } => {
-                let parent_name = desugar_type(id, ctx, state)?;
+            Node::Parent { ty, args: old_args } => {
+                let parent_name = desugar_type(ty, ctx, state)?;
                 parent_names.push(parent_name.clone());
 
                 let mut args = vec![];
@@ -264,7 +264,7 @@ fn extract_parents(
                     })
                 });
             }
-            other => panic!("Expected parent but got {:?}", other)
+            other => panic!("Expected parent, was {:?}", other)
         }
     }
 

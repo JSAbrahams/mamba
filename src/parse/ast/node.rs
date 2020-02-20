@@ -160,10 +160,8 @@ impl Node {
                     && equal_optional(lb, rb),
             (Node::Generic { id: li, isa: lisa }, Node::Generic { id: ri, isa: risa }) =>
                 li.equal_structure(ri) && equal_optional(lisa, risa),
-            (
-                Node::Parent { id: li, generics: lg, args: la },
-                Node::Parent { id: ri, generics: rg, args: ra }
-            ) => li.equal_structure(ri) && equal_vec(lg, rg) && equal_vec(la, ra),
+            (Node::Parent { ty: l_ty, args: la }, Node::Parent { ty: r_ty, args: ra }) =>
+                l_ty.equal_structure(r_ty) && equal_vec(la, ra),
             (Node::Script { statements: l }, Node::Script { statements: r }) => equal_vec(l, r),
             (Node::Init, Node::Init) => true,
             (Node::Reassign { left: ll, right: lr }, Node::Reassign { left: rl, right: rr }) =>

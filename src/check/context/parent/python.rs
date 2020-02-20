@@ -1,32 +1,35 @@
-use python_parser::ast::{Argument, Expression};
+use python_parser::ast::{Argument, Expression, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::context::name::DirectName;
-use crate::check::context::parameter::python::GenericParameters;
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::parent::generic::GenericParent;
 use crate::common::position::Position;
 use std::ops::Deref;
 
 impl From<&Argument> for GenericParent {
     fn from(argument: &Argument) -> GenericParent {
-        let (name, generics) = match argument {
-            Argument::Positional(expr) => match expr {
-                Expression::Name(name) =>
-                    (DirectName::from(python_to_concrete(name).as_ref()), vec![]),
-                Expression::Subscript(name, generics) => {
-                    let name = if let Expression::Name(name) = name.deref() {
-                        DirectName::from(python_to_concrete(name).as_ref())
-                    } else {
-                        DirectName::empty()
-                    };
-                    let generics = GenericParameters::from(generics).parameters;
-                    (name, generics)
-                }
-                _ => (DirectName::empty(), vec![])
-            },
-            _ => (DirectName::empty(), vec![])
+        let name = match argument {
+            Argument::Positional(Expression::Name(name)) =>
+                DirectName::from(python_to_concrete(name).as_ref()),
+            Argument::Positional(Expression::Subscript(expr, generics)) =>
+                if let Expression::Name(name) = expr.deref() {
+                    let generics: Vec<NameUnion> = generics.iter().map(NameUnion::from).collect();
+                    DirectName::new(python_to_concrete(name).as_ref(), &generics)
+                } else {
+                    DirectName::empty()
+                },
+            _ => DirectName::empty()
         };
 
-        GenericParent { is_py_type: true, name, pos: Position::default(), generics, args: vec![] }
+        GenericParent { is_py_type: true, name, pos: Position::default(), args: vec![] }
+    }
+}
+
+impl From<&Subscript> for NameUnion {
+    fn from(sub: &Subscript) -> Self {
+        match sub {
+            Subscript::Simple(expr) => NameUnion::from(expr),
+            _ => NameUnion::empty()
+        }
     }
 }

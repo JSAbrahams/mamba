@@ -4,7 +4,7 @@ use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
 use crate::parse::block::parse_statements;
-use crate::parse::class::parse_class;
+use crate::parse::class::{parse_class, parse_parent};
 use crate::parse::iterator::LexIterator;
 use crate::parse::parse_result::ParseResult;
 use crate::parse::parse_result::{custom, expected};
@@ -120,7 +120,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
     let ty = it.parse(&parse_type, "type definition", &start)?;
-    let isa = it.parse_if(&Token::IsA, &parse_type, "type parent", &start)?;
+    let isa = it.parse_if(&Token::IsA, &parse_parent, "type parent", &start)?;
 
     it.peek(
         &|it, lex| match lex.token {

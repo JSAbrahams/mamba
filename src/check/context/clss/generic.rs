@@ -10,7 +10,6 @@ use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
 use crate::check::context::name::{DirectName, NameUnion};
-use crate::check::context::parameter::generic::GenericParameter;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -23,7 +22,6 @@ pub struct GenericClass {
     pub pos:        Position,
     pub concrete:   bool,
     pub args:       Vec<GenericFunctionArg>,
-    pub generics:   Vec<GenericParameter>,
     pub fields:     HashSet<GenericField>,
     pub functions:  HashSet<GenericFunction>,
     pub parents:    HashSet<GenericParent>
@@ -53,7 +51,7 @@ impl TryFrom<&AST> for GenericClass {
         match &class.node {
             // TODO add pure classes
             Node::Class { ty, args, parents, body, .. } => {
-                let (name, generics) = get_name_and_generics(ty)?;
+                let name = DirectName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -135,7 +133,6 @@ impl TryFrom<&AST> for GenericClass {
                     name,
                     pos: class.pos.clone(),
                     args: class_args,
-                    generics,
                     concrete: true,
                     fields: argument_fields.union(&body_fields).cloned().collect(),
                     functions,
@@ -143,7 +140,7 @@ impl TryFrom<&AST> for GenericClass {
                 })
             }
             Node::TypeDef { ty, isa, body, .. } => {
-                let (name, generics) = get_name_and_generics(ty)?;
+                let name = DirectName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -167,55 +164,23 @@ impl TryFrom<&AST> for GenericClass {
                     pos: class.pos.clone(),
                     args: vec![],
                     concrete: false,
-                    generics,
                     fields,
                     functions,
                     parents
                 })
             }
-            Node::TypeAlias { ty, isa, .. } => {
-                let (name, generics) = get_name_and_generics(ty)?;
-                let parents = HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]);
-                Ok(GenericClass {
-                    is_py_type: false,
-                    name,
-                    pos: class.pos.clone(),
-                    args: vec![],
-                    concrete: false,
-                    generics,
-                    fields: HashSet::new(),
-                    functions: HashSet::new(),
-                    parents
-                })
-            }
+            Node::TypeAlias { ty, isa, .. } => Ok(GenericClass {
+                is_py_type: false,
+                name:       DirectName::try_from(ty)?,
+                pos:        class.pos.clone(),
+                args:       vec![],
+                concrete:   false,
+                fields:     HashSet::new(),
+                functions:  HashSet::new(),
+                parents:    HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?])
+            }),
             _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")])
         }
-    }
-}
-
-fn get_name_and_generics(ast: &AST) -> Result<(DirectName, Vec<GenericParameter>), Vec<TypeErr>> {
-    match &ast.node {
-        Node::Type { id, generics } => {
-            let (generics, generic_errs): (Vec<_>, Vec<_>) =
-                generics.iter().map(GenericParameter::try_from).partition(Result::is_ok);
-            if !generic_errs.is_empty() {
-                return Err(generic_errs.into_iter().map(Result::unwrap_err).flatten().collect());
-            }
-
-            let generics = generics.into_iter().map(Result::unwrap).collect::<Vec<_>>();
-            let names: Vec<NameUnion> = generics.iter().map(|g| NameUnion::from(&g.name)).collect();
-            let name = DirectName::new(
-                match &id.node {
-                    Node::Id { lit } => lit.clone(),
-                    _ => return Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
-                }
-                .as_str(),
-                &names
-            );
-
-            Ok((name, generics))
-        }
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected class name")])
     }
 }
 

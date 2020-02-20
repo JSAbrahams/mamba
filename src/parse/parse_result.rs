@@ -143,6 +143,7 @@ impl Display for ParseErr {
         let cause_formatter = &self.causes[0..min(self.causes.len(), SYNTAX_ERR_MAX_DEPTH)]
             .iter()
             .rev()
+            .skip(1) // The first cause is the error itself
             .fold(String::new(), |acc, cause| {
                 let source_line = match &self.source {
                     Some(source) => source
@@ -171,16 +172,16 @@ impl Display for ParseErr {
 
         write!(
             f,
-            "--> {}:{}:{}\n     | {}\n{}\n     |\n{:3}  |- {}\n     | {}{}",
+            "{}\n --> {}:{}:{}\n {:3} |- {}\n     | {}{}\n{}",
+            self.msg,
             self.path.clone().map_or(String::from("<unknown>"), |path| path.display().to_string()),
             self.position.start.line,
             self.position.start.pos,
-            self.msg,
-            cause_formatter,
             self.position.start.line,
             source_line,
             String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
+            String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap(),
+            cause_formatter,
         )
     }
 }
