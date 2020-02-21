@@ -3,7 +3,7 @@ use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
-use crate::parse::parse_result::ParseResult;
+use crate::parse::result::ParseResult;
 
 macro_rules! inner_bin_op {
     ($it:expr, $start:expr, $fun:path, $ast:ident, $left:expr, $msg:expr) => {{

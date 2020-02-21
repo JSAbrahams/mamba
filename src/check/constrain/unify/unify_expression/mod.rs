@@ -1,4 +1,4 @@
-use crate::check::constrain::constraint::expected::Expect::{Collection, Expression, ExpressionAny};
+use crate::check::constrain::constraint::expected::Expect::{Expression, ExpressionAny};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
@@ -9,7 +9,6 @@ use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::Node;
-use itertools::{EitherOrBoth, Itertools};
 
 mod substitute;
 
@@ -40,39 +39,6 @@ pub fn unify_expression(
             )])
         },
 
-        (Expression { ast: l_ast }, Expression { ast: r_ast }) =>
-            match (&l_ast.node, &r_ast.node) {
-                (Node::Set { elements: l_e }, Node::Set { elements: r_e })
-                | (Node::List { elements: l_e }, Node::List { elements: r_e })
-                | (Node::Tuple { elements: l_e }, Node::Tuple { elements: r_e }) => {
-                    for pair in l_e.iter().zip_longest(r_e.iter()) {
-                        match pair {
-                            EitherOrBoth::Both(l, r) =>
-                                constraints.eager_push(&Expected::from(l), &Expected::from(r)),
-                            EitherOrBoth::Left(e) | EitherOrBoth::Right(e) =>
-                                return Err(vec![TypeErr::new(&e.pos, "Unexpected element")]),
-                        }
-                    }
-                    unify_link(constraints, ctx, total + l_e.len())
-                }
-                _ => {
-                    let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
-                    unify_link(&mut constr, ctx, total)
-                }
-            },
-
-        (Expression { ast }, Collection { ty }) => match &ast.node {
-            Node::Set { elements } | Node::Tuple { elements } | Node::List { elements } => {
-                for element in elements {
-                    constraints.eager_push(&Expected::from(element), &ty);
-                }
-                unify_link(constraints, ctx, total + elements.len())
-            }
-            _ => {
-                let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
-                unify_link(&mut constr, ctx, total)
-            }
-        },
         (Expression { .. }, _) => {
             let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
             unify_link(&mut constr, ctx, total)

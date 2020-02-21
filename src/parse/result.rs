@@ -140,10 +140,11 @@ fn title_case(s: &str) -> String {
 
 impl Display for ParseErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        // The first cause is the error itself
         let cause_formatter = &self.causes[0..min(self.causes.len(), SYNTAX_ERR_MAX_DEPTH)]
             .iter()
             .rev()
-            .skip(1) // The first cause is the error itself
+            .skip(1)
             .fold(String::new(), |acc, cause| {
                 let source_line = match &self.source {
                     Some(source) => source

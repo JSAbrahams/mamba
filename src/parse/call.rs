@@ -5,8 +5,8 @@ use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::parse_result::expected_one_of;
-use crate::parse::parse_result::ParseResult;
+use crate::parse::result::expected_one_of;
+use crate::parse::result::ParseResult;
 
 pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("reassignment")?;

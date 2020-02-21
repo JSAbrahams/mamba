@@ -46,6 +46,11 @@ pub fn unify_type(
 
             unify_link(constraints, ctx, total)
         }
+        (Collection { ty }, Stringy) => {
+            constraints.eager_push(ty, right);
+            unify_link(constraints, ctx, total + 1)
+        }
+
         (Type { name: l_ty }, Type { name: r_ty }) => {
             if l_ty.is_superset_of(r_ty, ctx, &left.pos)? {
                 ctx.class(l_ty, &left.pos)?;

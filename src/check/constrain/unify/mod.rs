@@ -8,7 +8,6 @@ use itertools::Itertools;
 
 mod unify_link;
 
-mod unify_direct;
 mod unify_expression;
 mod unify_function;
 mod unify_type;

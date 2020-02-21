@@ -10,8 +10,8 @@ use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
 use crate::parse::parse_direct;
-use crate::parse::parse_result::expected_one_of;
-use crate::parse::parse_result::ParseResult;
+use crate::parse::result::expected_one_of;
+use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_id;
 use std::ops::Deref;
 

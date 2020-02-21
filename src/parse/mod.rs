@@ -2,13 +2,13 @@ use std::path::PathBuf;
 
 use crate::lex::token::Lex;
 use crate::parse::iterator::LexIterator;
-use crate::parse::parse_result::{ParseResult, ParseResults};
+use crate::parse::result::{ParseResult, ParseResults};
 
 pub mod ast;
 
 mod iterator;
 
-pub mod parse_result;
+pub mod result;
 
 mod block;
 mod call;

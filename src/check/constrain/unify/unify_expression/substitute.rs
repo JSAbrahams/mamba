@@ -24,8 +24,8 @@ pub fn substitute(
             break;
         }
 
-        let (sub_l, parent) = recursive_substitute("l", &constr.parent, old, new);
-        let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);
+        let (sub_l, parent) = recursive_substitute(false, "l", &constr.parent, old, new);
+        let (sub_r, child) = recursive_substitute(false, "r", &constr.child, old, new);
 
         constr.parent = parent;
         constr.child = child;
@@ -38,34 +38,35 @@ pub fn substitute(
 }
 
 fn recursive_substitute(
+    inner: bool,
     side: &str,
     inspected: &Expected,
     old: &Expected,
     new: &Expected
 ) -> (bool, Expected) {
     macro_rules! replace {
-        ($inner:expr, $new:expr) => {{
+        ($new:expr) => {{
             let pos = format!("({}-{}) ", inspected.pos.start, new.pos.start);
-            let count = format!("[{}subst {}] ", if $inner { "inner " } else { "" }, side);
+            let count = format!("[{}subst {}] ", if inner { "inner " } else { "" }, side);
             println!("{:width$} {}{} <= {}", pos, count, inspected.expect, $new.expect, width = 17);
         }};
     };
 
     if is_expr_and_structurally_eq(&inspected.expect, &old.expect) {
-        replace!(false, new);
+        replace!(new);
         return (true, new.clone());
     }
 
     match &inspected.expect {
         Expect::Access { entity, name } => {
-            let (subs_e, entity) = recursive_substitute(side, entity, old, new);
-            let (sub_n, name) = recursive_substitute(side, name, old, new);
+            let (subs_e, entity) = recursive_substitute(true, side, entity, old, new);
+            let (sub_n, name) = recursive_substitute(true, side, name, old, new);
 
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(&inspected.pos, &expect))
         }
         Expect::Collection { ty } => {
-            let (subs_ty, ty) = recursive_substitute(side, ty, old, new);
+            let (subs_ty, ty) = recursive_substitute(true, side, ty, old, new);
 
             let expect = Expect::Collection { ty: Box::from(ty.clone()) };
             (subs_ty, Expected::new(&inspected.pos, &expect))
@@ -73,7 +74,7 @@ fn recursive_substitute(
         Expect::Function { name, args } => {
             let mut any_substituted = false;
             let new_args = args.iter().map(|arg| {
-                let (subs, arg) = recursive_substitute(side, arg, old, new);
+                let (subs, arg) = recursive_substitute(true, side, arg, old, new);
                 any_substituted = any_substituted || subs;
                 arg
             });

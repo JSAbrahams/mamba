@@ -22,8 +22,8 @@ fn test_directory(
     .map_err(|errs| {
         errs.iter()
             .map(|(ty, msg)| {
-                eprintln!("[{}] {}", ty, msg);
-                format!("[{}] {}", ty, msg)
+                eprintln!("[error | {}] {}", ty, msg);
+                format!("[error | {}] {}", ty, msg)
             })
             .collect::<Vec<String>>()
     })?;

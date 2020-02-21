@@ -5,7 +5,7 @@ use crate::parse::block::parse_block;
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::parse_result::ParseResult;
+use crate::parse::result::ParseResult;
 use crate::parse::statement::is_start_statement;
 use crate::parse::statement::parse_statement;
 use crate::parse::ty::parse_generics;

@@ -1,4 +1,6 @@
-class int(float):
+from typing import Union
+
+class int:
     def __init__(self, arg: int): pass
 
     def __add__(self, other: int) -> int: pass

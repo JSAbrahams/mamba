@@ -1,6 +1,7 @@
 use std::fmt::{Display, Error, Formatter};
 
 use crate::check::context::arg;
+use crate::common::delimit::comma_delm;
 use crate::parse::ast::{Node, AST};
 
 fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
@@ -68,11 +69,14 @@ impl Display for Node {
             Node::EqOp => String::from("equal"),
             Node::LeOp => String::from("less than"),
             Node::GeOp => String::from("greater than"),
-            Node::Set { .. } => String::from("set"),
+            Node::Set { elements } =>
+                format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone()))),
             Node::SetBuilder { .. } => String::from("set builder"),
-            Node::List { .. } => String::from("list"),
+            Node::List { elements } =>
+                format!("[{}]", comma_delm(elements.iter().map(|e| e.node.clone()))),
             Node::ListBuilder { .. } => String::from("list builder"),
-            Node::Tuple { .. } => String::from("tuple"),
+            Node::Tuple { elements } =>
+                format!("({})", comma_delm(elements.iter().map(|e| e.node.clone()))),
             Node::Range { .. } => String::from("range"),
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),

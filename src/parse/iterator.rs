@@ -5,9 +5,9 @@ use crate::common::position::Position;
 use crate::lex::token::Lex;
 use crate::lex::token::Token;
 use crate::parse::ast::AST;
-use crate::parse::parse_result::eof_expected_one_of;
-use crate::parse::parse_result::expected;
-use crate::parse::parse_result::ParseResult;
+use crate::parse::result::eof_expected_one_of;
+use crate::parse::result::expected;
+use crate::parse::result::ParseResult;
 
 pub struct LexIterator<'a> {
     it: Peekable<Iter<'a, Lex>>

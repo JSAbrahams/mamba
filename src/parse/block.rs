@@ -3,7 +3,7 @@ use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
-use crate::parse::parse_result::{expected_one_of, ParseResult};
+use crate::parse::result::{expected_one_of, ParseResult};
 
 // TODO look at whether we can handle class and type tokens more elegantly
 pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {

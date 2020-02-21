@@ -18,8 +18,10 @@ pub fn gen_coll(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
-            gen_vec(elements, env, ctx, constr),
+        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
+            let mut constr = constr_col(ast, constr);
+            gen_vec(elements, env, ctx, &mut constr)
+        }
 
         Node::SetBuilder { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")]),

@@ -37,7 +37,7 @@ pub fn main() -> Result<(), String> {
 
     transpile_directory(&current_dir, in_path, out_path)
         .map_err(|errors| {
-            errors.iter().for_each(|(ty, msg)| eprintln!("[{}] {}", ty, msg));
+            errors.iter().for_each(|(ty, msg)| eprintln!("[error | {}] {}", ty, msg));
             match errors.first() {
                 Some((ty, msg)) => format!(
                     "{} {} error occurred: {}",

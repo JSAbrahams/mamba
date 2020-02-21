@@ -1,7 +1,7 @@
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
+use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::Constrained;
 use crate::check::context::name::NameUnion;
@@ -79,9 +79,7 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             constr.new_set(true);
-            let mut constr = constr_col(col, constr);
-            let (mut constr, env) =
-                gen_collection_lookup(expr, &col, &env.define_mode(), &mut constr)?;
+            let (mut constr, env) = gen_collection_lookup(expr, &col, &env.define_mode(), constr)?;
             let (mut constr, env) = generate(col, &env, ctx, &mut constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;

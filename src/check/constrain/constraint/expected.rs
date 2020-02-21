@@ -88,8 +88,8 @@ impl Expect {
         match (self, other) {
             (Collection { ty: l }, Collection { ty: r }) => l.expect.structurally_eq(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
-            (Raises { name: l }, Raises { name: r }) => l == r,
-            (Type { name: l }, Type { name: r }) => l == r,
+            (Raises { name: l }, Raises { name: r }) | (Type { name: l }, Type { name: r }) =>
+                l == r,
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) =>
                 le == re && ln == rn,
             (Function { name: l, args: la }, Function { name: r, args: ra }) =>
@@ -101,6 +101,7 @@ impl Expect {
                             false
                         }
                     }),
+
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
 
             (Truthy, Truthy)
@@ -117,6 +118,7 @@ impl Expect {
             | (Expression { ast: AST { node: Node::Or { .. }, .. } }, Truthy) => true,
             (Truthy, Expression { ast: AST { node: Node::Not { .. }, .. } })
             | (Expression { ast: AST { node: Node::Not { .. }, .. } }, Truthy) => true,
+
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
                 if ty == &NameUnion::from(clss::STRING_PRIMITIVE) =>
@@ -129,6 +131,7 @@ impl Expect {
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
                 if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
                 true,
+
             _ => false
         }
     }

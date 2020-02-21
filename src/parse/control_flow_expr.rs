@@ -4,8 +4,8 @@ use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::parse_result::expected_one_of;
-use crate::parse::parse_result::ParseResult;
+use crate::parse::result::expected_one_of;
+use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_type;
 
 pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {

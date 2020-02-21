@@ -1,6 +1,6 @@
 from typing import Union
 
-class float(complex):
+class float:
     def __init__(self, arg: float): pass
 
     # def __add__(self, other: int) -> float: pass

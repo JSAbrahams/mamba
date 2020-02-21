@@ -5,8 +5,8 @@ use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::parse_result::ParseResult;
-use crate::parse::parse_result::{custom, expected_one_of};
+use crate::parse::result::ParseResult;
+use crate::parse::result::{custom, expected_one_of};
 
 pub fn parse_id(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
