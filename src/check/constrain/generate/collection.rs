@@ -69,11 +69,17 @@ pub fn gen_collection_lookup(
 ) -> Constrained {
     let mut env = env.clone();
     let any = Expected::new(&lookup.pos, &ExpressionAny);
+    let mut vars = vec![];
     for (mutable, var) in Identifier::try_from(lookup)?.fields() {
+        vars.push(var.clone());
         env = env.insert_var(mutable, &var, &any);
     }
 
     let exp_collection = Collection { ty: Box::from(Expected::from(lookup)) };
-    constr.add(&Expected::new(&lookup.pos, &exp_collection), &Expected::from(col));
+    constr.add_with_identifier(
+        &Expected::new(&lookup.pos, &exp_collection),
+        &Expected::from(col),
+        &vars
+    );
     Ok((constr.clone(), env.clone()))
 }

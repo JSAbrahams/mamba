@@ -1,4 +1,7 @@
+use std::fmt::{Display, Error, Formatter};
+
 use crate::check::constrain::constraint::expected::Expected;
+use crate::common::delimit::comma_delm;
 
 pub mod builder;
 pub mod expected;
@@ -11,6 +14,19 @@ pub struct Constraint {
     pub idents:  Vec<String>,
     pub parent:  Expected,
     pub child:   Expected
+}
+
+impl Display for Constraint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        let is_flag = if self.is_flag { "(flagged) " } else { "" };
+        let is_sub = if self.is_flag { "(subs) " } else { "" };
+        let idents = if self.idents.is_empty() {
+            String::new()
+        } else {
+            format!("(idents: {}) ", comma_delm(&self.idents))
+        };
+        write!(f, "{}{}{}{} = {}", is_flag, is_sub, idents, self.parent, self.child)
+    }
 }
 
 impl Constraint {

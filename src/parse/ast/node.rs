@@ -44,9 +44,10 @@ impl Display for Node {
             Node::Raise { .. } => String::from("raise"),
             Node::Handle { .. } => String::from("handle"),
             Node::With { .. } => String::from("with"),
-            Node::ConstructorCall { .. } => String::from("constructor call"),
-            Node::FunctionCall { .. } => String::from("function call"),
-            Node::PropertyCall { .. } => String::from("property call"),
+            Node::ConstructorCall { name, args } | Node::FunctionCall { name, args } =>
+                format!("{}({})", name.node, comma_delm(args.iter().map(|a| a.node.clone()))),
+            Node::PropertyCall { instance, property } =>
+                format!("{}.{}", instance.node, property.node),
             Node::Id { lit } => format!("id:'{}'", lit),
             Node::ExpressionType { .. } => String::from("expression type"),
             Node::TypeDef { .. } => String::from("type definition"),

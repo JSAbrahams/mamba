@@ -8,7 +8,6 @@ use crate::check::constrain::unify::unify_function::unify_function;
 use crate::check::constrain::unify::unify_type::unify_type;
 use crate::check::constrain::Unified;
 use crate::check::context::Context;
-use crate::common::delimit::comma_delm;
 
 /// Unifies all constraints.
 ///
@@ -20,16 +19,9 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         let (left, right) = (&constraint.parent, &constraint.child);
 
         let pos = format!("({}-{}) ", left.pos.start, right.pos.start);
-        let is_flag = if constraint.is_flag { " (fl)" } else { "" };
-        let is_sub = if constraint.is_sub { " (sub)" } else { "" };
         let count = total - constraints.len();
-        let unify = format!("[unifying {}\\{}{}{}] ", count, total, is_flag, is_sub);
-        let idents = if constraint.idents.is_empty() {
-            String::new()
-        } else {
-            format!("[idents: {}] ", comma_delm(&constraint.idents))
-        };
-        println!("{:width$}{}{}{} = {}", pos, unify, idents, left.expect, right.expect, width = 15);
+        let unify = format!("[unifying {}\\{}] ", count, total);
+        println!("{:width$}{}{}", pos, unify, constraint, width = 15);
 
         match (&left.expect, &right.expect) {
             // trivially equal

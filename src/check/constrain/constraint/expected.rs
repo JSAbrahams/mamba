@@ -28,14 +28,9 @@ impl From<&AST> for Expected {
     fn from(ast: &AST) -> Expected {
         let ast = match &ast.node {
             Node::Block { statements } | Node::Script { statements } =>
-                if let Some(stmt) = statements.last() {
-                    stmt
-                } else {
-                    ast
-                },
+                statements.last().unwrap_or(ast),
             _ => ast
         };
-
         Expected::new(&ast.pos, &Expression { ast: ast.clone() })
     }
 }
@@ -52,7 +47,6 @@ pub enum Expect {
     Collection { ty: Box<Expected> },
     Truthy,
     Stringy,
-    RaisesAny,
     Raises { name: NameUnion },
     Function { name: DirectName, args: Vec<Expected> },
     Field { name: String },
@@ -73,7 +67,6 @@ impl Display for Expect {
             Collection { ty } => format!("Collection[{}]", ty.expect),
             Truthy => format!("Truthy"),
             Stringy => format!("Stringy"),
-            RaisesAny => String::from("RaisesAny"),
             Raises { name: ty } => format!("Raises[{}]", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } => format!("{}({})", name, comma_delm(args)),
@@ -105,7 +98,6 @@ impl Expect {
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
 
             (Truthy, Truthy)
-            | (RaisesAny, RaisesAny)
             | (ExpressionAny, ExpressionAny)
             | (Stringy, Stringy)
             | (Nullable, Nullable) => true,
