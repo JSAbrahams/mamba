@@ -8,6 +8,7 @@ use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
+use std::convert::TryFrom;
 
 pub fn gen_expr(
     ast: &AST,
@@ -30,7 +31,7 @@ pub fn gen_expr(
                 Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))])
             },
         Node::Question { left, right } => {
-            constr.add(&Expected::from(left), &Expected::new(&left.pos, &Nullable));
+            constr.add(&Expected::try_from(left)?, &Expected::new(&left.pos, &Nullable));
             let (mut constr, env) = generate(left, env, ctx, constr)?;
             generate(right, &env, ctx, &mut constr)
         }
@@ -45,7 +46,7 @@ pub fn gen_expr(
             },
 
         Node::Undefined => {
-            constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &Nullable));
+            constr.add(&Expected::try_from(ast)?, &Expected::new(&ast.pos, &Nullable));
             Ok((constr.clone(), env.clone()))
         }
 

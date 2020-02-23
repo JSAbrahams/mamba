@@ -27,7 +27,7 @@ pub fn gen_call(
     match &ast.node {
         Node::Reassign { left, right } => {
             check_reassignable(left)?;
-            constr.add(&Expected::from(left), &Expected::from(right));
+            constr.add(&Expected::try_from(left)?, &Expected::try_from(right)?);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
@@ -35,7 +35,7 @@ pub fn gen_call(
             let c_name = NameUnion::try_from(name.deref())?;
             let self_type = Type { name: c_name.clone() };
 
-            constr.add(&Expected::new(&ast.pos, &self_type), &Expected::from(ast));
+            constr.add(&Expected::new(&ast.pos, &self_type), &Expected::try_from(ast)?);
 
             let self_arg = Some(self_type);
             let mut constr = constr.clone();
@@ -58,7 +58,7 @@ pub fn gen_call(
 
                 for (_, fun_exp) in functions {
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-                    let args = args.iter().map(Expected::from).collect();
+                    let args = args.iter().map(Expected::try_from).collect::<Result<_, _>>()?;
                     let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
                     constr.add(&right, &fun_exp);
                 }
@@ -68,7 +68,7 @@ pub fn gen_call(
                 constr = call_parameters(ast, &fun.arguments, &None, args, ctx, &constr)?;
                 let fun_ret_exp = Expected::new(&ast.pos, &Type { name: fun.ret_ty });
                 // entire AST is either fun ret ty or statement
-                constr.add(&Expected::from(ast), &fun_ret_exp);
+                constr.add(&Expected::try_from(ast)?, &fun_ret_exp);
 
                 if !fun.raises.is_empty() {
                     if let Some(raises) = &env.raises {
@@ -149,16 +149,16 @@ fn property_call(
         }
         Node::Id { lit } => {
             let access = Expected::new(&property.pos, &Access {
-                entity: Box::new(Expected::from(instance)),
+                entity: Box::new(Expected::try_from(instance)?),
                 name:   Box::new(Expected::new(&property.pos, &Field { name: lit.clone() }))
             });
-            let instance = Expected::from(&AST {
+            let instance = Expected::try_from(&AST {
                 pos:  instance.pos.union(&property.pos),
                 node: Node::PropertyCall {
                     instance: Box::from(instance.clone()),
                     property: Box::from(property.clone())
                 }
-            });
+            })?;
             constr.add(&instance, &access);
             Ok((constr.clone(), env.clone()))
         }
@@ -171,24 +171,25 @@ fn property_call(
                     property: Box::from(AST { pos: left.pos.clone(), node: left.clone().node })
                 }
             };
-            constr.add(&Expected::from(&left), &Expected::from(right));
+            constr.add(&Expected::try_from(&left)?, &Expected::try_from(right)?);
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
-            let instance_exp = Expected::from(instance);
+            let instance_exp = Expected::try_from(instance)?;
             let mut args_with_self: Vec<Expected> = vec![instance_exp.clone()];
-            args_with_self.append(&mut args.iter().map(Expected::from).collect());
+            args_with_self
+                .append(&mut args.iter().map(Expected::try_from).collect::<Result<_, _>>()?);
 
-            let instance_exp = Expected::from(&AST {
+            let instance_exp = Expected::try_from(&AST {
                 pos:  instance.pos.union(&property.pos),
                 node: Node::PropertyCall {
                     instance: Box::from(instance.clone()),
                     property: Box::from(property.clone())
                 }
-            });
+            })?;
             let access = Expected::new(&property.pos, &Access {
-                entity: Box::new(Expected::from(instance)),
+                entity: Box::new(Expected::try_from(instance)?),
                 name:   Box::new(Expected::new(&property.pos, &Function {
                     name: DirectName::try_from(name.deref())?,
                     args: args_with_self

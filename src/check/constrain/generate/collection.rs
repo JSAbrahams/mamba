@@ -8,7 +8,7 @@ use crate::check::constrain::Constrained;
 use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
-use crate::check::result::TypeErr;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_coll(
@@ -19,7 +19,7 @@ pub fn gen_coll(
 ) -> Constrained {
     match &ast.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
-            let mut constr = constr_col(ast, constr);
+            let mut constr = constr_col(ast, constr)?;
             gen_vec(elements, env, ctx, &mut constr)
         }
 
@@ -34,12 +34,12 @@ pub fn gen_coll(
 /// Generate constraint for collection by taking first element
 ///
 /// The assumption here being that every element in the set has the same type.
-pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> ConstrBuilder {
+pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<ConstrBuilder> {
     let col = match &collection.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
             if let Some(first) = elements.first() {
                 for element in elements {
-                    constr.add(&Expected::from(element), &Expected::from(first))
+                    constr.add(&Expected::try_from(element)?, &Expected::try_from(first)?)
                 }
                 Expect::Collection {
                     ty: Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
@@ -52,8 +52,8 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> ConstrBuilder
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
-    constr.add(&Expected::from(collection), &col_exp);
-    constr.clone()
+    constr.add(&Expected::try_from(collection)?, &col_exp);
+    Ok(constr.clone())
 }
 
 /// Constrain lookup an collection.
@@ -74,8 +74,8 @@ pub fn gen_collection_lookup(
     }
 
     constr.add_with_identifier(
-        &Expected::new(&lookup.pos, &Collection { ty: Box::from(Expected::from(lookup)) }),
-        &Expected::from(col),
+        &Expected::new(&lookup.pos, &Collection { ty: Box::from(Expected::try_from(lookup)?) }),
+        &Expected::try_from(col)?,
         &vars
     );
 

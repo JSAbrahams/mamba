@@ -9,6 +9,7 @@ use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
+use std::convert::TryFrom;
 
 pub fn gen_flow(
     ast: &AST,
@@ -27,12 +28,12 @@ pub fn gen_flow(
 
         Node::IfElse { cond, then, el: Some(el) } => {
             constr.new_set(true);
-            let left = Expected::from(cond);
+            let left = Expected::try_from(cond)?;
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
-            let left = Expected::from(then);
-            let right = Expected::from(el);
+            let left = Expected::try_from(then)?;
+            let right = Expected::try_from(el)?;
             constr.add(&left, &right);
 
             constr.new_set(true);
@@ -48,8 +49,7 @@ pub fn gen_flow(
         }
         Node::IfElse { cond, then, .. } => {
             constr.new_set(true);
-            let left = Expected::from(cond);
-            constr.add(&left, &Expected::new(&cond.pos, &Truthy));
+            constr.add(&Expected::try_from(cond)?, &Expected::new(&cond.pos, &Truthy));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
             let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
@@ -60,14 +60,13 @@ pub fn gen_flow(
         Node::Case { .. } => Err(vec![TypeErr::new(&ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
             let mut res = (constr.clone(), env.clone());
-            let cond_exp = Expected::from(cond);
+            let cond_exp = Expected::try_from(cond)?;
 
             // TODO check that all variants are covered
             for case in cases {
                 match &case.node {
                     Node::Case { cond, body } => {
-                        let left = Expected::from(cond);
-                        res.0.add(&left, &cond_exp);
+                        res.0.add(&Expected::try_from(cond)?, &cond_exp);
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
                     _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
@@ -79,27 +78,27 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             constr.new_set(true);
-            let (mut constr, env) = generate(col, &env, ctx, constr)?;
+            let (mut constr, for_env) = generate(col, &env, ctx, constr)?;
 
             // Generate lookup after collection in case of shadowing
             // TODO make more elegant with environment unification
-            let is_define_mode = env.is_define_mode;
-            let (mut constr, env) =
-                gen_collection_lookup(expr, &col, &env.define_mode(true), &mut constr)?;
+            let is_define_mode = for_env.is_define_mode;
+            let (mut constr, for_env) =
+                gen_collection_lookup(expr, &col, &for_env.define_mode(true), &mut constr)?;
             let (mut constr, _) =
-                generate(body, &env.in_loop().define_mode(is_define_mode), ctx, &mut constr)?;
+                generate(body, &for_env.in_loop().define_mode(is_define_mode), ctx, &mut constr)?;
 
             constr.exit_set(&ast.pos)?;
-            Ok((constr, env))
+            Ok((constr, env.clone()))
         }
         Node::Step { amount } => {
             let name = NameUnion::from(clss::INT_PRIMITIVE);
-            constr.add(&Expected::from(amount), &Expected::new(&amount.pos, &Type { name }));
+            constr.add(&Expected::try_from(amount)?, &Expected::new(&amount.pos, &Type { name }));
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
             constr.new_set(true);
-            let left = Expected::from(cond);
+            let left = Expected::try_from(cond)?;
             constr.add(&left, &Expected::new(&cond.pos, &Truthy));
             let (mut constr, env) = generate(cond, &env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;

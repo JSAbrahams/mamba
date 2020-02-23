@@ -12,6 +12,7 @@ use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
+use std::convert::TryFrom;
 
 pub fn gen_op(
     ast: &AST,
@@ -21,20 +22,20 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            let mut constr = constr_col(right, constr);
+            let mut constr = constr_col(right, constr)?;
             let (mut constr, env) = gen_collection_lookup(left, &right, env, &mut constr)?;
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::Range { from, to, step: Some(step), .. } => {
             let name = NameUnion::from(clss::INT_PRIMITIVE);
-            let l_exp = Expected::from(from);
+            let l_exp = Expected::try_from(from)?;
             constr.add(&l_exp, &Expected::new(&from.pos, &Type { name: name.clone() }));
 
-            let l_exp = Expected::from(to);
+            let l_exp = Expected::try_from(to)?;
             constr.add(&l_exp, &Expected::new(&to.pos, &Type { name: name.clone() }));
 
-            let l_exp = Expected::from(step);
+            let l_exp = Expected::try_from(step)?;
             constr.add(&l_exp, &Expected::new(&step.pos, &Type { name }));
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
@@ -43,10 +44,10 @@ pub fn gen_op(
         }
         Node::Range { from, to, .. } => {
             let name = NameUnion::from(clss::INT_PRIMITIVE);
-            let l_exp = Expected::from(from);
+            let l_exp = Expected::try_from(from)?;
             constr.add(&l_exp, &Expected::new(&from.pos, &Type { name: name.clone() }));
 
-            let l_exp = Expected::from(to);
+            let l_exp = Expected::try_from(to)?;
             constr.add(&l_exp, &Expected::new(&to.pos, &Type { name }));
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
@@ -59,16 +60,16 @@ pub fn gen_op(
         Node::Str { expressions, .. } => {
             let (mut constr, env) = gen_vec(expressions, env, ctx, constr)?;
             for expr in expressions {
-                constr.add(&Expected::from(expr), &Expected::new(&expr.pos, &Stringy))
+                constr.add(&Expected::try_from(expr)?, &Expected::new(&expr.pos, &Stringy))
             }
 
             let name = NameUnion::from(STRING_PRIMITIVE);
-            let left = Expected::from(ast);
+            let left = Expected::try_from(ast)?;
             constr.add(&left, &Expected::new(&ast.pos, &Type { name }));
             Ok((constr, env))
         }
         Node::Bool { .. } => {
-            let left = Expected::from(ast);
+            let left = Expected::try_from(ast)?;
             constr.add(&left, &Expected::new(&ast.pos, &Truthy));
             Ok((constr.clone(), env.clone()))
         }
@@ -91,41 +92,41 @@ pub fn gen_op(
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
             let ty = Type { name: NameUnion::from(clss::FLOAT_PRIMITIVE) };
-            constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
+            constr.add(&Expected::try_from(ast)?, &Expected::new(&ast.pos, &ty));
 
             let access = Expected::new(&expr.pos, &Access {
-                entity: Box::new(Expected::from(expr)),
+                entity: Box::new(Expected::try_from(expr)?),
                 name:   Box::from(Expected::new(&expr.pos, &Function {
                     name: DirectName::from(SQRT),
-                    args: vec![Expected::from(expr)]
+                    args: vec![Expected::try_from(expr)?]
                 }))
             });
-            constr.add(&Expected::from(ast), &access);
+            constr.add(&Expected::try_from(ast)?, &access);
 
             generate(expr, &env, ctx, constr)
         }
 
         Node::BOneCmpl { expr } => {
-            let left = Expected::from(expr);
+            let left = Expected::try_from(expr)?;
             constr.add(&left, &Expected::new(&expr.pos, &ExpressionAny));
             generate(expr, &env, ctx, constr)
         }
         Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
-            let l_exp = Expected::from(left);
+            let l_exp = Expected::try_from(left)?;
             constr.add(&l_exp, &Expected::new(&left.pos, &ExpressionAny));
 
-            let l_exp = Expected::from(right);
+            let l_exp = Expected::try_from(right)?;
             constr.add(&l_exp, &Expected::new(&right.pos, &ExpressionAny));
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::BLShift { left, right } | Node::BRShift { left, right } => {
-            let l_exp = Expected::from(left);
+            let l_exp = Expected::try_from(left)?;
             constr.add(&l_exp, &Expected::new(&right.pos, &ExpressionAny));
 
             let name = NameUnion::from(clss::INT_PRIMITIVE);
-            let l_exp = Expected::from(right);
+            let l_exp = Expected::try_from(right)?;
             constr.add(&l_exp, &Expected::new(&right.pos, &Type { name }));
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
@@ -142,15 +143,15 @@ pub fn gen_op(
         }
 
         Node::Not { expr } => {
-            let left = Expected::from(expr);
+            let left = Expected::try_from(expr)?;
             constr.add(&left, &Expected::new(&expr.pos, &Truthy));
             generate(expr, env, ctx, constr)
         }
         Node::And { left, right } | Node::Or { left, right } => {
-            let l_exp = Expected::from(left);
+            let l_exp = Expected::try_from(left)?;
             constr.add(&l_exp, &Expected::new(&left.pos, &Truthy));
 
-            let l_exp = Expected::from(right);
+            let l_exp = Expected::try_from(right)?;
             constr.add(&l_exp, &Expected::new(&right.pos, &Truthy));
 
             let (mut constr, env) = generate(left, env, ctx, constr)?;
@@ -163,7 +164,7 @@ pub fn gen_op(
 
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
     let name = NameUnion::from(ty);
-    constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &Type { name }));
+    constr.add(&Expected::try_from(ast)?, &Expected::new(&ast.pos, &Type { name }));
     Ok((constr.clone(), env.clone()))
 }
 
@@ -177,12 +178,12 @@ fn impl_magic(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     constr.add(
-        &Expected::from(ast),
+        &Expected::try_from(ast)?,
         &Expected::new(&left.pos, &Access {
-            entity: Box::new(Expected::from(left)),
+            entity: Box::new(Expected::try_from(left)?),
             name:   Box::new(Expected::new(&left.pos, &Function {
                 name: DirectName::from(fun),
-                args: vec![Expected::from(left), Expected::from(right)]
+                args: vec![Expected::try_from(left)?, Expected::try_from(right)?]
             }))
         })
     );
@@ -201,17 +202,17 @@ fn impl_bool_op(
     constr: &mut ConstrBuilder
 ) -> Constrained {
     constr.add(
-        &Expected::from(ast),
+        &Expected::try_from(ast)?,
         &Expected::new(&left.pos, &Access {
-            entity: Box::new(Expected::from(left)),
+            entity: Box::new(Expected::try_from(left)?),
             name:   Box::new(Expected::new(&left.pos, &Function {
                 name: DirectName::from(fun),
-                args: vec![Expected::from(left), Expected::from(right)]
+                args: vec![Expected::try_from(left)?, Expected::try_from(right)?]
             }))
         })
     );
     let ty = Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) };
-    constr.add(&Expected::from(ast), &Expected::new(&ast.pos, &ty));
+    constr.add(&Expected::try_from(ast)?, &Expected::new(&ast.pos, &ty));
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;
     generate(right, &env, ctx, &mut constr)

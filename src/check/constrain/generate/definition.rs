@@ -88,7 +88,7 @@ pub fn constrain_args(
 
                     let self_exp = Expected::new(&var.pos, &self_type);
                     res.1 = res.1.insert_var(*mutable, SELF, &self_exp);
-                    let left = Expected::from(var);
+                    let left = Expected::try_from(var)?;
                     res.0.add(&left, &Expected::new(&var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, default, *mutable, ctx, &mut res.0, &res.1)?;
@@ -130,12 +130,12 @@ pub fn identifier_from_var(
         }
     };
 
-    let var_expect = Expected::from(var);
+    let var_expect = Expected::try_from(var)?;
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
-            let expr_expect = Expected::from(expr);
+            let expr_expect = Expected::try_from(expr)?;
             constr.add(&var_expect, &expr_expect);
             generate(expr, &env, ctx, &mut constr)
         }
@@ -145,7 +145,7 @@ pub fn identifier_from_var(
             Ok((constr, env))
         }
         (None, Some(expr)) => {
-            constr.add_with_identifier(&var_expect, &Expected::from(expr), &names);
+            constr.add_with_identifier(&var_expect, &Expected::try_from(expr)?, &names);
             generate(expr, &env, ctx, &mut constr)
         }
         (None, None) => {

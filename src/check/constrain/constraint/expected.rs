@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
@@ -7,7 +8,9 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
+use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -24,19 +27,36 @@ impl Expected {
     }
 }
 
-impl From<&AST> for Expected {
-    fn from(ast: &AST) -> Expected {
+impl TryFrom<&AST> for Expected {
+    type Error = Vec<TypeErr>;
+
+    /// Creates Expected from AST.
+    ///
+    /// If primitive or Constructor, constructs Type.
+    fn try_from(ast: &AST) -> TypeResult<Expected> {
         let ast = match &ast.node {
             Node::Block { statements } | Node::Script { statements } =>
                 statements.last().unwrap_or(ast),
             _ => ast
         };
-        Expected::new(&ast.pos, &Expression { ast: ast.clone() })
+
+        let expect = match &ast.node {
+            Node::Int { .. } | Node::ENum { .. } => Type { name: NameUnion::from(INT_PRIMITIVE) },
+            Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
+            Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
+            Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
+            Node::ConstructorCall { name, .. } => Type { name: NameUnion::try_from(name)? },
+            _ => Expression { ast: ast.clone() }
+        };
+
+        Ok(Expected::new(&ast.pos, &expect))
     }
 }
 
-impl From<&Box<AST>> for Expected {
-    fn from(ast: &Box<AST>) -> Expected { Expected::from(ast.deref()) }
+impl TryFrom<&Box<AST>> for Expected {
+    type Error = Vec<TypeErr>;
+
+    fn try_from(ast: &Box<AST>) -> TypeResult<Expected> { Expected::try_from(ast.deref()) }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

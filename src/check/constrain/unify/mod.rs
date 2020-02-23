@@ -8,9 +8,9 @@ use itertools::Itertools;
 
 mod link;
 
+mod expression;
 mod function;
 mod ty;
-mod unify_expression;
 
 pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Constraints>> {
     let mut count = 1;
