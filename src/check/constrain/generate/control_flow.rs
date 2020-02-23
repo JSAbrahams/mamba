@@ -79,9 +79,16 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             constr.new_set(true);
-            let (mut constr, env) = gen_collection_lookup(expr, &col, &env.define_mode(), constr)?;
-            let (mut constr, env) = generate(col, &env, ctx, &mut constr)?;
-            let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
+            let (mut constr, env) = generate(col, &env, ctx, constr)?;
+
+            // Generate lookup after collection in case of shadowing
+            // TODO make more elegant with environment unification
+            let is_define_mode = env.is_define_mode;
+            let (mut constr, env) =
+                gen_collection_lookup(expr, &col, &env.define_mode(true), &mut constr)?;
+            let (mut constr, _) =
+                generate(body, &env.in_loop().define_mode(is_define_mode), ctx, &mut constr)?;
+
             constr.exit_set(&ast.pos)?;
             Ok((constr, env))
         }

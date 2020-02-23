@@ -21,7 +21,7 @@ pub fn gen_resources(
         Node::Raises { expr_or_stmt, errors } => {
             let mut constr = constr.clone();
             for error in errors {
-                let exp = Expected::new(&error.pos, &Type { name: NameUnion::try_from(ast)? });
+                let exp = Expected::new(&error.pos, &Type { name: NameUnion::try_from(error)? });
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression

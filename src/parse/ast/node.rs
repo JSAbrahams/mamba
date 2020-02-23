@@ -48,7 +48,7 @@ impl Display for Node {
                 format!("{}({})", name.node, comma_delm(args.iter().map(|a| a.node.clone()))),
             Node::PropertyCall { instance, property } =>
                 format!("{}.{}", instance.node, property.node),
-            Node::Id { lit } => format!("id:'{}'", lit),
+            Node::Id { lit } => lit.clone(),
             Node::ExpressionType { .. } => String::from("expression type"),
             Node::TypeDef { .. } => String::from("type definition"),
             Node::TypeAlias { .. } => String::from("type alias"),
@@ -125,7 +125,7 @@ impl Display for Node {
             Node::Break => String::from("break"),
             Node::Continue => String::from("continue"),
             Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
-            Node::Underscore => String::from("underscore"),
+            Node::Underscore => String::from("_"),
             Node::Undefined => String::from("undefined"),
             Node::Pass => String::from("pass"),
             Node::Question { .. } => String::from("ternary operator"),
@@ -439,6 +439,7 @@ impl Node {
             | Node::Underscore
             | Node::Undefined
             | Node::Pass
+            | Node::_Self
             | Node::Question { .. }
             | Node::QuestionOp { .. } => true,
 

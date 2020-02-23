@@ -45,8 +45,8 @@ impl Environment {
     /// Sets environment into define mode.
     ///
     /// Causes all identifiers to be treated as definitions.
-    pub fn define_mode(&self) -> Environment {
-        Environment { is_define_mode: true, ..self.clone() }
+    pub fn define_mode(&self, is_define_mode: bool) -> Environment {
+        Environment { is_define_mode, ..self.clone() }
     }
 
     /// Insert a variable.

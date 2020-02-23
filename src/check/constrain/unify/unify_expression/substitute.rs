@@ -9,6 +9,9 @@ use crate::check::result::TypeResult;
 /// identifiers is used to signal when we should stop substituting.
 /// Namely, if we encounter an identifier in a constraint, we abort
 /// substitution and copy over all remaining constraints.
+///
+/// If identifier override detected, only substitute right hand side of
+/// unification before ceasing substitution.
 pub fn substitute(
     identifiers: &[String],
     old: &Expected,
@@ -20,29 +23,37 @@ pub fn substitute(
     let identifiers = Vec::from(identifiers);
 
     while let Some(mut constr) = constraints.pop_constr() {
-        if !constr.idents.is_empty() && constr.idents == identifiers {
-            break;
-        }
-
         let old_constr = constr.clone();
         macro_rules! replace {
             ($new:expr) => {{
                 let pos = format!("({}-{}) ", constr.parent.pos.start, constr.child.pos.start);
-                println!("{:width$} [subst] {} => {}", pos, old_constr, $new, width = 18);
+                println!("{:width$} [subst] {} => {}", pos, old_constr, $new, width = 17);
             }};
         };
 
-        let (sub_l, parent) = recursive_substitute("l", &constr.parent, old, new);
-        let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);
+        if !constr.idents.is_empty() && constr.idents == identifiers {
+            let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);
 
-        constr.parent = parent;
-        constr.child = child;
-        constr.is_sub = constr.is_sub || sub_l || sub_r;
-        if sub_l || sub_r {
-            replace!(constr)
+            constr.child = child;
+            constr.is_sub = constr.is_sub || sub_r;
+            if sub_r {
+                replace!(constr)
+            }
+            substituted.push_constr(&constr);
+            break;
+        } else {
+            let (sub_l, parent) = recursive_substitute("l", &constr.parent, old, new);
+            let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);
+
+            constr.parent = parent;
+            constr.child = child;
+            constr.is_sub = constr.is_sub || sub_l || sub_r;
+            if sub_l || sub_r {
+                replace!(constr)
+            }
+
+            substituted.push_constr(&constr)
         }
-
-        substituted.push_constr(&constr)
     }
 
     substituted.append(constraints);

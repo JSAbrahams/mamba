@@ -23,9 +23,20 @@ impl Display for Constraint {
         let idents = if self.idents.is_empty() {
             String::new()
         } else {
-            format!("(idents: {}) ", comma_delm(&self.idents))
+            format!("(ids: {}) ", comma_delm(&self.idents))
         };
-        write!(f, "{}{}{}{} = {}", is_flag, is_sub, idents, self.parent, self.child)
+        let parent = if self.parent.is_expr() {
+            format!("{}", self.parent)
+        } else {
+            format!("[{}]", self.parent)
+        };
+        let child = if self.child.is_expr() {
+            format!("{}", self.child)
+        } else {
+            format!("[{}]", self.child)
+        };
+        let eq = if self.parent.is_ty() { ">=" } else { "=" };
+        write!(f, "{}{}{}{} {} {}", is_flag, is_sub, idents, parent, eq, child)
     }
 }
 

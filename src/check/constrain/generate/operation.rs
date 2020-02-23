@@ -5,8 +5,8 @@ use crate::check::constrain::generate::collection::{constr_col, gen_collection_l
 use crate::check::constrain::generate::{gen_vec, generate};
 use crate::check::constrain::Constrained;
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
-use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW,
-                                      SQRT, SUB};
+use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT,
+                                      SUB};
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
@@ -80,13 +80,13 @@ pub fn gen_op(
         Node::FDiv { left, right } => impl_magic(FDIV, ast, left, right, env, ctx, constr),
         Node::Pow { left, right } => impl_magic(POW, ast, left, right, env, ctx, constr),
         Node::Mod { left, right } => impl_magic(MOD, ast, left, right, env, ctx, constr),
-        Node::Neq { left, right } => impl_magic(NEQ, ast, left, right, env, ctx, constr),
 
         Node::Le { left, right } => impl_bool_op(LE, ast, left, right, env, ctx, constr),
         Node::Ge { left, right } => impl_bool_op(GE, ast, left, right, env, ctx, constr),
         Node::Leq { left, right } => impl_bool_op(LEQ, ast, left, right, env, ctx, constr),
         Node::Geq { left, right } => impl_bool_op(GEQ, ast, left, right, env, ctx, constr),
-        Node::Eq { left, right } => impl_bool_op(EQ, ast, left, right, env, ctx, constr),
+        Node::Neq { left, right } | Node::Eq { left, right } =>
+            impl_bool_op(EQ, ast, left, right, env, ctx, constr),
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {

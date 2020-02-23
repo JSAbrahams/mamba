@@ -45,6 +45,10 @@ impl TryFrom<&Box<AST>> for Name {
 impl TryFrom<&AST> for Name {
     type Error = Vec<TypeErr>;
 
+    /// Try to construct Name from AST.
+    ///
+    /// In the case of Generics, isa field is ignored and we only look at the
+    /// name of the generic itself.
     fn try_from(ast: &AST) -> TypeResult<Name> {
         match &ast.node {
             Node::Id { lit } => Ok(Name::from(&DirectName::from(lit.as_str()))),
@@ -60,6 +64,7 @@ impl TryFrom<&AST> for Name {
             ))),
             Node::TypeUnion { .. } =>
                 Err(vec![TypeErr::new(&ast.pos, "Expected single name but was union")]),
+            Node::Generic { id, .. } => Name::try_from(id),
             _ => {
                 let msg = format!("Expected name, was {}", ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])

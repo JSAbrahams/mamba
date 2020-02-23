@@ -1,16 +1,16 @@
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::unify::unify_link::unify_link;
+use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::common::delimit::{custom_delimited, newline_delimited};
 use itertools::Itertools;
 
-mod unify_link;
+mod link;
 
+mod function;
+mod ty;
 mod unify_expression;
-mod unify_function;
-mod unify_type;
 
 pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Constraints>> {
     let mut count = 1;

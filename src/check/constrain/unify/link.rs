@@ -3,9 +3,9 @@ use crate::check::constrain::constraint::expected::Expect::{Access, Collection, 
                                                             Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::unify::function::unify_function;
+use crate::check::constrain::unify::ty::unify_type;
 use crate::check::constrain::unify::unify_expression::unify_expression;
-use crate::check::constrain::unify::unify_function::unify_function;
-use crate::check::constrain::unify::unify_type::unify_type;
 use crate::check::constrain::Unified;
 use crate::check::context::Context;
 

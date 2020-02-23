@@ -2,9 +2,9 @@ use crate::check::constrain::constraint::expected::Expect::{Expression, Expressi
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::unify::link::reinsert;
+use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::unify::unify_expression::substitute::substitute;
-use crate::check::constrain::unify::unify_link::reinsert;
-use crate::check::constrain::unify::unify_link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;

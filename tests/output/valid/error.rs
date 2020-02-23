@@ -11,7 +11,6 @@ fn exception_ast_verify() -> Result<(), Vec<String>> {
 }
 
 #[test]
-#[ignore]
 fn raise_ast_verify() -> Result<(), Vec<String>> {
     test_directory(true, &["error"], &["error", "target"], "raise")
 }

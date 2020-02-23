@@ -2,7 +2,7 @@ use crate::check::constrain::constraint::expected::Expect::{Collection, Expressi
                                                             Raises, Stringy, Truthy, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::unify::unify_link::unify_link;
+use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
 use crate::check::context::name::{AsNullable, DirectName, IsNullable, IsSuperSet, NameVariant};
 use crate::check::context::{function, Context, LookupClass};
@@ -47,7 +47,7 @@ pub fn unify_type(
             unify_link(constraints, ctx, total)
         }
         (Collection { ty }, Stringy) => {
-            constraints.eager_push(ty, right);
+            constraints.push(ty, right);
             unify_link(constraints, ctx, total + 1)
         }
 
@@ -79,7 +79,7 @@ pub fn unify_type(
             },
 
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
-            constraints.eager_push(&l_ty, &r_ty);
+            constraints.push(&l_ty, &r_ty);
             unify_link(constraints, ctx, total + 1)
         }
 

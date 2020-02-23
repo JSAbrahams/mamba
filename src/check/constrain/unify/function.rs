@@ -6,7 +6,7 @@ use crate::check::constrain::constraint::expected::Expect::{Access, Field, Funct
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::unify::unify_link::{reinsert, unify_link};
+use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::name::{NameUnion, NameVariant};
@@ -43,7 +43,7 @@ pub fn unify_function(
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
                             let right = Expected::new(&left.pos, &Type { name: arg.clone() });
-                            constraints.eager_push(expected, &right)
+                            constraints.push(expected, &right)
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
@@ -77,7 +77,7 @@ pub fn unify_function(
                                 )?;
                             }
                             let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
-                            constraints.eager_push(&right, &field_ty_exp);
+                            constraints.push(&right, &field_ty_exp);
                         }
                         unify_link(constraints, ctx, total)
                     }
@@ -98,7 +98,7 @@ pub fn unify_function(
 
                             let fun_ty_exp =
                                 Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
-                            constraints.eager_push(&right, &fun_ty_exp);
+                            constraints.push(&right, &fun_ty_exp);
                         }
 
                         let possible_args: HashSet<Vec<FunctionArg>> =
@@ -141,7 +141,7 @@ fn unify_fun_arg(
                         TypeErr::new(&expected.pos, "Function argument must have type parameters")
                     })?;
                     added += 1;
-                    constr.eager_push(
+                    constr.push(
                         &Expected::new(&expected.pos, &Type { name: name.clone() }),
                         &expected
                     )
