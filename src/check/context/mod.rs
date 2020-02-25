@@ -114,6 +114,7 @@ impl LookupField<&str, Field> for Context {
     }
 }
 
+#[derive(Debug)]
 pub struct ClassUnion {
     union: HashSet<Class>
 }

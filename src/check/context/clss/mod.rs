@@ -117,12 +117,12 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Po
         )
     ) -> Result<Self, Self::Error> {
         let self_name = generic.name.substitute(generics, pos)?;
-        let mut fields: HashSet<Field> = generic
+        let fields: HashSet<Field> = generic
             .fields
             .iter()
             .map(|field| Field::try_from((field, generics, pos)))
             .collect::<Result<_, _>>()?;
-        let mut functions: HashSet<Function> = generic
+        let functions: HashSet<Function> = generic
             .functions
             .iter()
             .map(|fun| Function::try_from((fun, generics, pos)))
@@ -130,13 +130,6 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Po
 
         let mut parents: HashSet<DirectName> = HashSet::new();
         for parent in &generic.parents {
-            let ty = types.iter().find(|ty| ty.name == parent.name).ok_or_else(|| {
-                TypeErr::new(pos, &format!("Unknown parent type: {}", parent.name))
-            })?;
-
-            let ty = Class::try_from((ty, generics, types, pos))?;
-            fields = fields.union(&ty.fields).cloned().collect();
-            functions = functions.union(&ty.functions).cloned().collect();
             parents.insert(parent.name.clone());
         }
 

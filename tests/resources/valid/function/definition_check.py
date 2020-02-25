@@ -34,7 +34,7 @@ class MyClass:
     def some_function(self, c: int) -> int:
         d = 20
         d = 10 + 30
-        return c + 20
+        return c + 20 + d
 
     def __add__(self, other: MyClass) -> MyClass: return MyClass(self.a + self.b + other.some_function(self.a), self.b)
     def __sub__(self, other: MyClass) -> MyClass: return self + other

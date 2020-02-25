@@ -88,14 +88,6 @@ impl Expected {
             false
         }
     }
-
-    pub fn is_ty(&self) -> bool {
-        if let Type { .. } = self.expect {
-            true
-        } else {
-            false
-        }
-    }
 }
 
 impl Display for Expect {

@@ -42,8 +42,8 @@ pub fn unify_function(
                     match possible {
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
-                            let right = Expected::new(&left.pos, &Type { name: arg.clone() });
-                            constraints.push("function argument", expected, &right)
+                            let arg_ty = Expected::new(&left.pos, &Type { name: arg.clone() });
+                            constraints.push("function argument", expected, &arg_ty)
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(

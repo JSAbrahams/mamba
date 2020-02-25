@@ -27,8 +27,12 @@ impl Constraints {
 
     pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
 
+    /// Push constraint at front so that it will be analysed next.
+    ///
+    /// Only used during unification stage.
+    /// Marks constraint as generated.
     pub fn push(&mut self, msg: &str, left: &Expected, right: &Expected) {
-        self.constraints.push_front(Constraint::new(msg, left, right))
+        self.constraints.push_front(Constraint::new(msg, left, right).as_gen())
     }
 
     /// Append in_class and constraints of constraints to self
