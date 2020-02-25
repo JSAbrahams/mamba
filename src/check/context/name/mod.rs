@@ -336,13 +336,10 @@ impl Name {
 impl IsSuperSet<NameUnion> for NameUnion {
     fn is_superset_of(&self, other: &NameUnion, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         for name in &other.names {
-            let res: Vec<bool> = self
-                .names
-                .iter()
-                .map(|s_name| s_name.is_superset_of(&name, ctx, pos))
-                .collect::<Result<_, _>>()?;
-            let any_other_subset_of_a_self = res.iter().any(|b| *b);
-            if !any_other_subset_of_a_self {
+            let is_superset = |s_name: &Name| s_name.is_superset_of(&name, ctx, pos);
+            let any_superset: Vec<bool> =
+                self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
+            if !any_superset.iter().any(|b| *b) {
                 return Ok(false);
             }
         }

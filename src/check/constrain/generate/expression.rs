@@ -45,11 +45,6 @@ pub fn gen_expr(
                 Ok((constr.clone(), env.clone()))
             },
 
-        Node::Undefined => {
-            constr.add(&Expected::try_from(ast)?, &Expected::new(&ast.pos, &Nullable));
-            Ok((constr.clone(), env.clone()))
-        }
-
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected an expression")])
     }
 }

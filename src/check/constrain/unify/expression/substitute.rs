@@ -27,7 +27,7 @@ pub fn substitute(
         macro_rules! replace {
             ($new:expr) => {{
                 let pos = format!("({}-{}) ", constr.parent.pos.start, constr.child.pos.start);
-                println!("{:width$} [subst] {} => {}", pos, old_constr, $new, width = 17);
+                println!("{:width$} [substitute] {} => {}", pos, old_constr, $new, width = 17);
             }};
         };
 
@@ -39,6 +39,7 @@ pub fn substitute(
             if sub_r {
                 replace!(constr)
             }
+
             substituted.push_constr(&constr);
             break;
         } else {

@@ -109,9 +109,7 @@ pub fn identifier_from_var(
     constr: &mut ConstrBuilder,
     env: &Environment
 ) -> Constrained {
-    let mut constr = constr.clone();
-    let mut env = env.clone();
-    let mut names = vec![];
+    let (mut constr, mut env, mut names) = (constr.clone(), env.clone(), vec![]);
 
     if let Some(ty) = ty {
         let name = NameUnion::try_from(ty.deref())?;

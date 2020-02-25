@@ -19,7 +19,8 @@ pub struct Constraint {
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let is_flag = if self.is_flag { "(flagged) " } else { "" };
-        let is_sub = if self.is_flag { "(subs) " } else { "" };
+        let is_sub = if self.is_sub { "(sub) " } else { "" };
+
         let idents = if self.idents.is_empty() {
             String::new()
         } else {
@@ -35,16 +36,17 @@ impl Display for Constraint {
         } else {
             format!("[{}]", self.child)
         };
-        let eq = if self.parent.is_ty() { ">=" } else { "=" };
+        let eq = if self.parent.is_ty() || self.child.is_ty() { ">=" } else { "=" };
+
         write!(f, "{}{}{}{} {} {}", is_flag, is_sub, idents, parent, eq, child)
     }
 }
 
 impl Constraint {
-    pub fn new(left: &Expected, right: &Expected) -> Constraint {
+    pub fn new(parent: &Expected, child: &Expected) -> Constraint {
         Constraint {
-            parent:  left.clone(),
-            child:   right.clone(),
+            parent:  parent.clone(),
+            child:   child.clone(),
             idents:  vec![],
             is_flag: false,
             is_sub:  false

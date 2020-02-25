@@ -173,30 +173,24 @@ impl Class {
         })
     }
 
-    pub fn function(&self, fun_name: &DirectName, pos: &Position) -> TypeResult<Function> {
-        self.functions
-            .iter()
-            .find_map(
-                |function| {
-                    if function.name == fun_name.clone() {
-                        Some(function.clone())
-                    } else {
-                        None
-                    }
-                }
-            )
-            .ok_or_else(|| {
-                vec![TypeErr::new(
-                    pos,
-                    &format!(
-                        "Type {} does not define function \"{}\"{}{}",
-                        self,
-                        fun_name,
-                        if self.functions.is_empty() { "" } else { ", must be one of: \n" },
-                        newline_delimited(&self.functions)
-                    )
-                )]
-            })
+    /// Get function of class.
+    ///
+    /// If class does not implement function, traverse parents until function
+    /// found.
+    pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
+        if let Some(function) = self.functions.iter().find(|f| &f.name == name) {
+            return Ok(function.clone());
+        }
+
+        // TODO deal with conflicting function names in parents.
+        // TODO check for cyclic dependencies after constructing Context.
+        for parent in &self.parents {
+            if let Ok(function) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
+                return Ok(function.clone());
+            }
+        }
+
+        Err(vec![TypeErr::new(pos, &format!("'{}' does not define \"{}\"", self, name))])
     }
 }
 
@@ -214,6 +208,7 @@ pub fn concrete_to_python(name: &str) -> String {
         LIST => String::from(python::LIST),
 
         NONE => String::from(python::NONE),
+        EXCEPTION => String::from(python::EXCEPTION),
         other => String::from(other)
     }
 }

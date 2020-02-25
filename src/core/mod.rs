@@ -33,7 +33,7 @@ pub mod construct;
 ///     el: Box::from(Core::Str { string: String::from("c") })
 /// };
 ///
-/// assert_eq!(to_source(&core_node), "if a: \"b\"\nelse: \"c\"\n");
+/// assert_eq!(to_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
 /// ```
 pub fn to_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
 
@@ -313,7 +313,7 @@ fn indent(amount: usize) -> String { " ".repeat(4 * amount) }
 fn newline_if_body(core: &Core, ind: usize) -> String {
     match core {
         Core::Block { .. } => format!("\n{}", to_py(core, ind + 1)),
-        _ => format!(" {}", to_py(core, ind + 1))
+        _ => format!("\n{}{}", indent(ind + 1), to_py(core, ind + 1))
     }
 }
 

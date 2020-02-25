@@ -83,7 +83,7 @@ pub fn unify_function(
                     }
                     Function { name, args } => {
                         let class = ctx.class(entity_name, &left.pos)?;
-                        let function_union = class.function(&name, &left.pos)?;
+                        let function_union = class.fun(&name, ctx, &left.pos)?;
 
                         for function in &function_union.union {
                             if function.private {

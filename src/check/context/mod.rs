@@ -157,10 +157,9 @@ impl ClassUnion {
 
     pub fn classes(&self) -> IntoIter<Class> { self.union.clone().into_iter() }
 
-    pub fn function(&self, fun_name: &DirectName, pos: &Position) -> TypeResult<FunctionUnion> {
-        let union =
-            self.union.iter().map(|c| c.function(fun_name, pos)).collect::<Result<_, _>>()?;
-        Ok(FunctionUnion { union })
+    pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<FunUnion> {
+        let union = self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
+        Ok(FunUnion { union })
     }
 
     pub fn field(&self, name: &str, pos: &Position) -> TypeResult<FieldUnion> {
@@ -169,7 +168,7 @@ impl ClassUnion {
     }
 }
 
-pub struct FunctionUnion {
+pub struct FunUnion {
     pub union: HashSet<Function>
 }
 
