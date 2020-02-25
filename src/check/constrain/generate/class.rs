@@ -60,6 +60,7 @@ pub fn constrain_class_body(
     }
 
     res.0.add(
+        "class body",
         &Expected::try_from(&AST { pos: ty.pos.clone(), node: Node::_Self })?,
         &Expected::new(&ty.pos, &class_ty_exp)
     );
@@ -87,13 +88,13 @@ pub fn property_from_field(
     let field_ty = Expected::new(&pos, &Type { name: field.ty.clone() });
 
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
-    constr.add(&field_ty, &property_call);
+    constr.add("field property", &field_ty, &property_call);
 
     let access = Expected::new(&pos, &Access {
         entity: Box::new(Expected::new(&pos, &Type { name: NameUnion::from(class) })),
         name:   Box::new(Expected::new(&pos, &Field { name: field.name.clone() }))
     });
 
-    constr.add(&property_call, &access);
+    constr.add("field property", &property_call, &access);
     Ok((constr.clone(), env))
 }

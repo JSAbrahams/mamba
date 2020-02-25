@@ -43,7 +43,7 @@ pub fn unify_expression(
         (Expression { ast }, Collection { ty }) => match &ast.node {
             Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
                 for e in elements {
-                    constraints.push(&Expected::try_from(e)?, ty);
+                    constraints.push("expression and collection", &Expected::try_from(e)?, ty);
                 }
                 unify_link(constraints, ctx, total)
             }
@@ -60,7 +60,11 @@ pub fn unify_expression(
                 | (Node::Tuple { elements: l_elements }, Node::Tuple { elements: r_elements }) =>
                     if l_elements.len() == r_elements.len() {
                         for (l, r) in l_elements.iter().zip(r_elements) {
-                            constraints.push(&Expected::try_from(l)?, &Expected::try_from(r)?);
+                            constraints.push(
+                                "collection expression",
+                                &Expected::try_from(l)?,
+                                &Expected::try_from(r)?
+                            );
                         }
                         unify_link(constraints, ctx, total)
                     } else {

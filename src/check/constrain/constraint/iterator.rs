@@ -27,8 +27,8 @@ impl Constraints {
 
     pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
 
-    pub fn push(&mut self, left: &Expected, right: &Expected) {
-        self.constraints.push_front(Constraint::new(left, right))
+    pub fn push(&mut self, msg: &str, left: &Expected, right: &Expected) {
+        self.constraints.push_front(Constraint::new(msg, left, right))
     }
 
     /// Append in_class and constraints of constraints to self

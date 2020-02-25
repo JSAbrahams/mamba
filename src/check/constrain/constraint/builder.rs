@@ -68,14 +68,20 @@ impl ConstrBuilder {
         Ok(())
     }
 
-    pub fn add_with_identifier(&mut self, parent: &Expected, child: &Expected, idens: &[String]) {
-        let mut constr = Constraint::new(parent, child);
+    pub fn add_with_identifier(
+        &mut self,
+        msg: &str,
+        parent: &Expected,
+        child: &Expected,
+        idens: &[String]
+    ) {
+        let mut constr = Constraint::new(msg, parent, child);
         constr.idents.append(&mut Vec::from(idens));
         self.constraints[self.level].1.push(constr);
     }
 
-    pub fn add(&mut self, parent: &Expected, child: &Expected) {
-        self.constraints[self.level].1.push(Constraint::new(parent, child));
+    pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected) {
+        self.constraints[self.level].1.push(Constraint::new(msg, parent, child));
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {

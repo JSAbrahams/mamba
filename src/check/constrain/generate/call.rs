@@ -27,7 +27,7 @@ pub fn gen_call(
     match &ast.node {
         Node::Reassign { left, right } => {
             check_reassignable(left)?;
-            constr.add(&Expected::try_from(left)?, &Expected::try_from(right)?);
+            constr.add("reassign", &Expected::try_from(left)?, &Expected::try_from(right)?);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
@@ -35,7 +35,11 @@ pub fn gen_call(
             let c_name = NameUnion::try_from(name.deref())?;
             let self_type = Type { name: c_name.clone() };
 
-            constr.add(&Expected::new(&ast.pos, &self_type), &Expected::try_from(ast)?);
+            constr.add(
+                "constructor call",
+                &Expected::new(&ast.pos, &self_type),
+                &Expected::try_from(ast)?
+            );
 
             let self_arg = Some(self_type);
             let mut constr = constr.clone();
@@ -60,7 +64,7 @@ pub fn gen_call(
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
                     let args = args.iter().map(Expected::try_from).collect::<Result<_, _>>()?;
                     let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
-                    constr.add(&right, &fun_exp);
+                    constr.add("function call", &right, &fun_exp);
                 }
             } else {
                 // Resort to looking up in Context
@@ -68,12 +72,12 @@ pub fn gen_call(
                 constr = call_parameters(ast, &fun.arguments, &None, args, ctx, &constr)?;
                 let fun_ret_exp = Expected::new(&ast.pos, &Type { name: fun.ret_ty });
                 // entire AST is either fun ret ty or statement
-                constr.add(&Expected::try_from(ast)?, &fun_ret_exp);
+                constr.add("function call", &Expected::try_from(ast)?, &fun_ret_exp);
 
                 if !fun.raises.is_empty() {
                     if let Some(raises) = &env.raises {
                         let raises_exp = Expected::new(&ast.pos, &Raises { name: fun.raises });
-                        constr.add(&raises, &raises_exp);
+                        constr.add("function call", &raises, &raises_exp);
                     } else if !constr.is_top_level() {
                         let msg = format!("Exceptions not covered: {}", &fun.raises);
                         return Err(vec![TypeErr::new(&ast.pos, &msg)]);
@@ -121,7 +125,7 @@ fn call_parameters(
 
                 let arg_exp = Expected::new(&pos, &arg);
                 let name = ctx.class(ty, pos)?.name();
-                constr.add(&arg_exp, &Expected::new(&pos, &Type { name }))
+                constr.add("call parameters", &arg_exp, &Expected::new(&pos, &Type { name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&self_ast.pos.end, &self_ast.pos.end);
@@ -159,7 +163,7 @@ fn property_call(
                     property: Box::from(property.clone())
                 }
             })?;
-            constr.add(&instance, &access);
+            constr.add("call property", &instance, &access);
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right } => {
@@ -171,7 +175,11 @@ fn property_call(
                     property: Box::from(AST { pos: left.pos.clone(), node: left.clone().node })
                 }
             };
-            constr.add(&Expected::try_from(&left)?, &Expected::try_from(right)?);
+            constr.add(
+                "call and reassign",
+                &Expected::try_from(&left)?,
+                &Expected::try_from(right)?
+            );
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
@@ -196,7 +204,7 @@ fn property_call(
                 }))
             });
 
-            constr.add(&instance_exp, &access);
+            constr.add("call class function", &instance_exp, &access);
             Ok((constr, env))
         }
 

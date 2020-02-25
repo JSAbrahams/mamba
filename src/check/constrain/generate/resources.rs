@@ -25,18 +25,18 @@ pub fn gen_resources(
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
-            constr.add(&Expected::try_from(ast)?, &Expected::try_from(expr_or_stmt)?);
+            constr.add("raises", &Expected::try_from(ast)?, &Expected::try_from(expr_or_stmt)?);
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             constr.new_set(true);
             let resource_exp = Expected::try_from(resource)?;
-            constr.add(&resource_exp, &Expected::try_from(alias)?);
-            constr.add(&resource_exp, &Expected::new(&resource.pos, &ExpressionAny));
+            constr.add("with as", &resource_exp, &Expected::try_from(alias)?);
+            constr.add("with as", &resource_exp, &Expected::new(&resource.pos, &ExpressionAny));
 
             if let Some(ty) = ty {
                 let ty_exp = Type { name: NameUnion::try_from(ty)? };
-                constr.add(&resource_exp, &Expected::new(&ty.pos, &ty_exp));
+                constr.add("with as", &resource_exp, &Expected::new(&ty.pos, &ty_exp));
             }
 
             let (mut constr, env) = generate(resource, &env, ctx, constr)?;
@@ -60,8 +60,11 @@ pub fn gen_resources(
         }
         Node::With { resource, expr, .. } => {
             constr.new_set(true);
-            constr
-                .add(&Expected::try_from(resource)?, &Expected::new(&resource.pos, &ExpressionAny));
+            constr.add(
+                "with",
+                &Expected::try_from(resource)?,
+                &Expected::new(&resource.pos, &ExpressionAny)
+            );
             let (mut constr, env) = generate(resource, env, ctx, constr)?;
             constr.exit_set(&ast.pos)?;
             generate(expr, &env, ctx, &mut constr)
@@ -86,7 +89,7 @@ pub fn constrain_raises(
     }
 
     if let Some(raises) = raises {
-        constr.add(&exp, raises);
+        constr.add("raises", &exp, raises);
         Ok(constr.clone())
     } else {
         Err(vec![TypeErr::new(&exp.pos, "Unexpected raise")])

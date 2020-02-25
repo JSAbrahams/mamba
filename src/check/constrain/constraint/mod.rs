@@ -12,6 +12,7 @@ pub struct Constraint {
     pub is_flag: bool,
     pub is_sub:  bool,
     pub idents:  Vec<String>,
+    pub msg:     String,
     pub parent:  Expected,
     pub child:   Expected
 }
@@ -21,6 +22,7 @@ impl Display for Constraint {
         let is_flag = if self.is_flag { "(flagged) " } else { "" };
         let is_sub = if self.is_sub { "(sub) " } else { "" };
 
+        let msg = if self.msg.is_empty() { String::new() } else { format!("\"{}\" | ", self.msg) };
         let idents = if self.idents.is_empty() {
             String::new()
         } else {
@@ -38,15 +40,16 @@ impl Display for Constraint {
         };
         let eq = if self.parent.is_ty() || self.child.is_ty() { ">=" } else { "=" };
 
-        write!(f, "{}{}{}{} {} {}", is_flag, is_sub, idents, parent, eq, child)
+        write!(f, "{}{}{}{}{} {} {}", msg, is_flag, is_sub, idents, parent, eq, child)
     }
 }
 
 impl Constraint {
-    pub fn new(parent: &Expected, child: &Expected) -> Constraint {
+    pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
         Constraint {
             parent:  parent.clone(),
             child:   child.clone(),
+            msg:     String::from(msg),
             idents:  vec![],
             is_flag: false,
             is_sub:  false

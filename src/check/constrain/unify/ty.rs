@@ -49,7 +49,7 @@ pub fn unify_type(
         }
 
         (Collection { ty }, Stringy) => {
-            constraints.push(ty, right);
+            constraints.push("stringy collection", ty, right);
             unify_link(constraints, ctx, total + 1)
         }
 
@@ -79,7 +79,7 @@ pub fn unify_type(
             },
 
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
-            constraints.push(&l_ty, &r_ty);
+            constraints.push("collection parameters", &l_ty, &r_ty);
             unify_link(constraints, ctx, total + 1)
         }
 

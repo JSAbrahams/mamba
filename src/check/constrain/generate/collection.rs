@@ -39,7 +39,11 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
             if let Some(first) = elements.first() {
                 for element in elements {
-                    constr.add(&Expected::try_from(element)?, &Expected::try_from(first)?)
+                    constr.add(
+                        "collection",
+                        &Expected::try_from(element)?,
+                        &Expected::try_from(first)?
+                    )
                 }
                 Expect::Collection {
                     ty: Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
@@ -52,7 +56,7 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
-    constr.add(&Expected::try_from(collection)?, &col_exp);
+    constr.add("collection", &Expected::try_from(collection)?, &col_exp);
     Ok(constr.clone())
 }
 
@@ -74,6 +78,7 @@ pub fn gen_collection_lookup(
     }
 
     constr.add_with_identifier(
+        "collection lookup",
         &Expected::new(&lookup.pos, &Collection { ty: Box::from(Expected::try_from(lookup)?) }),
         &Expected::try_from(col)?,
         &vars

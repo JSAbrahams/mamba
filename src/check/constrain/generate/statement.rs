@@ -24,14 +24,14 @@ pub fn gen_stmt(
         Node::ReturnEmpty => Ok((constr.clone(), env.clone())),
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.return_type {
-                constr.add(&expected_ret_ty, &Expected::try_from(expr)?);
+                constr.add("return", &expected_ret_ty, &Expected::try_from(expr)?);
                 generate(expr, env, ctx, constr)
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Return outside function with return type")])
             },
         Node::Print { expr } => {
             let left = Expected::try_from(expr)?;
-            constr.add(&left, &Expected::new(&expr.pos, &Stringy));
+            constr.add("print", &left, &Expected::new(&expr.pos, &Stringy));
             generate(expr, env, ctx, constr)
         }
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected statement")])

@@ -43,7 +43,7 @@ pub fn unify_function(
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
                             let right = Expected::new(&left.pos, &Type { name: arg.clone() });
-                            constraints.push(expected, &right)
+                            constraints.push("function argument", expected, &right)
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
@@ -77,7 +77,7 @@ pub fn unify_function(
                                 )?;
                             }
                             let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
-                            constraints.push(&right, &field_ty_exp);
+                            constraints.push("field access", &right, &field_ty_exp);
                         }
                         unify_link(constraints, ctx, total)
                     }
@@ -98,7 +98,7 @@ pub fn unify_function(
 
                             let fun_ty_exp =
                                 Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
-                            constraints.push(&right, &fun_ty_exp);
+                            constraints.push("function access", &right, &fun_ty_exp);
                         }
 
                         let possible_args: HashSet<Vec<FunctionArg>> =
@@ -142,6 +142,7 @@ fn unify_fun_arg(
                     })?;
                     added += 1;
                     constr.push(
+                        "function argument",
                         &Expected::new(&expected.pos, &Type { name: name.clone() }),
                         &expected
                     )

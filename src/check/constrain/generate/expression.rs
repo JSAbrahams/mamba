@@ -31,14 +31,18 @@ pub fn gen_expr(
                 Err(vec![TypeErr::new(&ast.pos, &format!("Undefined variable: {}", lit))])
             },
         Node::Question { left, right } => {
-            constr.add(&Expected::try_from(left)?, &Expected::new(&left.pos, &Nullable));
+            constr.add(
+                "question",
+                &Expected::try_from(left)?,
+                &Expected::new(&left.pos, &Nullable)
+            );
             let (mut constr, env) = generate(left, env, ctx, constr)?;
             generate(right, &env, ctx, &mut constr)
         }
         Node::Pass =>
             if let Some(expected_ret_ty) = &env.return_type {
                 if env.last_stmt_in_function {
-                    constr.add(&Expected::new(&ast.pos, &Nullable), &expected_ret_ty);
+                    constr.add("pass", &Expected::new(&ast.pos, &Nullable), &expected_ret_ty);
                 }
                 Ok((constr.clone(), env.clone()))
             } else {

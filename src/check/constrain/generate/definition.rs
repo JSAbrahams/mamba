@@ -89,7 +89,7 @@ pub fn constrain_args(
                     let self_exp = Expected::new(&var.pos, &self_type);
                     res.1 = res.1.insert_var(*mutable, SELF, &self_exp);
                     let left = Expected::try_from(var)?;
-                    res.0.add(&left, &Expected::new(&var.pos, self_type));
+                    res.0.add("arguments", &left, &Expected::new(&var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, default, *mutable, ctx, &mut res.0, &res.1)?;
                 },
@@ -132,22 +132,38 @@ pub fn identifier_from_var(
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
-            constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
+            constr.add_with_identifier(
+                "variable with type and expression",
+                &var_expect,
+                &Expected::new(&ty.pos, &ty_exp),
+                &names
+            );
             let expr_expect = Expected::try_from(expr)?;
-            constr.add(&var_expect, &expr_expect);
+            constr.add("variable with type and expression", &var_expect, &expr_expect);
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
-            constr.add_with_identifier(&var_expect, &Expected::new(&ty.pos, &ty_exp), &names);
+            constr.add_with_identifier(
+                "variable with type",
+                &var_expect,
+                &Expected::new(&ty.pos, &ty_exp),
+                &names
+            );
             Ok((constr, env))
         }
         (None, Some(expr)) => {
-            constr.add_with_identifier(&var_expect, &Expected::try_from(expr)?, &names);
+            constr.add_with_identifier(
+                "variable with expression",
+                &var_expect,
+                &Expected::try_from(expr)?,
+                &names
+            );
             generate(expr, &env, ctx, &mut constr)
         }
         (None, None) => {
             constr.add_with_identifier(
+                "variable",
                 &var_expect,
                 &Expected::new(&var.pos, &ExpressionAny),
                 &names
