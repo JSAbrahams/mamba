@@ -1,7 +1,7 @@
 use std::fmt::{Display, Error, Formatter};
 
 use crate::check::constrain::constraint::expected::Expected;
-use crate::common::delimit::comma_delm;
+use crate::common::delimit::{comma_delm, custom_delimited};
 
 pub mod builder;
 pub mod expected;
@@ -21,32 +21,35 @@ pub struct Constraint {
 
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let is_flag = if self.is_flag { "(flagged) " } else { "" };
-        let is_sub = if self.is_sub { "(sub) " } else { "" };
-
-        let msg = if self.msg.is_empty() { String::new() } else { format!("\"{}\" ", self.msg) };
+        let is_flag = if self.is_flag { "(flagged)" } else { "" };
+        let is_sub = if self.is_sub { "(sub)" } else { "" };
         let idents = if self.idents.is_empty() {
             String::new()
         } else {
-            format!("(ids: {}) ", comma_delm(&self.idents))
+            format!("(ids: {})", comma_delm(&self.idents))
         };
-        let is_gen = if self.is_gen { "(gen) " } else { "" };
+        let is_gen = if self.is_gen { "(gen)" } else { "" };
+
+        let flags = custom_delimited(
+            vec![is_flag, is_sub, is_gen, idents.as_str()].drain_filter(|f| !f.is_empty()),
+            " ",
+            ""
+        );
+        let flags = if flags.is_empty() { String::new() } else { format!("{{{}}} # ", flags) };
 
         let parent = if self.parent.is_expr() {
             format!("{}", self.parent)
         } else {
             format!("[{}]", self.parent)
         };
+        let eq = if self.is_flipped { "<=" } else { ">=" };
         let child = if self.child.is_expr() {
             format!("{}", self.child)
         } else {
             format!("[{}]", self.child)
         };
-        let eq = if self.is_flipped { "<=" } else { ">=" };
 
-        let flags = format!("{}{}{}{}{}", msg, is_gen, is_flag, is_sub, idents);
-        let div = if flags.is_empty() { String::new() } else { String::from("| ") };
-        write!(f, "{}{}{} {} {}", flags, div, parent, eq, child)
+        write!(f, "{}{} {} {}", flags, parent, eq, child)
     }
 }
 

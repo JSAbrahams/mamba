@@ -13,8 +13,14 @@ class MyType:
         self.some_field = some_field
 
 
-SomeState = MyClass
-OtherState = MyClass
+class SomeState(MyClass):
+    def __init__(self):
+        super(MyClass, self).__init__()
+
+
+class OtherState(MyClass):
+    def __init__(self):
+        super(MyClass, self).__init__()
 
 
 class SuperInterface:
@@ -24,7 +30,11 @@ class SuperInterface:
 class MyInterface(SuperInterface):
     required_field: int = None
 
-    def higher_order(self) -> int: pass
+    def __init__(self):
+        super(SuperInterface, self).__init__()
+
+    def higher_order(self) -> int:
+        pass
 
 
 class MyClass(MyType, MyInterface):

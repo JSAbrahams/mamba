@@ -60,7 +60,7 @@ impl LookupClass<&DirectName, Class> for Context {
     fn class(&self, class: &DirectName, pos: &Position) -> Result<Class, Vec<TypeErr>> {
         if let Some(generic_class) = self.classes.iter().find(|c| &c.name == class) {
             let generics = HashMap::new();
-            Class::try_from((generic_class, &generics, &self.classes, pos))
+            Class::try_from((generic_class, &generics, pos))
         } else {
             let msg = format!("Class {} is undefined.", class);
             Err(vec![TypeErr::new(pos, &msg)])

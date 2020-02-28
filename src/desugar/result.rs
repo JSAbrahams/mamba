@@ -64,7 +64,7 @@ impl Display for UnimplementedErr {
             self.msg,
             self.position.start.line,
             self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
-            String::from_utf8(vec![b' '; self.position.end.pos as usize]).unwrap(),
+            String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
         )
     }

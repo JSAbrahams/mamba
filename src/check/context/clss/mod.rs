@@ -4,9 +4,12 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::generic::GenericClass;
+use crate::check::context::field::generic::GenericField;
 use crate::check::context::field::Field;
+use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::Function;
 use crate::check::context::name::{DirectName, Name, NameUnion};
 use crate::check::context::{Context, LookupClass};
@@ -105,46 +108,24 @@ impl Display for Class {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericClass, &HashMap<String, Name>, &HashSet<GenericClass>, &Position)> for Class {
+impl TryFrom<(&GenericClass, &HashMap<String, Name>, &Position)> for Class {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, types, pos): (
-            &GenericClass,
-            &HashMap<String, Name>,
-            &HashSet<GenericClass>,
-            &Position
-        )
+        (generic, generics, pos): (&GenericClass, &HashMap<String, Name>, &Position)
     ) -> Result<Self, Self::Error> {
-        let self_name = generic.name.substitute(generics, pos)?;
-        let fields: HashSet<Field> = generic
-            .fields
-            .iter()
-            .map(|field| Field::try_from((field, generics, pos)))
-            .collect::<Result<_, _>>()?;
-        let functions: HashSet<Function> = generic
-            .functions
-            .iter()
-            .map(|fun| Function::try_from((fun, generics, pos)))
-            .collect::<Result<_, _>>()?;
-
-        let mut parents: HashSet<DirectName> = HashSet::new();
-        for parent in &generic.parents {
-            parents.insert(parent.name.clone());
-        }
+        let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
+        let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
+        let try_function = |fun: &GenericFunction| Function::try_from((fun, generics, pos));
 
         Ok(Class {
             is_py_type: generic.is_py_type,
-            name: self_name,
-            concrete: generic.concrete,
-            args: generic
-                .args
-                .iter()
-                .map(|a| FunctionArg::try_from((a, generics, pos)))
-                .collect::<Result<_, _>>()?,
-            parents,
-            fields,
-            functions
+            name:       generic.name.substitute(generics, pos)?,
+            concrete:   generic.concrete,
+            args:       generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
+            parents:    generic.parents.iter().map(|g| g.name.clone()).collect(),
+            fields:     generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
+            functions:  generic.functions.iter().map(try_function).collect::<Result<_, _>>()?
         })
     }
 }

@@ -21,21 +21,26 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         let pos = format!("({}-{}) ", left.pos.start, right.pos.start);
         let count = total - constraints.len();
         let unify = format!("[unifying {}\\{}] ", count, total);
-        println!("{:width$}{}{}", pos, unify, constraint, width = 15);
+        let msg = if constraint.msg.is_empty() {
+            String::new()
+        } else {
+            format!("{{{}}} # ", constraint.msg)
+        };
+        println!("{:width$}{}{}{}", pos, unify, msg, constraint, width = 15);
 
         match (&left.expect, &right.expect) {
             // trivially equal
             (left, right) if left == right => unify_link(constraints, ctx, total),
 
-            (Expression { .. }, _) =>
-                unify_expression(constraint, &left, &right, constraints, ctx, total),
-            (_, Expression { .. }) =>
-                unify_expression(constraint, &right, &left, constraints, ctx, total),
-
             (Function { .. }, Type { .. }) | (Access { .. }, _) =>
                 unify_function(constraint, &left, &right, constraints, ctx, total),
             (Type { .. }, Function { .. }) | (_, Access { .. }) =>
                 unify_function(constraint, &right, &left, constraints, ctx, total),
+
+            (Expression { .. }, _) =>
+                unify_expression(constraint, &left, &right, constraints, ctx, total),
+            (_, Expression { .. }) =>
+                unify_expression(constraint, &right, &left, constraints, ctx, total),
 
             (Type { .. }, _) | (_, Stringy) | (_, Truthy) | (_, Nullable) =>
                 unify_type(&left, &right, constraints, ctx, total),
@@ -59,10 +64,9 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 /// The amount of attempts is a counter which states how often we allow
 /// reinserts.
 pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
-    let pos = format!("({}-{})", constraint.parent.pos.start, constraint.child.pos.start);
+    let pos = format!("({}-{}) ", constraint.parent.pos.start, constraint.child.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
-    let (parent, child) = (&constraint.parent.expect, &constraint.child.expect);
-    println!("{:width$} {}{} = {}", pos, count, child, parent, width = 17);
+    println!("{:width$}{}{}", pos, count, constraint, width = 17);
 
     constr.reinsert(&constraint)?;
     Ok(constr.clone())

@@ -5,8 +5,8 @@ use crate::desugar::class::desugar_class;
 use crate::desugar::common::{desugar_stmts, desugar_vec};
 use crate::desugar::control_flow::desugar_control_flow;
 use crate::desugar::definition::desugar_definition;
-use crate::desugar::desugar_result::DesugarResult;
-use crate::desugar::desugar_result::UnimplementedErr;
+use crate::desugar::result::DesugarResult;
+use crate::desugar::result::UnimplementedErr;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
@@ -272,16 +272,15 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             Core::Block { statements }
         }
 
-        Node::TypeAlias { .. }
-        | Node::TypeTup { .. }
+        Node::TypeTup { .. }
         | Node::Type { .. }
         | Node::TypeFun { .. }
         | Node::TypeUnion { .. } => desugar_type(ast, imp, state)?,
 
-        Node::TypeDef { .. } => desugar_class(ast, imp, state)?,
+        Node::TypeDef { .. } | Node::TypeAlias { .. } => desugar_class(ast, imp, state)?,
         Node::Class { .. } => desugar_class(ast, imp, state)?,
         Node::Generic { .. } => Core::Empty,
-        Node::Parent { .. } => panic!("Parent cannot be top-level"),
+        Node::Parent { .. } => panic!("Parent cannot be top-level: {:?}", ast),
 
         Node::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
 

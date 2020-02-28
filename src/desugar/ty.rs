@@ -1,8 +1,8 @@
 use crate::check::context::clss::concrete_to_python;
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
+use crate::desugar::result::DesugarResult;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::parse::ast::Node;
@@ -19,10 +19,6 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         }
         Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         Node::ExpressionType { expr, .. } => desugar_node(expr, imp, state)?,
-        Node::TypeAlias { ty, isa, .. } => Core::Assign {
-            left:  Box::from(desugar_node(ty, imp, state)?),
-            right: Box::from(desugar_node(isa, imp, state)?)
-        },
         Node::TypeTup { types } => {
             imp.add_from_import("typing", "Tuple");
             Core::Type {

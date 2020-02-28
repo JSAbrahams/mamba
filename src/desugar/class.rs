@@ -3,8 +3,8 @@ use std::ops::Deref;
 use crate::check::context::{arg, function};
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
+use crate::desugar::result::DesugarResult;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
@@ -19,109 +19,99 @@ use crate::parse::ast::AST;
 ///
 /// We add arguments and calls to super for parents.
 pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    Ok(match &ast.node {
-        Node::TypeDef { ty, body: Some(body), isa } => match (&ty.node, &body.node) {
-            (Node::Type { id, .. }, Node::Block { statements }) => Core::ClassDef {
-                name:        Box::from(desugar_node(id, imp, state)?),
-                parents:     if let Some(isa) = isa {
-                    vec![desugar_node(isa, imp, state)?]
-                } else {
-                    vec![]
-                },
-                definitions: desugar_vec(statements, imp, &state.in_interface(true))?
-            },
-            other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
-        },
-        Node::TypeDef { ty, body: None, isa } => match &ty.node {
-            Node::Type { id, .. } => Core::ClassDef {
-                name:        Box::from(desugar_node(id, imp, state)?),
-                parents:     if let Some(isa) = isa {
-                    vec![desugar_node(isa, imp, state)?]
-                } else {
-                    vec![]
-                },
-                definitions: vec![]
-            },
-            other => panic!("desugar didn't recognize while making type definition: {:?}.", other)
-        },
+    match &ast.node {
+        Node::TypeAlias { ty, isa, .. } => {
+            let parents = vec![isa.deref().clone()];
+            let body = None;
+            extract_class(ty, &body, &vec![], &parents, imp, &state.in_interface(true))
+        }
+        Node::TypeDef { ty, body, isa } => {
+            let parents = if let Some(isa) = isa { vec![isa.deref().clone()] } else { vec![] };
+            extract_class(ty, body, &vec![], &parents, imp, &state.in_interface(true))
+        }
+        Node::Class { ty, body, args, parents } =>
+            extract_class(ty, body, args, parents, imp, &state.in_interface(false)),
 
-        Node::Class { ty, body, args, parents } => {
-            let statements = if let Some(body) = body {
-                match &body.deref().node {
-                    Node::Block { statements } => statements.clone(),
-                    _ => vec![]
-                }
+        other => panic!("Expected class or type definition but was {:?}", other)
+    }
+}
+
+fn extract_class(
+    ty: &AST,
+    body: &Option<Box<AST>>,
+    args: &Vec<AST>,
+    parents: &Vec<AST>,
+    imp: &mut Imports,
+    state: &State
+) -> DesugarResult {
+    let statements = if let Some(body) = body {
+        match &body.deref().node {
+            Node::Block { statements } => statements.clone(),
+            _ => vec![]
+        }
+    } else {
+        vec![]
+    };
+
+    match &ty.node {
+        Node::Type { id, .. } => {
+            let (parent_names, parent_args, super_calls) = extract_parents(parents, imp, state)?;
+            let core_definitions: Vec<Core> = desugar_vec(&statements, imp, state)?;
+            let inline_args = desugar_vec(args, imp, state)?;
+
+            let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
+                desugar_vec(&statements, imp, state)?
             } else {
-                vec![]
+                let (found_constructor, augmented_definitions) =
+                    add_parent_to_constructor(&core_definitions, &super_calls)?;
+
+                if found_constructor && !args.is_empty() {
+                    panic!("Cannot have explicit constructor and inline arguments.")
+                } else if found_constructor {
+                    augmented_definitions
+                } else {
+                    constructor_from_inline(
+                        &inline_args,
+                        &parent_args,
+                        &super_calls,
+                        &augmented_definitions
+                    )?
+                }
             };
 
-            match &ty.node {
-                Node::Type { id, .. } => {
-                    let (parent_names, parent_args, super_calls) =
-                        extract_parents(parents, imp, state)?;
-                    let core_definitions: Vec<Core> = desugar_vec(&statements, imp, state)?;
-                    let inline_args = desugar_vec(args, imp, state)?;
+            let mut final_definitions = if final_definitions.is_empty() {
+                vec![Core::FunDef {
+                    private: false,
+                    id:      Box::new(Core::Id { lit: String::from(function::python::INIT) }),
+                    arg:     vec![Core::FunArg {
+                        vararg:  false,
+                        var:     Box::new(Core::Id { lit: String::from(arg::python::SELF) }),
+                        ty:      None,
+                        default: None
+                    }],
+                    ty:      None,
+                    body:    Box::new(Core::Pass)
+                }]
+            } else {
+                final_definitions
+            };
 
-                    let final_definitions = if parent_names.is_empty() && inline_args.is_empty() {
-                        desugar_vec(&statements, imp, state)?
-                    } else {
-                        let (found_constructor, augmented_definitions) =
-                            add_parent_to_constructor(&core_definitions, &super_calls)?;
+            let (mut stmts, mut non_variables): (Vec<_>, Vec<_>) =
+                final_definitions.into_iter().partition(|stmt| match stmt {
+                    Core::VarDef { .. } => true,
+                    _ => false
+                });
+            stmts.append(&mut non_variables);
+            final_definitions = stmts;
 
-                        if found_constructor && !args.is_empty() {
-                            panic!("Cannot have explicit constructor and inline arguments.")
-                        } else if found_constructor {
-                            augmented_definitions
-                        } else {
-                            constructor_from_inline(
-                                &inline_args,
-                                &parent_args,
-                                &super_calls,
-                                &augmented_definitions
-                            )?
-                        }
-                    };
-
-                    let mut final_definitions = if final_definitions.is_empty() {
-                        vec![Core::FunDef {
-                            private: false,
-                            id:      Box::new(Core::Id {
-                                lit: String::from(function::python::INIT)
-                            }),
-                            arg:     vec![Core::FunArg {
-                                vararg:  false,
-                                var:     Box::new(Core::Id {
-                                    lit: String::from(arg::python::SELF)
-                                }),
-                                ty:      None,
-                                default: None
-                            }],
-                            ty:      None,
-                            body:    Box::new(Core::Pass)
-                        }]
-                    } else {
-                        final_definitions
-                    };
-
-                    let (mut stmts, mut non_variables): (Vec<_>, Vec<_>) =
-                        final_definitions.into_iter().partition(|stmt| match stmt {
-                            Core::VarDef { .. } => true,
-                            _ => false
-                        });
-                    stmts.append(&mut non_variables);
-                    final_definitions = stmts;
-
-                    Core::ClassDef {
-                        name:        Box::from(desugar_node(id, imp, state)?),
-                        parents:     parent_names,
-                        definitions: final_definitions
-                    }
-                }
-                other => panic!("Didn't recognize while making class: {:?}.", other)
-            }
+            Ok(Core::ClassDef {
+                name:        Box::from(desugar_node(id, imp, state)?),
+                parents:     parent_names,
+                definitions: final_definitions
+            })
         }
-        other => panic!("Expected class or type definition but was {:?}", other)
-    })
+        other => panic!("Didn't recognize while making class: {:?}.", other)
+    }
 }
 
 // TODO simplify application logic

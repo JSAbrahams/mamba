@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
+use crate::desugar::result::{DesugarResult, DesugarResults};
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::parse::ast::AST;
@@ -15,7 +15,7 @@ mod node;
 mod state;
 mod ty;
 
-pub mod desugar_result;
+pub mod result;
 
 pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 
