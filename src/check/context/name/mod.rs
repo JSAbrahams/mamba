@@ -294,6 +294,10 @@ impl AsNullable for Name {
 
 impl IsSuperSet<Name> for Name {
     fn is_superset_of(&self, other: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        if !self.is_empty() && other.is_empty() {
+            return Ok(false);
+        }
+
         let nullable_super = self.is_nullable || (!self.is_nullable && !other.is_nullable);
         Ok(nullable_super && self.variant.is_superset_of(&other.variant, ctx, pos)?)
     }
@@ -303,6 +307,8 @@ impl Name {
     pub fn new(lit: &str, generics: &[NameUnion]) -> Name {
         Name::from(&DirectName::new(lit, generics))
     }
+
+    pub fn is_empty(&self) -> bool { self == &Name::empty() }
 
     pub fn empty() -> Name { Name::from(&DirectName::empty()) }
 
@@ -335,6 +341,10 @@ impl Name {
 
 impl IsSuperSet<NameUnion> for NameUnion {
     fn is_superset_of(&self, other: &NameUnion, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        if !self.is_empty() && other.is_empty() {
+            return Ok(false);
+        }
+
         for name in &other.names {
             let is_superset = |s_name: &Name| s_name.is_superset_of(&name, ctx, pos);
             let any_superset: Vec<bool> =
@@ -343,6 +353,7 @@ impl IsSuperSet<NameUnion> for NameUnion {
                 return Ok(false);
             }
         }
+
         Ok(true)
     }
 }

@@ -1,11 +1,11 @@
 use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Nullable,
-                                                            Raises, Stringy, Truthy, Type};
+                                                            Raises, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
-use crate::check::context::name::{AsNullable, DirectName, IsNullable, IsSuperSet, NameVariant};
-use crate::check::context::{function, Context, LookupClass};
+use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet};
+use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
 
 pub fn unify_type(
@@ -16,42 +16,16 @@ pub fn unify_type(
     total: usize
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (_, ExpressionAny) => unify_link(constraints, ctx, total),
-        (ExpressionAny, _) => unify_link(constraints, ctx, total),
-
-        (Type { name }, Truthy) => {
-            let class = ctx.class(name, &left.pos)?;
-            class.fun(&DirectName::from(function::TRUTHY), ctx, &left.pos)?;
-            unify_link(constraints, ctx, total)
-        }
-
-        (Type { name }, Stringy) => {
-            for name in name.names() {
-                match &name.variant {
-                    NameVariant::Single(name) => {
-                        let class = ctx.class(name, &left.pos)?;
-                        class.fun(&DirectName::from(function::STR), ctx, &left.pos)?;
-                    }
-                    NameVariant::Tuple(names) =>
-                        for name in names {
-                            // Tuples are the exception, they can be printed
-                            let class = ctx.class(name, &left.pos)?;
-                            class.fun(&DirectName::from(function::STR), ctx, &left.pos)?;
-                        },
-                    NameVariant::Fun(..) => {
-                        let msg = format!("Cannot print '{}'", &left);
-                        return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                    }
-                }
-            }
-
-            unify_link(constraints, ctx, total)
-        }
-
-        (Collection { ty }, Stringy) => {
-            constraints.push("stringy collection", ty, right);
-            unify_link(constraints, ctx, total + 1)
-        }
+        (ExpressionAny, ty) | (ty, ExpressionAny) => match ty {
+            Type { name } =>
+                if name.is_empty() {
+                    let msg = format!("Expected an expression, but was '{}'", name);
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                } else {
+                    unify_link(constraints, ctx, total)
+                },
+            _ => unify_link(constraints, ctx, total)
+        },
 
         (Type { name: l_ty }, Type { name: r_ty }) =>
             if l_ty.is_superset_of(r_ty, ctx, &left.pos)? {
@@ -83,9 +57,7 @@ pub fn unify_type(
             unify_link(constraints, ctx, total + 1)
         }
 
-        (Truthy, Stringy) | (Stringy, Truthy) => unify_link(constraints, ctx, total),
-        (Stringy, Nullable) | (Nullable, Stringy) => unify_link(constraints, ctx, total),
-        (Stringy, Stringy) | (Nullable, Nullable) => unify_link(constraints, ctx, total),
+        (Nullable, Nullable) => unify_link(constraints, ctx, total),
 
         (l_exp, r_exp) => {
             let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);

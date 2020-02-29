@@ -70,7 +70,15 @@ impl LookupClass<&DirectName, Class> for Context {
 
 impl LookupClass<&NameUnion, ClassUnion> for Context {
     /// Look up GenericClass and substitute generics to yield a Class.
+    ///
+    /// # Error
+    ///
+    /// If NameUnion is empty.
     fn class(&self, name: &NameUnion, pos: &Position) -> Result<ClassUnion, Vec<TypeErr>> {
+        if name.is_empty() {
+            return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
+        }
+
         let union = name
             .as_direct("class", pos)?
             .iter()

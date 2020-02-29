@@ -1,6 +1,9 @@
+use std::convert::TryFrom;
+
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::Constrained;
@@ -9,7 +12,6 @@ use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
-use std::convert::TryFrom;
 
 pub fn gen_flow(
     ast: &AST,
@@ -29,7 +31,7 @@ pub fn gen_flow(
         Node::IfElse { cond, then, el: Some(el) } => {
             constr.new_set(true);
             let left = Expected::try_from(cond)?;
-            constr.add("if else", &left, &Expected::new(&cond.pos, &Truthy));
+            constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
             let left = Expected::try_from(then)?;
@@ -49,7 +51,8 @@ pub fn gen_flow(
         }
         Node::IfElse { cond, then, .. } => {
             constr.new_set(true);
-            constr.add("if else", &Expected::try_from(cond)?, &Expected::new(&cond.pos, &Truthy));
+            let left = Expected::try_from(cond)?;
+            constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
             let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
@@ -103,7 +106,7 @@ pub fn gen_flow(
         Node::While { cond, body } => {
             constr.new_set(true);
             let left = Expected::try_from(cond)?;
-            constr.add("while", &left, &Expected::new(&cond.pos, &Truthy));
+            constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, &env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;

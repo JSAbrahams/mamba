@@ -67,8 +67,6 @@ pub enum Expect {
     Expression { ast: AST },
     ExpressionAny,
     Collection { ty: Box<Expected> },
-    Truthy,
-    Stringy,
     Raises { name: NameUnion },
     Function { name: DirectName, args: Vec<Expected> },
     Field { name: String },
@@ -97,8 +95,6 @@ impl Display for Expect {
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
             Collection { ty } => format!("Collection[{}]", ty.expect),
-            Truthy => format!("Truthy"),
-            Stringy => format!("Stringy"),
             Raises { name: ty } => format!("Raises[{}]", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } => format!("{}({})", name, comma_delm(args)),
@@ -129,19 +125,7 @@ impl Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
 
-            (Truthy, Truthy)
-            | (ExpressionAny, ExpressionAny)
-            | (Stringy, Stringy)
-            | (Nullable, Nullable) => true,
-
-            (Truthy, Expression { ast: AST { node: Node::Bool { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Bool { .. }, .. } }, Truthy) => true,
-            (Truthy, Expression { ast: AST { node: Node::And { .. }, .. } })
-            | (Expression { ast: AST { node: Node::And { .. }, .. } }, Truthy) => true,
-            (Truthy, Expression { ast: AST { node: Node::Or { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Or { .. }, .. } }, Truthy) => true,
-            (Truthy, Expression { ast: AST { node: Node::Not { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Not { .. }, .. } }, Truthy) => true,
+            (ExpressionAny, ExpressionAny) | (Nullable, Nullable) => true,
 
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })

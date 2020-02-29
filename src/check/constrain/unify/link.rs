@@ -1,6 +1,5 @@
 use crate::check::constrain::constraint::expected::Expect::{Access, Collection, Expression,
-                                                            Function, Nullable, Stringy, Truthy,
-                                                            Type};
+                                                            Function, Nullable, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::expression::unify_expression;
@@ -42,10 +41,8 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             (_, Expression { .. }) =>
                 unify_expression(constraint, &right, &left, constraints, ctx, total),
 
-            (Type { .. }, _) | (_, Stringy) | (_, Truthy) | (_, Nullable) =>
-                unify_type(&left, &right, constraints, ctx, total),
-            (_, Type { .. }) | (Stringy, _) | (Truthy, _) | (Nullable, _) =>
-                unify_type(&right, &left, constraints, ctx, total),
+            (Type { .. }, _) | (_, Nullable) => unify_type(&left, &right, constraints, ctx, total),
+            (_, Type { .. }) => unify_type(&right, &left, constraints, ctx, total),
             (Collection { .. }, Collection { .. }) =>
                 unify_type(&right, &left, constraints, ctx, total),
 

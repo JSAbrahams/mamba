@@ -1,6 +1,9 @@
+use std::convert::TryFrom;
+
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::{gen_vec, generate};
 use crate::check::constrain::Constrained;
@@ -12,7 +15,6 @@ use crate::check::context::{clss, Context};
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
-use std::convert::TryFrom;
 
 pub fn gen_op(
     ast: &AST,
@@ -60,11 +62,8 @@ pub fn gen_op(
         Node::Str { expressions, .. } => {
             let (mut constr, env) = gen_vec(expressions, env, ctx, constr)?;
             for expr in expressions {
-                constr.add(
-                    "string",
-                    &Expected::try_from(expr)?,
-                    &Expected::new(&expr.pos, &Stringy)
-                )
+                let c = Constraint::stringy("string", &Expected::try_from(expr)?);
+                constr.add_constr(&c);
             }
 
             let name = NameUnion::from(STRING_PRIMITIVE);
@@ -73,8 +72,7 @@ pub fn gen_op(
             Ok((constr, env))
         }
         Node::Bool { .. } => {
-            let left = Expected::try_from(ast)?;
-            constr.add("boolean", &left, &Expected::new(&ast.pos, &Truthy));
+            constr.add_constr(&Constraint::truthy("if else", &Expected::try_from(ast)?));
             Ok((constr.clone(), env.clone()))
         }
 
@@ -138,26 +136,34 @@ pub fn gen_op(
         }
 
         Node::Is { left, right } | Node::IsN { left, right } => {
+            let bool =
+                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+            constr.add("and", &Expected::try_from(ast)?, &bool);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::IsA { left, right } | Node::IsNA { left, right } => {
+            let bool =
+                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+            constr.add("and", &Expected::try_from(ast)?, &bool);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
 
         Node::Not { expr } => {
-            let left = Expected::try_from(expr)?;
-            constr.add("not", &left, &Expected::new(&expr.pos, &Truthy));
+            let bool =
+                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+            constr.add("and", &Expected::try_from(ast)?, &bool);
+            constr.add_constr(&Constraint::truthy("not", &Expected::try_from(expr)?));
             generate(expr, env, ctx, constr)
         }
         Node::And { left, right } | Node::Or { left, right } => {
-            let l_exp = Expected::try_from(left)?;
-            constr.add("dis- or conjunction", &l_exp, &Expected::new(&left.pos, &Truthy));
+            let bool =
+                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+            constr.add("and", &Expected::try_from(ast)?, &bool);
 
-            let l_exp = Expected::try_from(right)?;
-            constr.add("dis- or conjunction", &l_exp, &Expected::new(&right.pos, &Truthy));
-
+            constr.add_constr(&Constraint::truthy("and", &Expected::try_from(left)?));
+            constr.add_constr(&Constraint::truthy("and", &Expected::try_from(right)?));
             let (mut constr, env) = generate(left, env, ctx, constr)?;
             generate(right, &env, &ctx, &mut constr)
         }

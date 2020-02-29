@@ -77,11 +77,15 @@ impl ConstrBuilder {
     ) {
         let mut constr = Constraint::new(msg, parent, child);
         constr.idents.append(&mut Vec::from(idens));
-        self.constraints[self.level].1.push(constr);
+        self.add_constr(&constr);
     }
 
     pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected) {
-        self.constraints[self.level].1.push(Constraint::new(msg, parent, child));
+        self.add_constr(&Constraint::new(msg, parent, child));
+    }
+
+    pub fn add_constr(&mut self, constraint: &Constraint) {
+        self.constraints[self.level].1.push(constraint.clone())
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
