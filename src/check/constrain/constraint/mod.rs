@@ -16,7 +16,7 @@ pub struct Constraint {
     pub is_sub:     bool,
     pub is_gen:     bool,
     pub is_flipped: bool,
-    pub idents:     Vec<String>,
+    pub ids:        Vec<String>,
     pub msg:        String,
     pub parent:     Expected,
     pub child:      Expected
@@ -26,10 +26,10 @@ impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let is_flag = if self.is_flag { "(flagged)" } else { "" };
         let is_sub = if self.is_sub { "(sub)" } else { "" };
-        let idents = if self.idents.is_empty() {
+        let idents = if self.ids.is_empty() {
             String::new()
         } else {
-            format!("(ids: {})", comma_delm(&self.idents))
+            format!("(ids: {})", comma_delm(&self.ids))
         };
         let is_gen = if self.is_gen { "(gen)" } else { "" };
 
@@ -64,7 +64,7 @@ impl Constraint {
             is_flipped: false,
             is_gen:     false,
             msg:        String::from(msg),
-            idents:     vec![],
+            ids:        vec![],
             is_flag:    false,
             is_sub:     false
         }

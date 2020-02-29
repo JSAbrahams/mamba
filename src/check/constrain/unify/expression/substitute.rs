@@ -23,15 +23,20 @@ pub fn substitute(
     let identifiers = Vec::from(identifiers);
 
     while let Some(mut constr) = constraints.pop_constr() {
-        let old_constr = constr.clone();
         macro_rules! replace {
             ($new:expr) => {{
                 let pos = format!("({}-{}) ", constr.parent.pos.start, constr.child.pos.start);
-                println!("{:width$} [substitute] {} ===> {}", pos, old_constr, $new, width = 17);
+                println!(
+                    "{:width$} [substitute] {} ===> {}",
+                    pos,
+                    constr.clone(),
+                    $new,
+                    width = 17
+                );
             }};
         };
 
-        if !constr.idents.is_empty() && constr.idents == identifiers {
+        if !constr.ids.is_empty() && constr.ids == identifiers {
             let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);
 
             constr.child = child;

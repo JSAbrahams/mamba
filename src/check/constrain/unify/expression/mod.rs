@@ -31,7 +31,7 @@ pub fn unify_expression(
                 unify_link(constraints, ctx, total)
             }
             node if node.trivially_expression() => {
-                let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
+                let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
                 unify_link(&mut constr, ctx, total)
             }
             _ => Err(vec![TypeErr::new(
@@ -48,7 +48,7 @@ pub fn unify_expression(
                 unify_link(constraints, ctx, total)
             }
             _ => {
-                let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
+                let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
                 unify_link(&mut constr, ctx, total)
             }
         },
@@ -76,14 +76,14 @@ pub fn unify_expression(
                         Err(vec![TypeErr::new(&left.pos, &msg)])
                     },
                 _ => {
-                    let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
+                    let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
                     unify_link(&mut constr, ctx, total)
                 }
             },
 
         (Expression { .. }, _) => {
-            let mut constr = substitute(&constraint.idents, &left, &right, constraints)?;
-            unify_link(&mut constr, ctx, total)
+            let mut constraints = substitute(&constraint.ids, &left, &right, constraints)?;
+            unify_link(&mut constraints, ctx, total)
         }
 
         (l_exp, r_exp) => {

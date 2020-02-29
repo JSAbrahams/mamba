@@ -4,7 +4,7 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::generate::resources::constrain_raises;
 use crate::check::constrain::Constrained;
-use crate::check::context::{clss, Context};
+use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};

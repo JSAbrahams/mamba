@@ -76,7 +76,7 @@ impl ConstrBuilder {
         idens: &[String]
     ) {
         let mut constr = Constraint::new(msg, parent, child);
-        constr.idents.append(&mut Vec::from(idens));
+        constr.ids.append(&mut Vec::from(idens));
         self.add_constr(&constr);
     }
 

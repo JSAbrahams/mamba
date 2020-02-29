@@ -168,18 +168,17 @@ fn property_call(
         }
         Node::Reassign { left, right } => {
             check_reassignable(left)?;
-            let left = AST {
-                pos:  left.pos.clone(),
-                node: Node::PropertyCall {
-                    instance: Box::from(instance.clone()),
-                    property: Box::from(AST { pos: left.pos.clone(), node: left.clone().node })
-                }
+            let name = match &left.node {
+                Node::Id { lit } => lit.clone(),
+                _ => return Err(vec![TypeErr::new(&right.pos, "Expected identifier.")])
             };
-            constr.add(
-                "call and reassign",
-                &Expected::try_from(&left)?,
-                &Expected::try_from(right)?
-            );
+
+            let left = Expected::new(&property.pos, &Access {
+                entity: Box::new(Expected::try_from(instance)?),
+                name:   Box::new(Expected::new(&property.pos, &Field { name }))
+            });
+
+            constr.add("call and reassign", &left, &Expected::try_from(right)?);
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {

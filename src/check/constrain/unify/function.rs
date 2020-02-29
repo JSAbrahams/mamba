@@ -65,7 +65,8 @@ pub fn unify_function(
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
-                        let fields = ctx.class(entity_name, &left.pos)?.field(name, &left.pos)?;
+                        let fields =
+                            ctx.class(entity_name, &left.pos)?.field(name, ctx, &left.pos)?;
                         for field in fields.union {
                             if field.private {
                                 check_is_parent(

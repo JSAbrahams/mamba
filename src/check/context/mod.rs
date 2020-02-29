@@ -167,12 +167,24 @@ impl ClassUnion {
     pub fn classes(&self) -> IntoIter<Class> { self.union.clone().into_iter() }
 
     pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<FunUnion> {
-        let union = self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
+        let union: HashSet<Function> =
+            self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
+        if union.is_empty() {
+            let msg = format!("'{}' does not define function '{}'", self.name(), name);
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
+
         Ok(FunUnion { union })
     }
 
-    pub fn field(&self, name: &str, pos: &Position) -> TypeResult<FieldUnion> {
-        let union = self.union.iter().map(|c| c.field(name, pos)).collect::<Result<_, _>>()?;
+    pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<FieldUnion> {
+        let union: HashSet<Field> =
+            self.union.iter().map(|c| c.field(name, ctx, pos)).collect::<Result<_, _>>()?;
+        if union.is_empty() {
+            let msg = format!("'{}' does not define attribute '{}'", self.name(), name);
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
+
         Ok(FieldUnion { union })
     }
 }

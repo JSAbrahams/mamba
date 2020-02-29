@@ -14,7 +14,6 @@ use crate::check::context::function::Function;
 use crate::check::context::name::{DirectName, Name, NameUnion};
 use crate::check::context::{Context, LookupClass};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::common::delimit::newline_delimited;
 use crate::common::position::Position;
 
 pub const INT_PRIMITIVE: &str = "Int";
@@ -131,20 +130,18 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &Position)> for Class {
 }
 
 impl Class {
-    pub fn field(&self, name: &str, pos: &Position) -> TypeResult<Field> {
-        let field = self.fields.iter().find(|field| field.name.as_str() == name).cloned();
-        field.ok_or_else(|| {
-            vec![TypeErr::new(
-                pos,
-                &format!(
-                    "Type {} does not define field \"{}\"{}{}",
-                    self.name,
-                    name,
-                    if self.fields.is_empty() { "" } else { ", must be one of:\n" },
-                    newline_delimited(&self.fields)
-                )
-            )]
-        })
+    pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<Field> {
+        if let Some(field) = self.fields.iter().find(|f| &f.name == name) {
+            return Ok(field.clone());
+        }
+
+        for parent in &self.parents {
+            if let Ok(field) = ctx.class(parent, pos)?.field(name, ctx, pos) {
+                return Ok(field.clone());
+            }
+        }
+
+        Err(vec![TypeErr::new(pos, &format!("'{}' does not define \"{}\"", self, name))])
     }
 
     /// Get function of class.
