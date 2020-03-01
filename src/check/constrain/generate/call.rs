@@ -44,7 +44,7 @@ pub fn gen_call(
             let self_arg = Some(self_type);
             let mut constr = constr.clone();
             let c_type_union = ctx.class(&c_name, &ast.pos)?;
-            let possible_args = c_type_union.constructor();
+            let possible_args = c_type_union.constructor(&ast.pos)?;
             for constr_args in possible_args {
                 constr = call_parameters(ast, &constr_args, &self_arg, args, ctx, &constr)?;
             }

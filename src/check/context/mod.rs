@@ -1,6 +1,8 @@
-use std::collections::hash_set::IntoIter;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::generic::GenericClass;
@@ -10,9 +12,10 @@ use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::Function;
 use crate::check::context::generic::generics;
-use crate::check::context::name::{DirectName, Name, NameUnion};
+use crate::check::context::name::{DirectName, Name, NameUnion, NameVariant};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::check::CheckInput;
+use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
 pub mod arg;
@@ -68,6 +71,23 @@ impl LookupClass<&DirectName, Class> for Context {
     }
 }
 
+impl LookupClass<&Name, ClassTuple> for Context {
+    fn class(&self, class: &Name, pos: &Position) -> TypeResult<ClassTuple> {
+        let variant = match &class.variant {
+            NameVariant::Single(direct) => ClassVariant::Direct(self.class(direct, pos)?),
+            NameVariant::Tuple(unions) => ClassVariant::Tuple(
+                unions.iter().map(|union| self.class(union, pos)).collect::<Result<_, _>>()?
+            ),
+            NameVariant::Fun(..) => {
+                let msg = format!("'{}' is not a valid class identifier", class.variant);
+                return Err(vec![TypeErr::new(pos, &msg)]);
+            }
+        };
+
+        Ok(ClassTuple { variant })
+    }
+}
+
 impl LookupClass<&NameUnion, ClassUnion> for Context {
     /// Look up GenericClass and substitute generics to yield a Class.
     ///
@@ -79,11 +99,7 @@ impl LookupClass<&NameUnion, ClassUnion> for Context {
             return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
         }
 
-        let union = name
-            .as_direct("class", pos)?
-            .iter()
-            .map(|n| self.class(n, pos))
-            .collect::<Result<_, _>>()?;
+        let union = name.names().map(|n| self.class(&n, pos)).collect::<Result<_, _>>()?;
         Ok(ClassUnion { union })
     }
 }
@@ -122,9 +138,84 @@ impl LookupField<&str, Field> for Context {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum ClassVariant {
+    Direct(Class),
+    Tuple(Vec<ClassUnion>)
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct ClassTuple {
+    variant: ClassVariant
+}
+
+impl Display for ClassTuple {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match &self.variant {
+            ClassVariant::Direct(class) => write!(f, "{}", class.name),
+            ClassVariant::Tuple(classes) => {
+                let names: Vec<NameUnion> = classes.iter().map(|c| c.name()).collect();
+                write!(f, "({})", comma_delm(names))
+            }
+        }
+    }
+}
+
+impl ClassTuple {
+    pub fn name(&self) -> Name {
+        let variant = match &self.variant {
+            ClassVariant::Direct(class) => NameVariant::Single(class.name.clone()),
+            ClassVariant::Tuple(classes) =>
+                NameVariant::Tuple(classes.iter().map(|c| c.name()).collect()),
+        };
+        Name::from(&variant)
+    }
+
+    pub fn args(&self, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+        match &self.variant {
+            ClassVariant::Direct(class) => Ok(class.args.clone()),
+            ClassVariant::Tuple(_) => {
+                let msg = format!("Cannot invoke '{}' with arguments.", self);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+
+    /// Check if ClassTuple implements function.
+    ///
+    /// Tuple never implements function, except if function __str__.
+    /// If __str__, grab __str__ of last item in union of last item.
+    pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
+        match &self.variant {
+            ClassVariant::Direct(class) => class.fun(name, ctx, pos),
+            ClassVariant::Tuple(classes) =>
+                if name == &DirectName::from(function::STR) {
+                    unimplemented!()
+                } else {
+                    let msg = format!("Function '{}' undefined on '{}'", name, self);
+                    return Err(vec![TypeErr::new(pos, &msg)]);
+                },
+        }
+    }
+
+    pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<Field> {
+        match &self.variant {
+            ClassVariant::Direct(class) => class.field(name, ctx, pos),
+            ClassVariant::Tuple(_) => {
+                let msg = format!("Attribute '{}' undefined on '{}'", name, self);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct ClassUnion {
-    union: HashSet<Class>
+    union: HashSet<ClassTuple>
+}
+
+impl Hash for ClassUnion {
+    fn hash<H: Hasher>(&self, state: &mut H) { self.union.iter().for_each(|c| c.hash(state)) }
 }
 
 impl HasParent<&DirectName> for ClassUnion {
@@ -137,6 +228,51 @@ impl HasParent<&DirectName> for ClassUnion {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
+    }
+}
+
+impl HasParent<&DirectName> for ClassTuple {
+    fn has_parent(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        match &self.variant {
+            ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
+            ClassVariant::Tuple(_) => {
+                let msg = format!("'{}' does not have parents.", self);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+}
+
+impl HasParent<&Name> for ClassTuple {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        match &self.variant {
+            ClassVariant::Direct(class) =>
+                class.has_parent(&name.as_direct("class", pos)?, ctx, pos),
+            ClassVariant::Tuple(_) => {
+                let msg = format!("'{}' does not have parents.", self);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+}
+
+impl HasParent<&Name> for ClassUnion {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> Result<bool, Vec<TypeErr>> {
+        let res: Vec<bool> =
+            self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
+        Ok(res.iter().all(|b| *b))
+    }
+}
+
+impl HasParent<&NameUnion> for ClassTuple {
+    fn has_parent(&self, name: &NameUnion, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        match &self.variant {
+            ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
+            ClassVariant::Tuple(_) => {
+                let msg = format!("'{}' does not have parents", self);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
     }
 }
 
@@ -155,16 +291,14 @@ impl HasParent<&NameUnion> for ClassUnion {
 
 impl ClassUnion {
     pub fn name(&self) -> NameUnion {
-        let names: Vec<Name> = self.union.iter().map(|u| Name::from(&u.name)).collect();
+        let names: Vec<Name> = self.union.iter().map(|u| u.name()).collect();
         NameUnion::new(&names)
     }
 
-    pub fn constructor(&self) -> HashSet<Vec<FunctionArg>> {
+    pub fn constructor(&self, pos: &Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
         // TODO check raises of constructor
-        self.union.iter().map(|c| c.args.clone()).collect()
+        self.union.iter().map(|c| c.args(pos)).collect::<Result<_, _>>()
     }
-
-    pub fn classes(&self) -> IntoIter<Class> { self.union.clone().into_iter() }
 
     pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<FunUnion> {
         let union: HashSet<Function> =
