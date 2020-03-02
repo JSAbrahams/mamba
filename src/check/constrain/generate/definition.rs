@@ -134,8 +134,8 @@ pub fn identifier_from_var(
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(
                 "variable with type and expression",
-                &var_expect,
                 &Expected::new(&ty.pos, &ty_exp),
+                &var_expect,
                 &names
             );
             let expr_expect = Expected::try_from(expr)?;

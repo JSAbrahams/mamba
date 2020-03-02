@@ -43,7 +43,7 @@ pub fn unify_function(
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
                             let arg_ty = Expected::new(&left.pos, &Type { name: arg.clone() });
-                            constraints.push("function argument", expected, &arg_ty)
+                            constraints.push("function argument", &arg_ty, expected)
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
@@ -142,25 +142,18 @@ fn unify_fun_arg(
                         TypeErr::new(&expected.pos, "Function argument must have type parameters")
                     })?;
                     added += 1;
-                    constr.push(
-                        "function argument",
-                        &Expected::new(&expected.pos, &Type { name: name.clone() }),
-                        &expected
-                    )
+                    let ty = Expected::new(&expected.pos, &Type { name: name.clone() });
+                    constr.push("function argument", &ty, &expected)
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
                     return Err(vec![TypeErr::new(
                         &pos,
                         &format!("Expected argument: expected {}", fun_arg)
                     )]),
-                EitherOrBoth::Right(_) =>
-                    return Err(vec![TypeErr::new(
-                        &pos,
-                        &format!(
-                            "Unexpected argument, function takes only {} arguments",
-                            f_args.len()
-                        )
-                    )]),
+                EitherOrBoth::Right(_) => {
+                    let msg = format!("Function takes only {} arguments", f_args.len());
+                    return Err(vec![TypeErr::new(&pos, &msg)]);
+                }
                 _ => {}
             }
         }

@@ -12,3 +12,6 @@ def m <- n ^ 100
 
 def x <- +10
 def y <- -30
+
+def z: {Int, Float} <- 5
+print z + 1
