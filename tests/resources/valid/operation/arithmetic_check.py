@@ -1,4 +1,3 @@
-from typing import Union
 import math
 
 a = 10
@@ -15,6 +14,3 @@ m = n ** 100
 
 x = +10
 y = -30
-
-z: Union[int, float] = 5
-print(z + 1)

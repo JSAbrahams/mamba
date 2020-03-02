@@ -48,7 +48,7 @@ impl From<&Expression> for Name {
                     let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
                     let generics: Vec<NameUnion> =
                         generics.iter().map(|n| NameUnion::from(n)).collect();
-                    Name::new(&lit, &generics)
+                    Name::new(&python_to_concrete(&lit), &generics)
                 }
             }
             _ => Name::empty()

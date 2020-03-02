@@ -42,19 +42,22 @@ pub fn unify_expression(
         },
 
         (Expression { ast }, Collection { ty }) => {
+            let mut pushed = 0;
             match &ast.node {
                 Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
                     for e in elements {
                         constraints.push("expression and collection", &Expected::try_from(e)?, ty);
+                        pushed += 1;
                     },
                 _ => {}
             }
 
             let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
-            unify_link(&mut constr, ctx, total)
+            unify_link(&mut constr, ctx, total + pushed)
         }
 
         (Expression { ast: l_ast }, Expression { ast: r_ast }) => {
+            let mut pushed = 0;
             match (&l_ast.node, &r_ast.node) {
                 (Node::Set { elements: l_el }, Node::Set { elements: r_el })
                 | (Node::List { elements: l_el }, Node::List { elements: r_el })
@@ -64,6 +67,7 @@ pub fn unify_expression(
                             let l_exp = Expected::try_from(l)?;
                             let r_exp = Expected::try_from(r)?;
                             constraints.push("collection expression", &l_exp, &r_exp);
+                            pushed += 1;
                         }
                     } else {
                         let msg = format!(
@@ -77,7 +81,7 @@ pub fn unify_expression(
             }
 
             let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
-            unify_link(&mut constr, ctx, total)
+            unify_link(&mut constr, ctx, total + pushed)
         }
 
         (Expression { .. }, _) => {

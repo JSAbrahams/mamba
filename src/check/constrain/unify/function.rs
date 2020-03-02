@@ -43,7 +43,7 @@ pub fn unify_function(
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
                             let arg_ty = Expected::new(&left.pos, &Type { name: arg.clone() });
-                            constraints.push("function argument", &arg_ty, expected)
+                            constraints.push("anonymous function argument", &arg_ty, expected)
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
@@ -65,6 +65,7 @@ pub fn unify_function(
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
+                        let mut pushed = 0;
                         let fields =
                             ctx.class(entity_name, &left.pos)?.field(name, ctx, &left.pos)?;
                         for field in fields.union {
@@ -79,13 +80,15 @@ pub fn unify_function(
                             }
                             let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
                             constraints.push("field access", &right, &field_ty_exp);
+                            pushed += 1;
                         }
-                        unify_link(constraints, ctx, total)
+                        unify_link(constraints, ctx, total + pushed)
                     }
                     Function { name, args } => {
                         let class = ctx.class(entity_name, &left.pos)?;
                         let function_union = class.fun(&name, ctx, &left.pos)?;
 
+                        let mut pushed = 0;
                         for function in &function_union.union {
                             if function.private {
                                 check_is_parent(
@@ -100,22 +103,23 @@ pub fn unify_function(
                             let fun_ty_exp =
                                 Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
                             constraints.push("function access", &right, &fun_ty_exp);
+                            pushed += 1;
                         }
 
                         let possible_args: HashSet<Vec<FunctionArg>> =
                             function_union.union.iter().map(|f| f.arguments.clone()).collect();
                         let (mut constr, added) =
                             unify_fun_arg(&possible_args, &args, &constraints, &left.pos)?;
-                        unify_link(&mut constr, ctx, total + added)
+                        unify_link(&mut constr, ctx, total + added + pushed)
                     }
                     _ => {
                         let mut constr = reinsert(constraints, &constr, total)?;
-                        unify_link(&mut constr, ctx, total + 1)
+                        unify_link(&mut constr, ctx, total)
                     }
                 }
             } else {
                 let mut constr = reinsert(constraints, &constr, total)?;
-                unify_link(&mut constr, ctx, total + 1)
+                unify_link(&mut constr, ctx, total)
             },
 
         (l_exp, r_exp) => {
