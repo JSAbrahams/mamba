@@ -56,7 +56,7 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
-    constr.add("collection", &Expected::try_from(collection)?, &col_exp);
+    constr.add("collection", &col_exp, &Expected::try_from(collection)?);
     Ok(constr.clone())
 }
 

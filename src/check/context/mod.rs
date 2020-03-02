@@ -181,16 +181,27 @@ impl ClassTuple {
         }
     }
 
-    /// Check if ClassTuple implements function.
-    ///
-    /// Tuple never implements function, except if function __str__.
-    /// If __str__, grab __str__ of last item in union of last item.
     pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
         match &self.variant {
             ClassVariant::Direct(class) => class.fun(name, ctx, pos),
             ClassVariant::Tuple(classes) =>
                 if name == &DirectName::from(function::STR) {
-                    unimplemented!()
+                    let funcs: Vec<FunUnion> =
+                        classes.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
+                    // TODO get arguments of self
+
+                    if let Some(fun_union) = funcs.first() {
+                        if let Some(_) = fun_union.union.iter().last() {
+                            // TODO replace self of function
+                            unimplemented!()
+                        } else {
+                            let msg = format!("Function '{}' undefined on '{}'", name, self);
+                            return Err(vec![TypeErr::new(pos, &msg)]);
+                        }
+                    } else {
+                        let msg = format!("Function '{}' undefined on '{}'", name, self);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    }
                 } else {
                     let msg = format!("Function '{}' undefined on '{}'", name, self);
                     return Err(vec![TypeErr::new(pos, &msg)]);
@@ -300,6 +311,7 @@ impl ClassUnion {
         self.union.iter().map(|c| c.args(pos)).collect::<Result<_, _>>()
     }
 
+    /// Check if ClassUnion implements a function.
     pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<FunUnion> {
         let union: HashSet<Function> =
             self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;

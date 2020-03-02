@@ -29,31 +29,26 @@ pub fn gen_op(
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }
-        Node::Range { from, to, step: Some(step), .. } => {
+        Node::Range { from, to, step, .. } => {
             let name = NameUnion::from(clss::INT_PRIMITIVE);
-            let l_exp = Expected::try_from(from)?;
-            constr.add("range", &l_exp, &Expected::new(&from.pos, &Type { name: name.clone() }));
+            let int_exp = &Expected::new(&from.pos, &Type { name });
 
-            let l_exp = Expected::try_from(to)?;
-            constr.add("range", &l_exp, &Expected::new(&to.pos, &Type { name: name.clone() }));
+            constr.add("range from", &Expected::try_from(from)?, &int_exp);
+            constr.add("range to", &Expected::try_from(to)?, &int_exp);
+            let col = Expected::new(&ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
+            constr.add("range collection", &col, &Expected::try_from(ast)?);
 
-            let l_exp = Expected::try_from(step)?;
-            constr.add("range", &l_exp, &Expected::new(&step.pos, &Type { name }));
+            if let Some(step) = step {
+                constr.add("range step", &Expected::try_from(step)?, &int_exp);
+            }
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
             let (mut constr, env) = generate(to, &env, ctx, &mut constr)?;
-            generate(step, &env, ctx, &mut constr)
-        }
-        Node::Range { from, to, .. } => {
-            let name = NameUnion::from(clss::INT_PRIMITIVE);
-            let l_exp = Expected::try_from(from)?;
-            constr.add("range", &l_exp, &Expected::new(&from.pos, &Type { name: name.clone() }));
-
-            let l_exp = Expected::try_from(to)?;
-            constr.add("range", &l_exp, &Expected::new(&to.pos, &Type { name }));
-
-            let (mut constr, env) = generate(from, env, ctx, constr)?;
-            generate(to, &env, ctx, &mut constr)
+            if let Some(step) = step {
+                generate(step, &env, ctx, &mut constr)
+            } else {
+                Ok((constr, env))
+            }
         }
 
         Node::Real { .. } => primitive(ast, FLOAT_PRIMITIVE, env, constr),

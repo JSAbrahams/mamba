@@ -8,7 +8,7 @@ fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
     if let (Some(this), Some(that)) = (this, that) {
         this.equal_structure(that)
     } else {
-        false
+        true
     }
 }
 
