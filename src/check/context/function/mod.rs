@@ -164,4 +164,35 @@ impl Function {
         }
         Ok(())
     }
+
+    pub fn simple_fun(
+        name: &DirectName,
+        self_arg: &NameUnion,
+        ret_ty: &NameUnion,
+        pos: &Position
+    ) -> TypeResult<Function> {
+        if self_arg.is_empty() {
+            let msg = format!("'{}' self argument of '{}' cannot be empty", arg::SELF, name);
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
+
+        Ok(Function {
+            is_py_type:   false,
+            name:         name.clone(),
+            self_mutable: None,
+            private:      false,
+            pure:         false,
+            arguments:    vec![FunctionArg {
+                is_py_type:  false,
+                name:        String::from(arg::SELF),
+                has_default: false,
+                vararg:      false,
+                mutable:     false,
+                ty:          Some(self_arg.clone())
+            }],
+            raises:       NameUnion::empty(),
+            in_class:     None,
+            ret_ty:       ret_ty.clone()
+        })
+    }
 }

@@ -186,22 +186,13 @@ impl ClassTuple {
             ClassVariant::Direct(class) => class.fun(name, ctx, pos),
             ClassVariant::Tuple(classes) =>
                 if name == &DirectName::from(function::STR) {
-                    let funcs: Vec<FunUnion> =
-                        classes.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
-                    // TODO get arguments of self
+                    // Check that all implement __str__
+                    classes.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
 
-                    if let Some(fun_union) = funcs.first() {
-                        if let Some(_) = fun_union.union.iter().last() {
-                            // TODO replace self of function
-                            unimplemented!()
-                        } else {
-                            let msg = format!("Function '{}' undefined on '{}'", name, self);
-                            return Err(vec![TypeErr::new(pos, &msg)]);
-                        }
-                    } else {
-                        let msg = format!("Function '{}' undefined on '{}'", name, self);
-                        return Err(vec![TypeErr::new(pos, &msg)]);
-                    }
+                    let variant = NameVariant::Tuple(classes.iter().map(|c| c.name()).collect());
+                    let self_arg = NameUnion::from(&Name::from(&variant));
+                    let ret_ty = NameUnion::from(clss::STRING_PRIMITIVE);
+                    Function::simple_fun(name, &self_arg, &ret_ty, pos)
                 } else {
                     let msg = format!("Function '{}' undefined on '{}'", name, self);
                     return Err(vec![TypeErr::new(pos, &msg)]);
