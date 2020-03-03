@@ -6,6 +6,7 @@ use crate::core::to_source;
 use crate::desugar::desugar_all;
 use crate::lex::tokenize_all;
 use crate::parse::parse_all;
+use std::fs::create_dir;
 
 mod io;
 
@@ -31,7 +32,11 @@ pub fn transpile_directory(
 ) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
     let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));
+    if !out_dir.exists() {
+        create_dir(&out_dir).map_err(|e| vec![(String::from("io"), e.to_string())])?;
+    }
     info!("Input is '{}'", src_path.display());
+    info!("Output will be stored in '{}'", out_dir.display());
 
     let relative_paths = io::relative_files(src_path.as_path()).map_err(|error| vec![error])?;
     let in_absolute_paths = if src_path.is_dir() {
@@ -64,7 +69,6 @@ pub fn transpile_directory(
         io::write_source(source, &out_path).map_err(|error| vec![error])?;
     }
 
-    info!("Output stored in '{}'", out_dir.display());
     Ok(out_dir)
 }
 
