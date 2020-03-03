@@ -38,7 +38,13 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
 
     let source_path = tempdir_in(source_path).unwrap();
     let source = source_path.path();
-    (String::from(source.to_string_lossy()), String::from(source.join(file).to_string_lossy()))
+
+    let joined_with_path = source.join(file);
+    if joined_with_path.is_dir() && !joined_with_path.exists() {
+        create_dir(&joined_with_path).unwrap();
+    }
+
+    (String::from(source.to_string_lossy()), String::from(joined_with_path.to_string_lossy()))
 }
 
 pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
