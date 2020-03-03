@@ -43,9 +43,7 @@ pub fn generate(
         FunArg { .. } => gen_def(ast, env, ctx, constr),
 
         Reassign { .. } => gen_call(ast, env, ctx, constr),
-        ConstructorCall { .. } => gen_call(ast, env, ctx, constr),
-        FunctionCall { .. } => gen_call(ast, env, ctx, constr),
-        PropertyCall { .. } => gen_call(ast, env, ctx, constr),
+        FunctionCall { .. } | PropertyCall { .. } => gen_call(ast, env, ctx, constr),
 
         TypeTup { .. } => gen_ty(ast, env, ctx, constr),
         TypeUnion { .. } | Type { .. } => gen_ty(ast, env, ctx, constr),

@@ -64,10 +64,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "parent generics", &start)?;
     let generics_end =
         if let Some(end) = it.eat_if(&Token::RSBrack) { end } else { id.pos.clone() };
-    let ty = Box::from(AST {
-        pos:  start.union(&generics_end),
-        node: Node::Type { id, generics: generics.clone() }
-    });
+    let ty = Box::from(AST { pos: start.union(&generics_end), node: Node::Type { id, generics } });
 
     let mut args = vec![];
     let end = if it.eat_if(&Token::LRBrack).is_some() {

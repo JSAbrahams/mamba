@@ -26,8 +26,9 @@ pub fn substitute(
         let old_constr = constr.clone();
         macro_rules! replace {
             ($new:expr) => {{
-                let pos = format!("({}-{}) ", constr.parent.pos.start, constr.child.pos.start);
-                println!("{:width$} [substitute] {} ===> {}", pos, old_constr, $new, width = 17);
+                let pos =
+                    format!("({}={}) ", old_constr.parent.pos.start, old_constr.child.pos.start);
+                trace!("{:width$} [substitute] {} ===> {}", pos, old_constr, $new, width = 17);
             }};
         };
 
@@ -81,7 +82,7 @@ fn recursive_substitute(
         }
         Expect::Collection { ty } => {
             let (subs_ty, ty) = recursive_substitute(side, ty, old, new);
-            let expect = Expect::Collection { ty: Box::from(ty.clone()) };
+            let expect = Expect::Collection { ty: Box::from(ty) };
             (subs_ty, Expected::new(&inspected.pos, &expect))
         }
         Expect::Function { name, args } => {

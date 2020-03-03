@@ -31,8 +31,7 @@ impl From<&Expression> for Name {
                     SetItem::Star(_) => None,
                     SetItem::Unique(expr) => Some(expr)
                 });
-                let variant =
-                    NameVariant::Tuple(expressions.map(|expr| NameUnion::from(expr)).collect());
+                let variant = NameVariant::Tuple(expressions.map(NameUnion::from).collect());
                 Name::from(&variant)
             }
             Expression::Subscript(id, exprs) => {
@@ -42,12 +41,11 @@ impl From<&Expression> for Name {
                 };
 
                 // Union not expected
-                if lit == String::from("Union") {
+                if &lit == "Union" {
                     Name::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
-                    let generics: Vec<NameUnion> =
-                        generics.iter().map(|n| NameUnion::from(n)).collect();
+                    let generics: Vec<NameUnion> = generics.iter().map(NameUnion::from).collect();
                     Name::new(&python_to_concrete(&lit), &generics)
                 }
             }

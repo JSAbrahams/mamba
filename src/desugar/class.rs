@@ -23,11 +23,11 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
         Node::TypeAlias { ty, isa, .. } => {
             let parents = vec![isa.deref().clone()];
             let body = None;
-            extract_class(ty, &body, &vec![], &parents, imp, &state.in_interface(true))
+            extract_class(ty, &body, &[], &parents, imp, &state.in_interface(true))
         }
         Node::TypeDef { ty, body, isa } => {
             let parents = if let Some(isa) = isa { vec![isa.deref().clone()] } else { vec![] };
-            extract_class(ty, body, &vec![], &parents, imp, &state.in_interface(true))
+            extract_class(ty, body, &[], &parents, imp, &state.in_interface(true))
         }
         Node::Class { ty, body, args, parents } =>
             extract_class(ty, body, args, parents, imp, &state.in_interface(false)),
@@ -39,8 +39,8 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
 fn extract_class(
     ty: &AST,
     body: &Option<Box<AST>>,
-    args: &Vec<AST>,
-    parents: &Vec<AST>,
+    args: &[AST],
+    parents: &[AST],
     imp: &mut Imports,
     state: &State
 ) -> DesugarResult {

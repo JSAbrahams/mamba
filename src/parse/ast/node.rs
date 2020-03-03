@@ -44,7 +44,7 @@ impl Display for Node {
             Node::Raise { .. } => String::from("raise"),
             Node::Handle { .. } => String::from("handle"),
             Node::With { .. } => String::from("with"),
-            Node::ConstructorCall { name, args } | Node::FunctionCall { name, args } =>
+            Node::FunctionCall { name, args } =>
                 format!("{}({})", name.node, comma_delm(args.iter().map(|a| a.node.clone()))),
             Node::PropertyCall { instance, property } =>
                 format!("{}.{}", instance.node, property.node),
@@ -247,10 +247,6 @@ impl Node {
                 Node::With { resource: rr, alias: None, expr: re }
             ) => lr.equal_structure(rr) && le.equal_structure(re),
             (
-                Node::ConstructorCall { name: ln, args: la },
-                Node::ConstructorCall { name: rn, args: ra }
-            ) => ln.equal_structure(rn) && equal_vec(la, ra),
-            (
                 Node::FunctionCall { name: ln, args: la },
                 Node::FunctionCall { name: rn, args: ra }
             ) => ln.equal_structure(rn) && equal_vec(la, ra),
@@ -421,7 +417,6 @@ impl Node {
     pub fn trivially_expression(&self) -> bool {
         match &self {
             Node::AnonFun { .. }
-            | Node::ConstructorCall { .. }
             | Node::PropertyCall { .. }
             | Node::Id { .. }
             | Node::Set { .. }

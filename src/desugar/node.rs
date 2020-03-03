@@ -72,9 +72,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::Undefined => Core::None,
         Node::ExpressionType { .. } => desugar_type(ast, imp, state)?,
-        Node::Id { lit } => Core::Id {
-            lit: if state.is_constructor { concrete_to_python(lit) } else { lit.clone() }
-        },
+        Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         Node::_Self => Core::Id { lit: String::from("self") },
         Node::Init => Core::Id { lit: String::from("init") },
         Node::Bool { lit } => Core::Bool { boolean: *lit },
@@ -230,9 +228,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             }
         },
 
-        Node::FunctionCall { .. } | Node::PropertyCall { .. } | Node::ConstructorCall { .. } =>
-            desugar_call(ast, imp, state)?,
-
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
         Node::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, imp, &state.expand_ty(false))?,
             body: Box::from(desugar_node(body, imp, state)?)

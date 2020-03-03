@@ -91,10 +91,6 @@ pub enum Node {
         alias:    Option<(Box<AST>, bool, Option<Box<AST>>)>,
         expr:     Box<AST>
     },
-    ConstructorCall {
-        name: Box<AST>,
-        args: Vec<AST>
-    },
     FunctionCall {
         name: Box<AST>,
         args: Vec<AST>

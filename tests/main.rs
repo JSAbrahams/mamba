@@ -40,5 +40,5 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
         .stderr(Stdio::inherit())
         .stdout(Stdio::inherit())
         .output()?;
-    exists_and_delete(true, &["operation", "my_target"], "simple_class.py")
+    exists_and_delete(true, &["class", "my_target"], "simple_class.py")
 }

@@ -149,11 +149,10 @@ fn unify_fun_arg(
                     let ty = Expected::new(&expected.pos, &Type { name: name.clone() });
                     constr.push("function argument", &ty, &expected)
                 }
-                EitherOrBoth::Left(fun_arg) if !fun_arg.has_default =>
-                    return Err(vec![TypeErr::new(
-                        &pos,
-                        &format!("Expected argument: expected {}", fun_arg)
-                    )]),
+                EitherOrBoth::Left(fun_arg) if !fun_arg.has_default => {
+                    let msg = format!("Expected argument: '{}' has no default", fun_arg);
+                    return Err(vec![TypeErr::new(&pos, &msg)]);
+                }
                 EitherOrBoth::Right(_) => {
                     let msg = format!("Function takes only {} arguments", f_args.len());
                     return Err(vec![TypeErr::new(&pos, &msg)]);

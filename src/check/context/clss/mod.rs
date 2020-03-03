@@ -130,14 +130,32 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &Position)> for Class {
 }
 
 impl Class {
+    pub fn constructor(&self, without_self: bool) -> TypeResult<Function> {
+        Ok(Function {
+            is_py_type:   false,
+            name:         self.name.clone(),
+            self_mutable: None,
+            private:      false,
+            pure:         false,
+            arguments:    if without_self && !self.args.is_empty() {
+                self.args.iter().skip(1).cloned().collect()
+            } else {
+                self.args.clone()
+            },
+            raises:       NameUnion::empty(),
+            in_class:     None,
+            ret_ty:       NameUnion::from(&self.name)
+        })
+    }
+
     pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<Field> {
-        if let Some(field) = self.fields.iter().find(|f| &f.name == name) {
+        if let Some(field) = self.fields.iter().find(|f| f.name == name) {
             return Ok(field.clone());
         }
 
         for parent in &self.parents {
             if let Ok(field) = ctx.class(parent, pos)?.field(name, ctx, pos) {
-                return Ok(field.clone());
+                return Ok(field);
             }
         }
 
@@ -157,7 +175,7 @@ impl Class {
         // TODO check for cyclic dependencies after constructing Context.
         for parent in &self.parents {
             if let Ok(function) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
-                return Ok(function.clone());
+                return Ok(function);
             }
         }
 

@@ -17,19 +17,19 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Cons
     let (oks, errs): (Vec<_>, Vec<_>) = all_constraints
         .iter()
         .map(|constraints| {
-            println!(
+            trace!(
                 "[unifying set {}\\{}{}]",
                 count,
                 all_constraints.len(),
                 if constraints.in_class.is_empty() {
                     String::new()
                 } else {
-                    format!("{}", custom_delimited(&constraints.in_class, " in ", " in "))
+                    custom_delimited(&constraints.in_class, " in ", " in ")
                 }
             );
             count += 1;
             unify_link(&mut constraints.clone(), ctx, constraints.len()).map_err(|e| {
-                println!(
+                trace!(
                     "[error unifying set {}\\{}:{}]",
                     count - 1,
                     all_constraints.len(),

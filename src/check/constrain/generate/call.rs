@@ -10,7 +10,7 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::generate::{gen_vec, generate};
 use crate::check::constrain::Constrained;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::name::DirectName;
 use crate::check::context::{Context, LookupClass, LookupFunction};
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
@@ -30,25 +30,6 @@ pub fn gen_call(
             constr.add("reassign", &Expected::try_from(left)?, &Expected::try_from(right)?);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
-        }
-        Node::ConstructorCall { name, args } => {
-            let c_name = NameUnion::try_from(name.deref())?;
-            let self_type = Type { name: c_name.clone() };
-
-            constr.add(
-                "constructor call",
-                &Expected::new(&ast.pos, &self_type),
-                &Expected::try_from(ast)?
-            );
-
-            let self_arg = Some(self_type);
-            let mut constr = constr.clone();
-            let c_type_union = ctx.class(&c_name, &ast.pos)?;
-            let possible_args = c_type_union.constructor(&ast.pos)?;
-            for constr_args in possible_args {
-                constr = call_parameters(ast, &constr_args, &self_arg, args, ctx, &constr)?;
-            }
-            gen_vec(args, env, ctx, &constr)
         }
         Node::FunctionCall { name, args } => {
             let f_name = DirectName::try_from(name)?;
@@ -96,7 +77,7 @@ pub fn gen_call(
 
 fn call_parameters(
     self_ast: &AST,
-    possible: &Vec<FunctionArg>,
+    possible: &[FunctionArg],
     self_arg: &Option<Expect>,
     args: &[AST],
     ctx: &Context,
@@ -129,7 +110,8 @@ fn call_parameters(
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&self_ast.pos.end, &self_ast.pos.end);
-                return Err(vec![TypeErr::new(&pos, "Expected argument: no default")]);
+                let msg = format!("Expected argument: '{}' has no default", fun_arg);
+                return Err(vec![TypeErr::new(&pos, &msg)]);
             }
             Right((pos, _)) => return Err(vec![TypeErr::new(&pos, "Unexpected argument")]),
             _ => {}
@@ -184,7 +166,7 @@ fn property_call(
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
             let instance_exp = Expected::try_from(instance)?;
-            let mut args_with_self: Vec<Expected> = vec![instance_exp.clone()];
+            let mut args_with_self: Vec<Expected> = vec![instance_exp];
             args_with_self
                 .append(&mut args.iter().map(Expected::try_from).collect::<Result<_, _>>()?);
 

@@ -6,7 +6,7 @@ use crate::common::position::Position;
 
 pub fn check_is_parent(
     field: &NameUnion,
-    in_class: &Vec<DirectName>,
+    in_class: &[DirectName],
     object_class: &NameUnion,
     ctx: &Context,
     pos: &Position

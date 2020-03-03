@@ -45,7 +45,6 @@ impl TryFrom<&AST> for Expected {
             Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
             Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
             Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
-            Node::ConstructorCall { name, .. } => Type { name: NameUnion::try_from(name)? },
             Node::Undefined => Nullable,
             Node::Underscore => ExpressionAny,
             _ => Expression { ast: ast.clone() }

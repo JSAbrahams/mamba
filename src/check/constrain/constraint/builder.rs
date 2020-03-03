@@ -88,6 +88,8 @@ impl ConstrBuilder {
         self.constraints[self.level].1.push(constraint.clone())
     }
 
+    // It is not redundant
+    #[allow(clippy::redundant_clone)]
     pub fn all_constr(self) -> Vec<Constraints> {
         let mut finished = self.finished.clone();
         finished.append(&mut self.constraints.clone());

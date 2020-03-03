@@ -44,6 +44,14 @@ pub struct Context {
     fields:    HashSet<GenericField>
 }
 
+impl Context {
+    pub fn class_count(&self) -> usize { self.classes.len() }
+
+    pub fn function_count(&self) -> usize { self.functions.len() }
+
+    pub fn field_count(&self) -> usize { self.fields.len() }
+}
+
 impl TryFrom<&[CheckInput]> for Context {
     type Error = Vec<TypeErr>;
 
@@ -110,10 +118,17 @@ pub trait LookupFunction<In, Out> {
 
 impl LookupFunction<&DirectName, Function> for Context {
     /// Look up a function and substitutes generics to yield a Function.
+    ///
+    /// If function does not exist, treat function as constructor and see if
+    /// there exists a class with the same name.
     fn function(&self, function: &DirectName, pos: &Position) -> Result<Function, Vec<TypeErr>> {
+        let generics = HashMap::new();
+
         if let Some(generic_fun) = self.functions.iter().find(|c| &c.name == function) {
-            let generics = HashMap::new();
             Function::try_from((generic_fun, &generics, pos))
+        } else if let Some(generic_class) = self.classes.iter().find(|c| &c.name == function) {
+            let class = Class::try_from((generic_class, &generics, pos))?;
+            class.constructor(true)
         } else {
             let msg = format!("Function {} is undefined.", function);
             Err(vec![TypeErr::new(pos, &msg)])
@@ -128,7 +143,7 @@ pub trait LookupField<In, Out> {
 impl LookupField<&str, Field> for Context {
     /// Look up a field and substitutes generics to yield a Field.
     fn field(&self, field: &str, pos: &Position) -> Result<Field, Vec<TypeErr>> {
-        if let Some(generic_field) = self.fields.iter().find(|c| &c.name == field) {
+        if let Some(generic_field) = self.fields.iter().find(|c| c.name == field) {
             let generics = HashMap::new();
             Field::try_from((generic_field, &generics, pos))
         } else {
@@ -138,6 +153,7 @@ impl LookupField<&str, Field> for Context {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ClassVariant {
     Direct(Class),
@@ -197,7 +213,7 @@ impl ClassTuple {
                     Function::simple_fun(name, &self_arg, &ret_ty, pos)
                 } else {
                     let msg = format!("Function '{}' undefined on '{}'", name, self);
-                    return Err(vec![TypeErr::new(pos, &msg)]);
+                    Err(vec![TypeErr::new(pos, &msg)])
                 },
         }
     }
@@ -213,9 +229,16 @@ impl ClassTuple {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Eq)]
 pub struct ClassUnion {
     union: HashSet<ClassTuple>
+}
+
+impl PartialEq for ClassUnion {
+    fn eq(&self, other: &Self) -> bool {
+        self.union.len() == other.union.len()
+            && self.union.iter().zip(&other.union).all(|(this, that)| this == that)
+    }
 }
 
 impl Hash for ClassUnion {

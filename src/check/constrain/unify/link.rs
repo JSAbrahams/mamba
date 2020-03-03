@@ -17,7 +17,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
     if let Some(constraint) = &constraints.pop_constr() {
         let (left, right) = (&constraint.parent, &constraint.child);
 
-        let pos = format!("({}-{}) ", left.pos.start, right.pos.start);
+        let pos = format!("({}={}) ", left.pos.start, right.pos.start);
         let count = total - constraints.len();
         let unify = format!("[unifying {}\\{}] ", count, total);
         let msg = if constraint.msg.is_empty() {
@@ -25,7 +25,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         } else {
             format!("{{{}}} # ", constraint.msg)
         };
-        println!("{:width$}{}{}{}", pos, unify, msg, constraint, width = 15);
+        trace!("{:width$}{}{}{}", pos, unify, msg, constraint, width = 15);
 
         match (&left.expect, &right.expect) {
             // trivially equal
@@ -61,9 +61,9 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 /// The amount of attempts is a counter which states how often we allow
 /// reinserts.
 pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
-    let pos = format!("({}-{}) ", constraint.parent.pos.start, constraint.child.pos.start);
+    let pos = format!("({}={}) ", constraint.parent.pos.start, constraint.child.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
-    println!("{:width$}{}{}", pos, count, constraint, width = 17);
+    trace!("{:width$}{}{}", pos, count, constraint, width = 17);
 
     constr.reinsert(&constraint)?;
     Ok(constr.clone())

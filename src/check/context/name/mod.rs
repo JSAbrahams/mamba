@@ -41,7 +41,7 @@ pub struct Name {
     pub variant: NameVariant
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct NameUnion {
     names: HashSet<Name>
 }
@@ -112,6 +112,13 @@ impl From<&HashSet<NameUnion>> for NameUnion {
 impl From<&DirectName> for NameUnion {
     fn from(name: &DirectName) -> Self {
         NameUnion { names: HashSet::from_iter(vec![Name::from(name)]) }
+    }
+}
+
+impl PartialEq for NameUnion {
+    fn eq(&self, other: &Self) -> bool {
+        self.names.len() == other.names.len()
+            && self.names.iter().zip(&other.names).all(|(this, that)| this == that)
     }
 }
 
@@ -292,6 +299,7 @@ impl AsNullable for Name {
     fn as_nullable(&self) -> Self { Name { is_nullable: true, ..self.clone() } }
 }
 
+#[allow(clippy::nonminimal_bool)]
 impl IsSuperSet<Name> for Name {
     fn is_superset_of(&self, other: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         if !self.is_empty() && other.is_empty() {

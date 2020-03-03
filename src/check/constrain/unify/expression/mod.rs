@@ -24,9 +24,7 @@ pub fn unify_expression(
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (Expression { ast }, ExpressionAny) => match &ast.node {
-            Node::ConstructorCall { .. }
-            | Node::FunctionCall { .. }
-            | Node::PropertyCall { .. } => {
+            Node::FunctionCall { .. } | Node::PropertyCall { .. } => {
                 // may be expression, defer in case substituted
                 reinsert(constraints, constraint, total)?;
                 unify_link(constraints, ctx, total)

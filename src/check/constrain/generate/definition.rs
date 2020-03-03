@@ -28,7 +28,7 @@ pub fn gen_def(
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
             let mut constr = if let Some(body) = body {
                 let r_tys: Vec<_> =
-                    raises.into_iter().map(|r| (r.pos.clone(), DirectName::try_from(r))).collect();
+                    raises.iter().map(|r| (r.pos.clone(), DirectName::try_from(r))).collect();
                 let mut r_res = NameUnion::empty();
                 // TODO check this during Context check
                 let exception_name = NameUnion::from(clss::EXCEPTION);

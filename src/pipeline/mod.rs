@@ -80,24 +80,28 @@ pub fn mamba_to_python(
             .map(|err| (String::from("token"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Tokenized {} files", tokens.len());
 
     let asts = parse_all(tokens.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("syntax"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Parsed {} files", asts.len());
 
     let modified_trees = check_all(asts.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("type"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Checked {} files", modified_trees.len());
 
     let core_tree = desugar_all(modified_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("unimplemented"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Converted {} checked files to Python", core_tree.len());
 
     Ok(core_tree.iter().map(|(core, ..)| to_source(core)).collect())
 }

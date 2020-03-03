@@ -7,6 +7,7 @@ use crate::desugar::state::State;
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 
+#[allow(clippy::comparison_chain)]
 pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
         Node::IfElse { cond, then, el } => match el {

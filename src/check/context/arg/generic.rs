@@ -44,18 +44,22 @@ impl Hash for GenericFunctionArg {
 
 impl GenericFunctionArg {
     pub fn in_class(self, class: Option<&DirectName>) -> TypeResult<GenericFunctionArg> {
-        if class.is_none() && self.name.as_str() == SELF {
-            Err(vec![TypeErr::new(&self.pos, "Cannot have self argument outside class")])
-        } else if self.name.as_str() == SELF && self.ty.is_none() {
-            if let Some(class) = class {
-                // TODO if self has type, check that class is parent of type
-                Ok(GenericFunctionArg { ty: Some(NameUnion::from(class)), ..self })
-            } else {
-                Ok(self)
+        if self.name.as_str() == SELF {
+            if class.is_none() {
+                let msg = "Cannot have self argument outside class";
+                return Err(vec![TypeErr::new(&self.pos, &msg)]);
             }
-        } else {
-            Ok(self)
+
+            if self.ty.is_none() {
+                return if let Some(class) = class {
+                    Ok(GenericFunctionArg { ty: Some(NameUnion::from(class)), ..self })
+                } else {
+                    Ok(self)
+                };
+            }
         }
+
+        Ok(self)
     }
 }
 
@@ -64,19 +68,23 @@ impl TryFrom<&AST> for ClassArgument {
 
     fn try_from(ast: &AST) -> TypeResult<ClassArgument> {
         match &ast.node {
-            Node::VariableDef { mutable, var, expression, ty, .. } => Ok(ClassArgument {
-                field:   Some(GenericField::try_from(ast)?),
-                fun_arg: GenericFunctionArg::try_from(&AST {
-                    pos:  ast.pos.clone(),
-                    node: Node::FunArg {
-                        vararg:  false,
-                        mutable: *mutable,
-                        var:     var.clone(),
-                        default: expression.clone(),
-                        ty:      ty.clone()
+            Node::VariableDef { mutable, var, expression, ty, .. } => {
+                let fun_arg = GenericFunctionArg {
+                    is_py_type:  false,
+                    name:        argument_name(var)?,
+                    pos:         ast.pos.clone(),
+                    has_default: expression.is_some(),
+                    vararg:      false,
+                    mutable:     *mutable,
+                    ty:          if let Some(ty) = ty {
+                        Some(NameUnion::try_from(ty)?)
+                    } else {
+                        None
                     }
-                })?
-            }),
+                };
+
+                Ok(ClassArgument { field: Some(GenericField::try_from(ast)?), fun_arg })
+            }
             Node::FunArg { .. } =>
                 Ok(ClassArgument { field: None, fun_arg: GenericFunctionArg::try_from(ast)? }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition or function argument")])
@@ -87,6 +95,7 @@ impl TryFrom<&AST> for ClassArgument {
 impl TryFrom<&AST> for GenericFunctionArg {
     type Error = Vec<TypeErr>;
 
+    /// Construct FunctionArg from AST.
     fn try_from(ast: &AST) -> TypeResult<GenericFunctionArg> {
         match &ast.node {
             Node::FunArg { vararg, var, mutable, ty, default, .. } => {

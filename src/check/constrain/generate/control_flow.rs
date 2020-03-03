@@ -118,7 +118,7 @@ pub fn gen_flow(
             let (mut constr, env) = generate(cond, &env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;
-            Ok((constr, env.clone()))
+            Ok((constr, env))
         }
 
         Node::Break | Node::Continue =>

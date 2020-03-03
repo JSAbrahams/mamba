@@ -84,7 +84,7 @@ impl TryFrom<&AST> for NameUnion {
 
     fn try_from(ast: &AST) -> Result<Self, Self::Error> {
         let names = if let Node::TypeUnion { types } = &ast.node {
-            types.into_iter().map(Name::try_from).collect::<Result<_, _>>()?
+            types.iter().map(Name::try_from).collect::<Result<_, _>>()?
         } else {
             HashSet::from_iter(vec![Name::try_from(ast)?].into_iter())
         };
@@ -96,8 +96,7 @@ impl TryFrom<&Vec<AST>> for NameUnion {
     type Error = Vec<TypeErr>;
 
     fn try_from(asts: &Vec<AST>) -> Result<Self, Self::Error> {
-        let names: Vec<Name> =
-            asts.iter().map(|ast| Name::try_from(ast)).collect::<Result<_, _>>()?;
+        let names: Vec<Name> = asts.iter().map(Name::try_from).collect::<Result<_, _>>()?;
         if let Some(first) = names.first() {
             let mut name_union = NameUnion::from(first);
             names.iter().for_each(|name| {

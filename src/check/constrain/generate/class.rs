@@ -65,7 +65,7 @@ pub fn constrain_class_body(
         &Expected::new(&ty.pos, &class_ty_exp)
     );
 
-    res = gen_vec(statements, &res.1, ctx, &mut res.0)?;
+    res = gen_vec(statements, &res.1, ctx, &res.0)?;
     res.0.exit_set(&ty.pos)?;
     Ok((res.0, env.clone()))
 }
