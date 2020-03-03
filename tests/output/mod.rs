@@ -1,8 +1,12 @@
-use crate::common::{exists_and_delete, python_src_to_stmts, resource_content, resource_path};
-use crate::output::common::PYTHON;
-use mamba::pipeline::transpile_directory;
 use std::path::Path;
 use std::process::Command;
+
+use mamba::pipeline::transpile_directory;
+
+use crate::common::{delete_dir, python_src_to_stmts, resource_content, resource_content_path,
+                    resource_content_randomize, resource_path};
+use crate::output::common::PYTHON;
+use python_parser::ast::Statement;
 
 mod common;
 
@@ -11,30 +15,44 @@ pub mod valid;
 fn test_directory(
     valid: bool,
     input: &[&str],
-    output: &[&str],
+    _output: &[&str],
     file_name: &str
-) -> Result<(), Vec<(String, String)>> {
-    transpile_directory(
-        &Path::new(&resource_path(valid, input, "")),
-        Some(&format!("{}.mamba", file_name)),
-        None
-    )?;
+) -> Result<(), Vec<String>> {
+    let (output_path, output_file) =
+        resource_content_randomize(true, input, &format!("{}.py", file_name));
 
-    let cmd = Command::new(PYTHON)
-        .arg("-m")
-        .arg("py_compile")
-        .arg(resource_path(true, output, &format!("{}.py", file_name)))
-        .output()
-        .unwrap();
+    let res = fallable(valid, input, &output_path, &output_file, file_name);
+    delete_dir(&output_path).map_err(|_| vec![])?;
+    let (check_ast, out_ast) = res?;
+    assert_eq!(check_ast, out_ast);
+    Ok(())
+}
+
+fn fallable(
+    valid: bool,
+    input: &[&str],
+    output_path: &str,
+    output_file: &str,
+    file_name: &str
+) -> Result<(Vec<Statement>, Vec<Statement>), Vec<String>> {
+    let current_dir_string = resource_path(valid, input, "");
+    let current_dir = Path::new(&current_dir_string);
+
+    let map_err = |(ty, msg): &(String, String)| {
+        eprintln!("[error | {}] {}", ty, msg);
+        format!("[error | {}] {}", ty, msg)
+    };
+    transpile_directory(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path))
+        .map_err(|errs| errs.iter().map(&map_err).collect::<Vec<String>>())?;
+
+    let cmd = Command::new(PYTHON).arg("-m").arg("py_compile").arg(&output_file).output().unwrap();
     if cmd.status.code().unwrap() != 0 {
         panic!("{}", String::from_utf8(cmd.stderr).unwrap());
     }
 
-    let python_src = resource_content(true, input, &format!("{}_check.py", file_name));
-    let out_src = resource_content(true, output, &format!("{}.py", file_name));
-    let python_ast = python_src_to_stmts(&python_src);
-    let out_ast = python_src_to_stmts(&out_src);
+    let check_src = resource_content(true, input, &format!("{}_check.py", file_name));
+    let check_ast = python_src_to_stmts(&check_src);
+    let out_ast = python_src_to_stmts(&resource_content_path(output_file));
 
-    assert_eq!(out_ast, python_ast);
-    Ok(assert!(exists_and_delete(true, output, &format!("{}.py", file_name))))
+    Ok((check_ast, out_ast))
 }

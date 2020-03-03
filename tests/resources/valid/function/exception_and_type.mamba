@@ -1,0 +1,4 @@
+class MyErr isa Exception
+
+# Function does never return integer
+def f(x: Int) -> Int raises [MyErr] => raise MyErr()

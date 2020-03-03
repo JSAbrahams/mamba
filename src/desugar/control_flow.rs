@@ -1,19 +1,20 @@
 use crate::core::construct::Core;
-use crate::desugar::desugar_result::DesugarResult;
-use crate::desugar::desugar_result::UnimplementedErr;
 use crate::desugar::node::desugar_node;
+use crate::desugar::result::DesugarResult;
+use crate::desugar::result::UnimplementedErr;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
+#[allow(clippy::comparison_chain)]
 pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
-        Node::IfElse { cond, then, _else } => match _else {
-            Some(_else) => Core::IfElse {
-                cond:  Box::from(desugar_node(cond, imp, state)?),
-                then:  Box::from(desugar_node(then, imp, state)?),
-                _else: Box::from(desugar_node(_else, imp, state)?)
+        Node::IfElse { cond, then, el } => match el {
+            Some(el) => Core::IfElse {
+                cond: Box::from(desugar_node(cond, imp, state)?),
+                then: Box::from(desugar_node(then, imp, state)?),
+                el:   Box::from(desugar_node(el, imp, state)?)
             },
             None => Core::If {
                 cond: Box::from(desugar_node(cond, imp, state)?),
@@ -28,7 +29,7 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
             for case in cases {
                 match &case.node {
                     Node::Case { cond, body } => match &cond.node {
-                        Node::IdType { id, .. } => match id.node {
+                        Node::ExpressionType { expr, .. } => match expr.node {
                             Node::Underscore =>
                                 core_defaults.push(desugar_node(body.as_ref(), imp, state)?),
                             _ => core_cases.push(Core::KeyValue {

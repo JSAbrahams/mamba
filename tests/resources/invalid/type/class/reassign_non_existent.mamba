@@ -1,0 +1,6 @@
+class MyClass
+    def something: Int <- 10
+
+
+def my_class <- MyClass()
+my_class.other_thing <- 20

@@ -19,7 +19,7 @@ class MyClass(def a: Int, def b: Int)
     def some_function(self, c: Int) -> Int =>
         def mut d <- 20
         d <- 10 + 30
-        return c + 20
+        return c + 20 + d
 
     def +(self, other: MyClass) -> MyClass => return MyClass(self.a + self.b + other.some_function(self.a), self.b)
     def -(self, other: MyClass) -> MyClass => return self + other

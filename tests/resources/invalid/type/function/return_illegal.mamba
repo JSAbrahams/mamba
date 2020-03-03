@@ -1,0 +1,1 @@
+def f(a: Int) => return a

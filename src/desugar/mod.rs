@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-use crate::desugar::desugar_result::{DesugarResult, DesugarResults};
 use crate::desugar::node::desugar_node;
+use crate::desugar::result::{DesugarResult, DesugarResults};
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::AST;
+use crate::parse::ast::AST;
 
 mod call;
 mod class;
@@ -15,29 +15,29 @@ mod node;
 mod state;
 mod ty;
 
-pub mod desugar_result;
+pub mod result;
 
 pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 
-/// Consumes the given [AST](crate::parser::ast::AST) and produces
-/// a [Core](crate::core::construct::Core) node.
+/// Consumes the given [AST](mamba::parser::ast::AST) and produces
+/// a [Core](mamba::core::construct::Core) node.
 ///
-/// Note that the given [AST](crate::parser::ast::AST) must be
+/// Note that the given [AST](mamba::parser::ast::AST) must be
 /// correctly formed. Therefore, malformed
-/// [AST](crate::parser::ast::AST)'s should be caught by either
+/// [AST](mamba::parser::ast::AST)'s should be caught by either
 /// the parser or the type checker.
 ///
 /// # Examples
 ///
 /// ```
-/// # use mamba::parser::ast::Node;
-/// # use mamba::parser::ast::AST;
+/// # use mamba::parse::ast::Node;
+/// # use mamba::parse::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
 /// # use mamba::common::position::{CaretPos, Position};
 /// let node = Node::ReturnEmpty;
-/// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
-/// let core_result = desugar(&ast_node_pos).unwrap();
+/// let ast = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
+/// let core_result = desugar(&ast).unwrap();
 ///
 /// assert_eq!(core_result, Core::Return { expr: Box::from(Core::None) });
 /// ```
@@ -47,16 +47,16 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// Fails if desugaring a construct which has not been implemented yet.
 ///
 /// ```rust
-/// # use mamba::parser::ast::Node;
-/// # use mamba::parser::ast::AST;
+/// # use mamba::parse::ast::Node;
+/// # use mamba::parse::ast::AST;
 /// # use mamba::desugar::desugar;
 /// # use mamba::core::construct::Core;
 /// use mamba::common::position::{CaretPos, Position};
 /// let cond_node = Node::Int { lit: String::from("56") };
 /// let cond_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), cond_node);
-/// let node = Node::Condition { cond: Box::from(cond_pos), _else: None };
-/// let ast_node_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
-/// let core_result = desugar(&ast_node_pos);
+/// let node = Node::Condition { cond: Box::from(cond_pos), el: None };
+/// let ast = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
+/// let core_result = desugar(&ast);
 ///
 /// assert!(core_result.is_err());
 /// ```
@@ -72,7 +72,7 @@ pub fn desugar(input: &AST) -> DesugarResult {
 pub fn desugar_all(inputs: &[DesugarInput]) -> DesugarResults {
     let inputs: Vec<_> = inputs
         .iter()
-        .map(|(node_pos, source, path)| (desugar(node_pos), source, path))
+        .map(|(ast, source, path)| (desugar(ast), source, path))
         .map(|(result, source, path)| {
             (result.map_err(|err| err.into_with_source(source, path)), source.clone(), path.clone())
         })

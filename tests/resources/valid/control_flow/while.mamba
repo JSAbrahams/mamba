@@ -1,4 +1,5 @@
 def b <- False
+def e <- "Hello world"
 while b do print b
 
 def d <- True

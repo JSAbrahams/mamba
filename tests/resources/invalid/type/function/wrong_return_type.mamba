@@ -1,1 +1,1 @@
-def g(x: Int) -> String => x + 10
+def g(x: Int) -> String => return x + 10

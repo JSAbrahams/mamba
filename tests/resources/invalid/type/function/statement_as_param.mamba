@@ -1,0 +1,4 @@
+def f(x: Int) -> Int => x
+def g() => print "statement"
+
+f(g())

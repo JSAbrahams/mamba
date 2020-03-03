@@ -1,6 +1,9 @@
 b = {1,2}
-for first in b:
-    print(first)
+for b in b:
+    print(b + 5)
+    new = b + 1
+    new = 30
+    print(new)
 
 b = {(1, 4), (2, 5)}
 for (first, second) in b:
@@ -28,5 +31,5 @@ c = 2451
 for i in range(a, c + 1, 20):
     print("world")
 
-for i in ([1,2], {3,4}):
-    print(i)
+# for i in ([1, 2], {3, 4}) do
+#    print i

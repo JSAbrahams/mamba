@@ -1,8 +1,8 @@
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::Node;
-use mamba::parser::ast::AST;
+use mamba::parse::ast::Node;
+use mamba::parse::ast::AST;
 use std::panic;
 
 #[test]
@@ -28,7 +28,7 @@ fn print_verify() {
     let expr = to_pos!(Node::Str { lit: String::from("a"), expressions: vec![] });
     let print_stmt = to_pos!(Node::Print { expr });
     assert_eq!(desugar(&print_stmt).unwrap(), Core::Print {
-        expr: Box::from(Core::Str { _str: String::from("a") })
+        expr: Box::from(Core::Str { string: String::from("a") })
     });
 }
 
@@ -38,7 +38,7 @@ fn return_verify() {
     let print_stmt = to_pos!(Node::Return { expr });
 
     assert_eq!(desugar(&print_stmt).unwrap(), Core::Return {
-        expr: Box::from(Core::Str { _str: String::from("a") })
+        expr: Box::from(Core::Str { string: String::from("a") })
     });
 }
 
@@ -69,7 +69,7 @@ fn import_verify() {
 
     assert_eq!(desugar(&_break).unwrap(), Core::ImportAs {
         imports: vec![Core::Id { lit: String::from("a") }],
-        _as:     vec![Core::Id { lit: String::from("b") }]
+        alias:   vec![Core::Id { lit: String::from("b") }]
     });
 }
 
@@ -87,7 +87,7 @@ fn from_import_as_verify() {
         from:   Box::from(Core::Id { lit: String::from("f") }),
         import: Box::from(Core::ImportAs {
             imports: vec![Core::Id { lit: String::from("a") }],
-            _as:     vec![Core::Id { lit: String::from("b") }]
+            alias:   vec![Core::Id { lit: String::from("b") }]
         })
     });
 }
