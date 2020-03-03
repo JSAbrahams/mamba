@@ -1,14 +1,14 @@
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parser::ast::Node;
-use mamba::parser::ast::AST;
+use mamba::parse::ast::Node;
+use mamba::parse::ast::AST;
 
 #[test]
 fn if_verify() {
     let cond = to_pos!(Node::Id { lit: String::from("cond") });
     let then = to_pos!(Node::Id { lit: String::from("then") });
-    let if_stmt = to_pos!(Node::IfElse { cond, then, _else: None });
+    let if_stmt = to_pos!(Node::IfElse { cond, then, el: None });
 
     let (core_cond, core_then) = match desugar(&if_stmt) {
         Ok(Core::If { cond, then }) => (cond, then),
@@ -23,11 +23,11 @@ fn if_verify() {
 fn if_else_verify() {
     let cond = to_pos!(Node::Id { lit: String::from("cond") });
     let then = to_pos!(Node::Id { lit: String::from("then") });
-    let _else = to_pos!(Node::Id { lit: String::from("else") });
-    let if_stmt = to_pos!(Node::IfElse { cond, then, _else: Some(_else) });
+    let el = to_pos!(Node::Id { lit: String::from("else") });
+    let if_stmt = to_pos!(Node::IfElse { cond, then, el: Some(el) });
 
     let (core_cond, core_then, core_else) = match desugar(&if_stmt) {
-        Ok(Core::IfElse { cond, then, _else }) => (cond, then, _else),
+        Ok(Core::IfElse { cond, then, el }) => (cond, then, el),
         other => panic!("Expected reassign but was {:?}", other)
     };
 

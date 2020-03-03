@@ -1,6 +1,6 @@
 class Err(Exception):
     def __init__(self, msg: str):
-        super().__init__(msg)
+        super(Exception, self).__init__(msg)
 
 
 def f(x: int) -> int:

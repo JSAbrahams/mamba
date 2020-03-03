@@ -1,17 +1,17 @@
+use crate::check::context::clss::concrete_to_python;
 use crate::core::construct::Core;
 use crate::desugar::call::desugar_call;
 use crate::desugar::class::desugar_class;
 use crate::desugar::common::{desugar_stmts, desugar_vec};
 use crate::desugar::control_flow::desugar_control_flow;
 use crate::desugar::definition::desugar_definition;
-use crate::desugar::desugar_result::DesugarResult;
-use crate::desugar::desugar_result::UnimplementedErr;
+use crate::desugar::result::DesugarResult;
+use crate::desugar::result::UnimplementedErr;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
-use crate::type_checker::context::ty::concrete::concrete_to_python;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
@@ -25,7 +25,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             } else {
                 Core::ImportAs {
                     imports: desugar_vec(import, imp, state)?,
-                    _as:     desugar_vec(_as, imp, state)?
+                    alias:   desugar_vec(_as, imp, state)?
                 }
             },
         Node::FromImport { id, import } => Core::FromImport {
@@ -49,12 +49,12 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             num: num.clone(),
             exp: if exp.is_empty() { String::from("0") } else { exp.clone() }
         },
-        Node::DocStr { lit } => Core::DocStr { _str: lit.clone() },
+        Node::DocStr { lit } => Core::DocStr { string: lit.clone() },
         Node::Str { lit, expressions } =>
             if expressions.is_empty() {
-                Core::Str { _str: lit.clone() }
+                Core::Str { string: lit.clone() }
             } else {
-                Core::FStr { _str: lit.clone() }
+                Core::FStr { string: lit.clone() }
             },
 
         Node::AddOp => Core::AddOp,
@@ -71,13 +71,11 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::QuestionOp { .. } => desugar_type(ast, imp, state)?,
 
         Node::Undefined => Core::None,
-        Node::IdType { .. } => desugar_type(ast, imp, state)?,
-        Node::Id { lit } => Core::Id {
-            lit: if state.is_constructor { concrete_to_python(lit) } else { lit.clone() }
-        },
+        Node::ExpressionType { .. } => desugar_type(ast, imp, state)?,
+        Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         Node::_Self => Core::Id { lit: String::from("self") },
         Node::Init => Core::Id { lit: String::from("init") },
-        Node::Bool { lit } => Core::Bool { _bool: *lit },
+        Node::Bool { lit } => Core::Bool { boolean: *lit },
 
         Node::Tuple { elements } => Core::Tuple { elements: desugar_vec(elements, imp, state)? },
         Node::List { elements } => Core::List { elements: desugar_vec(elements, imp, state)? },
@@ -210,18 +208,27 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             right: Box::from(desugar_node(right, imp, state)?)
         },
 
-        Node::FunArg { vararg, id_maybe_type, default } => Core::FunArg {
+        Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
             vararg:  *vararg,
-            id:      Box::from(desugar_node(id_maybe_type, imp, state)?),
+            var:     Box::from(desugar_node(var, imp, state)?),
+            ty:      if state.expand_ty {
+                match ty {
+                    Some(ty) => match &var.node {
+                        Node::_Self => None,
+                        _ => Some(Box::from(desugar_node(ty, imp, state)?))
+                    },
+                    None => None
+                }
+            } else {
+                None
+            },
             default: match default {
-                Some(default) => Box::from(desugar_node(default, imp, state)?),
-                None => Box::from(Core::Empty)
+                Some(default) => Some(Box::from(desugar_node(default, imp, state)?)),
+                None => None
             }
         },
 
-        Node::FunctionCall { .. } | Node::PropertyCall { .. } | Node::ConstructorCall { .. } =>
-            desugar_call(ast, imp, state)?,
-
+        Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
         Node::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, imp, &state.expand_ty(false))?,
             body: Box::from(desugar_node(body, imp, state)?)
@@ -261,32 +268,29 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             Core::Block { statements }
         }
 
-        Node::TypeAlias { .. }
-        | Node::TypeTup { .. }
+        Node::TypeTup { .. }
         | Node::Type { .. }
         | Node::TypeFun { .. }
         | Node::TypeUnion { .. } => desugar_type(ast, imp, state)?,
 
-        Node::TypeDef { .. } => desugar_class(ast, imp, state)?,
+        Node::TypeDef { .. } | Node::TypeAlias { .. } => desugar_class(ast, imp, state)?,
         Node::Class { .. } => desugar_class(ast, imp, state)?,
         Node::Generic { .. } => Core::Empty,
-        Node::Parent { .. } => panic!("Parent cannot be top-level"),
+        Node::Parent { .. } => panic!("Parent cannot be top-level: {:?}", ast),
 
         Node::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
 
         Node::Comment { comment } => Core::Comment { comment: comment.clone() },
         Node::Pass => Core::Pass,
 
-        Node::With { resource, _as, expr } => match _as {
-            Some(_as) => Core::WithAs {
-                resource: Box::from(desugar_node(resource, imp, state)?),
-                _as:      Box::from(desugar_node(_as, imp, &state.expand_ty(false))?),
-                expr:     Box::from(desugar_node(expr, imp, state)?)
-            },
-            None => Core::With {
-                resource: Box::from(desugar_node(resource, imp, state)?),
-                expr:     Box::from(desugar_node(expr, imp, state)?)
-            }
+        Node::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
+            resource: Box::from(desugar_node(resource, imp, state)?),
+            alias:    Box::from(desugar_node(alias, imp, &state.expand_ty(false))?),
+            expr:     Box::from(desugar_node(expr, imp, state)?)
+        },
+        Node::With { resource, expr, .. } => Core::With {
+            resource: Box::from(desugar_node(resource, imp, state)?),
+            expr:     Box::from(desugar_node(expr, imp, state)?)
         },
 
         Node::Step { .. } => panic!("Step cannot be top level."),
@@ -294,23 +298,30 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
 
         Node::Handle { expr_or_stmt, cases } => {
-            let assign_to = if let Node::VariableDef { id_maybe_type, .. } = &expr_or_stmt.node {
-                Some(desugar_node(id_maybe_type.as_ref(), imp, state)?)
-            } else {
-                None
-            };
+            let (var, private, ty) =
+                if let Node::VariableDef { var, private, ty, .. } = &expr_or_stmt.node {
+                    (
+                        Some(Box::from(desugar_node(var, imp, state)?)),
+                        *private,
+                        if let Some(ty) = ty {
+                            Some(Box::from(desugar_node(ty, imp, state)?))
+                        } else {
+                            None
+                        }
+                    )
+                } else {
+                    (None, false, None)
+                };
+            let assign_state = state.assign_to(var.as_deref());
 
             Core::TryExcept {
-                setup:  if let Some(assign_to) = &assign_to {
-                    Some(Box::from(Core::Assign {
-                        left:  Box::from(assign_to.clone()),
-                        right: Box::from(Core::Empty)
-                    }))
+                setup:   if let Some(var) = var {
+                    Some(Box::from(Core::VarDef { private, var, ty, expr: None }))
                 } else {
                     None
                 },
-                _try:   Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
-                except: {
+                attempt: Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
+                except:  {
                     let mut except = Vec::new();
                     for case in cases {
                         let (cond, body) = match &case.node {
@@ -319,27 +330,15 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                         };
 
                         match &cond.node {
-                            Node::IdType { id, _type: Some(ty), .. } => match &ty.node {
-                                Node::Type { id: ty, .. } => except.push(Core::Except {
-                                    id:    Box::from(desugar_node(id, imp, state)?),
-                                    class: Box::from(desugar_node(ty, imp, state)?),
-                                    body:  Box::from(desugar_node(
-                                        body,
-                                        imp,
-                                        &state.assign_to(assign_to.as_ref())
-                                    )?)
-                                }),
-                                other => panic!("Expected type but was {:?}", other)
-                            },
-                            Node::IdType { id, _type: None, .. } =>
-                                except.push(Core::ExceptNoClass {
-                                    id:   Box::from(desugar_node(id, imp, state)?),
-                                    body: Box::from(desugar_node(
-                                        body,
-                                        imp,
-                                        &state.assign_to(assign_to.as_ref())
-                                    )?)
-                                }),
+                            Node::ExpressionType { expr, ty, .. } => except.push(Core::Except {
+                                id:    Box::from(desugar_node(expr, imp, state)?),
+                                class: if let Some(ty) = ty {
+                                    Some(Box::from(desugar_node(ty, imp, state)?))
+                                } else {
+                                    None
+                                },
+                                body:  Box::from(desugar_node(body, imp, &assign_state)?)
+                            }),
                             other => panic!("Expected id type but was {:?}", other)
                         };
                     }

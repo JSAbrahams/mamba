@@ -1,13 +1,12 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use leg::*;
-
+use crate::check::check_all;
 use crate::core::to_source;
 use crate::desugar::desugar_all;
-use crate::lexer::tokenize_all;
-use crate::parser::parse_all;
-use crate::type_checker::check_all;
+use crate::lex::tokenize_all;
+use crate::parse::parse_all;
+use std::fs::create_dir;
 
 mod io;
 
@@ -33,7 +32,11 @@ pub fn transpile_directory(
 ) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
     let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));
-    info(format!("Input is '{}'", src_path.display()).as_str(), None, None);
+    if !out_dir.exists() {
+        create_dir(&out_dir).map_err(|e| vec![(String::from("io"), e.to_string())])?;
+    }
+    info!("Input is '{}'", src_path.display());
+    info!("Output will be stored in '{}'", out_dir.display());
 
     let relative_paths = io::relative_files(src_path.as_path()).map_err(|error| vec![error])?;
     let in_absolute_paths = if src_path.is_dir() {
@@ -44,15 +47,10 @@ pub fn transpile_directory(
     let out_absolute_paths: Vec<PathBuf> =
         relative_paths.iter().map(|os_string| out_dir.join(os_string)).collect();
 
-    info(
-        format!(
-            "Transpiling {} file{}",
-            out_absolute_paths.len(),
-            if out_absolute_paths.len() > 1 { "s" } else { "" }
-        )
-        .as_str(),
-        None,
-        None
+    info!(
+        "Transpiling {} file {}",
+        out_absolute_paths.len(),
+        if out_absolute_paths.len() > 1 { "s" } else { "" }
     );
 
     let mut sources = vec![];
@@ -71,7 +69,6 @@ pub fn transpile_directory(
         io::write_source(source, &out_path).map_err(|error| vec![error])?;
     }
 
-    success(format!("Output stored in '{}'", out_dir.display()).as_str(), None, None);
     Ok(out_dir)
 }
 
@@ -87,24 +84,28 @@ pub fn mamba_to_python(
             .map(|err| (String::from("token"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Tokenized {} files", tokens.len());
 
-    let ast_trees = parse_all(tokens.as_slice()).map_err(|errs| {
+    let asts = parse_all(tokens.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("syntax"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Parsed {} files", asts.len());
 
-    let modified_trees = check_all(ast_trees.as_slice()).map_err(|errs| {
+    let modified_trees = check_all(asts.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("type"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Checked {} files", modified_trees.len());
 
     let core_tree = desugar_all(modified_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("unimplemented"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
+    trace!("Converted {} checked files to Python", core_tree.len());
 
     Ok(core_tree.iter().map(|(core, ..)| to_source(core)).collect())
 }

@@ -1,12 +1,12 @@
+use crate::check::context::clss::concrete_to_python;
 use crate::core::construct::Core;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::desugar_result::DesugarResult;
 use crate::desugar::node::desugar_node;
+use crate::desugar::result::DesugarResult;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parser::ast::Node;
-use crate::parser::ast::AST;
-use crate::type_checker::context::ty::concrete::concrete_to_python;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     Ok(match &ast.node {
@@ -18,39 +18,7 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             }
         }
         Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
-        Node::IdType { id, _type, .. } => match &id.node {
-            Node::Id { lit } =>
-                if let Some(ty) = _type {
-                    if state.expand_ty {
-                        Core::IdType {
-                            lit: lit.clone(),
-                            ty:  Box::from(desugar_node(ty, imp, state)?)
-                        }
-                    } else {
-                        Core::Id {
-                            lit: if state.is_constructor {
-                                concrete_to_python(lit)
-                            } else {
-                                lit.clone()
-                            }
-                        }
-                    }
-                } else {
-                    Core::Id {
-                        lit: if state.is_constructor {
-                            concrete_to_python(lit)
-                        } else {
-                            lit.clone()
-                        }
-                    }
-                },
-            Node::_Self => Core::Id { lit: String::from("self") },
-            _ => desugar_node(id, imp, state)?
-        },
-        Node::TypeAlias { _type, isa, .. } => Core::Assign {
-            left:  Box::from(desugar_node(_type, imp, state)?),
-            right: Box::from(desugar_node(isa, imp, state)?)
-        },
+        Node::ExpressionType { expr, .. } => desugar_node(expr, imp, state)?,
         Node::TypeTup { types } => {
             imp.add_from_import("typing", "Tuple");
             Core::Type {

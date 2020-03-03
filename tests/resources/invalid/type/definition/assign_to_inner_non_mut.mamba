@@ -9,4 +9,4 @@ class D
     def my_field: Int <- 10
 
 def mut a <- A()
-a.c.my_field_accessor().my_field <- 20
+a.c.my_field_accessor().mmy_field <- 20
