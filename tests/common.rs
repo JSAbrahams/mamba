@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use python_parser::ast::Statement;
 use tempfile::tempdir_in;
 
-pub fn resource_content_path(path: &String) -> String {
+pub fn resource_content_path(path: &str) -> String {
     match File::open(path) {
         Ok(mut path) => {
             let mut content = String::new();
