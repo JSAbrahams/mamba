@@ -3,8 +3,8 @@ use std::process::Stdio;
 
 use assert_cmd::prelude::*;
 
-use crate::common::exists_and_delete_file;
 use crate::common::resource_path;
+use crate::common::{delete_dir, resource_content_randomize};
 
 #[macro_use]
 mod common;
@@ -24,7 +24,8 @@ fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
     let input = resource_path(true, &["class"], "types.mamba");
     cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
 
-    exists_and_delete_file(true, &["class", "target"], "types.py")
+    let output = resource_path(true, &["class", "target"], "");
+    delete_dir(&output)
 }
 
 #[test]
@@ -33,9 +34,9 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
-    let output = resource_path(true, &["class"], "my_target");
-    cmd.arg("-i").arg(input).arg("-o").arg(output);
+    let output = resource_content_randomize(true, &["class"], "");
+    cmd.arg("-i").arg(input).arg("-o").arg(&output.0);
     cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
 
-    exists_and_delete_file(true, &["class", "my_target"], "types.py")
+    delete_dir(&output.0)
 }

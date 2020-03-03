@@ -74,27 +74,6 @@ pub fn delete_dir(resource_path: &String) -> Result<(), Box<dyn std::error::Erro
     }
 }
 
-pub fn delete_file(resource_path: &String) -> Result<(), Box<dyn std::error::Error>> {
-    let path = Path::new(&resource_path);
-    if !path.exists() {
-        panic!("{} does not exist", path.display())
-    } else {
-        match fs::remove_file(path) {
-            Ok(_) => Ok(()),
-            Err(err) => panic!("[{}] {}", err, path.display())
-        }
-    }
-}
-
-pub fn exists_and_delete_file(
-    valid: bool,
-    subdirs: &[&str],
-    file: &str
-) -> Result<(), Box<dyn std::error::Error>> {
-    let resource_path = resource_path(valid, subdirs, file);
-    delete_file(&resource_path)
-}
-
 pub fn python_src_to_stmts(python_src: &String) -> Vec<Statement> {
     python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1
 }

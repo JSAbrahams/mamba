@@ -14,7 +14,7 @@ pub mod valid;
 fn test_directory(
     valid: bool,
     input: &[&str],
-    output: &[&str],
+    _output: &[&str],
     file_name: &str
 ) -> Result<(), Vec<String>> {
     let current_dir_string = resource_path(valid, input, "");
