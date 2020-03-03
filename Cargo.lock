@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "mamba"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "assert_cmd 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",

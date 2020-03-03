@@ -1,8 +1,8 @@
 [package]
 name = "mamba"
-version = "0.2.2"
-authors = ["Joel Abrahams <abrahamsjo@gmail.com>"]
-description = "A transpiler which translates Mamba to Python 3 files"
+version = "0.3.0"
+authors = ["Joël Abrahams <abrahamsjo@gmail.com>"]
+description = "A transpiler which converts Mamba files to Python 3 files"
 edition = "2018"
 license-file = "LICENSE"
 
