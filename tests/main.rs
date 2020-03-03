@@ -21,9 +21,10 @@ fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::main_binary()?;
     cmd.current_dir(resource_path(true, &["class"], ""));
 
-    let input = resource_path(true, &["class"], "simple_class.mamba");
+    let input = resource_path(true, &["class"], "types.mamba");
     cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
-    exists_and_delete(true, &["class", "target"], "simple_class.py")
+
+    exists_and_delete(true, &["class", "target"], "types.py")
 }
 
 #[test]
@@ -31,14 +32,10 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::main_binary()?;
     cmd.current_dir(resource_path(true, &["class"], ""));
 
-    let input = resource_path(true, &["class"], "simple_class.mamba");
+    let input = resource_path(true, &["class"], "types.mamba");
     let output = resource_path(true, &["class"], "my_target");
-    cmd.arg("-i")
-        .arg(input)
-        .arg("-o")
-        .arg(output)
-        .stderr(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .output()?;
-    exists_and_delete(true, &["class", "my_target"], "simple_class.py")
+    cmd.arg("-i").arg(input).arg("-o").arg(output);
+    cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
+
+    exists_and_delete(true, &["class", "my_target"], "types.py")
 }
