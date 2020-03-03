@@ -34,9 +34,9 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
-    let output = resource_content_randomize(true, &["class"], "");
-    cmd.arg("-i").arg(input).arg("-o").arg(&output.0);
+    let (output_path, _) = resource_content_randomize(true, &["class"], "");
+    cmd.arg("-v").arg("-i").arg(input).arg("-o").arg(&output_path);
     cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
 
-    delete_dir(&output.0)
+    delete_dir(&output_path)
 }
