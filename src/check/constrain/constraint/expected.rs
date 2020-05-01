@@ -65,7 +65,7 @@ pub enum Expect {
     Nullable,
     Expression { ast: AST },
     ExpressionAny,
-    Collection { ty: Box<Expected> },
+    Collection { size: Option<usize>, ty: Box<Expected> },
     Raises { name: NameUnion },
     Function { name: DirectName, args: Vec<Expected> },
     Field { name: String },
@@ -93,7 +93,10 @@ impl Display for Expect {
             Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
-            Collection { ty } => format!("Collection[{}]", ty.expect),
+            Collection { size, ty } => match size {
+                Some(size) => format!("Collection[{}] ({} elements)", ty.expect, size),
+                None => format!("Collection[{}]", ty.expect)
+            },
             Raises { name: ty } => format!("Raises[{}]", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } => format!("{}({})", name, comma_delm(args)),
@@ -106,7 +109,8 @@ impl Display for Expect {
 impl Expect {
     pub fn structurally_eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l.expect.structurally_eq(&r.expect),
+            (Collection { ty: l, size: l_s }, Collection { ty: r, size: r_s }) =>
+                l_s == r_s && l.expect.structurally_eq(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
             (Raises { name: l }, Raises { name: r }) | (Type { name: l }, Type { name: r }) =>
                 l == r,

@@ -1,10 +1,10 @@
 use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Nullable,
                                                             Raises, Type};
-use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
-use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet};
+use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet, NameVariant};
 use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
 
@@ -44,6 +44,42 @@ pub fn unify_type(
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
+        (Type { name }, Collection { size, ty }) => {
+            for name_ty in name.names() {
+                match name_ty.variant {
+                    NameVariant::Tuple(names) => {
+                        match size {
+                            Some(size) =>
+                                if *size != names.len() {
+                                    let msg = format!(
+                                        "Cannot assign to tuple of size {} with collection of \
+                                         size {}",
+                                        names.len(),
+                                        size
+                                    );
+                                    return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                                },
+                            None => {
+                                let msg =
+                                    format!("Cannot assign to tuple if collection size unkown");
+                                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                            }
+                        }
+
+                        for name in names {
+                            let l_ty = Expected::new(&left.pos, &Expect::Type { name });
+                            constraints.push("tuple collection", &l_ty, ty)
+                        }
+                    }
+                    _ => {
+                        let msg = format!("Expected '{}', found '{}'", name, right);
+                        return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                    }
+                }
+            }
+            unify_link(constraints, ctx, total)
+        }
+
         (Type { name }, Nullable) =>
             if name.is_nullable() {
                 unify_link(constraints, ctx, total)
@@ -52,7 +88,7 @@ pub fn unify_type(
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
+        (Collection { ty: l_ty, .. }, Collection { ty: r_ty, .. }) => {
             constraints.push("collection parameters", &l_ty, &r_ty);
             unify_link(constraints, ctx, total + 1)
         }

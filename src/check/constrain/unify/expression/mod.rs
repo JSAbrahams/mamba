@@ -39,14 +39,26 @@ pub fn unify_expression(
             )])
         },
 
-        (Expression { ast }, Collection { ty }) => {
+        (Expression { ast }, Collection { size, ty }) => {
             let mut pushed = 0;
             match &ast.node {
-                Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
+                Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
+                    if let Some(size) = size {
+                        if elements.len() != *size {
+                            let msg = format!(
+                                "Collection sizes not equal, expected {}, was {}",
+                                elements.len(),
+                                size
+                            );
+                            return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                        }
+                    }
+
                     for e in elements {
                         constraints.push("expression and collection", &Expected::try_from(e)?, ty);
                         pushed += 1;
-                    },
+                    }
+                }
                 _ => {}
             }
 

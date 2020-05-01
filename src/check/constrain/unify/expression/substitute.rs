@@ -80,9 +80,9 @@ fn recursive_substitute(
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(&inspected.pos, &expect))
         }
-        Expect::Collection { ty } => {
+        Expect::Collection { size, ty } => {
             let (subs_ty, ty) = recursive_substitute(side, ty, old, new);
-            let expect = Expect::Collection { ty: Box::from(ty) };
+            let expect = Expect::Collection { size: size.clone(), ty: Box::from(ty) };
             (subs_ty, Expected::new(&inspected.pos, &expect))
         }
         Expect::Function { name, args } => {

@@ -34,7 +34,10 @@ pub fn gen_coll(
 /// The assumption here being that every element in the set has the same type.
 pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<ConstrBuilder> {
     let col = match &collection.node {
-        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
+        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
+            let size =
+                if let Node::Tuple { .. } = collection.node { Some(elements.len()) } else { None };
+
             if let Some(first) = elements.first() {
                 for element in elements {
                     constr.add(
@@ -44,13 +47,21 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
                     )
                 }
                 Expect::Collection {
+                    size,
                     ty: Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
                 }
             } else {
-                Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &ExpressionAny)) }
-            },
+                Expect::Collection {
+                    size,
+                    ty: Box::from(Expected::new(&collection.pos, &ExpressionAny))
+                }
+            }
+        }
 
-        _ => Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &ExpressionAny)) }
+        _ => Expect::Collection {
+            size: None,
+            ty:   Box::from(Expected::new(&collection.pos, &ExpressionAny))
+        }
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
@@ -77,7 +88,10 @@ pub fn gen_collection_lookup(
 
     constr.add_with_identifier(
         "collection lookup",
-        &Expected::new(&lookup.pos, &Collection { ty: Box::from(Expected::try_from(lookup)?) }),
+        &Expected::new(&lookup.pos, &Collection {
+            size: None,
+            ty:   Box::from(Expected::try_from(lookup)?)
+        }),
         &Expected::try_from(col)?,
         &vars
     );

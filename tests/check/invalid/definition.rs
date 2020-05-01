@@ -104,3 +104,16 @@ fn tuple_modify_mut() {
     let source = resource_content(false, &["type", "definition"], "tuple_modify_mut.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }
+
+#[test]
+fn wrong_size_tuple() {
+    let source = resource_content(false, &["type", "definition"], "wrong_size_tuple.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+#[ignore]
+fn wrong_size_list() {
+    let source = resource_content(false, &["type", "definition"], "wrong_size_list.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
