@@ -46,7 +46,7 @@ fn empty_definition_verify() {
 
 #[test]
 fn definition_verify() {
-    let source = String::from("def a <- 10");
+    let source = String::from("def a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
@@ -64,7 +64,7 @@ fn definition_verify() {
 
 #[test]
 fn mutable_definition_verify() {
-    let source = String::from("def mut a <- 10");
+    let source = String::from("def mut a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
@@ -82,7 +82,7 @@ fn mutable_definition_verify() {
 
 #[test]
 fn private_definition_verify() {
-    let source = String::from("def private a <- 10");
+    let source = String::from("def private a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
@@ -100,7 +100,7 @@ fn private_definition_verify() {
 
 #[test]
 fn typed_definition_verify() {
-    let source = String::from("def a: Object <- 10");
+    let source = String::from("def a: Object := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
@@ -141,7 +141,7 @@ fn forward_empty_definition_verify() {
 
 #[test]
 fn forward_definition_verify() {
-    let source = String::from("def a <- MyClass forward b, c");
+    let source = String::from("def a := MyClass forward b, c");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 

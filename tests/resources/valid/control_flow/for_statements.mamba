@@ -1,14 +1,14 @@
-def b <- {1, 2}
+def b := {1, 2}
 for b in b do
     print b + 5
-    def mut new <- b + 1
-    new <- 30
+    def mut new := b + 1
+    new := 30
     print new
 
-def b <- {(1, 4), (2, 5)}
+def b := {(1, 4), (2, 5)}
 for (first, second) in b do print first + second
 
-def e <- {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+def e := {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 for d in e do
     print d
     print d - 1
@@ -21,12 +21,12 @@ for i in 0 .. 34 do
 for i in 0 ..= 345 do
     print i
 
-def a <- 1
-def b <- 112
+def a := 1
+def b := 112
 for i in a.. b step 1 do
     print "hello"
 
-def c <- 2451
+def c := 2451
 for i in a ..= c step 20 do
     print "world"
 

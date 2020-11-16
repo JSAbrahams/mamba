@@ -1,8 +1,8 @@
 class MyClass
-    def something: String <- "my string"
+    def something: String := "my string"
 
 
-def my_class <- MyClass()
-def b <- my_class.something
+def my_class := MyClass()
+def b := my_class.something
 
-def c: Int <- b
+def c: Int := b

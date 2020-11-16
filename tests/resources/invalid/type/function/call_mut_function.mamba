@@ -1,8 +1,8 @@
 class MyClass
-    def mut a: Int <- 20
+    def mut a: Int := 20
     def f(mut self, x: Int) -> Int =>
         x + 20
 
 
-def my_class <- MyClass()
+def my_class := MyClass()
 my_class.f(10)

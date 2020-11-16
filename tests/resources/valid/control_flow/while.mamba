@@ -1,8 +1,8 @@
-def b <- False
-def e <- "Hello world"
+def b := False
+def e := "Hello world"
 while b do print b
 
-def d <- True
+def d := True
 while d do
     print d and False
 

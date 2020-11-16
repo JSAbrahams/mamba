@@ -1,6 +1,6 @@
 class MyClass
-    def private (my_field, other_field): (Int, Int) <- (10, 10)
+    def private (my_field, other_field): (Int, Int) := (10, 10)
 
 
-def my_class <- MyClass()
+def my_class := MyClass()
 print my_class.other_field

@@ -1,5 +1,5 @@
-def j <- { person to city | Persons contains person, Cities contains city }
-def k <- { happy to people, hello to "world" }
+def j := { person to city | Persons contains person, Cities contains city }
+def k := { happy to people, hello to "world" }
 
-def j <- { person to city | Persons contains person, Cities contains city }
-def k <- { happy to people, hello to "world" }
+def j := { person to city | Persons contains person, Cities contains city }
+def k := { happy to people, hello to "world" }

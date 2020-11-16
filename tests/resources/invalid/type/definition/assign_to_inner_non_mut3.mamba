@@ -2,11 +2,11 @@ class A
     def mut c: C
 
 class C
-    def my_class: D <- D()
+    def my_class: D := D()
     def my_field_accessor(self) -> D => self.my_class
 
 class D
-    def mut my_field: Int <- 10
+    def mut my_field: Int := 10
 
-def mut a <- A()
-a.c.my_field_accessor().my_field <- 20
+def mut a := A()
+a.c.my_field_accessor().my_field := 20
