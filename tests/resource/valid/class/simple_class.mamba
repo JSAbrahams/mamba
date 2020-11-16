@@ -1,5 +1,5 @@
 class MyClass
     def my_function() -> Int => 10
 
-def my_class <- MyClass()
+def my_class := MyClass()
 print(my_class.my_function())

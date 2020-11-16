@@ -1,19 +1,19 @@
-def a <- True
-def b <- a
+def a := True
+def b := a
 
-def c <- False or True and False
-def d <- c and b and a
-def e <- not False
+def c := False or True and False
+def d := c and b and a
+def e := not False
 
 a and b
 c or d
 not e
 
-def f <- True
-def g <- False
-def h <- True
-def i <- True
-def j <- False
+def f := True
+def g := False
+def h := True
+def i := True
+def j := False
 
 c is d
 e isnt f

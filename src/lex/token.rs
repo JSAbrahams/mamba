@@ -187,7 +187,7 @@ impl fmt::Display for Token {
             Token::BSlash => String::from("\\"),
 
             Token::Mut => String::from("mut"),
-            Token::Assign => String::from("<-"),
+            Token::Assign => String::from(":="),
             Token::Def => String::from("def"),
 
             Token::Id(id) => id,

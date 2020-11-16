@@ -10,7 +10,7 @@ def f(x: Int) -> Int raises [MyErr1, MyErr2] =>
         else
             return x + 2
 
-def a <- f(10) handle
+def a := f(10) handle
     err: MyErr1 =>
         print "Something went wrong"
         -1

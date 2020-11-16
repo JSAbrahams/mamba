@@ -78,7 +78,7 @@ fn range_incl_verify() {
 
 #[test]
 fn reassign_verify() {
-    let source = String::from("id <- new_value");
+    let source = String::from("id := new_value");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
     let (left, right) = match ast.node {

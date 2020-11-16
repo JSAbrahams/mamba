@@ -1,6 +1,6 @@
 def do_something(x: Int) => print("hello world {x}")
 
-def my_resource <- 10
+def my_resource := 10
 
 with my_resource as other do
     do_something(other)

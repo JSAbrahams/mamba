@@ -1,1 +1,1 @@
-def my_fun(a: Int <- 10, b: Int) -> Int => a + b
+def my_fun(a: Int := 10, b: Int) -> Int => a + b

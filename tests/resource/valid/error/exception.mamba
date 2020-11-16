@@ -1,2 +1,2 @@
-def a <- Exception()
-def b <- Exception("b")
+def a := Exception()
+def b := Exception("b")

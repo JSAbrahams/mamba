@@ -3,7 +3,7 @@ def fun_a() -> Int? =>
     if True and True then print "hello"
     if False or True then print "world"
 
-    def a <- undefined ? 11
+    def a := undefined ? 11
     if True then return 10 else return undefined
 
 def fun_b(b: Int) => print b
@@ -17,8 +17,8 @@ def fun_v(y: String, ab: String -> String -> Bool) -> String -> Bool => return a
 
 class MyClass(def a: Int, def b: Int)
     def some_function(self, c: Int) -> Int =>
-        def mut d <- 20
-        d <- 10 + 30
+        def mut d := 20
+        d := 10 + 30
         return c + 20 + d
 
     def +(self, other: MyClass) -> MyClass => return MyClass(self.a + self.b + other.some_function(self.a), self.b)
