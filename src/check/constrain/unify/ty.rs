@@ -1,5 +1,5 @@
 use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Nullable,
-                                                            Raises, Type};
+                                                            Raises, Tuple, Type};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::unify::link::unify_link;
@@ -7,6 +7,8 @@ use crate::check::constrain::Unified;
 use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet, NameVariant};
 use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
+use itertools::{EitherOrBoth, Itertools};
+use EitherOrBoth::Both;
 
 pub fn unify_type(
     left: &Expected,
@@ -44,31 +46,36 @@ pub fn unify_type(
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { name }, Collection { size, ty }) => {
+        (Type { name }, Tuple { elements }) => {
             for name_ty in name.names() {
                 match name_ty.variant {
                     NameVariant::Tuple(names) => {
-                        match size {
-                            Some(size) =>
-                                if *size != names.len() {
-                                    let msg = format!(
-                                        "Cannot assign to tuple of size {} with collection of \
-                                         size {}",
-                                        names.len(),
-                                        size
-                                    );
-                                    return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                                },
-                            None => {
-                                let msg =
-                                    format!("Cannot assign to tuple if collection size unkown");
-                                return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                            }
+                        if names.len() != elements.len() {
+                            let msg = format!(
+                                "Cannot assign to tuple of size {} with tuple of size {}",
+                                names.len(),
+                                elements.len()
+                            );
+                            return Err(vec![TypeErr::new(&left.pos, &msg)]);
                         }
 
-                        for name in names {
-                            let l_ty = Expected::new(&left.pos, &Expect::Type { name });
-                            constraints.push("tuple collection", &l_ty, ty)
+                        for pair in names.iter().zip_longest(elements.iter()) {
+                            match &pair {
+                                Both(name, exp) => {
+                                    let l_ty = Expected::new(&left.pos, &Expect::Type {
+                                        name: name.clone().clone()
+                                    });
+                                    constraints.push("tuple collection", &l_ty, &exp)
+                                }
+                                _ => {
+                                    let msg = format!(
+                                        "Cannot assign {} elements to a tuple of size {}",
+                                        elements.len(),
+                                        names.len()
+                                    );
+                                    return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                                }
+                            }
                         }
                     }
                     _ => {
@@ -88,8 +95,24 @@ pub fn unify_type(
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Collection { ty: l_ty, .. }, Collection { ty: r_ty, .. }) => {
+        (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
             constraints.push("collection parameters", &l_ty, &r_ty);
+            unify_link(constraints, ctx, total + 1)
+        }
+        (Tuple { elements: l_ty }, Tuple { elements: r_ty }) => {
+            for pair in l_ty.iter().zip_longest(r_ty.iter()) {
+                match &pair {
+                    Both(name, exp) => constraints.push("tuple collection", name, exp),
+                    _ => {
+                        let msg = format!(
+                            "Tuple sizes differ. Expected {}, was {}",
+                            l_ty.len(),
+                            r_ty.len()
+                        );
+                        return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                    }
+                }
+            }
             unify_link(constraints, ctx, total + 1)
         }
 

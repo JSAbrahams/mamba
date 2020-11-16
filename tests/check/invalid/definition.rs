@@ -112,8 +112,13 @@ fn wrong_size_tuple() {
 }
 
 #[test]
-#[ignore]
-fn wrong_size_list() {
-    let source = resource_content(false, &["type", "definition"], "wrong_size_list.mamba");
+fn wrong_size_tuple_2() {
+    let source = resource_content(false, &["type", "definition"], "wrong_size_tuple_2.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn list_not_a_tuple() {
+    let source = resource_content(false, &["type", "definition"], "list_not_a_tuple.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }

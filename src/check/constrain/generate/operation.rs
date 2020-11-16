@@ -35,10 +35,7 @@ pub fn gen_op(
 
             constr.add("range from", &Expected::try_from(from)?, &int_exp);
             constr.add("range to", &Expected::try_from(to)?, &int_exp);
-            let col = Expected::new(&ast.pos, &Collection {
-                size: None,
-                ty:   Box::from(int_exp.clone())
-            });
+            let col = Expected::new(&ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
             constr.add("range collection", &col, &Expected::try_from(ast)?);
 
             if let Some(step) = step {

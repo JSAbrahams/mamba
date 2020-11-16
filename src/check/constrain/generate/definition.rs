@@ -1,9 +1,11 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
+use permutate::Permutator;
+
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::generate::generate;
 use crate::check::constrain::Constrained;
 use crate::check::context::arg::SELF;
@@ -12,7 +14,8 @@ use crate::check::context::name::{match_name, DirectName, NameUnion, Union};
 use crate::check::context::{clss, Context, LookupClass};
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
-use crate::check::result::TypeErr;
+use crate::check::result::{TypeErr, TypeResult};
+use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
 
 pub fn gen_def(
@@ -111,16 +114,15 @@ pub fn identifier_from_var(
 ) -> Constrained {
     let (mut constr, mut env, mut names) = (constr.clone(), env.clone(), vec![]);
 
+    let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
         let name = NameUnion::try_from(ty.deref())?;
-        let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         for (f_name, (f_mut, name)) in match_name(&identifier, &name, &var.pos)? {
             let ty = Expected::new(&var.pos, &Type { name: name.clone() });
             env = env.insert_var(mutable && f_mut, &f_name, &ty);
             names.push(f_name);
         }
     } else {
-        let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
         let any = Expected::new(&var.pos, &ExpressionAny);
         for (f_mut, f_name) in identifier.fields() {
             env = env.insert_var(mutable && f_mut, &f_name, &any);
@@ -129,7 +131,7 @@ pub fn identifier_from_var(
     };
 
     let var_expect = Expected::try_from(var)?;
-    match (ty, expression) {
+    let (mut constr, env) = match (ty, expression) {
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(
@@ -140,26 +142,26 @@ pub fn identifier_from_var(
             );
             let expr_expect = Expected::try_from(expr)?;
             constr.add("variable with type and expression", &var_expect, &expr_expect);
-            generate(expr, &env, ctx, &mut constr)
+            generate(expr, &env, ctx, &mut constr)?
         }
         (Some(ty), None) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(
                 "variable with type",
-                &var_expect,
                 &Expected::new(&ty.pos, &ty_exp),
+                &var_expect,
                 &names
             );
-            Ok((constr, env))
+            (constr, env)
         }
         (None, Some(expr)) => {
             constr.add_with_identifier(
                 "variable with expression",
-                &var_expect,
                 &Expected::try_from(expr)?,
+                &var_expect,
                 &names
             );
-            generate(expr, &env, ctx, &mut constr)
+            generate(expr, &env, ctx, &mut constr)?
         }
         (None, None) => {
             constr.add_with_identifier(
@@ -168,7 +170,76 @@ pub fn identifier_from_var(
                 &Expected::new(&var.pos, &ExpressionAny),
                 &names
             );
-            Ok((constr, env))
+            (constr, env)
         }
+    };
+
+    if identifier.is_tuple() {
+        let tup_exps = identifier_to_tuple(&var.pos, &identifier, &env)?;
+        match (ty, expression) {
+            (Some(ty), _) => {
+                let ty_exp = Expected::try_from(ty)?;
+                for tup_exp in tup_exps {
+                    constr.add("type and tuple", &ty_exp, &tup_exp);
+                }
+            }
+            (_, Some(expr)) => {
+                let expr_expt = Expected::try_from(expr)?;
+                if tup_exps.len() > 1 {
+                    for tup_exp in &tup_exps {
+                        println!("{:?}", tup_exp)
+                    }
+                    panic!()
+                }
+                for tup_exp in tup_exps {
+                    constr.add("tuple and expression", &tup_exp, &expr_expt);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok((constr, env.clone()))
+}
+
+// TODO do something with mutable
+// Returns every possible tuple. Elements of a tuple are not to be confused with
+// the union of types derived from the current environment.
+fn identifier_to_tuple(
+    pos: &Position,
+    iden: &Identifier,
+    env: &Environment
+) -> TypeResult<Vec<Expected>> {
+    if let Some((_, var)) = &iden.lit {
+        let expected = env.get_var(var);
+
+        if let Some(expected) = expected {
+            Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
+        } else {
+            let msg = format!("{} is undefined in this scope", iden);
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
+    } else {
+        // Every item in the tuple is a union of expected
+        let tuple_unions: Vec<Vec<Expected>> = iden
+            .names
+            .iter()
+            .map(|i| identifier_to_tuple(pos, i, env))
+            .collect::<Result<_, _>>()?;
+
+        // .. So we create permutation of every possible tuple combination
+        let tuple_unions: Vec<Vec<&Expected>> = tuple_unions.iter()
+            .map(|list| list.iter().map(AsRef::as_ref).collect())
+            .collect();
+        let tuple_unions: Vec<&[&Expected]> = tuple_unions.iter().map(AsRef::as_ref).collect();
+        let permutations: Vec<Vec<&Expected>> = Permutator::new(&tuple_unions[..]).collect();
+
+        Ok(permutations
+            .into_iter()
+            .map(|elements| {
+                let elements = elements.into_iter().map(|e| e.clone()).collect();
+                Expected::new(pos, &Expect::Tuple { elements })
+            })
+            .collect())
     }
 }

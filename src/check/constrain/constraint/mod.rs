@@ -12,14 +12,13 @@ pub mod iterator;
 
 #[derive(Clone, Debug)]
 pub struct Constraint {
-    pub is_flag:    bool,
-    pub is_sub:     bool,
-    pub is_gen:     bool,
-    pub is_flipped: bool,
-    pub ids:        Vec<String>,
-    pub msg:        String,
-    pub parent:     Expected,
-    pub child:      Expected
+    pub is_flag: bool,
+    pub is_sub:  bool,
+    pub is_gen:  bool,
+    pub ids:     Vec<String>,
+    pub msg:     String,
+    pub parent:  Expected,
+    pub child:   Expected
 }
 
 impl Display for Constraint {
@@ -45,28 +44,26 @@ impl Display for Constraint {
         } else {
             format!("[{}]", self.parent)
         };
-        let eq = if self.is_flipped { "<=" } else { ">=" };
         let child = if self.child.is_expr() {
             format!("{}", self.child)
         } else {
             format!("[{}]", self.child)
         };
 
-        write!(f, "{}{} {} {}", flags, parent, eq, child)
+        write!(f, "{}{} == {}", flags, parent, child)
     }
 }
 
 impl Constraint {
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
         Constraint {
-            parent:     parent.clone(),
-            child:      child.clone(),
-            is_flipped: false,
-            is_gen:     false,
-            msg:        String::from(msg),
-            ids:        vec![],
-            is_flag:    false,
-            is_sub:     false
+            parent:  parent.clone(),
+            child:   child.clone(),
+            is_gen:  false,
+            msg:     String::from(msg),
+            ids:     vec![],
+            is_flag: false,
+            is_sub:  false
         }
     }
 

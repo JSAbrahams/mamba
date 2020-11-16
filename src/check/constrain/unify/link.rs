@@ -1,5 +1,5 @@
 use crate::check::constrain::constraint::expected::Expect::{Access, Collection, Expression,
-                                                            Function, Nullable, Type};
+                                                            Function, Nullable, Tuple, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::expression::unify_expression;
@@ -19,7 +19,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 
         let pos = format!("({}={}) ", left.pos.start, right.pos.start);
         let count = total - constraints.len();
-        let unify = format!("[unifying {}\\{}] ", count, total);
+        let unify = format!("[{}\\{}] ", count, total);
         let msg = if constraint.msg.is_empty() {
             String::new()
         } else {
@@ -45,6 +45,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             (_, Type { .. }) => unify_type(&right, &left, constraints, ctx, total),
             (Collection { .. }, Collection { .. }) =>
                 unify_type(&right, &left, constraints, ctx, total),
+            (Tuple { .. }, Tuple { .. }) => unify_type(&right, &left, constraints, ctx, total),
 
             _ => {
                 let mut constr = reinsert(constraints, &constraint, total)?;

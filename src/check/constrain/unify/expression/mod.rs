@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::check::constrain::constraint::expected::Expect::{Collection, Expression, ExpressionAny};
+use crate::check::constrain::constraint::expected::Expect::{Collection, Expression, ExpressionAny,
+                                                            Tuple};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
@@ -11,6 +12,7 @@ use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::Node;
+use itertools::{EitherOrBoth, Itertools};
 
 mod substitute;
 
@@ -23,40 +25,61 @@ pub fn unify_expression(
     total: usize
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (Expression { ast }, ExpressionAny) => match &ast.node {
-            Node::FunctionCall { .. } | Node::PropertyCall { .. } => {
-                // may be expression, defer in case substituted
-                reinsert(constraints, constraint, total)?;
-                unify_link(constraints, ctx, total)
-            }
-            node if node.trivially_expression() => {
-                let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
-                unify_link(&mut constr, ctx, total)
-            }
-            _ => Err(vec![TypeErr::new(
-                &ast.pos,
-                &format!("Expected an expression but was {}", ast.node)
-            )])
-        },
+        (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
+            match &ast.node {
+                Node::FunctionCall { .. } | Node::PropertyCall { .. } => {
+                    // may be expression, defer in case substituted
+                    reinsert(constraints, constraint, total)?;
+                    unify_link(constraints, ctx, total)
+                }
+                node if node.trivially_expression() => {
+                    let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
+                    unify_link(&mut constr, ctx, total)
+                }
+                _ => Err(vec![TypeErr::new(
+                    &ast.pos,
+                    &format!("Expected an expression but was {}", ast.node)
+                )])
+            },
 
-        (Expression { ast }, Collection { size, ty }) => {
+        (Expression { ast }, Collection { ty }) | (Collection { ty }, Expression { ast }) => {
             let mut pushed = 0;
             match &ast.node {
-                Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
-                    if let Some(size) = size {
-                        if elements.len() != *size {
-                            let msg = format!(
-                                "Collection sizes not equal, expected {}, was {}",
-                                elements.len(),
-                                size
-                            );
-                            return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                        }
-                    }
-
+                Node::Set { elements } | Node::List { elements } =>
                     for e in elements {
                         constraints.push("expression and collection", &Expected::try_from(e)?, ty);
                         pushed += 1;
+                    },
+                _ => {}
+            }
+
+            let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
+            unify_link(&mut constr, ctx, total + pushed)
+        }
+
+        (Expression { ast }, Tuple { elements }) | (Tuple { elements }, Expression { ast }) => {
+            let mut pushed = 0;
+            match &ast.node {
+                Node::Tuple { elements: tuple_els } => {
+                    for pair in elements.iter().zip_longest(tuple_els.iter()) {
+                        match pair {
+                            EitherOrBoth::Both(tuple_exp, expr_ast) => {
+                                constraints.push(
+                                    "expression and tuple",
+                                    tuple_exp,
+                                    &Expected::try_from(expr_ast)?
+                                );
+                                pushed += 1;
+                            }
+                            _ => {
+                                let msg = format!(
+                                    "Expected tuple of size {}, was {}",
+                                    elements.len(),
+                                    tuple_els.len()
+                                );
+                                return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                            }
+                        }
                     }
                 }
                 _ => {}

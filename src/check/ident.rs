@@ -14,6 +14,10 @@ pub struct Identifier {
 }
 
 impl Identifier {
+    pub fn is_tuple(&self) -> bool { self.names.len() > 1 }
+}
+
+impl Identifier {
     pub fn fields(&self) -> Vec<(bool, String)> {
         if let Some(lit) = &self.lit {
             vec![lit.clone()]

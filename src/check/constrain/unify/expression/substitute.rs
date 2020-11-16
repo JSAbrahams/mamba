@@ -28,7 +28,14 @@ pub fn substitute(
             ($new:expr) => {{
                 let pos =
                     format!("({}={}) ", old_constr.parent.pos.start, old_constr.child.pos.start);
-                trace!("{:width$} [substitute] {} ===> {}", pos, old_constr, $new, width = 17);
+                trace!(
+                    "{:width$} [substitute] {} {} ===> {}",
+                    pos,
+                    old_constr.msg,
+                    old_constr,
+                    $new,
+                    width = 17
+                );
             }};
         };
 
@@ -80,9 +87,9 @@ fn recursive_substitute(
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(&inspected.pos, &expect))
         }
-        Expect::Collection { size, ty } => {
+        Expect::Collection { ty } => {
             let (subs_ty, ty) = recursive_substitute(side, ty, old, new);
-            let expect = Expect::Collection { size: size.clone(), ty: Box::from(ty) };
+            let expect = Expect::Collection { ty: Box::from(ty) };
             (subs_ty, Expected::new(&inspected.pos, &expect))
         }
         Expect::Function { name, args } => {
