@@ -129,7 +129,7 @@ fn parse_fun_def(id: &AST, pure: bool, private: bool, it: &mut LexIterator) -> P
     };
 
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", &start)?;
-    let raises = it.parse_vec_if(&Token::Raises, &parse_raises, "raises", &start)?;
+    let raises = it.parse_vec_if(&Token::Raise, &parse_raises, "raises", &start)?;
     let body = it.parse_if(&Token::BTo, &parse_expr_or_stmt, "function body", &start)?;
 
     let end = match (&ret_ty, &raises.last(), &body) {

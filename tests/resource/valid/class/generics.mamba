@@ -9,7 +9,7 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped 
     def private z_modified: String := "asdf"
     def private mut other_field: Int := 10
 
-    def init(mut self, other_field: Int, z: Int) raises [Err1] =>
+    def init(mut self, other_field: Int, z: Int) raise [Err1] =>
         if z > 10 then raise Err1("Something is wrong!")
         self.z_modified := "fdsa"
 
@@ -36,7 +36,7 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped 
 
         print a
 
-    def error_function(self) -> Int raises [Err, Err2] => 200
+    def error_function(self) -> Int raise [Err, Err2] => 200
 
     def connect(mut self) => self.other_field := 200
 

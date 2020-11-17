@@ -30,7 +30,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 
     it.peek(
         &|it, lex| match lex.token {
-            Token::Raises => parse_raise(*result.clone(), it),
+            Token::Raise => parse_raise(*result.clone(), it),
             Token::Handle => parse_handle(*result.clone(), it),
             _ => Ok(result.clone())
         },
@@ -40,7 +40,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_raise(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
     let start = &it.start_pos("raise")?;
-    it.eat(&Token::Raises, "raise")?;
+    it.eat(&Token::Raise, "raise")?;
 
     it.eat(&Token::LSBrack, "raise")?;
     let errors = it.parse_vec(&parse_generics, "raise", start)?;

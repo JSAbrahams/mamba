@@ -252,7 +252,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "in" => Token::In,
 
-        "raises" => Token::Raises,
         "raise" => Token::Raise,
         "handle" => Token::Handle,
         "when" => Token::When,
