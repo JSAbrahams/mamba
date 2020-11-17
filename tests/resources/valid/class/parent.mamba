@@ -2,5 +2,5 @@ type MyType
     def fun_a(self)
     def factorial(self, x: Int) -> Int
 
-class MyClass1 isa MyType("asdf")
+class MyClass1: MyType("asdf")
     def other: Int

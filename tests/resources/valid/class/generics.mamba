@@ -1,11 +1,11 @@
 class Err1(msg: String) isa Exception(msg)
 class Err2(msg: String) isa Exception(msg)
 
-class MyGeneric isa String
+class MyGeneric: String
 
 class MyType[A isa MyGeneric, C](def super_field: String)
 
-class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped over the slow donkey")
+class MyClass2[C, A isa MyGeneric]: MyType[A, C]("the quick brown fox jumped over the slow donkey")
     def private z_modified: String := "asdf"
     def private mut other_field: Int := 10
 

@@ -1,8 +1,8 @@
 class MyGeneric isa String
 class MyType(def mut some_field: String)
 
-type SomeState isa MyClass when self.private_field > 2
-type OtherState isa MyClass when
+type SomeState: MyClass when self.private_field > 2
+type OtherState: MyClass when
     self.private_field  > 10
     self.private_field  < 200
     self.required_field < 50
@@ -10,12 +10,12 @@ type OtherState isa MyClass when
 type SuperInterface
     def bar: Int
 
-type MyInterface isa SuperInterface
+type MyInterface: SuperInterface
     def required_field: Int
     def higher_order(self) -> int
 
 # this class has no state
-class MyClass(def my_field: Int, other_field: String := "Hello") isa MyType(other_field), MyInterface
+class MyClass(def my_field: Int, other_field: String := "Hello"): MyType(other_field), MyInterface
     def required_field: Int := 100
     def private mut private_field: Int := 20
 
