@@ -69,7 +69,7 @@ We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
-class ServerError(def message: String) isa Exception(message)
+class ServerError(def message: String): Exception(message)
 
 class MyServer(def ip_address: IPv4Address)
     def mut is_connected: Bool           := false
@@ -103,7 +103,7 @@ def some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 http_server.connect()
-if my_server.is_connected then http_serve.send "Hello World!"
+if my_server.is_connected then http_server.send "Hello World!"
 
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
@@ -127,9 +127,9 @@ type Server
     def send(message): (String) -> () raise [ServerErr]
     def disconnect():  () -> ()
 
-class ServerError(def message: String) isa Exception(message)
+class ServerError(def message: String): Exception(message)
 
-class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa Server
+class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address): Server
     def mut is_connected: Bool           := false
     def mut private last_message: String := undefined
 
@@ -143,8 +143,8 @@ class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa 
 
     def disconnect(mut self: ConnectedMyServer) => self.is_connected := false
 
-type ConnectedMyServer isa MyServer when self.is_connected
-type DisconnectedMyServer isa MyServer when not self.is_connected
+type ConnectedMyServer: MyServer when self.is_connected
+type DisconnectedMyServer: MyServer when not self.is_connected
 ```
 
 Notice how above, we define the type of `self`.
@@ -173,7 +173,7 @@ if my_server isa ConnectedMyServer then my_server.disconnect()
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 ```mamba
-type PositiveInt isa Int when 
+type PositiveInt: Int when 
     self >= 0
 
 def factorial (x: PositiveInt) -> PositiveInt => match x
