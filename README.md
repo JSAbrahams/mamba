@@ -72,13 +72,13 @@ class MyServer(def ip_address: IPv4Address)
     def mut is_connected: Bool           := false
     def mut private last_message: String := undefined
 
-    def last_sent(self) raises [ServerError] => if self.last_message /= undefined 
+    def last_sent(self) raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
     def connect(mut self) => self.is_connected := true
 
-    def send(mut self, message: String) raises [ServerError] => if self.is_connected 
+    def send(mut self, message: String) raise [ServerError] => if self.is_connected 
         then self.last_message := message
         else raise ServerError("Not connected!")
 
@@ -104,7 +104,7 @@ if my_server.is_connected then http_serve.send "Hello World!"
 
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
-print "last message sent before disconnect: \"{my_server.last_sent()}\"." raises [ServerError]
+print "last message sent before disconnect: \"{my_server.last_sent()}\"." raise [ServerError]
 my_server.disconnect()
 ```
 
@@ -120,8 +120,8 @@ import ipaddress
 type Server
     def ip_address: IPv4Address
 
-    def connect():     () -> ()       raises [ServerErr]
-    def send(message): (String) -> () raises [ServerErr]
+    def connect():     () -> ()       raise [ServerErr]
+    def send(message): (String) -> () raise [ServerErr]
     def disconnect():  () -> ()
 
 class ServerError(def message: String) isa Exception(message)
@@ -164,7 +164,7 @@ if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
     my_server.send "Hello World!"
 
-print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerErr]
+print "last message sent before disconnect: \"{my_server.last_sent}\"." raise [ServerErr]
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
@@ -280,8 +280,8 @@ def a := function_may_throw_err() handle
 print "a has value {a}."
 ```
 
-If we don't want to use a `handle`, we can simply use `raises` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
-See the sections above for examples where we don't handle errors and simply pass them on using `raises`.
+If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
+See the sections above for examples where we don't handle errors and simply pass them on using `raise`.
 
 ## Project Structure
 

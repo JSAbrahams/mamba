@@ -106,7 +106,6 @@ pub enum Token {
     Dedent,
     Underscore,
 
-    Raises,
     Raise,
     When,
 
@@ -267,7 +266,6 @@ impl fmt::Display for Token {
             Token::Question => String::from("?"),
 
             Token::Handle => String::from("handle"),
-            Token::Raises => String::from("raises"),
             Token::Raise => String::from("raise"),
             Token::When => String::from("when"),
 
