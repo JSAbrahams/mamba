@@ -1,6 +1,6 @@
 class MyClass
-    def mut a: Int := 20
-    def f(mut self, x: Int) -> Int =>
+    def a: Int := 20
+    def f(self, x: Int) -> Int =>
         x + 20
 
 

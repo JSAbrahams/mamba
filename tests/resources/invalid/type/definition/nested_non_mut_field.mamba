@@ -1,9 +1,9 @@
 class B
-    def mut my_num: Int := 10
+    def my_num: Int := 10
 
 class A
-    def b: B
+    def fin b: B
 
 
-def mut a := A()
+def a := A()
 a.b.my_num := 20

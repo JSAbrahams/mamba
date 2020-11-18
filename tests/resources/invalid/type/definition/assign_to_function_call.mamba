@@ -2,8 +2,8 @@ class A
     def c: C
 
 class C
-    def my_field: Int := 10
+    def fin my_field: Int := 10
     def my_field_accessor(self) -> Int => self.my_field
 
-def mut a := A()
+def a := A()
 a.c.my_field_accessor() := 20

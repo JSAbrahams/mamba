@@ -1,5 +1,5 @@
 class MyClass
-    def mut my_field: Int := 10
+    def my_field: Int := 10
 
 
 def (a, b) := (MyClass(), 10)

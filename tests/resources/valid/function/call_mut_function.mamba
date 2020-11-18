@@ -1,10 +1,10 @@
 class MyClass
-    def mut a: Int := 20
-    def f(mut self, x: Int) -> Int =>
+    def a: Int := 20
+    def f(self, x: Int) -> Int =>
         self.a := x
         def y := x + 230
         self.a + y
 
 
-def mut my_class := MyClass()
+def my_class := MyClass()
 my_class.f(10)
