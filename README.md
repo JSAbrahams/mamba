@@ -41,7 +41,6 @@ Functions written in Python can be called in Mamba and vice versa (from the gene
 
 Below are some code examples to showcase the features of Mamba.
 We highlight how functions work, how de define classes, how types and type refinement features are applied, how Mamba can be used to ensure pureness, and how error handling works.
-For more extensive examples and explanations check out the [documentation](https://joelabrahams.nl/mamba_doc).
 
 ### ➕ Functions
 
@@ -65,11 +64,15 @@ This means that the compiler will check for us that factorial is only used with 
 ### 📋 Classes and mutability
 
 Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
+If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its fields.
+We can do the same for any field.
 We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
 class ServerError(def message: String): Exception(message)
+
+def fin always_the_same_message = "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool           := false
@@ -79,7 +82,9 @@ class MyServer(def ip_address: IPv4Address)
         then message
         else raise ServerError("No last message!")
 
-    def connect(self) => self.is_connected := true
+    def connect(self) =>
+        self.is_connected := true
+        print always_the_same_message
 
     def send(self, message: String) raise [ServerError] => if self.is_connected 
         then self.last_message := message
@@ -156,7 +161,7 @@ For each type, we use `when` to show that it is a type refinement, which certain
 import ipaddress
 from server import MyServer
 
-def some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
@@ -217,12 +222,12 @@ def pure sin(x: Int) =>
 ```
 
 We can add `pure` to the top of a file, which ensures all functions in said file are pure.
-This is useful when we want to write multiple pure functions.
+This is useful when we want to write multiple pure functions, for instance in a utility file.
 
 ```mamba
 pure
 
-def taylor := 7
+def fin taylor := 7
 
 def sin(x: Int): Real =>
     def ans := x
@@ -251,7 +256,7 @@ In that case, we must handle the case where `my_server` throws a `ServerErr`:
 import ipaddress
 from server import MyServer
 
-def some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 def message := "Hello World!"
