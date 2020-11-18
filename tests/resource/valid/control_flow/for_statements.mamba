@@ -1,7 +1,7 @@
 def b := {1, 2}
 for b in b do
     print b + 5
-    def mut new := b + 1
+    def new := b + 1
     new := 30
     print new
 

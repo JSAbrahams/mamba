@@ -72,20 +72,20 @@ import ipaddress
 class ServerError(def message: String): Exception(message)
 
 class MyServer(def ip_address: IPv4Address)
-    def mut is_connected: Bool           := false
-    def mut private last_message: String := undefined
+    def is_connected: Bool           := false
+    def private last_message: String := undefined
 
-    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
+    def last_sent(fin self) String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
-    def connect(mut self) => self.is_connected := true
+    def connect(self) => self.is_connected := true
 
-    def send(mut self, message: String) raise [ServerError] => if self.is_connected 
+    def send(self, message: String) raise [ServerError] => if self.is_connected 
         then self.last_message := message
         else raise ServerError("Not connected!")
 
-    def disconnect(mut self) => self.is_connected := false
+    def disconnect(self) => self.is_connected := false
 ```
 
 Notice how:
@@ -99,7 +99,7 @@ Which we can then use as follows in our script:
 import ipaddress
 from server import MyServer
 
-def some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 http_server.connect()
@@ -129,19 +129,19 @@ type Server
 
 class ServerError(def message: String): Exception(message)
 
-class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address): Server
-    def mut is_connected: Bool           := false
-    def mut private last_message: String := undefined
+class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
+    def is_connected: Bool           := false
+    def private last_message: String := undefined
 
     def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
-    def connect(mut self: DisconnectedMyServer) => self.is_connected := true
+    def connect(self: DisconnectedMyServer) => self.is_connected := true
 
-    def send(mut self: ConnectedMyServer, message: String) => self.last_message := message
+    def send(self: ConnectedMyServer, message: String) => self.last_message := message
 
-    def disconnect(mut self: ConnectedMyServer) => self.is_connected := false
+    def disconnect(self: ConnectedMyServer) => self.is_connected := false
 
 type ConnectedMyServer: MyServer when self.is_connected
 type DisconnectedMyServer: MyServer when not self.is_connected
@@ -210,7 +210,7 @@ def taylor := 7
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) =>
-    def mut ans := x
+    def ans := x
     for i in 1 ..= taylor step 2 do
         ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
@@ -225,12 +225,12 @@ pure
 def taylor := 7
 
 def sin(x: Int): Real =>
-    def mut ans := x
+    def ans := x
     for i in 1 ..= taylor step 2 do ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
     
 def cos(x: Int): Real =>
-    def mut ans := x
+    def ans := x
     for i in 0 .. taylor step 2 do ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```

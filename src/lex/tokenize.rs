@@ -221,7 +221,7 @@ fn as_op_or_id(string: String) -> Token {
         "init" => Token::Init,
 
         "def" => Token::Def,
-        "mut" => Token::Mut,
+        "fin" => Token::Fin,
         "and" => Token::And,
         "or" => Token::Or,
         "not" => Token::Not,

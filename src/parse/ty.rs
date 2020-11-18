@@ -200,7 +200,7 @@ pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_expression_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression type")?;
-    let mutable = it.eat_if(&Token::Mut).is_some();
+    let mutable = it.eat_if(&Token::Fin).is_none();
 
     let expr = it.parse(&parse_id, "expression type", &start)?;
     let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression type", &start)?;
