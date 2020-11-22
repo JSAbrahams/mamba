@@ -130,50 +130,6 @@ pub fn identifier_from_var(
         }
     };
 
-    let var_expect = Expected::try_from(var)?;
-    let (mut constr, env) = match (ty, expression) {
-        (Some(ty), Some(expr)) => {
-            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
-            constr.add_with_identifier(
-                "variable with type and expression",
-                &Expected::new(&ty.pos, &ty_exp),
-                &var_expect,
-                &names
-            );
-            let expr_expect = Expected::try_from(expr)?;
-            constr.add("variable with type and expression", &var_expect, &expr_expect);
-            generate(expr, &env, ctx, &mut constr)?
-        }
-        (Some(ty), None) => {
-            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
-            constr.add_with_identifier(
-                "variable with type",
-                &Expected::new(&ty.pos, &ty_exp),
-                &var_expect,
-                &names
-            );
-            (constr, env)
-        }
-        (None, Some(expr)) => {
-            constr.add_with_identifier(
-                "variable with expression",
-                &Expected::try_from(expr)?,
-                &var_expect,
-                &names
-            );
-            generate(expr, &env, ctx, &mut constr)?
-        }
-        (None, None) => {
-            constr.add_with_identifier(
-                "variable",
-                &var_expect,
-                &Expected::new(&var.pos, &ExpressionAny),
-                &names
-            );
-            (constr, env)
-        }
-    };
-
     if identifier.is_tuple() {
         let tup_exps = identifier_to_tuple(&var.pos, &identifier, &env)?;
         match (ty, expression) {
@@ -192,14 +148,56 @@ pub fn identifier_from_var(
                     panic!()
                 }
                 for tup_exp in tup_exps {
-                    constr.add("tuple and expression", &tup_exp, &expr_expt);
+                    constr.add("tuple and expression", &expr_expt, &tup_exp);
                 }
             }
             _ => {}
         }
     }
 
-    Ok((constr, env.clone()))
+    let var_expect = Expected::try_from(var)?;
+    match (ty, expression) {
+        (Some(ty), Some(expr)) => {
+            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
+            constr.add_with_identifier(
+                "variable with type and expression",
+                &Expected::new(&ty.pos, &ty_exp),
+                &var_expect,
+                &names
+            );
+            let expr_expect = Expected::try_from(expr)?;
+            constr.add("variable with type and expression", &var_expect, &expr_expect);
+            generate(expr, &env, ctx, &mut constr)
+        }
+        (Some(ty), None) => {
+            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
+            constr.add_with_identifier(
+                "variable with type",
+                &Expected::new(&ty.pos, &ty_exp),
+                &var_expect,
+                &names
+            );
+            Ok((constr, env))
+        }
+        (None, Some(expr)) => {
+            constr.add_with_identifier(
+                "variable with expression",
+                &Expected::try_from(expr)?,
+                &var_expect,
+                &names
+            );
+            generate(expr, &env, ctx, &mut constr)
+        }
+        (None, None) => {
+            constr.add_with_identifier(
+                "variable",
+                &var_expect,
+                &Expected::new(&var.pos, &ExpressionAny),
+                &names
+            );
+            Ok((constr, env))
+        }
+    }
 }
 
 // TODO do something with mutable
@@ -228,9 +226,8 @@ fn identifier_to_tuple(
             .collect::<Result<_, _>>()?;
 
         // .. So we create permutation of every possible tuple combination
-        let tuple_unions: Vec<Vec<&Expected>> = tuple_unions.iter()
-            .map(|list| list.iter().map(AsRef::as_ref).collect())
-            .collect();
+        let tuple_unions: Vec<Vec<&Expected>> =
+            tuple_unions.iter().map(|list| list.iter().map(AsRef::as_ref).collect()).collect();
         let tuple_unions: Vec<&[&Expected]> = tuple_unions.iter().map(AsRef::as_ref).collect();
         let permutations: Vec<Vec<&Expected>> = Permutator::new(&tuple_unions[..]).collect();
 

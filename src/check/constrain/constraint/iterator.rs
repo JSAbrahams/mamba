@@ -32,7 +32,9 @@ impl Constraints {
     /// Only used during unification stage.
     /// Marks constraint as generated.
     pub fn push(&mut self, msg: &str, parent: &Expected, child: &Expected) {
-        self.constraints.push_front(Constraint::new(msg, parent, child).as_gen())
+        let constraint = Constraint::new(msg, parent, child).as_gen();
+        trace!("{:width$}[{}] {}", "", "generated", constraint, width = 18);
+        self.constraints.push_front(constraint)
     }
 
     /// Append in_class and constraints of constraints to self

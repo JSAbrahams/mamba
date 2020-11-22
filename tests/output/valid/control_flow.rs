@@ -17,7 +17,5 @@ fn while_ast_verify() -> Result<(), Vec<String>> {
 
 #[test]
 fn match_ast_verify() -> Result<(), Vec<String>> {
-    loggerv::Logger::new().verbosity(3).init().unwrap();
-
     test_directory(true, &["control_flow"], &["control_flow", "target"], "match")
 }

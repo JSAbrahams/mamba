@@ -46,7 +46,7 @@ pub fn unify_type(
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
-        (Type { name }, Tuple { elements }) => {
+        (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
             for name_ty in name.names() {
                 match name_ty.variant {
                     NameVariant::Tuple(names) => {
@@ -105,7 +105,7 @@ pub fn unify_type(
                     Both(name, exp) => constraints.push("tuple collection", name, exp),
                     _ => {
                         let msg = format!(
-                            "Tuple sizes differ. Expected {}, was {}",
+                            "Tuple sizes differ. Expected {} elements, was {}",
                             l_ty.len(),
                             r_ty.len()
                         );

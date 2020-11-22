@@ -50,12 +50,11 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
 
             ("collection", Expect::Collection { ty })
         }
-        Node::Tuple { elements } => ("tuple", Expect::Tuple {
-            elements: elements
-                .iter()
-                .map(|ast| Expected::try_from(ast))
-                .collect::<Result<_, _>>()?
-        }),
+        Node::Tuple { elements } => {
+            let elements =
+                elements.iter().map(|ast| Expected::try_from(ast)).collect::<Result<_, _>>()?;
+            ("tuple", Expect::Tuple { elements })
+        }
 
         _ => ("collection", Expect::Collection {
             ty: Box::from(Expected::new(&collection.pos, &ExpressionAny))
