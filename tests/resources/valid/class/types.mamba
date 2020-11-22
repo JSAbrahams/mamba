@@ -1,4 +1,4 @@
-class MyGeneric isa String
+class MyGeneric: String
 class MyType(def mut some_field: String)
 
 type SomeState: MyClass when self.private_field > 2

@@ -72,7 +72,7 @@ class MyServer(def ip_address: IPv4Address)
     def mut is_connected: Bool           := false
     def mut private last_message: String := undefined
 
-    def last_sent(self) raise [ServerError] => if self.last_message /= undefined 
+    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
@@ -130,7 +130,7 @@ class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address): Ser
     def mut is_connected: Bool           := false
     def mut private last_message: String := undefined
 
-    def last_sent(self): String => if self.last_message /= undefined 
+    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 

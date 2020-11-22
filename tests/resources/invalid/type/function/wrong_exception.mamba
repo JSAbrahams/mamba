@@ -1,5 +1,5 @@
-class Err1(msg: String) isa Exception(msg)
-class Err2(msg: String) isa Exception(msg)
+class Err1(msg: String): Exception(msg)
+class Err2(msg: String): Exception(msg)
 
 def f(x: Int) -> Int raise [Err1] =>
     if x = 0 then

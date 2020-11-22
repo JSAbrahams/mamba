@@ -1,4 +1,4 @@
-class MyErr isa Exception
+class MyErr: Exception
 
 def f(x: Int) raise [MyErr] => print "nothing"
 def g(x: Int) => f(x)

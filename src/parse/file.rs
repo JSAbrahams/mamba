@@ -120,7 +120,7 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("type definition")?;
     it.eat(&Token::Type, "type definition")?;
     let ty = it.parse(&parse_type, "type definition", &start)?;
-    let isa = it.parse_if(&Token::IsA, &parse_parent, "type parent", &start)?;
+    let isa = it.parse_if(&Token::DoublePoint, &parse_parent, "type parent", &start)?;
 
     it.peek(
         &|it, lex| match lex.token {
