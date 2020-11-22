@@ -37,7 +37,7 @@ fn empty_definition_verify() {
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
     assert_eq!(private, false);
-    assert_eq!(mutable, false);
+    assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(expression, None);
@@ -51,7 +51,7 @@ fn definition_verify() {
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
     assert_eq!(private, false);
-    assert_eq!(mutable, false);
+    assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(forward, vec![]);
@@ -64,12 +64,12 @@ fn definition_verify() {
 
 #[test]
 fn mutable_definition_verify() {
-    let source = String::from("def mut a := 10");
+    let source = String::from("def fin a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
     assert_eq!(private, false);
-    assert_eq!(mutable, true);
+    assert_eq!(mutable, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(forward, vec![]);
@@ -87,7 +87,7 @@ fn private_definition_verify() {
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
     assert_eq!(private, true);
-    assert_eq!(mutable, false);
+    assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
     assert_eq!(forward, vec![]);
@@ -117,7 +117,7 @@ fn typed_definition_verify() {
     };
 
     assert_eq!(private, false);
-    assert_eq!(mutable, false);
+    assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(forward, vec![]);
     assert_eq!(expr.node, Node::Int { lit: String::from("10") });
@@ -131,7 +131,7 @@ fn forward_empty_definition_verify() {
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
     assert_eq!(private, false);
-    assert_eq!(mutable, false);
+    assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(expression, None);
     assert_eq!(forward.len(), 2);
@@ -146,7 +146,7 @@ fn forward_definition_verify() {
     let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
     assert_eq!(private, false);
-    assert_eq!(mutable, false);
+    assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(expression.unwrap().node, Node::Id { lit: String::from("MyClass") });
     assert_eq!(forward.len(), 2);
@@ -156,7 +156,7 @@ fn forward_definition_verify() {
 
 #[test]
 fn function_definition_verify() {
-    let source = String::from("def f(b: Something, vararg c) => d");
+    let source = String::from("def f(fin b: Something, vararg c) => d");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast);
 
@@ -184,7 +184,7 @@ fn function_definition_verify() {
             assert_eq!(id2.node, Node::Id { lit: String::from("c") });
 
             assert!(!mut1);
-            assert!(!mut2);
+            assert!(mut2);
 
             match ty1.clone().unwrap().node {
                 Node::Type { id, generics } => {
@@ -240,7 +240,7 @@ fn function_pure_definition_verify() {
 
 #[test]
 fn function_definition_with_literal_verify() {
-    let source = String::from("def f(x, vararg mut b: Something) => d");
+    let source = String::from("def f(x, vararg b: Something) => d");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
     let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast);
 
@@ -263,7 +263,7 @@ fn function_definition_with_literal_verify() {
             assert!(!v1.clone());
             assert!(v2.clone());
 
-            assert!(!mut1.clone());
+            assert!(mut1.clone());
             assert!(mut2.clone());
 
             assert_eq!(id1.node, Node::Id { lit: String::from("x") });

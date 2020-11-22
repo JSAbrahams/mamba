@@ -201,11 +201,9 @@ When we make a function `pure`, it cannot:
     Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
 -   Call impure functions.
 
-With the above properties, we can ensure that a function is pure.
-`pure` is similar to `mut`.
 When a function is `pure`, its output is always the same for a given input.
-When a variable is immutable, when we omit `mut`, it can never change.
-So, `pure` is a property of functions, and `mut` is a property of variables.
+When a variable is immutable, when we add `fin`, it can never change.
+So, `pure` is a property of functions, and `fin` is a property of variables.
 
 ```mamba
 def taylor := 7
