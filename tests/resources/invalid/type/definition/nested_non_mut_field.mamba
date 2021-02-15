@@ -1,9 +1,9 @@
 class B
-    def mut my_num: Int <- 10
+    def mut my_num: Int := 10
 
 class A
     def b: B
 
 
-def mut a <- A()
-a.b.my_num <- 20
+def mut a := A()
+a.b.my_num := 20

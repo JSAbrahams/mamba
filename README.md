@@ -19,7 +19,7 @@
 # Mamba
 
 This is the Mamba programming language. 
-The Documentation can be found [here](https://joelabrahams.nl/mamba_doc).
+The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
@@ -48,9 +48,9 @@ def factorial(x: Int) -> Int => match x
     0 => 1
     n => n * factorial(n - 1)
 
-def num <- input "Compute factorial: "
+def num := input "Compute factorial: "
 if num.is_digit() then
-    def result <- factorial(int(num))
+    def result := factorial(int(num))
     print "Factorial {num} is: {result}."
 else
     print "Input was not an integer."
@@ -66,29 +66,29 @@ We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
-class ServerError(def message: String) isa Exception(message)
+class ServerError(def message: String): Exception(message)
 
 class MyServer(def ip_address: IPv4Address)
-    def mut is_connected: Bool           <- false
-    def mut private last_message: String <- undefined
+    def mut is_connected: Bool           := false
+    def mut private last_message: String := undefined
 
-    def last_sent(self) raises [ServerError] => if self.last_message /= undefined 
+    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
-    def connect(mut self) => self.is_connected <- true
+    def connect(mut self) => self.is_connected := true
 
-    def send(mut self, message: String) raises [ServerError] => if self.is_connected 
-        then self.last_message <- message
+    def send(mut self, message: String) raise [ServerError] => if self.is_connected 
+        then self.last_message := message
         else raise ServerError("Not connected!")
 
-    def disconnect(mut self) => self.is_connected <- false
+    def disconnect(mut self) => self.is_connected := false
 ```
 
 Notice how:
 -   `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
 -   `last_message` is private, denoted by the `private` keyword.
-    This means that we cannot access is directly, meaning we cannot for instance do `server.last_message <- "Mischief"`.
+    This means that we cannot access is directly, meaning we cannot for instance do `server.last_message := "Mischief"`.
     Instead, we call `server.last_sent`.
 
 Which we can then use as follows in our script:
@@ -96,15 +96,15 @@ Which we can then use as follows in our script:
 import ipaddress
 from server import MyServer
 
-def some_ip   <- ipaddress.ip_address "151.101.193.140"
-def my_server <- MyServer(some_ip)
+def some_ip   := ipaddress.ip_address "151.101.193.140"
+def my_server := MyServer(some_ip)
 
 http_server.connect()
-if my_server.is_connected then http_serve.send "Hello World!"
+if my_server.is_connected then http_server.send "Hello World!"
 
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
-print "last message sent before disconnect: \"{my_server.last_sent()}\"." raises [ServerError]
+print "last message sent before disconnect: \"{my_server.last_sent()}\"." raise [ServerError]
 my_server.disconnect()
 ```
 
@@ -120,28 +120,28 @@ import ipaddress
 type Server
     def ip_address: IPv4Address
 
-    def connect():     () -> ()       raises [ServerErr]
-    def send(message): (String) -> () raises [ServerErr]
+    def connect():     () -> ()       raise [ServerErr]
+    def send(message): (String) -> () raise [ServerErr]
     def disconnect():  () -> ()
 
-class ServerError(def message: String) isa Exception(message)
+class ServerError(def message: String): Exception(message)
 
-class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address) isa Server
-    def mut is_connected: Bool           <- false
-    def mut private last_message: String <- undefined
+class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address): Server
+    def mut is_connected: Bool           := false
+    def mut private last_message: String := undefined
 
-    def last_sent(self): String => if self.last_message /= undefined 
+    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
-    def connect(mut self: DisconnectedMyServer) => self.is_connected <- true
+    def connect(mut self: DisconnectedMyServer) => self.is_connected := true
 
-    def send(mut self: ConnectedMyServer, message: String) => self.last_message <- message
+    def send(mut self: ConnectedMyServer, message: String) => self.last_message := message
 
-    def disconnect(mut self: ConnectedMyServer) => self.is_connected <- false
+    def disconnect(mut self: ConnectedMyServer) => self.is_connected := false
 
-type ConnectedMyServer isa MyServer when self.is_connected
-type DisconnectedMyServer isa MyServer when not self.is_connected
+type ConnectedMyServer: MyServer when self.is_connected
+type DisconnectedMyServer: MyServer when not self.is_connected
 ```
 
 Notice how above, we define the type of `self`.
@@ -153,8 +153,8 @@ For each type, we use `when` to show that it is a type refinement, which certain
 import ipaddress
 from server import MyServer
 
-def some_ip   <- ipaddress.ip_address "151.101.193.140"
-def my_server <- MyServer(some_ip)
+def some_ip   := ipaddress.ip_address "151.101.193.140"
+def my_server := MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
 http_server.connect()
@@ -164,13 +164,13 @@ if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
     my_server.send "Hello World!"
 
-print "last message sent before disconnect: \"{my_server.last_sent}\"." raises [ServerErr]
+print "last message sent before disconnect: \"{my_server.last_sent}\"." raise [ServerErr]
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 ```mamba
-type PositiveInt isa Int when 
+type PositiveInt: Int when 
     self >= 0
 
 def factorial (x: PositiveInt) -> PositiveInt => match x
@@ -203,13 +203,13 @@ When a variable is immutable, when we omit `mut`, it can never change.
 So, `pure` is a property of functions, and `mut` is a property of variables.
 
 ```mamba
-def taylor <- 7
+def taylor := 7
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) =>
-    def mut ans <- x
+    def mut ans := x
     for i in 1 ..= taylor step 2 do
-        ans <- (x ^ (i + 2)) / (factorial (i + 2))
+        ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
 
@@ -219,16 +219,16 @@ This is useful when we want to write multiple pure functions.
 ```mamba
 pure
 
-def taylor <- 7
+def taylor := 7
 
 def sin(x: Int): Real =>
-    def mut ans <- x
-    for i in 1 ..= taylor step 2 do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    def mut ans := x
+    for i in 1 ..= taylor step 2 do ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
     
 def cos(x: Int): Real =>
-    def mut ans <- x
-    for i in 0 .. taylor step 2 do ans <- (x ^ (i + 2)) / (factorial (i + 2))
+    def mut ans := x
+    for i in 0 .. taylor step 2 do ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
 
@@ -248,10 +248,10 @@ In that case, we must handle the case where `my_server` throws a `ServerErr`:
 import ipaddress
 from server import MyServer
 
-def some_ip   <- ipaddress.ip_address "151.101.193.140"
-def my_server <- MyServer(some_ip)
+def some_ip   := ipaddress.ip_address "151.101.193.140"
+def my_server := MyServer(some_ip)
 
-def message <- "Hello World!"
+def message := "Hello World!"
 my_server.send message handle
     err: ServerErr => print "Error while sending message: \"{message}\": {err}"
 
@@ -267,7 +267,7 @@ This also prevents us from wrapping large code blocks in a `try`, where it might
 In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
 This is shown below:
 ```mamba
-def a <- function_may_throw_err() handle
+def a := function_may_throw_err() handle
     err : MyErr => 
         print "We have a problem: {err.message}."
         # we return, halting execution
@@ -280,8 +280,8 @@ def a <- function_may_throw_err() handle
 print "a has value {a}."
 ```
 
-If we don't want to use a `handle`, we can simply use `raises` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
-See the sections above for examples where we don't handle errors and simply pass them on using `raises`.
+If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
+See the sections above for examples where we don't handle errors and simply pass them on using `raise`.
 
 ## Project Structure
 

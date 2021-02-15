@@ -11,7 +11,10 @@ use crate::lex::tokenize;
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
     match c {
         ',' => create(state, Token::Comma),
-        ':' => create(state, Token::DoublePoint),
+        ':' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::Assign),
+            _ => create(state, Token::DoublePoint)
+        },
         '(' => create(state, Token::LRBrack),
         ')' => create(state, Token::RRBrack),
         '[' => create(state, Token::LSBrack),
@@ -33,7 +36,6 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         },
         '<' => match it.peek() {
             Some('<') => next_and_create(it, state, Token::BLShift),
-            Some('-') => next_and_create(it, state, Token::Assign),
             Some('=') => next_and_create(it, state, Token::Leq),
             _ => create(state, Token::Le)
         },
@@ -250,7 +252,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "in" => Token::In,
 
-        "raises" => Token::Raises,
         "raise" => Token::Raise,
         "handle" => Token::Handle,
         "when" => Token::When,

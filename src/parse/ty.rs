@@ -61,7 +61,7 @@ pub fn parse_generics(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 pub fn parse_generic(it: &mut LexIterator) -> ParseResult {
     let start = &it.start_pos("generic")?;
     let id = it.parse(&parse_id, "generic", start)?;
-    let isa = it.parse_if(&Token::IsA, &parse_id, "generic", start)?;
+    let isa = it.parse_if(&Token::DoublePoint, &parse_id, "generic", start)?;
     let end = isa.clone().map_or(id.pos.clone(), |isa| isa.pos);
 
     let node = Node::Generic { id, isa };

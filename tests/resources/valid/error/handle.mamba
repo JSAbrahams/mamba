@@ -1,7 +1,7 @@
-class MyErr1 isa Exception("Something went wrong")
-class MyErr2(msg: String) isa Exception(msg)
+class MyErr1: Exception("Something went wrong")
+class MyErr2(msg: String): Exception(msg)
 
-def f(x: Int) -> Int raises [MyErr1, MyErr2] =>
+def f(x: Int) -> Int raise [MyErr1, MyErr2] =>
     if x < 0 then
         raise MyErr1()
     else
@@ -10,7 +10,7 @@ def f(x: Int) -> Int raises [MyErr1, MyErr2] =>
         else
             return x + 2
 
-def a <- f(10) handle
+def a := f(10) handle
     err: MyErr1 =>
         print "Something went wrong"
         -1

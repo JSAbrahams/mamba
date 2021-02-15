@@ -1,7 +1,7 @@
 class A
-    def (a, b): (Int, Int) <- (10, 100)
+    def (a, b): (Int, Int) := (10, 100)
 
 
-def a <- A()
+def a := A()
 print a.a
 print a.b

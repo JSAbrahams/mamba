@@ -1,16 +1,16 @@
-def a <- "d"
+def a := "d"
 
 print match a
     "b" => "c"
     "d" => "e"
 
-def (b, bb, bbb) <- (0, 1, 2)
+def (b, bb, bbb) := (0, 1, 2)
 
 # TODO handle tuples
 # match (b, bb, bbb)
 #    (0, 1, 2) => print "hello world"
 
-def nested <- "other"
+def nested := "other"
 
 match nested
     "a" => "b"

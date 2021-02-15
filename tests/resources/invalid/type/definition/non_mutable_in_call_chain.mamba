@@ -1,14 +1,14 @@
 class A
-    def mut b: B <- B()
+    def mut b: B := B()
 
 class B
-    def c: C <- C()
+    def c: C := C()
 
 class C
-    def mut d: D <- D()
+    def mut d: D := D()
 
 class D
-    def mut e: Int <- 100
+    def mut e: Int := 100
 
-def mut a <- A()
-a.b.c.d.e <- 20
+def mut a := A()
+a.b.c.d.e := 20

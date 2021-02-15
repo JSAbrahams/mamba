@@ -1,32 +1,32 @@
 class Err1(msg: String) isa Exception(msg)
 class Err2(msg: String) isa Exception(msg)
 
-class MyGeneric isa String
+class MyGeneric: String
 
 class MyType[A isa MyGeneric, C](def super_field: String)
 
-class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped over the slow donkey")
-    def private z_modified: String <- "asdf"
-    def private mut other_field: Int <- 10
+class MyClass2[C, A isa MyGeneric]: MyType[A, C]("the quick brown fox jumped over the slow donkey")
+    def private z_modified: String := "asdf"
+    def private mut other_field: Int := 10
 
-    def init(mut self, other_field: Int, z: Int) raises [Err1] =>
+    def init(mut self, other_field: Int, z: Int) raise [Err1] =>
         if z > 10 then raise Err1("Something is wrong!")
-        self.z_modified <- "fdsa"
+        self.z_modified := "fdsa"
 
-        def (a, b) <- (10, 20)
-        def mut (a, b) <- (30, 40)
-        (a, b) <- (0, 10)
+        def (a, b) := (10, 20)
+        def mut (a, b) := (30, 40)
+        (a, b) := (0, 10)
 
-        def something <- match z
+        def something := match z
             10 => z + 10
             _ => z + 100
 
-        def my_bool <- True
-        def other <- match my_bool
+        def my_bool := True
+        def other := match my_bool
             True => 2
             False => 3
 
-        def a <- self.error_function() handle
+        def a := self.error_function() handle
             err1: Err1 =>
                 print err1
                 -1
@@ -36,15 +36,15 @@ class MyClass2[C, A isa MyGeneric] isa MyType[A, C]("the quick brown fox jumped 
 
         print a
 
-    def error_function(self) -> Int raises [Err, Err2] => 200
+    def error_function(self) -> Int raise [Err, Err2] => 200
 
-    def connect(mut self) => self.other_field <- 200
+    def connect(mut self) => self.other_field := 200
 
     def fun_a(self) => print self
 
     def private fun_b(self) => print "this function is private!"
 
-    def factorial(self, x: Int <- 0) -> Int => x * self.factorial(x - 1)
+    def factorial(self, x: Int := 0) -> Int => x * self.factorial(x - 1)
     def factorial_infinite(self, x: Int) -> Int => x * self.factorial(x)
 
     def a(self) -> Int=> self.b(10)

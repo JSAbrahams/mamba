@@ -2,5 +2,5 @@ class MyClass
     def something() -> Int => 10
 
 
-def my_class <- MyClass()
-my_class.something() <- 20
+def my_class := MyClass()
+my_class.something() := 20

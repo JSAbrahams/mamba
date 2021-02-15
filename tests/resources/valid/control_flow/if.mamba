@@ -1,10 +1,10 @@
-def b <- 40
+def b := 40
 
 if True then print "hello world"
 if False then "hello" else "world"
 
-def mut cond <- True and False
-cond <- True or False
+def mut cond := True and False
+cond := True or False
 
 if cond then
     "asdf"
@@ -15,7 +15,7 @@ if cond then
     else
         "ccc"
 
-    def iii <- "iii"
+    def iii := "iii"
     if cond or False then
         "hhh"
     else iii

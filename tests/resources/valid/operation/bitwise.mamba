@@ -1,13 +1,13 @@
-def a <- 10
-def b <- 20
-def c <- 30
-def d <- 40
-def e <- 50
-def f <- 60
-def g <- 70
-def h <- 80
-def i <- 90
-def j <- 100
+def a := 10
+def b := 20
+def c := 30
+def d := 40
+def e := 50
+def f := 60
+def g := 70
+def h := 80
+def i := 90
+def j := 100
 
 a << b
 c >> d

@@ -29,7 +29,7 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 /// # use mamba::lex::token::Token;
 /// # use mamba::lex::token::Lex;
 /// # use mamba::common::position::CaretPos;
-/// let source = "a <- 2";
+/// let source = "a := 2";
 /// let tokens = tokenize(&source).unwrap();
 ///
 /// assert_eq!(tokens[0].clone(), Lex::new(&CaretPos::new(1, 1), Token::Id(String::from("a"))));
