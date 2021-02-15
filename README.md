@@ -38,7 +38,6 @@ Functions written in Python can be called in Mamba and vice versa (from the gene
 
 Below are some code examples to showcase the features of Mamba.
 We highlight how functions work, how de define classes, how types and type refinement features are applied, how Mamba can be used to ensure pureness, and how error handling works.
-For more extensive examples and explanations check out the [documentation](https://joelabrahams.nl/mamba_doc).
 
 ### ➕ Functions
 
@@ -62,27 +61,33 @@ This means that the compiler will check for us that factorial is only used with 
 ### 📋 Classes and mutability
 
 Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
+If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its fields.
+We can do the same for any field.
 We showcase this using a simple dummy `Server` object.
 ```mamba
 import ipaddress
 
 class ServerError(def message: String): Exception(message)
 
-class MyServer(def ip_address: IPv4Address)
-    def mut is_connected: Bool           := false
-    def mut private last_message: String := undefined
+def fin always_the_same_message = "Connected!"
 
-    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
+class MyServer(def ip_address: IPv4Address)
+    def is_connected: Bool           := false
+    def private last_message: String := undefined
+
+    def last_sent(fin self) String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
-    def connect(mut self) => self.is_connected := true
+    def connect(self) =>
+        self.is_connected := true
+        print always_the_same_message
 
-    def send(mut self, message: String) raise [ServerError] => if self.is_connected 
+    def send(self, message: String) raise [ServerError] => if self.is_connected 
         then self.last_message := message
         else raise ServerError("Not connected!")
 
-    def disconnect(mut self) => self.is_connected := false
+    def disconnect(self) => self.is_connected := false
 ```
 
 Notice how:
@@ -96,7 +101,7 @@ Which we can then use as follows in our script:
 import ipaddress
 from server import MyServer
 
-def some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 http_server.connect()
@@ -126,19 +131,19 @@ type Server
 
 class ServerError(def message: String): Exception(message)
 
-class MyServer(mut self: DisconnectedMyServer, def ip_address: IPv4Address): Server
-    def mut is_connected: Bool           := false
-    def mut private last_message: String := undefined
+class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
+    def is_connected: Bool           := false
+    def private last_message: String := undefined
 
     def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
         then message
         else raise ServerError("No last message!")
 
-    def connect(mut self: DisconnectedMyServer) => self.is_connected := true
+    def connect(self: DisconnectedMyServer) => self.is_connected := true
 
-    def send(mut self: ConnectedMyServer, message: String) => self.last_message := message
+    def send(self: ConnectedMyServer, message: String) => self.last_message := message
 
-    def disconnect(mut self: ConnectedMyServer) => self.is_connected := false
+    def disconnect(self: ConnectedMyServer) => self.is_connected := false
 
 type ConnectedMyServer: MyServer when self.is_connected
 type DisconnectedMyServer: MyServer when not self.is_connected
@@ -153,7 +158,7 @@ For each type, we use `when` to show that it is a type refinement, which certain
 import ipaddress
 from server import MyServer
 
-def some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
@@ -196,38 +201,36 @@ When we make a function `pure`, it cannot:
     Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
 -   Call impure functions.
 
-With the above properties, we can ensure that a function is pure.
-`pure` is similar to `mut`.
 When a function is `pure`, its output is always the same for a given input.
-When a variable is immutable, when we omit `mut`, it can never change.
-So, `pure` is a property of functions, and `mut` is a property of variables.
+When a variable is immutable, when we add `fin`, it can never change.
+So, `pure` is a property of functions, and `fin` is a property of variables.
 
 ```mamba
 def taylor := 7
 
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) =>
-    def mut ans := x
+    def ans := x
     for i in 1 ..= taylor step 2 do
         ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
 
 We can add `pure` to the top of a file, which ensures all functions in said file are pure.
-This is useful when we want to write multiple pure functions.
+This is useful when we want to write multiple pure functions, for instance in a utility file.
 
 ```mamba
 pure
 
-def taylor := 7
+def fin taylor := 7
 
 def sin(x: Int): Real =>
-    def mut ans := x
+    def ans := x
     for i in 1 ..= taylor step 2 do ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
     
 def cos(x: Int): Real =>
-    def mut ans := x
+    def ans := x
     for i in 0 .. taylor step 2 do ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
@@ -248,7 +251,7 @@ In that case, we must handle the case where `my_server` throws a `ServerErr`:
 import ipaddress
 from server import MyServer
 
-def some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip   := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 def message := "Hello World!"

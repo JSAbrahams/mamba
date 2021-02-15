@@ -49,7 +49,7 @@ pub enum Token {
     BSlash,
 
     Id(String),
-    Mut,
+    Fin,
     Assign,
     Def,
 
@@ -185,7 +185,7 @@ impl fmt::Display for Token {
             Token::Vararg => String::from("vararg"),
             Token::BSlash => String::from("\\"),
 
-            Token::Mut => String::from("mut"),
+            Token::Fin => String::from("fin"),
             Token::Assign => String::from(":="),
             Token::Def => String::from("def"),
 

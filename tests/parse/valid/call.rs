@@ -36,8 +36,8 @@ fn anon_fun_verify() {
     assert_eq!(args.len(), 2);
     let (id1, id2) = match (&args[0], &args[1]) {
         (
-            AST { node: Node::FunArg { var: id1, ty: None, mutable: false, .. }, .. },
-            AST { node: Node::FunArg { var: id2, ty: None, mutable: false, .. }, .. }
+            AST { node: Node::FunArg { var: id1, ty: None, mutable: true, .. }, .. },
+            AST { node: Node::FunArg { var: id2, ty: None, mutable: true, .. }, .. }
         ) => (id1.clone(), id2.clone()),
         other => panic!("Id's of anon fun not expression type: {:?}", other)
     };

@@ -78,12 +78,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
             parse_variable_def_id(&id, private, it),
         Node::ExpressionType { expr, ty: None, mutable } => it.peek(
             &|it, lex| match lex.token {
-                Token::LRBrack => {
-                    if *mutable {
-                        return Err(custom("Function definition cannot be mutable.", &expr.pos));
-                    }
-                    parse_fun_def(&id, false, private, it)
-                }
+                Token::LRBrack => parse_fun_def(&id, false, private, it),
                 _ => parse_variable_def_id(&id, private, it)
             },
             {
@@ -108,8 +103,7 @@ fn parse_fun_def(id: &AST, pure: bool, private: bool, it: &mut LexIterator) -> P
 
     let id = match &id.node {
         Node::ExpressionType { expr, mutable, ty } => match (mutable, ty) {
-            (false, None) => expr.clone(),
-            (true, _) => return Err(custom("Function definition cannot be mutable", &expr.pos)),
+            (_, None) => expr.clone(),
             (_, Some(_)) => return Err(custom("Function identifier cannot have type", &expr.pos))
         },
 

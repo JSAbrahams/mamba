@@ -3,7 +3,7 @@ def b := 40
 if True then print "hello world"
 if False then "hello" else "world"
 
-def mut cond := True and False
+def cond := True and False
 cond := True or False
 
 if cond then

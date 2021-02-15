@@ -17,7 +17,7 @@ def fun_v(y: String, ab: String -> String -> Bool) -> String -> Bool => return a
 
 class MyClass(def a: Int, def b: Int)
     def some_function(self, c: Int) -> Int =>
-        def mut d := 20
+        def d := 20
         d := 10 + 30
         return c + 20 + d
 
