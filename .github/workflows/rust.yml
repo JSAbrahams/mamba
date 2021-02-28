@@ -10,13 +10,20 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build_and_test:
 
+    name: "Build and Test"
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install nightly
+      run: rustup toolchain install nightly
     - name: Build
       run: cargo +nightly build --verbose
     - name: Run tests
-      run: cargo +nigthly test --verbose
+      run: cargo +nightly test --package mamba --verbose
