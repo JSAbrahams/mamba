@@ -1,12 +1,21 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
-<p align="center">
-    <img src="image/logo_text.png" height="200">
-</p>
+<h1 align="center">
+    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
+    <br />
+    Mamba
+</h1>
 
 <p align="center">
     <i>Safety first!</i>
-    <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE"><img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/></a>
+    <br/><br/>
+    <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
+    <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
+    </a>
+    <br/>
+    <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
+    </a>
     <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
 </p>
 
