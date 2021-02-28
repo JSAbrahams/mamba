@@ -136,7 +136,7 @@ pub fn unify_function(
             },
 
         (l_exp, r_exp) => {
-            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }

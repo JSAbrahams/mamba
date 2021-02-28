@@ -30,12 +30,12 @@ pub fn gen_flow(
 
         Node::IfElse { cond, then, el: Some(el) } => {
             constr.new_set(true);
-            let left = Expected::try_from(cond)?;
+            let left = Expected::try_from((cond, env))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
-            let left = Expected::try_from(then)?;
-            let right = Expected::try_from(el)?;
+            let left = Expected::try_from((then, &env))?;
+            let right = Expected::try_from((el, &env))?;
             constr.add("if else", &left, &right);
 
             constr.new_set(true);
@@ -51,7 +51,7 @@ pub fn gen_flow(
         }
         Node::IfElse { cond, then, .. } => {
             constr.new_set(true);
-            let left = Expected::try_from(cond)?;
+            let left = Expected::try_from((cond, env))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
@@ -70,13 +70,13 @@ pub fn gen_flow(
                     Node::Case { cond, body } => {
                         res.0.add(
                             "match case",
-                            &Expected::try_from(cond)?,
-                            &Expected::try_from(cond)?
+                            &Expected::try_from((cond, env))?,
+                            &Expected::try_from((cond, env))?
                         );
                         res.0.add(
                             "match body",
-                            &Expected::try_from(body)?,
-                            &Expected::try_from(ast)?
+                            &Expected::try_from((body, env))?,
+                            &Expected::try_from((ast, env))?
                         );
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
@@ -106,14 +106,14 @@ pub fn gen_flow(
             let name = NameUnion::from(clss::INT_PRIMITIVE);
             constr.add(
                 "step",
-                &Expected::try_from(amount)?,
+                &Expected::try_from((amount, env))?,
                 &Expected::new(&amount.pos, &Type { name })
             );
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
             constr.new_set(true);
-            let left = Expected::try_from(cond)?;
+            let left = Expected::try_from((cond, env))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, &env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;

@@ -25,13 +25,13 @@ pub fn gen_resources(
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
-            constr.add("raises", &Expected::try_from(ast)?, &Expected::try_from(expr_or_stmt)?);
+            constr.add("raises", &Expected::try_from((ast, env))?, &Expected::try_from((expr_or_stmt, env))?);
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             constr.new_set(true);
-            let resource_exp = Expected::try_from(resource)?;
-            constr.add("with as", &resource_exp, &Expected::try_from(alias)?);
+            let resource_exp = Expected::try_from((resource, env))?;
+            constr.add("with as", &resource_exp, &Expected::try_from((alias, env))?);
             constr.add("with as", &resource_exp, &Expected::new(&resource.pos, &ExpressionAny));
 
             if let Some(ty) = ty {
@@ -62,7 +62,7 @@ pub fn gen_resources(
             constr.new_set(true);
             constr.add(
                 "with",
-                &Expected::try_from(resource)?,
+                &Expected::try_from((resource, env))?,
                 &Expected::new(&resource.pos, &ExpressionAny)
             );
             let (mut constr, env) = generate(resource, env, ctx, constr)?;

@@ -104,7 +104,7 @@ impl LookupClass<&NameUnion, ClassUnion> for Context {
     /// If NameUnion is empty.
     fn class(&self, name: &NameUnion, pos: &Position) -> Result<ClassUnion, Vec<TypeErr>> {
         if name.is_empty() {
-            return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
+            return Err(vec![TypeErr::new(pos, &format!("UnExpected a '{}'", name))]);
         }
 
         let union = name.names().map(|n| self.class(&n, pos)).collect::<Result<_, _>>()?;

@@ -18,19 +18,19 @@ pub fn gen_stmt(
 ) -> Constrained {
     match &ast.node {
         Node::Raise { error } => {
-            let mut constr = constrain_raises(&Expected::try_from(error)?, &env.raises, constr)?;
+            let mut constr = constrain_raises(&Expected::try_from((error, env))?, &env.raises, constr)?;
             generate(error, env, ctx, &mut constr)
         }
         Node::ReturnEmpty => Ok((constr.clone(), env.clone())),
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.return_type {
-                constr.add("return", &expected_ret_ty, &Expected::try_from(expr)?);
+                constr.add("return", &expected_ret_ty, &Expected::try_from((expr, env))?);
                 generate(expr, env, ctx, constr)
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Return outside function with return type")])
             },
         Node::Print { expr } => {
-            let con = Constraint::stringy("print", &Expected::try_from(expr)?);
+            let con = Constraint::stringy("print", &Expected::try_from((expr, env))?);
             constr.add_constr(&con);
             generate(expr, env, ctx, constr)
         }

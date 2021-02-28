@@ -34,7 +34,7 @@ pub fn unify_type(
                 ctx.class(l_ty, &left.pos)?;
                 unify_link(constraints, ctx, total)
             } else {
-                let msg = format!("Expected '{}', found '{}'", l_ty, r_ty);
+                let msg = format!("Expected a '{}', was a '{}'", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
@@ -79,7 +79,7 @@ pub fn unify_type(
                         }
                     }
                     _ => {
-                        let msg = format!("Expected '{}', found '{}'", name, right);
+                        let msg = format!("Expected a '{}', was a '{}'", name, right);
                         return Err(vec![TypeErr::new(&left.pos, &msg)]);
                     }
                 }
@@ -91,7 +91,7 @@ pub fn unify_type(
             if name.is_nullable() {
                 unify_link(constraints, ctx, total)
             } else {
-                let msg = format!("Expected '{}', found '{}'", name.as_nullable(), name);
+                let msg = format!("Expected a '{}', was a '{}'", name.as_nullable(), name);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             },
 
@@ -119,7 +119,7 @@ pub fn unify_type(
         (Nullable, Nullable) => unify_link(constraints, ctx, total),
 
         (l_exp, r_exp) => {
-            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }

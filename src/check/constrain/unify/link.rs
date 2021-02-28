@@ -1,11 +1,11 @@
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Collection, Expression,
                                                             Function, Nullable, Tuple, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::unify_expression;
 use crate::check::constrain::unify::function::unify_function;
 use crate::check::constrain::unify::ty::unify_type;
-use crate::check::constrain::Unified;
 use crate::check::context::Context;
 
 /// Unifies all constraints.
@@ -19,13 +19,10 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 
         let pos = format!("({}={}) ", left.pos.start, right.pos.start);
         let count = total - constraints.len();
-        let unify = format!("[{}\\{}] ", count, total);
-        let msg = if constraint.msg.is_empty() {
-            String::new()
-        } else {
-            format!("{{{}}} # ", constraint.msg)
-        };
-        trace!("{:width$}{}{}{}", pos, unify, msg, constraint, width = 15);
+        let unify = format!("{}\\{}", count, total);
+        let msg = if constraint.msg.is_empty() { String::new() } else { format!(" {}", constraint.msg) };
+
+        trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 15);
 
         match (&left.expect, &right.expect) {
             // trivially equal
@@ -37,9 +34,9 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
                 unify_function(constraint, &right, &left, constraints, ctx, total),
 
             (Expression { .. }, _) =>
-                unify_expression(constraint, &left, &right, constraints, ctx, total),
+                unify_expression(constraint, &left, &right, constraints, ctx, count, total),
             (_, Expression { .. }) =>
-                unify_expression(constraint, &right, &left, constraints, ctx, total),
+                unify_expression(constraint, &right, &left, constraints, ctx, count, total),
 
             (Type { .. }, _) | (_, Nullable) => unify_type(&left, &right, constraints, ctx, total),
             (_, Type { .. }) => unify_type(&right, &left, constraints, ctx, total),

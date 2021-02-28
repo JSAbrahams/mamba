@@ -13,6 +13,7 @@ use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
+use crate::check::env::Environment;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
@@ -30,27 +31,29 @@ impl AsRef<Expected> for Expected {
     fn as_ref(&self) -> &Expected { &self }
 }
 
-impl TryFrom<&AST> for Expected {
+impl TryFrom<(&AST, &Environment)> for Expected {
     type Error = Vec<TypeErr>;
 
     /// Creates Expected from AST.
     ///
     /// If primitive or Constructor, constructs Type.
-    fn try_from(ast: &AST) -> TypeResult<Expected> {
+    fn try_from((ast, env): (&AST, &Environment)) -> TypeResult<Expected> {
         let ast = match &ast.node {
             Node::Block { statements } | Node::Script { statements } =>
                 statements.last().unwrap_or(ast),
             _ => ast
         };
 
-        Ok(Expected::new(&ast.pos, &Expression { ast: ast.clone() }))
+        Ok(Expected::new(&ast.pos, &Expect::from((ast, env))))
     }
 }
 
-impl TryFrom<&Box<AST>> for Expected {
+impl TryFrom<(&Box<AST>, &Environment)> for Expected {
     type Error = Vec<TypeErr>;
 
-    fn try_from(ast: &Box<AST>) -> TypeResult<Expected> { Expected::try_from(ast.deref()) }
+    fn try_from((ast, env): (&Box<AST>, &Environment)) -> TypeResult<Expected> {
+        Expected::try_from((ast.deref(), env))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -65,6 +68,26 @@ pub enum Expect {
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
     Type { name: NameUnion }
+}
+
+impl From<(&AST, &Environment)> for Expect {
+    /// Also substitutes any identifiers with new ones from the environment if the environment
+    /// has a mapping.
+    /// This means that we forget about shadowed variables and continue with the new ones.
+    fn from((ast, env): (&AST, &Environment)) -> Self {
+        Expression { ast: ast.map(&|node: &Node| {
+            if let Node::Id { ref lit } = node {
+                if let Some((name, _)) = env.get_var(&lit) {
+                    // Always use name currently defined in environment
+                    Node::Id { lit: name }
+                } else {
+                    node.clone()
+                }
+            } else {
+                node.clone()
+            }
+        }) }
+    }
 }
 
 impl Display for Expected {

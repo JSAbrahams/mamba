@@ -15,7 +15,8 @@ pub struct Environment {
     pub return_type: Option<Expected>,
     pub raises: Option<Expected>,
     pub class_type: Option<Expect>,
-    pub vars: HashMap<String, HashSet<(bool, Expected)>>
+    vars: HashMap<String, HashSet<(bool, Expected)>>,
+    var_mappings: Vec<(String, String)>
 }
 
 impl Default for Environment {
@@ -27,7 +28,8 @@ impl Default for Environment {
             return_type: None,
             raises: None,
             class_type: None,
-            vars: HashMap::new()
+            vars: HashMap::new(),
+            var_mappings: vec![]
         }
     }
 }
@@ -37,7 +39,7 @@ impl Environment {
     ///
     /// This adds a self variable with the class expected, and class_type is set
     /// to the expected class type.
-    pub fn in_class(&self, class: &Expected) -> Environment {
+    pub fn in_class(&mut self, class: &Expected) -> Environment {
         let env = self.insert_var(false, &String::from(SELF), class);
         Environment { class_type: Some(class.expect.clone()), ..env }
     }
@@ -51,11 +53,26 @@ impl Environment {
 
     /// Insert a variable.
     ///
-    /// If it has a previous expected type then this is overwritten
-    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected) -> Environment {
-        let mut vars = self.vars.clone();
+    /// If the var was previously defined, it is renamed, and the rename mapping is stored.
+    /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
+    pub fn insert_var(&mut self, mutable: bool, var: &str, expect: &Expected) -> Environment {
         let expected_set = HashSet::from_iter(vec![(mutable, expect.clone())].into_iter());
-        vars.insert(String::from(var), expected_set);
+        let mut vars = self.vars.clone();
+
+        let var = if self.vars.contains_key(var) {
+            let mut offset = 0;
+            let mut new_var = format!("{}@{}", var, offset);
+            while self.vars.contains_key(&new_var) {
+                offset += 1;
+                new_var = format!("{}@{}", var, offset);
+            }
+            self.var_mappings.push((String::from(var), new_var.clone()));
+            new_var
+        } else {
+            String::from(var)
+        };
+
+        vars.insert(var, expected_set);
         Environment { vars, ..self.clone() }
     }
 
@@ -86,8 +103,19 @@ impl Environment {
     /// Is Some, Vector wil usually contain only one expected.
     /// It can contain multiple if the environment was unioned or intersected at
     /// one point.
-    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
-        self.vars.get(var).cloned()
+    ///
+    /// If the variable was mapped to another variable at one point due to a naming conflict,
+    /// the mapped to variable is returned to instead.
+    /// In other words, what the variable was mapped to.
+    /// This is useful for detecting shadowing.
+    ///
+    /// Return true variable name, whether it's mutable and it's expected value
+    pub fn get_var(&self, var: &str) -> Option<(String, HashSet<(bool, Expected)>)> {
+        for (old, new) in &self.var_mappings {
+            if old == var { return self.get_var(new) }
+        }
+
+        self.vars.get(var).cloned().map(|res| (String::from(var), res))
     }
 
     /// Union between two environments

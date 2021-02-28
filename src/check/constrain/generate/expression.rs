@@ -33,7 +33,7 @@ pub fn gen_expr(
         Node::Question { left, right } => {
             constr.add(
                 "question",
-                &Expected::try_from(left)?,
+                &Expected::try_from((left, env))?,
                 &Expected::new(&left.pos, &Nullable)
             );
             let (mut constr, env) = generate(left, env, ctx, constr)?;

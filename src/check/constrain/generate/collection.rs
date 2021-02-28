@@ -19,7 +19,7 @@ pub fn gen_coll(
 ) -> Constrained {
     match &ast.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
-            gen_vec(elements, env, ctx, &constr_col(ast, constr)?),
+            gen_vec(elements, env, ctx, &constr_col(ast, env, constr)?),
 
         Node::SetBuilder { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")]),
@@ -32,31 +32,27 @@ pub fn gen_coll(
 /// Generate constraint for collection by taking first element
 ///
 /// The assumption here being that every element in the set has the same type.
-pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<ConstrBuilder> {
+pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder) -> TypeResult<ConstrBuilder> {
     let (msg, col) = match &collection.node {
         Node::Set { elements } | Node::List { elements } => {
             let ty = if let Some(first) = elements.first() {
                 for element in elements {
                     constr.add(
                         "collection item",
-                        &Expected::try_from(first)?,
-                        &Expected::try_from(element)?,
+                        &Expected::try_from((first, env))?,
+                        &Expected::try_from((element, env))?,
                     )
                 }
-                Box::from(Expected::new(&collection.pos, &Collection {
-                    ty: Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
-                }))
+                Box::from(Expected::new(&first.pos, &Expect::from((first, env))))
             } else {
-                Box::from(Expected::new(&collection.pos, &Collection {
-                    ty: Box::from(Expected::new(&collection.pos, &ExpressionAny))
-                }))
+                Box::from(Expected::new(&collection.pos, &ExpressionAny))
             };
 
             ("collection", Expect::Collection { ty })
         }
         Node::Tuple { elements } => {
             let elements =
-                elements.iter().map(|ast| Expected::try_from(ast)).collect::<Result<_, _>>()?;
+                elements.iter().map(|ast| Expected::try_from((ast, env))).collect::<Result<_, _>>()?;
             ("tuple", Expect::Tuple { elements })
         }
 
@@ -66,7 +62,7 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
-    constr.add(msg, &col_exp, &Expected::try_from(collection)?);
+    constr.add(msg, &col_exp, &Expected::try_from((collection, env))?);
     Ok(constr.clone())
 }
 
@@ -81,18 +77,16 @@ pub fn gen_collection_lookup(
     env: &Environment,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    let (mut env, mut vars) = (env.clone(), vec![]);
+    let mut env = env.clone();
+    // Constrain before looking at variables in lookup
+    let collection = Expected::new(&lookup.pos, &Collection {
+        ty: Box::from(Expected::try_from((lookup, &env))?)
+    });
+
     for (mutable, var) in Identifier::try_from(lookup)?.fields() {
-        vars.push(var.clone());
         env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
     }
 
-    constr.add_with_identifier(
-        "collection lookup",
-        &Expected::new(&lookup.pos, &Collection { ty: Box::from(Expected::try_from(lookup)?) }),
-        &Expected::try_from(col)?,
-        &vars,
-    );
-
+    constr.add("collection lookup", &collection, &Expected::try_from((col, &env))?, );
     Ok((constr.clone(), env))
 }
