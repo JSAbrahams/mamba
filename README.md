@@ -1,10 +1,10 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
-<p style="text-align: center">
+<p style="align-items: center">
     <img src="image/logo_text.png" height="200" alt="Mamba Logo">
 </p>
 
-<p style="text-align: center">
+<p style="align-items: center">
     <i>Safety first!</i>
     <br>
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml/badge.svg">
