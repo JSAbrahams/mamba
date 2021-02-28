@@ -64,7 +64,7 @@ fn self_verify() {
 fn import_verify() {
     let _break = to_pos!(Node::Import {
         import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-        _as:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
+        aliases:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
     });
 
     assert_eq!(desugar(&_break).unwrap(), Core::ImportAs {
@@ -79,7 +79,7 @@ fn from_import_as_verify() {
         id:     to_pos!(Node::Id { lit: String::from("f") }),
         import: to_pos!(Node::Import {
             import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-            _as:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
+            aliases:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
         })
     });
 

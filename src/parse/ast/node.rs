@@ -149,7 +149,7 @@ impl Node {
         match (&self, &other) {
             (Node::File { pure: lp, modules: lm }, Node::File { pure: rp, modules: rm }) =>
                 lp == rp && equal_vec(lm, rm),
-            (Node::Import { import: li, _as: la }, Node::Import { import: ri, _as: ra }) =>
+            (Node::Import { import: li, aliases: la }, Node::Import { import: ri, aliases: ra }) =>
                 equal_vec(li, ri) && equal_vec(la, ra),
             (
                 Node::FromImport { id: lid, import: li },

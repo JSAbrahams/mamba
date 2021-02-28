@@ -19,7 +19,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
     let state = &state.assign_to(None);
 
     let core = match &ast.node {
-        Node::Import { import, _as } =>
+        Node::Import { import, aliases: _as } =>
             if _as.is_empty() {
                 Core::Import { imports: desugar_vec(import, imp, state)? }
             } else {

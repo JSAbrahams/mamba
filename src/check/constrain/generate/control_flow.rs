@@ -91,8 +91,6 @@ pub fn gen_flow(
             constr.new_set(true);
             let (mut constr, for_env) = generate(col, &env, ctx, constr)?;
 
-            // Generate lookup after collection in case of shadowing
-            // TODO make more elegant with environment unification
             let is_define_mode = for_env.is_define_mode;
             let (mut constr, for_env) =
                 gen_collection_lookup(expr, &col, &for_env.define_mode(true), &mut constr)?;

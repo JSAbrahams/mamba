@@ -78,7 +78,6 @@ pub fn gen_collection_lookup(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     let mut env = env.clone();
-    // Constrain before looking at variables in lookup
     let collection = Expected::new(&lookup.pos, &Collection {
         ty: Box::from(Expected::try_from((lookup, &env))?)
     });
@@ -87,6 +86,6 @@ pub fn gen_collection_lookup(
         env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
     }
 
-    constr.add("collection lookup", &collection, &Expected::try_from((col, &env))?, );
+    constr.add("collection lookup", &Expected::try_from((col, &env))?, &collection);
     Ok((constr.clone(), env))
 }
