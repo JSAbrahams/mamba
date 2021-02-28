@@ -8,7 +8,6 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
-use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -44,17 +43,7 @@ impl TryFrom<&AST> for Expected {
             _ => ast
         };
 
-        let expect = match &ast.node {
-            Node::Int { .. } | Node::ENum { .. } => Type { name: NameUnion::from(INT_PRIMITIVE) },
-            Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
-            Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
-            Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
-            Node::Undefined => Nullable,
-            Node::Underscore => ExpressionAny,
-            _ => Expression { ast: ast.clone() }
-        };
-
-        Ok(Expected::new(&ast.pos, &expect))
+        Ok(Expected::new(&ast.pos, &Expression { ast: ast.clone() }))
     }
 }
 
@@ -98,9 +87,9 @@ impl Display for Expect {
             Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("{}", ast.node),
-            Collection { ty, .. } => format!("Collection[{}]", ty.expect),
-            Tuple { elements } => format!("Tuple[{}]", comma_delm(elements)),
-            Raises { name: ty } => format!("Raises[{}]", ty),
+            Collection { ty, .. } => format!("Collection [{}]", ty.expect),
+            Tuple { elements } => format!("Tuple ({})", comma_delm(elements)),
+            Raises { name: ty } => format!("Raises {}", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } => format!("{}({})", name, comma_delm(args)),
             Field { name } => name.clone(),

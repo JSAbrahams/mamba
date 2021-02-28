@@ -24,8 +24,8 @@ impl Display for Position {
 ///
 /// Line's and position's are 1-indexed.
 pub struct CaretPos {
-    pub line: i32,
-    pub pos:  i32
+    pub line: usize,
+    pub pos:  usize
 }
 
 impl Display for CaretPos {
@@ -44,7 +44,7 @@ impl Position {
     ///
     /// Width is always 1 or greater.
     pub fn get_width(&self) -> i32 {
-        max(1, max(self.end.pos - self.start.pos, self.start.pos - self.end.pos))
+        max(1, max(self.end.pos as i32 - self.start.pos as i32, self.start.pos as i32 - self.end.pos as i32))
     }
 
     pub fn offset(&self, offset: &CaretPos) -> Position {
@@ -70,7 +70,7 @@ impl Position {
 
 impl CaretPos {
     /// Create new endpoint with given line and position.
-    pub fn new(line: i32, pos: i32) -> CaretPos { CaretPos { line, pos } }
+    pub fn new(line: usize, pos: usize) -> CaretPos { CaretPos { line, pos } }
 
     pub fn offset(self, offset: &CaretPos) -> CaretPos {
         CaretPos { line: self.line + offset.line - 1, pos: self.pos + offset.pos - 1 }
@@ -78,13 +78,13 @@ impl CaretPos {
 
     /// Create new [EndPoint] which is offset in the vertical direction by the
     /// given amount.
-    pub fn offset_line(self, offset: i32) -> CaretPos {
+    pub fn offset_line(self, offset: usize) -> CaretPos {
         CaretPos { line: self.line + offset, pos: self.pos }
     }
 
     /// Create new [EndPoint] which is offset in the horizontal direction by the
     /// given amount.
-    pub fn offset_pos(self, offset: i32) -> CaretPos {
+    pub fn offset_pos(self, offset: usize) -> CaretPos {
         CaretPos { line: self.line, pos: self.pos + offset }
     }
 

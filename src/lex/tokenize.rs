@@ -146,7 +146,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 
                     if c == '{' {
                         if build_cur_expr == 0 {
-                            cur_offset = state.pos.clone().offset_pos(string.len() as i32 + 1);
+                            cur_offset = state.pos.clone().offset_pos(string.len() + 1);
                         }
                         build_cur_expr += 1;
                     } else if c == '}' {

@@ -1,21 +1,21 @@
 use std::convert::TryFrom;
 
-use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::generate::gen_vec;
 use crate::check::constrain::Constrained;
+use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::expected::Expect::*;
+use crate::check::constrain::generate::gen_vec;
 use crate::check::context::Context;
 use crate::check::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 pub fn gen_coll(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
@@ -40,12 +40,16 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder) -> TypeResult<Co
                     constr.add(
                         "collection item",
                         &Expected::try_from(first)?,
-                        &Expected::try_from(element)?
+                        &Expected::try_from(element)?,
                     )
                 }
-                Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
+                Box::from(Expected::new(&collection.pos, &Collection {
+                    ty: Box::from(Expected::new(&first.pos, &Expression { ast: first.clone() }))
+                }))
             } else {
-                Box::from(Expected::new(&collection.pos, &ExpressionAny))
+                Box::from(Expected::new(&collection.pos, &Collection {
+                    ty: Box::from(Expected::new(&collection.pos, &ExpressionAny))
+                }))
             };
 
             ("collection", Expect::Collection { ty })
@@ -75,7 +79,7 @@ pub fn gen_collection_lookup(
     lookup: &AST,
     col: &AST,
     env: &Environment,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     let (mut env, mut vars) = (env.clone(), vec![]);
     for (mutable, var) in Identifier::try_from(lookup)?.fields() {
@@ -87,7 +91,7 @@ pub fn gen_collection_lookup(
         "collection lookup",
         &Expected::new(&lookup.pos, &Collection { ty: Box::from(Expected::try_from(lookup)?) }),
         &Expected::try_from(col)?,
-        &vars
+        &vars,
     );
 
     Ok((constr.clone(), env))

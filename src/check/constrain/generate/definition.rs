@@ -160,13 +160,13 @@ pub fn identifier_from_var(
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             constr.add_with_identifier(
-                "variable with type and expression",
+                "variable, type, and expression",
                 &Expected::new(&ty.pos, &ty_exp),
                 &var_expect,
                 &names
             );
             let expr_expect = Expected::try_from(expr)?;
-            constr.add("variable with type and expression", &var_expect, &expr_expect);
+            constr.add("variable, type, and expression", &var_expect, &expr_expect);
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
@@ -181,7 +181,7 @@ pub fn identifier_from_var(
         }
         (None, Some(expr)) => {
             constr.add_with_identifier(
-                "variable with expression",
+                "variable and expression",
                 &Expected::try_from(expr)?,
                 &var_expect,
                 &names
