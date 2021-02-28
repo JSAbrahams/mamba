@@ -11,18 +11,28 @@ env:
 
 jobs:
   build_and_test:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python: ["3.8"]
+        rust: ["+nightly"]
 
-    name: "Build and Test"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    name: Test on OS ${{ matrix.os }} using Python v${{ matrix.python }}, Rust ${{ matrix.rust }}
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.8
+
+    # Install Python
+    - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
-    - name: Install nightly
-      run: rustup toolchain install nightly
+        python-version: ${{ matrix.python }}
+
+    # Install Rust, build and run tests
+    - name: Install Rust ${{ matrix.rust }}
+      run: rustup toolchain install ${{ matrix.rust }}
     - name: Build
       run: cargo +nightly build --verbose
     - name: Run tests
