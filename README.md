@@ -9,7 +9,7 @@
 <p align="center">
     <i>Safety first!</i>
     <br/><br/>
-    <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml/badge.svg">
+    <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
     <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
     </a>
     <br/>
