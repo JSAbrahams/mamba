@@ -1,7 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
 <h1 align="center">
-    <img src="image/logo_text.png" height="200" alt="Mamba logo"/>
+    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
     <br />
     Mamba
 </h1>
