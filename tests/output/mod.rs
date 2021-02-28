@@ -45,9 +45,15 @@ fn fallable(
     transpile_directory(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path))
         .map_err(|errs| errs.iter().map(&map_err).collect::<Vec<String>>())?;
 
-    let cmd = Command::new(PYTHON).arg("-m").arg("py_compile").arg(&output_file).output().unwrap();
+    let cmd = Command::new(PYTHON)
+        .arg("-m")
+        .arg("py_compile")
+        .arg(&output_file)
+        .output()
+        .expect("Could not run Python command.");
+
     if cmd.status.code().unwrap() != 0 {
-        panic!("{}", String::from_utf8(cmd.stderr).unwrap());
+        panic!("Error running Python command: {}", String::from_utf8(cmd.stderr).unwrap());
     }
 
     let check_src = resource_content(true, input, &format!("{}_check.py", file_name));
