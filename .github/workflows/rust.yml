@@ -35,15 +35,15 @@ jobs:
       run: rustup toolchain install ${{ matrix.rust }}
 
     - name: Build Nightly
-      if: ${{ matrix.rust == "nightly" }}
+      if: ${{ matrix.rust == 'nightly' }}
       run: cargo +nightly build --verbose
     - name: Run tests Nightly
-      if: ${{ matrix.rust == "nightly" }}
+      if: ${{ matrix.rust == 'nightly' }}
       run: cargo +nightly test --package mamba --verbose
 
     - name: Build
-      if: ${{ matrix.rust != "nightly" }}
+      if: ${{ matrix.rust != 'nightly' }}
       run: cargo build --verbose
     - name: Run tests
-      if: ${{ matrix.rust != "nightly" }}
+      if: ${{ matrix.rust != 'nightly' }}
       run: cargo test --package mamba --verbose
