@@ -68,9 +68,7 @@ pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilde
 
 /// Constrain lookup an collection.
 ///
-/// This is done by constraining the given expected collection with an expected
-/// collection with the lookup parameter. Therefore, the type of the lookup, and
-/// the type of the given collection's parameter must be the same.
+/// Adds constraint of collection of type lookup, and the given collection.
 pub fn gen_collection_lookup(
     lookup: &AST,
     col: &AST,
@@ -78,14 +76,17 @@ pub fn gen_collection_lookup(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     let mut env = env.clone();
-    let collection = Expected::new(&lookup.pos, &Collection {
-        ty: Box::from(Expected::try_from((lookup, &env))?)
-    });
 
+    // Make col constraint before inserting environment, in case shadowed here
+    let col_exp = Expected::try_from((col, &env))?;
     for (mutable, var) in Identifier::try_from(lookup)?.fields() {
         env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
     }
 
-    constr.add("collection lookup", &Expected::try_from((col, &env))?, &collection);
+    let lookup_exp = Expected::new(&lookup.pos, &Collection {
+        ty: Box::from(Expected::try_from((lookup, &env))?)
+    });
+
+    constr.add("collection lookup", &lookup_exp, &col_exp);
     Ok((constr.clone(), env))
 }

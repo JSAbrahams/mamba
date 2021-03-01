@@ -11,7 +11,7 @@ fn import_verify() {
         to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
         to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
-    let _as = vec![];
+    let aliases = vec![];
     let import = to_pos!(Node::Import { import, aliases });
 
     let core_import = match desugar(&import) {
@@ -30,7 +30,7 @@ fn import_as_verify() {
         to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
         to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
-    let _as = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
+    let aliases = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
     let import = to_pos!(Node::Import { import, aliases });
 
     let (core_import, core_as) = match desugar(&import) {
