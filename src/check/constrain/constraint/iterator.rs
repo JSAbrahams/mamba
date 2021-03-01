@@ -33,7 +33,7 @@ impl Constraints {
     /// Marks constraint as generated.
     pub fn push(&mut self, msg: &str, parent: &Expected, child: &Expected) {
         let constraint = Constraint::new(msg, parent, child);
-        trace!("{:width$}[gen] {}", "", constraint, width = 17);
+        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 17);
         self.constraints.push_front(constraint)
     }
 

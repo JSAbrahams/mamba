@@ -1,11 +1,11 @@
-use crate::check::constrain::constraint::expected::Expect::{Expression, ExpressionAny};
-use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::expected::Expect::{Expression, ExpressionAny};
+use crate::check::constrain::constraint::expected::{Expected};
+use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::reinsert;
 use crate::check::constrain::unify::link::unify_link;
-use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::Node;
@@ -19,7 +19,7 @@ pub fn unify_expression(
     constraints: &mut Constraints,
     ctx: &Context,
     count: usize,
-    total: usize
+    total: usize,
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
@@ -35,7 +35,7 @@ pub fn unify_expression(
                 }
                 _ => Err(vec![TypeErr::new(
                     &ast.pos,
-                    &format!("Expected an expression but was {}", ast.node)
+                    &format!("Expected an expression but was {}", ast.node),
                 )])
             },
 

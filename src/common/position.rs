@@ -79,7 +79,7 @@ impl CaretPos {
     /// Create new [EndPoint] which is offset in the vertical direction by the
     /// given amount.
     pub fn offset_line(self, offset: usize) -> CaretPos {
-        CaretPos { line: self.line + offset, pos: self.pos }
+        CaretPos { line: (self.line as i32 + offset as i32) as usize, pos: self.pos }
     }
 
     /// Create new [EndPoint] which is offset in the horizontal direction by the

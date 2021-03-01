@@ -9,16 +9,17 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
 use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::env::Environment;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
-use crate::check::env::Environment;
+use crate::parse::ast::{AST, Node};
+use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, BOOL_PRIMITIVE, STRING_PRIMITIVE};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
-    pub pos:    Position,
-    pub expect: Expect
+    pub pos: Position,
+    pub expect: Expect,
 }
 
 impl Expected {
@@ -67,7 +68,7 @@ pub enum Expect {
     Function { name: DirectName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
-    Type { name: NameUnion }
+    Type { name: NameUnion },
 }
 
 impl From<(&AST, &Environment)> for Expect {
@@ -75,7 +76,7 @@ impl From<(&AST, &Environment)> for Expect {
     /// has a mapping.
     /// This means that we forget about shadowed variables and continue with the new ones.
     fn from((ast, env): (&AST, &Environment)) -> Self {
-        Expression { ast: ast.map(&|node: &Node| {
+        let ast = ast.map(&|node: &Node| {
             if let Node::Id { ref lit } = node {
                 if let Some((name, _)) = env.get_var(&lit) {
                     // Always use name currently defined in environment
@@ -86,7 +87,17 @@ impl From<(&AST, &Environment)> for Expect {
             } else {
                 node.clone()
             }
-        }) }
+        });
+
+        match &ast.node {
+            Node::Int { .. } | Node::ENum { .. } => Type { name: NameUnion::from(INT_PRIMITIVE) },
+            Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
+            Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
+            Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
+            Node::Undefined => Nullable,
+            Node::Underscore => ExpressionAny,
+            _ => Expression { ast }
+        }
     }
 }
 
@@ -109,7 +120,7 @@ impl Display for Expect {
         write!(f, "{}", match &self {
             Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
-            Expression { ast } => format!("{}", ast.node),
+            Expression { ast } => format!("`{}`", ast.node),
             Collection { ty, .. } => format!("{{{}}}", ty.expect),
             Tuple { elements } => format!("({})", comma_delm(elements)),
             Raises { name: ty } => format!("Raise {}", ty),
@@ -133,12 +144,12 @@ impl Expect {
             (Function { name: l, args: la }, Function { name: r, args: ra }) =>
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
-                        if let EitherOrBoth::Both(left, right) = pair {
-                            left.expect.structurally_eq(&right.expect)
-                        } else {
-                            false
-                        }
-                    }),
+                    if let EitherOrBoth::Both(left, right) = pair {
+                        left.expect.structurally_eq(&right.expect)
+                    } else {
+                        false
+                    }
+                }),
 
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
 
@@ -146,15 +157,15 @@ impl Expect {
 
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
-                if ty == &NameUnion::from(clss::STRING_PRIMITIVE) =>
+            if ty == &NameUnion::from(clss::STRING_PRIMITIVE) =>
                 true,
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
             | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
-                if ty == &NameUnion::from(clss::FLOAT_PRIMITIVE) =>
+            if ty == &NameUnion::from(clss::FLOAT_PRIMITIVE) =>
                 true,
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
-                if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
+            if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
                 true,
 
             _ => false
