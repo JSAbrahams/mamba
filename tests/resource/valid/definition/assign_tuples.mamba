@@ -1,0 +1,6 @@
+class MyTuple: (Int, Int, String)
+
+def a := (2, 3)
+def b: (Int, Int) := (3, 5)
+
+def c: (Int, Int, String) := (3, 4, "Hello")

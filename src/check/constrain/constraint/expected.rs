@@ -105,16 +105,6 @@ impl Display for Expected {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { write!(f, "{}", self.expect) }
 }
 
-impl Expected {
-    pub fn is_expr(&self) -> bool {
-        if let Expression { .. } = self.expect {
-            true
-        } else {
-            false
-        }
-    }
-}
-
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {

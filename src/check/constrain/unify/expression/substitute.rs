@@ -13,8 +13,8 @@ use crate::check::result::TypeResult;
 /// If identifier override detected, only substitute right hand side of
 /// unification before ceasing substitution.
 pub fn substitute(
-    old: &Expected,
     new: &Expected,
+    old: &Expected,
     constraints: &mut Constraints,
     offset: usize,
     total: usize

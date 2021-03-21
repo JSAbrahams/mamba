@@ -152,7 +152,7 @@ fn property_call(
             check_reassignable(left)?;
             let name = match &left.node {
                 Node::Id { lit } => lit.clone(),
-                _ => return Err(vec![TypeErr::new(&right.pos, "Expected identifier.")])
+                _ => return Err(vec![TypeErr::new(&right.pos, "Expected identifier in reassign.")])
             };
 
             let left = Expected::new(&property.pos, &Access {

@@ -36,13 +36,13 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             (Expression { .. }, _) =>
                 unify_expression(constraint, &left, &right, constraints, ctx, count, total),
             (_, Expression { .. }) =>
-                unify_expression(constraint, &right, &left, constraints, ctx, count, total),
+                unify_expression(constraint, &left, &right, constraints, ctx, count, total),
 
-            (Type { .. }, _) | (_, Nullable) => unify_type(&left, &right, constraints, ctx, total),
+            (Tuple { .. }, Tuple { .. }) => unify_type(&right, &left, constraints, ctx, total),
+            (Type { .. }, _) | (Nullable, _) => unify_type(&left, &right, constraints, ctx, total),
             (_, Type { .. }) => unify_type(&right, &left, constraints, ctx, total),
             (Collection { .. }, Collection { .. }) =>
                 unify_type(&right, &left, constraints, ctx, total),
-            (Tuple { .. }, Tuple { .. }) => unify_type(&right, &left, constraints, ctx, total),
 
             _ => {
                 let mut constr = reinsert(constraints, &constraint, total)?;

@@ -20,18 +20,7 @@ pub struct Constraint {
 
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let parent = if self.parent.is_expr() {
-            format!("{}", self.parent)
-        } else {
-            format!("[{}]", self.parent)
-        };
-        let child = if self.child.is_expr() {
-            format!("{}", self.child)
-        } else {
-            format!("[{}]", self.child)
-        };
-
-        write!(f, "{} == {}", parent, child)
+        write!(f, "{} == {}", self.parent, self.child)
     }
 }
 

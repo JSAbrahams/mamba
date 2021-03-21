@@ -1,21 +1,22 @@
+use EitherOrBoth::Both;
+use itertools::{EitherOrBoth, Itertools};
+
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Nullable,
                                                             Raises, Tuple, Type};
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::unify::link::unify_link;
 use crate::check::constrain::Unified;
-use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet, NameVariant};
+use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
+use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet, NameVariant};
 use crate::check::result::TypeErr;
-use itertools::{EitherOrBoth, Itertools};
-use EitherOrBoth::Both;
 
 pub fn unify_type(
     left: &Expected,
     right: &Expected,
     constraints: &mut Constraints,
     ctx: &Context,
-    total: usize
+    total: usize,
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (ExpressionAny, ty) | (ty, ExpressionAny) => match ty {
@@ -51,28 +52,19 @@ pub fn unify_type(
                 match name_ty.variant {
                     NameVariant::Tuple(names) => {
                         if names.len() != elements.len() {
-                            let msg = format!(
-                                "Cannot assign to tuple of size {} with tuple of size {}",
-                                names.len(),
-                                elements.len()
-                            );
+                            let msg = format!("Expected tuple with {} elements, was {}", names.len(), elements.len());
                             return Err(vec![TypeErr::new(&left.pos, &msg)]);
                         }
 
                         for pair in names.iter().zip_longest(elements.iter()) {
                             match &pair {
                                 Both(name, exp) => {
-                                    let l_ty = Expected::new(&left.pos, &Expect::Type {
-                                        name: name.clone().clone()
-                                    });
-                                    constraints.push("tuple collection", &l_ty, &exp)
+                                    let expect = Expect::Type { name: name.clone().clone() };
+                                    let l_ty = Expected::new(&left.pos, &expect);
+                                    constraints.push("tuple", &l_ty, &exp)
                                 }
                                 _ => {
-                                    let msg = format!(
-                                        "Cannot assign {} elements to a tuple of size {}",
-                                        elements.len(),
-                                        names.len()
-                                    );
+                                    let msg = format!("Cannot assign {} elements to a tuple of size {}", elements.len(), names.len());
                                     return Err(vec![TypeErr::new(&left.pos, &msg)]);
                                 }
                             }
@@ -102,7 +94,7 @@ pub fn unify_type(
         (Tuple { elements: l_ty }, Tuple { elements: r_ty }) => {
             for pair in l_ty.iter().zip_longest(r_ty.iter()) {
                 match &pair {
-                    Both(name, exp) => constraints.push("tuple collection", name, exp),
+                    Both(name, exp) => constraints.push("tuple", name, exp),
                     _ => {
                         let msg = format!(
                             "Tuple sizes differ. Expected {} elements, was {}",
