@@ -22,9 +22,9 @@ fn test_directory(
         resource_content_randomize(true, input, &format!("{}.py", file_name));
 
     let res = fallable(valid, input, &output_path, &output_file, file_name);
-    delete_dir(&output_path).map_err(|_| vec![])?;
     let (check_ast, out_ast) = res?;
     assert_eq!(check_ast, out_ast);
+    delete_dir(&output_path).map_err(|_| vec![])?;
     Ok(())
 }
 

@@ -17,32 +17,37 @@ pub fn substitute(
     old: &Expected,
     constraints: &mut Constraints,
     offset: usize,
-    total: usize
+    total: usize,
 ) -> TypeResult<Constraints> {
-    // TODO deal with tuples of identifiers
     let mut substituted = Constraints::new(&constraints.in_class);
     let mut constraint_pos = offset;
+
+    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}",
+        "",
+        offset,
+        total,
+        old,
+        new,
+        width = 14
+    );
 
     while let Some(mut constr) = constraints.pop_constr() {
         let old_constr = constr.clone();
         constraint_pos += 1;
-        macro_rules! replace {
-            ($left:expr, $new:expr) => {{
-                let pos =
-                    format!("({}={}) ", old_constr.parent.pos.start, old_constr.child.pos.start);
-                let side = if $left { "l" } else { "r" };
-                trace!(
-                    "{:width$} [sub {}\\{} {}]  {}  =>  {}",
-                    pos,
-                    constraint_pos,
-                    total,
-                    side,
-                    old_constr,
-                    $new,
-                    width = 16
-                );
-            }};
-        };
+        macro_rules! replace { ($left:expr, $new:expr) => {{
+            let pos = format!("({}={}) ", old_constr.parent.pos.start, old_constr.child.pos.start);
+            let side = if $left { "l" } else { "r" };
+            trace!(
+                "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
+                pos,
+                constraint_pos,
+                total,
+                side,
+                old_constr,
+                $new,
+                width = 16
+            );
+        }}};
 
         let (sub_l, parent) = recursive_substitute("l", &constr.parent, old, new);
         let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);

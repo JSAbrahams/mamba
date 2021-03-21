@@ -33,9 +33,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             (Type { .. }, Function { .. }) | (_, Access { .. }) =>
                 unify_function(constraint, &right, &left, constraints, ctx, total),
 
-            (Expression { .. }, _) =>
-                unify_expression(constraint, &left, &right, constraints, ctx, count, total),
-            (_, Expression { .. }) =>
+            (Expression { .. }, _) | (_, Expression { .. }) =>
                 unify_expression(constraint, &left, &right, constraints, ctx, count, total),
 
             (Tuple { .. }, Tuple { .. }) => unify_type(&right, &left, constraints, ctx, total),
