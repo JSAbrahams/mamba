@@ -27,7 +27,7 @@ pub const RANGE: &str = "Range";
 pub const SET: &str = "Set";
 pub const LIST: &str = "List";
 
-pub const NONE: &str = "undefined";
+pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
 
 pub mod generic;

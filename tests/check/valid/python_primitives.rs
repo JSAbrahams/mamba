@@ -26,6 +26,6 @@ pub fn std_lib_present() {
 
     // TODO Test for Set and List
     context.class(&DirectName::from("Range"), &Position::default()).unwrap();
-    context.class(&DirectName::from("undefined"), &Position::default()).unwrap();
+    context.class(&DirectName::from("None"), &Position::default()).unwrap();
     context.class(&DirectName::from("Exception"), &Position::default()).unwrap();
 }

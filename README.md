@@ -76,9 +76,9 @@ def fin always_the_same_message = "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool           := false
-    def private last_message: String := undefined
+    def private last_message: String := None
 
-    def last_sent(fin self) String raise [ServerError] => if self.last_message /= undefined 
+    def last_sent(fin self) String raise [ServerError] => if self.last_message /= None 
         then message
         else raise ServerError("No last message!")
 
@@ -136,9 +136,9 @@ class ServerError(def message: String): Exception(message)
 
 class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
     def is_connected: Bool           := false
-    def private last_message: String := undefined
+    def private last_message: String := None
 
-    def last_sent(self): String raise [ServerError] => if self.last_message /= undefined 
+    def last_sent(self): String raise [ServerError] => if self.last_message /= None 
         then message
         else raise ServerError("No last message!")
 

@@ -271,7 +271,7 @@ impl fmt::Display for Token {
 
             Token::Pass => String::from("pass"),
             Token::Print => String::from("print"),
-            Token::Undefined => String::from("undefined"),
+            Token::Undefined => String::from("None"),
             Token::Comment(string) => format!("{} (comment)", string)
         })
     }
