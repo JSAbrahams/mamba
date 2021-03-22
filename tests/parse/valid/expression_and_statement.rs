@@ -164,7 +164,7 @@ fn from_import_verify() {
     assert_eq!(imports.len(), 1);
     let (id, _use, _as) = match &imports[0].node {
         Node::FromImport { id, import } => match &import.node {
-            Node::Import { import, _as } => (id, import, _as),
+            Node::Import { import, aliases: _as } => (id, import, _as),
             other => panic!("Expected import but was {:?}.", other)
         },
         other => panic!("Expected from import but was {:?}.", other)
@@ -188,7 +188,7 @@ fn import_verify() {
 
     assert_eq!(imports.len(), 1);
     let (_use, _as) = match &imports[0].node {
-        Node::Import { import, _as } => (import, _as),
+        Node::Import { import, aliases: _as } => (import, _as),
         other => panic!("Expected import but was {:?}.", other)
     };
 
@@ -209,7 +209,7 @@ fn import_as_verify() {
 
     assert_eq!(imports.len(), 1);
     let (_use, _as) = match &imports[0].node {
-        Node::Import { import, _as } => (import, _as),
+        Node::Import { import, aliases: _as } => (import, _as),
         other => panic!("Expected import but was {:?}.", other)
     };
 

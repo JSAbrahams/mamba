@@ -11,8 +11,8 @@ fn import_verify() {
         to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
         to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
-    let _as = vec![];
-    let import = to_pos!(Node::Import { import, _as });
+    let aliases = vec![];
+    let import = to_pos!(Node::Import { import, aliases });
 
     let core_import = match desugar(&import) {
         Ok(Core::Import { imports }) => imports,
@@ -30,8 +30,8 @@ fn import_as_verify() {
         to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
         to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
-    let _as = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
-    let import = to_pos!(Node::Import { import, _as });
+    let aliases = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
+    let import = to_pos!(Node::Import { import, aliases });
 
     let (core_import, core_as) = match desugar(&import) {
         Ok(Core::ImportAs { imports, alias }) => (imports, alias),
@@ -53,7 +53,7 @@ fn from_import_verify() {
         to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
     ];
     let import =
-        to_pos!(Node::FromImport { id, import: to_pos!(Node::Import { import, _as: vec![] }) });
+        to_pos!(Node::FromImport { id, import: to_pos!(Node::Import { import, aliases: vec![] }) });
 
     let (from, import) = match desugar(&import) {
         Ok(Core::FromImport { from, import }) => match &import.deref() {

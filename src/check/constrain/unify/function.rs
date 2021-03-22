@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
+use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Tuple, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
@@ -117,13 +117,26 @@ pub fn unify_function(
                         unify_link(&mut constr, ctx, total)
                     }
                 }
+            } else if let Tuple { elements } = &entity.expect {
+                // Every element of tuple is individually accessed
+                for (i, element) in elements.iter().enumerate() {
+                    constraints.push(
+                        format!("Tuple element {}", i).as_str(),
+                        &Expected::new(&element.pos, &Access {
+                            entity: Box::from(element.clone()),
+                            name:   name.clone()
+                        }),
+                        right
+                    )
+                }
+                unify_link(constraints, ctx, total + elements.len())
             } else {
                 let mut constr = reinsert(constraints, &constr, total)?;
                 unify_link(&mut constr, ctx, total)
             },
 
         (l_exp, r_exp) => {
-            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
+            let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }

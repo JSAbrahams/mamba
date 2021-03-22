@@ -55,9 +55,9 @@ impl State {
         self.cur_indent = self.line_indent;
         self.pos = self.pos.clone().offset_pos(token.clone().width());
         if let Token::Str(_str, _) = &token {
-            self.pos = self.pos.clone().offset_line(_str.lines().count() as i32 - 1);
+            self.pos = self.pos.clone().offset_line((_str.lines().count() as i32 - 1) as usize);
         } else if let Token::DocStr(_str) = &token {
-            self.pos = self.pos.clone().offset_line(_str.lines().count() as i32 - 1);
+            self.pos = self.pos.clone().offset_line((_str.lines().count() as i32 - 1) as usize);
         }
 
         res

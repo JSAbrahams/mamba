@@ -5,9 +5,6 @@ for b in b do
     new := 30
     print new
 
-def b := {(1, 4), (2, 5)}
-for (first, second) in b do print first + second
-
 def e := {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 for d in e do
     print d

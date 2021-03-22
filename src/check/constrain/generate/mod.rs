@@ -1,3 +1,5 @@
+use env::Environment;
+
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::generate::call::gen_call;
 use crate::check::constrain::generate::class::gen_class;
@@ -9,11 +11,11 @@ use crate::check::constrain::generate::operation::gen_op;
 use crate::check::constrain::generate::resources::gen_resources;
 use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
-use crate::check::constrain::Constrained;
 use crate::check::context::Context;
-use crate::check::env::Environment;
-use crate::parse::ast::Node::*;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node::*;
+use crate::check::result::TypeErr;
+use crate::check::constrain::constraint::iterator::Constraints;
 
 mod call;
 mod class;
@@ -25,6 +27,15 @@ mod operation;
 mod resources;
 mod statement;
 mod ty;
+
+mod env;
+
+pub type Constrained<T = (ConstrBuilder, Environment)> = Result<T, Vec<TypeErr>>;
+
+pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<Vec<Constraints>> {
+    let builder = generate(ast, &Environment::default(), ctx, &mut ConstrBuilder::new())?.0;
+    Ok(builder.all_constr())
+}
 
 pub fn generate(
     ast: &AST,

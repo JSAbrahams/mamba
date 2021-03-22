@@ -5,11 +5,10 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::collection::gen_collection_lookup;
-use crate::check::constrain::generate::generate;
-use crate::check::constrain::Constrained;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::name::NameUnion;
 use crate::check::context::{clss, Context};
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
 
@@ -30,12 +29,12 @@ pub fn gen_flow(
 
         Node::IfElse { cond, then, el: Some(el) } => {
             constr.new_set(true);
-            let left = Expected::try_from(cond)?;
+            let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
-            let left = Expected::try_from(then)?;
-            let right = Expected::try_from(el)?;
+            let left = Expected::try_from((then, &env.var_mappings))?;
+            let right = Expected::try_from((el, &env.var_mappings))?;
             constr.add("if else", &left, &right);
 
             constr.new_set(true);
@@ -51,7 +50,7 @@ pub fn gen_flow(
         }
         Node::IfElse { cond, then, .. } => {
             constr.new_set(true);
-            let left = Expected::try_from(cond)?;
+            let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
@@ -70,13 +69,13 @@ pub fn gen_flow(
                     Node::Case { cond, body } => {
                         res.0.add(
                             "match case",
-                            &Expected::try_from(cond)?,
-                            &Expected::try_from(cond)?
+                            &Expected::try_from((cond, &env.var_mappings))?,
+                            &Expected::try_from((cond, &env.var_mappings))?
                         );
                         res.0.add(
                             "match body",
-                            &Expected::try_from(body)?,
-                            &Expected::try_from(ast)?
+                            &Expected::try_from((body, &env.var_mappings))?,
+                            &Expected::try_from((ast, &env.var_mappings))?
                         );
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
@@ -91,8 +90,6 @@ pub fn gen_flow(
             constr.new_set(true);
             let (mut constr, for_env) = generate(col, &env, ctx, constr)?;
 
-            // Generate lookup after collection in case of shadowing
-            // TODO make more elegant with environment unification
             let is_define_mode = for_env.is_define_mode;
             let (mut constr, for_env) =
                 gen_collection_lookup(expr, &col, &for_env.define_mode(true), &mut constr)?;
@@ -106,14 +103,14 @@ pub fn gen_flow(
             let name = NameUnion::from(clss::INT_PRIMITIVE);
             constr.add(
                 "step",
-                &Expected::try_from(amount)?,
+                &Expected::try_from((amount, &env.var_mappings))?,
                 &Expected::new(&amount.pos, &Type { name })
             );
             Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
             constr.new_set(true);
-            let left = Expected::try_from(cond)?;
+            let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, &env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;

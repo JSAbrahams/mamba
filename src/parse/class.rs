@@ -36,7 +36,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let mut parents = vec![];
     if it.eat_if(&Token::DoublePoint).is_some() {
         it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
-            Token::Id(_) => {
+            Token::Id(_) | Token::LRBrack => {
                 parents.push(*it.parse(&parse_parent, "parents", &start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())

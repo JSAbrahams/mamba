@@ -26,7 +26,7 @@ impl TryFrom<&AST> for DirectName {
                         generics.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?;
                     Ok(DirectName::new(lit, &generics))
                 }
-                _ => Err(vec![TypeErr::new(&id.pos, "Expected identifier")])
+                _ => Err(vec![TypeErr::new(&id.pos, &format!("Expected identifier, was {}", ast.node))])
             },
             _ => {
                 let msg = format!("Expected class name, was {}", ast.node);

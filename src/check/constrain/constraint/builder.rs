@@ -1,6 +1,6 @@
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::context::name::DirectName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -16,9 +16,9 @@ use crate::common::position::Position;
 /// the top-level of a script.
 #[derive(Clone, Debug)]
 pub struct ConstrBuilder {
-    pub level:   usize,
-    finished:    Vec<(Vec<DirectName>, Vec<Constraint>)>,
-    constraints: Vec<(Vec<DirectName>, Vec<Constraint>)>
+    pub level: usize,
+    finished: Vec<(Vec<DirectName>, Vec<Constraint>)>,
+    constraints: Vec<(Vec<DirectName>, Vec<Constraint>)>,
 }
 
 impl ConstrBuilder {
@@ -68,18 +68,7 @@ impl ConstrBuilder {
         Ok(())
     }
 
-    pub fn add_with_identifier(
-        &mut self,
-        msg: &str,
-        parent: &Expected,
-        child: &Expected,
-        idens: &[String]
-    ) {
-        let mut constr = Constraint::new(msg, parent, child);
-        constr.ids.append(&mut Vec::from(idens));
-        self.add_constr(&constr);
-    }
-
+    /// Add new constraint to constraint builder with a message.
     pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected) {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
