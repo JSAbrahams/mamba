@@ -147,6 +147,6 @@ pub fn argument_name(ast: &AST) -> Result<String, TypeErr> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
         Node::_Self => Ok(String::from(SELF)),
-        _ => Err(TypeErr::new(&ast.pos, "Expected identifier"))
+        _ => Err(TypeErr::new(&ast.pos, "Expected identifier in argument"))
     }
 }

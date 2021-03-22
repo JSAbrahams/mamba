@@ -100,7 +100,26 @@ fn reassign_non_mut_field() {
 }
 
 #[test]
+#[ignore] // Ignore mutability for now
 fn tuple_modify_mut() {
     let source = resource_content(false, &["type", "definition"], "tuple_modify_mut.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn wrong_size_tuple() {
+    let source = resource_content(false, &["type", "definition"], "wrong_size_tuple.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn wrong_size_tuple_2() {
+    let source = resource_content(false, &["type", "definition"], "wrong_size_tuple_2.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn list_not_a_tuple() {
+    let source = resource_content(false, &["type", "definition"], "list_not_a_tuple.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }

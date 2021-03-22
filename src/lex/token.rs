@@ -13,9 +13,9 @@ impl Lex {
     pub fn new(pos: &CaretPos, token: Token) -> Self {
         let start = pos.clone();
         let end = if let Token::Str(_str, _) = &token {
-            pos.clone().offset_line(max(_str.lines().count() as i32 - 1, 0))
+            pos.clone().offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
         } else if let Token::DocStr(_str) = &token {
-            pos.clone().offset_line(max(_str.lines().count() as i32 - 1, 0))
+            pos.clone().offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
         } else {
             pos.clone()
         };
@@ -134,8 +134,8 @@ pub enum Token {
 }
 
 impl Token {
-    pub fn width(self) -> i32 {
-        (match self {
+    pub fn width(self) -> usize {
+        match self {
             Token::Id(id) => id.len(),
             Token::Real(real) => real.len(),
             Token::Int(int) => int.len(),
@@ -145,7 +145,7 @@ impl Token {
             Token::DocStr(_str) => _str.len() + 6,
             Token::ENum(num, exp) => num.len() + 1 + exp.len(),
             other => format!("{}", other).len()
-        } as i32)
+        }
     }
 
     pub fn same_type(left: &Token, right: &Token) -> bool {

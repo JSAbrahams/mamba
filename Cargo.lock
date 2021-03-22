@@ -191,6 +191,7 @@ dependencies = [
  "log",
  "loggerv",
  "pathdiff",
+ "permutate",
  "python-parser",
  "tempfile",
 ]
@@ -257,6 +258,12 @@ name = "pathdiff"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3bf70094d203e07844da868b634207e71bfab254fe713171fae9a6e751ccf31"
+
+[[package]]
+name = "permutate"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53b7d5b19a715ffab38693a9dd44b067fdfa2b18eef65bd93562dfe507022fae"
 
 [[package]]
 name = "ppv-lite86"

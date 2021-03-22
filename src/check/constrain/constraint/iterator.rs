@@ -32,7 +32,9 @@ impl Constraints {
     /// Only used during unification stage.
     /// Marks constraint as generated.
     pub fn push(&mut self, msg: &str, parent: &Expected, child: &Expected) {
-        self.constraints.push_front(Constraint::new(msg, parent, child).as_gen())
+        let constraint = Constraint::new(msg, parent, child);
+        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 17);
+        self.constraints.push_front(constraint)
     }
 
     /// Append in_class and constraints of constraints to self
@@ -49,7 +51,7 @@ impl Constraints {
         if constraint.is_flag {
             // Can only reinsert constraint once
             let msg = format!(
-                "Cannot infer type, expected '{}' but was '{}'",
+                "Cannot infer type. Expected a {}, was {}",
                 &constraint.parent.expect, &constraint.child.expect
             );
             return Err(vec![TypeErr::new(&constraint.parent.pos, &msg)]);

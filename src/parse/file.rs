@@ -38,7 +38,7 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
         (Some(ast), _) => ast.pos.clone(),
         (..) => end
     };
-    Ok(Box::from(AST::new(&start.union(&end), Node::Import { import, _as })))
+    Ok(Box::from(AST::new(&start.union(&end), Node::Import { import, aliases: _as })))
 }
 
 fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {

@@ -1,16 +1,17 @@
-use std::convert::TryFrom;
+use EitherOrBoth::Both;
+use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::expected::Expect::{Collection, Expression, ExpressionAny};
-use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::expected::Expect::{Expression, ExpressionAny, Tuple};
+use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::reinsert;
 use crate::check::constrain::unify::link::unify_link;
-use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::Node;
+use crate::parse::ast::{AST, Node};
 
 mod substitute;
 
@@ -20,76 +21,53 @@ pub fn unify_expression(
     right: &Expected,
     constraints: &mut Constraints,
     ctx: &Context,
-    total: usize
+    count: usize,
+    total: usize,
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (Expression { ast }, ExpressionAny) => match &ast.node {
-            Node::FunctionCall { .. } | Node::PropertyCall { .. } => {
-                // may be expression, defer in case substituted
-                reinsert(constraints, constraint, total)?;
-                unify_link(constraints, ctx, total)
-            }
-            node if node.trivially_expression() => {
-                let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
-                unify_link(&mut constr, ctx, total)
-            }
-            _ => Err(vec![TypeErr::new(
-                &ast.pos,
-                &format!("Expected an expression but was {}", ast.node)
-            )])
-        },
-
-        (Expression { ast }, Collection { ty }) => {
-            let mut pushed = 0;
+        (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
             match &ast.node {
-                Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
-                    for e in elements {
-                        constraints.push("expression and collection", &Expected::try_from(e)?, ty);
-                        pushed += 1;
-                    },
-                _ => {}
-            }
+                Node::FunctionCall { .. } | Node::PropertyCall { .. } => {
+                    // may be expression, defer in case substituted
+                    reinsert(constraints, constraint, total)?;
+                    unify_link(constraints, ctx, total)
+                }
+                node if node.trivially_expression() => {
+                    let mut constr = substitute(&right, &left, constraints, count, total)?;
+                    unify_link(&mut constr, ctx, total)
+                }
+                _ => Err(vec![TypeErr::new(&ast.pos, &format!("Expected an expression but was {}", ast.node))])
+            },
 
-            let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
-            unify_link(&mut constr, ctx, total + pushed)
-        }
+        // Not sure if necessary, but exception made for tuple
+        (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
+        (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements })=> {
+            let mut constraints = substitute(&left, &right, constraints, count, total)?;
 
-        (Expression { ast: l_ast }, Expression { ast: r_ast }) => {
-            let mut pushed = 0;
-            match (&l_ast.node, &r_ast.node) {
-                (Node::Set { elements: l_el }, Node::Set { elements: r_el })
-                | (Node::List { elements: l_el }, Node::List { elements: r_el })
-                | (Node::Tuple { elements: l_el }, Node::Tuple { elements: r_el }) =>
-                    if l_el.len() == r_el.len() {
-                        for (l, r) in l_el.iter().zip(r_el) {
-                            let l_exp = Expected::try_from(l)?;
-                            let r_exp = Expected::try_from(r)?;
-                            constraints.push("collection expression", &l_exp, &r_exp);
-                            pushed += 1;
-                        }
-                    } else {
-                        let msg = format!(
-                            "Expected collection with {} elements, was {}.",
-                            l_el.len(),
-                            r_el.len()
-                        );
+            for pair in ast_elements.iter().zip_longest(elements.iter()) {
+                match &pair {
+                    Both(ast, exp) => {
+                        let expect = Expect::Expression { ast: ast.clone().clone() };
+                        let l_ty = Expected::new(&left.pos, &expect);
+                        constraints.push("tuple", &l_ty, &exp)
+                    }
+                    _ => {
+                        let msg = format!("Expected tuple with {} elements, was {}", elements.len(), ast_elements.len());
                         return Err(vec![TypeErr::new(&left.pos, &msg)]);
-                    },
-                _ => {}
+                    }
+                }
             }
 
-            let mut constr = substitute(&constraint.ids, &left, &right, constraints)?;
-            unify_link(&mut constr, ctx, total + pushed)
-        }
-
-        (Expression { .. }, _) => {
-            let mut constraints = substitute(&constraint.ids, &left, &right, constraints)?;
             unify_link(&mut constraints, ctx, total)
         }
 
-        (l_exp, r_exp) => {
-            let msg = format!("Expected '{}', found '{}'", l_exp, r_exp);
-            Err(vec![TypeErr::new(&left.pos, &msg)])
+        (Expression { .. }, _) => {
+            let mut constraints = substitute(&right, &left, constraints, count, total)?;
+            unify_link(&mut constraints, ctx, total)
+        }
+        _ => {
+            let mut constraints = substitute(&left, &right, constraints, count, total)?;
+            unify_link(&mut constraints, ctx, total)
         }
     }
 }

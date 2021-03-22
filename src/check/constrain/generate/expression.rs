@@ -2,10 +2,9 @@ use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::definition::{constrain_args, identifier_from_var};
-use crate::check::constrain::generate::generate;
-use crate::check::constrain::Constrained;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::Context;
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{Node, AST};
 use std::convert::TryFrom;
@@ -33,7 +32,7 @@ pub fn gen_expr(
         Node::Question { left, right } => {
             constr.add(
                 "question",
-                &Expected::try_from(left)?,
+                &Expected::try_from((left, &env.var_mappings))?,
                 &Expected::new(&left.pos, &Nullable)
             );
             let (mut constr, env) = generate(left, env, ctx, constr)?;

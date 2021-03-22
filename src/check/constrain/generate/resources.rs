@@ -2,11 +2,10 @@ use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::{ExpressionAny, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::definition::identifier_from_var;
-use crate::check::constrain::generate::generate;
-use crate::check::constrain::Constrained;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::name::NameUnion;
 use crate::check::context::Context;
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{Node, AST};
 use std::convert::TryFrom;
@@ -25,13 +24,13 @@ pub fn gen_resources(
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
-            constr.add("raises", &Expected::try_from(ast)?, &Expected::try_from(expr_or_stmt)?);
+            constr.add("raises", &Expected::try_from((ast, &env.var_mappings))?, &Expected::try_from((expr_or_stmt, &env.var_mappings))?);
             generate(expr_or_stmt, &env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             constr.new_set(true);
-            let resource_exp = Expected::try_from(resource)?;
-            constr.add("with as", &resource_exp, &Expected::try_from(alias)?);
+            let resource_exp = Expected::try_from((resource, &env.var_mappings))?;
+            constr.add("with as", &resource_exp, &Expected::try_from((alias, &env.var_mappings))?);
             constr.add("with as", &resource_exp, &Expected::new(&resource.pos, &ExpressionAny));
 
             if let Some(ty) = ty {
@@ -62,7 +61,7 @@ pub fn gen_resources(
             constr.new_set(true);
             constr.add(
                 "with",
-                &Expected::try_from(resource)?,
+                &Expected::try_from((resource, &env.var_mappings))?,
                 &Expected::new(&resource.pos, &ExpressionAny)
             );
             let (mut constr, env) = generate(resource, env, ctx, constr)?;
