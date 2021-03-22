@@ -1,12 +1,11 @@
 use std::convert::TryFrom;
 
-use crate::check::constrain::Constrained;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::gen_vec;
+use crate::check::constrain::generate::{gen_vec, Constrained};
 use crate::check::context::Context;
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
@@ -39,11 +38,11 @@ pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilde
                 for element in elements {
                     constr.add(
                         "collection item",
-                        &Expected::try_from((first, env))?,
-                        &Expected::try_from((element, env))?,
+                        &Expected::try_from((first, &env.var_mappings))?,
+                        &Expected::try_from((element, &env.var_mappings))?,
                     )
                 }
-                Box::from(Expected::new(&first.pos, &Expect::from((first, env))))
+                Box::from(Expected::new(&first.pos, &Expect::from((first, &env.var_mappings))))
             } else {
                 Box::from(Expected::new(&collection.pos, &ExpressionAny))
             };
@@ -52,7 +51,7 @@ pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilde
         }
         Node::Tuple { elements } => {
             let elements =
-                elements.iter().map(|ast| Expected::try_from((ast, env))).collect::<Result<_, _>>()?;
+                elements.iter().map(|ast| Expected::try_from((ast, &env.var_mappings))).collect::<Result<_, _>>()?;
             ("tuple", Expect::Tuple { elements })
         }
 
@@ -62,7 +61,7 @@ pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilde
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
-    constr.add(msg, &col_exp, &Expected::try_from((collection, env))?);
+    constr.add(msg, &col_exp, &Expected::try_from((collection, &env.var_mappings))?);
     Ok(constr.clone())
 }
 
@@ -78,13 +77,13 @@ pub fn gen_collection_lookup(
     let mut env = env.clone();
 
     // Make col constraint before inserting environment, in case shadowed here
-    let col_exp = Expected::try_from((col, &env))?;
+    let col_exp = Expected::try_from((col, &env.var_mappings))?;
     for (mutable, var) in Identifier::try_from(lookup)?.fields() {
         env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
     }
 
     let lookup_exp = Expected::new(&lookup.pos, &Collection {
-        ty: Box::from(Expected::try_from((lookup, &env))?)
+        ty: Box::from(Expected::try_from((lookup, &env.var_mappings))?)
     });
 
     constr.add("collection lookup", &lookup_exp, &col_exp);

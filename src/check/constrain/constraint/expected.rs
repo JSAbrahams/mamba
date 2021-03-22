@@ -9,12 +9,12 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
 use crate::check::context::name::{DirectName, NameUnion};
-use crate::check::env::Environment;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, BOOL_PRIMITIVE, STRING_PRIMITIVE};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
@@ -32,28 +32,28 @@ impl AsRef<Expected> for Expected {
     fn as_ref(&self) -> &Expected { &self }
 }
 
-impl TryFrom<(&AST, &Environment)> for Expected {
+impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
     type Error = Vec<TypeErr>;
 
     /// Creates Expected from AST.
     ///
     /// If primitive or Constructor, constructs Type.
-    fn try_from((ast, env): (&AST, &Environment)) -> TypeResult<Expected> {
+    fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expected> {
         let ast = match &ast.node {
             Node::Block { statements } | Node::Script { statements } =>
                 statements.last().unwrap_or(ast),
             _ => ast
         };
 
-        Ok(Expected::new(&ast.pos, &Expect::from((ast, env))))
+        Ok(Expected::new(&ast.pos, &Expect::from((ast, mappings))))
     }
 }
 
-impl TryFrom<(&Box<AST>, &Environment)> for Expected {
+impl TryFrom<(&Box<AST>, &HashMap<String, String>)> for Expected {
     type Error = Vec<TypeErr>;
 
-    fn try_from((ast, env): (&Box<AST>, &Environment)) -> TypeResult<Expected> {
-        Expected::try_from((ast.deref(), env))
+    fn try_from((ast, mappings): (&Box<AST>, &HashMap<String, String>)) -> TypeResult<Expected> {
+        Expected::try_from((ast.deref(), mappings))
     }
 }
 
@@ -71,16 +71,16 @@ pub enum Expect {
     Type { name: NameUnion },
 }
 
-impl From<(&AST, &Environment)> for Expect {
+impl From<(&AST, &HashMap<String, String>)> for Expect {
     /// Also substitutes any identifiers with new ones from the environment if the environment
     /// has a mapping.
     /// This means that we forget about shadowed variables and continue with the new ones.
-    fn from((ast, env): (&AST, &Environment)) -> Self {
+    fn from((ast, mappings): (&AST, &HashMap<String, String>)) -> Self {
         let ast = ast.map(&|node: &Node| {
-            if let Node::Id { ref lit } = node {
-                if let Some((name, _)) = env.get_var(&lit) {
+            if let Node::Id { lit } = node {
+                if let Some(name) = mappings.get(lit) {
                     // Always use name currently defined in environment
-                    Node::Id { lit: name }
+                    Node::Id { lit: name.clone() }
                 } else {
                     node.clone()
                 }

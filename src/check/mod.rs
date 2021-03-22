@@ -7,7 +7,6 @@ use crate::check::result::{TypeErr, TypeResults};
 use crate::parse::ast::AST;
 
 mod constrain;
-mod env;
 mod ident;
 
 pub mod context;

@@ -7,12 +7,11 @@ use itertools::Itertools;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::generate::{gen_vec, generate};
-use crate::check::constrain::Constrained;
+use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::name::DirectName;
 use crate::check::context::{Context, LookupClass, LookupFunction};
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -27,7 +26,7 @@ pub fn gen_call(
     match &ast.node {
         Node::Reassign { left, right } => {
             check_reassignable(left)?;
-            constr.add("reassign", &Expected::try_from((left, env))?, &Expected::try_from((right, env))?);
+            constr.add("reassign", &Expected::try_from((left, &env.var_mappings))?, &Expected::try_from((right, &env.var_mappings))?);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
@@ -43,7 +42,7 @@ pub fn gen_call(
 
                 for (_, fun_exp) in functions {
                     let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
-                    let args = args.iter().map(|a| Expected::try_from((a, &env))).collect::<Result<_, _>>()?;
+                    let args = args.iter().map(|a| Expected::try_from((a, &env.var_mappings))).collect::<Result<_, _>>()?;
                     let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
                     constr.add("function call", &right, &fun_exp);
                 }
@@ -53,7 +52,7 @@ pub fn gen_call(
                 constr = call_parameters(ast, &fun.arguments, &None, args, ctx, &constr)?;
                 let fun_ret_exp = Expected::new(&ast.pos, &Type { name: fun.ret_ty });
                 // entire AST is either fun ret ty or statement
-                constr.add("function call", &Expected::try_from((ast, &env))?, &fun_ret_exp);
+                constr.add("function call", &Expected::try_from((ast, &env.var_mappings))?, &fun_ret_exp);
 
                 if !fun.raises.is_empty() {
                     if let Some(raises) = &env.raises {
@@ -135,7 +134,7 @@ fn property_call(
         }
         Node::Id { lit } => {
             let access = Expected::new(&property.pos, &Access {
-                entity: Box::new(Expected::try_from((instance, env))?),
+                entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
                 name:   Box::new(Expected::new(&property.pos, &Field { name: lit.clone() }))
             });
             let instance = Expected::try_from((&AST {
@@ -144,7 +143,7 @@ fn property_call(
                     instance: Box::from(instance.clone()),
                     property: Box::from(property.clone())
                 }
-            }, env))?;
+            }, &env.var_mappings))?;
             constr.add("call property", &instance, &access);
             Ok((constr.clone(), env.clone()))
         }
@@ -156,19 +155,19 @@ fn property_call(
             };
 
             let left = Expected::new(&property.pos, &Access {
-                entity: Box::new(Expected::try_from((instance, env))?),
+                entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
                 name:   Box::new(Expected::new(&property.pos, &Field { name }))
             });
 
-            constr.add("call and reassign", &left, &Expected::try_from((right, env))?);
+            constr.add("call and reassign", &left, &Expected::try_from((right, &env.var_mappings))?);
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
-            let instance_exp = Expected::try_from((instance, &env))?;
+            let instance_exp = Expected::try_from((instance, &env.var_mappings))?;
             let mut args_with_self: Vec<Expected> = vec![instance_exp];
             args_with_self
-                .append(&mut args.iter().map(|a|Expected::try_from((a, &env))).collect::<Result<_, _>>()?);
+                .append(&mut args.iter().map(|a|Expected::try_from((a, &env.var_mappings))).collect::<Result<_, _>>()?);
 
             let instance_exp = Expected::try_from((&AST {
                 pos:  instance.pos.union(&property.pos),
@@ -176,9 +175,9 @@ fn property_call(
                     instance: Box::from(instance.clone()),
                     property: Box::from(property.clone())
                 }
-            }, &env))?;
+            }, &env.var_mappings))?;
             let access = Expected::new(&property.pos, &Access {
-                entity: Box::new(Expected::try_from((instance, &env))?),
+                entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
                 name:   Box::new(Expected::new(&property.pos, &Function {
                     name: DirectName::try_from(name.deref())?,
                     args: args_with_self

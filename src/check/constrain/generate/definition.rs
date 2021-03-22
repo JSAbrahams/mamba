@@ -3,16 +3,15 @@ use std::ops::Deref;
 
 use permutate::Permutator;
 
-use crate::check::constrain::Constrained;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::generate;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::name::{DirectName, match_name, NameUnion, Union};
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -91,7 +90,7 @@ pub fn constrain_args(
 
                     let self_exp = Expected::new(&var.pos, &self_type);
                     res.1 = res.1.insert_var(*mutable, SELF, &self_exp);
-                    let left = Expected::try_from((var, env))?;
+                    let left = Expected::try_from((var, &env.var_mappings))?;
                     res.0.add("arguments", &left, &Expected::new(&var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, default, *mutable, ctx, &mut res.0, &res.1)?;
@@ -132,13 +131,13 @@ pub fn identifier_from_var(
         let tup_exps = identifier_to_tuple(&var.pos, &identifier, &env)?;
         match (ty, expression) {
             (Some(ty), _) => {
-                let ty_exp = Expected::try_from((ty, &env))?;
+                let ty_exp = Expected::try_from((ty, &env.var_mappings))?;
                 for tup_exp in tup_exps {
                     constr.add("type and tuple", &ty_exp, &tup_exp);
                 }
             }
             (_, Some(expr)) => {
-                let expr_expt = Expected::try_from((expr, &env))?;
+                let expr_expt = Expected::try_from((expr, &env.var_mappings))?;
                 if tup_exps.len() > 1 {
                     for tup_exp in &tup_exps {
                         println!("{:?}", tup_exp)
@@ -153,13 +152,13 @@ pub fn identifier_from_var(
         }
     }
 
-    let var_expect = Expected::try_from((var, &env))?;
+    let var_expect = Expected::try_from((var, &env.var_mappings))?;
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
             constr.add("variable, type, and expression", &parent, &var_expect);
-            let expr_expect = Expected::try_from((expr, &env))?;
+            let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
             constr.add("variable, type, and expression", &var_expect, &expr_expect);
             generate(expr, &env, ctx, &mut constr)
         }
@@ -170,7 +169,7 @@ pub fn identifier_from_var(
             Ok((constr, env))
         }
         (None, Some(expr)) => {
-            let parent = Expected::try_from((expr, &env))?;
+            let parent = Expected::try_from((expr, &env.var_mappings))?;
             constr.add("variable and expression", &parent, &var_expect);
             generate(expr, &env, ctx, &mut constr)
         }

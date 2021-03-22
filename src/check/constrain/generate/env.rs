@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
-use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
 use crate::check::context::name::NameUnion;
 use crate::common::position::Position;
@@ -15,8 +15,8 @@ pub struct Environment {
     pub return_type: Option<Expected>,
     pub raises: Option<Expected>,
     pub class_type: Option<Expect>,
+    pub var_mappings: HashMap<String, String>,
     vars: HashMap<String, HashSet<(bool, Expected)>>,
-    var_mappings: Vec<(String, String)>
 }
 
 impl Default for Environment {
@@ -29,7 +29,7 @@ impl Default for Environment {
             raises: None,
             class_type: None,
             vars: HashMap::new(),
-            var_mappings: vec![]
+            var_mappings: HashMap::new(),
         }
     }
 }
@@ -66,7 +66,8 @@ impl Environment {
                 offset += 1;
                 new_var = format!("{}@{}", var, offset);
             }
-            self.var_mappings.push((String::from(var), new_var.clone()));
+
+            self.var_mappings.insert(String::from(var), new_var.clone());
             new_var
         } else {
             String::from(var)
@@ -112,7 +113,7 @@ impl Environment {
     /// Return true variable name, whether it's mutable and it's expected value
     pub fn get_var(&self, var: &str) -> Option<(String, HashSet<(bool, Expected)>)> {
         for (old, new) in &self.var_mappings {
-            if old == var { return self.get_var(new) }
+            if old == var { return self.get_var(new); }
         }
 
         self.vars.get(var).cloned().map(|res| (String::from(var), res))
@@ -121,6 +122,9 @@ impl Environment {
     /// Union between two environments
     ///
     /// Combines all variables.
+    ///
+    /// Variable mappings combined.
+    /// If mapping occurs in both environments, then those of this environment taken.
     pub fn union(&self, other: &Environment) -> Environment {
         let mut vars = self.vars.clone();
         for (key, other_set) in &other.vars {
@@ -131,7 +135,13 @@ impl Environment {
                 vars.insert(key.clone(), other_set.clone());
             }
         }
-        Environment { vars, ..self.clone() }
+
+        let mut var_mappings = self.var_mappings.clone();
+        for (key, value) in &other.var_mappings {
+            var_mappings.insert(key.clone(), value.clone());
+        }
+
+        Environment { vars, var_mappings, ..self.clone() }
     }
 
     /// Intersection between two environments.
@@ -142,6 +152,9 @@ impl Environment {
     ///
     /// Only intersect vars, all other fields of other environment are
     /// discarded.
+    ///
+    /// Var mappings from this environment preserved which also occur in the other environment.
+    /// However, mappings of other environment preserved.
     pub fn intersect(&self, other: &Environment) -> Environment {
         let keys = self.vars.keys().filter(|key| other.vars.contains_key(*key));
         let mut vars = HashMap::new();
@@ -158,6 +171,16 @@ impl Environment {
             }
         }
 
-        Environment { vars, ..self.clone() }
+        let to_remove: Vec<String> = self.var_mappings.iter()
+            .filter(|(key, _)| { other.var_mappings.contains_key(key.clone()) })
+            .map(|(key, _)| key.clone())
+            .collect();
+
+        let mut var_mappings = self.var_mappings.clone();
+        for key in &to_remove {
+            var_mappings.remove(key);
+        }
+
+        Environment { vars, var_mappings, ..self.clone() }
     }
 }

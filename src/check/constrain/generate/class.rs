@@ -4,12 +4,11 @@ use std::ops::Deref;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{gen_vec, generate};
-use crate::check::constrain::Constrained;
+use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::Context;
 use crate::check::context::{field, LookupClass};
-use crate::check::env::Environment;
+use crate::check::constrain::generate::env::Environment;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::parse::ast::{Node, AST};
@@ -61,7 +60,7 @@ pub fn constrain_class_body(
 
     res.0.add(
         "class body",
-        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::_Self }, env))?,
+        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::_Self }, &env.var_mappings))?,
         &Expected::new(&ty.pos, &class_ty_exp)
     );
 
@@ -84,7 +83,7 @@ pub fn property_from_field(
         instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
         property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } })
     };
-    let property_call = Expected::try_from((&AST::new(&pos, node), &env.clone()))?;
+    let property_call = Expected::try_from((&AST::new(&pos, node), &env.var_mappings))?;
     let field_ty = Expected::new(&pos, &Type { name: field.ty.clone() });
 
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
