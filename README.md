@@ -72,10 +72,10 @@ import ipaddress
 
 class ServerError(def message: String): Exception(message)
 
-def fin always_the_same_message = "Connected!"
+def fin always_the_same_message := "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
-    def is_connected: Bool           := false
+    def is_connected: Bool           := False
     def private last_message: String := None
 
     def last_sent(fin self) String raise [ServerError] => if self.last_message /= None 
@@ -90,7 +90,7 @@ class MyServer(def ip_address: IPv4Address)
         then self.last_message := message
         else raise ServerError("Not connected!")
 
-    def disconnect(self) => self.is_connected := false
+    def disconnect(self) => self.is_connected := False
 ```
 
 Notice how:
@@ -104,15 +104,15 @@ Which we can then use as follows in our script:
 import ipaddress
 from server import MyServer
 
-def fin some_ip   := ipaddress.ip_address "151.101.193.140"
-def my_server := MyServer(some_ip)
+def fin some_ip := ipaddress.ip_address "151.101.193.140"
+def my_server   := MyServer(some_ip)
 
 http_server.connect()
-if my_server.is_connected then http_server.send "Hello World!"
+if my_server.is_connected then http_server.send("Hello World!")
 
 # This statement may raise an error, but for now de simply leave it as-is
 # See the error handling section for more detail
-print "last message sent before disconnect: \"{my_server.last_sent()}\"." raise [ServerError]
+print "last message sent before disconnect: \"{my_server.last_sent()}\"."
 my_server.disconnect()
 ```
 
@@ -135,18 +135,18 @@ type Server
 class ServerError(def message: String): Exception(message)
 
 class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
-    def is_connected: Bool           := false
+    def is_connected: Bool           := False
     def private last_message: String := None
 
     def last_sent(self): String raise [ServerError] => if self.last_message /= None 
         then message
         else raise ServerError("No last message!")
 
-    def connect(self: DisconnectedMyServer) => self.is_connected := true
+    def connect(self: DisconnectedMyServer) => self.is_connected := True
 
     def send(self: ConnectedMyServer, message: String) => self.last_message := message
 
-    def disconnect(self: ConnectedMyServer) => self.is_connected := false
+    def disconnect(self: ConnectedMyServer) => self.is_connected := False
 
 type ConnectedMyServer: MyServer when self.is_connected
 type DisconnectedMyServer: MyServer when not self.is_connected
@@ -161,7 +161,7 @@ For each type, we use `when` to show that it is a type refinement, which certain
 import ipaddress
 from server import MyServer
 
-def fin some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 # The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
@@ -170,7 +170,7 @@ http_server.connect()
 # We check the state
 if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
-    my_server.send "Hello World!"
+    my_server.send("Hello World!")
 
 print "last message sent before disconnect: \"{my_server.last_sent}\"." raise [ServerErr]
 if my_server isa ConnectedMyServer then my_server.disconnect()
@@ -254,7 +254,7 @@ In that case, we must handle the case where `my_server` throws a `ServerErr`:
 import ipaddress
 from server import MyServer
 
-def fin some_ip   := ipaddress.ip_address "151.101.193.140"
+def fin some_ip := ipaddress.ip_address "151.101.193.140"
 def my_server := MyServer(some_ip)
 
 def message := "Hello World!"
@@ -305,7 +305,8 @@ During this stage, errors are raised if we encounter an illegal character.
 
 Convert the list of tokens to an Abstract Syntax Tree (AST) based on the pre-defined grammar of the language.
 
-During this stage syntax errors may be raised if we encounter illegal strings of tokens.
+During this stage syntax errors are raised if we encounter an illegal strings of tokens.
+I.e. a list of tokens that does not conform to the grammar of the language.
 
 ### Type checking
 
