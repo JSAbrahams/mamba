@@ -30,9 +30,14 @@ impl Identifier {
         if let Some((_, id)) = &self.lit {
             Identifier { lit: Some((mutable, id.clone())), names: self.names.clone() }
         } else {
-            Identifier {
-                lit:   self.lit.clone(),
-                names: self.names.iter().map(|name| name.as_mutable(mutable)).collect()
+            if mutable {
+                self.clone()
+            } else {
+                // If not mutable, then make everything immutable
+                Identifier {
+                    lit: self.lit.clone().map(|(_, str)| (true, str)),
+                    names: self.names.iter().map(|name| name.as_mutable(false)).collect()
+                }
             }
         }
     }
@@ -41,7 +46,7 @@ impl Identifier {
 impl Display for Identifier {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         if let Some((mutable, lit)) = &self.lit {
-            write!(f, "{}{}", if *mutable { "mut " } else { "" }, lit.clone())
+            write!(f, "{}{}", if *mutable { "" } else { "fin " }, lit.clone())
         } else {
             write!(f, "({})", comma_delm(&self.names))
         }
@@ -53,8 +58,7 @@ impl TryFrom<&AST> for Identifier {
 
     fn try_from(ast: &AST) -> TypeResult<Identifier> {
         match &ast.node {
-            // TODO add mutable field to identifier
-            Node::Id { lit } => Ok(Identifier::from((false, lit.as_str()))),
+            Node::Id { lit } => Ok(Identifier::from((true, lit.as_str()))),
             Node::ExpressionType { expr, mutable, .. } => {
                 let identifier = Identifier::try_from(expr.deref())?;
                 Ok(identifier.as_mutable(*mutable))
