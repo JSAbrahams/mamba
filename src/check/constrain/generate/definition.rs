@@ -181,7 +181,6 @@ pub fn identifier_from_var(
     }
 }
 
-// TODO do something with mutable
 // Returns every possible tuple. Elements of a tuple are not to be confused with
 // the union of types derived from the current environment.
 fn identifier_to_tuple(

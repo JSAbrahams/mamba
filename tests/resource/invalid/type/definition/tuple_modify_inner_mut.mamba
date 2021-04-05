@@ -2,5 +2,5 @@ class MyClass
     def my_field: Int := 10
 
 
-def fin (a, b) := (MyClass(), 10)
-b := 20
+def (a, fin b) := (MyClass(), 10)
+b := 30
