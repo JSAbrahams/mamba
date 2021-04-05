@@ -3,8 +3,8 @@ def fun_a() -> Int? =>
     if True and True then print "hello"
     if False or True then print "world"
 
-    def a := undefined ? 11
-    if True then return 10 else return undefined
+    def a := None ? 11
+    if True then return 10 else return None
 
 def fun_b(b: Int) => print b
 
@@ -39,4 +39,4 @@ def factorial(x: Int) -> Int => return x * factorial(x - 1)
 
 def some_higher_order(f: (Int) -> Int, x: Int) -> Int => return f(x)
 
-def always_undefined() -> Int? => return undefined
+def always_undefined() -> Int? => return None
