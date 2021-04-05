@@ -260,7 +260,7 @@ fn as_op_or_id(string: String) -> Token {
         "False" => Token::Bool(false),
         "print" => Token::Print,
 
-        "undefined" => Token::Undefined,
+        "None" => Token::Undefined,
         "pass" => Token::Pass,
 
         _ => Token::Id(string)

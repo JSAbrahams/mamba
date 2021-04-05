@@ -127,7 +127,7 @@ impl Display for Node {
             Node::Continue => String::from("continue"),
             Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
             Node::Underscore => String::from("_"),
-            Node::Undefined => String::from("undefined"),
+            Node::Undefined => format!("{}", Token::Undefined),
             Node::Pass => String::from("pass"),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),

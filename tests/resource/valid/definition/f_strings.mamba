@@ -5,4 +5,4 @@ print "primitive {"a string"}"
 
 print "set {{2, 3, 4}}"
 print "list {[2, 3, 4]}"
-print "Optional {undefined}"
+print "Optional {None}"
