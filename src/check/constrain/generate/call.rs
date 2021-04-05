@@ -30,6 +30,7 @@ pub fn gen_call(
             let mut errors = vec![];
             for (f_mut, var) in &identifier.fields() {
                 if !f_mut {
+                    // note that this is mutability of reassign iden, not one in env
                     let msg = format!("Cannot change mutability of {} in reassign", var);
                     errors.push(TypeErr::new(&ast.pos, &msg))
                 }
