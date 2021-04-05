@@ -35,7 +35,7 @@ impl Identifier {
             } else {
                 // If not mutable, then make everything immutable
                 Identifier {
-                    lit: self.lit.clone().map(|(_, str)| (true, str)),
+                    lit: self.lit.clone().map(|(_, str)| (false, str)),
                     names: self.names.iter().map(|name| name.as_mutable(false)).collect()
                 }
             }
