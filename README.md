@@ -78,7 +78,7 @@ class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool           := False
     def private last_message: String := None
 
-    def last_sent(fin self) -> String raise [ServerError] => if self.last_message /= None 
+    def last_sent(fin self) -> String raise ServerError => if self.last_message /= None 
         then message
         else raise ServerError("No last message!")
 
@@ -86,7 +86,7 @@ class MyServer(def ip_address: IPv4Address)
         self.is_connected := true
         print(always_the_same_message)
 
-    def send(self, message: String) raise [ServerError] => if self.is_connected 
+    def send(self, message: String) raise ServerError => if self.is_connected 
         then self.last_message := message
         else raise ServerError("Not connected!")
 
@@ -128,17 +128,17 @@ import ipaddress
 type Server
     def ip_address: IPv4Address
 
-    def connect()    -> () raise [ServerErr]
-    def send(String) -> () raise [ServerErr]
+    def connect()    -> () raise ServerErr
+    def send(String) -> () raise ServerErr
     def disconnect() -> ()
 
-class ServerError(def message: String): Exception(message)
+class ServerErr(def message: String): Exception(message)
 
 class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
     def is_connected: Bool           := False
     def private last_message: String := None
 
-    def last_sent(self) -> String raise [ServerError] => if self.last_message /= None 
+    def last_sent(self) -> String raise ServerErr => if self.last_message /= None 
         then message
         else raise ServerError("No last message!")
 
@@ -172,7 +172,7 @@ if my_server isa ConnectedMyServer then
     # http_server is a Connected Server if the above is true
     my_server.send("Hello World!")
 
-print "last message sent before disconnect: \"{my_server.last_sent}\"." raise [ServerErr]
+print("last message sent before disconnect: \"{my_server.last_sent}\".")
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
