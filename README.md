@@ -75,10 +75,10 @@ class ServerError(def message: String): Exception(message)
 def fin always_the_same_message := "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
-    def is_connected: Bool           := False
-    def private last_message: String := None
+    def is_connected: Bool    := False
+    def _last_message: String := None
 
-    def last_sent(fin self) -> String raise ServerError => if self.last_message /= None 
+    def last_sent(fin self) -> String raise ServerError => if self._last_message /= None 
         then message
         else raise ServerError("No last message!")
 
@@ -87,17 +87,14 @@ class MyServer(def ip_address: IPv4Address)
         print(always_the_same_message)
 
     def send(self, message: String) raise ServerError => if self.is_connected 
-        then self.last_message := message
+        then self._last_message := message
         else raise ServerError("Not connected!")
 
     def disconnect(self) => self.is_connected := False
 ```
 
 Notice how:
--   `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
--   `last_message` is private, denoted by the `private` keyword.
-    This means that we cannot access is directly, meaning we cannot for instance do `server.last_message := "Mischief"`.
-    Instead, we call `server.last_sent`.
+-   `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `sel
 
 Which we can then use as follows in our script:
 ```mamba
@@ -132,24 +129,24 @@ type Server
     def send(String) -> () raise ServerErr
     def disconnect() -> ()
 
+type ConnectedMyServer: MyServer when self.is_connected
+type DisconnectedMyServer: MyServer when not self.is_connected
+
 class ServerErr(def message: String): Exception(message)
 
 class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
-    def is_connected: Bool           := False
-    def private last_message: String := None
+    def is_connected: Bool    := False
+    def _last_message: String := None
 
     def last_sent(self) -> String raise ServerErr => if self.last_message /= None 
-        then message
+        then self._last_message
         else raise ServerError("No last message!")
 
     def connect(self: DisconnectedMyServer) => self.is_connected := True
 
-    def send(self: ConnectedMyServer, message: String) => self.last_message := message
+    def send(self: ConnectedMyServer, message: String) => self._last_message := message
 
     def disconnect(self: ConnectedMyServer) => self.is_connected := False
-
-type ConnectedMyServer: MyServer when self.is_connected
-type DisconnectedMyServer: MyServer when not self.is_connected
 ```
 
 Notice how above, we define the type of `self`.
