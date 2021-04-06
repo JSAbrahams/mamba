@@ -100,7 +100,6 @@ fn reassign_non_mut_field() {
 }
 
 #[test]
-#[ignore] // Need to update parsing rules first
 fn tuple_modify_inner_mut() {
     let source = resource_content(false, &["type", "definition"], "tuple_modify_inner_mut.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
