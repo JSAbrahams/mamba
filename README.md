@@ -79,7 +79,7 @@ class MyServer(def ip_address: IPv4Address)
     def _last_message: String := None
 
     def last_sent(fin self) -> String raise ServerError => if self._last_message /= None 
-        then message
+        then self._last_message
         else raise ServerError("No last message!")
 
     def connect(self) =>
