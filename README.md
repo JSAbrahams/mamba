@@ -12,10 +12,11 @@
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
     <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
     </a>
-    <br/>
     <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
     </a>
+    <br/>
+    <img src="https://img.shields.io/tokei/lines/github/JSAbrahams/mamba?style=for-the-badge" alt="Total Lines">
     <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
 </p>
 
