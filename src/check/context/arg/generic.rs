@@ -68,7 +68,7 @@ impl TryFrom<&AST> for ClassArgument {
 
     fn try_from(ast: &AST) -> TypeResult<ClassArgument> {
         match &ast.node {
-            Node::VariableDef { mutable, var, expression, ty, .. } => {
+            Node::VariableDef { mutable, var, expr: expression, ty, .. } => {
                 let fun_arg = GenericFunctionArg {
                     is_py_type:  false,
                     name:        argument_name(var)?,

@@ -259,9 +259,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             left:  Box::from(desugar_node(left, imp, state)?),
             right: Box::from(desugar_node(right, imp, state)?)
         },
-        Node::Script { statements } =>
-            Core::Block { statements: desugar_vec(statements, imp, state)? },
-        Node::File { modules, .. } => {
+        Node::File { statements: modules, .. } => {
             let mut modules = desugar_vec(modules, imp, state)?;
             let mut statements = imp.imports.clone();
             statements.append(&mut modules);
@@ -298,11 +296,10 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Raise { error } => Core::Raise { error: Box::from(desugar_node(error, imp, state)?) },
 
         Node::Handle { expr_or_stmt, cases } => {
-            let (var, private, ty) =
-                if let Node::VariableDef { var, private, ty, .. } = &expr_or_stmt.node {
+            let (var, ty) =
+                if let Node::VariableDef { var, ty, .. } = &expr_or_stmt.node {
                     (
                         Some(Box::from(desugar_node(var, imp, state)?)),
-                        *private,
                         if let Some(ty) = ty {
                             Some(Box::from(desugar_node(ty, imp, state)?))
                         } else {
@@ -310,13 +307,13 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                         }
                     )
                 } else {
-                    (None, false, None)
+                    (None, None)
                 };
             let assign_state = state.assign_to(var.as_deref());
 
             Core::TryExcept {
                 setup:   if let Some(var) = var {
-                    Some(Box::from(Core::VarDef { private, var, ty, expr: None }))
+                    Some(Box::from(Core::VarDef { var, ty, expr: None }))
                 } else {
                     None
                 },

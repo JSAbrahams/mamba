@@ -25,130 +25,37 @@ impl AST {
     }
 }
 
+type OptAST = Option<Box<AST>>;
+
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
-    File {
-        pure: bool,
-        modules: Vec<AST>,
-    },
-    Import {
-        import: Vec<AST>,
-        aliases: Vec<AST>,
-    },
-    FromImport {
-        id: Box<AST>,
-        import: Box<AST>,
-    },
-    Class {
-        ty: Box<AST>,
-        args: Vec<AST>,
-        parents: Vec<AST>,
-        body: Option<Box<AST>>,
-    },
-    Generic {
-        id: Box<AST>,
-        isa: Option<Box<AST>>,
-    },
-    Parent {
-        ty: Box<AST>,
-        args: Vec<AST>,
-    },
-    Script {
-        statements: Vec<AST>
-    },
+    File { statements: Vec<AST> },
+    Import { import: Vec<AST>, aliases: Vec<AST> },
+    FromImport { id: Box<AST>, import: Box<AST> },
+    Class { ty: Box<AST>, args: Vec<AST>, parents: Vec<AST>, body: OptAST },
+    Generic { id: Box<AST>, isa: OptAST },
+    Parent { ty: Box<AST>, args: Vec<AST> },
     Init,
-    Reassign {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    VariableDef {
-        private: bool,
-        mutable: bool,
-        var: Box<AST>,
-        ty: Option<Box<AST>>,
-        expression: Option<Box<AST>>,
-        forward: Vec<AST>,
-    },
-    FunDef {
-        pure: bool,
-        private: bool,
-        id: Box<AST>,
-        fun_args: Vec<AST>,
-        ret_ty: Option<Box<AST>>,
-        raises: Vec<AST>,
-        body: Option<Box<AST>>,
-    },
-    AnonFun {
-        args: Vec<AST>,
-        body: Box<AST>,
-    },
-    Raises {
-        expr_or_stmt: Box<AST>,
-        errors: Vec<AST>,
-    },
-    Raise {
-        error: Box<AST>
-    },
-    Handle {
-        expr_or_stmt: Box<AST>,
-        cases: Vec<AST>,
-    },
-    With {
-        resource: Box<AST>,
-        alias: Option<(Box<AST>, bool, Option<Box<AST>>)>,
-        expr: Box<AST>,
-    },
-    FunctionCall {
-        name: Box<AST>,
-        args: Vec<AST>,
-    },
-    PropertyCall {
-        instance: Box<AST>,
-        property: Box<AST>,
-    },
-    Id {
-        lit: String
-    },
-    ExpressionType {
-        expr: Box<AST>,
-        mutable: bool,
-        ty: Option<Box<AST>>,
-    },
-    TypeDef {
-        ty: Box<AST>,
-        isa: Option<Box<AST>>,
-        body: Option<Box<AST>>,
-    },
-    TypeAlias {
-        ty: Box<AST>,
-        isa: Box<AST>,
-        conditions: Vec<AST>,
-    },
-    TypeTup {
-        types: Vec<AST>
-    },
-    TypeUnion {
-        types: Vec<AST>
-    },
-    Type {
-        id: Box<AST>,
-        generics: Vec<AST>,
-    },
-    TypeFun {
-        args: Vec<AST>,
-        ret_ty: Box<AST>,
-    },
-    Condition {
-        cond: Box<AST>,
-        el: Option<Box<AST>>,
-    },
-    FunArg {
-        vararg: bool,
-        mutable: bool,
-        var: Box<AST>,
-        ty: Option<Box<AST>>,
-        default: Option<Box<AST>>,
-    },
+    Reassign { left: Box<AST>, right: Box<AST> },
+    VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
+    FunDef { pure: bool, id: Box<AST>, args: Vec<AST>, ret: OptAST, raises: Vec<AST>, body: OptAST },
+    AnonFun { args: Vec<AST>, body: Box<AST> },
+    Raises { expr_or_stmt: Box<AST>, errors: Vec<AST> },
+    Raise { error: Box<AST> },
+    Handle { expr_or_stmt: Box<AST>, cases: Vec<AST> },
+    With { resource: Box<AST>, alias: Option<(Box<AST>, bool, Option<Box<AST>>)>, expr: Box<AST> },
+    FunctionCall { name: Box<AST>, args: Vec<AST> },
+    PropertyCall { instance: Box<AST>, property: Box<AST> },
+    Id { lit: String },
+    ExpressionType { expr: Box<AST>, mutable: bool, ty: OptAST },
+    TypeDef { ty: Box<AST>, isa: OptAST, body: OptAST },
+    TypeAlias { ty: Box<AST>, isa: Box<AST>, conditions: Vec<AST> },
+    TypeTup { types: Vec<AST> },
+    TypeUnion { types: Vec<AST> },
+    Type { id: Box<AST>, generics: Vec<AST> },
+    TypeFun { args: Vec<AST>, ret_ty: Box<AST> },
+    Condition { cond: Box<AST>, el: OptAST },
+    FunArg { vararg: bool, mutable: bool, var: Box<AST>, ty: OptAST, default: OptAST },
     _Self,
     AddOp,
     SubOp,
@@ -161,266 +68,113 @@ pub enum Node {
     EqOp,
     LeOp,
     GeOp,
-    Set {
-        elements: Vec<AST>
-    },
-    SetBuilder {
-        item: Box<AST>,
-        conditions: Vec<AST>,
-    },
-    List {
-        elements: Vec<AST>
-    },
-    ListBuilder {
-        item: Box<AST>,
-        conditions: Vec<AST>,
-    },
-    Tuple {
-        elements: Vec<AST>
-    },
-    Range {
-        from: Box<AST>,
-        to: Box<AST>,
-        inclusive: bool,
-        step: Option<Box<AST>>,
-    },
-    Block {
-        statements: Vec<AST>
-    },
-    Real {
-        lit: String
-    },
-    Int {
-        lit: String
-    },
-    ENum {
-        num: String,
-        exp: String,
-    },
-    Str {
-        lit: String,
-        expressions: Vec<AST>,
-    },
-    DocStr {
-        lit: String
-    },
-    Bool {
-        lit: bool
-    },
-    Add {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    AddU {
-        expr: Box<AST>
-    },
-    Sub {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    SubU {
-        expr: Box<AST>
-    },
-    Mul {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Div {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    FDiv {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Mod {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Pow {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Sqrt {
-        expr: Box<AST>
-    },
-    BAnd {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BOr {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BXOr {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BOneCmpl {
-        expr: Box<AST>
-    },
-    BLShift {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    BRShift {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Le {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Ge {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Leq {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Geq {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Is {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IsN {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Eq {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Neq {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IsA {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IsNA {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Not {
-        expr: Box<AST>
-    },
-    And {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Or {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    IfElse {
-        cond: Box<AST>,
-        then: Box<AST>,
-        el: Option<Box<AST>>,
-    },
-    Match {
-        cond: Box<AST>,
-        cases: Vec<AST>,
-    },
-    Case {
-        cond: Box<AST>,
-        body: Box<AST>,
-    },
-    For {
-        expr: Box<AST>,
-        col: Box<AST>,
-        body: Box<AST>,
-    },
-    In {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    Step {
-        amount: Box<AST>
-    },
-    While {
-        cond: Box<AST>,
-        body: Box<AST>,
-    },
+    Set { elements: Vec<AST> },
+    SetBuilder { item: Box<AST>, conditions: Vec<AST> },
+    List { elements: Vec<AST> },
+    ListBuilder { item: Box<AST>, conditions: Vec<AST> },
+    Tuple { elements: Vec<AST> },
+    Range { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
+    Block { statements: Vec<AST> },
+    Real { lit: String },
+    Int { lit: String },
+    ENum { num: String, exp: String },
+    Str { lit: String, expressions: Vec<AST> },
+    DocStr { lit: String },
+    Bool { lit: bool },
+    Add { left: Box<AST>, right: Box<AST> },
+    AddU { expr: Box<AST> },
+    Sub { left: Box<AST>, right: Box<AST> },
+    SubU { expr: Box<AST> },
+    Mul { left: Box<AST>, right: Box<AST> },
+    Div { left: Box<AST>, right: Box<AST> },
+    FDiv { left: Box<AST>, right: Box<AST> },
+    Mod { left: Box<AST>, right: Box<AST> },
+    Pow { left: Box<AST>, right: Box<AST> },
+    Sqrt { expr: Box<AST> },
+    BAnd { left: Box<AST>, right: Box<AST> },
+    BOr { left: Box<AST>, right: Box<AST> },
+    BXOr { left: Box<AST>, right: Box<AST> },
+    BOneCmpl { expr: Box<AST> },
+    BLShift { left: Box<AST>, right: Box<AST> },
+    BRShift { left: Box<AST>, right: Box<AST> },
+    Le { left: Box<AST>, right: Box<AST> },
+    Ge { left: Box<AST>, right: Box<AST> },
+    Leq { left: Box<AST>, right: Box<AST> },
+    Geq { left: Box<AST>, right: Box<AST> },
+    Is { left: Box<AST>, right: Box<AST> },
+    IsN { left: Box<AST>, right: Box<AST> },
+    Eq { left: Box<AST>, right: Box<AST> },
+    Neq { left: Box<AST>, right: Box<AST> },
+    IsA { left: Box<AST>, right: Box<AST> },
+    IsNA { left: Box<AST>, right: Box<AST> },
+    Not { expr: Box<AST> },
+    And { left: Box<AST>, right: Box<AST> },
+    Or { left: Box<AST>, right: Box<AST> },
+    IfElse { cond: Box<AST>, then: Box<AST>, el:OptAST },
+    Match { cond: Box<AST>, cases: Vec<AST> },
+    Case { cond: Box<AST>, body: Box<AST> },
+    For { expr: Box<AST>, col: Box<AST>, body: Box<AST> },
+    In { left: Box<AST>, right: Box<AST> },
+    Step { amount: Box<AST> },
+    While { cond: Box<AST>, body: Box<AST> },
     Break,
     Continue,
-    Return {
-        expr: Box<AST>
-    },
+    Return { expr: Box<AST> },
     ReturnEmpty,
     Underscore,
     Undefined,
     Pass,
-    Question {
-        left: Box<AST>,
-        right: Box<AST>,
-    },
-    QuestionOp {
-        expr: Box<AST>
-    },
-    Print {
-        expr: Box<AST>
-    },
-    Comment {
-        comment: String
-    },
+    Question { left: Box<AST>, right: Box<AST> },
+    QuestionOp { expr: Box<AST> },
+    Print { expr: Box<AST> },
+    Comment { comment: String },
 }
 
 impl Node {
     /// Apply mapping to node, before recursively applying mapping to result
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> Node {
         match mapping(self) {
-            Node::File { pure, modules } =>Node::File{
-                pure,
-                modules: modules.iter().map(|m| m.map(mapping)).collect()
+            Node::File { statements: modules } => Node::File {
+                statements: modules.iter().map(|m| m.map(mapping)).collect(),
             },
             Node::Import { import, aliases: _as } => Node::Import {
                 import: import.iter().map(|i| i.map(mapping)).collect(),
-                aliases: _as.iter().map(|a| a.map(mapping)).collect()
+                aliases: _as.iter().map(|a| a.map(mapping)).collect(),
             },
             Node::FromImport { id, import } => Node::FromImport {
                 id: Box::from(id.map(mapping)),
-                import: Box::from(import.map(mapping))
+                import: Box::from(import.map(mapping)),
             },
-            Node::Class { ty, args, parents, body } => Node::Class{
+            Node::Class { ty, args, parents, body } => Node::Class {
                 ty: Box::from(ty.map(mapping)),
                 args: args.iter().map(|a| a.map(mapping)).collect(),
                 parents: parents.iter().map(|p| p.map(mapping)).collect(),
-                body: body.map(|b| Box::from(b.map(mapping)))
+                body: body.map(|b| Box::from(b.map(mapping))),
             },
-            Node::Generic { id, isa } => Node::Generic{
+            Node::Generic { id, isa } => Node::Generic {
                 id: Box::from(id.map(mapping)),
-                isa: isa.map(|isa| Box::from(isa.map(mapping)))
+                isa: isa.map(|isa| Box::from(isa.map(mapping))),
             },
             Node::Parent { ty, args } => Node::Parent {
-              ty: Box::from(ty.map(mapping)),
-                args: args.iter().map(|a| a.map(mapping)).collect()
+                ty: Box::from(ty.map(mapping)),
+                args: args.iter().map(|a| a.map(mapping)).collect(),
             },
-            Node::Script { statements } => Node::Script {
-                statements: statements.iter().map(|s| s.map(mapping)).collect() },
             Node::Reassign { left, right } => Node::Reassign {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
             },
-            Node::VariableDef { private, mutable, var, ty, expression, forward } => Node::VariableDef {
-                private,
+            Node::VariableDef { mutable, var, ty, expr: expression, forward } => Node::VariableDef {
                 mutable,
                 var: Box::from(var.map(mapping)),
                 ty: ty.map(|t| Box::from(t.map(mapping))),
-                expression: expression.map(|e| Box::from(e.map(mapping))),
+                expr: expression.map(|e| Box::from(e.map(mapping))),
                 forward: forward.iter().map(|f| f.map(mapping)).collect(),
             },
-            Node::FunDef { pure, private, id, fun_args, ret_ty, raises, body } => Node::FunDef {
+            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, body } => Node::FunDef {
                 pure,
-                private,
                 id: Box::from(id.map(mapping)),
-                fun_args: fun_args.iter().map(|a| a.map(mapping)).collect(),
-                ret_ty: ret_ty.map(|r| Box::from(r.map(mapping))),
+                args: fun_args.iter().map(|a| a.map(mapping)).collect(),
+                ret: ret_ty.map(|r| Box::from(r.map(mapping))),
                 raises: raises.iter().map(|r| r.map(mapping)).collect(),
                 body: body.map(|b| Box::from(b.map(mapping))),
             },

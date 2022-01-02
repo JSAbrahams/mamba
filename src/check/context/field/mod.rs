@@ -18,7 +18,6 @@ pub mod python;
 pub struct Field {
     pub is_py_type: bool,
     pub name:       String,
-    pub private:    bool,
     pub mutable:    bool,
     pub in_class:   Option<DirectName>,
     pub ty:         NameUnion
@@ -40,7 +39,6 @@ impl TryFrom<(&GenericField, &HashMap<String, Name>, &Position)> for Field {
         Ok(Field {
             is_py_type: field.is_py_type,
             name:       field.name.clone(),
-            private:    field.private,
             mutable:    field.mutable,
             in_class:   match &field.in_class {
                 Some(in_class) => Some(in_class.substitute(generics, pos)?),

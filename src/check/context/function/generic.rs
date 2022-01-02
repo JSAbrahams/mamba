@@ -14,7 +14,6 @@ pub struct GenericFunction {
     pub is_py_type: bool,
     pub name:       DirectName,
     pub pure:       bool,
-    pub private:    bool,
     pub pos:        Position,
     pub arguments:  Vec<GenericFunctionArg>,
     pub raises:     NameUnion,
@@ -42,22 +41,17 @@ impl GenericFunction {
     pub fn in_class(
         self,
         in_class: Option<&DirectName>,
-        type_def: bool
+        _type_def: bool
     ) -> TypeResult<GenericFunction> {
-        if self.private && type_def {
-            let msg = format!("Function `{}` cannot be private.", self.name);
-            Err(vec![TypeErr::new(&self.pos, &msg)])
-        } else {
-            Ok(GenericFunction {
-                in_class: in_class.cloned(),
-                arguments: self
-                    .arguments
-                    .iter()
-                    .map(|arg| arg.clone().in_class(in_class))
-                    .collect::<Result<_, _>>()?,
-                ..self
-            })
-        }
+        Ok(GenericFunction {
+            in_class: in_class.cloned(),
+            arguments: self
+                .arguments
+                .iter()
+                .map(|arg| arg.clone().in_class(in_class))
+                .collect::<Result<_, _>>()?,
+            ..self
+        })
     }
 }
 
@@ -75,12 +69,11 @@ impl TryFrom<&AST> for GenericFunction {
     fn try_from(ast: &AST) -> TypeResult<GenericFunction> {
         match &ast.node {
             // TODO add generics to function definitions
-            Node::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } =>
+            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, .. } =>
                 Ok(GenericFunction {
                     is_py_type: false,
                     name:       function_name(id.deref())?,
                     pure:       *pure,
-                    private:    *private,
                     pos:        ast.pos.clone(),
                     arguments:  {
                         let args: Vec<GenericFunctionArg> = fun_args

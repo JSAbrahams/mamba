@@ -1,5 +1,5 @@
 use mamba::lex::tokenize;
-use mamba::parse::parse_direct;
+use crate::parse::util::parse_direct;
 
 #[test]
 fn for_missing_do() {

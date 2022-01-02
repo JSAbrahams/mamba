@@ -27,7 +27,6 @@ mod parameter;
 pub mod parent;
 
 mod resource;
-pub mod util;
 
 mod generic;
 mod python;

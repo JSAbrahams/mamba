@@ -10,7 +10,6 @@ use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::name::{NameUnion, NameVariant};
-use crate::check::context::util::check_is_parent;
 use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
@@ -69,15 +68,6 @@ pub fn unify_function(
                         let fields =
                             ctx.class(entity_name, &left.pos)?.field(name, ctx, &left.pos)?;
                         for field in fields.union {
-                            if field.private {
-                                check_is_parent(
-                                    &field.ty,
-                                    &constraints.in_class,
-                                    entity_name,
-                                    ctx,
-                                    &left.pos
-                                )?;
-                            }
                             let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
                             constraints.push("field access", &right, &field_ty_exp);
                             pushed += 1;
@@ -90,16 +80,6 @@ pub fn unify_function(
 
                         let mut pushed = 0;
                         for function in &function_union.union {
-                            if function.private {
-                                check_is_parent(
-                                    &NameUnion::from(&function.name),
-                                    &constraints.in_class,
-                                    entity_name,
-                                    ctx,
-                                    &left.pos
-                                )?;
-                            }
-
                             let fun_ty_exp =
                                 Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
                             constraints.push("function access", &right, &fun_ty_exp);

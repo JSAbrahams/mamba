@@ -135,7 +135,6 @@ impl Class {
             is_py_type:   false,
             name:         self.name.clone(),
             self_mutable: None,
-            private:      false,
             pure:         false,
             arguments:    if without_self && !self.args.is_empty() {
                 self.args.iter().skip(1).cloned().collect()

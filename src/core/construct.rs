@@ -40,13 +40,11 @@ pub enum Core {
         right: Box<Core>
     },
     VarDef {
-        private: bool,
         var:     Box<Core>,
         ty:      Option<Box<Core>>,
         expr:    Option<Box<Core>>
     },
     FunDef {
-        private: bool,
         id:      Box<Core>,
         arg:     Vec<Core>,
         ty:      Option<Box<Core>>,

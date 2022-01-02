@@ -3,7 +3,6 @@ use crate::lex::token::Token;
 use crate::parse::ast::Node;
 use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
-use crate::parse::block::parse_statements;
 use crate::parse::class::{parse_class, parse_parent};
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::ParseResult;
@@ -11,6 +10,7 @@ use crate::parse::result::{custom, expected};
 use crate::parse::ty::parse_conditions;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
+use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 
 pub fn parse_from_import(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("from import")?;
@@ -56,20 +56,9 @@ fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     Ok(aliases)
 }
 
-pub fn parse_script(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("script")?;
-    let statements = it.parse_vec(&parse_statements, "script", &start)?;
-    let end = statements.last().map_or(start.clone(), |last| last.pos.clone());
-
-    let node = Node::Script { statements };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
-}
-
 pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     let start = Position::default();
     let mut modules = Vec::new();
-
-    let pure = it.eat_if(&Token::Pure).is_some();
 
     it.peek_while_fn(&|_| true, &mut |it, lex| match &lex.token {
         Token::NL => {
@@ -107,12 +96,12 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
             Ok(())
         }
         _ => {
-            modules.push(*it.parse(&parse_script, "file", &start)?);
+            modules.push(*it.parse(&parse_expr_or_stmt, "file", &start)?);
             Ok(())
         }
     })?;
 
-    let node = Node::File { pure, modules };
+    let node = Node::File { statements: modules };
     Ok(Box::from(AST::new(&start, node)))
 }
 

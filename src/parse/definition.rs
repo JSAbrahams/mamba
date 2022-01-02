@@ -13,24 +13,23 @@ use crate::parse::ty::parse_type;
 pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("definition")?;
     it.eat(&Token::Def, "definition")?;
-    let private = it.eat_if(&Token::Private).is_some();
     let pure = it.eat_if(&Token::Pure).is_some();
 
     macro_rules! op {
         ($it:expr, $token:ident, $node:ident) => {{
             let end = $it.eat(&Token::$token, "definition")?;
             let ast = AST::new(&start.union(&end), Node::$node);
-            parse_fun_def(&ast, pure, private, $it)
+            parse_fun_def(&ast, pure, $it)
         }};
     };
 
     let res = if pure {
         let id = it.parse(&parse_expression_type, "definition", &start)?;
-        parse_fun_def(&id, pure, private, it)
+        parse_fun_def(&id, pure, it)
     } else {
         it.peek_or_err(
             &|it, lex| match lex.token {
-                Token::LRBrack | Token::LCBrack | Token::LSBrack => parse_variable_def(private, it),
+                Token::LRBrack | Token::LCBrack | Token::LSBrack => parse_variable_def(it),
 
                 Token::Add => op!(it, Add, AddOp),
                 Token::Sub => op!(it, Sub, SubOp),
@@ -43,7 +42,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
                 Token::Eq => op!(it, Eq, EqOp),
                 Token::Ge => op!(it, Ge, GeOp),
                 Token::Le => op!(it, Le, LeOp),
-                _ => parse_var_or_fun_def(it, private)
+                _ => parse_var_or_fun_def(it)
             },
             &[
                 Token::Id(String::new()),
@@ -69,25 +68,24 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
     Ok(Box::new(AST { pos: res.pos.union(&start), node: res.node.clone() }))
 }
 
-fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
+fn parse_var_or_fun_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function definition")?;
     let id = *it.parse(&parse_expression_type, "variable or function definition", &start)?;
 
     match &id.node {
         Node::ExpressionType { ty: Some(_), .. } | Node::TypeTup { .. } =>
-            parse_variable_def_id(&id, private, it),
+            parse_variable_def_id(&id, it),
         Node::ExpressionType { expr, ty: None, mutable } => it.peek(
             &|it, lex| match lex.token {
-                Token::LRBrack => parse_fun_def(&id, false, private, it),
-                _ => parse_variable_def_id(&id, private, it)
+                Token::LRBrack => parse_fun_def(&id, false, it),
+                _ => parse_variable_def_id(&id, it)
             },
             {
                 let node = Node::VariableDef {
-                    private,
                     mutable: *mutable,
                     var: expr.clone(),
                     ty: None,
-                    expression: None,
+                    expr: None,
                     forward: vec![]
                 };
                 Ok(Box::from(AST::new(&id.pos.union(&id.pos), node)))
@@ -97,7 +95,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator, private: bool) -> ParseResult {
     }
 }
 
-fn parse_fun_def(id: &AST, pure: bool, private: bool, it: &mut LexIterator) -> ParseResult {
+fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("function definition")?;
     let fun_args = it.parse_vec(&parse_fun_args, "function definition", &start)?;
 
@@ -133,7 +131,7 @@ fn parse_fun_def(id: &AST, pure: bool, private: bool, it: &mut LexIterator) -> P
         _ => id.pos.clone()
     };
 
-    let node = Node::FunDef { id, pure, private, fun_args, ret_ty, raises, body };
+    let node = Node::FunDef { id, pure, args: fun_args, ret: ret_ty, raises, body };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
@@ -195,7 +193,7 @@ pub fn parse_forward(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     Ok(forwarded)
 }
 
-fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> ParseResult {
+fn parse_variable_def_id(id: &AST, it: &mut LexIterator) -> ParseResult {
     let start = &id.pos;
     let expression = it.parse_if(&Token::Assign, &parse_expression, "definition body", start)?;
     let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", start)?;
@@ -209,12 +207,12 @@ fn parse_variable_def_id(id: &AST, private: bool, it: &mut LexIterator) -> Parse
         (Some(expr), _) => expr.pos.clone(),
         _ => id.pos.clone()
     };
-    let node = Node::VariableDef { private, mutable, var, ty, expression, forward };
+    let node = Node::VariableDef { mutable, var, ty, expr: expression, forward };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
-fn parse_variable_def(private: bool, it: &mut LexIterator) -> ParseResult {
+fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("variable definition")?;
     let id = it.parse(&parse_expression_type, "variable definition", &start)?;
-    parse_variable_def_id(&id, private, it)
+    parse_variable_def_id(&id, it)
 }

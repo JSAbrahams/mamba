@@ -2,8 +2,8 @@ use std::fmt::{Display, Error, Formatter};
 
 use crate::check::context::arg;
 use crate::common::delimit::comma_delm;
-use crate::parse::ast::{Node, AST};
 use crate::lex::token::Token;
+use crate::parse::ast::{AST, Node};
 
 fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
     if let (Some(this), Some(that)) = (this, that) {
@@ -35,7 +35,6 @@ impl Display for Node {
             Node::Class { .. } => String::from("class"),
             Node::Generic { .. } => String::from("generic"),
             Node::Parent { .. } => String::from("parent"),
-            Node::Script { .. } => String::from("script"),
             Node::Init => String::from("constructor (init)"),
             Node::Reassign { .. } => String::from("reassign"),
             Node::VariableDef { .. } => String::from("variable definition"),
@@ -62,7 +61,7 @@ impl Display for Node {
             Node::_Self => String::from(arg::SELF),
             Node::AddOp => format!("{}", Token::Add),
             Node::SubOp => format!("{}", Token::Sub),
-            Node::SqrtOp =>format!("{}", Token::Sqrt),
+            Node::SqrtOp => format!("{}", Token::Sqrt),
             Node::MulOp => format!("{}", Token::Mul),
             Node::FDivOp => format!("{}", Token::FDiv),
             Node::DivOp => format!("{}", Token::Div),
@@ -97,30 +96,30 @@ impl Display for Node {
             Node::Mod { left, right } => format!("{} {} {}", left.node, Token::Mod, right.node),
             Node::Pow { left, right } => format!("{} {} {}", left.node, Token::Pow, right.node),
             Node::Sqrt { expr } => format!("{} {}", Token::Sqrt, expr.node),
-            Node::BAnd {  left, right } => format!("{} {} {}", left.node, Token::BAnd, right.node),
+            Node::BAnd { left, right } => format!("{} {} {}", left.node, Token::BAnd, right.node),
             Node::BOr { left, right } => format!("{} {} {}", left.node, Token::BOr, right.node),
-            Node::BXOr {  left, right } => format!("{} {} {}", left.node, Token::BXOr, right.node),
+            Node::BXOr { left, right } => format!("{} {} {}", left.node, Token::BXOr, right.node),
             Node::BOneCmpl { .. } => String::from("binary ones compliment"),
-            Node::BLShift {  left, right } => format!("{} {} {}", left.node, Token::BLShift, right.node),
-            Node::BRShift {  left, right } => format!("{} {} {}", left.node, Token::BRShift, right.node),
-            Node::Le {  left, right } => format!("{} {} {}", left.node, Token::Le, right.node),
+            Node::BLShift { left, right } => format!("{} {} {}", left.node, Token::BLShift, right.node),
+            Node::BRShift { left, right } => format!("{} {} {}", left.node, Token::BRShift, right.node),
+            Node::Le { left, right } => format!("{} {} {}", left.node, Token::Le, right.node),
             Node::Ge { left, right } => format!("{} {} {}", left.node, Token::Ge, right.node),
-            Node::Leq {  left, right } => format!("{} {} {}", left.node, Token::Leq, right.node),
+            Node::Leq { left, right } => format!("{} {} {}", left.node, Token::Leq, right.node),
             Node::Geq { left, right } => format!("{} {} {}", left.node, Token::Geq, right.node),
-            Node::Is {  left, right } => format!("{} {} {}", left.node, Token::Is, right.node),
-            Node::IsN {  left, right } => format!("{} {} {}", left.node, Token::IsN, right.node),
-            Node::Eq {  left, right } => format!("{} {} {}", left.node, Token::Eq, right.node),
-            Node::Neq {  left, right } => format!("{} {} {}", left.node, Token::Neq, right.node),
-            Node::IsA {  left, right } => format!("{} {} {}", left.node, Token::IsA, right.node),
+            Node::Is { left, right } => format!("{} {} {}", left.node, Token::Is, right.node),
+            Node::IsN { left, right } => format!("{} {} {}", left.node, Token::IsN, right.node),
+            Node::Eq { left, right } => format!("{} {} {}", left.node, Token::Eq, right.node),
+            Node::Neq { left, right } => format!("{} {} {}", left.node, Token::Neq, right.node),
+            Node::IsA { left, right } => format!("{} {} {}", left.node, Token::IsA, right.node),
             Node::IsNA { left, right } => format!("{} {} {}", left.node, Token::IsNA, right.node),
             Node::Not { .. } => String::from("not"),
-            Node::And {  left, right } => format!("{} {} {}", left.node, Token::And, right.node),
-            Node::Or {  left, right } => format!("{} {} {}", left.node, Token::Or, right.node),
+            Node::And { left, right } => format!("{} {} {}", left.node, Token::And, right.node),
+            Node::Or { left, right } => format!("{} {} {}", left.node, Token::Or, right.node),
             Node::IfElse { el, .. } => String::from(if el.is_some() { "if" } else { "if else" }),
             Node::Match { .. } => String::from("match"),
             Node::Case { .. } => String::from("case"),
             Node::For { .. } => String::from("for loop"),
-            Node::In {  left, right } => format!("{} {} {}", left.node, Token::In, right.node),
+            Node::In { left, right } => format!("{} {} {}", left.node, Token::In, right.node),
             Node::Step { .. } => String::from("step"),
             Node::While { .. } => String::from("while loop"),
             Node::Break => String::from("break"),
@@ -147,8 +146,7 @@ impl Display for Node {
 impl Node {
     pub fn equal_structure(&self, other: &Node) -> bool {
         match (&self, &other) {
-            (Node::File { pure: lp, modules: lm }, Node::File { pure: rp, modules: rm }) =>
-                lp == rp && equal_vec(lm, rm),
+            (Node::File { statements: lm }, Node::File { statements: rm }) => equal_vec(lm, rm),
             (Node::Import { import: li, aliases: la }, Node::Import { import: ri, aliases: ra }) =>
                 equal_vec(li, ri) && equal_vec(la, ra),
             (
@@ -167,30 +165,25 @@ impl Node {
                 li.equal_structure(ri) && equal_optional(lisa, risa),
             (Node::Parent { ty: l_ty, args: la }, Node::Parent { ty: r_ty, args: ra }) =>
                 l_ty.equal_structure(r_ty) && equal_vec(la, ra),
-            (Node::Script { statements: l }, Node::Script { statements: r }) => equal_vec(l, r),
             (Node::Init, Node::Init) => true,
             (Node::Reassign { left: ll, right: lr }, Node::Reassign { left: rl, right: rr }) =>
                 ll.equal_structure(rl) && lr.equal_structure(rr),
             (
                 Node::VariableDef {
-                    private: lp,
                     mutable: lm,
                     var: lv,
                     ty: lt,
-                    expression: le,
+                    expr: le,
                     forward: lf
                 },
                 Node::VariableDef {
-                    private: rp,
                     mutable: rm,
                     var: rv,
                     ty: rt,
-                    expression: re,
+                    expr: re,
                     forward: rf
                 }
-            ) =>
-                lp == rp
-                    && lm == rm
+            ) => lm == rm
                     && lv.equal_structure(rv)
                     && equal_optional(lt, rt)
                     && equal_optional(le, re)
@@ -198,25 +191,22 @@ impl Node {
             (
                 Node::FunDef {
                     pure: lpu,
-                    private: lp,
                     id: li,
-                    fun_args: la,
-                    ret_ty: lret,
+                    args: la,
+                    ret: lret,
                     raises: lraise,
                     body: lb
                 },
                 Node::FunDef {
                     pure: rpu,
-                    private: rp,
                     id: ri,
-                    fun_args: ra,
-                    ret_ty: rret,
+                    args: ra,
+                    ret: rret,
                     raises: rraise,
                     body: rb
                 }
             ) =>
                 lpu == rpu
-                    && lp == rp
                     && li.equal_structure(ri)
                     && equal_vec(la, ra)
                     && equal_optional(lret, rret)
@@ -440,12 +430,11 @@ impl Node {
 
             Node::IfElse { el, .. } => el.is_some(),
 
-            Node::Script { statements } | Node::Block { statements } =>
-                if let Some(stmt) = statements.last() {
-                    stmt.node.trivially_expression()
-                } else {
-                    false
-                },
+            Node::Block { statements } => if let Some(stmt) = statements.last() {
+                stmt.node.trivially_expression()
+            } else {
+                false
+            },
 
             _ => self.is_operator()
         }

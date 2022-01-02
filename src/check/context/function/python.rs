@@ -32,7 +32,6 @@ impl From<&Funcdef> for GenericFunction {
             is_py_type: true,
             name:       DirectName::from(convert_name(&func_def.name).as_str()),
             pure:       false,
-            private:    false,
             pos:        Position::default(),
             arguments:  func_def
                 .parameters

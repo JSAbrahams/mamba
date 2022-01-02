@@ -23,8 +23,9 @@ fn test_directory(
 
     let res = fallable(valid, input, &output_path, &output_file, file_name);
     let (check_ast, out_ast) = res?;
-    assert_eq!(check_ast, out_ast);
     delete_dir(&output_path).map_err(|_| vec![])?;
+
+    assert_eq!(check_ast, out_ast);
     Ok(())
 }
 

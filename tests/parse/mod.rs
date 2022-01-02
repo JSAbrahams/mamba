@@ -4,6 +4,7 @@ use mamba::parse::parse;
 
 pub mod invalid;
 pub mod valid;
+mod util;
 
 #[test]
 fn parse_empty_file() {

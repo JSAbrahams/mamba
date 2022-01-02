@@ -1,2 +1,0 @@
-type MyType
-    def private my_function() -> Int

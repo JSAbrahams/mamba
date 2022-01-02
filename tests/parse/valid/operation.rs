@@ -1,33 +1,23 @@
 use mamba::lex::token::Token::*;
 use mamba::lex::tokenize;
 use mamba::parse::ast::Node;
-use mamba::parse::parse_direct;
+
+use crate::parse::util::parse_direct;
 
 macro_rules! verify_is_operation {
     ($op:ident, $ast:expr) => {{
-        match $ast.node {
-            Node::Script { statements, .. } => {
-                match &statements.first().expect("script empty.").node {
-                    Node::$op { left, right } => (left.clone(), right.clone()),
-                    other =>
-                        panic!("first element script was not op: {}, but was: {:?}", $op, other),
-                }
-            }
-            _ => panic!("ast was not script.")
+        match &$ast.first().expect("script empty.").node {
+            Node::$op { left, right } => (left.clone(), right.clone()),
+            other => panic!("first element script was not op: {}, but was: {:?}", $op, other)
         }
     }};
 }
 
 macro_rules! verify_is_un_operation {
     ($op:ident, $ast:expr) => {{
-        match $ast.node {
-            Node::Script { statements, .. } => {
-                match &statements.first().expect("script empty.").node {
-                    Node::$op { expr } => expr.clone(),
-                    _ => panic!("first element script was not tuple.")
-                }
-            }
-            _ => panic!("ast was not script.")
+        match &$ast.first().expect("script empty.").node {
+            Node::$op { expr } => expr.clone(),
+            _ => panic!("first element script was not tuple.")
         }
     }};
 }

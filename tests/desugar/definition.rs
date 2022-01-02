@@ -23,20 +23,18 @@ fn reassign_verify() {
 #[test]
 fn variable_private_def_verify() {
     let definition = to_pos!(Node::VariableDef {
-        private:    true,
         mutable:    false,
         var:        to_pos!(Node::Id { lit: String::from("d") }),
         ty:         None,
-        expression: Some(to_pos!(Node::Int { lit: String::from("98") })),
+        expr: Some(to_pos!(Node::Int { lit: String::from("98") })),
         forward:    vec![]
     });
 
-    let (private, var, ty, expr) = match desugar(&definition) {
-        Ok(Core::VarDef { private, var, ty, expr }) => (private, var, ty, expr),
+    let ( var, ty, expr) = match desugar(&definition) {
+        Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
-    assert!(private);
     assert_eq!(ty, None);
     assert_eq!(var, Box::from(Core::Id { lit: String::from("d") }));
     assert_eq!(expr, Some(Box::from(Core::Int { int: String::from("98") })));
@@ -45,20 +43,18 @@ fn variable_private_def_verify() {
 #[test]
 fn variable_def_verify() {
     let definition = to_pos!(Node::VariableDef {
-        private:    false,
         mutable:    false,
         var:        to_pos!(Node::Id { lit: String::from("d") }),
         ty:         None,
-        expression: Some(to_pos!(Node::Int { lit: String::from("98") })),
+        expr: Some(to_pos!(Node::Int { lit: String::from("98") })),
         forward:    vec![]
     });
 
-    let (private, var, ty, expr) = match desugar(&definition) {
-        Ok(Core::VarDef { private, var, ty, expr }) => (private, var, ty, expr),
+    let (var, ty, expr) = match desugar(&definition) {
+        Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
-    assert!(!private);
     assert_eq!(ty, None);
     assert_eq!(var, Box::from(Core::Id { lit: String::from("d") }));
     assert_eq!(expr, Some(Box::from(Core::Int { int: String::from("98") })));
@@ -75,20 +71,18 @@ fn tuple_def_verify() {
         to_pos_unboxed!(Node::Id { lit: String::from("d") }),
     ];
     let definition = to_pos!(Node::VariableDef {
-        private:    true,
         mutable:    false,
         var:        to_pos!(Node::Tuple { elements }),
         ty:         None,
-        expression: Some(to_pos!(Node::Tuple { elements: expressions })),
+        expr: Some(to_pos!(Node::Tuple { elements: expressions })),
         forward:    vec![]
     });
 
-    let (private, var, ty, expr) = match desugar(&definition) {
-        Ok(Core::VarDef { private, var, ty, expr }) => (private, var, ty, expr),
+    let (var, ty, expr) = match desugar(&definition) {
+        Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
-    assert!(private);
     assert_eq!(ty, None);
     let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
     assert_eq!(var, Box::from(Core::Tuple { elements }));
@@ -100,20 +94,18 @@ fn tuple_def_verify() {
 #[test]
 fn variable_def_none_verify() {
     let definition = to_pos!(Node::VariableDef {
-        private:    true,
         mutable:    false,
         var:        to_pos!(Node::Id { lit: String::from("d") }),
         ty:         None,
-        expression: None,
+        expr: None,
         forward:    vec![]
     });
 
-    let (private, var, ty, expr) = match desugar(&definition) {
-        Ok(Core::VarDef { private, var, ty, expr }) => (private, var, ty, expr),
+    let (var, ty, expr) = match desugar(&definition) {
+        Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
-    assert!(private);
     assert_eq!(ty, None);
     assert_eq!(var, Box::from(Core::Id { lit: String::from("d") }));
     assert_eq!(expr, None);
@@ -126,20 +118,18 @@ fn tuple_def_none_verify() {
         to_pos_unboxed!(Node::Id { lit: String::from("b") }),
     ];
     let definition = to_pos!(Node::VariableDef {
-        private:    true,
         mutable:    false,
         var:        to_pos!(Node::Tuple { elements }),
         ty:         None,
-        expression: None,
+        expr: None,
         forward:    vec![]
     });
 
-    let (private, var, ty, expr) = match desugar(&definition) {
-        Ok(Core::VarDef { private, var, ty, expr }) => (private, var, ty, expr),
+    let (var, ty, expr) = match desugar(&definition) {
+        Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
         other => panic!("Expected var def but got: {:?}.", other)
     };
 
-    assert!(private);
     assert_eq!(ty, None);
     let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
     assert_eq!(var, Box::from(Core::Tuple { elements }));
@@ -151,8 +141,7 @@ fn fun_def_verify() {
     let definition = to_pos!(Node::FunDef {
         id:       to_pos!(Node::Id { lit: String::from("fun") }),
         pure:     false,
-        private:  false,
-        fun_args: vec![
+        args: vec![
             to_pos_unboxed!(Node::FunArg {
                 vararg:  false,
                 mutable: false,
@@ -168,17 +157,16 @@ fn fun_def_verify() {
                 default: None
             })
         ],
-        ret_ty:   None,
+        ret:   None,
         raises:   vec![],
         body:     None
     });
 
-    let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, arg, body, .. }) => (private, id, arg, body),
+    let (id, args, body) = match desugar(&definition) {
+        Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
-    assert_eq!(private, false);
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 2);
@@ -202,8 +190,7 @@ fn fun_def_default_arg_verify() {
     let definition = to_pos!(Node::FunDef {
         id:       to_pos!(Node::Id { lit: String::from("fun") }),
         pure:     false,
-        private:  false,
-        fun_args: vec![to_pos_unboxed!(Node::FunArg {
+        args: vec![to_pos_unboxed!(Node::FunArg {
             vararg:  false,
             mutable: false,
             var:     to_pos!(Node::Id { lit: String::from("arg1") }),
@@ -213,17 +200,16 @@ fn fun_def_default_arg_verify() {
                 expressions: vec![]
             }))
         })],
-        ret_ty:   None,
+        ret:   None,
         raises:   vec![],
         body:     None
     });
 
-    let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, arg, body, .. }) => (private, id, arg, body),
+    let (id, args, body) = match desugar(&definition) {
+        Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
-    assert_eq!(private, false);
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 1);
@@ -241,22 +227,20 @@ fn fun_def_with_body_verify() {
     let definition = to_pos!(Node::FunDef {
         id:       to_pos!(Node::Id { lit: String::from("fun") }),
         pure:     false,
-        private:  false,
-        fun_args: vec![
+        args: vec![
             to_pos_unboxed!(Node::Id { lit: String::from("arg1") }),
             to_pos_unboxed!(Node::Id { lit: String::from("arg2") })
         ],
-        ret_ty:   None,
+        ret:   None,
         raises:   vec![],
         body:     Some(to_pos!(Node::Real { lit: String::from("2.4") }))
     });
 
-    let (private, id, args, body) = match desugar(&definition) {
-        Ok(Core::FunDef { private, id, arg, body, .. }) => (private, id, arg, body),
+    let (id, args, body) = match desugar(&definition) {
+        Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
         other => panic!("Expected fun def but got: {:?}.", other)
     };
 
-    assert_eq!(private, false);
     assert_eq!(*id, Core::Id { lit: String::from("fun") });
 
     assert_eq!(args.len(), 2);

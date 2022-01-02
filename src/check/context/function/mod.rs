@@ -48,7 +48,6 @@ pub struct Function {
     pub is_py_type:   bool,
     pub name:         DirectName,
     pub self_mutable: Option<bool>,
-    pub private:      bool,
     pub pure:         bool,
     pub arguments:    Vec<FunctionArg>,
     pub raises:       NameUnion,
@@ -109,7 +108,6 @@ impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function
                 function_arg.map(|a| a.mutable)
             },
             pure: fun.pure,
-            private: fun.private,
             arguments,
             raises: fun.raises.substitute(generics, pos)?,
             in_class: match &fun.in_class {
@@ -180,7 +178,6 @@ impl Function {
             is_py_type:   false,
             name:         name.clone(),
             self_mutable: None,
-            private:      false,
             pure:         false,
             arguments:    vec![FunctionArg {
                 is_py_type:  false,

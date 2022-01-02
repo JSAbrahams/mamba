@@ -1,16 +1,13 @@
 use mamba::lex::tokenize;
 use mamba::parse::ast::Node;
-use mamba::parse::parse_direct;
+use crate::parse::util::parse_direct;
 
 macro_rules! unwrap_func_definition {
     ($ast:expr) => {{
-        let definition = match $ast.node {
-            Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
-            _ => panic!("ast was not script.")
-        };
+        let definition = $ast.first().expect("script empty.").clone();
         match definition.node {
-            Node::FunDef { id, private, pure, fun_args, ret_ty, raises, body, .. } =>
-                (private, pure, id, fun_args, ret_ty, raises, body),
+            Node::FunDef { id, pure, args, ret, raises, body, .. } =>
+                (pure, id, args, ret, raises, body),
             other => panic!("Expected variabledef but was {:?}.", other)
         }
     }};
@@ -18,13 +15,10 @@ macro_rules! unwrap_func_definition {
 
 macro_rules! unwrap_definition {
     ($ast:expr) => {{
-        let definition = match $ast.node {
-            Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
-            _ => panic!("ast was not script.")
-        };
-        match definition.node {
-            Node::VariableDef { private, mutable, var, ty, expression, forward } =>
-                (private, mutable, var, ty, expression, forward),
+        let definition = $ast.first().expect("script empty.").node.clone();
+        match definition {
+            Node::VariableDef { mutable, var, ty, expr, forward } =>
+                (mutable, var, ty, expr, forward),
             other => panic!("Expected variabledef but was {:?}.", other)
         }
     }};
@@ -34,9 +28,8 @@ macro_rules! unwrap_definition {
 fn empty_definition_verify() {
     let source = String::from("def a");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
-    assert_eq!(private, false);
     assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(_type, None);
@@ -48,12 +41,11 @@ fn empty_definition_verify() {
 fn definition_verify() {
     let source = String::from("def a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-    assert_eq!(private, false);
     assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
+    assert_eq!(ty, None);
     assert_eq!(forward, vec![]);
 
     match expression {
@@ -66,12 +58,11 @@ fn definition_verify() {
 fn mutable_definition_verify() {
     let source = String::from("def fin a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-    assert_eq!(private, false);
     assert_eq!(mutable, false);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
+    assert_eq!(ty, None);
     assert_eq!(forward, vec![]);
 
     match expression {
@@ -82,14 +73,13 @@ fn mutable_definition_verify() {
 
 #[test]
 fn private_definition_verify() {
-    let source = String::from("def private a := 10");
+    let source = String::from("def a := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-    assert_eq!(private, true);
     assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
-    assert_eq!(_type, None);
+    assert_eq!(ty, None);
     assert_eq!(forward, vec![]);
 
     match expression {
@@ -102,9 +92,9 @@ fn private_definition_verify() {
 fn typed_definition_verify() {
     let source = String::from("def a: Object := 10");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-    let type_id = match _type {
+    let type_id = match ty {
         Some(_type_pos) => match _type_pos.node {
             Node::Type { id, generics: _ } => id,
             other => panic!("Expected type but was: {:?}", other)
@@ -116,7 +106,6 @@ fn typed_definition_verify() {
         other => panic!("Unexpected expression: {:?}", other)
     };
 
-    assert_eq!(private, false);
     assert_eq!(mutable, true);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(forward, vec![]);
@@ -128,10 +117,10 @@ fn typed_definition_verify() {
 fn forward_empty_definition_verify() {
     let source = String::from("def a forward b, c");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, true);
+    assert!(mutable);
+    assert_eq!(ty, None);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(expression, None);
     assert_eq!(forward.len(), 2);
@@ -143,10 +132,10 @@ fn forward_empty_definition_verify() {
 fn forward_definition_verify() {
     let source = String::from("def a := MyClass forward b, c");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, mutable, id, _type, expression, forward) = unwrap_definition!(ast);
+    let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-    assert_eq!(private, false);
-    assert_eq!(mutable, true);
+    assert!(mutable, true);
+    assert_eq!(ty, None);
     assert_eq!(id.node, Node::Id { lit: String::from("a") });
     assert_eq!(expression.unwrap().node, Node::Id { lit: String::from("MyClass") });
     assert_eq!(forward.len(), 2);
@@ -158,13 +147,12 @@ fn forward_definition_verify() {
 fn function_definition_verify() {
     let source = String::from("def f(fin b: Something, vararg c) => d");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, pure, id, fun_args, ret_ty, raises, body) = unwrap_func_definition!(ast);
+    let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
-    assert_eq!(private, false);
     assert!(!pure);
     assert_eq!(id.node, Node::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
-    assert_eq!(ret_ty, None);
+    assert_eq!(ret, None);
     assert_eq!(raises, vec![]);
 
     match body {
@@ -206,13 +194,12 @@ fn function_definition_verify() {
 fn function_no_args_definition_verify() {
     let source = String::from("def f() => d");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast);
+    let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
-    assert_eq!(private, false);
     assert!(!pure);
     assert_eq!(id.node, Node::Id { lit: String::from("f") });
-    assert_eq!(fun_args.len(), 0);
-    assert_eq!(ret_ty, None);
+    assert_eq!(args.len(), 0);
+    assert_eq!(ret, None);
 
     match body {
         Some(body) => assert_eq!(body.node, Node::Id { lit: String::from("d") }),
@@ -224,13 +211,12 @@ fn function_no_args_definition_verify() {
 fn function_pure_definition_verify() {
     let source = String::from("def pure f() => d");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast);
+    let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
-    assert_eq!(private, false);
     assert!(pure);
     assert_eq!(id.node, Node::Id { lit: String::from("f") });
-    assert_eq!(fun_args.len(), 0);
-    assert_eq!(ret_ty, None);
+    assert_eq!(args.len(), 0);
+    assert_eq!(ret, None);
 
     match body {
         Some(body) => assert_eq!(body.node, Node::Id { lit: String::from("d") }),
@@ -242,13 +228,12 @@ fn function_pure_definition_verify() {
 fn function_definition_with_literal_verify() {
     let source = String::from("def f(x, vararg b: Something) => d");
     let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
-    let (private, pure, id, fun_args, ret_ty, _, body) = unwrap_func_definition!(ast);
+    let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
-    assert_eq!(private, false);
     assert!(!pure);
     assert_eq!(id.node, Node::Id { lit: String::from("f") });
     assert_eq!(fun_args.len(), 2);
-    assert_eq!(ret_ty, None);
+    assert_eq!(ret, None);
 
     match body {
         Some(body) => assert_eq!(body.node, Node::Id { lit: String::from("d") }),

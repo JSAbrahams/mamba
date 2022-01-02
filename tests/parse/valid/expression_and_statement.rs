@@ -1,33 +1,18 @@
 use mamba::lex::tokenize;
 use mamba::parse::ast::Node;
 use mamba::parse::parse;
-use mamba::parse::parse_direct;
 
-#[test]
-fn pure_file() {
-    let source = String::from("pure");
-    let ast = parse(&tokenize(&source).unwrap()).unwrap();
-
-    let pure = match ast.node {
-        Node::File { pure, .. } => pure,
-        _ => panic!("ast was not file.")
-    };
-
-    assert!(pure);
-}
+use crate::parse::util::parse_direct;
 
 #[test]
 fn range_verify() {
     let source = String::from("hello .. world");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (from, to, inclusive, step) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Range { from, to, inclusive, step } =>
-                (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-            _ => panic!("first element script was not range.")
-        },
-        _ => panic!("ast was not script.")
+    let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
+        Node::Range { from, to, inclusive, step } =>
+            (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+        _ => panic!("first element script was not range.")
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("hello") });
@@ -39,15 +24,12 @@ fn range_verify() {
 #[test]
 fn range_step_verify() {
     let source = String::from("hello .. world step 2");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (from, to, inclusive, step) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Range { from, to, inclusive, step } =>
-                (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-            _ => panic!("first element script was not range.")
-        },
-        _ => panic!("ast was not script.")
+    let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
+        Node::Range { from, to, inclusive, step } =>
+            (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+        _ => panic!("first element script was not range.")
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("hello") });
@@ -59,15 +41,12 @@ fn range_step_verify() {
 #[test]
 fn range_incl_verify() {
     let source = String::from("foo ..= bar");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (from, to, inclusive, step) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Range { from, to, inclusive, step } =>
-                (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-            _ => panic!("first element script was not range inclusive.")
-        },
-        _ => panic!("ast was not script.")
+    let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
+        Node::Range { from, to, inclusive, step } =>
+            (from.clone(), to.clone(), inclusive.clone(), step.clone()),
+        _ => panic!("first element script was not range inclusive.")
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("foo") });
@@ -79,14 +58,11 @@ fn range_incl_verify() {
 #[test]
 fn reassign_verify() {
     let source = String::from("id := new_value");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (left, right) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Reassign { left, right } => (left.clone(), right.clone()),
-            _ => panic!("first element script was not reassign.")
-        },
-        _ => panic!("ast was not script.")
+    let (left, right) = match &statements.first().expect("script empty.").node {
+        Node::Reassign { left, right } => (left.clone(), right.clone()),
+        _ => panic!("first element script was not reassign.")
     };
 
     assert_eq!(left.node, Node::Id { lit: String::from("id") });
@@ -96,14 +72,11 @@ fn reassign_verify() {
 #[test]
 fn print_verify() {
     let source = String::from("print some_value");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let expr = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Print { expr } => expr.clone(),
-            _ => panic!("first element script was not reassign.")
-        },
-        _ => panic!("ast was not script.")
+    let expr = match &statements.first().expect("script empty.").node {
+        Node::Print { expr } => expr.clone(),
+        _ => panic!("first element script was not reassign.")
     };
 
     assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
@@ -112,14 +85,11 @@ fn print_verify() {
 #[test]
 fn return_verify() {
     let source = String::from("return some_value");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let expr = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Return { expr } => expr.clone(),
-            _ => panic!("first element script was not reassign.")
-        },
-        _ => panic!("ast was not script.")
+    let expr = match &statements.first().expect("script empty.").node {
+        Node::Return { expr } => expr.clone(),
+        _ => panic!("first element script was not reassign.")
     };
 
     assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
@@ -128,26 +98,18 @@ fn return_verify() {
 #[test]
 fn underscore_verify() {
     let source = String::from("_");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let ast = match ast.node {
-        Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
-        _ => panic!("ast was not script.")
-    };
-
+    let ast = statements.first().expect("script empty.").clone();
     assert_eq!(ast.node, Node::Underscore);
 }
 
 #[test]
 fn pass_verify() {
     let source = String::from("pass");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let ast = match ast.node {
-        Node::Script { statements, .. } => statements.first().expect("script empty.").clone(),
-        _ => panic!("ast was not script.")
-    };
-
+    let ast = statements.first().expect("script empty.").clone();
     assert_eq!(ast.node, Node::Pass);
 }
 
@@ -157,7 +119,7 @@ fn from_import_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast.node {
-        Node::File { modules, .. } => modules,
+        Node::File { statements: modules, .. } => modules,
         _ => panic!("ast was not file.")
     };
 
@@ -182,7 +144,7 @@ fn import_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast.node {
-        Node::File { modules, .. } => modules,
+        Node::File { statements: modules, .. } => modules,
         _ => panic!("ast was not file.")
     };
 
@@ -203,7 +165,7 @@ fn import_as_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast.node {
-        Node::File { modules, .. } => modules,
+        Node::File { statements: modules, .. } => modules,
         _ => panic!("ast was not file.")
     };
 

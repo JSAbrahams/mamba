@@ -45,7 +45,6 @@ impl From<&Expression> for GenericFields {
                         is_py_type: true,
                         name:       name.clone(),
                         pos:        Default::default(),
-                        private:    false,
                         mutable:    false,
                         in_class:   None,
                         ty:         None
@@ -69,7 +68,6 @@ impl From<&Expression> for GenericFields {
                                     is_py_type: true,
                                     name:       name.clone(),
                                     pos:        Default::default(),
-                                    private:    false,
                                     mutable:    false,
                                     in_class:   None,
                                     ty:         None

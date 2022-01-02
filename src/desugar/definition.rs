@@ -11,7 +11,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
     // TODO augment function definition in type checker so that it has return type
     // when applicable
     Ok(match &ast.node {
-        Node::VariableDef { var, expression, private, ty, .. } => {
+        Node::VariableDef { var, expr: expression, ty, .. } => {
             let var = desugar_node(var, imp, state)?;
             let state = state.in_tup(match var.clone() {
                 Core::Tuple { elements } => elements.len(),
@@ -19,7 +19,6 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             });
 
             Core::VarDef {
-                private: *private,
                 var:     Box::from(var.clone()),
                 ty:      match ty {
                     Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
@@ -33,8 +32,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                 }
             }
         }
-        Node::FunDef { id, fun_args, body: expression, private, ret_ty, .. } => Core::FunDef {
-            private: *private,
+        Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => Core::FunDef {
             id:      Box::from(desugar_node(&id, imp, state)?),
             arg:     desugar_vec(&fun_args, imp, state)?,
             ty:      match ret_ty {

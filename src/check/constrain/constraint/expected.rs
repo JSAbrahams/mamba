@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Error, Formatter};
@@ -8,13 +9,12 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
+use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
-use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, BOOL_PRIMITIVE, STRING_PRIMITIVE};
-use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {
@@ -40,8 +40,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
     /// If primitive or Constructor, constructs Type.
     fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expected> {
         let ast = match &ast.node {
-            Node::Block { statements } | Node::Script { statements } =>
-                statements.last().unwrap_or(ast),
+            Node::Block { statements } => statements.last().unwrap_or(ast),
             _ => ast
         };
 

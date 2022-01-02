@@ -14,7 +14,6 @@ pub struct GenericField {
     pub is_py_type: bool,
     pub name:       String,
     pub pos:        Position,
-    pub private:    bool,
     pub mutable:    bool,
     pub in_class:   Option<DirectName>,
     pub ty:         Option<NameUnion>
@@ -38,13 +37,12 @@ impl TryFrom<&AST> for GenericField {
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
             // TODO do something with forward
-            Node::VariableDef { private, var, mutable, ty, .. } => Ok(GenericField {
+            Node::VariableDef { var, mutable, ty, .. } => Ok(GenericField {
                 is_py_type: false,
                 name:       field_name(var.deref())?,
                 mutable:    *mutable,
                 pos:        ast.pos.clone(),
                 in_class:   None,
-                private:    *private,
                 ty:         match ty {
                     Some(ty) => Some(NameUnion::try_from(ty.deref())?),
                     None => None
@@ -62,7 +60,7 @@ impl TryFrom<&AST> for GenericFields {
         Ok(GenericFields {
             fields: match &ast.node {
                 // TODO do something with forward
-                Node::VariableDef { private, var, ty, mutable, .. } => {
+                Node::VariableDef {  var, ty, mutable, .. } => {
                     let identifier = Identifier::try_from(var.deref())?;
                     // TODO infer type if not present
                     match &ty {
@@ -75,7 +73,6 @@ impl TryFrom<&AST> for GenericFields {
                                     name:       id.clone(),
                                     mutable:    *mutable || *inner_mut,
                                     pos:        ast.pos.clone(),
-                                    private:    *private,
                                     ty:         Some(ty.clone()),
                                     in_class:   None
                                 })
@@ -88,7 +85,6 @@ impl TryFrom<&AST> for GenericFields {
                                 is_py_type: false,
                                 name:       id.clone(),
                                 pos:        ast.pos.clone(),
-                                private:    *private,
                                 mutable:    *mutable || *inner_mut,
                                 in_class:   None,
                                 ty:         None
@@ -106,17 +102,10 @@ impl GenericField {
     pub fn in_class(
         self,
         class: Option<&DirectName>,
-        type_def: bool,
-        pos: &Position
+        _type_def: bool,
+        _pos: &Position
     ) -> TypeResult<GenericField> {
-        if self.private && type_def {
-            Err(vec![TypeErr::new(
-                pos,
-                &format!("Field {} cannot be private: In an type definition", self.name)
-            )])
-        } else {
-            Ok(GenericField { in_class: class.cloned(), ..self })
-        }
+        Ok(GenericField { in_class: class.cloned(), ..self })
     }
 }
 
