@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::{expected_one_of, ParseResult};
@@ -37,7 +37,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
                     Ok(())
                 }
             }
-        }
+        },
     )?;
 
     Ok(statements)

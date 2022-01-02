@@ -6,10 +6,10 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::check::context::{arg, Context, function};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::name::{DirectName, IsSuperSet, Name, NameUnion};
-use crate::check::context::{arg, function, Context};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -45,14 +45,14 @@ pub mod python;
 /// May raise any Name within raises.
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
-    pub is_py_type:   bool,
-    pub name:         DirectName,
+    pub is_py_type: bool,
+    pub name: DirectName,
     pub self_mutable: Option<bool>,
-    pub pure:         bool,
-    pub arguments:    Vec<FunctionArg>,
-    pub raises:       NameUnion,
-    pub in_class:     Option<DirectName>,
-    pub ret_ty:       NameUnion
+    pub pure: bool,
+    pub arguments: Vec<FunctionArg>,
+    pub raises: NameUnion,
+    pub in_class: Option<DirectName>,
+    pub ret_ty: NameUnion,
 }
 
 impl Hash for Function {
@@ -117,7 +117,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function
             ret_ty: match &fun.ret_ty {
                 Some(ty) => ty.substitute(generics, pos)?,
                 None => NameUnion::empty()
-            }
+            },
         })
     }
 }
@@ -127,7 +127,7 @@ impl Function {
         &self,
         args: &[NameUnion],
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> TypeResult<()> {
         for pair in self.arguments.iter().zip_longest(args) {
             match pair {
@@ -167,7 +167,7 @@ impl Function {
         name: &DirectName,
         self_arg: &NameUnion,
         ret_ty: &NameUnion,
-        pos: &Position
+        pos: &Position,
     ) -> TypeResult<Function> {
         if self_arg.is_empty() {
             let msg = format!("'{}' self argument of '{}' cannot be empty", arg::SELF, name);
@@ -175,21 +175,21 @@ impl Function {
         }
 
         Ok(Function {
-            is_py_type:   false,
-            name:         name.clone(),
+            is_py_type: false,
+            name: name.clone(),
             self_mutable: None,
-            pure:         false,
-            arguments:    vec![FunctionArg {
-                is_py_type:  false,
-                name:        String::from(arg::SELF),
+            pure: false,
+            arguments: vec![FunctionArg {
+                is_py_type: false,
+                name: String::from(arg::SELF),
                 has_default: false,
-                vararg:      false,
-                mutable:     false,
-                ty:          Some(self_arg.clone())
+                vararg: false,
+                mutable: false,
+                ty: Some(self_arg.clone()),
             }],
-            raises:       NameUnion::empty(),
-            in_class:     None,
-            ret_ty:       ret_ty.clone()
+            raises: NameUnion::empty(),
+            in_class: None,
+            ret_ty: ret_ty.clone(),
         })
     }
 }

@@ -4,44 +4,44 @@ about: |
   Transpile Mamba to Python code.
   Documentation available at http://joelabrahams.nl/mamba_doc/.
 args:
-    - input:
-        short: i
-        long: input
-        value_name: INPUT
-        help: |
-          Input file or directory.
-          If file, file taken as input.
-          If directory, recursively search all sub-directories for *.mamba files.
-          If no input given, current directory used as input directory.
-        takes_value: true
-    - output:
-        short: o
-        long: output
-        value_name: OUTPUT
-        help: |
-          Output directory to store Python files.
-          Output directory structure reflects input directory structure.
-          If no output given, 'target' directory created in current directory and is used as ouput.
-        takes_value: true
-    - v:
-        short: v
-        multiple: true
-        help: |
-          Set level of verbosity
-          - v   : info, error, warning printed to sterr (Default)
-          - vv  : debug messages are printed
-          - vvv : trace messages are printed
-    - debug:
-        short: d
-        long: debug
-        help: Add line numbers to log statements
-    - no-module-path:
-        long: no-module-path
-        help: Disable the module path in the log statements
-    - no=color:
-        long: no-color
-        help: Disable colorized output
-    - level:
-        short: l
-        long: level
-        help: Print log level
+  - input:
+      short: i
+      long: input
+      value_name: INPUT
+      help: |
+        Input file or directory.
+        If file, file taken as input.
+        If directory, recursively search all sub-directories for *.mamba files.
+        If no input given, current directory used as input directory.
+      takes_value: true
+  - output:
+      short: o
+      long: output
+      value_name: OUTPUT
+      help: |
+        Output directory to store Python files.
+        Output directory structure reflects input directory structure.
+        If no output given, 'target' directory created in current directory and is used as ouput.
+      takes_value: true
+  - v:
+      short: v
+      multiple: true
+      help: |
+        Set level of verbosity
+        - v   : info, error, warning printed to sterr (Default)
+        - vv  : debug messages are printed
+        - vvv : trace messages are printed
+  - debug:
+      short: d
+      long: debug
+      help: Add line numbers to log statements
+  - no-module-path:
+      long: no-module-path
+      help: Disable the module path in the log statements
+  - no=color:
+      long: no-color
+      help: Disable colorized output
+  - level:
+      short: l
+      long: level
+      help: Print log level

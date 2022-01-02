@@ -1,17 +1,18 @@
+use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
+use std::iter::FromIterator;
 use std::ops::Deref;
 use std::path::PathBuf;
+
+use python_parser::ast::{CompoundStatement, Statement};
 
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::result::{TypeErr, TypeResult};
-use python_parser::ast::{CompoundStatement, Statement};
-use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::iter::FromIterator;
 
 pub fn python_files(
     python_dir: &PathBuf

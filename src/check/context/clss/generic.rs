@@ -13,18 +13,18 @@ use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
     pub is_py_type: bool,
-    pub name:       DirectName,
-    pub pos:        Position,
-    pub concrete:   bool,
-    pub args:       Vec<GenericFunctionArg>,
-    pub fields:     HashSet<GenericField>,
-    pub functions:  HashSet<GenericFunction>,
-    pub parents:    HashSet<GenericParent>
+    pub name: DirectName,
+    pub pos: Position,
+    pub concrete: bool,
+    pub args: Vec<GenericFunctionArg>,
+    pub fields: HashSet<GenericField>,
+    pub functions: HashSet<GenericFunction>,
+    pub parents: HashSet<GenericParent>,
 }
 
 impl PartialEq for GenericClass {
@@ -81,13 +81,13 @@ impl TryFrom<&AST> for GenericClass {
                     class_args
                 } else {
                     let mut new_args = vec![GenericFunctionArg {
-                        is_py_type:  false,
-                        name:        String::from(arg::SELF),
+                        is_py_type: false,
+                        name: String::from(arg::SELF),
                         has_default: false,
-                        pos:         Default::default(),
-                        vararg:      false,
-                        mutable:     false,
-                        ty:          Some(NameUnion::from(&name))
+                        pos: Default::default(),
+                        vararg: false,
+                        mutable: false,
+                        ty: Some(NameUnion::from(&name)),
                     }];
                     new_args.append(&mut class_args);
                     new_args
@@ -101,20 +101,20 @@ impl TryFrom<&AST> for GenericClass {
                     } else {
                         return Err(vec![TypeErr::new(
                             &class.pos,
-                            "Cannot have constructor and class arguments"
+                            "Cannot have constructor and class arguments",
                         )]);
                     }
                 }
 
                 if class_args.is_empty() {
                     class_args.push(GenericFunctionArg {
-                        is_py_type:  false,
-                        name:        String::from(arg::SELF),
-                        pos:         Default::default(),
+                        is_py_type: false,
+                        name: String::from(arg::SELF),
+                        pos: Default::default(),
                         has_default: false,
-                        vararg:      false,
-                        mutable:     false,
-                        ty:          Option::from(NameUnion::from(&name))
+                        vararg: false,
+                        mutable: false,
+                        ty: Option::from(NameUnion::from(&name)),
                     })
                 }
 
@@ -136,7 +136,7 @@ impl TryFrom<&AST> for GenericClass {
                     concrete: true,
                     fields: argument_fields.union(&body_fields).cloned().collect(),
                     functions,
-                    parents: parents.into_iter().map(Result::unwrap).collect()
+                    parents: parents.into_iter().map(Result::unwrap).collect(),
                 })
             }
             Node::TypeDef { ty, isa, body, .. } => {
@@ -166,18 +166,18 @@ impl TryFrom<&AST> for GenericClass {
                     concrete: false,
                     fields,
                     functions,
-                    parents
+                    parents,
                 })
             }
             Node::TypeAlias { ty, isa, .. } => Ok(GenericClass {
                 is_py_type: false,
-                name:       DirectName::try_from(ty)?,
-                pos:        class.pos.clone(),
-                args:       vec![],
-                concrete:   false,
-                fields:     HashSet::new(),
-                functions:  HashSet::new(),
-                parents:    HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?])
+                name: DirectName::try_from(ty)?,
+                pos: class.pos.clone(),
+                args: vec![],
+                concrete: false,
+                fields: HashSet::new(),
+                functions: HashSet::new(),
+                parents: HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]),
             }),
             _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")])
         }
@@ -187,7 +187,7 @@ impl TryFrom<&AST> for GenericClass {
 fn get_fields_and_functions(
     class: &DirectName,
     statements: &[AST],
-    type_def: bool
+    type_def: bool,
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
     let mut fields = HashSet::new();
     let mut functions = HashSet::new();
@@ -211,7 +211,7 @@ fn get_fields_and_functions(
             _ =>
                 return Err(vec![TypeErr::new(
                     &statement.pos,
-                    "Expected function or variable definition"
+                    "Expected function or variable definition",
                 )]),
         }
     }

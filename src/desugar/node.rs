@@ -10,8 +10,8 @@ use crate::desugar::result::UnimplementedErr;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 
 // TODO return imports instead of modifying mutable reference
 pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
@@ -25,18 +25,18 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             } else {
                 Core::ImportAs {
                     imports: desugar_vec(import, imp, state)?,
-                    alias:   desugar_vec(_as, imp, state)?
+                    alias: desugar_vec(_as, imp, state)?,
                 }
             },
         Node::FromImport { id, import } => Core::FromImport {
-            from:   Box::from(desugar_node(id, imp, state)?),
-            import: Box::from(desugar_node(import, imp, state)?)
+            from: Box::from(desugar_node(id, imp, state)?),
+            import: Box::from(desugar_node(import, imp, state)?),
         },
 
         Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(ast, imp, state)?,
         Node::Reassign { left, right } => Core::Assign {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
 
         Node::Block { statements } => Core::Block {
@@ -47,7 +47,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Real { lit } => Core::Float { float: lit.clone() },
         Node::ENum { num, exp } => Core::ENum {
             num: num.clone(),
-            exp: if exp.is_empty() { String::from("0") } else { exp.clone() }
+            exp: if exp.is_empty() { String::from("0") } else { exp.clone() },
         },
         Node::DocStr { lit } => Core::DocStr { string: lit.clone() },
         Node::Str { lit, expressions } =>
@@ -98,90 +98,90 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::Not { expr } => Core::Not { expr: Box::from(desugar_node(expr, imp, state)?) },
         Node::And { left, right } => Core::And {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Or { left, right } => Core::Or {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Is { left, right } => Core::Is {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::IsN { left, right } => Core::IsN {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Eq { left, right } => Core::Eq {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Neq { left, right } => Core::Neq {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::IsA { left, right } => Core::IsA {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::IsNA { left, right } => Core::Not {
             expr: Box::from(Core::IsA {
-                left:  Box::from(desugar_node(left, imp, state)?),
-                right: Box::from(desugar_node(right, imp, state)?)
+                left: Box::from(desugar_node(left, imp, state)?),
+                right: Box::from(desugar_node(right, imp, state)?),
             })
         },
 
         Node::Add { left, right } => Core::Add {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Sub { left, right } => Core::Sub {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Mul { left, right } => Core::Mul {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Div { left, right } => Core::Div {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::FDiv { left, right } => Core::FDiv {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Mod { left, right } => Core::Mod {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Pow { left, right } => Core::Pow {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
 
         Node::BAnd { left, right } => Core::BAnd {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::BOr { left, right } => Core::BOr {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::BXOr { left, right } => Core::BXOr {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::BOneCmpl { expr } =>
             Core::BOneCmpl { expr: Box::from(desugar_node(expr, imp, state)?) },
         Node::BLShift { left, right } => Core::BLShift {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::BRShift { left, right } => Core::BRShift {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
 
         Node::AddU { expr } => Core::AddU { expr: Box::from(desugar_node(expr, imp, state)?) },
@@ -192,26 +192,26 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         }
 
         Node::Le { left, right } => Core::Le {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Leq { left, right } => Core::Leq {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Ge { left, right } => Core::Ge {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Geq { left, right } => Core::Geq {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
 
         Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
-            vararg:  *vararg,
-            var:     Box::from(desugar_node(var, imp, state)?),
-            ty:      if state.expand_ty {
+            vararg: *vararg,
+            var: Box::from(desugar_node(var, imp, state)?),
+            ty: if state.expand_ty {
                 match ty {
                     Some(ty) => match &var.node {
                         Node::_Self => None,
@@ -225,25 +225,25 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             default: match default {
                 Some(default) => Some(Box::from(desugar_node(default, imp, state)?)),
                 None => None
-            }
+            },
         },
 
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => desugar_call(ast, imp, state)?,
         Node::AnonFun { args, body } => Core::AnonFun {
             args: desugar_vec(args, imp, &state.expand_ty(false))?,
-            body: Box::from(desugar_node(body, imp, state)?)
+            body: Box::from(desugar_node(body, imp, state)?),
         },
 
         Node::In { left, right } => Core::In {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
         Node::Range { from, to, inclusive, step } => Core::Range {
             from: Box::from(desugar_node(from, imp, state)?),
-            to:   Box::from(if *inclusive {
+            to: Box::from(if *inclusive {
                 Core::Add {
-                    left:  Box::from(desugar_node(to, imp, state)?),
-                    right: Box::from(Core::Int { int: String::from("1") })
+                    left: Box::from(desugar_node(to, imp, state)?),
+                    right: Box::from(Core::Int { int: String::from("1") }),
                 }
             } else {
                 desugar_node(to, imp, state)?
@@ -252,19 +252,13 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                 desugar_node(step, imp, state)?
             } else {
                 Core::Int { int: String::from("1") }
-            })
+            }),
         },
         Node::Underscore => Core::UnderScore,
         Node::Question { left, right } => Core::Or {
-            left:  Box::from(desugar_node(left, imp, state)?),
-            right: Box::from(desugar_node(right, imp, state)?)
+            left: Box::from(desugar_node(left, imp, state)?),
+            right: Box::from(desugar_node(right, imp, state)?),
         },
-        Node::File { statements: modules, .. } => {
-            let mut modules = desugar_vec(modules, imp, state)?;
-            let mut statements = imp.imports.clone();
-            statements.append(&mut modules);
-            Core::Block { statements }
-        }
 
         Node::TypeTup { .. }
         | Node::Type { .. }
@@ -283,12 +277,12 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
         Node::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
             resource: Box::from(desugar_node(resource, imp, state)?),
-            alias:    Box::from(desugar_node(alias, imp, &state.expand_ty(false))?),
-            expr:     Box::from(desugar_node(expr, imp, state)?)
+            alias: Box::from(desugar_node(alias, imp, &state.expand_ty(false))?),
+            expr: Box::from(desugar_node(expr, imp, state)?),
         },
         Node::With { resource, expr, .. } => Core::With {
             resource: Box::from(desugar_node(resource, imp, state)?),
-            expr:     Box::from(desugar_node(expr, imp, state)?)
+            expr: Box::from(desugar_node(expr, imp, state)?),
         },
 
         Node::Step { .. } => panic!("Step cannot be top level."),
@@ -312,13 +306,13 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             let assign_state = state.assign_to(var.as_deref());
 
             Core::TryExcept {
-                setup:   if let Some(var) = var {
+                setup: if let Some(var) = var {
                     Some(Box::from(Core::VarDef { var, ty, expr: None }))
                 } else {
                     None
                 },
                 attempt: Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
-                except:  {
+                except: {
                     let mut except = Vec::new();
                     for case in cases {
                         let (cond, body) = match &case.node {
@@ -328,19 +322,19 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
                         match &cond.node {
                             Node::ExpressionType { expr, ty, .. } => except.push(Core::Except {
-                                id:    Box::from(desugar_node(expr, imp, state)?),
+                                id: Box::from(desugar_node(expr, imp, state)?),
                                 class: if let Some(ty) = ty {
                                     Some(Box::from(desugar_node(ty, imp, state)?))
                                 } else {
                                     None
                                 },
-                                body:  Box::from(desugar_node(body, imp, &assign_state)?)
+                                body: Box::from(desugar_node(body, imp, &assign_state)?),
                             }),
                             other => panic!("Expected id type but was {:?}", other)
                         };
                     }
                     except
-                }
+                },
             }
         }
     };

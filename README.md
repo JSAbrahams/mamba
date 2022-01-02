@@ -21,30 +21,32 @@
 
 # Mamba
 
-This is the Mamba programming language. 
-The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
+This is the Mamba programming language. The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
 This documentation outlines the different language features, and also contains a formal specification of the language.
 
 In short, Mamba is like Python, but with a few key features:
--   Strict static typing rules, but with type inference so it doesn't get in the way too much
--   Type refinement features
--   Null safety
--   Explicit error handling
--   A distinction between mutability and immutability
--   Pure functions, or, functions without side effects
 
-This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source files.
-Mamba code should therefore be interoperable with Python code.
-Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
+- Strict static typing rules, but with type inference so it doesn't get in the way too much
+- Type refinement features
+- Null safety
+- Explicit error handling
+- A distinction between mutability and immutability
+- Pure functions, or, functions without side effects
+
+This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
+files. Mamba code should therefore be interoperable with Python code. Functions written in Python can be called in Mamba
+and vice versa (from the generated Python files).
 
 ## ⌨️ Code Examples
 
-Below are some code examples to showcase the features of Mamba.
-We highlight how functions work, how de define classes, how types and type refinement features are applied, how Mamba can be used to ensure pureness, and how error handling works.
+Below are some code examples to showcase the features of Mamba. We highlight how functions work, how de define classes,
+how types and type refinement features are applied, how Mamba can be used to ensure pureness, and how error handling
+works.
 
 ### ➕ Functions
 
 We can write a simple script that computes the factorial of a value given by the user.
+
 ```mamba
 def factorial(x: Int) -> Int => match x
     0 => 1
@@ -58,15 +60,16 @@ else
     print("Input was not an integer.")
 ```
 
-Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
-This means that the compiler will check for us that factorial is only used with integers as argument.
+Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`. This means that the
+compiler will check for us that factorial is only used with integers as argument.
 
 ### 📋 Classes and mutability
 
-Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
-If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable and we cannot change its fields.
-We can do the same for any field.
-We showcase this using a simple dummy `Server` object.
+Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by
+stating whether it is mutable or not. If we write `self`, it is mutable, whereas if we write `fin self`, it is immutable
+and we cannot change its fields. We can do the same for any field. We showcase this using a simple dummy `Server`
+object.
+
 ```mamba
 import ipaddress
 
@@ -94,9 +97,12 @@ class MyServer(def ip_address: IPv4Address)
 ```
 
 Notice how:
--   `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `sel
+
+- `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we
+  can change properties of `sel
 
 Which we can then use as follows in our script:
+
 ```mamba
 import ipaddress
 from server import MyServer
@@ -115,10 +121,11 @@ my_server.disconnect()
 
 ### 🗃 Types and type refinement
 
-As shown above Mamba has a type system.
-Mamba however also has type refinement features to assign additional properties to types.
+As shown above Mamba has a type system. Mamba however also has type refinement features to assign additional properties
+to types.
 
 Lets expand our server example from above, and rewrite it slightly:
+
 ```mamba
 import ipaddress
 
@@ -151,8 +158,8 @@ class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
 
 Notice how above, we define the type of `self`.
 
-Each type effectively denotes another state that `self` can be in.
-For each type, we use `when` to show that it is a type refinement, which certain conditions.
+Each type effectively denotes another state that `self` can be in. For each type, we use `when` to show that it is a
+type refinement, which certain conditions.
 
 ```mamba
 import ipaddress
@@ -173,7 +180,9 @@ print("last message sent before disconnect: \"{my_server.last_sent}\".")
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
-Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
+Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns
+positive integers:
+
 ```mamba
 type PositiveInt: Int when 
     self >= 0 else "Must be greater than 0"
@@ -183,29 +192,30 @@ def factorial(x: PositiveInt) -> PositiveInt => match x
     n => n * factorial(n - 1)
 ```
 
-In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `String`.
-During execution, a check is done to verify that the variable does conform to the requirements of the refined type.
-If it does not, an exception is raised.
+In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int`
+or `String`. During execution, a check is done to verify that the variable does conform to the requirements of the
+refined type. If it does not, an exception is raised.
 
 Type refinement allows us to to some additional things:
--   It allows us to further specify the domain or co-domain of a function
--   It allows us to explicitly name the possible states of an object.
-    This means that we don't constantly have to check that certain conditions hold.
-    We can simply ask whether a given object is a certain state by checking whether it is a certain type.
-    
+
+- It allows us to further specify the domain or co-domain of a function
+- It allows us to explicitly name the possible states of an object. This means that we don't constantly have to check
+  that certain conditions hold. We can simply ask whether a given object is a certain state by checking whether it is a
+  certain type.
+
 ### 🔒 Pure functions
 
-Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)` (except if the output of the function is say `None` or `NaN`).
-By default, functions are not pure, and can read any variable they want, such as in Python.
-When we make a function `pure`, it cannot:
--   Read mutable variables not passed as an argument (with one exception).
--   Read mutable properties of `self`.
-    Mainly since `self` is never given as an argument, so a function output only depends on its explicit arguments.
--   Call impure functions.
+Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)` (except if the
+output of the function is say `None` or `NaN`). By default, functions are not pure, and can read any variable they want,
+such as in Python. When we make a function `pure`, it cannot:
 
-When a function is `pure`, its output is always the same for a given input.
-When a variable is immutable, when we add `fin`, it can never change.
-So, `pure` is a property of functions, and `fin` is a property of variables.
+- Read mutable variables not passed as an argument (with one exception).
+- Read mutable properties of `self`. Mainly since `self` is never given as an argument, so a function output only
+  depends on its explicit arguments.
+- Call impure functions.
+
+When a function is `pure`, its output is always the same for a given input. When a variable is immutable, when we
+add `fin`, it can never change. So, `pure` is a property of functions, and `fin` is a property of variables.
 
 ```mamba
 # taylor is immutable, its value does not change during execution
@@ -219,18 +229,20 @@ def pure sin(x: Int) =>
     ans
 ```
 
-Generally speaking, global variables can cause a lot of headaches.
-Immutable variables and pure functions make it easy to write declarative programs with no hidden dependencies.
+Generally speaking, global variables can cause a lot of headaches. Immutable variables and pure functions make it easy
+to write declarative programs with no hidden dependencies.
 
 ### ⚠ Error handling
 
-Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
-Instead, we aim to directly handle errors on-site so the origin of errors is more tracable.
-The following is only a brief example.
-Error handling can at times becomes quite verbose, so we do recommend checking out the [docs](https://joelabrahams.nl/mamba_doc/features/safety/error_handling.html) on error handling to get a better feel for error handling.
+Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known). Instead, we
+aim to directly handle errors on-site so the origin of errors is more tracable. The following is only a brief example.
+Error handling can at times becomes quite verbose, so we do recommend checking out
+the [docs](https://joelabrahams.nl/mamba_doc/features/safety/error_handling.html) on error handling to get a better feel
+for error handling.
 
-We can modify the above script such that we don't check whether the server is connected or not.
-In that case, we must handle the case where `my_server` throws a `ServerErr`:
+We can modify the above script such that we don't check whether the server is connected or not. In that case, we must
+handle the case where `my_server` throws a `ServerErr`:
+
 ```mamba
 import ipaddress
 from server import MyServer
@@ -245,14 +257,15 @@ my_server.send(message) handle
 if my_server isa ConnectedMyServer then my_server.disconnect()
 ```
 
-In the above script, we will always print the error since we forgot to actually connect to the server.
-Here we showcase how we try to handle errors on-site instead of in a (large) `try` block.
-This means that we don't need a `finally` block: We aim to deal with the error where it happens and then continue executing the remaining code.
-This also prevents us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what error.
+In the above script, we will always print the error since we forgot to actually connect to the server. Here we showcase
+how we try to handle errors on-site instead of in a (large) `try` block. This means that we don't need a `finally`
+block: We aim to deal with the error where it happens and then continue executing the remaining code. This also prevents
+us from wrapping large code blocks in a `try`, where it might not be clear what statement or expression might throw what
+error.
 
-`handle` can also be combined with an assign.
-In that case, we must either always return (halting execution or exiting the function), or evaluate to a value.
-This is shown below:
+`handle` can also be combined with an assign. In that case, we must either always return (halting execution or exiting
+the function), or evaluate to a value. This is shown below:
+
 ```mamba
 def a := function_may_throw_err() handle
     err: MyErr => 
@@ -265,56 +278,58 @@ def a := function_may_throw_err() handle
 print("a has value {a}.")
 ```
 
-If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
-See the sections above for examples where we don't handle errors and simply pass them on using `raise`.
+If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution
+might result in an exception, but we don't want to handle that here. See the sections above for examples where we don't
+handle errors and simply pass them on using `raise`.
 
 ## Structure
 
-The transpiler can be split up into three distinct stages: parsing of the input, checking the input, and converting the input to Python code.
+The transpiler can be split up into three distinct stages: parsing of the input, checking the input, and converting the
+input to Python code.
 
 ### Lexer and Parser: String to AST
 
-Convert a string of characters to a string of tokens.
-For each token we store the starting position within the file and its width.
-This information is used when generating error messages in this and consecutive stages.
+Convert a string of characters to a string of tokens. For each token we store the starting position within the file and
+its width. This information is used when generating error messages in this and consecutive stages.
 
-During this stage, errors are raised if we encounter an illegal character.
-We then convert the list of tokens to an Abstract Syntax Tree (AST) based on the pre-defined grammar of the language.
+During this stage, errors are raised if we encounter an illegal character. We then convert the list of tokens to an
+Abstract Syntax Tree (AST) based on the pre-defined grammar of the language.
 
-During this stage syntax errors are raised if we encounter an illegal strings of tokens.
-I.e. a list of tokens that does not conform to the grammar of the language.
-A lex error is thrown if something goes wrong during the lexing stage.
+During this stage syntax errors are raised if we encounter an illegal strings of tokens. I.e. a list of tokens that does
+not conform to the grammar of the language. A lex error is thrown if something goes wrong during the lexing stage.
 
 ### Type checking
 
-Check that the AST is correctly formed, beyond what the parser can check.
-We also verify that we only call methods which are members of an object's class and that functions are used properly, which are imported.
-We do mutability checks, that we only call variables which are initalized, and that functions receive only types they expect (at the very least an expression which may be evaluated).
-More complex language features are also type checked.
+Check that the AST is correctly formed, beyond what the parser can check. We also verify that we only call methods which
+are members of an object's class and that functions are used properly, which are imported. We do mutability checks, that
+we only call variables which are initalized, and that functions receive only types they expect (at the very least an
+expression which may be evaluated). More complex language features are also type checked.
 
-This stage generates type errors, and contains the bulk of applicationl logic.
-This is also the last stage where error messages may be generated.
-Any error after this stage is indicative of an internal error, and should be fixed.
+This stage generates type errors, and contains the bulk of applicationl logic. This is also the last stage where error
+messages may be generated. Any error after this stage is indicative of an internal error, and should be fixed.
 
-Note that we do type checking before desugaring to improve the quality of error messages.
-This is the same approach Haskell uses, at the cost of increased complexity of the type checker.
+Note that we do type checking before desugaring to improve the quality of error messages. This is the same approach
+Haskell uses, at the cost of increased complexity of the type checker.
 
 ### Desugar to Python
 
-Convert the AST to a simpler core language which looks similar to Python.
-This internal language is then again converted to a string which represents Python code.
+Convert the AST to a simpler core language which looks similar to Python. This internal language is then again converted
+to a string which represents Python code.
 
-Note that in future, the type checker should annotate the tree such that each node has a type.
-This will allow us to add type hints to all Python code we output, and to perhaps also more easily desugar more complex language construts (such as classes).
+Note that in future, the type checker should annotate the tree such that each node has a type. This will allow us to add
+type hints to all Python code we output, and to perhaps also more easily desugar more complex language construts (such
+as classes).
 
 ## 💻 The Command Line Interface
 
 ### Usage
+
 ```
 mamba [FLAGS] [OPTIONS]
 ```
 
 ### FLAGS
+
 ```
 -d, --debug             Add line numbers to log statements
 -h, --help              Prints help information
@@ -329,6 +344,7 @@ mamba [FLAGS] [OPTIONS]
 ```
 
 ### Options
+
 ```
 -i, --input <INPUT>      Input file or directory.
                          If file, file taken as input.
@@ -343,4 +359,5 @@ You can type `mamba -help` for a message containing roughly the above informatio
 
 ## 👥 Contributing
 
-Before submitting your first issue or pull request, please take the time to read both our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).
+Before submitting your first issue or pull request, please take the time to read both
+our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).

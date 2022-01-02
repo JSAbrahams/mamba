@@ -29,7 +29,6 @@ type OptAST = Option<Box<AST>>;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
-    File { statements: Vec<AST> },
     Import { import: Vec<AST>, aliases: Vec<AST> },
     FromImport { id: Box<AST>, import: Box<AST> },
     Class { ty: Box<AST>, args: Vec<AST>, parents: Vec<AST>, body: OptAST },
@@ -110,7 +109,7 @@ pub enum Node {
     Not { expr: Box<AST> },
     And { left: Box<AST>, right: Box<AST> },
     Or { left: Box<AST>, right: Box<AST> },
-    IfElse { cond: Box<AST>, then: Box<AST>, el:OptAST },
+    IfElse { cond: Box<AST>, then: Box<AST>, el: OptAST },
     Match { cond: Box<AST>, cases: Vec<AST> },
     Case { cond: Box<AST>, body: Box<AST> },
     For { expr: Box<AST>, col: Box<AST>, body: Box<AST> },
@@ -134,9 +133,6 @@ impl Node {
     /// Apply mapping to node, before recursively applying mapping to result
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> Node {
         match mapping(self) {
-            Node::File { statements: modules } => Node::File {
-                statements: modules.iter().map(|m| m.map(mapping)).collect(),
-            },
             Node::Import { import, aliases: _as } => Node::Import {
                 import: import.iter().map(|i| i.map(mapping)).collect(),
                 aliases: _as.iter().map(|a| a.map(mapping)).collect(),

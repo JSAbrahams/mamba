@@ -7,25 +7,25 @@ use crate::check::context::field::generic::GenericField;
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 pub const SELF: &str = "self";
 
 #[derive(Debug, Clone)]
 pub struct ClassArgument {
-    pub field:   Option<GenericField>,
-    pub fun_arg: GenericFunctionArg
+    pub field: Option<GenericField>,
+    pub fun_arg: GenericFunctionArg,
 }
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunctionArg {
-    pub is_py_type:  bool,
-    pub name:        String,
-    pub pos:         Position,
+    pub is_py_type: bool,
+    pub name: String,
+    pub pos: Position,
     pub has_default: bool,
-    pub vararg:      bool,
-    pub mutable:     bool,
-    pub ty:          Option<NameUnion>
+    pub vararg: bool,
+    pub mutable: bool,
+    pub ty: Option<NameUnion>,
 }
 
 impl PartialEq for GenericFunctionArg {
@@ -70,17 +70,17 @@ impl TryFrom<&AST> for ClassArgument {
         match &ast.node {
             Node::VariableDef { mutable, var, expr: expression, ty, .. } => {
                 let fun_arg = GenericFunctionArg {
-                    is_py_type:  false,
-                    name:        argument_name(var)?,
-                    pos:         ast.pos.clone(),
+                    is_py_type: false,
+                    name: argument_name(var)?,
+                    pos: ast.pos.clone(),
                     has_default: expression.is_some(),
-                    vararg:      false,
-                    mutable:     *mutable,
-                    ty:          if let Some(ty) = ty {
+                    vararg: false,
+                    mutable: *mutable,
+                    ty: if let Some(ty) = ty {
                         Some(NameUnion::try_from(ty)?)
                     } else {
                         None
-                    }
+                    },
                 };
 
                 Ok(ClassArgument { field: Some(GenericField::try_from(ast)?), fun_arg })
@@ -101,13 +101,13 @@ impl TryFrom<&AST> for GenericFunctionArg {
             Node::FunArg { vararg, var, mutable, ty, default, .. } => {
                 let name = argument_name(var.deref())?;
                 Ok(GenericFunctionArg {
-                    is_py_type:  false,
-                    name:        name.clone(),
+                    is_py_type: false,
+                    name: name.clone(),
                     has_default: default.is_some(),
-                    vararg:      *vararg,
-                    mutable:     *mutable,
-                    pos:         ast.pos.clone(),
-                    ty:          match ty {
+                    vararg: *vararg,
+                    mutable: *mutable,
+                    pos: ast.pos.clone(),
+                    ty: match ty {
                         Some(ty) => Some(NameUnion::try_from(ty.deref())?),
                         None if name.as_str() == SELF => None,
                         None =>
@@ -126,16 +126,16 @@ impl TryFrom<&AST> for GenericFunctionArg {
                                     _ =>
                                         return Err(vec![TypeErr::new(
                                             &default.pos,
-                                            "Can only infer type of literals"
+                                            "Can only infer type of literals",
                                         )]),
                                 })
                             } else {
                                 return Err(vec![TypeErr::new(
                                     &var.pos,
-                                    "Non-self argument must have type if no default present"
+                                    "Non-self argument must have type if no default present",
                                 )]);
                             },
-                    }
+                    },
                 })
             }
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected function argument")])

@@ -1,7 +1,8 @@
-use crate::common::*;
 use mamba::lex::tokenize;
 use mamba::parse::ast::Node;
 use mamba::parse::parse;
+
+use crate::common::*;
 
 #[test]
 fn parse_class() -> Result<(), String> {
@@ -22,7 +23,7 @@ fn import_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (import, _as) = match ast.node {
-        Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+        Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
             _ => panic!("first element script was not list.")
         },
@@ -40,7 +41,7 @@ fn import_as_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (import, _as) = match ast.node {
-        Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+        Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
             other => panic!("first element script was not import: {:?}.", other)
         },
@@ -59,7 +60,7 @@ fn from_import_as_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let (from, import, _as) = match ast.node {
-        Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+        Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
             Node::FromImport { id, import } => match &import.node {
                 Node::Import { import, aliases: _as } => (id.clone(), import.clone(), _as.clone()),
                 other => panic!("not import: {:?}.", other)

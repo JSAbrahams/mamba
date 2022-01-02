@@ -1,6 +1,7 @@
-use crate::common::resource_content;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+
+use crate::common::resource_content;
 
 #[test]
 fn def_mut_private_wrong_order() {

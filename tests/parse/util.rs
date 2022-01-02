@@ -5,7 +5,7 @@ use mamba::parse::result::ParseResult;
 
 pub fn parse_direct(input: &[Lex]) -> ParseResult<Vec<AST>> {
     match parse(input)?.node {
-         Node::File { statements } => Ok(statements),
+        Node::Block { statements } => Ok(statements),
         _ => Ok(vec![])
     }
 }

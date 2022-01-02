@@ -1,6 +1,7 @@
-use crate::common::resource_content;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+
+use crate::common::resource_content;
 
 #[test]
 fn handle_verify() {

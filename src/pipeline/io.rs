@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::fs;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
@@ -7,7 +8,6 @@ use std::path::PathBuf;
 
 use glob::glob;
 use pathdiff::diff_paths;
-use std::fs;
 
 pub fn read_source(source_path: &PathBuf) -> Result<String, (String, String)> {
     let mut source = String::new();

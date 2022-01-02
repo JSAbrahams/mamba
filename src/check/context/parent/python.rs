@@ -1,10 +1,11 @@
+use std::ops::Deref;
+
 use python_parser::ast::{Argument, Expression, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::parent::generic::GenericParent;
 use crate::common::position::Position;
-use std::ops::Deref;
 
 impl From<&Argument> for GenericParent {
     fn from(argument: &Argument) -> GenericParent {

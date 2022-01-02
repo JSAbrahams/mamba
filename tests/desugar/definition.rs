@@ -1,9 +1,10 @@
+use std::panic;
+
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parse::ast::Node;
 use mamba::parse::ast::AST;
-use std::panic;
+use mamba::parse::ast::Node;
 
 #[test]
 fn reassign_verify() {
@@ -30,7 +31,7 @@ fn variable_private_def_verify() {
         forward:    vec![]
     });
 
-    let ( var, ty, expr) = match desugar(&definition) {
+    let (var, ty, expr) = match desugar(&definition) {
         Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
         other => panic!("Expected var def but got: {:?}.", other)
     };
@@ -171,16 +172,16 @@ fn fun_def_verify() {
 
     assert_eq!(args.len(), 2);
     assert_eq!(args[0], Core::FunArg {
-        vararg:  false,
-        var:     Box::from(Core::Id { lit: String::from("arg1") }),
-        ty:      None,
-        default: None
+        vararg: false,
+        var: Box::from(Core::Id { lit: String::from("arg1") }),
+        ty: None,
+        default: None,
     });
     assert_eq!(args[1], Core::FunArg {
-        vararg:  true,
-        var:     Box::from(Core::Id { lit: String::from("arg2") }),
-        ty:      None,
-        default: None
+        vararg: true,
+        var: Box::from(Core::Id { lit: String::from("arg2") }),
+        ty: None,
+        default: None,
     });
     assert_eq!(*body, Core::Empty);
 }
@@ -214,10 +215,10 @@ fn fun_def_default_arg_verify() {
 
     assert_eq!(args.len(), 1);
     assert_eq!(args[0], Core::FunArg {
-        vararg:  false,
-        var:     Box::from(Core::Id { lit: String::from("arg1") }),
-        ty:      None,
-        default: Some(Box::from(Core::Str { string: String::from("asdf") }))
+        vararg: false,
+        var: Box::from(Core::Id { lit: String::from("arg1") }),
+        ty: None,
+        default: Some(Box::from(Core::Str { string: String::from("asdf") })),
     });
     assert_eq!(*body, Core::Empty);
 }

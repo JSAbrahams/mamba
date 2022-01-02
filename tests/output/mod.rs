@@ -1,12 +1,13 @@
 use std::path::Path;
 use std::process::Command;
 
+use python_parser::ast::Statement;
+
 use mamba::pipeline::transpile_directory;
 
 use crate::common::{delete_dir, python_src_to_stmts, resource_content, resource_content_path,
                     resource_content_randomize, resource_path};
 use crate::output::common::PYTHON;
-use python_parser::ast::Statement;
 
 mod common;
 
@@ -16,7 +17,7 @@ fn test_directory(
     valid: bool,
     input: &[&str],
     _output: &[&str],
-    file_name: &str
+    file_name: &str,
 ) -> Result<(), Vec<String>> {
     let (output_path, output_file) =
         resource_content_randomize(true, input, &format!("{}.py", file_name));
@@ -34,7 +35,7 @@ fn fallable(
     input: &[&str],
     output_path: &str,
     output_file: &str,
-    file_name: &str
+    file_name: &str,
 ) -> Result<(Vec<Statement>, Vec<Statement>), Vec<String>> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);

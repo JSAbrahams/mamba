@@ -1,5 +1,5 @@
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::generate::{gen_all};
+use crate::check::constrain::generate::gen_all;
 use crate::check::constrain::unify::unify;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;

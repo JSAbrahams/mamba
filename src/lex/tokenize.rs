@@ -108,7 +108,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                     Token::Real(number)
                 } else {
                     Token::Int(number)
-                }
+                },
             )
         }
         'a'..='z' | 'A'..='Z' | '_' => {
@@ -195,7 +195,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 fn next_and_create(
     it: &mut Peekable<Chars>,
     state: &mut State,
-    token: Token
+    token: Token,
 ) -> LexResult<Vec<Lex>> {
     it.next();
     create(state, token)

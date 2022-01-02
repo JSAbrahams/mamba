@@ -1,6 +1,7 @@
-use crate::common::*;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+
+use crate::common::*;
 
 #[test]
 fn function_definitions() {

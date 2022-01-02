@@ -29,7 +29,6 @@ fn equal_vec(this: &[AST], other: &[AST]) -> bool {
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let name = match &self {
-            Node::File { .. } => String::from("file"),
             Node::Import { .. } => String::from("import"),
             Node::FromImport { .. } => String::from("from import"),
             Node::Class { .. } => String::from("class"),
@@ -146,7 +145,6 @@ impl Display for Node {
 impl Node {
     pub fn equal_structure(&self, other: &Node) -> bool {
         match (&self, &other) {
-            (Node::File { statements: lm }, Node::File { statements: rm }) => equal_vec(lm, rm),
             (Node::Import { import: li, aliases: la }, Node::Import { import: ri, aliases: ra }) =>
                 equal_vec(li, ri) && equal_vec(la, ra),
             (
@@ -184,10 +182,10 @@ impl Node {
                     forward: rf
                 }
             ) => lm == rm
-                    && lv.equal_structure(rv)
-                    && equal_optional(lt, rt)
-                    && equal_optional(le, re)
-                    && equal_vec(lf, rf),
+                && lv.equal_structure(rv)
+                && equal_optional(lt, rt)
+                && equal_optional(le, re)
+                && equal_vec(lf, rf),
             (
                 Node::FunDef {
                     pure: lpu,

@@ -9,8 +9,8 @@ license-file = "LICENSE"
 readme = "README.md"
 documentation = "http://joelabrahams.nl/mamba_doc/"
 repository = "https://github.com/JSAbrahams/mamba"
-keywords = [ "python", "transpiler", "compiler"]
-categories = [ "parsing" ]
+keywords = ["python", "transpiler", "compiler"]
+categories = ["parsing"]
 
 [badges]
 appveyor = { repository = "JSAbrahams/mamba", branch = "master", service = "github" }
@@ -20,7 +20,7 @@ travis-ci = { repository = "JSAbrahams/mamba", branch = "master" }
 tempfile = "3.1.0"
 assert_cmd = "0.10"
 python-parser = "0.1.0"
-clap = {version = "2.33", features = ["yaml"]}
+clap = { version = "2.33", features = ["yaml"] }
 pathdiff = "0.1.0"
 glob = "0.3.0"
 itertools = "0.8.2"

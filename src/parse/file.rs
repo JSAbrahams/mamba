@@ -1,16 +1,16 @@
 use crate::common::position::Position;
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
 use crate::parse::class::{parse_class, parse_parent};
+use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
-use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected};
+use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_conditions;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
-use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 
 pub fn parse_from_import(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("from import")?;
@@ -101,7 +101,7 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
         }
     })?;
 
-    let node = Node::File { statements: modules };
+    let node = Node::Block { statements: modules };
     Ok(Box::from(AST::new(&start, node)))
 }
 
@@ -138,6 +138,6 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
             let isa = isa.clone();
             let node = Node::TypeDef { ty: ty.clone(), isa, body: None };
             Ok(Box::from(AST::new(&start.union(&ty.pos), node)))
-        }
+        },
     )
 }

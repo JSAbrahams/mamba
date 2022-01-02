@@ -13,37 +13,37 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
-        python: ["3.8"]
-        rust: ["nightly"]
+        os: [ "ubuntu-latest", "macos-latest" ]
+        python: [ "3.8" ]
+        rust: [ "nightly" ]
 
     runs-on: ${{ matrix.os }}
 
     name: OS ${{ matrix.os }}, Python v${{ matrix.python }}, Rust ${{ matrix.rust }}
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    # Install Python
-    - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python }}
+      # Install Python
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
 
-    # Install Rust, build and run tests
-    - name: Install Rust ${{ matrix.rust }}
-      run: rustup toolchain install ${{ matrix.rust }}
+      # Install Rust, build and run tests
+      - name: Install Rust ${{ matrix.rust }}
+        run: rustup toolchain install ${{ matrix.rust }}
 
-    - name: Build Nightly
-      if: ${{ matrix.rust == 'nightly' }}
-      run: cargo +nightly build
-    - name: Run tests Nightly
-      if: ${{ matrix.rust == 'nightly' }}
-      run: cargo +nightly test --package mamba
+      - name: Build Nightly
+        if: ${{ matrix.rust == 'nightly' }}
+        run: cargo +nightly build
+      - name: Run tests Nightly
+        if: ${{ matrix.rust == 'nightly' }}
+        run: cargo +nightly test --package mamba
 
-    - name: Build
-      if: ${{ matrix.rust != 'nightly' }}
-      run: cargo build
-    - name: Run tests
-      if: ${{ matrix.rust != 'nightly' }}
-      run: cargo test --package mamba
+      - name: Build
+        if: ${{ matrix.rust != 'nightly' }}
+        run: cargo build
+      - name: Run tests
+        if: ${{ matrix.rust != 'nightly' }}
+        run: cargo test --package mamba

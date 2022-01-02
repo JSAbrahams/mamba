@@ -119,7 +119,7 @@ fn from_import_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast.node {
-        Node::File { statements: modules, .. } => modules,
+        Node::Block { statements: modules, .. } => modules,
         _ => panic!("ast was not file.")
     };
 
@@ -144,7 +144,7 @@ fn import_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast.node {
-        Node::File { statements: modules, .. } => modules,
+        Node::Block { statements: modules, .. } => modules,
         _ => panic!("ast was not file.")
     };
 
@@ -165,7 +165,7 @@ fn import_as_verify() {
     let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
     let imports = match ast.node {
-        Node::File { statements: modules, .. } => modules,
+        Node::Block { statements: modules, .. } => modules,
         _ => panic!("ast was not file.")
     };
 

@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
@@ -61,7 +61,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
                 Token::Ge,
                 Token::Le
             ],
-            "definition"
+            "definition",
         )
     }?;
 
@@ -86,10 +86,10 @@ fn parse_var_or_fun_def(it: &mut LexIterator) -> ParseResult {
                     var: expr.clone(),
                     ty: None,
                     expr: None,
-                    forward: vec![]
+                    forward: vec![],
                 };
                 Ok(Box::from(AST::new(&id.pos.union(&id.pos), node)))
-            }
+            },
         ),
         _ => Err(custom("definition must start with id type", &id.pos))
     }
@@ -170,7 +170,7 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
         _ =>
             return Err(custom(
                 "Expected expression type in function argument",
-                &expression_type.pos
+                &expression_type.pos,
             )),
     };
     let default =

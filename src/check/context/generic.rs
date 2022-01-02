@@ -18,7 +18,7 @@ pub fn generics(
 
     for (file, source, path) in files {
         match &file.node {
-            Node::File { statements: modules, .. } =>
+            Node::Block { statements: modules, .. } =>
                 for module in modules {
                     match &module.node {
                         Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {

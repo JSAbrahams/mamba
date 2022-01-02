@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
@@ -24,11 +24,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[Token::While, Token::For, Token::Break, Token::Continue],
                 lex,
-                "control flow statement"
+                "control flow statement",
             ))
         },
         &[Token::While, Token::For, Token::Break, Token::Continue],
-        "control flow statement"
+        "control flow statement",
     )
 }
 

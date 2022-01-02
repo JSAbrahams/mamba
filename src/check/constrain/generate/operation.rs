@@ -1,25 +1,25 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
-use crate::check::constrain::generate::{gen_vec, generate, Constrained};
+use crate::check::constrain::generate::env::Environment;
+use crate::check::context::{clss, Context};
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT,
                                       SUB};
 use crate::check::context::name::{DirectName, NameUnion};
-use crate::check::context::{clss, Context};
-use crate::check::constrain::generate::env::Environment;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 pub fn gen_op(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
@@ -92,10 +92,10 @@ pub fn gen_op(
 
             let access = Expected::new(&expr.pos, &Access {
                 entity: Box::new(Expected::try_from((expr, &env.var_mappings))?),
-                name:   Box::from(Expected::new(&expr.pos, &Function {
+                name: Box::from(Expected::new(&expr.pos, &Function {
                     name: DirectName::from(SQRT),
-                    args: vec![Expected::try_from((expr, &env.var_mappings))?]
-                }))
+                    args: vec![Expected::try_from((expr, &env.var_mappings))?],
+                })),
             });
             constr.add("square root", &Expected::try_from((ast, &env.var_mappings))?, &access);
 
@@ -171,7 +171,7 @@ fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder)
     constr.add(
         format!("{} primitive", ty).as_str(),
         &Expected::try_from((ast, &env.var_mappings))?,
-        &Expected::new(&ast.pos, &Type { name })
+        &Expected::new(&ast.pos, &Type { name }),
     );
     Ok((constr.clone(), env.clone()))
 }
@@ -183,18 +183,18 @@ fn impl_magic(
     right: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     constr.add(
         format!("{} operation", fun).as_str(),
         &Expected::try_from((ast, &env.var_mappings))?,
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
-            name:   Box::new(Expected::new(&left.pos, &Function {
+            name: Box::new(Expected::new(&left.pos, &Function {
                 name: DirectName::from(fun),
-                args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?]
-            }))
-        })
+                args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?],
+            })),
+        }),
     );
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;
@@ -208,18 +208,18 @@ fn impl_bool_op(
     right: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     constr.add(
         "bool operation",
         &Expected::try_from((ast, &env.var_mappings))?,
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
-            name:   Box::new(Expected::new(&left.pos, &Function {
+            name: Box::new(Expected::new(&left.pos, &Function {
                 name: DirectName::from(fun),
-                args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?]
-            }))
-        })
+                args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?],
+            })),
+        }),
     );
     let ty = Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) };
     constr.add("bool operation", &Expected::try_from((ast, &env.var_mappings))?, &Expected::new(&ast.pos, &ty));

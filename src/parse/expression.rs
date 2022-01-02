@@ -11,10 +11,10 @@ use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
+use crate::parse::parse;
 use crate::parse::result::expected_one_of;
 use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_id;
-use crate::parse::parse;
 
 pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("literal")?;

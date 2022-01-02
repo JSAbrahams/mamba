@@ -1,9 +1,10 @@
+use std::ops::Deref;
+
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parse::ast::Node;
 use mamba::parse::ast::AST;
-use std::ops::Deref;
+use mamba::parse::ast::Node;
 
 #[test]
 fn import_verify() {

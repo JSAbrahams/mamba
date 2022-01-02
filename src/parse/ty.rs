@@ -1,12 +1,12 @@
 use std::ops::Deref;
 
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected_one_of};
+use crate::parse::result::ParseResult;
 
 pub fn parse_id(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
@@ -38,11 +38,11 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[Token::_Self, Token::Init, Token::Id(String::new()), Token::LRBrack],
                 lex,
-                "identifier"
+                "identifier",
             ))
         },
         &[Token::_Self, Token::Init, Token::Id(String::new())],
-        "identifier"
+        "identifier",
     )
 }
 
@@ -90,11 +90,11 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[Token::Id(String::new()), Token::LRBrack, Token::LCBrack],
                 &lex.clone(),
-                "type"
+                "type",
             ))
         },
         &[Token::Id(String::new()), Token::LRBrack],
-        "type"
+        "type",
     )?;
 
     let ty = if it.peek_if(&|lex| lex.token == Token::Question) {
@@ -117,7 +117,7 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
             Ok(Box::from(AST::new(&start.union(&ret_ty.pos), node)))
         },
         "function type",
-        start
+        start,
     )?;
 
     match res {

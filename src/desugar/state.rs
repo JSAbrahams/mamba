@@ -3,10 +3,10 @@ use crate::core::construct::Core;
 // TODO remove expect_expr once type checker augments AST
 #[derive(Clone, Debug)]
 pub struct State {
-    pub tup:       usize,
+    pub tup: usize,
     pub interface: bool,
     pub expand_ty: bool,
-    pub assign_to: Option<Core>
+    pub assign_to: Option<Core>,
 }
 
 impl State {
@@ -24,7 +24,7 @@ impl State {
 }
 
 pub struct Imports {
-    pub imports: Vec<Core>
+    pub imports: Vec<Core>,
 }
 
 impl Imports {
@@ -39,10 +39,10 @@ impl Imports {
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
         let import = Core::FromImport {
-            from:   Box::from(Core::Id { lit: String::from(from) }),
+            from: Box::from(Core::Id { lit: String::from(from) }),
             import: Box::from(Core::Import {
                 imports: vec![Core::Id { lit: String::from(import) }]
-            })
+            }),
         };
 
         if !self.imports.contains(&import) {

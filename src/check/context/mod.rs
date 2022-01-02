@@ -4,17 +4,17 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+use crate::check::CheckInput;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::clss::{Class, HasParent};
-use crate::check::context::field::generic::GenericField;
+use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::Field;
-use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
+use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::generic::generics;
 use crate::check::context::name::{DirectName, Name, NameUnion, NameVariant};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::CheckInput;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
@@ -38,9 +38,9 @@ mod python;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug)]
 pub struct Context {
-    classes:   HashSet<GenericClass>,
+    classes: HashSet<GenericClass>,
     functions: HashSet<GenericFunction>,
-    fields:    HashSet<GenericField>
+    fields: HashSet<GenericField>,
 }
 
 impl Context {
@@ -156,12 +156,12 @@ impl LookupField<&str, Field> for Context {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ClassVariant {
     Direct(Class),
-    Tuple(Vec<ClassUnion>)
+    Tuple(Vec<ClassUnion>),
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ClassTuple {
-    variant: ClassVariant
+    variant: ClassVariant,
 }
 
 impl Display for ClassTuple {
@@ -230,7 +230,7 @@ impl ClassTuple {
 
 #[derive(Debug, Eq)]
 pub struct ClassUnion {
-    union: HashSet<ClassTuple>
+    union: HashSet<ClassTuple>,
 }
 
 impl PartialEq for ClassUnion {
@@ -249,7 +249,7 @@ impl HasParent<&DirectName> for ClassUnion {
         &self,
         name: &DirectName,
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
@@ -307,7 +307,7 @@ impl HasParent<&NameUnion> for ClassUnion {
         &self,
         name: &NameUnion,
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
@@ -351,9 +351,9 @@ impl ClassUnion {
 }
 
 pub struct FunUnion {
-    pub union: HashSet<Function>
+    pub union: HashSet<Function>,
 }
 
 pub struct FieldUnion {
-    pub union: HashSet<Field>
+    pub union: HashSet<Field>,
 }

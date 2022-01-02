@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::ParseResult;
@@ -44,7 +44,7 @@ fn parse_level_7(it: &mut LexIterator) -> ParseResult {
             Token::Question => bin_op!(it, parse_level_7, Question, arithmetic.clone(), "question"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone())
+        Ok(arithmetic.clone()),
     )
 }
 
@@ -72,7 +72,7 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
             Token::In => bin_op!(it, parse_level_6, In, arithmetic.clone(), "in"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone())
+        Ok(arithmetic.clone()),
     )
 }
 
@@ -96,7 +96,7 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
             Token::BXOr => bin_op!(it, parse_level_5, BXOr, arithmetic.clone(), "bitwise xor"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone())
+        Ok(arithmetic.clone()),
     )
 }
 
@@ -115,7 +115,7 @@ fn parse_level_4(it: &mut LexIterator) -> ParseResult {
             Token::Sub => bin_op!(it, parse_level_4, Sub, arithmetic.clone(), "sub"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone())
+        Ok(arithmetic.clone()),
     )
 }
 
@@ -142,7 +142,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
                     from: arithmetic.clone(),
                     to: to.clone(),
                     inclusive: false,
-                    step
+                    step,
                 };
                 Ok(Box::from(AST::new(&start.union(&to.pos), node)))
             }
@@ -156,7 +156,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             }
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone())
+        Ok(arithmetic.clone()),
     )
 }
 
@@ -205,6 +205,6 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
             }
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone())
+        Ok(arithmetic.clone()),
     )
 }

@@ -2,15 +2,15 @@ use std::collections::HashSet;
 
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Tuple, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
+use crate::check::constrain::unify::link::{reinsert, unify_link};
+use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::name::{NameUnion, NameVariant};
-use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -20,7 +20,7 @@ pub fn unify_function(
     right: &Expected,
     constraints: &mut Constraints,
     ctx: &Context,
-    total: usize
+    total: usize,
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) => {
@@ -104,9 +104,9 @@ pub fn unify_function(
                         format!("Tuple element {}", i).as_str(),
                         &Expected::new(&element.pos, &Access {
                             entity: Box::from(element.clone()),
-                            name:   name.clone()
+                            name: name.clone(),
                         }),
-                        right
+                        right,
                     )
                 }
                 unify_link(constraints, ctx, total + elements.len())
@@ -126,7 +126,7 @@ fn unify_fun_arg(
     possible: &HashSet<Vec<FunctionArg>>,
     args: &[Expected],
     constr: &Constraints,
-    pos: &Position
+    pos: &Position,
 ) -> Unified<(Constraints, usize)> {
     let mut constr = constr.clone();
     let mut added = 0;

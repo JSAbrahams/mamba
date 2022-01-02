@@ -1,26 +1,26 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::context::name::{match_name, DirectName, NameUnion};
+use crate::check::context::name::{DirectName, match_name, NameUnion};
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
-use std::collections::HashSet;
+use crate::parse::ast::{AST, Node};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericField {
     pub is_py_type: bool,
-    pub name:       String,
-    pub pos:        Position,
-    pub mutable:    bool,
-    pub in_class:   Option<DirectName>,
-    pub ty:         Option<NameUnion>
+    pub name: String,
+    pub pos: Position,
+    pub mutable: bool,
+    pub in_class: Option<DirectName>,
+    pub ty: Option<NameUnion>,
 }
 
 pub struct GenericFields {
-    pub fields: HashSet<GenericField>
+    pub fields: HashSet<GenericField>,
 }
 
 impl Hash for GenericField {
@@ -39,14 +39,14 @@ impl TryFrom<&AST> for GenericField {
             // TODO do something with forward
             Node::VariableDef { var, mutable, ty, .. } => Ok(GenericField {
                 is_py_type: false,
-                name:       field_name(var.deref())?,
-                mutable:    *mutable,
-                pos:        ast.pos.clone(),
-                in_class:   None,
-                ty:         match ty {
+                name: field_name(var.deref())?,
+                mutable: *mutable,
+                pos: ast.pos.clone(),
+                in_class: None,
+                ty: match ty {
                     Some(ty) => Some(NameUnion::try_from(ty.deref())?),
                     None => None
-                }
+                },
             }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
         }
@@ -60,7 +60,7 @@ impl TryFrom<&AST> for GenericFields {
         Ok(GenericFields {
             fields: match &ast.node {
                 // TODO do something with forward
-                Node::VariableDef {  var, ty, mutable, .. } => {
+                Node::VariableDef { var, ty, mutable, .. } => {
                     let identifier = Identifier::try_from(var.deref())?;
                     // TODO infer type if not present
                     match &ty {
@@ -70,11 +70,11 @@ impl TryFrom<&AST> for GenericFields {
                                 .iter()
                                 .map(|(id, (inner_mut, ty))| GenericField {
                                     is_py_type: false,
-                                    name:       id.clone(),
-                                    mutable:    *mutable || *inner_mut,
-                                    pos:        ast.pos.clone(),
-                                    ty:         Some(ty.clone()),
-                                    in_class:   None
+                                    name: id.clone(),
+                                    mutable: *mutable || *inner_mut,
+                                    pos: ast.pos.clone(),
+                                    ty: Some(ty.clone()),
+                                    in_class: None,
                                 })
                                 .collect())
                         }
@@ -83,11 +83,11 @@ impl TryFrom<&AST> for GenericFields {
                             .iter()
                             .map(|(inner_mut, id)| GenericField {
                                 is_py_type: false,
-                                name:       id.clone(),
-                                pos:        ast.pos.clone(),
-                                mutable:    *mutable || *inner_mut,
-                                in_class:   None,
-                                ty:         None
+                                name: id.clone(),
+                                pos: ast.pos.clone(),
+                                mutable: *mutable || *inner_mut,
+                                in_class: None,
+                                ty: None,
                             })
                             .collect())
                     }
@@ -103,7 +103,7 @@ impl GenericField {
         self,
         class: Option<&DirectName>,
         _type_def: bool,
-        _pos: &Position
+        _pos: &Position,
     ) -> TypeResult<GenericField> {
         Ok(GenericField { in_class: class.cloned(), ..self })
     }
