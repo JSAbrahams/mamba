@@ -330,8 +330,9 @@ impl Name {
     pub fn is_empty(&self) -> bool { self == &Name::empty() }
 
     pub fn is_null(&self) -> bool {
+        let name = String::from(NONE);
         match &self.variant {
-            NameVariant::Single(DirectName { name, .. }) if name.clone() == String::from(NONE) => true,
+            NameVariant::Single(DirectName { name, .. }) => true,
             _ => false
         }
     }
