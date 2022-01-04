@@ -1,5 +1,6 @@
 from typing import Callable
 
+print("my script")
 
 class MyGeneric(str):
     def __init__(self):
