@@ -8,9 +8,9 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::clss;
+use crate::check::context::{clss, Context};
 use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::name::{DirectName, IsNullable, IsSuperSet, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -167,6 +167,20 @@ impl Expect {
         match &self {
             Expect::Type { name } => name.is_null(),
             _ => false
+        }
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        match &self {
+            Expect::Type { name } => name.is_nullable(),
+            _ => false
+        }
+    }
+
+    pub fn is_superset_of(&self, other: &Expect, ctx: &Context) -> TypeResult<bool> {
+        match (&self, other) {
+            (Expect::Type { name }, Expect::Type { name: other }) => name.is_superset_of(other, ctx, &Position::default()),
+            _ => Ok(false)
         }
     }
 }

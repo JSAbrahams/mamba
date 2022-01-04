@@ -7,7 +7,7 @@ use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::context::name::{AsNullable, IsNullable, IsSuperSet, NameVariant};
+use crate::check::context::name::{IsSuperSet, NameVariant};
 use crate::check::result::TypeErr;
 
 pub fn unify_type(
@@ -99,7 +99,7 @@ pub fn unify_type(
             unify_link(constraints, ctx, total + 1)
         }
 
-        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() {
+        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() || l_exp.is_superset_of(r_exp, ctx)? {
             unify_link(constraints, ctx, total)
         } else {
             let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
