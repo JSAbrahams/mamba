@@ -2,8 +2,7 @@ use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Nullable,
-                                                            Raises, Tuple, Type};
+use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Raises, Tuple, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::unify_link;
@@ -79,14 +78,6 @@ pub fn unify_type(
             unify_link(constraints, ctx, total)
         }
 
-        (Type { name }, Nullable) =>
-            if name.is_nullable() {
-                unify_link(constraints, ctx, total)
-            } else {
-                let msg = format!("Expected a '{}', was a '{}'", name.as_nullable(), name);
-                Err(vec![TypeErr::new(&left.pos, &msg)])
-            },
-
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
             constraints.push("collection parameters", &l_ty, &r_ty);
             unify_link(constraints, ctx, total + 1)
@@ -108,9 +99,9 @@ pub fn unify_type(
             unify_link(constraints, ctx, total + 1)
         }
 
-        (Nullable, Nullable) => unify_link(constraints, ctx, total),
-
-        (l_exp, r_exp) => {
+        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() {
+            unify_link(constraints, ctx, total)
+        } else {
             let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }

@@ -9,7 +9,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
-use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
+use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -58,7 +58,6 @@ impl TryFrom<(&Box<AST>, &HashMap<String, String>)> for Expected {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
-    Nullable,
     Expression { ast: AST },
     ExpressionAny,
     Collection { ty: Box<Expected> },
@@ -93,7 +92,7 @@ impl From<(&AST, &HashMap<String, String>)> for Expect {
             Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
             Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
             Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
-            Node::Undefined => Nullable,
+            Node::Undefined => Expect::none(),
             Node::Underscore => ExpressionAny,
             _ => Expression { ast }
         }
@@ -107,7 +106,6 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("`{}`", ast.node),
             Collection { ty, .. } => format!("{{{}}}", ty.expect),
@@ -142,7 +140,7 @@ impl Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
 
-            (ExpressionAny, ExpressionAny) | (Nullable, Nullable) => true,
+            (ExpressionAny, ExpressionAny) => true,
 
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
@@ -157,6 +155,17 @@ impl Expect {
             if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
                 true,
 
+            _ => self.is_none() && other.is_none()
+        }
+    }
+
+    pub fn none() -> Expect {
+        Expect::Type { name: NameUnion::from(NONE) }
+    }
+
+    pub fn is_none(&self) -> bool {
+        match &self {
+            Expect::Type { name } => name.is_null(),
             _ => false
         }
     }

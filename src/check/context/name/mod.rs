@@ -7,7 +7,7 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::{Context, LookupClass};
-use crate::check::context::clss::HasParent;
+use crate::check::context::clss::{HasParent, NONE};
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -318,6 +318,14 @@ impl Name {
 
     pub fn is_empty(&self) -> bool { self == &Name::empty() }
 
+    pub fn is_null(&self) -> bool {
+        let name = String::from(NONE);
+        match &self.variant {
+            NameVariant::Single(DirectName { name, .. }) => true,
+            _ => false
+        }
+    }
+
     pub fn empty() -> Name { Name::from(&DirectName::empty()) }
 
     pub fn as_direct(&self, exp: &str, pos: &Position) -> TypeResult<DirectName> {
@@ -389,6 +397,10 @@ impl NameUnion {
     }
 
     pub fn empty() -> NameUnion { NameUnion { names: HashSet::new() } }
+
+    pub fn is_null(&self) -> bool {
+        self.names.iter().all(|name| name.is_null())
+    }
 
     pub fn names(&self) -> IntoIter<Name> { self.names.clone().into_iter() }
 

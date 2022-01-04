@@ -23,7 +23,7 @@ pub fn unify_function(
     total: usize,
 ) -> Unified {
     match (&left.expect, &right.expect) {
-        (Function { args, .. }, Type { name }) => {
+        (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
             let arguments_union: Vec<Vec<NameUnion>> = name
                 .names()
                 .map(|n| match n.variant {
@@ -60,7 +60,7 @@ pub fn unify_function(
             unify_link(constraints, ctx, total + count)
         }
 
-        (Access { entity, name }, _) =>
+        (Access { entity, name }, _) | (_, Access { entity, name }) =>
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
@@ -111,6 +111,7 @@ pub fn unify_function(
                 }
                 unify_link(constraints, ctx, total + elements.len())
             } else {
+                println!("{}", constr);
                 let mut constr = reinsert(constraints, &constr, total)?;
                 unify_link(&mut constr, ctx, total)
             },
