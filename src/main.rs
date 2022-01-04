@@ -6,6 +6,7 @@ extern crate log;
 extern crate loggerv;
 
 use clap::App;
+use itertools::Itertools;
 
 use mamba::pipeline::transpile_directory;
 
@@ -37,7 +38,7 @@ pub fn main() -> Result<(), String> {
 
     transpile_directory(&current_dir, in_path, out_path)
         .map_err(|errors| {
-            errors.iter().for_each(|(ty, msg)| eprintln!("[error | {}] {}", ty, msg));
+            errors.iter().unique().for_each(|(ty, msg)| eprintln!("[error | {}] {}", ty, msg));
             match errors.first() {
                 Some((ty, msg)) => format!(
                     "{} {} error occurred: {}",
