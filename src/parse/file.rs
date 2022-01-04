@@ -1,13 +1,13 @@
 use crate::common::position::Position;
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
-use crate::parse::block::parse_statements;
 use crate::parse::class::{parse_class, parse_parent};
+use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
-use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected};
+use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_conditions;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
@@ -56,63 +56,39 @@ fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     Ok(aliases)
 }
 
-pub fn parse_script(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("script")?;
-    let statements = it.parse_vec(&parse_statements, "script", &start)?;
-    let end = statements.last().map_or(start.clone(), |last| last.pos.clone());
-
-    let node = Node::Script { statements };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
-}
-
 pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     let start = Position::default();
-    let mut modules = Vec::new();
-
     let pure = it.eat_if(&Token::Pure).is_some();
 
-    it.peek_while_fn(&|_| true, &mut |it, lex| match &lex.token {
-        Token::NL => {
-            it.eat(&Token::NL, "file")?;
-            Ok(())
+    let mut statements = Vec::new();
+    it.peek_while_fn(&|_| true, &mut |it, lex| {
+        match &lex.token {
+            Token::NL => {}
+            Token::Import => { statements.push(*it.parse(&parse_import, "file", &start)?); }
+            Token::From => { statements.push(*it.parse(&parse_from_import, "file", &start)?); }
+            Token::DocStr(string) => {
+                let start = it.start_pos("doc_string")?;
+                let end = it.eat(&Token::DocStr(string.clone()), "file")?;
+                let node = Node::DocStr { lit: string.clone() };
+                statements.push(AST::new(&start.union(&end), node));
+            }
+            Token::Comment(comment) => {
+                let start = it.start_pos("comment")?;
+                let end = it.eat(&Token::Comment(comment.clone()), "file")?;
+                let node = Node::Comment { comment: comment.clone() };
+                statements.push(AST::new(&start.union(&end), node));
+            }
+            Token::Type => { statements.push(*it.parse(&parse_type_def, "file", &start)?); }
+            Token::Class => { statements.push(*it.parse(&parse_class, "file", &start)?); }
+            _ => { statements.push(*it.parse(&parse_expr_or_stmt, "file", &start)?); }
         }
-        Token::Import => {
-            modules.push(*it.parse(&parse_import, "file", &start)?);
-            Ok(())
-        }
-        Token::From => {
-            modules.push(*it.parse(&parse_from_import, "file", &start)?);
-            Ok(())
-        }
-        Token::DocStr(string) => {
-            let start = it.start_pos("doc_string")?;
-            let end = it.eat(&Token::DocStr(string.clone()), "file")?;
-            let node = Node::DocStr { lit: string.clone() };
-            modules.push(AST::new(&start.union(&end), node));
-            Ok(())
-        }
-        Token::Comment(comment) => {
-            let start = it.start_pos("comment")?;
-            let end = it.eat(&Token::Comment(comment.clone()), "file")?;
-            let node = Node::Comment { comment: comment.clone() };
-            modules.push(AST::new(&start.union(&end), node));
-            Ok(())
-        }
-        Token::Type => {
-            modules.push(*it.parse(&parse_type_def, "file", &start)?);
-            Ok(())
-        }
-        Token::Class => {
-            modules.push(*it.parse(&parse_class, "file", &start)?);
-            Ok(())
-        }
-        _ => {
-            modules.push(*it.parse(&parse_script, "file", &start)?);
-            Ok(())
-        }
+
+        let last_pos = it.last_pos();
+        it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
+        Ok(())
     })?;
 
-    let node = Node::File { pure, modules };
+    let node = Node::File { pure, statements };
     Ok(Box::from(AST::new(&start, node)))
 }
 
@@ -149,6 +125,6 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
             let isa = isa.clone();
             let node = Node::TypeDef { ty: ty.clone(), isa, body: None };
             Ok(Box::from(AST::new(&start.union(&ty.pos), node)))
-        }
+        },
     )
 }

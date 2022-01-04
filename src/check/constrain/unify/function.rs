@@ -2,16 +2,15 @@ use std::collections::HashSet;
 
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Tuple, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::constrain::Unified;
+use crate::check::constrain::unify::link::{reinsert, unify_link};
+use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::name::{NameUnion, NameVariant};
-use crate::check::context::util::check_is_parent;
-use crate::check::context::{Context, LookupClass};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -21,7 +20,7 @@ pub fn unify_function(
     right: &Expected,
     constraints: &mut Constraints,
     ctx: &Context,
-    total: usize
+    total: usize,
 ) -> Unified {
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) => {
@@ -69,15 +68,6 @@ pub fn unify_function(
                         let fields =
                             ctx.class(entity_name, &left.pos)?.field(name, ctx, &left.pos)?;
                         for field in fields.union {
-                            if field.private {
-                                check_is_parent(
-                                    &field.ty,
-                                    &constraints.in_class,
-                                    entity_name,
-                                    ctx,
-                                    &left.pos
-                                )?;
-                            }
                             let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
                             constraints.push("field access", &right, &field_ty_exp);
                             pushed += 1;
@@ -90,16 +80,6 @@ pub fn unify_function(
 
                         let mut pushed = 0;
                         for function in &function_union.union {
-                            if function.private {
-                                check_is_parent(
-                                    &NameUnion::from(&function.name),
-                                    &constraints.in_class,
-                                    entity_name,
-                                    ctx,
-                                    &left.pos
-                                )?;
-                            }
-
                             let fun_ty_exp =
                                 Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
                             constraints.push("function access", &right, &fun_ty_exp);
@@ -124,9 +104,9 @@ pub fn unify_function(
                         format!("Tuple element {}", i).as_str(),
                         &Expected::new(&element.pos, &Access {
                             entity: Box::from(element.clone()),
-                            name:   name.clone()
+                            name: name.clone(),
                         }),
-                        right
+                        right,
                     )
                 }
                 unify_link(constraints, ctx, total + elements.len())
@@ -146,7 +126,7 @@ fn unify_fun_arg(
     possible: &HashSet<Vec<FunctionArg>>,
     args: &[Expected],
     constr: &Constraints,
-    pos: &Position
+    pos: &Position,
 ) -> Unified<(Constraints, usize)> {
     let mut constr = constr.clone();
     let mut added = 0;

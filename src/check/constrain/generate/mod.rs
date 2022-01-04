@@ -1,6 +1,7 @@
 use env::Environment;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::generate::call::gen_call;
 use crate::check::constrain::generate::class::gen_class;
 use crate::check::constrain::generate::collection::gen_coll;
@@ -12,10 +13,9 @@ use crate::check::constrain::generate::resources::gen_resources;
 use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
 use crate::check::context::Context;
+use crate::check::result::TypeErr;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node::*;
-use crate::check::result::TypeErr;
-use crate::check::constrain::constraint::iterator::Constraints;
 
 mod call;
 mod class;
@@ -41,11 +41,11 @@ pub fn generate(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        File { modules, .. } => gen_vec(modules, env, ctx, constr),
-        Block { statements } | Script { statements } => gen_vec(statements, env, ctx, constr),
+        File { statements, .. } => gen_vec(statements, env, ctx, constr),
+        Block { statements } => gen_vec(statements, env, ctx, constr),
 
         Class { .. } | TypeDef { .. } => gen_class(ast, env, ctx, constr),
         TypeAlias { .. } | Condition { .. } => gen_class(ast, env, ctx, constr),
@@ -119,7 +119,7 @@ pub fn gen_vec(
     asts: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstrBuilder
+    constr: &ConstrBuilder,
 ) -> Constrained {
     let mut constr_env = (constr.clone(), env.clone());
     let mut asts = Vec::from(asts);

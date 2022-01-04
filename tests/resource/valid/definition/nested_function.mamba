@@ -8,4 +8,4 @@ class C
     def fin my_field: Int := 10
 
 def a := A()
-print a.b.my_c().my_field
+print(a.b.my_c().my_field)

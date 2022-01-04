@@ -6,12 +6,12 @@ use permutate::Permutator;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{generate, Constrained};
+use crate::check::constrain::generate::{Constrained, generate};
+use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::name::{DirectName, match_name, NameUnion, Union};
-use crate::check::constrain::generate::env::Environment;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -24,7 +24,7 @@ pub fn gen_def(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::FunDef { fun_args, ret_ty, body, raises, .. } => {
+        Node::FunDef { args: fun_args, ret: ret_ty, body, raises, .. } => {
             constr.new_set(true);
 
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
@@ -62,7 +62,7 @@ pub fn gen_def(
         Node::FunArg { .. } =>
             Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
 
-        Node::VariableDef { mutable, var, ty, expression, .. } =>
+        Node::VariableDef { mutable, var, ty, expr: expression, .. } =>
             identifier_from_var(var, ty, expression, *mutable, ctx, constr, env),
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")])

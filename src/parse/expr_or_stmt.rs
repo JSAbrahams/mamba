@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
@@ -25,7 +25,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
                 },
         },
         &[],
-        "expression or statement"
+        "expression or statement",
     )?;
 
     it.peek(
@@ -34,7 +34,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
             Token::Handle => parse_handle(*result.clone(), it),
             _ => Ok(result.clone())
         },
-        Ok(result.clone())
+        Ok(result.clone()),
     )
 }
 

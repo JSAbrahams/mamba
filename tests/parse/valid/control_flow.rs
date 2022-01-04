@@ -1,10 +1,10 @@
 use mamba::lex::tokenize;
-use mamba::parse::ast::Node;
 use mamba::parse::ast::AST;
+use mamba::parse::ast::Node;
 use mamba::parse::parse;
-use mamba::parse::parse_direct;
 
 use crate::common::*;
+use crate::parse::util::parse_direct;
 
 #[test]
 fn for_statements() {
@@ -15,14 +15,11 @@ fn for_statements() {
 #[test]
 fn for_statement_verify() {
     let source = String::from("for a in c do d");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (expr, collection, body) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-            _ => panic!("first element script was not for.")
-        },
-        _ => panic!("ast was not script.")
+    let (expr, collection, body) = match &statements.first().expect("script empty.").node {
+        Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
+        _ => panic!("first element script was not for.")
     };
 
     assert_eq!(expr.node, Node::Id { lit: String::from("a") });
@@ -33,14 +30,11 @@ fn for_statement_verify() {
 #[test]
 fn for_range_step_verify() {
     let source = String::from("for a in c .. d step e do f");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (expr, col, body) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-            _ => panic!("first element script was not foreach.")
-        },
-        _ => panic!("ast was not script.")
+    let (expr, col, body) = match &statements.first().expect("script empty.").node {
+        Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
+        _ => panic!("first element script was not foreach.")
     };
 
     match col.node {
@@ -60,14 +54,11 @@ fn for_range_step_verify() {
 #[test]
 fn for_range_incl_verify() {
     let source = String::from("for a in c ..= d do f");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (expr, col, body) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-            _ => panic!("first element script was not foreach.")
-        },
-        _ => panic!("ast was not script.")
+    let (expr, col, body) = match &statements.first().expect("script empty.").node {
+        Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
+        _ => panic!("first element script was not foreach.")
     };
 
     match col.node {
@@ -93,18 +84,11 @@ fn if_stmt() {
 #[test]
 fn if_verify() {
     let source = String::from("if a then c");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let _statements;
-    let (cond, then, el) = match ast.node {
-        Node::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                Node::IfElse { cond, then, el } => (cond, then, el),
-                _ => panic!("first element script was not if.")
-            }
-        }
-        _ => panic!("ast was not script.")
+    let (cond, then, el) = match &statements.first().expect("script empty.").node {
+        Node::IfElse { cond, then, el } => (cond, then, el),
+        _ => panic!("first element script was not if.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -115,14 +99,11 @@ fn if_verify() {
 #[test]
 fn if_with_block_verify() {
     let source = String::from("if a then\n    c\n    d");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (cond, then, el) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
-            _ => panic!("first element script was not if.")
-        },
-        _ => panic!("ast was not script.")
+    let (cond, then, el) = match &statements.first().expect("script empty.").node {
+        Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
+        _ => panic!("first element script was not if.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -141,18 +122,11 @@ fn if_with_block_verify() {
 #[test]
 fn if_else_verify() {
     let source = String::from("if a then c else d");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let _statements;
-    let (cond, then, el) = match ast.node {
-        Node::Script { statements, .. } => {
-            _statements = statements;
-            match &_statements.first().expect("script empty.").node {
-                Node::IfElse { cond, then, el } => (cond, then, el),
-                _ => panic!("first element script was not if.")
-            }
-        }
-        _ => panic!("ast was not script.")
+    let (cond, then, el) = match &statements.first().expect("script empty.").node {
+        Node::IfElse { cond, then, el } => (cond, then, el),
+        _ => panic!("first element script was not if.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -169,14 +143,11 @@ fn match_statements() {
 #[test]
 fn match_verify() {
     let source = String::from("match a\n    a => b\n    c => d");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (cond, cases) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::Match { cond, cases } => (cond.clone(), cases.clone()),
-            _ => panic!("first element script was not match.")
-        },
-        _ => panic!("ast was not script.")
+    let (cond, cases) = match &statements.first().expect("script empty.").node {
+        Node::Match { cond, cases } => (cond.clone(), cases.clone()),
+        _ => panic!("first element script was not match.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -211,14 +182,11 @@ fn while_statements() {
 #[test]
 fn while_verify() {
     let source = String::from("while a do d");
-    let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+    let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
-    let (cond, body) = match ast.node {
-        Node::Script { statements, .. } => match &statements.first().expect("script empty.").node {
-            Node::While { cond, body } => (cond.clone(), body.clone()),
-            _ => panic!("first element script was not while.")
-        },
-        _ => panic!("ast was not script.")
+    let (cond, body) = match &statements.first().expect("script empty.").node {
+        Node::While { cond, body } => (cond.clone(), body.clone()),
+        _ => panic!("first element script was not while.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });

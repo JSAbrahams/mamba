@@ -1,8 +1,8 @@
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parse::ast::Node;
 use mamba::parse::ast::AST;
+use mamba::parse::ast::Node;
 
 #[test]
 fn if_verify() {
@@ -97,8 +97,8 @@ fn range_incl_verify() {
 
     assert_eq!(*from, Core::Id { lit: String::from("a") });
     assert_eq!(*to, Core::Add {
-        left:  Box::from(Core::Id { lit: String::from("b") }),
-        right: Box::from(Core::Int { int: String::from("1") })
+        left: Box::from(Core::Id { lit: String::from("b") }),
+        right: Box::from(Core::Int { int: String::from("1") }),
     });
     assert_eq!(*step, Core::Int { int: String::from("1") });
 }

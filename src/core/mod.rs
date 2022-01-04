@@ -101,9 +101,8 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
 
         Core::Assign { left, right } => format!("{} = {}", to_py(left, ind), to_py(right, ind)),
-        Core::VarDef { private, var, expr, ty } => format!(
-            "{}{}{} = {}",
-            if *private { "_" } else { "" },
+        Core::VarDef { var, expr, ty } => format!(
+            "{}{} = {}",
             to_py(var, ind),
             if let Some(ty) = ty { format!(": {}", to_py(ty, ind)) } else { String::new() },
             if let Some(expr) = expr { to_py(expr, ind) } else { String::from("None") }

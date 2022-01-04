@@ -1,7 +1,8 @@
-use crate::common::resource_content;
 use mamba::check::check_all;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+
+use crate::common::resource_content;
 
 #[test]
 #[ignore]
@@ -32,12 +33,14 @@ fn nested_function() {
 }
 
 #[test]
+#[ignore] // Ignore tuples for now
 fn tuple_modify_mut() {
     let source = resource_content(true, &["definition"], "tuple_modify_mut.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
 }
 
 #[test]
+#[ignore] // Ignore tuples for now
 fn tuple_modify_outer_mut() {
     let source = resource_content(true, &["definition"], "tuple_modify_outer_mut.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();

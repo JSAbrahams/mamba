@@ -4,15 +4,15 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::context::arg::FunctionArg;
-use crate::check::context::clss::generic::GenericClass;
-use crate::check::context::field::generic::GenericField;
-use crate::check::context::field::Field;
-use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::function::Function;
-use crate::check::context::name::{DirectName, Name, NameUnion};
 use crate::check::context::{Context, LookupClass};
+use crate::check::context::arg::FunctionArg;
+use crate::check::context::arg::generic::GenericFunctionArg;
+use crate::check::context::clss::generic::GenericClass;
+use crate::check::context::field::Field;
+use crate::check::context::field::generic::GenericField;
+use crate::check::context::function::Function;
+use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::name::{DirectName, Name, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -44,12 +44,12 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name:       DirectName,
-    pub concrete:   bool,
-    pub args:       Vec<FunctionArg>,
-    pub fields:     HashSet<Field>,
-    pub parents:    HashSet<DirectName>,
-    pub functions:  HashSet<Function>
+    pub name: DirectName,
+    pub concrete: bool,
+    pub args: Vec<FunctionArg>,
+    pub fields: HashSet<Field>,
+    pub parents: HashSet<DirectName>,
+    pub functions: HashSet<Function>,
 }
 
 pub trait HasParent<T> {
@@ -64,7 +64,7 @@ impl HasParent<&DirectName> for Class {
         &self,
         name: &DirectName,
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
         Ok(&self.name == name || {
             let res: Vec<bool> = self
@@ -82,7 +82,7 @@ impl HasParent<&NameUnion> for Class {
         &self,
         name: &NameUnion,
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
         let name = name.as_direct("class", pos)?;
         if name.contains(&self.name) {
@@ -119,12 +119,12 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &Position)> for Class {
 
         Ok(Class {
             is_py_type: generic.is_py_type,
-            name:       generic.name.substitute(generics, pos)?,
-            concrete:   generic.concrete,
-            args:       generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
-            parents:    generic.parents.iter().map(|g| g.name.clone()).collect(),
-            fields:     generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
-            functions:  generic.functions.iter().map(try_function).collect::<Result<_, _>>()?
+            name: generic.name.substitute(generics, pos)?,
+            concrete: generic.concrete,
+            args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
+            parents: generic.parents.iter().map(|g| g.name.clone()).collect(),
+            fields: generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
+            functions: generic.functions.iter().map(try_function).collect::<Result<_, _>>()?,
         })
     }
 }
@@ -132,19 +132,18 @@ impl TryFrom<(&GenericClass, &HashMap<String, Name>, &Position)> for Class {
 impl Class {
     pub fn constructor(&self, without_self: bool) -> TypeResult<Function> {
         Ok(Function {
-            is_py_type:   false,
-            name:         self.name.clone(),
+            is_py_type: false,
+            name: self.name.clone(),
             self_mutable: None,
-            private:      false,
-            pure:         false,
-            arguments:    if without_self && !self.args.is_empty() {
+            pure: false,
+            arguments: if without_self && !self.args.is_empty() {
                 self.args.iter().skip(1).cloned().collect()
             } else {
                 self.args.clone()
             },
-            raises:       NameUnion::empty(),
-            in_class:     None,
-            ret_ty:       NameUnion::from(&self.name)
+            raises: NameUnion::empty(),
+            in_class: None,
+            ret_ty: NameUnion::from(&self.name),
         })
     }
 

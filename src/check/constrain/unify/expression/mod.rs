@@ -41,7 +41,7 @@ pub fn unify_expression(
 
         // Not sure if necessary, but exception made for tuple
         (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
-        (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements })=> {
+        (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements }) => {
             let mut constraints = substitute(&left, &right, constraints, count, total)?;
 
             for pair in ast_elements.iter().zip_longest(elements.iter()) {

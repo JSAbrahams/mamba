@@ -1,7 +1,8 @@
-use crate::check::context::python::python_files;
-use crate::check::context::Context;
-use crate::check::result::TypeResult;
 use std::path::PathBuf;
+
+use crate::check::context::Context;
+use crate::check::context::python::python_files;
+use crate::check::result::TypeResult;
 
 impl Context {
     /// Loads pre-defined Python primitives into Context.

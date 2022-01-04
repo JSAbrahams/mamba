@@ -1,9 +1,10 @@
+use std::panic;
+
 use mamba::common::position::Position;
 use mamba::core::construct::Core;
 use mamba::desugar::desugar;
-use mamba::parse::ast::Node;
 use mamba::parse::ast::AST;
-use std::panic;
+use mamba::parse::ast::Node;
 
 #[test]
 fn break_verify() {
@@ -69,7 +70,7 @@ fn import_verify() {
 
     assert_eq!(desugar(&_break).unwrap(), Core::ImportAs {
         imports: vec![Core::Id { lit: String::from("a") }],
-        alias:   vec![Core::Id { lit: String::from("b") }]
+        alias: vec![Core::Id { lit: String::from("b") }],
     });
 }
 
@@ -84,11 +85,11 @@ fn from_import_as_verify() {
     });
 
     assert_eq!(desugar(&_break).unwrap(), Core::FromImport {
-        from:   Box::from(Core::Id { lit: String::from("f") }),
+        from: Box::from(Core::Id { lit: String::from("f") }),
         import: Box::from(Core::ImportAs {
             imports: vec![Core::Id { lit: String::from("a") }],
-            alias:   vec![Core::Id { lit: String::from("b") }]
-        })
+            alias: vec![Core::Id { lit: String::from("b") }],
+        }),
     });
 }
 

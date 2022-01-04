@@ -6,8 +6,8 @@ class MyGeneric: String
 class MyType[A isa MyGeneric, C](def super_field: String)
 
 class MyClass2[C, A isa MyGeneric]: MyType[A, C]("the quick brown fox jumped over the slow donkey")
-    def private fin z_modified: String := "asdf"
-    def private other_field: Int := 10
+    def fin z_modified: String := "asdf"
+    def other_field: Int := 10
 
     def init(self, other_field: Int, z: Int) raise [Err1] =>
         if z > 10 then raise Err1("Something is wrong!")

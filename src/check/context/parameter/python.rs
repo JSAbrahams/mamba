@@ -1,14 +1,14 @@
 use std::ops::Deref;
 
-use python_parser::ast::Subscript::Simple;
 use python_parser::ast::{Argument, Expression, Subscript};
+use python_parser::ast::Subscript::Simple;
 
 use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::name::DirectName;
 use crate::check::context::parameter::generic::GenericParameter;
 
 pub struct GenericParameters {
-    pub parameters: Vec<GenericParameter>
+    pub parameters: Vec<GenericParameter>,
 }
 
 // TODO add check that Python file does indeed import generic from typing
@@ -18,17 +18,17 @@ impl From<&Vec<Argument>> for GenericParameters {
         args.iter().for_each(|arg| match &arg {
             Argument::Positional(arg) => match &arg {
                 Expression::Subscript(name, generics)
-                    if &Expression::Name(String::from("Generic")) == name.deref() =>
-                {
-                    let name = generics.first();
-                    if let Some(Simple(Expression::Name(name))) = name {
-                        parameters.push(GenericParameter {
-                            is_py_type: true,
-                            name:       DirectName::from(python_to_concrete(name).as_ref()),
-                            parent:     None
-                        })
+                if &Expression::Name(String::from("Generic")) == name.deref() =>
+                    {
+                        let name = generics.first();
+                        if let Some(Simple(Expression::Name(name))) = name {
+                            parameters.push(GenericParameter {
+                                is_py_type: true,
+                                name: DirectName::from(python_to_concrete(name).as_ref()),
+                                parent: None,
+                            })
+                        }
                     }
-                }
                 _ => {}
             },
             Argument::Starargs(_) => {}
@@ -48,8 +48,8 @@ impl From<&Vec<Subscript>> for GenericParameters {
                 if let Expression::Name(name) = expr {
                     parameters.push(GenericParameter {
                         is_py_type: true,
-                        name:       DirectName::from(python_to_concrete(name).as_ref()),
-                        parent:     None
+                        name: DirectName::from(python_to_concrete(name).as_ref()),
+                        parent: None,
                     })
                 }
             }

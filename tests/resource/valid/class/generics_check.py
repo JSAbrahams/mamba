@@ -21,8 +21,8 @@ class MyType:
 
 
 class MyClass2(MyType):
-    _z_modified: str = "asdf"
-    _other_field: int = 10
+    z_modified: str = "asdf"
+    other_field: int = 10
 
     def __init__(self, other_field: int, z: int):
         super().__init__("the quick brown fox jumped over the slow donkey")

@@ -9,8 +9,6 @@ assignees: ''
 
 ### Current Issue
 
-
 ### High-level description of the feature
-
 
 ### Description of potential implementation

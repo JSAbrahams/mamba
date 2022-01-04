@@ -2,12 +2,12 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
+use crate::check::CheckInput;
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::check::CheckInput;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 pub fn generics(
     files: &[CheckInput]
@@ -18,25 +18,35 @@ pub fn generics(
 
     for (file, source, path) in files {
         match &file.node {
-            Node::File { pure, modules, .. } =>
+            Node::File { statements: modules, .. } =>
                 for module in modules {
                     match &module.node {
                         Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
                             let generic_type: Result<_, Vec<TypeErr>> =
-                                GenericClass::try_from(module)
-                                    .and_then(|ty| ty.all_pure(*pure))
-                                    .map_err(|errs| {
-                                        errs.into_iter()
-                                            .map(|e| e.into_with_source(source, path))
-                                            .collect()
-                                    });
+                                GenericClass::try_from(module).map_err(|errs| {
+                                    errs.into_iter()
+                                        .map(|e| e.into_with_source(source, path))
+                                        .collect()
+                                });
                             types.insert(generic_type?);
                         }
-                        Node::Script { statements } => {
-                            let (generic_fields, generic_functions) =
-                                get_functions_and_fields(statements, source, path)?;
-                            fields = fields.union(&generic_fields).cloned().collect();
-                            functions = functions.union(&generic_functions).cloned().collect();
+                        Node::FunDef { .. } => {
+                            let generic_type: Result<_, Vec<TypeErr>> =
+                                GenericFunction::try_from(module).map_err(|errs| {
+                                    errs.into_iter()
+                                        .map(|e| e.into_with_source(source, path))
+                                        .collect()
+                                });
+                            functions.insert(generic_type?);
+                        }
+                        Node::VariableDef { .. } => {
+                            let generic_type: Result<_, Vec<TypeErr>> =
+                                GenericField::try_from(module).map_err(|errs| {
+                                    errs.into_iter()
+                                        .map(|e| e.into_with_source(source, path))
+                                        .collect()
+                                });
+                            fields.insert(generic_type?);
                         }
                         _ => {} // TODO process imports
                     }
@@ -51,7 +61,7 @@ pub fn generics(
 fn get_functions_and_fields(
     statements: &[AST],
     source: &Option<String>,
-    path: &Option<PathBuf>
+    path: &Option<PathBuf>,
 ) -> TypeResult<(HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut fields: HashSet<GenericField> = HashSet::new();
     let mut functions: HashSet<GenericFunction> = HashSet::new();

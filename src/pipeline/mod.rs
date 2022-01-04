@@ -1,3 +1,4 @@
+use std::fs::create_dir;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -6,7 +7,6 @@ use crate::core::to_source;
 use crate::desugar::desugar_all;
 use crate::lex::tokenize_all;
 use crate::parse::parse_all;
-use std::fs::create_dir;
 
 mod io;
 
@@ -28,7 +28,7 @@ const IN_FILE: &str = "src";
 pub fn transpile_directory(
     current_dir: &Path,
     maybe_in: Option<&str>,
-    maybe_out: Option<&str>
+    maybe_out: Option<&str>,
 ) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
     let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));

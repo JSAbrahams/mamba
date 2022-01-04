@@ -18,12 +18,12 @@ pub mod python;
 /// May have a type.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {
-    pub is_py_type:  bool,
-    pub name:        String,
+    pub is_py_type: bool,
+    pub name: String,
     pub has_default: bool,
-    pub vararg:      bool,
-    pub mutable:     bool,
-    pub ty:          Option<NameUnion>
+    pub vararg: bool,
+    pub mutable: bool,
+    pub ty: Option<NameUnion>,
 }
 
 impl Display for FunctionArg {
@@ -45,15 +45,15 @@ impl TryFrom<(&GenericFunctionArg, &HashMap<String, Name>, &Position)> for Funct
         (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
-            is_py_type:  fun_arg.is_py_type,
-            name:        fun_arg.name.clone(),
+            is_py_type: fun_arg.is_py_type,
+            name: fun_arg.name.clone(),
             has_default: fun_arg.has_default,
-            vararg:      fun_arg.vararg,
-            mutable:     fun_arg.mutable,
-            ty:          match &fun_arg.ty {
+            vararg: fun_arg.vararg,
+            mutable: fun_arg.mutable,
+            ty: match &fun_arg.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
-            }
+            },
         })
     }
 }
