@@ -45,8 +45,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
         })?;
     }
 
-    it.eat(&Token::NL, "class")?;
-    let (body, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
+    let (body, pos) = if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
         let body = it.parse(&parse_block, "class", &start)?;
         (Some(body.clone()), start.union(&body.pos))
     } else {

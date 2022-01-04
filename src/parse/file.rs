@@ -58,19 +58,27 @@ fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     let start = Position::default();
+
     let mut modules = Vec::new();
 
     it.peek_while_fn(&|_| true, &mut |it, lex| match &lex.token {
         Token::NL => {
-            it.eat(&Token::NL, "file")?;
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         Token::Import => {
             modules.push(*it.parse(&parse_import, "file", &start)?);
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         Token::From => {
             modules.push(*it.parse(&parse_from_import, "file", &start)?);
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         Token::DocStr(string) => {
@@ -78,6 +86,9 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
             let end = it.eat(&Token::DocStr(string.clone()), "file")?;
             let node = Node::DocStr { lit: string.clone() };
             modules.push(AST::new(&start.union(&end), node));
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         Token::Comment(comment) => {
@@ -85,18 +96,30 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
             let end = it.eat(&Token::Comment(comment.clone()), "file")?;
             let node = Node::Comment { comment: comment.clone() };
             modules.push(AST::new(&start.union(&end), node));
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         Token::Type => {
             modules.push(*it.parse(&parse_type_def, "file", &start)?);
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         Token::Class => {
             modules.push(*it.parse(&parse_class, "file", &start)?);
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
         _ => {
             modules.push(*it.parse(&parse_expr_or_stmt, "file", &start)?);
+
+            let last_pos = it.last_pos();
+            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
             Ok(())
         }
     })?;

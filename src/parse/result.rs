@@ -36,13 +36,13 @@ impl Cause {
 }
 
 impl ParseErr {
-    pub fn clone_with_cause(&self, cause: &str, position: Position) -> ParseErr {
+    pub fn clone_with_cause(&self, cause: &str, position: &Position) -> ParseErr {
         ParseErr {
             position: self.position.clone(),
             msg: self.msg.clone(),
             causes: {
                 let mut new_causes = self.causes.clone();
-                new_causes.push(Cause::new(cause, position));
+                new_causes.push(Cause::new(cause, position.clone()));
                 new_causes
             },
             source: self.source.clone(),
@@ -65,7 +65,7 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
     ParseErr {
         position: actual.pos.clone(),
         msg: format!(
-            "Expected one of ({}) while parsing {} \"{}\", but found token '{}'",
+            "Expected one of ({}) while parsing {} {}, but found token '{}'",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing,
@@ -81,7 +81,7 @@ pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
         position: actual.pos.clone(),
         msg: format!(
-            "Expected token '{}' while parsing {} \"{}\", but found token '{}'",
+            "Expected {} while parsing {} {}, but found {}",
             expected,
             an_or_a(parsing),
             parsing,
@@ -106,12 +106,17 @@ pub fn custom(msg: &str, position: &Position) -> ParseErr {
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
         position: Position::default(),
-        msg: format!(
-            "Expected one of {} while parsing {} {}, but end of file",
-            comma_separated(tokens),
-            an_or_a(parsing),
-            parsing
-        ),
+        msg: if tokens.len() > 1 {
+            format!("Expected one of '{}' while parsing {} {}",
+                    comma_separated(tokens),
+                    an_or_a(parsing),
+                    parsing)
+        } else {
+            format!("Expected '{}' while parsing {} {}",
+                    comma_separated(tokens),
+                    an_or_a(parsing),
+                    parsing)
+        },
         source: None,
         path: None,
         causes: vec![],
