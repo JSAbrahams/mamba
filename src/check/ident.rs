@@ -5,12 +5,12 @@ use std::ops::Deref;
 
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 #[derive(Clone, Debug)]
 pub struct Identifier {
-    pub lit:   Option<(bool, String)>,
-    pub names: Vec<Identifier>
+    pub lit: Option<(bool, String)>,
+    pub names: Vec<Identifier>,
 }
 
 impl Identifier {
@@ -36,7 +36,7 @@ impl Identifier {
                 // If not mutable, then make everything immutable
                 Identifier {
                     lit: self.lit.clone().map(|(_, str)| (false, str)),
-                    names: self.names.iter().map(|name| name.as_mutable(false)).collect()
+                    names: self.names.iter().map(|name| name.as_mutable(false)).collect(),
                 }
             }
         }

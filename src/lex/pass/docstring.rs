@@ -2,9 +2,9 @@ use crate::lex::pass::Pass;
 use crate::lex::token::{Lex, Token};
 
 pub struct DocString {
-    front:  Option<Lex>,
+    front: Option<Lex>,
     middle: Option<Lex>,
-    back:   Option<Lex>
+    back: Option<Lex>,
 }
 
 impl DocString {

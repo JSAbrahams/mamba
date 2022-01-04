@@ -7,19 +7,18 @@ use crate::check::context::function;
 use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
     pub is_py_type: bool,
-    pub name:       DirectName,
-    pub pure:       bool,
-    pub private:    bool,
-    pub pos:        Position,
-    pub arguments:  Vec<GenericFunctionArg>,
-    pub raises:     NameUnion,
-    pub in_class:   Option<DirectName>,
-    pub ret_ty:     Option<NameUnion>
+    pub name: DirectName,
+    pub pure: bool,
+    pub pos: Position,
+    pub arguments: Vec<GenericFunctionArg>,
+    pub raises: NameUnion,
+    pub in_class: Option<DirectName>,
+    pub ret_ty: Option<NameUnion>,
 }
 
 impl Hash for GenericFunction {
@@ -42,22 +41,17 @@ impl GenericFunction {
     pub fn in_class(
         self,
         in_class: Option<&DirectName>,
-        type_def: bool
+        _type_def: bool,
     ) -> TypeResult<GenericFunction> {
-        if self.private && type_def {
-            let msg = format!("Function `{}` cannot be private.", self.name);
-            Err(vec![TypeErr::new(&self.pos, &msg)])
-        } else {
-            Ok(GenericFunction {
-                in_class: in_class.cloned(),
-                arguments: self
-                    .arguments
-                    .iter()
-                    .map(|arg| arg.clone().in_class(in_class))
-                    .collect::<Result<_, _>>()?,
-                ..self
-            })
-        }
+        Ok(GenericFunction {
+            in_class: in_class.cloned(),
+            arguments: self
+                .arguments
+                .iter()
+                .map(|arg| arg.clone().in_class(in_class))
+                .collect::<Result<_, _>>()?,
+            ..self
+        })
     }
 }
 
@@ -75,14 +69,13 @@ impl TryFrom<&AST> for GenericFunction {
     fn try_from(ast: &AST) -> TypeResult<GenericFunction> {
         match &ast.node {
             // TODO add generics to function definitions
-            Node::FunDef { pure, id, fun_args, ret_ty, raises, private, .. } =>
+            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, .. } =>
                 Ok(GenericFunction {
                     is_py_type: false,
-                    name:       function_name(id.deref())?,
-                    pure:       *pure,
-                    private:    *private,
-                    pos:        ast.pos.clone(),
-                    arguments:  {
+                    name: function_name(id.deref())?,
+                    pure: *pure,
+                    pos: ast.pos.clone(),
+                    arguments: {
                         let args: Vec<GenericFunctionArg> = fun_args
                             .iter()
                             .map(GenericFunctionArg::try_from)
@@ -94,7 +87,7 @@ impl TryFrom<&AST> for GenericFunction {
                                 return Err(vec![TypeErr::new(
                                     &arg.pos,
                                     "Cannot have argument with default followed by argument with \
-                                     no default."
+                                     no default.",
                                 )]);
                             }
                             has_default = arg.has_default;
@@ -102,12 +95,12 @@ impl TryFrom<&AST> for GenericFunction {
 
                         args
                     },
-                    ret_ty:     match ret_ty {
+                    ret_ty: match ret_ty {
                         Some(ty) => Some(NameUnion::try_from(ty.as_ref())?),
                         None => None
                     },
-                    in_class:   None,
-                    raises:     NameUnion::try_from(raises)?
+                    in_class: None,
+                    raises: NameUnion::try_from(raises)?,
                 }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")])
         }

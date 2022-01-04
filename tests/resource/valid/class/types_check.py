@@ -40,7 +40,7 @@ class MyInterface(SuperInterface):
 class MyClass(MyType, MyInterface):
     my_field: int = None
     required_field: int = 100
-    _private_field: int = 20
+    private_field: int = 20
 
     def __init__(self, my_field: int, other_field: str = "Hello"):
         super(MyType, self).__init__(other_field)

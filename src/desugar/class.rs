@@ -8,8 +8,8 @@ use crate::desugar::result::DesugarResult;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::desugar::ty::desugar_type;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 
 /// Desugar a class.
 ///
@@ -42,7 +42,7 @@ fn extract_class(
     args: &[AST],
     parents: &[AST],
     imp: &mut Imports,
-    state: &State
+    state: &State,
 ) -> DesugarResult {
     let statements = if let Some(body) = body {
         match &body.deref().node {
@@ -74,23 +74,22 @@ fn extract_class(
                         &inline_args,
                         &parent_args,
                         &super_calls,
-                        &augmented_definitions
+                        &augmented_definitions,
                     )?
                 }
             };
 
             let mut final_definitions = if final_definitions.is_empty() {
                 vec![Core::FunDef {
-                    private: false,
-                    id:      Box::new(Core::Id { lit: String::from(function::python::INIT) }),
-                    arg:     vec![Core::FunArg {
-                        vararg:  false,
-                        var:     Box::new(Core::Id { lit: String::from(arg::python::SELF) }),
-                        ty:      None,
-                        default: None
+                    id: Box::new(Core::Id { lit: String::from(function::python::INIT) }),
+                    arg: vec![Core::FunArg {
+                        vararg: false,
+                        var: Box::new(Core::Id { lit: String::from(arg::python::SELF) }),
+                        ty: None,
+                        default: None,
                     }],
-                    ty:      None,
-                    body:    Box::new(Core::Pass)
+                    ty: None,
+                    body: Box::new(Core::Pass),
                 }]
             } else {
                 final_definitions
@@ -105,9 +104,9 @@ fn extract_class(
             final_definitions = stmts;
 
             Ok(Core::ClassDef {
-                name:        Box::from(desugar_node(id, imp, state)?),
-                parents:     parent_names,
-                definitions: final_definitions
+                name: Box::from(desugar_node(id, imp, state)?),
+                parents: parent_names,
+                definitions: final_definitions,
             })
         }
         other => panic!("Didn't recognize while making class: {:?}.", other)
@@ -119,7 +118,7 @@ fn constructor_from_inline(
     inline_args: &[Core],
     parent_args: &[Core],
     super_calls: &[Core],
-    definitions: &[Core]
+    definitions: &[Core],
 ) -> DesugarResult<Vec<Core>> {
     let mut final_definitions = vec![];
     let mut arg = vec![Core::Id { lit: String::from("self") }];
@@ -137,23 +136,23 @@ fn constructor_from_inline(
 
             Core::VarDef { var, ty, expr, .. } => {
                 arg.push(Core::FunArg {
-                    vararg:  false,
-                    var:     var.clone(),
-                    ty:      ty.clone(),
+                    vararg: false,
+                    var: var.clone(),
+                    ty: ty.clone(),
                     default: match &expr.deref() {
                         Some(expr) => Some(expr.clone()),
                         _ => None
-                    }
+                    },
                 });
 
                 if !parent_args.contains(&var) {
                     final_definitions.push(inline_arg.clone());
                     statements.push(Core::Assign {
-                        left:  Box::from(Core::PropertyCall {
-                            object:   Box::new(Core::Id { lit: String::from("self") }),
-                            property: var.clone()
+                        left: Box::from(Core::PropertyCall {
+                            object: Box::new(Core::Id { lit: String::from("self") }),
+                            property: var.clone(),
                         }),
-                        right: var.clone()
+                        right: var.clone(),
                     });
                 }
             }
@@ -163,7 +162,7 @@ fn constructor_from_inline(
 
     let id = Box::from(Core::Id { lit: String::from("init") });
     let body = Box::from(Core::Block { statements });
-    let core_init = Core::FunDef { private: false, id, arg, ty: None, body };
+    let core_init = Core::FunDef { id, arg, ty: None, body };
 
     final_definitions.push(core_init);
     final_definitions.append(&mut Vec::from(definitions));
@@ -172,14 +171,14 @@ fn constructor_from_inline(
 
 fn add_parent_to_constructor(
     core_definitions: &[Core],
-    super_calls: &[Core]
+    super_calls: &[Core],
 ) -> DesugarResult<(bool, Vec<Core>)> {
     let mut final_definitions = vec![];
     let mut found_constructor = false;
 
     for definition in core_definitions {
         final_definitions.push(
-            if let Core::FunDef { private, id, arg, body: old_body, .. } = definition {
+            if let Core::FunDef { id, arg, body: old_body, .. } = definition {
                 if let Core::Id { lit, .. } = id.clone().deref() {
                     if lit == "init" {
                         if found_constructor {
@@ -200,13 +199,7 @@ fn add_parent_to_constructor(
                             }
                         };
 
-                        Core::FunDef {
-                            private: *private,
-                            id: id.clone(),
-                            arg: arg.clone(),
-                            ty: None,
-                            body
-                        }
+                        Core::FunDef { id: id.clone(), arg: arg.clone(), ty: None, body }
                     } else {
                         definition.clone()
                     }
@@ -225,7 +218,7 @@ fn add_parent_to_constructor(
 fn extract_parents(
     parents: &[AST],
     ctx: &mut Imports,
-    state: &State
+    state: &State,
 ) -> DesugarResult<(Vec<Core>, Vec<Core>, Vec<Core>)> {
     let mut parent_names: Vec<Core> = vec![];
     let mut parent_args: Vec<Core> = vec![];
@@ -242,16 +235,16 @@ fn extract_parents(
                 parent_args.append(&mut desugar_vec(old_args, ctx, state)?);
 
                 super_calls.push(Core::PropertyCall {
-                    object:   Box::from(Core::FunctionCall {
+                    object: Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("super") }),
-                        args:     vec![parent_name, Core::Id {
+                        args: vec![parent_name, Core::Id {
                             lit: String::from(arg::python::SELF)
-                        }]
+                        }],
                     }),
                     property: Box::from(Core::FunctionCall {
                         function: Box::from(Core::Id { lit: String::from("__init__") }),
-                        args
-                    })
+                        args,
+                    }),
                 });
             }
             other => panic!("Expected parent, was {:?}", other)

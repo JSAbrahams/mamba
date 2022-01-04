@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
-use mamba::check::context::name::DirectName;
-use mamba::check::context::{Context, LookupClass};
 use mamba::check::CheckInput;
+use mamba::check::context::{Context, LookupClass};
+use mamba::check::context::name::DirectName;
 use mamba::common::position::Position;
 
 #[test]

@@ -1,11 +1,13 @@
-use crate::common::resource_content;
-use mamba::check::context::name::DirectName;
-use mamba::check::context::{Context, LookupClass};
+use std::convert::TryFrom;
+
 use mamba::check::{check_all, CheckInput};
+use mamba::check::context::{Context, LookupClass};
+use mamba::check::context::name::DirectName;
 use mamba::common::position::Position;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
-use std::convert::TryFrom;
+
+use crate::common::resource_content;
 
 #[test]
 fn float_and() {

@@ -11,12 +11,12 @@ pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
 
 #[derive(Debug, Clone, Eq)]
 pub struct TypeErr {
-    pub position:      Option<Position>,
-    pub msg:           String,
-    pub path:          Option<PathBuf>,
+    pub position: Option<Position>,
+    pub msg: String,
+    pub path: Option<PathBuf>,
     pub source_before: Option<String>,
-    pub source_after:  Option<String>,
-    pub source_line:   Option<String>
+    pub source_after: Option<String>,
+    pub source_line: Option<String>,
 }
 
 impl Hash for TypeErr {
@@ -40,23 +40,23 @@ impl From<TypeErr> for Vec<TypeErr> {
 impl TypeErr {
     pub fn new(position: &Position, msg: &str) -> TypeErr {
         TypeErr {
-            position:      Some(position.clone()),
-            msg:           String::from(msg),
-            path:          None,
+            position: Some(position.clone()),
+            msg: String::from(msg),
+            path: None,
             source_before: None,
-            source_after:  None,
-            source_line:   None
+            source_after: None,
+            source_line: None,
         }
     }
 
     pub fn new_no_pos(msg: &str) -> TypeErr {
         TypeErr {
-            position:      None,
-            msg:           String::from(msg),
-            path:          None,
+            position: None,
+            msg: String::from(msg),
+            path: None,
             source_before: None,
-            source_after:  None,
-            source_line:   None
+            source_after: None,
+            source_line: None,
         }
     }
 
@@ -84,12 +84,12 @@ impl TypeErr {
         };
 
         TypeErr {
-            position:      self.position.clone(),
-            msg:           self.msg,
+            position: self.position.clone(),
+            msg: self.msg,
             source_before: source_before.map(String::from),
-            source_line:   source_line.map(String::from),
-            source_after:  source_after.map(String::from),
-            path:          path.clone()
+            source_line: source_line.map(String::from),
+            source_after: source_after.map(String::from),
+            path: path.clone(),
         }
     }
 }

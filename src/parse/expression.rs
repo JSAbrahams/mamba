@@ -1,7 +1,9 @@
+use std::ops::Deref;
+
 use crate::lex::token::Lex;
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::call::parse_anon_fun;
 use crate::parse::call::parse_call;
 use crate::parse::call::parse_reassignment;
@@ -9,11 +11,9 @@ use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::parse_direct;
 use crate::parse::result::expected_one_of;
 use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_id;
-use std::ops::Deref;
 
 pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("literal")?;
@@ -24,6 +24,29 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Ok(Box::from(AST::new(&start.union(&end), node)))
         }};
     }
+    let expected = [
+        Token::If,
+        Token::Match,
+        Token::LRBrack,
+        Token::LSBrack,
+        Token::LCBrack,
+        Token::Ret,
+        Token::Underscore,
+        Token::_Self,
+        Token::Real(String::new()),
+        Token::Int(String::new()),
+        Token::ENum(String::new(), String::new()),
+        Token::Bool(true),
+        Token::Bool(false),
+        Token::Not,
+        Token::Sqrt,
+        Token::Add,
+        Token::Id(String::new()),
+        Token::Sub,
+        Token::Undefined,
+        Token::BOneCmpl,
+        Token::BSlash
+    ];
 
     let result = it.peek_or_err(
         &|it, lex| match &lex.token {
@@ -40,11 +63,12 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Token::Str(string, tokens) => {
                 let end = it.eat(&Token::Str(string.clone(), tokens.clone()), "factor")?;
 
-                let expressions: Vec<Box<AST>> =
-                    tokens.iter().map(|tokens| parse_direct(tokens)).collect::<Result<_, _>>()?;
+                let expressions: Vec<Box<AST>> = tokens.iter().map(|tokens| {
+                    parse_expression(&mut LexIterator::new(tokens.iter().peekable()))
+                }).collect::<Result<_, _>>()?;
                 let node = Node::Str {
-                    lit:         string.clone(),
-                    expressions: expressions.iter().map(|expr| expr.deref().clone()).collect()
+                    lit: string.clone(),
+                    expressions: expressions.iter().map(|expr| expr.deref().clone()).collect(),
                 };
                 Ok(Box::from(AST::new(&start.union(&end), node)))
             }
@@ -63,58 +87,10 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(expected_one_of(
-                &[
-                    Token::If,
-                    Token::Match,
-                    Token::LRBrack,
-                    Token::LSBrack,
-                    Token::LCBrack,
-                    Token::Ret,
-                    Token::Underscore,
-                    Token::_Self,
-                    Token::Real(String::new()),
-                    Token::Int(String::new()),
-                    Token::ENum(String::new(), String::new()),
-                    Token::Bool(true),
-                    Token::Bool(false),
-                    Token::Not,
-                    Token::Sqrt,
-                    Token::Add,
-                    Token::Id(String::new()),
-                    Token::Sub,
-                    Token::Undefined,
-                    Token::BOneCmpl,
-                    Token::BSlash
-                ],
-                lex,
-                "expression"
-            ))
+            _ => Err(expected_one_of(&expected, lex, "expression"))
         },
-        &[
-            Token::If,
-            Token::Match,
-            Token::LRBrack,
-            Token::LSBrack,
-            Token::LCBrack,
-            Token::Ret,
-            Token::Underscore,
-            Token::_Self,
-            Token::Real(String::new()),
-            Token::Int(String::new()),
-            Token::ENum(String::new(), String::new()),
-            Token::Bool(true),
-            Token::Bool(false),
-            Token::Not,
-            Token::Sqrt,
-            Token::Add,
-            Token::Id(String::new()),
-            Token::Sub,
-            Token::Undefined,
-            Token::BOneCmpl,
-            Token::BSlash
-        ],
-        "expression"
+        &expected,
+        "expression",
     );
 
     match result {
@@ -148,7 +124,7 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                     Ok(Box::from(pre.clone()))
                 },
         },
-        Ok(Box::from(pre.clone()))
+        Ok(Box::from(pre.clone())),
     )
 }
 

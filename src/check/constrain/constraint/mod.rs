@@ -2,8 +2,8 @@ use std::fmt::{Display, Error, Formatter};
 
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::context::{clss, function};
+use crate::check::context::name::{DirectName, NameUnion};
 
 pub mod builder;
 pub mod expected;
@@ -12,10 +12,10 @@ pub mod iterator;
 #[derive(Clone, Debug)]
 pub struct Constraint {
     pub is_flag: bool,
-    pub is_sub:  bool,
-    pub msg:     String,
-    pub parent:  Expected,
-    pub child:   Expected
+    pub is_sub: bool,
+    pub msg: String,
+    pub parent: Expected,
+    pub child: Expected,
 }
 
 impl Display for Constraint {
@@ -27,11 +27,11 @@ impl Display for Constraint {
 impl Constraint {
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
         Constraint {
-            parent:  parent.clone(),
-            child:   child.clone(),
-            msg:     String::from(msg),
+            parent: parent.clone(),
+            child: child.clone(),
+            msg: String::from(msg),
             is_flag: false,
-            is_sub:  false
+            is_sub: false,
         }
     }
 
@@ -43,10 +43,10 @@ impl Constraint {
             Expected::new(&expected.pos, &Type { name: NameUnion::from(clss::STRING_PRIMITIVE) });
         let access = Access {
             entity: Box::from(expected.clone()),
-            name:   Box::new(Expected::new(&expected.pos, &Function {
+            name: Box::new(Expected::new(&expected.pos, &Function {
                 name: DirectName::from(function::STR),
-                args: vec![expected.clone()]
-            }))
+                args: vec![expected.clone()],
+            })),
         };
 
         Constraint::new(msg, &string, &Expected::new(&expected.pos, &access))
@@ -57,10 +57,10 @@ impl Constraint {
             Expected::new(&expected.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
         let access = Access {
             entity: Box::from(expected.clone()),
-            name:   Box::new(Expected::new(&expected.pos, &Function {
+            name: Box::new(Expected::new(&expected.pos, &Function {
                 name: DirectName::from(function::TRUTHY),
-                args: vec![expected.clone()]
-            }))
+                args: vec![expected.clone()],
+            })),
         };
 
         Constraint::new(msg, &bool, &Expected::new(&expected.pos, &access))

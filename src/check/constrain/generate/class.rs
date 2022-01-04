@@ -4,20 +4,20 @@ use std::ops::Deref;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{gen_vec, generate, Constrained};
-use crate::check::context::name::{DirectName, NameUnion};
-use crate::check::context::Context;
-use crate::check::context::{field, LookupClass};
+use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
+use crate::check::context::{field, LookupClass};
+use crate::check::context::Context;
+use crate::check::context::name::{DirectName, NameUnion};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 pub fn gen_class(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
         Node::Class { body: Some(body), ty, .. } | Node::TypeDef { body: Some(body), ty, .. } =>
@@ -45,7 +45,7 @@ pub fn constrain_class_body(
     ty: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
 
@@ -61,7 +61,7 @@ pub fn constrain_class_body(
     res.0.add(
         "class body",
         &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::_Self }, &env.var_mappings))?,
-        &Expected::new(&ty.pos, &class_ty_exp)
+        &Expected::new(&ty.pos, &class_ty_exp),
     );
 
     res = gen_vec(statements, &res.1, ctx, &res.0)?;
@@ -75,13 +75,13 @@ pub fn property_from_field(
     field: &field::Field,
     class: &DirectName,
     env: &mut Environment,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     // TODO generate constraints are part of interface
     // TODO add constraint for mutable field
     let node = Node::PropertyCall {
         instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
-        property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } })
+        property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } }),
     };
     let property_call = Expected::try_from((&AST::new(&pos, node), &env.var_mappings))?;
     let field_ty = Expected::new(&pos, &Type { name: field.ty.clone() });
@@ -91,7 +91,7 @@ pub fn property_from_field(
 
     let access = Expected::new(&pos, &Access {
         entity: Box::new(Expected::new(&pos, &Type { name: NameUnion::from(class) })),
-        name:   Box::new(Expected::new(&pos, &Field { name: field.name.clone() }))
+        name: Box::new(Expected::new(&pos, &Field { name: field.name.clone() })),
     });
 
     constr.add("field property", &property_call, &access);

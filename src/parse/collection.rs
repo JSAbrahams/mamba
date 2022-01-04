@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::expression::is_start_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
@@ -16,11 +16,11 @@ pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
                 lex,
-                "collection"
+                "collection",
             ))
         },
         &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
-        "collection"
+        "collection",
     )
 }
 

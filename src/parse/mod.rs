@@ -85,8 +85,3 @@ pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
         Err(errs.iter().map(|(res, ..)| res.as_ref().unwrap_err().clone()).collect())
     }
 }
-
-/// Parse input as a script.
-pub fn parse_direct(input: &[Lex]) -> ParseResult {
-    file::parse_script(&mut LexIterator::new(input.iter().peekable()))
-}

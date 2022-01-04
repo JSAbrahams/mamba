@@ -1,6 +1,6 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
@@ -44,7 +44,7 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let property = it.parse(&parse_inner_expression, "call", &pre.pos)?;
                 let node = Node::PropertyCall {
                     instance: Box::from(pre.clone()),
-                    property: property.clone()
+                    property: property.clone(),
                 };
                 Ok(Box::from(AST::new(&pre.pos.union(&property.pos), node)))
             }
@@ -58,7 +58,7 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call"))
         },
         &[Token::Point, Token::LRBrack],
-        "function call"
+        "function call",
     )
 }
 

@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 use crate::check::context::name::{AsNullable, DirectName, Name, NameUnion, NameVariant};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 impl TryFrom<&Box<AST>> for DirectName {
     type Error = Vec<TypeErr>;
@@ -60,7 +60,7 @@ impl TryFrom<&AST> for Name {
             }
             Node::TypeFun { args, ret_ty } => Ok(Name::from(&NameVariant::Fun(
                 args.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?,
-                Box::from(NameUnion::try_from(ret_ty.deref())?)
+                Box::from(NameUnion::try_from(ret_ty.deref())?),
             ))),
             Node::TypeUnion { .. } =>
                 Err(vec![TypeErr::new(&ast.pos, "Expected single name but was union")]),

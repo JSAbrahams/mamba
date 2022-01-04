@@ -1,12 +1,12 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
 use crate::parse::definition::{parse_definition, parse_fun_arg};
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::ParseResult;
 use crate::parse::result::{expected, expected_one_of};
+use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_generics;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
@@ -45,8 +45,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
         })?;
     }
 
-    it.eat(&Token::NL, "class")?;
-    let (body, pos) = if it.peek_if(&|lex| lex.token == Token::Indent) {
+    let (body, pos) = if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
         let body = it.parse(&parse_block, "class", &start)?;
         (Some(body.clone()), start.union(&body.pos))
     } else {
@@ -90,7 +89,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                     Token::Bool(false)
                 ],
                 lex,
-                "parent arguments"
+                "parent arguments",
             ))
         })?;
         it.eat(&Token::RRBrack, "parent arguments")?

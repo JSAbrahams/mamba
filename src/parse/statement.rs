@@ -1,13 +1,13 @@
 use crate::lex::token::Token;
-use crate::parse::ast::Node;
 use crate::parse::ast::AST;
+use crate::parse::ast::Node;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::ParseResult;
 use crate::parse::result::{custom, expected_one_of};
+use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_expression_type;
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
@@ -43,7 +43,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
                     Token::While
                 ],
                 lex,
-                "statement"
+                "statement",
             ))
         },
         &[
@@ -55,7 +55,7 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::For,
             Token::While
         ],
-        "statement"
+        "statement",
     )
 }
 

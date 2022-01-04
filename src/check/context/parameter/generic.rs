@@ -3,13 +3,13 @@ use std::fmt::{Display, Error, Formatter};
 
 use crate::check::context::name::{DirectName, Name};
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{Node, AST};
+use crate::parse::ast::{AST, Node};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GenericParameter {
     pub is_py_type: bool,
-    pub name:       DirectName,
-    pub parent:     Option<Name>
+    pub name: DirectName,
+    pub parent: Option<Name>,
 }
 
 impl Display for GenericParameter {

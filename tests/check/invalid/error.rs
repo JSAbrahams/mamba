@@ -1,7 +1,8 @@
-use crate::common::resource_content;
 use mamba::check::check_all;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+
+use crate::common::resource_content;
 
 #[test]
 fn using_old_resource_in_with() {

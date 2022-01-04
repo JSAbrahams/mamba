@@ -1,19 +1,20 @@
+use std::convert::TryFrom;
+
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::generate::{generate, Constrained};
+use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::generate::{Constrained, generate};
+use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::resources::constrain_raises;
 use crate::check::context::Context;
-use crate::check::constrain::generate::env::Environment;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{Node, AST};
-use std::convert::TryFrom;
+use crate::parse::ast::{AST, Node};
 
 pub fn gen_stmt(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
         Node::Raise { error } => {

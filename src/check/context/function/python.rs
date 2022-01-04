@@ -30,22 +30,21 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name:       DirectName::from(convert_name(&func_def.name).as_str()),
-            pure:       false,
-            private:    false,
-            pos:        Position::default(),
-            arguments:  func_def
+            name: DirectName::from(convert_name(&func_def.name).as_str()),
+            pure: false,
+            pos: Position::default(),
+            arguments: func_def
                 .parameters
                 .positional_args
                 .iter()
                 .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
                 .collect(),
-            raises:     NameUnion::empty(),
-            in_class:   None,
-            ret_ty:     match &func_def.return_type {
+            raises: NameUnion::empty(),
+            in_class: None,
+            ret_ty: match &func_def.return_type {
                 Some(ret_ty) => Some(NameUnion::from(ret_ty)),
                 None => None
-            }
+            },
         }
     }
 }

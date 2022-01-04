@@ -1,13 +1,13 @@
+use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
 use std::collections::hash_set::IntoIter;
-use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
-use crate::check::context::clss::HasParent;
 use crate::check::context::{Context, LookupClass};
+use crate::check::context::clss::HasParent;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -22,28 +22,28 @@ pub mod python;
 /// functions are not permitted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DirectName {
-    pub name:     String,
-    pub generics: Vec<NameUnion>
+    pub name: String,
+    pub generics: Vec<NameUnion>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NameVariant {
     Single(DirectName),
     Tuple(Vec<NameUnion>),
-    Fun(Vec<NameUnion>, Box<NameUnion>)
+    Fun(Vec<NameUnion>, Box<NameUnion>),
 }
 
 /// Name is the actual name of a Function, Field, or generic.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Name {
     is_nullable: bool,
-    is_mutable:  bool,
-    pub variant: NameVariant
+    is_mutable: bool,
+    pub variant: NameVariant,
 }
 
 #[derive(Debug, Clone, Eq)]
 pub struct NameUnion {
-    names: HashSet<Name>
+    names: HashSet<Name>,
 }
 
 pub trait Union<T> {
@@ -189,8 +189,8 @@ impl From<&DirectName> for Name {
     fn from(name: &DirectName) -> Self {
         Name {
             is_nullable: false,
-            is_mutable:  false,
-            variant:     NameVariant::Single(name.clone())
+            is_mutable: false,
+            variant: NameVariant::Single(name.clone()),
         }
     }
 }
@@ -199,8 +199,8 @@ impl From<&str> for Name {
     fn from(name: &str) -> Self {
         Name {
             is_nullable: false,
-            is_mutable:  false,
-            variant:     NameVariant::Single(DirectName::from(name))
+            is_mutable: false,
+            variant: NameVariant::Single(DirectName::from(name)),
         }
     }
 }
@@ -214,7 +214,7 @@ impl IsSuperSet<NameVariant> for NameVariant {
         &self,
         other: &NameVariant,
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> TypeResult<bool> {
         match (self, other) {
             (NameVariant::Single(left), NameVariant::Single(right)) =>
@@ -243,17 +243,17 @@ impl IsSuperSet<DirectName> for DirectName {
         &self,
         other: &DirectName,
         ctx: &Context,
-        pos: &Position
+        pos: &Position,
     ) -> TypeResult<bool> {
         Ok(ctx.class(other, pos)?.has_parent(self, ctx, pos)?
             && self
-                .generics
-                .iter()
-                .map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
-                .flatten()
-                .collect::<Result<Vec<bool>, _>>()?
-                .iter()
-                .all(|b| *b))
+            .generics
+            .iter()
+            .map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
+            .flatten()
+            .collect::<Result<Vec<bool>, _>>()?
+            .iter()
+            .all(|b| *b))
     }
 }
 
@@ -267,7 +267,7 @@ impl DirectName {
     pub fn substitute(
         &self,
         generics: &HashMap<String, Name>,
-        pos: &Position
+        pos: &Position,
     ) -> TypeResult<DirectName> {
         if let Some(name) = generics.get(&self.name) {
             match &name.variant {
@@ -280,12 +280,12 @@ impl DirectName {
             }
         } else {
             Ok(DirectName {
-                name:     self.name.clone(),
+                name: self.name.clone(),
                 generics: self
                     .generics
                     .iter()
                     .map(|generic| generic.substitute(generics, pos))
-                    .collect::<Result<_, _>>()?
+                    .collect::<Result<_, _>>()?,
             })
         }
     }
@@ -339,7 +339,7 @@ impl Name {
             }
             NameVariant::Fun(args, ret) => NameVariant::Fun(
                 args.iter().map(|a| a.substitute(generics, pos)).collect::<Result<_, _>>()?,
-                Box::from(ret.substitute(generics, pos)?)
+                Box::from(ret.substitute(generics, pos)?),
             )
         };
 
@@ -395,7 +395,7 @@ impl NameUnion {
     pub fn substitute(
         &self,
         generics: &HashMap<String, Name>,
-        pos: &Position
+        pos: &Position,
     ) -> TypeResult<NameUnion> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
@@ -406,7 +406,7 @@ impl NameUnion {
 pub fn match_name(
     identifier: &Identifier,
     name: &NameUnion,
-    pos: &Position
+    pos: &Position,
 ) -> TypeResult<HashMap<String, (bool, NameUnion)>> {
     let unions: Vec<HashMap<String, (bool, NameUnion)>> =
         name.names().map(|ty| match_type_direct(identifier, &ty, pos)).collect::<Result<_, _>>()?;
@@ -415,7 +415,7 @@ pub fn match_name(
     for union in unions {
         for (id, (mutable, name)) in union {
             if let Some((current_mutable, current_name)) =
-                final_union.insert(id.clone(), (mutable, name.clone()))
+            final_union.insert(id.clone(), (mutable, name.clone()))
             {
                 final_union
                     .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
@@ -429,7 +429,7 @@ pub fn match_name(
 pub fn match_type_direct(
     identifier: &Identifier,
     name: &Name,
-    pos: &Position
+    pos: &Position,
 ) -> TypeResult<HashMap<String, (bool, NameUnion)>> {
     match &name.variant {
         NameVariant::Single { .. } | NameVariant::Fun { .. } =>
