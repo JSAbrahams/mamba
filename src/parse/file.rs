@@ -58,73 +58,37 @@ fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     let start = Position::default();
+    let pure = it.eat_if(&Token::Pure).is_some();
 
-    let mut modules = Vec::new();
-
-    it.peek_while_fn(&|_| true, &mut |it, lex| match &lex.token {
-        Token::NL => {
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
+    let mut statements = Vec::new();
+    it.peek_while_fn(&|_| true, &mut |it, lex| {
+        match &lex.token {
+            Token::NL => {}
+            Token::Import => { statements.push(*it.parse(&parse_import, "file", &start)?); }
+            Token::From => { statements.push(*it.parse(&parse_from_import, "file", &start)?); }
+            Token::DocStr(string) => {
+                let start = it.start_pos("doc_string")?;
+                let end = it.eat(&Token::DocStr(string.clone()), "file")?;
+                let node = Node::DocStr { lit: string.clone() };
+                statements.push(AST::new(&start.union(&end), node));
+            }
+            Token::Comment(comment) => {
+                let start = it.start_pos("comment")?;
+                let end = it.eat(&Token::Comment(comment.clone()), "file")?;
+                let node = Node::Comment { comment: comment.clone() };
+                statements.push(AST::new(&start.union(&end), node));
+            }
+            Token::Type => { statements.push(*it.parse(&parse_type_def, "file", &start)?); }
+            Token::Class => { statements.push(*it.parse(&parse_class, "file", &start)?); }
+            _ => { statements.push(*it.parse(&parse_expr_or_stmt, "file", &start)?); }
         }
-        Token::Import => {
-            modules.push(*it.parse(&parse_import, "file", &start)?);
 
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
-        Token::From => {
-            modules.push(*it.parse(&parse_from_import, "file", &start)?);
-
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
-        Token::DocStr(string) => {
-            let start = it.start_pos("doc_string")?;
-            let end = it.eat(&Token::DocStr(string.clone()), "file")?;
-            let node = Node::DocStr { lit: string.clone() };
-            modules.push(AST::new(&start.union(&end), node));
-
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
-        Token::Comment(comment) => {
-            let start = it.start_pos("comment")?;
-            let end = it.eat(&Token::Comment(comment.clone()), "file")?;
-            let node = Node::Comment { comment: comment.clone() };
-            modules.push(AST::new(&start.union(&end), node));
-
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
-        Token::Type => {
-            modules.push(*it.parse(&parse_type_def, "file", &start)?);
-
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
-        Token::Class => {
-            modules.push(*it.parse(&parse_class, "file", &start)?);
-
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
-        _ => {
-            modules.push(*it.parse(&parse_expr_or_stmt, "file", &start)?);
-
-            let last_pos = it.last_pos();
-            it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
-            Ok(())
-        }
+        let last_pos = it.last_pos();
+        it.eat_if_not_empty(&Token::NL, "file", &last_pos)?;
+        Ok(())
     })?;
 
-    let node = Node::Block { statements: modules };
+    let node = Node::File { pure, statements };
     Ok(Box::from(AST::new(&start, node)))
 }
 

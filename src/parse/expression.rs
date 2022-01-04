@@ -11,7 +11,6 @@ use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
 use crate::parse::operation::parse_expression;
-use crate::parse::parse;
 use crate::parse::result::expected_one_of;
 use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_id;
@@ -64,8 +63,9 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Token::Str(string, tokens) => {
                 let end = it.eat(&Token::Str(string.clone(), tokens.clone()), "factor")?;
 
-                let expressions: Vec<Box<AST>> =
-                    tokens.iter().map(|tokens| parse(tokens)).collect::<Result<_, _>>()?;
+                let expressions: Vec<Box<AST>> = tokens.iter().map(|tokens| {
+                    parse_expression(&mut LexIterator::new(tokens.iter().peekable()))
+                }).collect::<Result<_, _>>()?;
                 let node = Node::Str {
                     lit: string.clone(),
                     expressions: expressions.iter().map(|expr| expr.deref().clone()).collect(),

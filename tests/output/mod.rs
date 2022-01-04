@@ -8,6 +8,7 @@ use mamba::pipeline::transpile_directory;
 use crate::common::{delete_dir, python_src_to_stmts, resource_content, resource_content_path,
                     resource_content_randomize, resource_path};
 use crate::output::common::PYTHON;
+use mamba::common::delimit::newline_delimited;
 
 mod common;
 
@@ -26,7 +27,10 @@ fn test_directory(
     let (check_ast, out_ast) = res?;
     delete_dir(&output_path).map_err(|_| vec![])?;
 
-    assert_eq!(check_ast, out_ast);
+    // Convert to newline delimited string for more readable diff
+    let check_string= newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
+    let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
+    assert_eq!(check_string, out_string);
     Ok(())
 }
 

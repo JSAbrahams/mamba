@@ -28,9 +28,11 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                     alias: desugar_vec(_as, imp, state)?,
                 }
             },
-        Node::FromImport { id, import } => Core::FromImport {
-            from: Box::from(desugar_node(id, imp, state)?),
-            import: Box::from(desugar_node(import, imp, state)?),
+        Node::FromImport { id, import } => {
+            Core::FromImport {
+                from: Box::from(desugar_node(id, imp, state)?),
+                import: Box::from(desugar_node(import, imp, state)?),
+            }
         },
 
         Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(ast, imp, state)?,
@@ -39,6 +41,12 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             right: Box::from(desugar_node(right, imp, state)?),
         },
 
+        Node::File { statements, .. } => {
+            let mut modules = desugar_vec(statements, imp, state)?;
+            let mut statements = imp.imports.clone();
+            statements.append(&mut modules);
+            Core::Block { statements }
+        }
         Node::Block { statements } => Core::Block {
             statements: desugar_stmts(statements, imp, &state.assign_to(assign_to.as_ref()))?
         },

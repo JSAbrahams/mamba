@@ -1,7 +1,7 @@
 use std::fmt::{Display, Error, Formatter};
 
 use crate::check::context::arg;
-use crate::common::delimit::comma_delm;
+use crate::common::delimit::{comma_delm, custom_delimited};
 use crate::lex::token::Token;
 use crate::parse::ast::{AST, Node};
 
@@ -29,6 +29,9 @@ fn equal_vec(this: &[AST], other: &[AST]) -> bool {
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let name = match &self {
+            Node::File { statements, .. } => {
+                format!("file: {}", custom_delimited(statements.iter().map(|ast| ast.node.clone()), "\\n", ""))
+            }
             Node::Import { .. } => String::from("import"),
             Node::FromImport { .. } => String::from("from import"),
             Node::Class { .. } => String::from("class"),
@@ -121,24 +124,19 @@ impl Display for Node {
             Node::In { left, right } => format!("{} {} {}", left.node, Token::In, right.node),
             Node::Step { .. } => String::from("step"),
             Node::While { .. } => String::from("while loop"),
-            Node::Break => String::from("break"),
-            Node::Continue => String::from("continue"),
+            Node::Break => format!("{}", Token::Break),
+            Node::Continue => format!("{}", Token::Continue),
             Node::Return { .. } | Node::ReturnEmpty => String::from("return"),
-            Node::Underscore => String::from("_"),
+            Node::Underscore => format!("{}", Token::Underscore),
             Node::Undefined => format!("{}", Token::Undefined),
-            Node::Pass => String::from("pass"),
+            Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),
-            Node::Print { .. } => String::from("print"),
+            Node::Print { .. } => format!("{}", Token::Print),
             Node::Comment { .. } => String::from("comment")
         };
 
-        write!(
-            f,
-            "{}{}",
-            name,
-            if self.trivially_expression() { "" } else { " statement" }
-        )
+        write!(f, "{}", name)
     }
 }
 

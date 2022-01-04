@@ -49,8 +49,8 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     Ok(statements)
 }
 
+/// Parse block, and consumes any newlines preceding it.
 pub fn parse_block(it: &mut LexIterator) -> ParseResult {
-    /// Parse block, and consumes any newlines preceding it.
     let start = it.start_pos("block")?;
     it.eat_while(&Token::NL);
 

@@ -44,6 +44,7 @@ pub fn generate(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
+        File { statements, .. } => gen_vec(statements, env, ctx, constr),
         Block { statements } => gen_vec(statements, env, ctx, constr),
 
         Class { .. } | TypeDef { .. } => gen_class(ast, env, ctx, constr),

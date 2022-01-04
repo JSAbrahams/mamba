@@ -29,6 +29,7 @@ type OptAST = Option<Box<AST>>;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
+    File { pure: bool, statements: Vec<AST> },
     Import { import: Vec<AST>, aliases: Vec<AST> },
     FromImport { id: Box<AST>, import: Box<AST> },
     Class { ty: Box<AST>, args: Vec<AST>, parents: Vec<AST>, body: OptAST },
