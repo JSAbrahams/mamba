@@ -4,10 +4,10 @@ use std::hash::Hash;
 
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::HasParent;
-use crate::check::context::name::IsSuperSet;
-use crate::check::context::name::NameUnion;
-use crate::check::context::name::namevariant::NameVariant;
-use crate::check::context::name::TrueName;
+use crate::check::name::IsSuperSet;
+use crate::check::name::NameUnion;
+use crate::check::name::namevariant::NameVariant;
+use crate::check::name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;

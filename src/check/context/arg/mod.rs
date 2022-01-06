@@ -4,8 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::truename::TrueName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::truename::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 

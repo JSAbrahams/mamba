@@ -3,8 +3,8 @@ use std::fmt::{Display, Error, Formatter};
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{clss, function};
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 
 pub mod builder;
 pub mod expected;

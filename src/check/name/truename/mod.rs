@@ -4,10 +4,10 @@ use std::hash::Hash;
 
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
-use crate::check::context::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
-use crate::check::context::name::NameUnion;
-use crate::check::context::name::namevariant::NameVariant;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
+use crate::check::name::NameUnion;
+use crate::check::name::namevariant::NameVariant;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 

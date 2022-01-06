@@ -8,7 +8,7 @@ use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context};
-use crate::check::context::name::nameunion::NameUnion;
+use crate::check::name::nameunion::NameUnion;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 

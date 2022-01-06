@@ -8,10 +8,10 @@ use crate::check::context::{clss, function};
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericFields;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 

@@ -3,10 +3,10 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::context::name::match_name;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
 use crate::check::ident::Identifier;
+use crate::check::name::match_name;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};

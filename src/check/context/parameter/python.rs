@@ -4,8 +4,8 @@ use python_parser::ast::{Argument, Expression, Subscript};
 use python_parser::ast::Subscript::Simple;
 
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::context::name::stringname::StringName;
 use crate::check::context::parameter::generic::GenericParameter;
+use crate::check::name::stringname::StringName;
 
 pub struct GenericParameters {
     pub parameters: Vec<GenericParameter>,

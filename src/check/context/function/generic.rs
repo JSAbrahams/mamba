@@ -4,8 +4,8 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};

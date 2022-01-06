@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use mamba::check::{check_all, CheckInput};
 use mamba::check::context::{Context, LookupClass};
-use mamba::check::context::name::stringname::StringName;
+use mamba::check::name::stringname::StringName;
 use mamba::common::position::Position;
 use mamba::lex::tokenize;
 use mamba::parse::parse;

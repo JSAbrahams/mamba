@@ -3,8 +3,8 @@ use python_parser::ast::Funcdef;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::common::position::Position;
 
 pub const INIT: &str = "__init__";

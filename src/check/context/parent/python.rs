@@ -3,9 +3,9 @@ use std::ops::Deref;
 use python_parser::ast::{Argument, Expression, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
 use crate::check::context::parent::generic::GenericParent;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::common::position::Position;
 
 impl From<&Argument> for GenericParent {

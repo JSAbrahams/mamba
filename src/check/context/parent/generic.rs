@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 use std::hash::Hash;
 
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};

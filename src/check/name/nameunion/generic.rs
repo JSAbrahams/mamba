@@ -3,8 +3,8 @@ use std::convert::TryFrom;
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::truename::TrueName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::truename::TrueName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 

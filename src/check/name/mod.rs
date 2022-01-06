@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use crate::check::context::Context;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::namevariant::NameVariant;
-use crate::check::context::name::truename::TrueName;
 use crate::check::ident::Identifier;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::namevariant::NameVariant;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 

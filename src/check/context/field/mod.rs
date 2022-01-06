@@ -4,9 +4,9 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
-use crate::check::context::name::truename::TrueName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 

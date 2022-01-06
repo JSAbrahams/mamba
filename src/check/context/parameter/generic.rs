@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 use std::fmt::{Display, Error, Formatter};
 
-use crate::check::context::name::stringname::StringName;
-use crate::check::context::name::truename::TrueName;
+use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 

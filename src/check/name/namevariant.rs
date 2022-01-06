@@ -2,9 +2,9 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
 use crate::check::context::Context;
-use crate::check::context::name::IsSuperSet;
-use crate::check::context::name::NameUnion;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::IsSuperSet;
+use crate::check::name::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;

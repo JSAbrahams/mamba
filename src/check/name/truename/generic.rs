@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::context::name::AsNullable;
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::namevariant::NameVariant;
-use crate::check::context::name::stringname::StringName;
-use crate::check::context::name::truename::TrueName;
+use crate::check::name::AsNullable;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::namevariant::NameVariant;
+use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 

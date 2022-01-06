@@ -10,13 +10,13 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::{clss, Context};
 use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::stringname::StringName;
+use crate::check::name::{IsNullable, IsSuperSet};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
-use crate::check::context::name::{NameUnion, DirectName, IsSuperSet, IsNullable};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Expected {

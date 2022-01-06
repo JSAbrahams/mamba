@@ -7,9 +7,9 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::Context;
-use crate::check::context::name::{AsMutable, AsNullable, IsNullable, IsSuperSet, Union};
-use crate::check::context::name::stringname::StringName;
-use crate::check::context::name::TrueName;
+use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet, Union};
+use crate::check::name::stringname::StringName;
+use crate::check::name::TrueName;
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -167,9 +167,9 @@ impl NameUnion {
 mod tests {
     use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
     use crate::check::context::Context;
-    use crate::check::context::name::IsSuperSet;
-    use crate::check::context::name::nameunion::NameUnion;
-    use crate::check::context::name::truename::TrueName;
+    use crate::check::name::IsSuperSet;
+    use crate::check::name::nameunion::NameUnion;
+    use crate::check::name::truename::TrueName;
     use crate::common::position::Position;
 
     #[test]

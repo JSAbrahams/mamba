@@ -2,9 +2,9 @@ use std::ops::Deref;
 
 use python_parser::ast::Expression;
 
-use crate::check::context::name::nameunion::NameUnion;
-use crate::check::context::name::truename::python::to_ty_name;
-use crate::check::context::name::truename::TrueName;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::truename::python::to_ty_name;
+use crate::check::name::truename::TrueName;
 
 impl From<&Expression> for NameUnion {
     fn from(value: &Expression) -> Self {
