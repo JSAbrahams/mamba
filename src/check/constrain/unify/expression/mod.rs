@@ -15,15 +15,8 @@ use crate::parse::ast::{AST, Node};
 
 mod substitute;
 
-pub fn unify_expression(
-    constraint: &Constraint,
-    left: &Expected,
-    right: &Expected,
-    constraints: &mut Constraints,
-    ctx: &Context,
-    count: usize,
-    total: usize,
-) -> Unified {
+pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, count: usize, total: usize) -> Unified {
+    let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
             match &ast.node {

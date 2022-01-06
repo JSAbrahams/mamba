@@ -35,7 +35,7 @@ pub fn substitute(
         let old_constr = constr.clone();
         constraint_pos += 1;
         macro_rules! replace { ($left:expr, $new:expr) => {{
-            let pos = format!("({}={}) ", old_constr.parent.pos.start, old_constr.child.pos.start);
+            let pos = format!("({}={}) ", old_constr.left.pos.start, old_constr.right.pos.start);
             let side = if $left { "l" } else { "r" };
             trace!(
                 "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
@@ -49,11 +49,11 @@ pub fn substitute(
             );
         }}};
 
-        let (sub_l, parent) = recursive_substitute("l", &constr.parent, old, new);
-        let (sub_r, child) = recursive_substitute("r", &constr.child, old, new);
+        let (sub_l, left) = recursive_substitute("l", &constr.left, old, new);
+        let (sub_r, right) = recursive_substitute("r", &constr.right, old, new);
 
-        constr.parent = parent;
-        constr.child = child;
+        constr.left = left;
+        constr.right = right;
         if sub_l || sub_r { replace!(sub_l, constr) }
 
         constr.is_sub = constr.is_sub || sub_l || sub_r;

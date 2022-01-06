@@ -8,9 +8,9 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::clss;
-use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::{clss, Context};
+use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
+use crate::check::context::name::{DirectName, IsNullable, IsSuperSet, NameUnion};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -44,7 +44,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
             _ => ast
         };
 
-        Ok(Expected::new(&ast.pos, &Expect::from((ast, mappings))))
+        Ok(Expected::new(&ast.pos, &Expect::try_from((ast, mappings))?))
     }
 }
 
@@ -58,7 +58,6 @@ impl TryFrom<(&Box<AST>, &HashMap<String, String>)> for Expected {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
-    Nullable,
     Expression { ast: AST },
     ExpressionAny,
     Collection { ty: Box<Expected> },
@@ -70,11 +69,13 @@ pub enum Expect {
     Type { name: NameUnion },
 }
 
-impl From<(&AST, &HashMap<String, String>)> for Expect {
+impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
+    type Error = Vec<TypeErr>;
+
     /// Also substitutes any identifiers with new ones from the environment if the environment
     /// has a mapping.
     /// This means that we forget about shadowed variables and continue with the new ones.
-    fn from((ast, mappings): (&AST, &HashMap<String, String>)) -> Self {
+    fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expect> {
         let ast = ast.map(&|node: &Node| {
             if let Node::Id { lit } = node {
                 if let Some(name) = mappings.get(lit) {
@@ -88,15 +89,16 @@ impl From<(&AST, &HashMap<String, String>)> for Expect {
             }
         });
 
-        match &ast.node {
+        Ok(match &ast.node {
             Node::Int { .. } | Node::ENum { .. } => Type { name: NameUnion::from(INT_PRIMITIVE) },
             Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
             Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
             Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
-            Node::Undefined => Nullable,
+            Node::Undefined => Expect::none(),
             Node::Underscore => ExpressionAny,
+            Node::Raise { error } => Raises { name: NameUnion::try_from(error)? },
             _ => Expression { ast }
-        }
+        })
     }
 }
 
@@ -107,12 +109,11 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", match &self {
-            Nullable => String::from("None"),
             ExpressionAny => String::from("Any"),
             Expression { ast } => format!("`{}`", ast.node),
             Collection { ty, .. } => format!("{{{}}}", ty.expect),
             Tuple { elements } => format!("({})", comma_delm(elements)),
-            Raises { name: ty } => format!("Raise {}", ty),
+            Raises { name: ty } => format!("Raises {}", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } => format!("{}({})", name, comma_delm(args)),
             Field { name } => name.clone(),
@@ -142,7 +143,7 @@ impl Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
 
-            (ExpressionAny, ExpressionAny) | (Nullable, Nullable) => true,
+            (ExpressionAny, ExpressionAny) => true,
 
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
@@ -157,7 +158,32 @@ impl Expect {
             if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
                 true,
 
+            _ => self.is_none() && other.is_none()
+        }
+    }
+
+    pub fn none() -> Expect {
+        Expect::Type { name: NameUnion::from(NONE) }
+    }
+
+    pub fn is_none(&self) -> bool {
+        match &self {
+            Expect::Type { name } => name.is_null(),
             _ => false
+        }
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        match &self {
+            Expect::Type { name } => name.is_nullable(),
+            _ => false
+        }
+    }
+
+    pub fn is_superset_of(&self, other: &Expect, ctx: &Context) -> TypeResult<bool> {
+        match (&self, other) {
+            (Expect::Type { name }, Expect::Type { name: other }) => name.is_superset_of(other, ctx, &Position::default()),
+            _ => Ok(false)
         }
     }
 }

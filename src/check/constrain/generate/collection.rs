@@ -42,7 +42,7 @@ pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilde
                         &Expected::try_from((element, &env.var_mappings))?,
                     )
                 }
-                Box::from(Expected::new(&first.pos, &Expect::from((first, &env.var_mappings))))
+                Box::from(Expected::new(&first.pos, &Expect::try_from((first, &env.var_mappings))?))
             } else {
                 Box::from(Expected::new(&collection.pos, &ExpressionAny))
             };
