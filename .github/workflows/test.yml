@@ -30,10 +30,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      # Install Rust, build and run tests
+      # Install Rust, build and check clippy warnings
       - name: Install Rust ${{ matrix.rust }}
         run: rustup toolchain install ${{ matrix.rust }}
 
+      # Run tests
       - name: Build Nightly
         if: ${{ matrix.rust == 'nightly' }}
         run: cargo +nightly build
@@ -47,3 +48,39 @@ jobs:
       - name: Run tests
         if: ${{ matrix.rust != 'nightly' }}
         run: cargo test --package mamba
+
+  code_coverage:
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python: [ "3.8" ]
+        rust: [ "nightly" ]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checkout and use nigthly toolchain
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Grcov
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+
+      # Run grcov, which outputs a report
+      - uses: actions-rs/grcov@v0.1
+        id: coverage
+
+      - name: Codecov upload
+        uses: codecov/codecov-action@v2
+        with:
+          files: ${{ steps.coverage.outputs.report }}
