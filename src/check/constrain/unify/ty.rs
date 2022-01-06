@@ -38,7 +38,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                 ctx.class(l_ty, &left.pos)?;
                 ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
-            } else if left_is_super {
+            } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Expected a '{}', was a '{}'", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             } else {
@@ -58,7 +58,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                 ctx.class(l_ty, &left.pos)?;
                 ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
-            } else if left_confirmed_super {
+            } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Unexpected raises '{}', may only be `{}`", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             } else {

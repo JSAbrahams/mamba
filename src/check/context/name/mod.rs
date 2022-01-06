@@ -15,6 +15,7 @@ use crate::common::position::Position;
 
 pub mod generic;
 pub mod python;
+mod name_test;
 
 /// A direct name is a string with accompanying generics.
 ///

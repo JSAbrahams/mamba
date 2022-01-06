@@ -187,6 +187,7 @@ fn impl_magic(
 ) -> Constrained {
     constr.add(
         format!("{} operation", fun).as_str(),
+        &Expected::try_from((ast, &env.var_mappings))?,
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
             name: Box::new(Expected::new(&left.pos, &Function {
@@ -194,7 +195,6 @@ fn impl_magic(
                 args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?],
             })),
         }),
-        &Expected::try_from((ast, &env.var_mappings))?,
     );
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;

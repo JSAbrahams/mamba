@@ -51,6 +51,16 @@ impl Context {
     pub fn field_count(&self) -> usize { self.fields.len() }
 }
 
+impl Default for Context {
+    fn default() -> Self {
+        Context {
+            classes: Default::default(),
+            functions: Default::default(),
+            fields: Default::default(),
+        }
+    }
+}
+
 impl TryFrom<&[CheckInput]> for Context {
     type Error = Vec<TypeErr>;
 
