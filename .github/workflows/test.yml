@@ -59,15 +59,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Clean
-      - name: Clean
-        uses: actions-rs/toolchain@v1
-        with:
-          command: clean
-          toolchain: nightly
-          override: true
-
-      # Install toolchain for coverage
+      # Checkout and use nigthly toolchain
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
