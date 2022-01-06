@@ -44,7 +44,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
             _ => ast
         };
 
-        Ok(Expected::new(&ast.pos, &Expect::from((ast, mappings))))
+        Ok(Expected::new(&ast.pos, &Expect::try_from((ast, mappings))?))
     }
 }
 
@@ -69,11 +69,13 @@ pub enum Expect {
     Type { name: NameUnion },
 }
 
-impl From<(&AST, &HashMap<String, String>)> for Expect {
+impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
+    type Error = Vec<TypeErr>;
+
     /// Also substitutes any identifiers with new ones from the environment if the environment
     /// has a mapping.
     /// This means that we forget about shadowed variables and continue with the new ones.
-    fn from((ast, mappings): (&AST, &HashMap<String, String>)) -> Self {
+    fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expect> {
         let ast = ast.map(&|node: &Node| {
             if let Node::Id { lit } = node {
                 if let Some(name) = mappings.get(lit) {
@@ -87,15 +89,16 @@ impl From<(&AST, &HashMap<String, String>)> for Expect {
             }
         });
 
-        match &ast.node {
+        Ok(match &ast.node {
             Node::Int { .. } | Node::ENum { .. } => Type { name: NameUnion::from(INT_PRIMITIVE) },
             Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
             Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
             Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
             Node::Undefined => Expect::none(),
             Node::Underscore => ExpressionAny,
+            Node::Raise { error } => Raises { name: NameUnion::try_from(error)? },
             _ => Expression { ast }
-        }
+        })
     }
 }
 
@@ -110,7 +113,7 @@ impl Display for Expect {
             Expression { ast } => format!("`{}`", ast.node),
             Collection { ty, .. } => format!("{{{}}}", ty.expect),
             Tuple { elements } => format!("({})", comma_delm(elements)),
-            Raises { name: ty } => format!("Raise {}", ty),
+            Raises { name: ty } => format!("Raises {}", ty),
             Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
             Function { name, args } => format!("{}({})", name, comma_delm(args)),
             Field { name } => name.clone(),

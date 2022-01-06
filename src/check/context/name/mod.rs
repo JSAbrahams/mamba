@@ -301,12 +301,22 @@ impl AsNullable for Name {
 
 #[allow(clippy::nonminimal_bool)]
 impl IsSuperSet<Name> for Name {
+    /// Check if name is supertype of other name.
+    ///
+    /// If self is nullable, then supertype of other if:
+    /// - Other is null.
+    /// - Or, variant is supertype of other's variant. (Other may or may not be nullable.)
+    /// If self is not nullable, then only super type if:
+    /// - Other is not nullable.
+    /// - And, variant is supertype of other's variant.
     fn is_superset_of(&self, other: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         if !self.is_empty() && other.is_empty() {
             return Ok(false);
+        } else if self.is_nullable() && other.is_null() {
+            return Ok(true); // Trivially true
         }
 
-        let nullable_super = self.is_nullable || (!self.is_nullable && !other.is_nullable);
+        let nullable_super = self.is_nullable() || (!self.is_nullable() && !other.is_nullable());
         Ok(nullable_super && self.variant.is_superset_of(&other.variant, ctx, pos)?)
     }
 }

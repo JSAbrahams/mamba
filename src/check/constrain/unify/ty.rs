@@ -36,19 +36,34 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                 ctx.class(l_ty, &left.pos)?;
                 ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
-            } else {
+            } else if left_confirmed_super {
                 let msg = format!("Expected a '{}', was a '{}'", l_ty, r_ty);
+                Err(vec![TypeErr::new(&left.pos, &msg)])
+            } else {
+                let msg = format!("Expected a '{}', was a '{}'", r_ty, l_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             }
         }
 
-        (Type { name }, Raises { name: raises }) =>
-            if raises.is_superset_of(name, ctx, &left.pos)? {
+        (Raises { name: l_ty }, Raises { name: r_ty }) => {
+            let left_confirmed_super = (constraint.superset == ConstrVariant::Left
+                || constraint.superset == ConstrVariant::Either)
+                && l_ty.is_superset_of(r_ty, ctx, &left.pos)?;
+            let right_confirmed_super = (constraint.superset == ConstrVariant::Right)
+                && r_ty.is_superset_of(l_ty, ctx, &left.pos)?;
+
+            if left_confirmed_super || right_confirmed_super {
+                ctx.class(l_ty, &left.pos)?;
+                ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
-            } else {
-                let msg = format!("Unexpected raises '{}', may only be `{}`", name, raises);
+            } else if left_confirmed_super {
+                let msg = format!("Unexpected raises '{}', may only be `{}`", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
-            },
+            } else {
+                let msg = format!("Unexpected raises '{}', may only be `{}`", r_ty, l_ty);
+                Err(vec![TypeErr::new(&left.pos, &msg)])
+            }
+        }
 
         (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
             for name_ty in name.names() {

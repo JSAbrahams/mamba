@@ -18,7 +18,8 @@ pub fn gen_stmt(
 ) -> Constrained {
     match &ast.node {
         Node::Raise { error } => {
-            let mut constr = constrain_raises(&Expected::try_from((error, &env.var_mappings))?, &env.raises, constr)?;
+            let raise_expected = Expected::try_from((ast, &env.var_mappings))?;
+            let mut constr = constrain_raises(&raise_expected, &env.raises, constr)?;
             generate(error, env, ctx, &mut constr)
         }
         Node::ReturnEmpty => Ok((constr.clone(), env.clone())),
