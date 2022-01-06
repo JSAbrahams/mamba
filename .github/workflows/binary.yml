@@ -14,8 +14,6 @@ jobs:
     strategy:
       matrix:
         os: [ "ubuntu-latest", "macos-latest" ]
-        python: [ "3.8" ]
-        rust: [ "nightly" ]
 
     runs-on: ${{ matrix.os }}
     name: OS ${{ matrix.os }}
@@ -25,8 +23,8 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-      - name: Run cargo bloat
-        uses: orf/cargo-bloat-action@v1
+          toolchain: nightly
+
+      - uses: orf/cargo-bloat-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
