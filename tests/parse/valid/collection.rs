@@ -18,7 +18,7 @@ fn list_verify() {
 
     let elements = match &statements.first().expect("script empty.").node {
         Node::List { elements } => elements,
-        _ => panic!("nameunion element script was not list.")
+        _ => panic!("first element script was not list.")
     };
 
     assert_eq!(elements[0].node, Node::Id { lit: String::from("a") });
@@ -32,7 +32,7 @@ fn list_builder_verify() {
 
     let (items, conditions) = match &statements.first().expect("script empty.").node {
         Node::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
-        _ => panic!("nameunion element script was not list builder.")
+        _ => panic!("first element script was not list builder.")
     };
 
     assert_eq!(items.node, Node::Id { lit: String::from("a") });
@@ -62,7 +62,7 @@ fn set_verify() {
 
     let elements = match &statements.first().expect("script empty.").node {
         Node::Set { elements } => elements,
-        _ => panic!("nameunion element script was not set.")
+        _ => panic!("first element script was not set.")
     };
 
     assert_eq!(elements[0].node, Node::Id { lit: String::from("a") });
@@ -76,7 +76,7 @@ fn set_builder_verify() {
 
     let (items, conditions) = match &statements.first().expect("script empty.").node {
         Node::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
-        _ => panic!("nameunion element script was not set builder.")
+        _ => panic!("first element script was not set builder.")
     };
 
     assert_eq!(items.node, Node::Id { lit: String::from("a") });
@@ -99,7 +99,7 @@ fn tuple_empty_verify() {
 
     let elements = match &statements.first().expect("script empty.").node {
         Node::Tuple { elements } => elements,
-        _ => panic!("nameunion element script was not tuple.")
+        _ => panic!("first element script was not tuple.")
     };
 
     assert_eq!(elements.len(), 0);
@@ -112,7 +112,7 @@ fn tuple_single_is_expr_verify() {
 
     let lit = match &statements.first().expect("script empty.").node {
         Node::Id { lit } => lit,
-        _ => panic!("nameunion element script was not tuple.")
+        _ => panic!("first element script was not tuple.")
     };
 
     assert_eq!(lit.as_str(), "a");
@@ -125,7 +125,7 @@ fn tuple_multiple_verify() {
 
     let elements = match &statements.first().expect("script empty.").node {
         Node::Tuple { elements } => elements,
-        _ => panic!("nameunion element script was not tuple.")
+        _ => panic!("first element script was not tuple.")
     };
 
     assert_eq!(elements.len(), 2);

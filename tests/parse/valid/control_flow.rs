@@ -19,7 +19,7 @@ fn for_statement_verify() {
 
     let (expr, collection, body) = match &statements.first().expect("script empty.").node {
         Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-        _ => panic!("nameunion element script was not for.")
+        _ => panic!("first element script was not for.")
     };
 
     assert_eq!(expr.node, Node::Id { lit: String::from("a") });
@@ -34,7 +34,7 @@ fn for_range_step_verify() {
 
     let (expr, col, body) = match &statements.first().expect("script empty.").node {
         Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-        _ => panic!("nameunion element script was not foreach.")
+        _ => panic!("first element script was not foreach.")
     };
 
     match col.node {
@@ -58,7 +58,7 @@ fn for_range_incl_verify() {
 
     let (expr, col, body) = match &statements.first().expect("script empty.").node {
         Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
-        _ => panic!("nameunion element script was not foreach.")
+        _ => panic!("first element script was not foreach.")
     };
 
     match col.node {
@@ -88,7 +88,7 @@ fn if_verify() {
 
     let (cond, then, el) = match &statements.first().expect("script empty.").node {
         Node::IfElse { cond, then, el } => (cond, then, el),
-        _ => panic!("nameunion element script was not if.")
+        _ => panic!("first element script was not if.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -103,7 +103,7 @@ fn if_with_block_verify() {
 
     let (cond, then, el) = match &statements.first().expect("script empty.").node {
         Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
-        _ => panic!("nameunion element script was not if.")
+        _ => panic!("first element script was not if.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -126,7 +126,7 @@ fn if_else_verify() {
 
     let (cond, then, el) = match &statements.first().expect("script empty.").node {
         Node::IfElse { cond, then, el } => (cond, then, el),
-        _ => panic!("nameunion element script was not if.")
+        _ => panic!("first element script was not if.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -147,7 +147,7 @@ fn match_verify() {
 
     let (cond, cases) = match &statements.first().expect("script empty.").node {
         Node::Match { cond, cases } => (cond.clone(), cases.clone()),
-        _ => panic!("nameunion element script was not match.")
+        _ => panic!("first element script was not match.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -186,7 +186,7 @@ fn while_verify() {
 
     let (cond, body) = match &statements.first().expect("script empty.").node {
         Node::While { cond, body } => (cond.clone(), body.clone()),
-        _ => panic!("nameunion element script was not while.")
+        _ => panic!("first element script was not while.")
     };
 
     assert_eq!(cond.node, Node::Id { lit: String::from("a") });

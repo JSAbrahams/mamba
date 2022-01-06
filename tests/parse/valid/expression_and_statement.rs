@@ -12,7 +12,7 @@ fn range_verify() {
     let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
         Node::Range { from, to, inclusive, step } =>
             (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-        _ => panic!("nameunion element script was not range.")
+        _ => panic!("first element script was not range.")
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("hello") });
@@ -29,7 +29,7 @@ fn range_step_verify() {
     let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
         Node::Range { from, to, inclusive, step } =>
             (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-        _ => panic!("nameunion element script was not range.")
+        _ => panic!("first element script was not range.")
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("hello") });
@@ -46,7 +46,7 @@ fn range_incl_verify() {
     let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
         Node::Range { from, to, inclusive, step } =>
             (from.clone(), to.clone(), inclusive.clone(), step.clone()),
-        _ => panic!("nameunion element script was not range inclusive.")
+        _ => panic!("first element script was not range inclusive.")
     };
 
     assert_eq!(from.node, Node::Id { lit: String::from("foo") });
@@ -62,7 +62,7 @@ fn reassign_verify() {
 
     let (left, right) = match &statements.first().expect("script empty.").node {
         Node::Reassign { left, right } => (left.clone(), right.clone()),
-        _ => panic!("nameunion element script was not reassign.")
+        _ => panic!("first element script was not reassign.")
     };
 
     assert_eq!(left.node, Node::Id { lit: String::from("id") });
@@ -76,7 +76,7 @@ fn print_verify() {
 
     let expr = match &statements.first().expect("script empty.").node {
         Node::Print { expr } => expr.clone(),
-        _ => panic!("nameunion element script was not reassign.")
+        _ => panic!("first element script was not reassign.")
     };
 
     assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
@@ -89,7 +89,7 @@ fn return_verify() {
 
     let expr = match &statements.first().expect("script empty.").node {
         Node::Return { expr } => expr.clone(),
-        _ => panic!("nameunion element script was not reassign.")
+        _ => panic!("first element script was not reassign.")
     };
 
     assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });

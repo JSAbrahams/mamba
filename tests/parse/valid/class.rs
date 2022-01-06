@@ -25,7 +25,7 @@ fn import_verify() {
     let (import, _as) = match ast.node {
         Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
-            _ => panic!("nameunion element script was not list.")
+            _ => panic!("first element script was not list.")
         },
         _ => panic!("ast was not script.")
     };
@@ -43,7 +43,7 @@ fn import_as_verify() {
     let (import, _as) = match ast.node {
         Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
             Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
-            other => panic!("nameunion element script was not import: {:?}.", other)
+            other => panic!("first element script was not import: {:?}.", other)
         },
         other => panic!("ast was not script: {:?}", other)
     };
@@ -65,7 +65,7 @@ fn from_import_as_verify() {
                 Node::Import { import, aliases: _as } => (id.clone(), import.clone(), _as.clone()),
                 other => panic!("not import: {:?}.", other)
             },
-            other => panic!("nameunion element script was not from: {:?}.", other)
+            other => panic!("first element script was not from: {:?}.", other)
         },
         other => panic!("ast was not script: {:?}", other)
     };

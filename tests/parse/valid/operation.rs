@@ -8,7 +8,7 @@ macro_rules! verify_is_operation {
     ($op:ident, $ast:expr) => {{
         match &$ast.first().expect("script empty.").node {
             Node::$op { left, right } => (left.clone(), right.clone()),
-            other => panic!("nameunion element script was not op: {}, but was: {:?}", $op, other)
+            other => panic!("first element script was not op: {}, but was: {:?}", $op, other)
         }
     }};
 }
@@ -17,7 +17,7 @@ macro_rules! verify_is_un_operation {
     ($op:ident, $ast:expr) => {{
         match &$ast.first().expect("script empty.").node {
             Node::$op { expr } => expr.clone(),
-            _ => panic!("nameunion element script was not tuple.")
+            _ => panic!("first element script was not tuple.")
         }
     }};
 }
