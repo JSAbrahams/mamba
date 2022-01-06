@@ -5,7 +5,6 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
-#[ignore]
 fn top_level_tuple() {
     let source = resource_content(true, &["class"], "top_level_tuple.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
