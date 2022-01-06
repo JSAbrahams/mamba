@@ -28,7 +28,7 @@ pub fn gen_coll(
     }
 }
 
-/// Generate constraint for collection by taking nameunion element
+/// Generate constraint for collection by taking first element.
 ///
 /// The assumption here being that every element in the set has the same type.
 pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder) -> TypeResult<ConstrBuilder> {

@@ -6,7 +6,7 @@ fn long_f_string() -> Result<(), Vec<String>> {
 }
 
 #[test]
-#[ignore]  // re-evaluate parsing rules nameunion
+#[ignore]  // re-evaluate parsing rules first
 fn assign_tuples() -> Result<(), Vec<String>> {
     test_directory(true, &["definition"], &["definition", "target"], "assign_tuples")
 }

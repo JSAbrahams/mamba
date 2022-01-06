@@ -180,7 +180,7 @@ fn function_definition_verify() {
                     assert_eq!(id.node, Node::Id { lit: String::from("Something") });
                     assert_eq!(generics.len(), 0);
                 }
-                other => panic!("Expected type for nameunion argument: {:?}", other)
+                other => panic!("Expected type for first argument: {:?}", other)
             }
             assert_eq!(ty2.clone(), None);
 
@@ -261,7 +261,7 @@ fn function_definition_with_literal_verify() {
                     assert_eq!(id.node, Node::Id { lit: String::from("Something") });
                     assert_eq!(generics.len(), 0);
                 }
-                other => panic!("Expected type for nameunion argument: {:?}", other)
+                other => panic!("Expected type for first argument: {:?}", other)
             }
 
             assert_eq!(d1.clone(), None);

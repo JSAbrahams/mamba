@@ -55,9 +55,9 @@ pub struct Class {
 }
 
 pub trait HasParent<T> {
-    /// Has truename as parent.
+    /// Has name as parent.
     ///
-    /// Does recursive search. Is true if any ancestor is equal to truename.
+    /// Does recursive search. Is true if any ancestor is equal to name.
     fn has_parent(&self, name: T, ctx: &Context, pos: &Position) -> TypeResult<bool>;
 }
 

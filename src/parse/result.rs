@@ -145,7 +145,7 @@ fn title_case(s: &str) -> String {
 
 impl Display for ParseErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        // The nameunion cause is the error itself
+        // The first cause is the error itself
         let cause_formatter = &self.causes[0..min(self.causes.len(), SYNTAX_ERR_MAX_DEPTH)]
             .iter()
             .rev()
