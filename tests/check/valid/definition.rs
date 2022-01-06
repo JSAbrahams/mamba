@@ -47,8 +47,14 @@ fn tuple_modify_outer_mut() {
 }
 
 #[test]
-#[ignore]
 fn f_strings() {
     let source = resource_content(true, &["definition"], "f_strings.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
+}
+
+#[test]
+#[ignore]
+fn collection_in_f_strings() {
+    let source = resource_content(true, &["definition"], "collection_in_f_strings.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
 }

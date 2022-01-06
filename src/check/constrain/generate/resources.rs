@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::Expect::{ExpressionAny, Type};
+use crate::check::constrain::constraint::expected::Expect::{ExpressionAny, Raises, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
@@ -21,7 +21,7 @@ pub fn gen_resources(
         Node::Raises { expr_or_stmt, errors } => {
             let mut constr = constr.clone();
             for error in errors {
-                let exp = Expected::new(&error.pos, &Type { name: NameUnion::try_from(error)? });
+                let exp = Expected::new(&error.pos, &Raises { name: NameUnion::try_from(error)? });
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
@@ -80,18 +80,18 @@ pub fn gen_resources(
 /// raises constraint. Does not constrain if top-level in constr builder,
 /// meaning that we do not constrain raises in top-level scripts.
 pub fn constrain_raises(
-    exp: &Expected,
-    raises: &Option<Expected>,
+    raises: &Expected,
+    env_raises: &Option<Expected>,
     constr: &mut ConstrBuilder,
 ) -> TypeResult<ConstrBuilder> {
     if constr.level == 0 {
         return Ok(constr.clone());
     }
 
-    if let Some(raises) = raises {
-        constr.add("raises", &exp, raises);
+    if let Some(env_raises) = env_raises {
+        constr.add("raises", env_raises, &raises);
         Ok(constr.clone())
     } else {
-        Err(vec![TypeErr::new(&exp.pos, "Unexpected raise")])
+        Err(vec![TypeErr::new(&raises.pos, "Unexpected raise")])
     }
 }

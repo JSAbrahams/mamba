@@ -14,24 +14,47 @@ pub struct Constraint {
     pub is_flag: bool,
     pub is_sub: bool,
     pub msg: String,
-    pub parent: Expected,
-    pub child: Expected,
+    pub left: Expected,
+    pub right: Expected,
+    pub superset: ConstrVariant
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ConstrVariant {
+    Left,
+    Right,
+    Either
 }
 
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{} == {}", self.parent, self.child)
+        let superset = match &self.superset {
+            ConstrVariant::Left => "{left}  ",
+            ConstrVariant::Right => "{right}  ",
+            _ => ""
+        };
+
+        write!(f, "{}{} == {}", superset, self.left, self.right)
     }
 }
 
 impl Constraint {
+    /// Create new constraint.
+    ///
+    /// By default, the left side is assumed to be the superset of the right side.
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
+        Constraint::new_variant(msg, parent, child, &ConstrVariant::Left)
+    }
+
+    pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: &ConstrVariant)
+                       -> Constraint {
         Constraint {
-            parent: parent.clone(),
-            child: child.clone(),
+            left: parent.clone(),
+            right: child.clone(),
             msg: String::from(msg),
             is_flag: false,
             is_sub: false,
+            superset: superset.clone(),
         }
     }
 

@@ -65,6 +65,7 @@ impl TryFrom<&AST> for Name {
             Node::TypeUnion { .. } =>
                 Err(vec![TypeErr::new(&ast.pos, "Expected single name but was union")]),
             Node::Generic { id, .. } => Name::try_from(id),
+            Node::FunctionCall { name, .. } => Name::try_from(name),
             _ => {
                 let msg = format!("Expected name, was {}", ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])
