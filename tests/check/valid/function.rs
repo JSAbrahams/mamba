@@ -17,6 +17,7 @@ fn allowed_exception() {
 }
 
 #[test]
+#[ignore]
 fn call_mut_function() {
     let source = resource_content(true, &["function"], "call_mut_function.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap();
