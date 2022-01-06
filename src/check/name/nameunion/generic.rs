@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::iter::FromIterator;
 use std::ops::Deref;
 
 use crate::check::name::nameunion::NameUnion;
@@ -21,7 +20,7 @@ impl TryFrom<&AST> for NameUnion {
         let names = if let Node::TypeUnion { types } = &ast.node {
             types.iter().map(TrueName::try_from).collect::<Result<_, _>>()?
         } else {
-            HashSet::from_iter(vec![TrueName::try_from(ast)?].into_iter())
+            vec![TrueName::try_from(ast)?].into_iter().collect::<HashSet<_>>()
         };
         Ok(NameUnion { names })
     }

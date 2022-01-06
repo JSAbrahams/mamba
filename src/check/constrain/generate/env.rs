@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
@@ -56,7 +55,7 @@ impl Environment {
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
     pub fn insert_var(&mut self, mutable: bool, var: &str, expect: &Expected) -> Environment {
-        let expected_set = HashSet::from_iter(vec![(mutable, expect.clone())].into_iter());
+        let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
         let var = if self.vars.contains_key(var) {
@@ -162,7 +161,7 @@ impl Environment {
             match (self.vars.get(key), other.vars.get(key)) {
                 (Some(l_exp), Some(r_exp)) => {
                     let union = l_exp.union(r_exp);
-                    vars.insert(String::from(key), HashSet::from_iter(union.cloned()));
+                    vars.insert(String::from(key), union.cloned().collect::<HashSet<_>>());
                 }
                 (Some(exp), None) | (None, Some(exp)) => {
                     vars.insert(String::from(key), exp.clone());
@@ -172,7 +171,7 @@ impl Environment {
         }
 
         let to_remove: Vec<String> = self.var_mappings.iter()
-            .filter(|(key, _)| { other.var_mappings.contains_key(key.clone()) })
+            .filter(|(key, _)| { other.var_mappings.contains_key(*key) })
             .map(|(key, _)| key.clone())
             .collect();
 

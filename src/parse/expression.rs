@@ -143,7 +143,7 @@ fn parse_return(it: &mut LexIterator) -> ParseResult {
 
 /// Excluding unary addition and subtraction
 pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
-    match tp.token {
+    matches!(tp.token,
         Token::If
         | Token::Match
         | Token::LRBrack
@@ -159,9 +159,7 @@ pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
         | Token::Bool(_)
         | Token::Not
         | Token::Undefined
-        | Token::Id(_) => true,
-        _ => false
-    }
+        | Token::Id(_))
 }
 
 pub fn is_start_expression(tp: &Lex) -> bool {

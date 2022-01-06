@@ -82,15 +82,12 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn is_start_statement(tp: &Token) -> bool {
-    match tp {
-        Token::Def
+    matches!(tp,  Token::Def
         | Token::Fin
         | Token::Print
         | Token::For
         | Token::While
         | Token::Pass
         | Token::Raise
-        | Token::With => true,
-        _ => false
-    }
+        | Token::With)
 }

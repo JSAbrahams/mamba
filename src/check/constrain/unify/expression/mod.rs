@@ -37,10 +37,10 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
         (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements }) => {
             let mut constraints = substitute(&left, &right, constraints, count, total)?;
 
-            for pair in ast_elements.iter().zip_longest(elements.iter()) {
+            for pair in ast_elements.iter().cloned().zip_longest(elements.iter()) {
                 match &pair {
                     Both(ast, exp) => {
-                        let expect = Expect::Expression { ast: ast.clone().clone() };
+                        let expect = Expect::Expression { ast: ast.clone() };
                         let l_ty = Expected::new(&left.pos, &expect);
                         constraints.push("tuple", &l_ty, &exp)
                     }
