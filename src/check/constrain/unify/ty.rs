@@ -77,10 +77,10 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                             return Err(vec![TypeErr::new(&left.pos, &msg)]);
                         }
 
-                        for pair in names.iter().zip_longest(elements.iter()) {
+                        for pair in names.iter().cloned().zip_longest(elements.iter()) {
                             match &pair {
                                 Both(name, exp) => {
-                                    let expect = Expect::Type { name: name.clone().clone() };
+                                    let expect = Expect::Type { name: name.clone() };
                                     let l_ty = Expected::new(&left.pos, &expect);
                                     constraints.push("tuple", &l_ty, &exp)
                                 }

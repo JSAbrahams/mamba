@@ -97,10 +97,7 @@ impl TrueName {
     pub fn is_empty(&self) -> bool { self == &TrueName::empty() }
 
     pub fn is_null(&self) -> bool {
-        match &self.variant {
-            NameVariant::Single(StringName { name, .. }) if name.clone() == String::from(NONE) => true,
-            _ => false
-        }
+        matches!(&self.variant, NameVariant::Single(StringName { name, .. }) if name.clone() == *NONE)
     }
 
     pub fn empty() -> TrueName { TrueName::from(&StringName::empty()) }

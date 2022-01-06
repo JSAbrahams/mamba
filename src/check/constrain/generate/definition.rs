@@ -217,7 +217,7 @@ fn identifier_to_tuple(
         Ok(permutations
             .into_iter()
             .map(|elements| {
-                let elements = elements.into_iter().map(|e| e.clone()).collect();
+                let elements = elements.into_iter().cloned().collect();
                 Expected::new(pos, &Expect::Tuple { elements })
             })
             .collect())

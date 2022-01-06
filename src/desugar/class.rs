@@ -96,10 +96,7 @@ fn extract_class(
             };
 
             let (mut stmts, mut non_variables): (Vec<_>, Vec<_>) =
-                final_definitions.into_iter().partition(|stmt| match stmt {
-                    Core::VarDef { .. } => true,
-                    _ => false
-                });
+                final_definitions.into_iter().partition(|stmt| matches!(stmt, Core::VarDef { .. }));
             stmts.append(&mut non_variables);
             final_definitions = stmts;
 
