@@ -19,11 +19,12 @@ jobs:
     name: OS ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v1
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          override: true
 
       - uses: orf/cargo-bloat-action@v1
         with:
