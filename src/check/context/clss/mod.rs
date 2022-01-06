@@ -12,7 +12,9 @@ use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::{DirectName, Name, NameUnion};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -44,11 +46,11 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name: DirectName,
+    pub name: StringName,
     pub concrete: bool,
     pub args: Vec<FunctionArg>,
     pub fields: HashSet<Field>,
-    pub parents: HashSet<DirectName>,
+    pub parents: HashSet<StringName>,
     pub functions: HashSet<Function>,
 }
 
@@ -59,10 +61,10 @@ pub trait HasParent<T> {
     fn has_parent(&self, name: T, ctx: &Context, pos: &Position) -> TypeResult<bool>;
 }
 
-impl HasParent<&DirectName> for Class {
+impl HasParent<&StringName> for Class {
     fn has_parent(
         &self,
-        name: &DirectName,
+        name: &StringName,
         ctx: &Context,
         pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
@@ -107,11 +109,11 @@ impl Display for Class {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericClass, &HashMap<String, Name>, &Position)> for Class {
+impl TryFrom<(&GenericClass, &HashMap<String, TrueName>, &Position)> for Class {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericClass, &HashMap<String, Name>, &Position)
+        (generic, generics, pos): (&GenericClass, &HashMap<String, TrueName>, &Position)
     ) -> Result<Self, Self::Error> {
         let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
         let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
@@ -165,7 +167,7 @@ impl Class {
     ///
     /// If class does not implement function, traverse parents until function
     /// found.
-    pub fn fun(&self, name: &DirectName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
+    pub fn fun(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
         if let Some(function) = self.functions.iter().find(|f| &f.name == name) {
             return Ok(function.clone());
         }

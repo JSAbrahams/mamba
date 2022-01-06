@@ -3,7 +3,8 @@ use python_parser::ast::Funcdef;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::common::position::Position;
 
 pub const INIT: &str = "__init__";
@@ -30,7 +31,7 @@ impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {
             is_py_type: true,
-            name: DirectName::from(convert_name(&func_def.name).as_str()),
+            name: StringName::from(convert_name(&func_def.name).as_str()),
             pure: false,
             pos: Position::default(),
             arguments: func_def

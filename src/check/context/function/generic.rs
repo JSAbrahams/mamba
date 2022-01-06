@@ -4,7 +4,8 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -12,12 +13,12 @@ use crate::parse::ast::{AST, Node};
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
     pub is_py_type: bool,
-    pub name: DirectName,
+    pub name: StringName,
     pub pure: bool,
     pub pos: Position,
     pub arguments: Vec<GenericFunctionArg>,
     pub raises: NameUnion,
-    pub in_class: Option<DirectName>,
+    pub in_class: Option<StringName>,
     pub ret_ty: Option<NameUnion>,
 }
 
@@ -40,7 +41,7 @@ impl GenericFunction {
 
     pub fn in_class(
         self,
-        in_class: Option<&DirectName>,
+        in_class: Option<&StringName>,
         _type_def: bool,
     ) -> TypeResult<GenericFunction> {
         Ok(GenericFunction {
@@ -107,8 +108,8 @@ impl TryFrom<&AST> for GenericFunction {
     }
 }
 
-pub fn function_name(ast: &AST) -> TypeResult<DirectName> {
-    Ok(DirectName::from(match &ast.node {
+pub fn function_name(ast: &AST) -> TypeResult<StringName> {
+    Ok(StringName::from(match &ast.node {
         Node::Id { lit } => lit.as_str(),
         Node::Init => "init",
         Node::SqrtOp => "sqrt",
@@ -122,6 +123,6 @@ pub fn function_name(ast: &AST) -> TypeResult<DirectName> {
         Node::ModOp => function::MOD,
         Node::DivOp => function::DIV,
         Node::FDivOp => function::FDIV,
-        _ => return Err(vec![TypeErr::new(&ast.pos, "Expected valid function name")])
+        _ => return Err(vec![TypeErr::new(&ast.pos, "Expected valid function truename")])
     }))
 }

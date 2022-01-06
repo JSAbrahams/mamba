@@ -11,7 +11,8 @@ use crate::check::context::{clss, Context};
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT,
                                       SUB};
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -93,7 +94,7 @@ pub fn gen_op(
             let access = Expected::new(&expr.pos, &Access {
                 entity: Box::new(Expected::try_from((expr, &env.var_mappings))?),
                 name: Box::from(Expected::new(&expr.pos, &Function {
-                    name: DirectName::from(SQRT),
+                    name: StringName::from(SQRT),
                     args: vec![Expected::try_from((expr, &env.var_mappings))?],
                 })),
             });
@@ -191,7 +192,7 @@ fn impl_magic(
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
             name: Box::new(Expected::new(&left.pos, &Function {
-                name: DirectName::from(fun),
+                name: StringName::from(fun),
                 args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?],
             })),
         }),
@@ -216,7 +217,7 @@ fn impl_bool_op(
         &Expected::new(&left.pos, &Access {
             entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
             name: Box::new(Expected::new(&left.pos, &Function {
-                name: DirectName::from(fun),
+                name: StringName::from(fun),
                 args: vec![Expected::try_from((left, &env.var_mappings))?, Expected::try_from((right, &env.var_mappings))?],
             })),
         }),

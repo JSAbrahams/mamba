@@ -10,7 +10,9 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::{clss, Context};
 use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
-use crate::check::context::name::{DirectName, IsNullable, IsSuperSet, NameUnion};
+use crate::check::name::{IsNullable, IsSuperSet};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -63,7 +65,7 @@ pub enum Expect {
     Collection { ty: Box<Expected> },
     Tuple { elements: Vec<Expected> },
     Raises { name: NameUnion },
-    Function { name: DirectName, args: Vec<Expected> },
+    Function { name: StringName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
     Type { name: NameUnion },
@@ -182,7 +184,8 @@ impl Expect {
 
     pub fn is_superset_of(&self, other: &Expect, ctx: &Context) -> TypeResult<bool> {
         match (&self, other) {
-            (Expect::Type { name }, Expect::Type { name: other }) => name.is_superset_of(other, ctx, &Position::default()),
+            (Expect::Type { name }, Expect::Type { name: other }) =>
+                name.is_superset_of(other, ctx, &Position::default()),
             _ => Ok(false)
         }
     }

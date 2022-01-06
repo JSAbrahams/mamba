@@ -12,8 +12,10 @@ use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
-use crate::check::context::name::{DirectName, match_name, NameUnion, Union};
 use crate::check::ident::Identifier;
+use crate::check::name::{match_name, Union};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -31,7 +33,7 @@ pub fn gen_def(
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
             let mut constr = if let Some(body) = body {
                 let r_tys: Vec<_> =
-                    raises.iter().map(|r| (r.pos.clone(), DirectName::try_from(r))).collect();
+                    raises.iter().map(|r| (r.pos.clone(), StringName::try_from(r))).collect();
                 let mut r_res = NameUnion::empty();
                 // TODO check this during Context check
                 let exception_name = NameUnion::from(clss::EXCEPTION);
