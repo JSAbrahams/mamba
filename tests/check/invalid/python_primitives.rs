@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use mamba::check::{check_all, CheckInput};
 use mamba::check::context::{Context, LookupClass};
-use mamba::check::context::name::DirectName;
+use mamba::check::name::stringname::StringName;
 use mamba::common::position::Position;
 use mamba::lex::tokenize;
 use mamba::parse::parse;
@@ -21,5 +21,5 @@ pub fn non_existent_primitive() {
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_primitives().unwrap();
 
-    context.class(&DirectName::from("nothing"), &Position::default()).unwrap_err();
+    context.class(&StringName::from("nothing"), &Position::default()).unwrap_err();
 }

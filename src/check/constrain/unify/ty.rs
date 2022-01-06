@@ -8,7 +8,8 @@ use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::context::name::{IsSuperSet, NameVariant};
+use crate::check::name::IsSuperSet;
+use crate::check::name::namevariant::NameVariant;
 use crate::check::result::TypeErr;
 
 pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {

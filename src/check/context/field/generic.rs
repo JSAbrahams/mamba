@@ -3,8 +3,10 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-use crate::check::context::name::{DirectName, match_name, NameUnion};
 use crate::check::ident::Identifier;
+use crate::check::name::match_name;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -15,7 +17,7 @@ pub struct GenericField {
     pub name: String,
     pub pos: Position,
     pub mutable: bool,
-    pub in_class: Option<DirectName>,
+    pub in_class: Option<StringName>,
     pub ty: Option<NameUnion>,
 }
 
@@ -101,7 +103,7 @@ impl TryFrom<&AST> for GenericFields {
 impl GenericField {
     pub fn in_class(
         self,
-        class: Option<&DirectName>,
+        class: Option<&StringName>,
         _type_def: bool,
         _pos: &Position,
     ) -> TypeResult<GenericField> {

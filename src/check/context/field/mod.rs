@@ -4,7 +4,9 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::{DirectName, Name, NameUnion};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -19,7 +21,7 @@ pub struct Field {
     pub is_py_type: bool,
     pub name: String,
     pub mutable: bool,
-    pub in_class: Option<DirectName>,
+    pub in_class: Option<StringName>,
     pub ty: NameUnion,
 }
 
@@ -30,11 +32,11 @@ impl Display for Field {
     }
 }
 
-impl TryFrom<(&GenericField, &HashMap<String, Name>, &Position)> for Field {
+impl TryFrom<(&GenericField, &HashMap<String, TrueName>, &Position)> for Field {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (field, generics, pos): (&GenericField, &HashMap<String, Name>, &Position)
+        (field, generics, pos): (&GenericField, &HashMap<String, TrueName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,

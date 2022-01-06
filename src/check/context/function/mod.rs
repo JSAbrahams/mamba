@@ -9,7 +9,10 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::context::{arg, Context, function};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::{DirectName, IsSuperSet, Name, NameUnion};
+use crate::check::name::IsSuperSet;
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -46,12 +49,12 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
     pub is_py_type: bool,
-    pub name: DirectName,
+    pub name: StringName,
     pub self_mutable: Option<bool>,
     pub pure: bool,
     pub arguments: Vec<FunctionArg>,
     pub raises: NameUnion,
-    pub in_class: Option<DirectName>,
+    pub in_class: Option<StringName>,
     pub ret_ty: NameUnion,
 }
 
@@ -82,11 +85,11 @@ impl Display for Function {
     }
 }
 
-impl TryFrom<(&GenericFunction, &HashMap<String, Name>, &Position)> for Function {
+impl TryFrom<(&GenericFunction, &HashMap<String, TrueName>, &Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<String, Name>, &Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<String, TrueName>, &Position)
     ) -> Result<Self, Self::Error> {
         let arguments: Vec<FunctionArg> = fun
             .arguments
@@ -164,7 +167,7 @@ impl Function {
     }
 
     pub fn simple_fun(
-        name: &DirectName,
+        name: &StringName,
         self_arg: &NameUnion,
         ret_ty: &NameUnion,
         pos: &Position,

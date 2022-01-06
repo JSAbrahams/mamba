@@ -11,6 +11,7 @@ mod ident;
 
 pub mod context;
 pub mod result;
+pub mod name;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 

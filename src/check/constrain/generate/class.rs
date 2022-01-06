@@ -8,7 +8,8 @@ use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{field, LookupClass};
 use crate::check::context::Context;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::name::nameunion::NameUnion;
+use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -49,7 +50,7 @@ pub fn constrain_class_body(
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
 
-    let class_name = DirectName::try_from(ty.deref())?;
+    let class_name = StringName::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
     let class_ty_exp = Type { name: NameUnion::from(&class_name) };
     res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
@@ -73,7 +74,7 @@ pub fn constrain_class_body(
 pub fn property_from_field(
     pos: &Position,
     field: &field::Field,
-    class: &DirectName,
+    class: &StringName,
     env: &mut Environment,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
