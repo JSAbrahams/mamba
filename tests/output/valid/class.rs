@@ -22,6 +22,7 @@ fn parent_ast_verify() -> Result<(), Vec<String>> {
 }
 
 #[test]
+#[ignore]
 fn types_ast_verify() -> Result<(), Vec<String>> {
     test_directory(true, &["class"], &["class", "target"], "types")
 }
