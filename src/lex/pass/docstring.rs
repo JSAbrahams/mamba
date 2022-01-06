@@ -17,24 +17,20 @@ impl DocString {
     }
 
     fn get(&mut self) -> Vec<Lex> {
-        match (self.front.clone(), self.middle.clone(), self.back.clone()) {
-            (Some(front), Some(middle), Some(back)) =>
-                match (front.token, middle.token, back.token) {
-                    (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) =>
-                        if f_str.is_empty()
-                            && b_str.is_empty()
-                            && front.pos.end.pos == middle.pos.start.pos
-                            && middle.pos.end.pos == back.pos.start.pos
-                        {
-                            self.front = None;
-                            self.middle = None;
-                            self.back = None;
-                            return vec![Lex::new(&front.pos.start, Token::DocStr(doc_str))];
-                        },
-                    _ => {}
-                },
-            _ => {}
-        };
+        if let (Some(front), Some(middle), Some(back)) = (self.front.clone(), self.middle.clone(), self.back.clone()) {
+            if let (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) = (front.token, middle.token, back.token) {
+                if f_str.is_empty()
+                    && b_str.is_empty()
+                    && front.pos.end.pos == middle.pos.start.pos
+                    && middle.pos.end.pos == back.pos.start.pos
+                {
+                    self.front = None;
+                    self.middle = None;
+                    self.back = None;
+                    return vec![Lex::new(&front.pos.start, Token::DocStr(doc_str))];
+                }
+            }
+        }
 
         if let Some(lex) = &self.front.clone() {
             self.front = None;

@@ -29,15 +29,13 @@ impl Identifier {
     pub fn as_mutable(&self, mutable: bool) -> Identifier {
         if let Some((_, id)) = &self.lit {
             Identifier { lit: Some((mutable, id.clone())), names: self.names.clone() }
+        } else if mutable {
+            self.clone()
         } else {
-            if mutable {
-                self.clone()
-            } else {
-                // If not mutable, then make everything immutable
-                Identifier {
-                    lit: self.lit.clone().map(|(_, str)| (false, str)),
-                    names: self.names.iter().map(|name| name.as_mutable(false)).collect(),
-                }
+            // If not mutable, then make everything immutable
+            Identifier {
+                lit: self.lit.clone().map(|(_, str)| (false, str)),
+                names: self.names.iter().map(|name| name.as_mutable(false)).collect(),
             }
         }
     }

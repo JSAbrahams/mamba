@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
-use std::iter::FromIterator;
 use std::ops::Deref;
 use std::path::PathBuf;
 
@@ -61,8 +60,8 @@ pub fn python_files(
     }
 
     Ok((
-        HashSet::from_iter(types.into_iter()),
-        HashSet::from_iter(fields.into_iter()),
-        HashSet::from_iter(functions.into_iter())
+        types.into_iter().collect::<HashSet<_>>(),
+        fields.into_iter().collect::<HashSet<_>>(),
+        functions.into_iter().collect::<HashSet<_>>()
     ))
 }

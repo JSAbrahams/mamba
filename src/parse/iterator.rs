@@ -42,7 +42,7 @@ impl<'a> LexIterator<'a> {
             } else if peeked_token != token.clone() { break; }
         }
 
-        return last_token == Some(final_token.clone());
+        last_token == Some(final_token.clone())
     }
 
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
@@ -80,8 +80,8 @@ impl<'a> LexIterator<'a> {
                             -> ParseResult<Option<Position>> {
         if self.it.peek().is_some() {
             self.eat(token, err_msg)
-                .map(|pos| Some(pos))
-                .map_err(|err| err.clone_with_cause(err_msg, &last_pos.clone().unwrap_or(Position::default())))
+                .map(Some)
+                .map_err(|err| err.clone_with_cause(err_msg, &last_pos.clone().unwrap_or_default()))
         } else {
             Ok(None)
         }

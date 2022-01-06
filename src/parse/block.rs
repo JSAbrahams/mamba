@@ -22,7 +22,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
                 let node = Node::Comment { comment: comment.clone() };
                 statements.push(AST::new(&lex.pos.union(&end), node));
 
-                let last_pos = &it.last_pos().clone();
+                let last_pos = &it.last_pos();
                 it.eat_if_not_empty(&Token::NL, "block", last_pos)?;
                 Ok(())
             }
@@ -31,7 +31,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
                 let node = Node::DocStr { lit: doc_str.clone() };
                 statements.push(AST::new(&lex.pos.union(&end), node));
 
-                let last_pos = &it.last_pos().clone();
+                let last_pos = &it.last_pos();
                 it.eat_if_not_empty(&Token::NL, "block", last_pos)?;
                 Ok(())
             }

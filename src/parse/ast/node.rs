@@ -437,8 +437,7 @@ impl Node {
     }
 
     fn is_operator(&self) -> bool {
-        match &self {
-            Node::Add { .. }
+        matches!(&self,            Node::Add { .. }
             | Node::AddU { .. }
             | Node::Sub { .. }
             | Node::SubU { .. }
@@ -467,8 +466,6 @@ impl Node {
             | Node::Not { .. }
             | Node::And { .. }
             | Node::Or { .. }
-            | Node::In { .. } => true,
-            _ => false
-        }
+            | Node::In { .. })
     }
 }

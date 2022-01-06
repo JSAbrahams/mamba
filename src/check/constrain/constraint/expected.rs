@@ -8,9 +8,8 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::{clss, Context};
+use crate::check::context::clss;
 use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
-use crate::check::name::{IsNullable, IsSuperSet};
 use crate::check::name::nameunion::NameUnion;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -172,21 +171,6 @@ impl Expect {
         match &self {
             Expect::Type { name } => name.is_null(),
             _ => false
-        }
-    }
-
-    pub fn is_nullable(&self) -> bool {
-        match &self {
-            Expect::Type { name } => name.is_nullable(),
-            _ => false
-        }
-    }
-
-    pub fn is_superset_of(&self, other: &Expect, ctx: &Context) -> TypeResult<bool> {
-        match (&self, other) {
-            (Expect::Type { name }, Expect::Type { name: other }) =>
-                name.is_superset_of(other, ctx, &Position::default()),
-            _ => Ok(false)
         }
     }
 }

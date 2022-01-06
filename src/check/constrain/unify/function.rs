@@ -93,7 +93,7 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
 fn field_access(constraints: &mut Constraints,
                 ctx: &Context,
                 entity_name: &NameUnion,
-                name: &String,
+                name: &str,
                 accessed: &Expected,
                 other: &Expected,
                 total: usize) -> Unified {
@@ -108,11 +108,12 @@ fn field_access(constraints: &mut Constraints,
     unify_link(constraints, ctx, total + pushed)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn function_access(constraints: &mut Constraints,
                    ctx: &Context,
                    entity_name: &NameUnion,
                    name: &StringName,
-                   args: &Vec<Expected>,
+                   args: &[Expected],
                    accessed: &Expected,
                    other: &Expected,
                    total: usize) -> Unified {
