@@ -13,7 +13,7 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [ "ubuntu-latest", "macos-latest" ]
+        os: [ "ubuntu-latest", "macos-latest", "windows-latest" ]
         python: [ "3.8" ]
         rust: [ "nightly" ]
 
@@ -49,23 +49,31 @@ jobs:
         if: ${{ matrix.rust != 'nightly' }}
         run: cargo test --package mamba
 
-      # Code Coverage
+  code_coverage:
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python: [ "3.8" ]
+        rust: [ "nightly" ]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Clean
       - name: Clean
-        if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: actions-rs/toolchain@v1
         with:
           command: clean
           toolchain: nightly
           override: true
 
-      # Must install for code coverage
+      # Install toolchain for coverage
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           override: true
 
       - name: Grcov
-        if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: actions-rs/cargo@v1
         with:
           command: test
@@ -80,7 +88,6 @@ jobs:
         id: coverage
 
       - name: Codecov upload
-        if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: codecov/codecov-action@v2
         with:
           files: ${{ steps.coverage.outputs.report }}
