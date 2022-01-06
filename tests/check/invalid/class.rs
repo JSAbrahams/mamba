@@ -23,14 +23,12 @@ fn reassign_function() {
 }
 
 #[test]
-#[ignore]
 fn access_field_wrong_type() {
     let source = resource_content(false, &["type", "class"], "access_field_wrong_type.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
 }
 
 #[test]
-#[ignore]
 fn access_function_wrong_type() {
     let source = resource_content(false, &["type", "class"], "access_function_wrong_type.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

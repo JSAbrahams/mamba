@@ -354,6 +354,7 @@ pub struct FunUnion {
     pub union: HashSet<Function>,
 }
 
+#[derive(Debug)]
 pub struct FieldUnion {
     pub union: HashSet<Field>,
 }

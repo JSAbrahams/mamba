@@ -26,17 +26,19 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
         },
 
         (Type { name: l_ty }, Type { name: r_ty }) => {
-            let left_confirmed_super = (constraint.superset == ConstrVariant::Left
-                || constraint.superset == ConstrVariant::Either)
+            let left_is_super = (constraint.superset == ConstrVariant::Left)
                 && l_ty.is_superset_of(r_ty, ctx, &left.pos)?;
-            let right_confirmed_super = (constraint.superset == ConstrVariant::Right)
+            let right_is_super = (constraint.superset == ConstrVariant::Right)
                 && r_ty.is_superset_of(l_ty, ctx, &left.pos)?;
+            let either_is_super = (constraint.superset == ConstrVariant::Either)
+                && (l_ty.is_superset_of(r_ty, ctx, &left.pos)?
+                || r_ty.is_superset_of(l_ty, ctx, &left.pos)?);
 
-            if left_confirmed_super || right_confirmed_super {
+            if left_is_super || right_is_super || either_is_super {
                 ctx.class(l_ty, &left.pos)?;
                 ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
-            } else if left_confirmed_super {
+            } else if left_is_super {
                 let msg = format!("Expected a '{}', was a '{}'", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             } else {

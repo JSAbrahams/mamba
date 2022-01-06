@@ -3,14 +3,14 @@ use std::collections::HashSet;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Tuple, Type};
+use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::name::{NameUnion, NameVariant};
+use crate::check::context::name::{DirectName, NameUnion, NameVariant};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -54,66 +54,79 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
             unify_link(constraints, ctx, total + count)
         }
 
-        (Access { entity, name }, _) | (_, Access { entity, name }) =>
-            if let Type { name: entity_name } = &entity.expect {
-                match &name.expect {
-                    Field { name } => {
-                        let mut pushed = 0;
-                        let fields =
-                            ctx.class(entity_name, &left.pos)?.field(name, ctx, &left.pos)?;
-                        for field in fields.union {
-                            let field_ty_exp = Expected::new(&left.pos, &Type { name: field.ty });
-                            constraints.push("field access", &right, &field_ty_exp);
-                            pushed += 1;
-                        }
-                        unify_link(constraints, ctx, total + pushed)
-                    }
-                    Function { name, args } => {
-                        let class = ctx.class(entity_name, &left.pos)?;
-                        let function_union = class.fun(&name, ctx, &left.pos)?;
-
-                        let mut pushed = 0;
-                        for function in &function_union.union {
-                            let fun_ty_exp =
-                                Expected::new(&left.pos, &Type { name: function.ret_ty.clone() });
-                            constraints.push("function access", &right, &fun_ty_exp);
-                            pushed += 1;
-                        }
-
-                        let possible_args: HashSet<Vec<FunctionArg>> =
-                            function_union.union.iter().map(|f| f.arguments.clone()).collect();
-                        let (mut constr, added) =
-                            unify_fun_arg(&possible_args, &args, &constraints, &left.pos)?;
-                        unify_link(&mut constr, ctx, total + added + pushed)
-                    }
-                    _ => {
-                        let mut constr = reinsert(constraints, &constraint, total)?;
-                        unify_link(&mut constr, ctx, total)
-                    }
+        (Access { entity, name }, _) => if let Type { name: entity_name } = &entity.expect {
+            match &name.expect {
+                Field { name } => field_access(constraints, ctx, entity_name, name, left, right, total),
+                Function { name, args } => function_access(constraints, ctx, entity_name, name, args, left, right, total),
+                _ => {
+                    let mut constr = reinsert(constraints, &constraint, total)?;
+                    unify_link(&mut constr, ctx, total)
                 }
-            } else if let Tuple { elements } = &entity.expect {
-                // Every element of tuple is individually accessed
-                for (i, element) in elements.iter().enumerate() {
-                    constraints.push(
-                        format!("Tuple element {}", i).as_str(),
-                        &Expected::new(&element.pos, &Access {
-                            entity: Box::from(element.clone()),
-                            name: name.clone(),
-                        }),
-                        right,
-                    )
+            }
+        } else {
+            let mut constr = reinsert(constraints, &constraint, total)?;
+            unify_link(&mut constr, ctx, total)
+        }
+        (_, Access { entity, name }) => if let Type { name: entity_name } = &entity.expect {
+            match &name.expect {
+                Field { name } => field_access(constraints, ctx, entity_name, name, right, left, total),
+                Function { name, args } => function_access(constraints, ctx, entity_name, name, args, right, left, total),
+                _ => {
+                    let mut constr = reinsert(constraints, &constraint, total)?;
+                    unify_link(&mut constr, ctx, total)
                 }
-                unify_link(constraints, ctx, total + elements.len())
-            } else {
-                let mut constr = reinsert(constraints, &constraint, total)?;
-                unify_link(&mut constr, ctx, total)
-            },
+            }
+        } else {
+            let mut constr = reinsert(constraints, &constraint, total)?;
+            unify_link(&mut constr, ctx, total)
+        },
 
         (l_exp, r_exp) => {
             let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }
+}
+
+fn field_access(constraints: &mut Constraints,
+                ctx: &Context,
+                entity_name: &NameUnion,
+                name: &String,
+                accessed: &Expected,
+                other: &Expected,
+                total: usize) -> Unified {
+    let mut pushed = 0;
+    let fields = ctx.class(entity_name, &accessed.pos)?.field(name, ctx, &accessed.pos)?;
+    for field in fields.union {
+        let field_ty_exp = Expected::new(&accessed.pos, &Type { name: field.ty });
+        constraints.push("field access", &field_ty_exp, &other);
+        pushed += 1;
+    }
+
+    unify_link(constraints, ctx, total + pushed)
+}
+
+fn function_access(constraints: &mut Constraints,
+                   ctx: &Context,
+                   entity_name: &NameUnion,
+                   name: &DirectName,
+                   args: &Vec<Expected>,
+                   accessed: &Expected,
+                   other: &Expected,
+                   total: usize) -> Unified {
+    let class = ctx.class(entity_name, &accessed.pos)?;
+    let function_union = class.fun(&name, ctx, &accessed.pos)?;
+
+    let mut pushed = 0;
+    for function in &function_union.union {
+        let fun_ty_exp = Expected::new(&accessed.pos, &Type { name: function.ret_ty.clone() });
+        constraints.push("function access", &fun_ty_exp, &other);
+        pushed += 1;
+    }
+
+    let possible_args: HashSet<Vec<FunctionArg>> = function_union.union.iter().map(|f| f.arguments.clone()).collect();
+    let (mut constr, added) = unify_fun_arg(&possible_args, &args, &constraints, &accessed.pos)?;
+    unify_link(&mut constr, ctx, total + added + pushed)
 }
 
 fn unify_fun_arg(
