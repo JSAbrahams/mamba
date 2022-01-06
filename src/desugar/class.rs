@@ -136,7 +136,7 @@ fn constructor_from_inline(
                     vararg: false,
                     var: var.clone(),
                     ty: ty.clone(),
-                    default: expr.deref().as_ref().map(|expr| expr.clone()),
+                    default: expr.deref().as_ref().cloned(),
                 });
 
                 if !parent_args.contains(var) {
