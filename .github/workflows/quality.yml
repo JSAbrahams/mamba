@@ -18,9 +18,19 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          components: clippy
+          components: clippy rustfmt
           override: true
-      - uses: actions-rs/clippy-check@v1
+
+      - name: clippy
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
+
+      - name: rustfmt
+        uses: LoliGothick/rustfmt-check@v0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          flags: --all
+          options: --manifest-path=Cargo.toml
+          args: --config-path=.rustfmt.toml
