@@ -33,7 +33,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                 from: Box::from(desugar_node(id, imp, state)?),
                 import: Box::from(desugar_node(import, imp, state)?),
             }
-        },
+        }
 
         Node::VariableDef { .. } | Node::FunDef { .. } => desugar_definition(ast, imp, state)?,
         Node::Reassign { left, right } => Core::Assign {

@@ -18,7 +18,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          components: clippy rustfmt
+          components: clippy, rustfmt
           override: true
 
       - name: clippy

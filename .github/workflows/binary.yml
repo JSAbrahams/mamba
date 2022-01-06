@@ -1,0 +1,32 @@
+name: Binary
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check_binary_size:
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest", "macos-latest" ]
+        python: [ "3.8" ]
+        rust: [ "nightly" ]
+
+    runs-on: ${{ matrix.os }}
+    name: OS ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@master
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Run cargo bloat
+        uses: orf/cargo-bloat-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
