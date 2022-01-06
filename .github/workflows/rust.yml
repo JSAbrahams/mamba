@@ -30,6 +30,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Annotate commit with clippy warnings
+        uses: actions-rs/clippy-check@v1
+        with:
+          args: --all-features
+
       # Install Rust, build and run tests
       - name: Install Rust ${{ matrix.rust }}
         run: rustup toolchain install ${{ matrix.rust }}
@@ -47,3 +52,24 @@ jobs:
       - name: Run tests
         if: ${{ matrix.rust != 'nightly' }}
         run: cargo test --package mamba
+
+      # Code Coverage
+      - name: Clean
+        uses: actions-rs/toolchain@v1
+        with:
+          command: clean
+          toolchain: nightly
+          override: true
+
+      - name: Grcov
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast  # Customize args for your own needs
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+
+      - name: Coveralls upload
+        uses: codecov/codecov-action@v2
