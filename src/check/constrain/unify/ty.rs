@@ -120,7 +120,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
             unify_link(constraints, ctx, total + 1)
         }
 
-        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() || l_exp.is_superset_of(r_exp, ctx)? {
+        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() {
             unify_link(constraints, ctx, total)
         } else {
             let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
