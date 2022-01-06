@@ -4,7 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::context::name::{Name, NameUnion};
+use crate::check::context::name::nameunion::NameUnion;
+use crate::check::context::name::truename::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -38,11 +39,11 @@ impl Display for FunctionArg {
     }
 }
 
-impl TryFrom<(&GenericFunctionArg, &HashMap<String, Name>, &Position)> for FunctionArg {
+impl TryFrom<(&GenericFunctionArg, &HashMap<String, TrueName>, &Position)> for FunctionArg {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, Name>, &Position)
+        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, TrueName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
             is_py_type: fun_arg.is_py_type,

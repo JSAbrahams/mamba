@@ -3,7 +3,8 @@ use std::fmt::{Display, Error, Formatter};
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{clss, function};
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::name::nameunion::NameUnion;
+use crate::check::context::name::stringname::StringName;
 
 pub mod builder;
 pub mod expected;
@@ -67,7 +68,7 @@ impl Constraint {
         let access = Access {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(&expected.pos, &Function {
-                name: DirectName::from(function::STR),
+                name: StringName::from(function::STR),
                 args: vec![expected.clone()],
             })),
         };
@@ -81,7 +82,7 @@ impl Constraint {
         let access = Access {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(&expected.pos, &Function {
-                name: DirectName::from(function::TRUTHY),
+                name: StringName::from(function::TRUTHY),
                 args: vec![expected.clone()],
             })),
         };

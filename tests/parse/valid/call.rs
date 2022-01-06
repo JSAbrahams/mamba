@@ -11,7 +11,7 @@ fn anon_fun_no_args_verify() {
 
     let (args, body) = match &statements.first().expect("script empty.").node {
         Node::AnonFun { args, body } => (args.clone(), body.clone()),
-        _ => panic!("first element script was anon fun.")
+        _ => panic!("nameunion element script was anon fun.")
     };
 
     assert_eq!(args.len(), 0);
@@ -25,7 +25,7 @@ fn anon_fun_verify() {
 
     let (args, body) = match &statements.first().expect("script empty.").node {
         Node::AnonFun { args, body } => (args.clone(), body.clone()),
-        _ => panic!("first element script was anon fun.")
+        _ => panic!("nameunion element script was anon fun.")
     };
 
     assert_eq!(args.len(), 2);
@@ -50,7 +50,7 @@ fn direct_call_verify() {
 
     let (name, args) = match &statements.first().expect("script empty.").node {
         Node::FunctionCall { name, args } => (name.clone(), args.clone()),
-        _ => panic!("first element script was anon fun.")
+        _ => panic!("nameunion element script was anon fun.")
     };
 
     assert_eq!(name.node, Node::Id { lit: String::from("a") });
@@ -69,7 +69,7 @@ fn method_call_verify() {
             Node::FunctionCall { name, args } => (instance.clone(), name.clone(), args.clone()),
             other => panic!("not function call in property call {:?}", other)
         },
-        other => panic!("first element script was property call {:?}", other)
+        other => panic!("nameunion element script was property call {:?}", other)
     };
 
     assert_eq!(instance.node, Node::Id { lit: String::from("instance") });

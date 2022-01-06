@@ -9,7 +9,8 @@ use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::name::nameunion::NameUnion;
+use crate::check::context::name::stringname::StringName;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -18,7 +19,7 @@ use crate::parse::ast::{AST, Node};
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
     pub is_py_type: bool,
-    pub name: DirectName,
+    pub name: StringName,
     pub pos: Position,
     pub concrete: bool,
     pub args: Vec<GenericFunctionArg>,
@@ -51,7 +52,7 @@ impl TryFrom<&AST> for GenericClass {
         match &class.node {
             // TODO add pure classes
             Node::Class { ty, args, parents, body, .. } => {
-                let name = DirectName::try_from(ty)?;
+                let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -94,7 +95,7 @@ impl TryFrom<&AST> for GenericClass {
                 };
 
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
-                if let Some(function) = functions.iter().find(|f| f.name == DirectName::from(INIT))
+                if let Some(function) = functions.iter().find(|f| f.name == StringName::from(INIT))
                 {
                     if class_args.is_empty() {
                         class_args.append(&mut function.arguments.clone())
@@ -140,7 +141,7 @@ impl TryFrom<&AST> for GenericClass {
                 })
             }
             Node::TypeDef { ty, isa, body, .. } => {
-                let name = DirectName::try_from(ty)?;
+                let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -171,7 +172,7 @@ impl TryFrom<&AST> for GenericClass {
             }
             Node::TypeAlias { ty, isa, .. } => Ok(GenericClass {
                 is_py_type: false,
-                name: DirectName::try_from(ty)?,
+                name: StringName::try_from(ty)?,
                 pos: class.pos.clone(),
                 args: vec![],
                 concrete: false,
@@ -185,7 +186,7 @@ impl TryFrom<&AST> for GenericClass {
 }
 
 fn get_fields_and_functions(
-    class: &DirectName,
+    class: &StringName,
     statements: &[AST],
     type_def: bool,
 ) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {

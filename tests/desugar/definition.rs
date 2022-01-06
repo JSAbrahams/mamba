@@ -254,7 +254,7 @@ fn fun_def_with_body_verify() {
 fn anon_fun_verify() {
     let anon_fun = to_pos!(Node::AnonFun {
         args: vec![
-            to_pos_unboxed!(Node::Id { lit: String::from("first") }),
+            to_pos_unboxed!(Node::Id { lit: String::from("nameunion") }),
             to_pos_unboxed!(Node::Id { lit: String::from("second") })
         ],
         body: to_pos!(Node::Str { lit: String::from("this_string"), expressions: vec![] })
@@ -266,7 +266,7 @@ fn anon_fun_verify() {
     };
 
     assert_eq!(args.len(), 2);
-    assert_eq!(args[0], Core::Id { lit: String::from("first") });
+    assert_eq!(args[0], Core::Id { lit: String::from("nameunion") });
     assert_eq!(args[1], Core::Id { lit: String::from("second") });
     assert_eq!(*body, Core::Str { string: String::from("this_string") });
 }

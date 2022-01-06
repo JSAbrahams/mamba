@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
-use crate::check::context::name::NameUnion;
+use crate::check::context::name::nameunion::NameUnion;
 use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
@@ -110,7 +110,7 @@ impl Environment {
     /// In other words, what the variable was mapped to.
     /// This is useful for detecting shadowing.
     ///
-    /// Return true variable name, whether it's mutable and it's expected value
+    /// Return true variable truename, whether it's mutable and it's expected value
     pub fn get_var(&self, var: &str) -> Option<(String, HashSet<(bool, Expected)>)> {
         for (old, new) in &self.var_mappings {
             if old == var { return self.get_var(new); }

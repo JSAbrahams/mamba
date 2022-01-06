@@ -4,7 +4,8 @@ use std::ops::Deref;
 
 use crate::check::context::clss;
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::name::nameunion::NameUnion;
+use crate::check::context::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -43,7 +44,7 @@ impl Hash for GenericFunctionArg {
 }
 
 impl GenericFunctionArg {
-    pub fn in_class(self, class: Option<&DirectName>) -> TypeResult<GenericFunctionArg> {
+    pub fn in_class(self, class: Option<&StringName>) -> TypeResult<GenericFunctionArg> {
         if self.name.as_str() == SELF {
             if class.is_none() {
                 let msg = "Cannot have self argument outside class";

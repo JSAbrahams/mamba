@@ -10,7 +10,9 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::name::{DirectName, NameUnion, NameVariant};
+use crate::check::context::name::nameunion::NameUnion;
+use crate::check::context::name::namevariant::NameVariant;
+use crate::check::context::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -109,7 +111,7 @@ fn field_access(constraints: &mut Constraints,
 fn function_access(constraints: &mut Constraints,
                    ctx: &Context,
                    entity_name: &NameUnion,
-                   name: &DirectName,
+                   name: &StringName,
                    args: &Vec<Expected>,
                    accessed: &Expected,
                    other: &Expected,

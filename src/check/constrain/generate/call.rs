@@ -11,7 +11,7 @@ use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{Context, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::name::DirectName;
+use crate::check::context::name::stringname::StringName;
 use crate::check::ident::Identifier;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -52,7 +52,7 @@ pub fn gen_call(
             generate(left, &env, ctx, &mut constr)
         }
         Node::FunctionCall { name, args } => {
-            let f_name = DirectName::try_from(name)?;
+            let f_name = StringName::try_from(name)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
             if let Some((_, functions)) = env.get_var(&f_name.name) {
@@ -200,7 +200,7 @@ fn property_call(
             let access = Expected::new(&property.pos, &Access {
                 entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
                 name: Box::new(Expected::new(&property.pos, &Function {
-                    name: DirectName::try_from(name.deref())?,
+                    name: StringName::try_from(name.deref())?,
                     args: args_with_self,
                 })),
             });

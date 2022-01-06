@@ -7,7 +7,7 @@ use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
-use crate::check::context::name::NameUnion;
+use crate::check::context::name::nameunion::NameUnion;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 

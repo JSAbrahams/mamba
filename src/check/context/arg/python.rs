@@ -1,7 +1,7 @@
 use python_parser::ast::Expression;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::context::name::NameUnion;
+use crate::check::context::name::nameunion::NameUnion;
 
 pub const SELF: &str = "self";
 

@@ -8,7 +8,8 @@ use crate::check::context::{clss, function};
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericFields;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::name::{DirectName, NameUnion};
+use crate::check::context::name::nameunion::NameUnion;
+use crate::check::context::name::stringname::StringName;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::result::{TypeErr, TypeResult};
@@ -57,14 +58,14 @@ impl TryFrom<&Classdef> for GenericClass {
 
         let generic_names: Vec<NameUnion> =
             generics.iter().map(|g| NameUnion::from(&g.name)).collect();
-        let class = DirectName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
+        let class = StringName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
             .map(|f| f.in_class(Some(&class), false))
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
-            .find(|f| f.name == DirectName::from(function::INIT))
+            .find(|f| f.name == StringName::from(function::INIT))
             .map_or(vec![], |f| f.arguments.clone());
 
         Ok(GenericClass {
