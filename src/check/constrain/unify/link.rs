@@ -15,7 +15,7 @@ use crate::check::context::Context;
 /// constraints each time we do a recursive call to unify link.
 pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {
     if let Some(constraint) = &constraints.pop_constr() {
-        let (left, right) = (&constraint.parent, &constraint.child);
+        let (left, right) = (&constraint.left, &constraint.right);
 
         let pos = format!("({}={}) ", left.pos.start, right.pos.start);
         let count = total - constraints.len();
@@ -23,23 +23,20 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         let msg = if constraint.msg.is_empty() { String::new() } else { format!(" {}", constraint.msg) };
 
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 15);
-
         match (&left.expect, &right.expect) {
             // trivially equal
             (left, right) if left == right => unify_link(constraints, ctx, total),
 
-            (Function { .. }, Type { .. }) | (Access { .. }, _) =>
-                unify_function(constraint, &left, &right, constraints, ctx, total),
-            (Type { .. }, Function { .. }) | (_, Access { .. }) =>
-                unify_function(constraint, &right, &left, constraints, ctx, total),
+            (Function { .. }, Type { .. }) | (Access { .. }, _)
+            | (Type { .. }, Function { .. }) | (_, Access { .. }) =>
+                unify_function(constraint, constraints, ctx, total),
 
             (Expression { .. }, _) | (_, Expression { .. }) =>
-                unify_expression(constraint, &left, &right, constraints, ctx, count, total),
+                unify_expression(constraint, constraints, ctx, count, total),
 
-            (Tuple { .. }, Tuple { .. }) => unify_type(&right, &left, constraints, ctx, total),
-            (Type { .. }, _) | (_, Type { .. }) => unify_type(&right, &left, constraints, ctx, total),
-            (Collection { .. }, Collection { .. }) =>
-                unify_type(&right, &left, constraints, ctx, total),
+            (Tuple { .. }, Tuple { .. }) => unify_type(constraint, constraints, ctx, total),
+            (Type { .. }, _) | (_, Type { .. }) => unify_type(constraint, constraints, ctx, total),
+            (Collection { .. }, Collection { .. }) => unify_type(constraint, constraints, ctx, total),
 
             _ => {
                 let mut constr = reinsert(constraints, &constraint, total)?;
@@ -56,7 +53,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 /// The amount of attempts is a counter which states how often we allow
 /// reinserts.
 pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
-    let pos = format!("({}={}) ", constraint.parent.pos.start, constraint.child.pos.start);
+    let pos = format!("({}={}) ", constraint.left.pos.start, constraint.right.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
     trace!("{:width$}{}{}", pos, count, constraint, width = 17);
 

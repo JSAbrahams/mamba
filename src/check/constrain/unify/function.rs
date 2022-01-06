@@ -14,14 +14,8 @@ use crate::check::context::name::{NameUnion, NameVariant};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
-pub fn unify_function(
-    constr: &Constraint,
-    left: &Expected,
-    right: &Expected,
-    constraints: &mut Constraints,
-    ctx: &Context,
-    total: usize,
-) -> Unified {
+pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {
+    let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
             let arguments_union: Vec<Vec<NameUnion>> = name
@@ -93,7 +87,7 @@ pub fn unify_function(
                         unify_link(&mut constr, ctx, total + added + pushed)
                     }
                     _ => {
-                        let mut constr = reinsert(constraints, &constr, total)?;
+                        let mut constr = reinsert(constraints, &constraint, total)?;
                         unify_link(&mut constr, ctx, total)
                     }
                 }
@@ -111,8 +105,7 @@ pub fn unify_function(
                 }
                 unify_link(constraints, ctx, total + elements.len())
             } else {
-                println!("{}", constr);
-                let mut constr = reinsert(constraints, &constr, total)?;
+                let mut constr = reinsert(constraints, &constraint, total)?;
                 unify_link(&mut constr, ctx, total)
             },
 

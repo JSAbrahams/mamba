@@ -4,6 +4,7 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::ConstrVariant;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, generate};
@@ -157,20 +158,20 @@ pub fn identifier_from_var(
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
-            constr.add("variable, type, and expression", &parent, &var_expect);
+            constr.add_variant("variable, type, and expression", &parent, &var_expect, &ConstrVariant::Left);
             let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add("variable, type, and expression", &var_expect, &expr_expect);
+            constr.add_variant("variable, type, and expression", &var_expect, &expr_expect, &ConstrVariant::Left);
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
             let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
-            constr.add("variable with type", &parent, &var_expect);
+            constr.add_variant("variable with type", &parent, &var_expect, &ConstrVariant::Left);
             Ok((constr, env))
         }
         (None, Some(expr)) => {
             let parent = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add("variable and expression", &parent, &var_expect);
+            constr.add_variant("variable and expression", &parent, &var_expect, &ConstrVariant::Left);
             generate(expr, &env, ctx, &mut constr)
         }
         (None, None) => {

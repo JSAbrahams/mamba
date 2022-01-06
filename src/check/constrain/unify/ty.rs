@@ -1,6 +1,7 @@
 use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Raises, Tuple, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -10,13 +11,8 @@ use crate::check::context::{Context, LookupClass};
 use crate::check::context::name::{IsSuperSet, NameVariant};
 use crate::check::result::TypeErr;
 
-pub fn unify_type(
-    left: &Expected,
-    right: &Expected,
-    constraints: &mut Constraints,
-    ctx: &Context,
-    total: usize,
-) -> Unified {
+pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {
+    let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (ExpressionAny, ty) | (ty, ExpressionAny) => match ty {
             Type { name } =>
@@ -29,14 +25,22 @@ pub fn unify_type(
             _ => unify_link(constraints, ctx, total)
         },
 
-        (Type { name: l_ty }, Type { name: r_ty }) =>
-            if l_ty.is_superset_of(r_ty, ctx, &left.pos)? {
+        (Type { name: l_ty }, Type { name: r_ty }) => {
+            let left_confirmed_super = (constraint.superset == ConstrVariant::Left
+                || constraint.superset == ConstrVariant::Either)
+                && l_ty.is_superset_of(r_ty, ctx, &left.pos)?;
+            let right_confirmed_super = (constraint.superset == ConstrVariant::Right)
+                && r_ty.is_superset_of(l_ty, ctx, &left.pos)?;
+
+            if left_confirmed_super || right_confirmed_super {
                 ctx.class(l_ty, &left.pos)?;
+                ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
             } else {
                 let msg = format!("Expected a '{}', was a '{}'", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
-            },
+            }
+        }
 
         (Type { name }, Raises { name: raises }) =>
             if raises.is_superset_of(name, ctx, &left.pos)? {
@@ -99,7 +103,7 @@ pub fn unify_type(
             unify_link(constraints, ctx, total + 1)
         }
 
-        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() || l_exp.is_superset_of(r_exp, ctx)? {
+        (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() {
             unify_link(constraints, ctx, total)
         } else {
             let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
