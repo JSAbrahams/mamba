@@ -38,7 +38,7 @@ mod python;
 ///
 /// Functions and fields are also stored alongside identified classes such that
 /// we can also check usage of top-level fields and functions.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Context {
     classes: HashSet<GenericClass>,
     functions: HashSet<GenericFunction>,
@@ -51,16 +51,6 @@ impl Context {
     pub fn function_count(&self) -> usize { self.functions.len() }
 
     pub fn field_count(&self) -> usize { self.fields.len() }
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        Context {
-            classes: Default::default(),
-            functions: Default::default(),
-            fields: Default::default(),
-        }
-    }
 }
 
 impl TryFrom<&[CheckInput]> for Context {

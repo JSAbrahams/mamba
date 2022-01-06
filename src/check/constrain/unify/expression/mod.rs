@@ -26,7 +26,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                     unify_link(constraints, ctx, total)
                 }
                 node if node.trivially_expression() => {
-                    let mut constr = substitute(&right, &left, constraints, count, total)?;
+                    let mut constr = substitute(right, left, constraints, count, total)?;
                     unify_link(&mut constr, ctx, total)
                 }
                 _ => Err(vec![TypeErr::new(&ast.pos, &format!("Expected an expression but was {}", ast.node))])
@@ -35,14 +35,14 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
         // Not sure if necessary, but exception made for tuple
         (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
         (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements }) => {
-            let mut constraints = substitute(&left, &right, constraints, count, total)?;
+            let mut constraints = substitute(left, right, constraints, count, total)?;
 
             for pair in ast_elements.iter().cloned().zip_longest(elements.iter()) {
                 match &pair {
                     Both(ast, exp) => {
                         let expect = Expect::Expression { ast: ast.clone() };
                         let l_ty = Expected::new(&left.pos, &expect);
-                        constraints.push("tuple", &l_ty, &exp)
+                        constraints.push("tuple", &l_ty, exp)
                     }
                     _ => {
                         let msg = format!("Expected tuple with {} elements, was {}", elements.len(), ast_elements.len());
@@ -55,11 +55,11 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
         }
 
         (Expression { .. }, _) => {
-            let mut constraints = substitute(&right, &left, constraints, count, total)?;
+            let mut constraints = substitute(right, left, constraints, count, total)?;
             unify_link(&mut constraints, ctx, total)
         }
         _ => {
-            let mut constraints = substitute(&left, &right, constraints, count, total)?;
+            let mut constraints = substitute(left, right, constraints, count, total)?;
             unify_link(&mut constraints, ctx, total)
         }
     }

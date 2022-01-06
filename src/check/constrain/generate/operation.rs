@@ -25,7 +25,7 @@ pub fn gen_op(
     match &ast.node {
         Node::In { left, right } => {
             let mut constr = constr_col(right, env, constr)?;
-            let (mut constr, env) = gen_collection_lookup(left, &right, env, &mut constr)?;
+            let (mut constr, env) = gen_collection_lookup(left, right, env, &mut constr)?;
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }
@@ -33,13 +33,13 @@ pub fn gen_op(
             let name = NameUnion::from(clss::INT_PRIMITIVE);
             let int_exp = &Expected::new(&from.pos, &Type { name });
 
-            constr.add("range from", &Expected::try_from((from, &env.var_mappings))?, &int_exp);
-            constr.add("range to", &Expected::try_from((to, &env.var_mappings))?, &int_exp);
+            constr.add("range from", &Expected::try_from((from, &env.var_mappings))?, int_exp);
+            constr.add("range to", &Expected::try_from((to, &env.var_mappings))?, int_exp);
             let col = Expected::new(&ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
             constr.add("range collection", &col, &Expected::try_from((ast, &env.var_mappings))?);
 
             if let Some(step) = step {
-                constr.add("range step", &Expected::try_from((step, &env.var_mappings))?, &int_exp);
+                constr.add("range step", &Expected::try_from((step, &env.var_mappings))?, int_exp);
             }
 
             let (mut constr, env) = generate(from, env, ctx, constr)?;
@@ -100,13 +100,13 @@ pub fn gen_op(
             });
             constr.add("square root", &Expected::try_from((ast, &env.var_mappings))?, &access);
 
-            generate(expr, &env, ctx, constr)
+            generate(expr, env, ctx, constr)
         }
 
         Node::BOneCmpl { expr } => {
             let left = Expected::try_from((expr, &env.var_mappings))?;
             constr.add("binary compliment", &left, &Expected::new(&expr.pos, &ExpressionAny));
-            generate(expr, &env, ctx, constr)
+            generate(expr, env, ctx, constr)
         }
         Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
@@ -160,7 +160,7 @@ pub fn gen_op(
             constr.add_constr(&Constraint::truthy("and", &Expected::try_from((left, &env.var_mappings))?));
             constr.add_constr(&Constraint::truthy("and", &Expected::try_from((right, &env.var_mappings))?));
             let (mut constr, env) = generate(left, env, ctx, constr)?;
-            generate(right, &env, &ctx, &mut constr)
+            generate(right, &env, ctx, &mut constr)
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting operation or primitive")])

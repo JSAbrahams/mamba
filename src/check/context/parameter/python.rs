@@ -44,14 +44,12 @@ impl From<&Vec<Subscript>> for GenericParameters {
     fn from(args: &Vec<Subscript>) -> Self {
         let mut parameters = vec![];
         args.iter().for_each(|subscript| {
-            if let Subscript::Simple(expr) = subscript {
-                if let Expression::Name(name) = expr {
-                    parameters.push(GenericParameter {
-                        is_py_type: true,
-                        name: StringName::from(python_to_concrete(name).as_ref()),
-                        parent: None,
-                    })
-                }
+            if let Subscript::Simple(Expression::Name(name)) = subscript {
+                parameters.push(GenericParameter {
+                    is_py_type: true,
+                    name: StringName::from(python_to_concrete(name).as_ref()),
+                    parent: None,
+                })
             }
         });
 

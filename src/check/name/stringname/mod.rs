@@ -50,8 +50,7 @@ impl IsSuperSet<StringName> for StringName {
             && self
             .generics
             .iter()
-            .map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
-            .flatten()
+            .flat_map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
             .all(|b| *b))

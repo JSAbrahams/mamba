@@ -58,7 +58,7 @@ pub fn gen_call(
             if let Some((_, functions)) = env.get_var(&f_name.name) {
                 if !f_name.generics.is_empty() {
                     let msg = "Anonymous function call cannot have generics";
-                    return Err(vec![TypeErr::new(&name.pos, &msg)]);
+                    return Err(vec![TypeErr::new(&name.pos, msg)]);
                 }
 
                 for (_, fun_exp) in functions {
@@ -78,7 +78,7 @@ pub fn gen_call(
                 if !fun.raises.is_empty() {
                     if let Some(raises) = &env.raises {
                         let raises_exp = Expected::new(&ast.pos, &Raises { name: fun.raises });
-                        constr.add("function call", &raises, &raises_exp);
+                        constr.add("function call", raises, &raises_exp);
                     } else if !constr.is_top_level() {
                         let msg = format!("Exceptions not covered: {}", &fun.raises);
                         return Err(vec![TypeErr::new(&ast.pos, &msg)]);
@@ -121,19 +121,19 @@ fn call_parameters(
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
                 let ty = &fun_arg.ty.clone().ok_or_else(|| {
-                    TypeErr::new(&pos, "Function argument must have type parameters")
+                    TypeErr::new(pos, "Function argument must have type parameters")
                 })?;
 
-                let arg_exp = Expected::new(&pos, &arg);
+                let arg_exp = Expected::new(pos, arg);
                 let name = ctx.class(ty, pos)?.name();
-                constr.add("call parameters", &arg_exp, &Expected::new(&pos, &Type { name }))
+                constr.add("call parameters", &arg_exp, &Expected::new(pos, &Type { name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(&self_ast.pos.end, &self_ast.pos.end);
                 let msg = format!("Expected argument: '{}' has no default", fun_arg);
                 return Err(vec![TypeErr::new(&pos, &msg)]);
             }
-            Right((pos, _)) => return Err(vec![TypeErr::new(&pos, "Unexpected argument")]),
+            Right((pos, _)) => return Err(vec![TypeErr::new(pos, "Unexpected argument")]),
             _ => {}
         }
     }

@@ -47,7 +47,7 @@ pub fn substitute(
                 $new,
                 width = 16
             );
-        }}};
+        }}}
 
         let (sub_l, left) = recursive_substitute("l", &constr.left, old, new);
         let (sub_r, right) = recursive_substitute("r", &constr.right, old, new);
@@ -116,7 +116,7 @@ fn substitute_vec(side: &str, old: &Expected, new: &Expected, elements: &[Expect
 
 fn is_expr_and_structurally_eq(inspected: &Expect, old: &Expect) -> bool {
     match inspected {
-        Expect::Expression { .. } => inspected.structurally_eq(&old),
+        Expect::Expression { .. } => inspected.structurally_eq(old),
         _ => false
     }
 }

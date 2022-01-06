@@ -36,6 +36,7 @@ impl Cause {
 }
 
 impl ParseErr {
+    #[must_use]
     pub fn clone_with_cause(&self, cause: &str, position: &Position) -> ParseErr {
         ParseErr {
             position: self.position.clone(),
@@ -50,6 +51,7 @@ impl ParseErr {
         }
     }
 
+    #[must_use]
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
         ParseErr {
             position: self.position,

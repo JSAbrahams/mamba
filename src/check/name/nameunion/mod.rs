@@ -110,7 +110,7 @@ impl IsSuperSet<NameUnion> for NameUnion {
         }
 
         for name in &other.names {
-            let is_superset = |s_name: &TrueName| s_name.is_superset_of(&name, ctx, pos);
+            let is_superset = |s_name: &TrueName| s_name.is_superset_of(name, ctx, pos);
             let any_superset: Vec<bool> =
                 self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
             if !any_superset.iter().any(|b| *b) {

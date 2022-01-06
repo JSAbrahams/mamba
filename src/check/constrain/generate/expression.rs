@@ -41,7 +41,7 @@ pub fn gen_expr(
         Node::Pass =>
             if let Some(expected_ret_ty) = &env.return_type {
                 if env.last_stmt_in_function {
-                    constr.add("pass", &Expected::new(&ast.pos, &Expect::none()), &expected_ret_ty);
+                    constr.add("pass", &Expected::new(&ast.pos, &Expect::none()), expected_ret_ty);
                 }
                 Ok((constr.clone(), env.clone()))
             } else {

@@ -4,12 +4,11 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
-use std::path::PathBuf;
 
 use glob::glob;
 use pathdiff::diff_paths;
 
-pub fn read_source(source_path: &PathBuf) -> Result<String, (String, String)> {
+pub fn read_source(source_path: &Path) -> Result<String, (String, String)> {
     let mut source = String::new();
     OpenOptions::new()
         .read(true)
@@ -20,7 +19,7 @@ pub fn read_source(source_path: &PathBuf) -> Result<String, (String, String)> {
     Ok(source)
 }
 
-pub fn write_source(source: &str, out_path: &PathBuf) -> Result<usize, (String, String)> {
+pub fn write_source(source: &str, out_path: &Path) -> Result<usize, (String, String)> {
     match out_path.parent() {
         Some(parent) => fs::create_dir_all(parent)
             .map_err(|e| (String::from("output"), format!("{}: {}", e, parent.display())))?,

@@ -48,7 +48,7 @@ impl GenericFunctionArg {
         if self.name.as_str() == SELF {
             if class.is_none() {
                 let msg = "Cannot have self argument outside class";
-                return Err(vec![TypeErr::new(&self.pos, &msg)]);
+                return Err(vec![TypeErr::new(&self.pos, msg)]);
             }
 
             if self.ty.is_none() {

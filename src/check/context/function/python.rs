@@ -42,10 +42,7 @@ impl From<&Funcdef> for GenericFunction {
                 .collect(),
             raises: NameUnion::empty(),
             in_class: None,
-            ret_ty: match &func_def.return_type {
-                Some(ret_ty) => Some(NameUnion::from(ret_ty)),
-                None => None
-            },
+            ret_ty: func_def.return_type.as_ref().map(NameUnion::from)
         }
     }
 }

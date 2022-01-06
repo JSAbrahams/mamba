@@ -47,6 +47,7 @@ impl Position {
         max(1, max(self.end.pos as i32 - self.start.pos as i32, self.start.pos as i32 - self.end.pos as i32))
     }
 
+    #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
         Position {
             start: self.start.clone().offset(offset),
@@ -54,6 +55,7 @@ impl Position {
         }
     }
 
+    #[must_use]
     pub fn union(&self, other: &Position) -> Position {
         Position {
             start: CaretPos {
@@ -72,22 +74,26 @@ impl CaretPos {
     /// Create new endpoint with given line and position.
     pub fn new(line: usize, pos: usize) -> CaretPos { CaretPos { line, pos } }
 
+    #[must_use]
     pub fn offset(self, offset: &CaretPos) -> CaretPos {
         CaretPos { line: self.line + offset.line - 1, pos: self.pos + offset.pos - 1 }
     }
 
     /// Create new [EndPoint] which is offset in the vertical direction by the
     /// given amount.
+    #[must_use]
     pub fn offset_line(self, offset: usize) -> CaretPos {
         CaretPos { line: (self.line as i32 + offset as i32) as usize, pos: self.pos }
     }
 
     /// Create new [EndPoint] which is offset in the horizontal direction by the
     /// given amount.
+    #[must_use]
     pub fn offset_pos(self, offset: usize) -> CaretPos {
         CaretPos { line: self.line, pos: self.pos + offset }
     }
 
+    #[must_use]
     pub fn newline(self) -> CaretPos { CaretPos { line: self.line + 1, pos: 1 } }
 }
 

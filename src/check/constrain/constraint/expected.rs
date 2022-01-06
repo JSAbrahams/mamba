@@ -30,7 +30,7 @@ impl Expected {
 }
 
 impl AsRef<Expected> for Expected {
-    fn as_ref(&self) -> &Expected { &self }
+    fn as_ref(&self) -> &Expected { self }
 }
 
 impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {

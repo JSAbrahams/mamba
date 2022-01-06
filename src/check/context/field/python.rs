@@ -10,8 +10,7 @@ impl From<(&Vec<Expression>, &Vec<Vec<Expression>>)> for GenericFields {
             fields: ids
                 .iter()
                 .zip(values)
-                .map(|(id, values)| GenericFields::from((id, values)).fields)
-                .flatten()
+                .flat_map(|(id, values)| GenericFields::from((id, values)).fields)
                 .collect()
         }
     }
@@ -23,8 +22,7 @@ impl From<(&Vec<Expression>, &Vec<Expression>)> for GenericFields {
             fields: ids
                 .iter()
                 .zip(values)
-                .map(|(id, _)| GenericFields::from(id).fields)
-                .flatten()
+                .flat_map(|(id, _)| GenericFields::from(id).fields)
                 .collect()
         }
     }

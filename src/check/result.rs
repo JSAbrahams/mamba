@@ -60,6 +60,7 @@ impl TypeErr {
         }
     }
 
+    #[must_use]
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
         let (source_before, source_line, source_after) = if let Some(position) = &self.position {
             if let Some(source) = source {
@@ -103,7 +104,7 @@ impl Display for TypeErr {
             if string.ends_with('\n') {
                 string.remove(string.len() - 1);
             }
-            string.replace("\n", "\n   > ")
+            string.replace('\n', "\n   > ")
         };
 
         if let Some(position) = self.position.clone() {
