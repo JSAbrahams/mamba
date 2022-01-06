@@ -17,14 +17,14 @@ pub struct Constraint {
     pub msg: String,
     pub left: Expected,
     pub right: Expected,
-    pub superset: ConstrVariant
+    pub superset: ConstrVariant,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstrVariant {
     Left,
     Right,
-    Either
+    Either,
 }
 
 impl Display for Constraint {

@@ -67,7 +67,7 @@ impl<'a> LexIterator<'a> {
 
     /// Eat given token until another token is encountered.
     /// Gives position of last consumed token.
-    pub fn eat_while(&mut self, token:&Token) -> Option<Position> {
+    pub fn eat_while(&mut self, token: &Token) -> Option<Position> {
         let mut last_pos = None;
         while self.it.peek().map(|l| l.token.clone()) == Some(token.clone()) {
             last_pos = self.eat_if(token);
