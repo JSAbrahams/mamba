@@ -58,17 +58,29 @@ jobs:
           toolchain: nightly
           override: true
 
+      # Must install for code coverage
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
       - name: Grcov
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --no-fail-fast  # Customize args for your own needs
+          args: --all-features --no-fail-fast
         env:
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
           RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
 
+      # Run grcov, which outputs a report
+      - uses: actions-rs/grcov@v0.1
+        id: coverage
+
       - name: Codecov upload
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: codecov/codecov-action@v2
+        with:
+          files: ${{ steps.coverage.outputs.report }}
