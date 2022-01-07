@@ -12,7 +12,6 @@ mod common;
 mod check;
 mod core;
 mod desugar;
-mod lex;
 mod output;
 mod parse;
 
