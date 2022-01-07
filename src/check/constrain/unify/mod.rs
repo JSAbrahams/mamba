@@ -4,7 +4,6 @@ use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::Context;
-use crate::check::result::TypeErr;
 use crate::common::delimit::{custom_delimited, newline_delimited};
 
 mod link;
@@ -52,7 +51,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Vec<Cons
     if errs.is_empty() {
         Ok(oks.into_iter().map(Result::unwrap).collect())
     } else {
-        let errs: Vec<TypeErr> = errs.into_iter().flat_map(Result::unwrap_err).collect();
+        let errs = errs.into_iter().flat_map(Result::unwrap_err);
         Err(errs.into_iter().unique().collect())
     }
 }

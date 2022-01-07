@@ -17,6 +17,7 @@ impl AST {
 
     pub fn equal_structure(&self, other: &AST) -> bool { self.node.equal_structure(&other.node) }
 
+    #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> AST {
         AST {
             pos: self.pos.clone(),
@@ -132,6 +133,7 @@ pub enum Node {
 
 impl Node {
     /// Apply mapping to node, before recursively applying mapping to result
+    #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> Node {
         match mapping(self) {
             Node::Import { import, aliases: _as } => Node::Import {

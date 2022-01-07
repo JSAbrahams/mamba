@@ -23,6 +23,7 @@ impl LexErr {
         LexErr { pos: pos.clone(), token, msg: String::from(msg), source_line: None, path: None }
     }
 
+    #[must_use]
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
         LexErr {
             pos: self.pos.clone(),

@@ -33,6 +33,7 @@ impl UnimplementedErr {
         }
     }
 
+    #[must_use]
     pub fn into_with_source(
         self,
         source: &Option<String>,

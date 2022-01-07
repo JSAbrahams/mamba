@@ -22,7 +22,7 @@ impl Identifier {
         if let Some(lit) = &self.lit {
             vec![lit.clone()]
         } else {
-            self.names.iter().map(|name| name.fields()).flatten().collect()
+            self.names.iter().flat_map(|name| name.fields()).collect()
         }
     }
 

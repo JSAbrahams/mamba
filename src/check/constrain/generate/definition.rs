@@ -91,7 +91,7 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(&arg.pos, &msg)]);
                     }
 
-                    let self_exp = Expected::new(&var.pos, &self_type);
+                    let self_exp = Expected::new(&var.pos, self_type);
                     res.1 = res.1.insert_var(*mutable, SELF, &self_exp);
                     let left = Expected::try_from((var, &env.var_mappings))?;
                     res.0.add("arguments", &left, &Expected::new(&var.pos, self_type));
@@ -212,7 +212,7 @@ fn identifier_to_tuple(
         let tuple_unions: Vec<Vec<&Expected>> =
             tuple_unions.iter().map(|list| list.iter().map(AsRef::as_ref).collect()).collect();
         let tuple_unions: Vec<&[&Expected]> = tuple_unions.iter().map(AsRef::as_ref).collect();
-        let permutations: Vec<Vec<&Expected>> = Permutator::new(&tuple_unions[..]).collect();
+        let permutations = Permutator::new(&tuple_unions[..]);
 
         Ok(permutations
             .into_iter()

@@ -21,7 +21,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
             let ast = AST::new(&start.union(&end), Node::$node);
             parse_fun_def(&ast, pure, $it)
         }};
-    };
+    }
 
     let res = if pure {
         let id = it.parse(&parse_expression_type, "definition", &start)?;
@@ -208,7 +208,7 @@ fn parse_variable_def_id(id: &AST, it: &mut LexIterator) -> ParseResult {
         _ => id.pos.clone()
     };
     let node = Node::VariableDef { mutable, var, ty, expr: expression, forward };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(&start.union(end), node)))
 }
 
 fn parse_variable_def(it: &mut LexIterator) -> ParseResult {

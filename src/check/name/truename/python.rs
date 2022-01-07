@@ -29,7 +29,7 @@ impl From<&Expression> for TrueName {
                 if &lit == "Union" {
                     TrueName::empty()
                 } else {
-                    let generics: Vec<_> = exprs.iter().map(|e| to_ty_name(e)).collect();
+                    let generics: Vec<_> = exprs.iter().map(to_ty_name).collect();
                     let generics: Vec<NameUnion> = generics.iter().map(NameUnion::from).collect();
                     TrueName::new(&python_to_concrete(&lit), &generics)
                 }

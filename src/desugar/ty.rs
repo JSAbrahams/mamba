@@ -28,7 +28,7 @@ pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         }
         Node::Type { id, generics } => match &id.node {
             Node::Id { lit } => Core::Type {
-                lit: concrete_to_python(&lit),
+                lit: concrete_to_python(lit),
                 generics: desugar_vec(generics, imp, state)?,
             },
             other => panic!("Expected identifier but was {:?}", other)

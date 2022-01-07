@@ -61,12 +61,12 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
                 Field { name } => field_access(constraints, ctx, entity_name, name, left, right, total),
                 Function { name, args } => function_access(constraints, ctx, entity_name, name, args, left, right, total),
                 _ => {
-                    let mut constr = reinsert(constraints, &constraint, total)?;
+                    let mut constr = reinsert(constraints, constraint, total)?;
                     unify_link(&mut constr, ctx, total)
                 }
             }
         } else {
-            let mut constr = reinsert(constraints, &constraint, total)?;
+            let mut constr = reinsert(constraints, constraint, total)?;
             unify_link(&mut constr, ctx, total)
         }
         (_, Access { entity, name }) => if let Type { name: entity_name } = &entity.expect {
@@ -74,12 +74,12 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
                 Field { name } => field_access(constraints, ctx, entity_name, name, right, left, total),
                 Function { name, args } => function_access(constraints, ctx, entity_name, name, args, right, left, total),
                 _ => {
-                    let mut constr = reinsert(constraints, &constraint, total)?;
+                    let mut constr = reinsert(constraints, constraint, total)?;
                     unify_link(&mut constr, ctx, total)
                 }
             }
         } else {
-            let mut constr = reinsert(constraints, &constraint, total)?;
+            let mut constr = reinsert(constraints, constraint, total)?;
             unify_link(&mut constr, ctx, total)
         },
 
@@ -101,7 +101,7 @@ fn field_access(constraints: &mut Constraints,
     let fields = ctx.class(entity_name, &accessed.pos)?.field(name, ctx, &accessed.pos)?;
     for field in fields.union {
         let field_ty_exp = Expected::new(&accessed.pos, &Type { name: field.ty });
-        constraints.push("field access", &field_ty_exp, &other);
+        constraints.push("field access", &field_ty_exp, other);
         pushed += 1;
     }
 
@@ -118,17 +118,17 @@ fn function_access(constraints: &mut Constraints,
                    other: &Expected,
                    total: usize) -> Unified {
     let class = ctx.class(entity_name, &accessed.pos)?;
-    let function_union = class.fun(&name, ctx, &accessed.pos)?;
+    let function_union = class.fun(name, ctx, &accessed.pos)?;
 
     let mut pushed = 0;
     for function in &function_union.union {
         let fun_ty_exp = Expected::new(&accessed.pos, &Type { name: function.ret_ty.clone() });
-        constraints.push("function access", &fun_ty_exp, &other);
+        constraints.push("function access", &fun_ty_exp, other);
         pushed += 1;
     }
 
     let possible_args: HashSet<Vec<FunctionArg>> = function_union.union.iter().map(|f| f.arguments.clone()).collect();
-    let (mut constr, added) = unify_fun_arg(&possible_args, &args, &constraints, &accessed.pos)?;
+    let (mut constr, added) = unify_fun_arg(&possible_args, args, constraints, &accessed.pos)?;
     unify_link(&mut constr, ctx, total + added + pushed)
 }
 
@@ -150,15 +150,15 @@ fn unify_fun_arg(
                     })?;
                     added += 1;
                     let ty = Expected::new(&expected.pos, &Type { name: name.clone() });
-                    constr.push("function argument", &ty, &expected)
+                    constr.push("function argument", &ty, expected)
                 }
                 EitherOrBoth::Left(fun_arg) if !fun_arg.has_default => {
                     let msg = format!("Expected argument: '{}' has no default", fun_arg);
-                    return Err(vec![TypeErr::new(&pos, &msg)]);
+                    return Err(vec![TypeErr::new(pos, &msg)]);
                 }
                 EitherOrBoth::Right(_) => {
                     let msg = format!("Function takes only {} arguments", f_args.len());
-                    return Err(vec![TypeErr::new(&pos, &msg)]);
+                    return Err(vec![TypeErr::new(pos, &msg)]);
                 }
                 _ => {}
             }

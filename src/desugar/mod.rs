@@ -66,7 +66,7 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// A malformed [AST](crate::parser::ast::AST) causes this stage
 /// to panic.
 pub fn desugar(input: &AST) -> DesugarResult {
-    desugar_node(&input, &mut Imports::new(), &State::new())
+    desugar_node(input, &mut Imports::new(), &State::new())
 }
 
 pub fn desugar_all(inputs: &[DesugarInput]) -> DesugarResults {

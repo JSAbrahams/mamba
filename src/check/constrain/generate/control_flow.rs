@@ -88,11 +88,11 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             constr.new_set(true);
-            let (mut constr, for_env) = generate(col, &env, ctx, constr)?;
+            let (mut constr, for_env) = generate(col, env, ctx, constr)?;
 
             let is_define_mode = for_env.is_define_mode;
             let (mut constr, for_env) =
-                gen_collection_lookup(expr, &col, &for_env.define_mode(true), &mut constr)?;
+                gen_collection_lookup(expr, col, &for_env.define_mode(true), &mut constr)?;
             let (mut constr, _) =
                 generate(body, &for_env.in_loop().define_mode(is_define_mode), ctx, &mut constr)?;
 
@@ -112,7 +112,7 @@ pub fn gen_flow(
             constr.new_set(true);
             let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
-            let (mut constr, env) = generate(cond, &env, ctx, constr)?;
+            let (mut constr, env) = generate(cond, env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;
             Ok((constr, env))

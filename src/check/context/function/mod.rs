@@ -136,7 +136,7 @@ impl Function {
             match pair {
                 EitherOrBoth::Both(fun_param, arg) =>
                     if let Some(arg_ty) = &fun_param.ty {
-                        if !arg_ty.is_superset_of(arg, ctx, &pos)? {
+                        if !arg_ty.is_superset_of(arg, ctx, pos)? {
                             let msg = format!(
                                 "'{}' given to argument {}, which expected a '{}'",
                                 arg, fun_param, arg_ty

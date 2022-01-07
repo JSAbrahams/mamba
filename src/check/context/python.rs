@@ -4,7 +4,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::ops::Deref;
-use std::path::PathBuf;
+use std::path::Path;
 
 use python_parser::ast::{CompoundStatement, Statement};
 
@@ -14,7 +14,7 @@ use crate::check::context::function::generic::GenericFunction;
 use crate::check::result::{TypeErr, TypeResult};
 
 pub fn python_files(
-    python_dir: &PathBuf
+    python_dir: &Path
 ) -> TypeResult<(HashSet<GenericClass>, HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut types = vec![];
     let mut fields = vec![];

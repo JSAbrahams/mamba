@@ -6,7 +6,7 @@ use crate::check::context::arg::SELF;
 use crate::check::name::nameunion::NameUnion;
 use crate::common::position::Position;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Environment {
     pub in_loop: bool,
     pub last_stmt_in_function: bool,
@@ -16,21 +16,6 @@ pub struct Environment {
     pub class_type: Option<Expect>,
     pub var_mappings: HashMap<String, String>,
     vars: HashMap<String, HashSet<(bool, Expected)>>,
-}
-
-impl Default for Environment {
-    fn default() -> Self {
-        Environment {
-            in_loop: false,
-            is_define_mode: false,
-            last_stmt_in_function: false,
-            return_type: None,
-            raises: None,
-            class_type: None,
-            vars: HashMap::new(),
-            var_mappings: HashMap::new(),
-        }
-    }
 }
 
 impl Environment {
@@ -128,7 +113,7 @@ impl Environment {
         let mut vars = self.vars.clone();
         for (key, other_set) in &other.vars {
             if let Some(this_set) = vars.get(key) {
-                let new_set = this_set.union(&other_set).cloned().collect();
+                let new_set = this_set.union(other_set).cloned().collect();
                 vars.insert(key.clone(), new_set);
             } else {
                 vars.insert(key.clone(), other_set.clone());
