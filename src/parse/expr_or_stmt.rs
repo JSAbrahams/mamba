@@ -49,7 +49,7 @@ pub fn parse_raise(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
     let end = errors.last().map_or(start, |stmt| &stmt.pos);
 
     let node = Node::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors: errors.clone() };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(&start.union(end), node)))
 }
 
 pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
@@ -61,5 +61,5 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
     let end = cases.last().map_or(start, |stmt| &stmt.pos);
 
     let node = Node::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases: cases.clone() };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(&start.union(end), node)))
 }

@@ -37,6 +37,7 @@ impl PartialEq for GenericFunction {
 }
 
 impl GenericFunction {
+    #[must_use]
     pub fn pure(self, pure: bool) -> Self { GenericFunction { pure: self.pure || pure, ..self } }
 
     pub fn in_class(

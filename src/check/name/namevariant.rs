@@ -38,8 +38,7 @@ impl IsSuperSet<NameVariant> for NameVariant {
                 left.is_superset_of(right, ctx, pos),
             (NameVariant::Tuple(left), NameVariant::Tuple(right)) => left
                 .iter()
-                .map(|l| right.iter().map(move |r| l.is_superset_of(r, ctx, pos)))
-                .flatten()
+                .flat_map(|l| right.iter().map(move |r| l.is_superset_of(r, ctx, pos)))
                 .collect::<Result<Vec<bool>, _>>()
                 .map(|b| b.iter().all(|b| *b)),
             (NameVariant::Fun(left_a, left), NameVariant::Fun(right_a, right)) =>

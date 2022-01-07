@@ -39,7 +39,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             (Collection { .. }, Collection { .. }) => unify_type(constraint, constraints, ctx, total),
 
             _ => {
-                let mut constr = reinsert(constraints, &constraint, total)?;
+                let mut constr = reinsert(constraints, constraint, total)?;
                 unify_link(&mut constr, ctx, total + 1)
             }
         }
@@ -57,6 +57,6 @@ pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize)
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
     trace!("{:width$}{}{}", pos, count, constraint, width = 17);
 
-    constr.reinsert(&constraint)?;
+    constr.reinsert(constraint)?;
     Ok(constr.clone())
 }

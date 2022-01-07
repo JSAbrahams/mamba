@@ -124,8 +124,7 @@ impl TryFrom<&AST> for GenericClass {
                 if !parent_errs.is_empty() {
                     return Err(parent_errs
                         .into_iter()
-                        .map(Result::unwrap_err)
-                        .flatten()
+                        .flat_map(Result::unwrap_err)
                         .collect());
                 }
 
@@ -197,14 +196,14 @@ fn get_fields_and_functions(
         match &statement.node {
             Node::FunDef { .. } => {
                 let function = GenericFunction::try_from(statement)?;
-                let function = function.in_class(Some(&class), type_def)?;
+                let function = function.in_class(Some(class), type_def)?;
                 functions.insert(function);
             }
             Node::VariableDef { .. } => {
                 let stmt_fields: HashSet<GenericField> = GenericFields::try_from(statement)?
                     .fields
                     .into_iter()
-                    .map(|f| f.in_class(Some(&class), type_def, &statement.pos))
+                    .map(|f| f.in_class(Some(class), type_def, &statement.pos))
                     .collect::<Result<_, _>>()?;
                 fields = fields.union(&stmt_fields).cloned().collect();
             }

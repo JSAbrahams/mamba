@@ -25,7 +25,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                     None => None
                 },
                 expr: match (var, expression) {
-                    (_, Some(expr)) => Some(Box::from(desugar_node(&expr, imp, &state)?)),
+                    (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
                     (Core::Tuple { elements }, None) =>
                         Some(Box::from(Core::Tuple { elements: vec![Core::None; elements.len()] })),
                     (_, None) => None
@@ -33,8 +33,8 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             }
         }
         Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => Core::FunDef {
-            id: Box::from(desugar_node(&id, imp, state)?),
-            arg: desugar_vec(&fun_args, imp, state)?,
+            id: Box::from(desugar_node(id, imp, state)?),
+            arg: desugar_vec(fun_args, imp, state)?,
             ty: match ret_ty {
                 Some(ret_ty) => Some(Box::from(desugar_node(ret_ty, imp, state)?)),
                 None => None
@@ -44,7 +44,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             } else {
                 // TODO augment AST in type checker
                 Box::from(match expression {
-                    Some(expr) => desugar_node(&expr, imp, &state.expand_ty(true))?,
+                    Some(expr) => desugar_node(expr, imp, &state.expand_ty(true))?,
                     None => Core::Empty
                 })
             },

@@ -125,7 +125,7 @@ fn constructor_from_inline(
         match inline_arg {
             Core::FunArg { var, .. } => {
                 arg.push(inline_arg.clone());
-                if !parent_args.contains(&var) {
+                if !parent_args.contains(var) {
                     final_definitions
                         .push(Core::Assign { left: var.clone(), right: Box::from(Core::None) })
                 }
@@ -136,13 +136,10 @@ fn constructor_from_inline(
                     vararg: false,
                     var: var.clone(),
                     ty: ty.clone(),
-                    default: match &expr.deref() {
-                        Some(expr) => Some(expr.clone()),
-                        _ => None
-                    },
+                    default: expr.deref().as_ref().cloned(),
                 });
 
-                if !parent_args.contains(&var) {
+                if !parent_args.contains(var) {
                     final_definitions.push(inline_arg.clone());
                     statements.push(Core::Assign {
                         left: Box::from(Core::PropertyCall {

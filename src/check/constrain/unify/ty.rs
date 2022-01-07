@@ -82,7 +82,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                                 Both(name, exp) => {
                                     let expect = Expect::Type { name: name.clone() };
                                     let l_ty = Expected::new(&left.pos, &expect);
-                                    constraints.push("tuple", &l_ty, &exp)
+                                    constraints.push("tuple", &l_ty, exp)
                                 }
                                 _ => {
                                     let msg = format!("Cannot assign {} elements to a tuple of size {}", elements.len(), names.len());
@@ -101,7 +101,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
         }
 
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
-            constraints.push("collection parameters", &l_ty, &r_ty);
+            constraints.push("collection parameters", l_ty, r_ty);
             unify_link(constraints, ctx, total + 1)
         }
         (Tuple { elements: l_ty }, Tuple { elements: r_ty }) => {

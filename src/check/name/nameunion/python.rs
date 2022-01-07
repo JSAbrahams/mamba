@@ -13,7 +13,7 @@ impl From<&Expression> for NameUnion {
             Expression::TupleLiteral(_) => NameUnion::from(&TrueName::from(value)),
             Expression::Subscript(id, exprs) =>
                 if id.deref() == &Expression::Name(String::from("Union")) {
-                    let names: Vec<TrueName> = exprs.iter().map(|e| to_ty_name(e)).collect();
+                    let names: Vec<TrueName> = exprs.iter().map(to_ty_name).collect();
                     NameUnion::new(&names)
                 } else {
                     NameUnion::from(&TrueName::from(value))

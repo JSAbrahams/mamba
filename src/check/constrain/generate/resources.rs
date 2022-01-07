@@ -26,7 +26,7 @@ pub fn gen_resources(
             }
             // raises expression has type of contained expression
             constr.add("raises", &Expected::try_from((ast, &env.var_mappings))?, &Expected::try_from((expr_or_stmt, &env.var_mappings))?);
-            generate(expr_or_stmt, &env, ctx, &mut constr)
+            generate(expr_or_stmt, env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             constr.new_set(true);
@@ -39,7 +39,7 @@ pub fn gen_resources(
                 constr.add("with as", &resource_exp, &Expected::new(&ty.pos, &ty_exp));
             }
 
-            let (mut constr, env) = generate(resource, &env, ctx, constr)?;
+            let (mut constr, env) = generate(resource, env, ctx, constr)?;
 
             constr.new_set(true);
             constr.remove_expected(&resource_exp);
@@ -89,7 +89,7 @@ pub fn constrain_raises(
     }
 
     if let Some(env_raises) = env_raises {
-        constr.add("raises", env_raises, &raises);
+        constr.add("raises", env_raises, raises);
         Ok(constr.clone())
     } else {
         Err(vec![TypeErr::new(&raises.pos, "Unexpected raise")])

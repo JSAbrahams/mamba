@@ -14,6 +14,7 @@ pub mod nameunion;
 pub mod namevariant;
 
 pub trait Union<T> {
+    #[must_use]
     fn union(&self, value: &T) -> Self;
 }
 
@@ -26,10 +27,12 @@ pub trait IsNullable {
 }
 
 pub trait AsNullable {
+    #[must_use]
     fn as_nullable(&self) -> Self;
 }
 
 pub trait AsMutable {
+    #[must_use]
     fn as_mutable(&self) -> Self;
 }
 
@@ -73,7 +76,7 @@ pub fn match_type_direct(identifier: &Identifier, name: &TrueName, pos: &Positio
                     .names
                     .iter()
                     .zip(elements)
-                    .map(|(identifier, ty)| match_name(&identifier, &ty, pos))
+                    .map(|(identifier, ty)| match_name(identifier, ty, pos))
                     .collect::<Result<_, _>>()?;
 
                 Ok(sets.into_iter().flatten().collect())

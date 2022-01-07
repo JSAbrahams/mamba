@@ -314,11 +314,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
             let assign_state = state.assign_to(var.as_deref());
 
             Core::TryExcept {
-                setup: if let Some(var) = var {
-                    Some(Box::from(Core::VarDef { var, ty, expr: None }))
-                } else {
-                    None
-                },
+                setup: var.map(|var| Box::from(Core::VarDef { var, ty, expr: None })),
                 attempt: Box::from(desugar_node(&expr_or_stmt.clone(), imp, state)?),
                 except: {
                     let mut except = Vec::new();

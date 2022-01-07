@@ -84,15 +84,15 @@ pub fn property_from_field(
         instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
         property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } }),
     };
-    let property_call = Expected::try_from((&AST::new(&pos, node), &env.var_mappings))?;
-    let field_ty = Expected::new(&pos, &Type { name: field.ty.clone() });
+    let property_call = Expected::try_from((&AST::new(pos, node), &env.var_mappings))?;
+    let field_ty = Expected::new(pos, &Type { name: field.ty.clone() });
 
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
     constr.add("field property", &field_ty, &property_call);
 
-    let access = Expected::new(&pos, &Access {
-        entity: Box::new(Expected::new(&pos, &Type { name: NameUnion::from(class) })),
-        name: Box::new(Expected::new(&pos, &Field { name: field.name.clone() })),
+    let access = Expected::new(pos, &Access {
+        entity: Box::new(Expected::new(pos, &Type { name: NameUnion::from(class) })),
+        name: Box::new(Expected::new(pos, &Field { name: field.name.clone() })),
     });
 
     constr.add("field property", &property_call, &access);

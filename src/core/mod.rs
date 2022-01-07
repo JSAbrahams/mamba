@@ -35,7 +35,7 @@ pub mod construct;
 ///
 /// assert_eq!(to_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
 /// ```
-pub fn to_source(core: &Core) -> String { format!("{}\n", to_py(&core, 0)) }
+pub fn to_source(core: &Core) -> String { format!("{}\n", to_py(core, 0)) }
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
