@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use std::fmt::{Display, Error, Formatter};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
 /// A position represents a rectangle in the source code.
 pub struct Position {
     pub start: CaretPos,
@@ -95,10 +95,6 @@ impl CaretPos {
 
     #[must_use]
     pub fn newline(self) -> CaretPos { CaretPos { line: self.line + 1, pos: 1 } }
-}
-
-impl Default for Position {
-    fn default() -> Self { Position { start: CaretPos::default(), end: CaretPos::default() } }
 }
 
 impl Default for CaretPos {

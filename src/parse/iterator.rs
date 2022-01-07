@@ -166,7 +166,7 @@ impl<'a> LexIterator<'a> {
         loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>,
     ) -> ParseResult<()> {
         self.peek_while_fn(
-            &|lex| tokens.into_iter().all(|token| !Token::same_type(&lex.token, &token)),
+            &|lex| tokens.iter().all(|token| !Token::same_type(&lex.token, &token)),
             loop_fn,
         )
     }
