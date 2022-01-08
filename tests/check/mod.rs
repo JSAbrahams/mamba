@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Formatter};
 
 use mamba::check::check_all;
 use mamba::check::result::TypeErr;
