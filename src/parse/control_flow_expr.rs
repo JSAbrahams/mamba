@@ -80,3 +80,82 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
     let node = Node::ExpressionType { expr, mutable, ty };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
+
+#[cfg(test)]
+mod test {
+    use crate::lex::tokenize;
+    use crate::parse::ast::{AST, Node};
+    use crate::parse::parse_direct;
+
+    #[test]
+    fn if_else_verify() {
+        let source = String::from("if a then c else d");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (cond, then, el) = match &statements.first().expect("script empty.").node {
+            Node::IfElse { cond, then, el } => (cond, then, el),
+            _ => panic!("first element script was not if.")
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(then.node, Node::Id { lit: String::from("c") });
+        assert_eq!(el.as_ref().unwrap().node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn match_verify() {
+        let source = String::from("match a\n    a => b\n    c => d");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (cond, cases) = match &statements.first().expect("script empty.").node {
+            Node::Match { cond, cases } => (cond.clone(), cases.clone()),
+            _ => panic!("first element script was not match.")
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+
+        assert_eq!(cases.len(), 2);
+        let (cond1, expr1, cond2, expr2) = match (&cases[0], &cases[1]) {
+            (
+                AST { node: Node::Case { cond: cond1, body: expr1 }, .. },
+                AST { node: Node::Case { cond: cond2, body: expr2 }, .. }
+            ) => match (&cond1.node, &cond2.node) {
+                (
+                    Node::ExpressionType { expr: cond1, .. },
+                    Node::ExpressionType { expr: cond2, .. }
+                ) => (cond1, expr1, cond2, expr2),
+                other => panic!("expected expression type: {:?}", other)
+            },
+            _ => panic!("Cases incorrect.")
+        };
+
+        assert_eq!(cond1.node, Node::Id { lit: String::from("a") });
+        assert_eq!(expr1.node, Node::Id { lit: String::from("b") });
+        assert_eq!(cond2.node, Node::Id { lit: String::from("c") });
+        assert_eq!(expr2.node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn if_then_missing_body() {
+        let source = String::from("if a then b else");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn match_missing_condition() {
+        let source = String::from("match\n    a => b");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn match_missing_arms() {
+        let source = String::from("match a with\n    ");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn match_missing_arms_no_newline() {
+        let source = String::from("match a");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+}

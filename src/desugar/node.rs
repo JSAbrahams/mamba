@@ -433,9 +433,9 @@ mod tests {
     #[test]
     fn import_verify() {
         let _break = to_pos!(Node::Import {
-        import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-        aliases:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
-    });
+            import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
+            aliases:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
+        });
 
         assert_eq!(desugar(&_break).unwrap(), Core::ImportAs {
             imports: vec![Core::Id { lit: String::from("a") }],
@@ -446,12 +446,12 @@ mod tests {
     #[test]
     fn from_import_as_verify() {
         let _break = to_pos!(Node::FromImport {
-        id:     to_pos!(Node::Id { lit: String::from("f") }),
-        import: to_pos!(Node::Import {
-            import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-            aliases:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
-        })
-    });
+            id:     to_pos!(Node::Id { lit: String::from("f") }),
+            import: to_pos!(Node::Import {
+                import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
+                aliases:    vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
+            })
+        });
 
         assert_eq!(desugar(&_break).unwrap(), Core::FromImport {
             from: Box::from(Core::Id { lit: String::from("f") }),
@@ -470,43 +470,44 @@ mod tests {
     });
         assert_eq!(desugar(&type_def).unwrap(), Core::Id { lit: String::from("a") });
     }
+
     macro_rules! verify_op {
-    ($op:ident) => {{
-        let add_op = to_pos!(Node::$op);
-        let core = desugar(&add_op).unwrap();
-        assert_eq!(core, Core::$op);
-    }};
-}
+        ($op:ident) => {{
+            let add_op = to_pos!(Node::$op);
+            let core = desugar(&add_op).unwrap();
+            assert_eq!(core, Core::$op);
+        }};
+    }
 
     macro_rules! verify {
-    ($ast:ident) => {{
-        let left = Node::Id { lit: String::from("left") };
-        let right = Node::Id { lit: String::from("right") };
-        let add_node = to_pos!(Node::$ast { left: to_pos!(left), right: to_pos!(right) });
+        ($ast:ident) => {{
+            let left = Node::Id { lit: String::from("left") };
+            let right = Node::Id { lit: String::from("right") };
+            let add_node = to_pos!(Node::$ast { left: to_pos!(left), right: to_pos!(right) });
 
-        let (left, right) = match desugar(&add_node) {
-            Ok(Core::$ast { left, right }) => (left, right),
-            other => panic!("Expected binary operation but was {:?}", other)
-        };
+            let (left, right) = match desugar(&add_node) {
+                Ok(Core::$ast { left, right }) => (left, right),
+                other => panic!("Expected binary operation but was {:?}", other)
+            };
 
-        assert_eq!(*left, Core::Id { lit: String::from("left") });
-        assert_eq!(*right, Core::Id { lit: String::from("right") });
-    }};
-}
+            assert_eq!(*left, Core::Id { lit: String::from("left") });
+            assert_eq!(*right, Core::Id { lit: String::from("right") });
+        }};
+    }
 
     macro_rules! verify_unary {
-    ($ast:ident) => {{
-        let expr = to_pos!(Node::Id { lit: String::from("expression") });
-        let add_node = to_pos!(Node::$ast { expr });
+        ($ast:ident) => {{
+            let expr = to_pos!(Node::Id { lit: String::from("expression") });
+            let add_node = to_pos!(Node::$ast { expr });
 
-        let expr_des = match desugar(&add_node) {
-            Ok(Core::$ast { expr }) => expr,
-            other => panic!("Expected unary operation but was {:?}", other)
-        };
+            let expr_des = match desugar(&add_node) {
+                Ok(Core::$ast { expr }) => expr,
+                other => panic!("Expected unary operation but was {:?}", other)
+            };
 
-        assert_eq!(*expr_des, Core::Id { lit: String::from("expression") });
-    }};
-}
+            assert_eq!(*expr_des, Core::Id { lit: String::from("expression") });
+        }};
+    }
 
     #[test]
     fn add_verify() {
@@ -776,13 +777,13 @@ mod tests {
     fn handle_verify() {
         let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
         let cond = to_pos!(Node::ExpressionType {
-        expr:    to_pos!(Node::Id { lit: String::from("err") }),
-        mutable: false,
-        ty:      Some(to_pos!(Node::Type {
-            id:       to_pos!(Node::Id { lit: String::from("my_type") }),
-            generics: vec![]
-        }))
-    });
+            expr:    to_pos!(Node::Id { lit: String::from("err") }),
+            mutable: false,
+            ty:      Some(to_pos!(Node::Type {
+                id:       to_pos!(Node::Id { lit: String::from("my_type") }),
+                generics: vec![]
+            }))
+        });
         let body = to_pos!(Node::Int { lit: String::from("9999") });
         let case = to_pos_unboxed!(Node::Case { cond, body });
         let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });

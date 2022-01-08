@@ -265,7 +265,7 @@ mod tests {
         }};
     }
 
-    macro_rules! to_pos {
+        macro_rules! to_pos {
         ($node:expr) => {{
             Box::from(to_pos_unboxed!($node))
         }};

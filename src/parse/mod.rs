@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::lex::token::Lex;
+use crate::parse::ast::{AST, Node};
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::{ParseResult, ParseResults};
 
@@ -64,6 +65,13 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// ```
 pub fn parse(input: &[Lex]) -> ParseResult {
     file::parse_file(&mut LexIterator::new(input.iter().peekable()))
+}
+
+fn parse_direct(input: &[Lex]) -> ParseResult<Vec<AST>> {
+    match parse(input)?.node {
+        Node::File { statements, .. } => Ok(statements),
+        _ => Ok(vec![])
+    }
 }
 
 pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {

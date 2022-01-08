@@ -55,3 +55,149 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
     let node = Node::For { expr, col, body: body.clone() };
     Ok(Box::from(AST::new(&start.union(&body.pos), node)))
 }
+
+#[cfg(test)]
+mod test {
+    use crate::lex::tokenize;
+    use crate::parse::parse_direct;
+    use crate::parse::ast::Node;
+
+    #[test]
+    fn for_statement_verify() {
+        let source = String::from("for a in c do d");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (expr, collection, body) = match &statements.first().expect("script empty.").node {
+            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
+            _ => panic!("first element script was not for.")
+        };
+
+        assert_eq!(expr.node, Node::Id { lit: String::from("a") });
+        assert_eq!(collection.node, Node::Id { lit: String::from("c") });
+        assert_eq!(body.node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn for_range_step_verify() {
+        let source = String::from("for a in c .. d step e do f");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (expr, col, body) = match &statements.first().expect("script empty.").node {
+            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
+            _ => panic!("first element script was not foreach.")
+        };
+
+        match col.node {
+            Node::Range { from, to, inclusive, step } => {
+                assert_eq!(from.node, Node::Id { lit: String::from("c") });
+                assert_eq!(to.node, Node::Id { lit: String::from("d") });
+                assert!(!inclusive);
+                assert_eq!(step.clone().unwrap().node, Node::Id { lit: String::from("e") });
+            }
+            _ => panic!("Expected range")
+        }
+
+        assert_eq!(expr.node, Node::Id { lit: String::from("a") });
+        assert_eq!(body.node, Node::Id { lit: String::from("f") });
+    }
+
+    #[test]
+    fn for_range_incl_verify() {
+        let source = String::from("for a in c ..= d do f");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (expr, col, body) = match &statements.first().expect("script empty.").node {
+            Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
+            _ => panic!("first element script was not foreach.")
+        };
+
+        match col.node {
+            Node::Range { from, to, inclusive, step } => {
+                assert_eq!(from.node, Node::Id { lit: String::from("c") });
+                assert_eq!(to.node, Node::Id { lit: String::from("d") });
+                assert!(inclusive);
+                assert_eq!(step, None);
+            }
+            _ => panic!("Expected range")
+        }
+
+        assert_eq!(expr.node, Node::Id { lit: String::from("a") });
+        assert_eq!(body.node, Node::Id { lit: String::from("f") });
+    }
+
+    #[test]
+    fn if_verify() {
+        let source = String::from("if a then c");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (cond, then, el) = match &statements.first().expect("script empty.").node {
+            Node::IfElse { cond, then, el } => (cond, then, el),
+            _ => panic!("first element script was not if.")
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(then.node, Node::Id { lit: String::from("c") });
+        assert_eq!(el.is_none(), true);
+    }
+
+    #[test]
+    fn if_with_block_verify() {
+        let source = String::from("if a then\n    c\n    d");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (cond, then, el) = match &statements.first().expect("script empty.").node {
+            Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
+            _ => panic!("first element script was not if.")
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(el.is_none(), true);
+
+        let block = match then.node {
+            Node::Block { statements } => statements,
+            other => panic!("then of if was not block, was: {:?}", other)
+        };
+
+        assert_eq!(block.len(), 2);
+        assert_eq!(block[0].node, Node::Id { lit: String::from("c") });
+        assert_eq!(block[1].node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn while_verify() {
+        let source = String::from("while a do d");
+        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+
+        let (cond, body) = match &statements.first().expect("script empty.").node {
+            Node::While { cond, body } => (cond.clone(), body.clone()),
+            _ => panic!("first element script was not while.")
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        assert_eq!(body.node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn for_missing_do() {
+        let source = String::from("for a in c d");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn for_missing_body() {
+        let source = String::from("for a in c");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn if_missing_then() {
+        let source = String::from("if a b");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn if_missing_body() {
+        let source = String::from("if a then");
+        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+}
