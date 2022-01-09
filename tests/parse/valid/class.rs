@@ -1,17 +1,17 @@
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+use mamba::parse::result::ParseResult;
 
 use crate::common::*;
 
 #[test]
-fn parse_class() -> Result<(), String> {
+fn parse_class() -> ParseResult<()> {
     let source = resource_content(true, &["class"], "types.mamba");
-    parse(&tokenize(&source).unwrap()).map_err(|e| format!("{}", e))?;
-    Ok(())
+    parse(&tokenize(&source).unwrap()).map(|_| ())
 }
 
 #[test]
-fn parse_imports_class() {
+fn parse_imports_class() -> ParseResult<()> {
     let source = resource_content(true, &["class"], "import.mamba");
-    parse(&tokenize(&source).unwrap()).unwrap();
+    parse(&tokenize(&source).unwrap()).map(|_| ())
 }

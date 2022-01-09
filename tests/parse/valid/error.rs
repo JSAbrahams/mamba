@@ -1,23 +1,23 @@
 use mamba::lex::tokenize;
 use mamba::parse::parse;
+use mamba::parse::result::ParseResult;
 
 use crate::common::resource_content;
 
 #[test]
-fn handle_verify() {
+fn handle_verify() -> ParseResult<()> {
     let source = resource_content(true, &["error"], "handle.mamba");
-    parse(&tokenize(&source).unwrap()).unwrap();
+    parse(&tokenize(&source).unwrap()).map(|_| ())
 }
 
 #[test]
-fn raises_verify() -> Result<(), String> {
+fn raises_verify() -> ParseResult<()> {
     let source = resource_content(true, &["error"], "raise.mamba");
-    parse(&tokenize(&source).unwrap()).map_err(|e| format!("{}", e))?;
-    Ok(())
+    parse(&tokenize(&source).unwrap()).map(|_| ())
 }
 
 #[test]
-fn with_verify() {
+fn with_verify() -> ParseResult<()> {
     let source = resource_content(true, &["error"], "with.mamba");
-    assert!(parse(&tokenize(&source).unwrap()).is_ok());
+    parse(&tokenize(&source).unwrap()).map(|_| ())
 }

@@ -1,18 +1,18 @@
-use crate::output::test_directory;
+use crate::output::{OutTestRet, test_directory};
 
 #[test]
-fn call_ast_verify() -> Result<(), Vec<String>> {
+fn call_ast_verify() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "calls")
 }
 
 #[test]
 #[ignore]  // Problem with function argument bindings, presumably
-fn definition_ast_verify() -> Result<(), Vec<String>> {
+fn definition_ast_verify() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "definition")
 }
 
 #[test]
 #[ignore]  // Problem with access, presumably
-fn function_with_defaults_ast_verify() -> Result<(), Vec<String>> {
+fn function_with_defaults_ast_verify() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "function_with_defaults")
 }

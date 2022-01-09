@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::lex::token::Lex;
+#[cfg(test)]
 use crate::parse::ast::{AST, Node};
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::{ParseResult, ParseResults};
@@ -67,13 +68,6 @@ pub fn parse(input: &[Lex]) -> ParseResult {
     file::parse_file(&mut LexIterator::new(input.iter().peekable()))
 }
 
-fn parse_direct(input: &[Lex]) -> ParseResult<Vec<AST>> {
-    match parse(input)?.node {
-        Node::File { statements, .. } => Ok(statements),
-        _ => Ok(vec![])
-    }
-}
-
 pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
     let inputs: Vec<_> = inputs
         .iter()
@@ -91,5 +85,13 @@ pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
             .collect())
     } else {
         Err(errs.iter().map(|(res, ..)| res.as_ref().unwrap_err().clone()).collect())
+    }
+}
+
+#[cfg(test)]
+fn parse_direct(input: &[Lex]) -> ParseResult<Vec<AST>> {
+    match parse(input)?.node {
+        Node::File { statements, .. } => Ok(statements),
+        _ => Ok(vec![])
     }
 }

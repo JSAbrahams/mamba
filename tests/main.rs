@@ -20,10 +20,12 @@ fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
-    cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
+    let res = cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).output();
 
     let output = resource_path(true, &["class", "target"], "");
-    delete_dir(&output)
+    let del_res = delete_dir(&output);
+    res?;
+    del_res
 }
 
 // TODO investigate why this test fails on Appveyor
@@ -36,7 +38,9 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
     let input = resource_path(true, &["class"], "types.mamba");
     let (output_path, _) = resource_content_randomize(true, &["class"], "");
     cmd.arg("-v").arg("-i").arg(input).arg("-o").arg(&output_path);
-    cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?;
+    let res = cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output();
 
-    delete_dir(&output_path)
+    let del_res = delete_dir(&output_path);
+    res?;
+    del_res
 }

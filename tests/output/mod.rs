@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::path::Path;
 use std::process::Command;
 
@@ -14,17 +15,27 @@ mod common;
 
 pub mod valid;
 
+struct OutTestErr(Vec<String>);
+
+type OutTestRet<T = ()> = Result<T, OutTestErr>;
+
+impl Debug for OutTestErr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.0.iter().map(|err| write!(f, "{}\n", err)).collect()
+    }
+}
+
 fn test_directory(
     valid: bool,
     input: &[&str],
     _output: &[&str],
     file_name: &str,
-) -> Result<(), Vec<String>> {
+) -> OutTestRet {
     let (output_path, output_file) =
         resource_content_randomize(true, input, &format!("{}.py", file_name));
 
     let res = fallable(valid, input, &output_path, &output_file, file_name);
-    delete_dir(&output_path).map_err(|_| vec![])?;
+    delete_dir(&output_path).map_err(|_| OutTestErr(vec![]))?;
     let (check_ast, out_ast) = res?;
 
     // Convert to newline delimited string for more readable diff
@@ -40,16 +51,15 @@ fn fallable(
     output_path: &str,
     output_file: &str,
     file_name: &str,
-) -> Result<(Vec<Statement>, Vec<Statement>), Vec<String>> {
+) -> OutTestRet<(Vec<Statement>, Vec<Statement>)> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
     let map_err = |(ty, msg): &(String, String)| {
-        eprintln!("[error | {}] {}", ty, msg);
         format!("[error | {}] {}", ty, msg)
     };
     transpile_directory(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path))
-        .map_err(|errs| errs.iter().map(&map_err).collect::<Vec<String>>())?;
+        .map_err(|errs| OutTestErr(errs.iter().map(&map_err).collect::<Vec<String>>()))?;
 
     let cmd = Command::new(PYTHON)
         .arg("-m")
