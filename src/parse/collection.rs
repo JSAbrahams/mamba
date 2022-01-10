@@ -100,9 +100,11 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
+    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
-    use crate::parse::parse_direct;
+    use crate::parse::result::ParseResult;
+    use crate::test_util::resource_content;
 
     #[test]
     fn tuple_empty_verify() {
@@ -205,5 +207,30 @@ mod test {
         assert_eq!(conditions.len(), 2);
         assert_eq!(conditions[0].node, Node::Id { lit: String::from("c") });
         assert_eq!(conditions[1].node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn list_expression() -> ParseResult<()> {
+        let source = resource_content(true, &["collection"], "tuple.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    #[ignore]
+    fn parse_map() -> ParseResult<()> {
+        let source = resource_content(true, &["collection"], "map.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn parse_set() -> ParseResult<()> {
+        let source = resource_content(true, &["collection"], "set.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn parse_tuple() -> ParseResult<()> {
+        let source = resource_content(true, &["collection"], "tuple.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
     }
 }

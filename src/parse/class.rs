@@ -106,6 +106,8 @@ mod test {
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
     use crate::parse::parse;
+    use crate::parse::result::ParseResult;
+    use crate::test_util::resource_content;
 
     #[test]
     fn import_verify() {
@@ -167,5 +169,17 @@ mod test {
         assert_eq!(import[1].node, Node::Id { lit: String::from("f") });
         assert_eq!(_as[0].node, Node::Id { lit: String::from("e") });
         assert_eq!(_as[1].node, Node::Id { lit: String::from("g") });
+    }
+
+    #[test]
+    fn parse_class() -> ParseResult<()> {
+        let source = resource_content(true, &["class"], "types.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn parse_imports_class() -> ParseResult<()> {
+        let source = resource_content(true, &["class"], "import.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
     }
 }

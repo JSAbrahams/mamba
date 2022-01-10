@@ -83,9 +83,10 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
     use crate::parse::lex::tokenize;
-    use crate::parse::parse_direct;
+    use crate::test_util::resource_content;
 
     #[test]
     fn if_else_verify() {
@@ -157,5 +158,11 @@ mod test {
     fn match_missing_arms_no_newline() {
         let source = String::from("match a");
         parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn match_statements() {
+        let source = resource_content(true, &["control_flow"], "match.mamba");
+        parse(&tokenize(&source).unwrap()).unwrap();
     }
 }

@@ -69,6 +69,8 @@ mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
+    use crate::parse::result::ParseResult;
+    use crate::test_util::resource_content;
 
     #[test]
     fn range_verify() {
@@ -295,5 +297,24 @@ mod test {
     fn quest_or_on_nothing() {
         let source = String::from("?or");
         parse(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+
+    #[test]
+    fn handle_verify() -> ParseResult<()> {
+        let source = resource_content(true, &["error"], "handle.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn raises_verify() -> ParseResult<()> {
+        let source = resource_content(true, &["error"], "raise.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn with_verify() -> ParseResult<()> {
+        let source = resource_content(true, &["error"], "with.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
     }
 }

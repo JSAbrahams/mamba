@@ -222,6 +222,8 @@ mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
+    use crate::parse::result::ParseResult;
+    use crate::test_util::resource_content;
 
     macro_rules! unwrap_func_definition {
     ($ast:expr) => {{
@@ -531,6 +533,24 @@ mod test {
     #[test]
     fn handle_no_indentation() {
         let source = String::from("def a handle\nerr: Err => b");
+        parse(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn function_definitions() -> ParseResult<()> {
+        let source = resource_content(true, &["function"], "definition.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn function_calling() -> ParseResult<()> {
+        let source = resource_content(true, &["function"], "calls.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn type_annotation_in_tuple() {
+        let source = resource_content(false, &["syntax"], "type_annotation_in_tuple.mamba");
         parse(&tokenize(&source).unwrap()).unwrap_err();
     }
 }

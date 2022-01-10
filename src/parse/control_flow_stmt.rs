@@ -58,9 +58,11 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
-    use crate::parse::parse_direct;
+    use crate::parse::result::ParseResult;
+    use crate::test_util::resource_content;
 
     #[test]
     fn for_statement_verify() {
@@ -199,5 +201,29 @@ mod test {
     fn if_missing_body() {
         let source = String::from("if a then");
         parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn while_statements() -> ParseResult<()> {
+        let source = resource_content(true, &["control_flow"], "while.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn assigns_and_while() {
+        let source = resource_content(false, &["syntax"], "assign_and_while.mamba");
+        parse(&tokenize(&source).unwrap()).unwrap_err();
+    }
+
+    #[test]
+    fn for_statements() {
+        let source = resource_content(true, &["control_flow"], "for_statements.mamba");
+        parse(&tokenize(&source).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn if_stmt() {
+        let source = resource_content(true, &["control_flow"], "if.mamba");
+        assert!(parse(&tokenize(&source).unwrap()).is_ok());
     }
 }
