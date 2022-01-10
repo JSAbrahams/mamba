@@ -1,4 +1,4 @@
-use crate::output::{OutTestRet, test_directory};
+use crate::system::{OutTestRet, test_directory};
 
 #[test]
 fn call_ast_verify() -> OutTestRet {

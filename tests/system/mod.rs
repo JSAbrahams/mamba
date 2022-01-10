@@ -9,7 +9,7 @@ use mamba::pipeline::transpile_directory;
 
 use crate::common::{delete_dir, python_src_to_stmts, resource_content, resource_content_path,
                     resource_content_randomize, resource_path};
-use crate::output::common::PYTHON;
+use crate::system::common::PYTHON;
 
 mod common;
 
