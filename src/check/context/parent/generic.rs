@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::hash::Hash;
 
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -12,7 +12,7 @@ pub struct GenericParent {
     pub is_py_type: bool,
     pub name: StringName,
     pub pos: Position,
-    pub args: Vec<NameUnion>,
+    pub args: Vec<Name>,
 }
 
 impl TryFrom<&AST> for GenericParent {

@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
 use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
-use crate::check::name::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -90,7 +90,7 @@ impl IsSuperSet<TrueName> for TrueName {
 }
 
 impl TrueName {
-    pub fn new(lit: &str, generics: &[NameUnion]) -> TrueName {
+    pub fn new(lit: &str, generics: &[Name]) -> TrueName {
         TrueName::from(&StringName::new(lit, generics))
     }
 

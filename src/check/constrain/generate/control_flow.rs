@@ -8,7 +8,7 @@ use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context};
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -100,7 +100,7 @@ pub fn gen_flow(
             Ok((constr, env.clone()))
         }
         Node::Step { amount } => {
-            let name = NameUnion::from(clss::INT_PRIMITIVE);
+            let name = Name::from(clss::INT_PRIMITIVE);
             constr.add(
                 "step",
                 &Expected::try_from((amount, &env.var_mappings))?,

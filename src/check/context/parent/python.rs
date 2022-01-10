@@ -4,7 +4,7 @@ use python_parser::ast::{Argument, Expression, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::common::position::Position;
 
@@ -15,7 +15,7 @@ impl From<&Argument> for GenericParent {
                 StringName::from(python_to_concrete(name).as_ref()),
             Argument::Positional(Expression::Subscript(expr, generics)) =>
                 if let Expression::Name(name) = expr.deref() {
-                    let generics: Vec<NameUnion> = generics.iter().map(NameUnion::from).collect();
+                    let generics: Vec<Name> = generics.iter().map(Name::from).collect();
                     StringName::new(python_to_concrete(name).as_ref(), &generics)
                 } else {
                     StringName::empty()
@@ -27,11 +27,11 @@ impl From<&Argument> for GenericParent {
     }
 }
 
-impl From<&Subscript> for NameUnion {
+impl From<&Subscript> for Name {
     fn from(sub: &Subscript) -> Self {
         match sub {
-            Subscript::Simple(expr) => NameUnion::from(expr),
-            _ => NameUnion::empty()
+            Subscript::Simple(expr) => Name::from(expr),
+            _ => Name::empty()
         }
     }
 }

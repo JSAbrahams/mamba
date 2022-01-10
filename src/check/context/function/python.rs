@@ -3,7 +3,7 @@ use python_parser::ast::Funcdef;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::common::position::Position;
 
@@ -40,9 +40,9 @@ impl From<&Funcdef> for GenericFunction {
                 .iter()
                 .map(|(name, ty, expr)| GenericFunctionArg::from((name, ty, expr)))
                 .collect(),
-            raises: NameUnion::empty(),
+            raises: Name::empty(),
             in_class: None,
-            ret_ty: func_def.return_type.as_ref().map(NameUnion::from)
+            ret_ty: func_def.return_type.as_ref().map(Name::from)
         }
     }
 }

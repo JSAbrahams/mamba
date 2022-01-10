@@ -8,7 +8,7 @@ use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{field, LookupClass};
 use crate::check::context::Context;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
@@ -52,7 +52,7 @@ pub fn constrain_class_body(
 
     let class_name = StringName::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
-    let class_ty_exp = Type { name: NameUnion::from(&class_name) };
+    let class_ty_exp = Type { name: Name::from(&class_name) };
     res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
 
     for field in ctx.class(&class_name, &ty.pos)?.fields {
@@ -91,7 +91,7 @@ pub fn property_from_field(
     constr.add("field property", &field_ty, &property_call);
 
     let access = Expected::new(pos, &Access {
-        entity: Box::new(Expected::new(pos, &Type { name: NameUnion::from(class) })),
+        entity: Box::new(Expected::new(pos, &Type { name: Name::from(class) })),
         name: Box::new(Expected::new(pos, &Field { name: field.name.clone() })),
     });
 

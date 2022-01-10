@@ -3,7 +3,7 @@ use std::ops::Deref;
 use python_parser::ast::{Expression, SetItem, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::truename::TrueName;
 
@@ -16,7 +16,7 @@ impl From<&Expression> for TrueName {
                     SetItem::Star(_) => None,
                     SetItem::Unique(expr) => Some(expr)
                 });
-                let variant = NameVariant::Tuple(expressions.map(NameUnion::from).collect());
+                let variant = NameVariant::Tuple(expressions.map(Name::from).collect());
                 TrueName::from(&variant)
             }
             Expression::Subscript(id, exprs) => {
@@ -30,7 +30,7 @@ impl From<&Expression> for TrueName {
                     TrueName::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(to_ty_name).collect();
-                    let generics: Vec<NameUnion> = generics.iter().map(NameUnion::from).collect();
+                    let generics: Vec<Name> = generics.iter().map(Name::from).collect();
                     TrueName::new(&python_to_concrete(&lit), &generics)
                 }
             }

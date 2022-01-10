@@ -14,7 +14,7 @@ use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Union};
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -34,9 +34,9 @@ pub fn gen_def(
             let mut constr = if let Some(body) = body {
                 let r_tys: Vec<_> =
                     raises.iter().map(|r| (r.pos.clone(), StringName::try_from(r))).collect();
-                let mut r_res = NameUnion::empty();
+                let mut r_res = Name::empty();
                 // TODO check this during Context check
-                let exception_name = NameUnion::from(clss::EXCEPTION);
+                let exception_name = Name::from(clss::EXCEPTION);
                 for (pos, raise) in r_tys {
                     let raise = raise?;
                     if !ctx.class(&raise, &pos)?.has_parent(&exception_name, ctx, &pos)? {
@@ -48,7 +48,7 @@ pub fn gen_def(
 
                 let inner_env = inner_env.insert_raises(&r_res, &ast.pos);
                 if let Some(ret_ty) = ret_ty {
-                    let name = NameUnion::try_from(ret_ty)?;
+                    let name = Name::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { name });
                     let inner_env = inner_env.return_type(&ret_ty_exp);
                     generate(body, &inner_env, ctx, &mut constr)?.0
@@ -118,7 +118,7 @@ pub fn identifier_from_var(
 
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
-        let name = NameUnion::try_from(ty.deref())?;
+        let name = Name::try_from(ty.deref())?;
         for (f_name, (f_mut, name)) in match_name(&identifier, &name, &var.pos)? {
             let ty = Expected::new(&var.pos, &Type { name: name.clone() });
             env = env.insert_var(mutable && f_mut, &f_name, &ty);
@@ -158,7 +158,7 @@ pub fn identifier_from_var(
     let var_expect = Expected::try_from((var, &env.var_mappings))?;
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
-            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
+            let ty_exp = Type { name: Name::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
             constr.add_variant("variable, type, and expression", &parent, &var_expect, &ConstrVariant::Left);
             let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
@@ -166,7 +166,7 @@ pub fn identifier_from_var(
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
-            let ty_exp = Type { name: NameUnion::try_from(ty.deref())? };
+            let ty_exp = Type { name: Name::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
             constr.add_variant("variable with type", &parent, &var_expect, &ConstrVariant::Left);
             Ok((constr, env))

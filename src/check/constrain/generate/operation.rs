@@ -11,7 +11,7 @@ use crate::check::context::{clss, Context};
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
 use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT,
                                       SUB};
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
@@ -30,7 +30,7 @@ pub fn gen_op(
             generate(left, &env, ctx, &mut constr)
         }
         Node::Range { from, to, step, .. } => {
-            let name = NameUnion::from(clss::INT_PRIMITIVE);
+            let name = Name::from(clss::INT_PRIMITIVE);
             let int_exp = &Expected::new(&from.pos, &Type { name });
 
             constr.add("range from", &Expected::try_from((from, &env.var_mappings))?, int_exp);
@@ -61,7 +61,7 @@ pub fn gen_op(
                 constr.add_constr(&c);
             }
 
-            let name = NameUnion::from(STRING_PRIMITIVE);
+            let name = Name::from(STRING_PRIMITIVE);
             let left = Expected::try_from((ast, &env.var_mappings))?;
             constr.add("string", &left, &Expected::new(&ast.pos, &Type { name }));
             Ok((constr, env))
@@ -88,7 +88,7 @@ pub fn gen_op(
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let ty = Type { name: NameUnion::from(clss::FLOAT_PRIMITIVE) };
+            let ty = Type { name: Name::from(clss::FLOAT_PRIMITIVE) };
             constr.add("square root", &Expected::try_from((ast, &env.var_mappings))?, &Expected::new(&ast.pos, &ty));
 
             let access = Expected::new(&expr.pos, &Access {
@@ -122,7 +122,7 @@ pub fn gen_op(
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
             constr.add("binary shift", &l_exp, &Expected::new(&right.pos, &ExpressionAny));
 
-            let name = NameUnion::from(clss::INT_PRIMITIVE);
+            let name = Name::from(clss::INT_PRIMITIVE);
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
             constr.add("binary shift", &l_exp, &Expected::new(&right.pos, &Type { name }));
 
@@ -132,14 +132,14 @@ pub fn gen_op(
 
         Node::Is { left, right } | Node::IsN { left, right } => {
             let bool =
-                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+                Expected::new(&ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::IsA { left, right } | Node::IsNA { left, right } => {
             let bool =
-                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+                Expected::new(&ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
@@ -147,14 +147,14 @@ pub fn gen_op(
 
         Node::Not { expr } => {
             let bool =
-                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+                Expected::new(&ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             constr.add_constr(&Constraint::truthy("not", &Expected::try_from((expr, &env.var_mappings))?));
             generate(expr, env, ctx, constr)
         }
         Node::And { left, right } | Node::Or { left, right } => {
             let bool =
-                Expected::new(&ast.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+                Expected::new(&ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
 
             constr.add_constr(&Constraint::truthy("and", &Expected::try_from((left, &env.var_mappings))?));
@@ -168,7 +168,7 @@ pub fn gen_op(
 }
 
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
-    let name = NameUnion::from(ty);
+    let name = Name::from(ty);
     constr.add(
         format!("{} primitive", ty).as_str(),
         &Expected::try_from((ast, &env.var_mappings))?,
@@ -222,7 +222,7 @@ fn impl_bool_op(
             })),
         }),
     );
-    let ty = Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) };
+    let ty = Type { name: Name::from(clss::BOOL_PRIMITIVE) };
     constr.add("bool operation", &Expected::try_from((ast, &env.var_mappings))?, &Expected::new(&ast.pos, &ty));
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;

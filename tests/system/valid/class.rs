@@ -27,7 +27,7 @@ fn types_ast_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // See issue #223
-fn tuple_as_class_verify() -> Result<(), Vec<String>> {
+#[ignore] // See #223
+fn tuple_as_class_verify() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "tuple_as_class")
 }

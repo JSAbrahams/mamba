@@ -12,7 +12,7 @@ use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -79,10 +79,10 @@ impl HasParent<&StringName> for Class {
     }
 }
 
-impl HasParent<&NameUnion> for Class {
+impl HasParent<&Name> for Class {
     fn has_parent(
         &self,
-        name: &NameUnion,
+        name: &Name,
         ctx: &Context,
         pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
@@ -143,9 +143,9 @@ impl Class {
             } else {
                 self.args.clone()
             },
-            raises: NameUnion::empty(),
+            raises: Name::empty(),
             in_class: None,
-            ret_ty: NameUnion::from(&self.name),
+            ret_ty: Name::from(&self.name),
         })
     }
 

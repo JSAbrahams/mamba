@@ -10,7 +10,7 @@ use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -88,7 +88,7 @@ impl TryFrom<&AST> for GenericClass {
                         pos: Default::default(),
                         vararg: false,
                         mutable: false,
-                        ty: Some(NameUnion::from(&name)),
+                        ty: Some(Name::from(&name)),
                     }];
                     new_args.append(&mut class_args);
                     new_args
@@ -115,7 +115,7 @@ impl TryFrom<&AST> for GenericClass {
                         has_default: false,
                         vararg: false,
                         mutable: false,
-                        ty: Option::from(NameUnion::from(&name)),
+                        ty: Option::from(Name::from(&name)),
                     })
                 }
 

@@ -4,7 +4,7 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -17,9 +17,9 @@ pub struct GenericFunction {
     pub pure: bool,
     pub pos: Position,
     pub arguments: Vec<GenericFunctionArg>,
-    pub raises: NameUnion,
+    pub raises: Name,
     pub in_class: Option<StringName>,
-    pub ret_ty: Option<NameUnion>,
+    pub ret_ty: Option<Name>,
 }
 
 impl Hash for GenericFunction {
@@ -98,11 +98,11 @@ impl TryFrom<&AST> for GenericFunction {
                         args
                     },
                     ret_ty: match ret_ty {
-                        Some(ty) => Some(NameUnion::try_from(ty.as_ref())?),
+                        Some(ty) => Some(Name::try_from(ty.as_ref())?),
                         None => None
                     },
                     in_class: None,
-                    raises: NameUnion::try_from(raises)?,
+                    raises: Name::try_from(raises)?,
                 }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")])
         }

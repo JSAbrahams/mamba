@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
@@ -21,8 +21,8 @@ impl TryFrom<&AST> for StringName {
             Node::Parent { ty, .. } => StringName::try_from(ty),
             Node::Type { id, generics } => match &id.node {
                 Node::Id { lit } => {
-                    let generics: Vec<NameUnion> =
-                        generics.iter().map(NameUnion::try_from).collect::<Result<_, _>>()?;
+                    let generics: Vec<Name> =
+                        generics.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                     Ok(StringName::new(lit, &generics))
                 }
                 _ => Err(vec![TypeErr::new(&id.pos, &format!("Expected identifier, was {}", ast.node))])

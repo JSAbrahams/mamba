@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 use crate::check::ident::Identifier;
 use crate::check::name::match_name;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -18,7 +18,7 @@ pub struct GenericField {
     pub pos: Position,
     pub mutable: bool,
     pub in_class: Option<StringName>,
-    pub ty: Option<NameUnion>,
+    pub ty: Option<Name>,
 }
 
 pub struct GenericFields {
@@ -46,7 +46,7 @@ impl TryFrom<&AST> for GenericField {
                 pos: ast.pos.clone(),
                 in_class: None,
                 ty: match ty {
-                    Some(ty) => Some(NameUnion::try_from(ty.deref())?),
+                    Some(ty) => Some(Name::try_from(ty.deref())?),
                     None => None
                 },
             }),
@@ -67,7 +67,7 @@ impl TryFrom<&AST> for GenericFields {
                     // TODO infer type if not present
                     match &ty {
                         Some(ty) => {
-                            let ty = NameUnion::try_from(ty.deref())?;
+                            let ty = Name::try_from(ty.deref())?;
                             Ok(match_name(&identifier, &ty, &ast.pos)?
                                 .iter()
                                 .map(|(id, (inner_mut, ty))| GenericField {
