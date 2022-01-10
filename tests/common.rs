@@ -3,8 +3,7 @@ extern crate python_parser;
 use std::fs;
 use std::fs::{create_dir, File};
 use std::io::Read;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use python_parser::ast::Statement;
 use tempfile::tempdir_in;

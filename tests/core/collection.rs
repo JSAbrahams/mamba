@@ -1,6 +1,6 @@
 use mamba::core::to_source;
 use mamba::desugar::desugar;
-use mamba::lex::tokenize;
+use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 
 use crate::common::*;

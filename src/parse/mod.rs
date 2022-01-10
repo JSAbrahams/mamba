@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use crate::lex::token::Lex;
+use lex::token::Lex;
+
+#[cfg(test)]
+use crate::parse::ast::{AST, Node};
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::{ParseResult, ParseResults};
 
@@ -23,6 +26,7 @@ mod file;
 mod operation;
 mod statement;
 mod ty;
+pub mod lex;
 
 pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 
@@ -33,8 +37,8 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// # Examples
 ///
 /// ```
-/// # use mamba::lex::token::Token;
-/// # use mamba::lex::token::Lex;
+/// # use mamba::parse::lex::token::Token;
+/// # use mamba::parse::lex::token::Lex;
 /// # use mamba::parse::parse;
 /// # use mamba::common::position::CaretPos;
 /// let def = Lex::new(&CaretPos::new(1, 1), Token::Def);
@@ -51,8 +55,8 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// If we receive an illegal sequence of tokens it fails.
 ///
 /// ```
-/// # use mamba::lex::token::Token;
-/// # use mamba::lex::token::Lex;
+/// # use mamba::parse::lex::token::Token;
+/// # use mamba::parse::lex::token::Lex;
 /// # use mamba::parse::parse;
 /// # use mamba::common::position::CaretPos;
 /// let def = Lex::new(&CaretPos::new(0, 0), Token::Def);
@@ -83,5 +87,27 @@ pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
             .collect())
     } else {
         Err(errs.iter().map(|(res, ..)| res.as_ref().unwrap_err().clone()).collect())
+    }
+}
+
+#[cfg(test)]
+fn parse_direct(input: &[Lex]) -> ParseResult<Vec<AST>> {
+    match parse(input)?.node {
+        Node::File { statements, .. } => Ok(statements),
+        _ => Ok(vec![])
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::parse::lex::tokenize;
+    use crate::parse::parse;
+    use crate::parse::result::ParseResult;
+    use crate::test_util::resource_content;
+
+    #[test]
+    fn parse_empty_file() -> ParseResult<()> {
+        let source = resource_content(true, &[], "empty_file.mamba");
+        parse(&tokenize(&source).unwrap()).map(|_| ())
     }
 }

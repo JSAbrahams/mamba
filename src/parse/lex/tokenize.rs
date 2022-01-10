@@ -2,10 +2,10 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::common::position::CaretPos;
-use crate::lex::lex_result::{LexErr, LexResult};
-use crate::lex::state::State;
-use crate::lex::token::{Lex, Token};
-use crate::lex::tokenize;
+use crate::parse::lex::lex_result::{LexErr, LexResult};
+use crate::parse::lex::state::State;
+use crate::parse::lex::token::{Lex, Token};
+use crate::parse::lex::tokenize;
 
 #[allow(clippy::cognitive_complexity)]
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {

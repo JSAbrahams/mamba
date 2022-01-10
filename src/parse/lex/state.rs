@@ -1,6 +1,6 @@
 use crate::common::position::CaretPos;
-use crate::lex::token::Lex;
-use crate::lex::token::Token;
+use crate::parse::lex::token::Lex;
+use crate::parse::lex::token::Token;
 
 #[derive(Clone, Debug)]
 pub struct State {

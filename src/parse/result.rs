@@ -4,9 +4,9 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::lex::token::Lex;
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
+use crate::parse::lex::token::Lex;
+use crate::parse::lex::token::Token;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 

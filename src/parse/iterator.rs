@@ -4,9 +4,9 @@ use std::slice::Iter;
 use itertools::multipeek;
 
 use crate::common::position::Position;
-use crate::lex::token::Lex;
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
+use crate::parse::lex::token::Lex;
+use crate::parse::lex::token::Token;
 use crate::parse::result::eof_expected_one_of;
 use crate::parse::result::expected;
 use crate::parse::result::ParseResult;

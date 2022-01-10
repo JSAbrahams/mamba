@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::CaretPos;
-use crate::lex::token::{Lex, Token};
+use crate::parse::lex::token::{Lex, Token};
 
 pub type LexResult<T = Vec<Lex>> = std::result::Result<T, LexErr>;
 pub type LexResults =
