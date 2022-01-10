@@ -357,7 +357,7 @@ mod test {
         let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
-        assert!(mutable, true);
+        assert!(mutable);
         assert_eq!(ty, None);
         assert_eq!(id.node, Node::Id { lit: String::from("a") });
         assert_eq!(expression.unwrap().node, Node::Id { lit: String::from("MyClass") });

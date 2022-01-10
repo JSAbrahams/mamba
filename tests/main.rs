@@ -12,7 +12,6 @@ mod common;
 mod check;
 mod core;
 mod output;
-mod parse;
 
 #[test]
 fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
