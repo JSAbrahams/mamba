@@ -1,34 +1,45 @@
+use std::fmt::{Debug, Formatter};
 use std::path::Path;
 use std::process::Command;
 
 use python_parser::ast::Statement;
 
+use mamba::common::delimit::newline_delimited;
 use mamba::pipeline::transpile_directory;
 
 use crate::common::{delete_dir, python_src_to_stmts, resource_content, resource_content_path,
                     resource_content_randomize, resource_path};
-use crate::output::common::PYTHON;
-use mamba::common::delimit::newline_delimited;
+use crate::system::common::PYTHON;
 
 mod common;
 
 pub mod valid;
+
+struct OutTestErr(Vec<String>);
+
+type OutTestRet<T = ()> = Result<T, OutTestErr>;
+
+impl Debug for OutTestErr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.0.iter().map(|err| write!(f, "{}\n", err)).collect()
+    }
+}
 
 fn test_directory(
     valid: bool,
     input: &[&str],
     _output: &[&str],
     file_name: &str,
-) -> Result<(), Vec<String>> {
+) -> OutTestRet {
     let (output_path, output_file) =
         resource_content_randomize(true, input, &format!("{}.py", file_name));
 
     let res = fallable(valid, input, &output_path, &output_file, file_name);
+    delete_dir(&output_path).map_err(|_| OutTestErr(vec![]))?;
     let (check_ast, out_ast) = res?;
-    delete_dir(&output_path).map_err(|_| vec![])?;
 
     // Convert to newline delimited string for more readable diff
-    let check_string= newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
+    let check_string = newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
     let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
     assert_eq!(check_string, out_string);
     Ok(())
@@ -40,16 +51,15 @@ fn fallable(
     output_path: &str,
     output_file: &str,
     file_name: &str,
-) -> Result<(Vec<Statement>, Vec<Statement>), Vec<String>> {
+) -> OutTestRet<(Vec<Statement>, Vec<Statement>)> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
     let map_err = |(ty, msg): &(String, String)| {
-        eprintln!("[error | {}] {}", ty, msg);
         format!("[error | {}] {}", ty, msg)
     };
     transpile_directory(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path))
-        .map_err(|errs| errs.iter().map(&map_err).collect::<Vec<String>>())?;
+        .map_err(|errs| OutTestErr(errs.iter().map(&map_err).collect::<Vec<String>>()))?;
 
     let cmd = Command::new(PYTHON)
         .arg("-m")

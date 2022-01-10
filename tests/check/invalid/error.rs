@@ -1,5 +1,5 @@
 use mamba::check::check_all;
-use mamba::lex::tokenize;
+use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 
 use crate::common::resource_content;

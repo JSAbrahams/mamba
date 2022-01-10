@@ -1,11 +1,11 @@
 use crate::common::position::Position;
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
 use crate::parse::class::{parse_class, parse_parent};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::result::{custom, expected};
 use crate::parse::result::ParseResult;
 use crate::parse::ty::parse_conditions;

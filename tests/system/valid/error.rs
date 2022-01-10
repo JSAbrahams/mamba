@@ -1,21 +1,21 @@
-use crate::output::test_directory;
+use crate::system::{OutTestRet, test_directory};
 
 #[test]
-fn handle_ast_verify() -> Result<(), Vec<String>> {
+fn handle_ast_verify() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "handle")
 }
 
 #[test]
-fn exception_ast_verify() -> Result<(), Vec<String>> {
+fn exception_ast_verify() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "exception")
 }
 
 #[test]
-fn raise_ast_verify() -> Result<(), Vec<String>> {
+fn raise_ast_verify() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "raise")
 }
 
 #[test]
-fn with_ast_verify() -> Result<(), Vec<String>> {
+fn with_ast_verify() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "with")
 }

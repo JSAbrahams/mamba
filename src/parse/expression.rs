@@ -1,7 +1,5 @@
 use std::ops::Deref;
 
-use crate::lex::token::Lex;
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::call::parse_anon_fun;
@@ -10,6 +8,8 @@ use crate::parse::call::parse_reassignment;
 use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Lex;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::expected_one_of;
 use crate::parse::result::ParseResult;

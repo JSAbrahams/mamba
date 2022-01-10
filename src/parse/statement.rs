@@ -1,10 +1,10 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::{custom, expected_one_of};
 use crate::parse::result::ParseResult;

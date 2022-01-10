@@ -4,7 +4,7 @@ use mamba::check::{check_all, CheckInput};
 use mamba::check::context::{Context, LookupClass};
 use mamba::check::name::stringname::StringName;
 use mamba::common::position::Position;
-use mamba::lex::tokenize;
+use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 
 use crate::common::resource_content;

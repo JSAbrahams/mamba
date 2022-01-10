@@ -1,5 +1,5 @@
-use crate::lex::pass::Pass;
-use crate::lex::token::{Lex, Token};
+use crate::parse::lex::pass::Pass;
+use crate::parse::lex::token::{Lex, Token};
 
 pub struct DocString {
     front: Option<Lex>,
