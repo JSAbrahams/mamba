@@ -10,7 +10,6 @@ pub mod common;
 pub mod check;
 pub mod core;
 pub mod desugar;
-pub mod lex;
 pub mod parse;
 
 pub mod pipeline;

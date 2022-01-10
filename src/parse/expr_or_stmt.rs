@@ -1,9 +1,9 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::ParseResult;
 use crate::parse::statement::is_start_statement;
@@ -66,9 +66,9 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::tokenize;
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
+    use crate::parse::lex::tokenize;
 
     #[test]
     fn range_verify() {
@@ -281,7 +281,7 @@ mod test {
 
     #[test]
     fn reassign_missing_value() {
-        let source = String::from("a <-");
+        let source = String::from("a :=");
         parse(&tokenize(&source).unwrap()).unwrap_err();
     }
 

@@ -2,8 +2,8 @@ use std::fmt::{Display, Error, Formatter};
 
 use crate::check::context::arg;
 use crate::common::delimit::{comma_delm, custom_delimited};
-use crate::lex::token::Token;
 use crate::parse::ast::{AST, Node};
+use crate::parse::lex::token::Token;
 
 fn equal_optional(this: &Option<Box<AST>>, that: &Option<Box<AST>>) -> bool {
     if let (Some(this), Some(that)) = (this, that) {

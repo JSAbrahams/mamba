@@ -1,8 +1,8 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::custom;
 use crate::parse::result::ParseResult;
@@ -219,9 +219,9 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::tokenize;
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
+    use crate::parse::lex::tokenize;
 
     macro_rules! unwrap_func_definition {
     ($ast:expr) => {{

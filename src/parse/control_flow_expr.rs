@@ -1,8 +1,8 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::expected_one_of;
 use crate::parse::result::ParseResult;
@@ -83,8 +83,8 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::tokenize;
     use crate::parse::ast::{AST, Node};
+    use crate::parse::lex::tokenize;
     use crate::parse::parse_direct;
 
     #[test]

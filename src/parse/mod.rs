@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
-use crate::lex::token::Lex;
+use lex::token::Lex;
+
 #[cfg(test)]
 use crate::parse::ast::{AST, Node};
 use crate::parse::iterator::LexIterator;
@@ -25,6 +26,7 @@ mod file;
 mod operation;
 mod statement;
 mod ty;
+pub mod lex;
 
 pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 
@@ -35,8 +37,8 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// # Examples
 ///
 /// ```
-/// # use mamba::lex::token::Token;
-/// # use mamba::lex::token::Lex;
+/// # use mamba::parse::lex::token::Token;
+/// # use mamba::parse::lex::token::Lex;
 /// # use mamba::parse::parse;
 /// # use mamba::common::position::CaretPos;
 /// let def = Lex::new(&CaretPos::new(1, 1), Token::Def);
@@ -53,8 +55,8 @@ pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 /// If we receive an illegal sequence of tokens it fails.
 ///
 /// ```
-/// # use mamba::lex::token::Token;
-/// # use mamba::lex::token::Lex;
+/// # use mamba::parse::lex::token::Token;
+/// # use mamba::parse::lex::token::Lex;
 /// # use mamba::parse::parse;
 /// # use mamba::common::position::CaretPos;
 /// let def = Lex::new(&CaretPos::new(0, 0), Token::Def);

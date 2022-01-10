@@ -1,4 +1,4 @@
-use mamba::lex::tokenize;
+use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 use mamba::parse::result::ParseResult;
 

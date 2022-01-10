@@ -1,8 +1,8 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::result::ParseResult;
 
 macro_rules! inner_bin_op {
@@ -211,10 +211,10 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::token::Token::*;
-    use crate::lex::tokenize;
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
+    use crate::parse::lex::token::Token::*;
+    use crate::parse::lex::tokenize;
 
     macro_rules! verify_is_operation {
         ($op:ident, $ast:expr) => {{

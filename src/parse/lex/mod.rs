@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use crate::lex::lex_result::{LexResult, LexResults};
-use crate::lex::pass::pass;
-use crate::lex::state::State;
-use crate::lex::tokenize::into_tokens;
+use crate::parse::lex::lex_result::{LexResult, LexResults};
+use crate::parse::lex::pass::pass;
+use crate::parse::lex::state::State;
+use crate::parse::lex::tokenize::into_tokens;
 
 pub mod lex_result;
 pub mod token;
@@ -25,9 +25,9 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 /// # Examples
 ///
 /// ```
-/// # use mamba::lex::tokenize;
-/// # use mamba::lex::token::Token;
-/// # use mamba::lex::token::Lex;
+/// # use mamba::parse::lex::tokenize;
+/// # use mamba::parse::lex::token::Token;
+/// # use mamba::parse::lex::token::Lex;
 /// # use mamba::common::position::CaretPos;
 /// let source = "a := 2";
 /// let tokens = tokenize(&source).unwrap();
@@ -42,7 +42,7 @@ pub type TokenizeInput = (String, Option<PathBuf>);
 /// Fails if it encounters an unrecognized character.
 ///
 /// ```
-/// # use mamba::lex::tokenize;
+/// # use mamba::parse::lex::tokenize;
 /// // The '$' character is meaningless in Mamba.
 /// let source = "$";
 /// let result = tokenize(&source);
@@ -84,8 +84,8 @@ pub fn tokenize_all(inputs: &[TokenizeInput]) -> LexResults {
 #[cfg(test)]
 mod tests {
     use crate::common::position::{CaretPos, Position};
-    use crate::lex::token::{Lex, Token};
-    use crate::lex::tokenize;
+    use crate::parse::lex::token::{Lex, Token};
+    use crate::parse::lex::tokenize;
 
     #[test]
     fn from() {

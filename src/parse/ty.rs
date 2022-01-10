@@ -1,9 +1,9 @@
 use std::ops::Deref;
 
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::{custom, expected_one_of};
 use crate::parse::result::ParseResult;

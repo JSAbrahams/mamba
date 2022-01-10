@@ -1,5 +1,5 @@
-use crate::lex::pass::docstring::DocString;
-use crate::lex::token::Lex;
+use crate::parse::lex::pass::docstring::DocString;
+use crate::parse::lex::token::Lex;
 
 mod docstring;
 

@@ -1,9 +1,9 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::expected_one_of;
 use crate::parse::result::ParseResult;
@@ -75,9 +75,9 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::tokenize;
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
+    use crate::parse::lex::tokenize;
 
     #[test]
     fn anon_fun_no_args_verify() {

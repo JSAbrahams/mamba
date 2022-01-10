@@ -1,9 +1,9 @@
-use crate::lex::token::Token;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::block::parse_block;
 use crate::parse::definition::{parse_definition, parse_fun_arg};
 use crate::parse::iterator::LexIterator;
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::{expected, expected_one_of};
 use crate::parse::result::ParseResult;
@@ -103,8 +103,8 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::tokenize;
     use crate::parse::ast::Node;
+    use crate::parse::lex::tokenize;
     use crate::parse::parse;
 
     #[test]
