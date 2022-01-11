@@ -129,7 +129,7 @@ impl LookupFunction<&StringName, Function> for Context {
             Function::try_from((generic_fun, &generics, pos))
         } else if let Some(generic_class) = self.classes.iter().find(|c| &c.name == function) {
             let class = Class::try_from((generic_class, &generics, pos))?;
-            class.constructor(true)
+            class.constructor(true, pos)
         } else {
             let msg = format!("Function {} is undefined.", function);
             Err(vec![TypeErr::new(pos, &msg)])
@@ -179,9 +179,19 @@ impl Display for ClassTuple {
 }
 
 impl ClassTuple {
+    pub fn as_direct(&self, pos: &Position) -> TypeResult<Class> {
+        match &self.variant {
+            ClassVariant::Direct(class) => Ok(class.clone()),
+            _ => {
+                let msg = format!("Expected a single class.");
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+
     pub fn name(&self) -> TrueName {
         let variant = match &self.variant {
-            ClassVariant::Direct(class) => NameVariant::Single(class.name.clone()),
+            ClassVariant::Direct(class) => return class.name.clone(),
             ClassVariant::Tuple(classes) =>
                 NameVariant::Tuple(classes.iter().map(|c| c.name()).collect()),
         };

@@ -6,6 +6,7 @@ use crate::check::context::clss::python::python_to_concrete;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::common::position::Position;
 
 impl From<&Argument> for GenericParent {
@@ -23,6 +24,7 @@ impl From<&Argument> for GenericParent {
             _ => StringName::empty()
         };
 
+        let name = TrueName::from(&name);
         GenericParent { is_py_type: true, name, pos: Position::default(), args: vec![] }
     }
 }

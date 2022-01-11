@@ -15,7 +15,6 @@ use crate::check::context::clss::HasParent;
 use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Union};
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -33,7 +32,7 @@ pub fn gen_def(
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
             let mut constr = if let Some(body) = body {
                 let r_tys: Vec<_> =
-                    raises.iter().map(|r| (r.pos.clone(), StringName::try_from(r))).collect();
+                    raises.iter().map(|r| (r.pos.clone(), Name::try_from(r))).collect();
                 let mut r_res = Name::empty();
                 // TODO check this during Context check
                 let exception_name = Name::from(clss::EXCEPTION);

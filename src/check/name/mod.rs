@@ -227,6 +227,10 @@ impl Name {
         self.names.iter().map(|n| n.as_direct(msg, pos)).collect::<Result<_, _>>()
     }
 
+    pub fn contains(&self, item: &TrueName) -> bool {
+        self.names.contains(item)
+    }
+
     pub fn empty() -> Name { Name { names: HashSet::new() } }
 
     pub fn is_null(&self) -> bool {

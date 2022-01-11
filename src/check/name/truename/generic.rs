@@ -25,8 +25,12 @@ impl TryFrom<&AST> for TrueName {
     fn try_from(ast: &AST) -> TypeResult<TrueName> {
         match &ast.node {
             Node::Id { lit } => Ok(TrueName::from(&StringName::from(lit.as_str()))),
+            Node::Tuple { elements } => {
+                let elements = elements.iter().map(Name::try_from).collect::<Result<_, _>>()?;
+                Ok(TrueName::from(&NameVariant::Tuple(elements)))
+            },
             Node::QuestionOp { expr } => Ok(TrueName::try_from(expr)?.as_nullable()),
-            Node::Type { .. } => Ok(TrueName::from(&StringName::try_from(ast)?)),
+            Node::Type { id, .. } => Ok(TrueName::try_from(id)?),
             Node::TypeTup { types } => {
                 let names = types.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                 Ok(TrueName::from(&NameVariant::Tuple(names)))
@@ -39,6 +43,7 @@ impl TryFrom<&AST> for TrueName {
                 Err(vec![TypeErr::new(&ast.pos, "Expected single type name but was union")]),
             Node::Generic { id, .. } => TrueName::try_from(id),
             Node::FunctionCall { name, .. } => TrueName::try_from(name),
+            Node::Parent { ty, .. } => TrueName::try_from(ty),
             _ => {
                 let msg = format!("Expected type name, was {}", ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])

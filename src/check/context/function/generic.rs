@@ -5,7 +5,9 @@ use std::ops::Deref;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::name::Name;
+use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -42,18 +44,24 @@ impl GenericFunction {
 
     pub fn in_class(
         self,
-        in_class: Option<&StringName>,
+        in_class: Option<&TrueName>,
         _type_def: bool,
+        pos: &Position,
     ) -> TypeResult<GenericFunction> {
-        Ok(GenericFunction {
-            in_class: in_class.cloned(),
-            arguments: self
-                .arguments
-                .iter()
-                .map(|arg| arg.clone().in_class(in_class))
-                .collect::<Result<_, _>>()?,
-            ..self
-        })
+        if let Some(NameVariant::Single(in_class)) = in_class.map(|t| t.variant.clone()) {
+            Ok(GenericFunction {
+                in_class: Some(in_class.clone()),
+                arguments: self
+                    .arguments
+                    .iter()
+                    .map(|arg| arg.clone().in_class(Some(&in_class)))
+                    .collect::<Result<_, _>>()?,
+                ..self
+            })
+        } else {
+            let msg = format!("Function must be in class.");
+            Err(Vec::from(TypeErr::new(pos, &msg)))
+        }
     }
 }
 

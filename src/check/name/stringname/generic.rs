@@ -18,7 +18,6 @@ impl TryFrom<&AST> for StringName {
     fn try_from(ast: &AST) -> Result<Self, Self::Error> {
         match &ast.node {
             Node::Id { lit } => Ok(StringName::from(lit.as_str())),
-            Node::Parent { ty, .. } => StringName::try_from(ty),
             Node::Type { id, generics } => match &id.node {
                 Node::Id { lit } => {
                     let generics: Vec<Name> =
@@ -28,7 +27,7 @@ impl TryFrom<&AST> for StringName {
                 _ => Err(vec![TypeErr::new(&id.pos, &format!("Expected identifier, was {}", ast.node))])
             },
             _ => {
-                let msg = format!("Expected class truename, was {}", ast.node);
+                let msg = format!("Expected class name, was {}", ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])
             }
         }

@@ -67,6 +67,15 @@ impl AsNullable for TrueName {
     fn as_nullable(&self) -> Self { TrueName { is_nullable: true, ..self.clone() } }
 }
 
+impl PartialEq<StringName> for TrueName {
+    fn eq(&self, other: &StringName) -> bool {
+        match &self.variant {
+            NameVariant::Single(string_name) => string_name == other,
+            _ => false
+        }
+    }
+}
+
 #[allow(clippy::nonminimal_bool)]
 impl IsSuperSet<TrueName> for TrueName {
     /// Check if name is supertype of other name.
