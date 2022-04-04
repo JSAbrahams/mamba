@@ -100,10 +100,12 @@ fn extract_class(
             stmts.append(&mut non_variables);
             final_definitions = stmts;
 
-            Ok(Core::ClassDef {
-                name: Box::from(desugar_node(id, imp, state)?),
-                parents: parent_names,
-                definitions: final_definitions,
+            let name = Box::from(desugar_node(id, imp, state)?);
+            Ok(if final_definitions.len() > 1 {
+                Core::ClassDef { name, parents: parent_names, definitions: final_definitions }
+            } else {
+                let expr = Option::from(Box::from(Core::Tuple { elements: parent_names }));
+                Core::VarDef { var: name, ty: None, expr }
             })
         }
         other => panic!("Didn't recognize while making class: {:?}.", other)
@@ -265,7 +267,7 @@ mod tests {
         }};
     }
 
-        macro_rules! to_pos {
+    macro_rules! to_pos {
         ($node:expr) => {{
             Box::from(to_pos_unboxed!($node))
         }};

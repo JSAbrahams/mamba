@@ -188,7 +188,7 @@ fn get_fields_and_functions(
     class: &TrueName,
     statements: &[AST],
     type_def: bool,
-) -> Result<(HashSet<GenericField>, HashSet<GenericFunction>), Vec<TypeErr>> {
+) -> TypeResult<(HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut fields = HashSet::new();
     let mut functions = HashSet::new();
 
