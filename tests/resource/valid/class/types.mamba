@@ -1,5 +1,3 @@
-print("my script")
-
 class MyGeneric: String
 class MyType(def some_field: String)
 

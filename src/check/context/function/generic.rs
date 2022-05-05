@@ -4,8 +4,10 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
+use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -17,9 +19,9 @@ pub struct GenericFunction {
     pub pure: bool,
     pub pos: Position,
     pub arguments: Vec<GenericFunctionArg>,
-    pub raises: NameUnion,
+    pub raises: Name,
     pub in_class: Option<StringName>,
-    pub ret_ty: Option<NameUnion>,
+    pub ret_ty: Option<Name>,
 }
 
 impl Hash for GenericFunction {
@@ -42,18 +44,23 @@ impl GenericFunction {
 
     pub fn in_class(
         self,
-        in_class: Option<&StringName>,
+        in_class: Option<&TrueName>,
         _type_def: bool,
+        pos: &Position,
     ) -> TypeResult<GenericFunction> {
-        Ok(GenericFunction {
-            in_class: in_class.cloned(),
-            arguments: self
-                .arguments
-                .iter()
-                .map(|arg| arg.clone().in_class(in_class))
-                .collect::<Result<_, _>>()?,
-            ..self
-        })
+        if let Some(NameVariant::Single(in_class)) = in_class.map(|t| t.variant.clone()) {
+            Ok(GenericFunction {
+                in_class: Some(in_class.clone()),
+                arguments: self
+                    .arguments
+                    .iter()
+                    .map(|arg| arg.clone().in_class(Some(&in_class)))
+                    .collect::<Result<_, _>>()?,
+                ..self
+            })
+        } else {
+            Err(Vec::from(TypeErr::new(pos, &String::from("Function must be in class."))))
+        }
     }
 }
 
@@ -98,11 +105,11 @@ impl TryFrom<&AST> for GenericFunction {
                         args
                     },
                     ret_ty: match ret_ty {
-                        Some(ty) => Some(NameUnion::try_from(ty.as_ref())?),
+                        Some(ty) => Some(Name::try_from(ty.as_ref())?),
                         None => None
                     },
                     in_class: None,
-                    raises: NameUnion::try_from(raises)?,
+                    raises: Name::try_from(raises)?,
                 }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")])
         }

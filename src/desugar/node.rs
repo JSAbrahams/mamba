@@ -276,7 +276,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::TypeDef { .. } | Node::TypeAlias { .. } => desugar_class(ast, imp, state)?,
         Node::Class { .. } => desugar_class(ast, imp, state)?,
         Node::Generic { .. } => Core::Empty,
-        Node::Parent { .. } => panic!("Parent cannot be top-level: {:?}", ast),
+        Node::Parent { .. } => desugar_class(ast, imp, state)?,
 
         Node::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
 

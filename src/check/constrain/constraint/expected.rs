@@ -10,7 +10,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
 use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -63,11 +63,11 @@ pub enum Expect {
     ExpressionAny,
     Collection { ty: Box<Expected> },
     Tuple { elements: Vec<Expected> },
-    Raises { name: NameUnion },
+    Raises { name: Name },
     Function { name: StringName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
-    Type { name: NameUnion },
+    Type { name: Name },
 }
 
 impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
@@ -91,13 +91,13 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
         });
 
         Ok(match &ast.node {
-            Node::Int { .. } | Node::ENum { .. } => Type { name: NameUnion::from(INT_PRIMITIVE) },
-            Node::Real { .. } => Type { name: NameUnion::from(FLOAT_PRIMITIVE) },
-            Node::Bool { .. } => Type { name: NameUnion::from(BOOL_PRIMITIVE) },
-            Node::Str { .. } => Type { name: NameUnion::from(STRING_PRIMITIVE) },
+            Node::Int { .. } | Node::ENum { .. } => Type { name: Name::from(INT_PRIMITIVE) },
+            Node::Real { .. } => Type { name: Name::from(FLOAT_PRIMITIVE) },
+            Node::Bool { .. } => Type { name: Name::from(BOOL_PRIMITIVE) },
+            Node::Str { .. } => Type { name: Name::from(STRING_PRIMITIVE) },
             Node::Undefined => Expect::none(),
             Node::Underscore => ExpressionAny,
-            Node::Raise { error } => Raises { name: NameUnion::try_from(error)? },
+            Node::Raise { error } => Raises { name: Name::try_from(error)? },
             _ => Expression { ast }
         })
     }
@@ -148,15 +148,15 @@ impl Expect {
 
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
-            if ty == &NameUnion::from(clss::STRING_PRIMITIVE) =>
+            if ty == &Name::from(clss::STRING_PRIMITIVE) =>
                 true,
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
             | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
-            if ty == &NameUnion::from(clss::FLOAT_PRIMITIVE) =>
+            if ty == &Name::from(clss::FLOAT_PRIMITIVE) =>
                 true,
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
-            if ty == &NameUnion::from(clss::INT_PRIMITIVE) =>
+            if ty == &Name::from(clss::INT_PRIMITIVE) =>
                 true,
 
             _ => self.is_none() && other.is_none()
@@ -164,7 +164,7 @@ impl Expect {
     }
 
     pub fn none() -> Expect {
-        Expect::Type { name: NameUnion::from(NONE) }
+        Expect::Type { name: Name::from(NONE) }
     }
 
     pub fn is_none(&self) -> bool {

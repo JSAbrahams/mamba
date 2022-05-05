@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use crate::check::context::field::generic::GenericField;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
 use crate::check::result::TypeErr;
@@ -22,7 +22,7 @@ pub struct Field {
     pub name: String,
     pub mutable: bool,
     pub in_class: Option<StringName>,
-    pub ty: NameUnion,
+    pub ty: Name,
 }
 
 impl Display for Field {
@@ -48,7 +48,7 @@ impl TryFrom<(&GenericField, &HashMap<String, TrueName>, &Position)> for Field {
             },
             ty: match &field.ty {
                 Some(ty) => ty.substitute(generics, pos)?,
-                None => NameUnion::empty()
+                None => Name::empty()
             },
         })
     }

@@ -3,7 +3,7 @@ use std::fmt::{Display, Error, Formatter};
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{clss, function};
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 
 pub mod builder;
@@ -64,7 +64,7 @@ impl Constraint {
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
         let string =
-            Expected::new(&expected.pos, &Type { name: NameUnion::from(clss::STRING_PRIMITIVE) });
+            Expected::new(&expected.pos, &Type { name: Name::from(clss::STRING_PRIMITIVE) });
         let access = Access {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(&expected.pos, &Function {
@@ -78,7 +78,7 @@ impl Constraint {
 
     pub fn truthy(msg: &str, expected: &Expected) -> Constraint {
         let bool =
-            Expected::new(&expected.pos, &Type { name: NameUnion::from(clss::BOOL_PRIMITIVE) });
+            Expected::new(&expected.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
         let access = Access {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(&expected.pos, &Function {

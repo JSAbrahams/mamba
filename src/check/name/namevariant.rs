@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use crate::check::context::Context;
 use crate::check::name::IsSuperSet;
-use crate::check::name::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
@@ -12,8 +12,8 @@ use crate::common::position::Position;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NameVariant {
     Single(StringName),
-    Tuple(Vec<NameUnion>),
-    Fun(Vec<NameUnion>, Box<NameUnion>),
+    Tuple(Vec<Name>),
+    Fun(Vec<Name>, Box<Name>),
 }
 
 impl Display for NameVariant {

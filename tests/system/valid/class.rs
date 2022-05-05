@@ -25,3 +25,8 @@ fn parent_ast_verify() -> OutTestRet {
 fn types_ast_verify() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "types")
 }
+
+#[test]
+fn tuple_as_class_verify() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "tuple_as_class")
+}

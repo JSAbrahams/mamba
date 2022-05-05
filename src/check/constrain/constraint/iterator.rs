@@ -2,24 +2,24 @@ use std::collections::VecDeque;
 
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::name::stringname::StringName;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    pub in_class: Vec<StringName>,
+    pub in_class: Vec<TrueName>,
     constraints: VecDeque<Constraint>,
 }
 
-impl From<&(Vec<StringName>, Vec<Constraint>)> for Constraints {
-    fn from((in_class, constraints): &(Vec<StringName>, Vec<Constraint>)) -> Self {
+impl From<&(Vec<TrueName>, Vec<Constraint>)> for Constraints {
+    fn from((in_class, constraints): &(Vec<TrueName>, Vec<Constraint>)) -> Self {
         let constraints = VecDeque::from(constraints.clone());
         Constraints { in_class: in_class.clone(), constraints }
     }
 }
 
 impl Constraints {
-    pub fn new(in_class: &[StringName]) -> Constraints {
+    pub fn new(in_class: &[TrueName]) -> Constraints {
         Constraints { in_class: Vec::from(in_class), constraints: VecDeque::new() }
     }
 

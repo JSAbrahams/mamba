@@ -12,7 +12,7 @@ use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -46,11 +46,11 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name: StringName,
+    pub name: TrueName,
     pub concrete: bool,
     pub args: Vec<FunctionArg>,
     pub fields: HashSet<Field>,
-    pub parents: HashSet<StringName>,
+    pub parents: HashSet<TrueName>,
     pub functions: HashSet<Function>,
 }
 
@@ -62,37 +62,37 @@ pub trait HasParent<T> {
 }
 
 impl HasParent<&StringName> for Class {
-    fn has_parent(
-        &self,
-        name: &StringName,
-        ctx: &Context,
-        pos: &Position,
-    ) -> Result<bool, Vec<TypeErr>> {
-        Ok(&self.name == name || {
-            let res: Vec<bool> = self
-                .parents
-                .iter()
-                .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
-                .collect::<Result<_, _>>()?;
-            res.iter().any(|b| *b)
-        })
+    fn has_parent(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        Ok(&self.name == name || self.parents
+            .iter()
+            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+            .collect::<Result<Vec<bool>, _>>()?
+            .iter()
+            .any(|b| *b))
     }
 }
 
-impl HasParent<&NameUnion> for Class {
-    fn has_parent(
-        &self,
-        name: &NameUnion,
-        ctx: &Context,
-        pos: &Position,
-    ) -> Result<bool, Vec<TypeErr>> {
-        let name = name.as_direct("class", pos)?;
+impl HasParent<&TrueName> for Class {
+    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+        Ok(&self.name == name || self.parents
+            .iter()
+            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+            .collect::<Result<Vec<bool>, _>>()?
+            .iter()
+            .any(|b| *b))
+    }
+}
+
+impl HasParent<&Name> for Class {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         if name.contains(&self.name) {
             return Ok(true);
         }
 
-        let res: Vec<bool> =
-            name.iter().map(|p| self.has_parent(p, ctx, pos)).collect::<Result<_, _>>()?;
+        let res: Vec<bool> = name
+            .names()
+            .map(|true_name| self.has_parent(&true_name, ctx, pos))
+            .collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
     }
 }
@@ -132,10 +132,10 @@ impl TryFrom<(&GenericClass, &HashMap<String, TrueName>, &Position)> for Class {
 }
 
 impl Class {
-    pub fn constructor(&self, without_self: bool) -> TypeResult<Function> {
+    pub fn constructor(&self, without_self: bool, pos: &Position) -> TypeResult<Function> {
         Ok(Function {
             is_py_type: false,
-            name: self.name.clone(),
+            name: self.name.as_direct("function name", pos)?,
             self_mutable: None,
             pure: false,
             arguments: if without_self && !self.args.is_empty() {
@@ -143,9 +143,9 @@ impl Class {
             } else {
                 self.args.clone()
             },
-            raises: NameUnion::empty(),
+            raises: Name::empty(),
             in_class: None,
-            ret_ty: NameUnion::from(&self.name),
+            ret_ty: Name::from(&self.name),
         })
     }
 

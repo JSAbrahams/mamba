@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::common::position::Position;
 
 #[derive(Clone, Debug, Default)]
@@ -62,7 +62,7 @@ impl Environment {
     }
 
     /// Insert raises.
-    pub fn insert_raises(&self, raises: &NameUnion, pos: &Position) -> Environment {
+    pub fn insert_raises(&self, raises: &Name, pos: &Position) -> Environment {
         if raises.is_empty() {
             self.clone()
         } else {

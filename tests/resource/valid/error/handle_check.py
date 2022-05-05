@@ -1,6 +1,4 @@
-class MyErr1(Exception):
-    def __init__(self):
-        super(Exception, self).__init__("Something went wrong")
+MyErr1 = Exception("Something went wrong")
 
 
 class MyErr2(Exception):

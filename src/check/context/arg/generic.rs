@@ -4,7 +4,7 @@ use std::ops::Deref;
 
 use crate::check::context::clss;
 use crate::check::context::field::generic::GenericField;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -26,7 +26,7 @@ pub struct GenericFunctionArg {
     pub has_default: bool,
     pub vararg: bool,
     pub mutable: bool,
-    pub ty: Option<NameUnion>,
+    pub ty: Option<Name>,
 }
 
 impl PartialEq for GenericFunctionArg {
@@ -53,7 +53,7 @@ impl GenericFunctionArg {
 
             if self.ty.is_none() {
                 return if let Some(class) = class {
-                    Ok(GenericFunctionArg { ty: Some(NameUnion::from(class)), ..self })
+                    Ok(GenericFunctionArg { ty: Some(Name::from(class)), ..self })
                 } else {
                     Ok(self)
                 };
@@ -78,7 +78,7 @@ impl TryFrom<&AST> for ClassArgument {
                     vararg: false,
                     mutable: *mutable,
                     ty: if let Some(ty) = ty {
-                        Some(NameUnion::try_from(ty)?)
+                        Some(Name::try_from(ty)?)
                     } else {
                         None
                     },
@@ -109,33 +109,26 @@ impl TryFrom<&AST> for GenericFunctionArg {
                     mutable: *mutable,
                     pos: ast.pos.clone(),
                     ty: match ty {
-                        Some(ty) => Some(NameUnion::try_from(ty.deref())?),
+                        Some(ty) => Some(Name::try_from(ty.deref())?),
                         None if name.as_str() == SELF => None,
-                        None =>
-                            if let Some(default) = default {
-                                Some(match &default.deref().node {
-                                    Node::Str { .. } =>
-                                        NameUnion::from(clss::python::STRING_PRIMITIVE),
-                                    Node::Bool { .. } =>
-                                        NameUnion::from(clss::python::BOOL_PRIMITIVE),
-                                    Node::Int { .. } =>
-                                        NameUnion::from(clss::python::INT_PRIMITIVE),
-                                    Node::Real { .. } =>
-                                        NameUnion::from(clss::python::FLOAT_PRIMITIVE),
-                                    Node::ENum { .. } =>
-                                        NameUnion::from(clss::python::INT_PRIMITIVE),
-                                    _ =>
-                                        return Err(vec![TypeErr::new(
-                                            &default.pos,
-                                            "Can only infer type of literals",
-                                        )]),
-                                })
-                            } else {
-                                return Err(vec![TypeErr::new(
-                                    &var.pos,
-                                    "Non-self argument must have type if no default present",
-                                )]);
-                            },
+                        None => if let Some(default) = default {
+                            Some(match &default.deref().node {
+                                Node::Str { .. } => Name::from(clss::python::STRING_PRIMITIVE),
+                                Node::Bool { .. } => Name::from(clss::python::BOOL_PRIMITIVE),
+                                Node::Int { .. } => Name::from(clss::python::INT_PRIMITIVE),
+                                Node::Real { .. } => Name::from(clss::python::FLOAT_PRIMITIVE),
+                                Node::ENum { .. } => Name::from(clss::python::INT_PRIMITIVE),
+                                _ => return Err(vec![TypeErr::new(
+                                    &default.pos,
+                                    "Can only infer type of literals",
+                                )]),
+                            })
+                        } else {
+                            return Err(vec![TypeErr::new(
+                                &var.pos,
+                                "Non-self argument must have type if no default present",
+                            )]);
+                        },
                     },
                 })
             }
