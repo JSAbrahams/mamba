@@ -29,7 +29,7 @@ macro_rules! inner_bin_op {
 pub fn parse_expression(it: &mut LexIterator) -> ParseResult { parse_level_7(it) }
 
 fn parse_level_7(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (7)")?;
     let arithmetic = it.parse(&parse_level_6, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -49,7 +49,7 @@ fn parse_level_7(it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_level_6(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (6)")?;
     let arithmetic = it.parse(&parse_level_5, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -77,7 +77,7 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_level_5(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (5)")?;
     let arithmetic = it.parse(&parse_level_4, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -101,7 +101,7 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_level_4(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (4)")?;
     let arithmetic = it.parse(&parse_level_3, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -120,7 +120,7 @@ fn parse_level_4(it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_level_3(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (3)")?;
     let arithmetic = it.parse(&parse_level_2, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
@@ -161,7 +161,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_level_2(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (2)")?;
     macro_rules! un_op {
         ($it:expr, $fun:path, $tok:ident, $ast:ident, $msg:expr) => {{
             let factor = $it.parse(&$fun, $msg, &start)?;
@@ -186,7 +186,7 @@ fn parse_level_2(it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_level_1(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("operation")?;
+    let start = it.start_pos("operation (1)")?;
     let arithmetic = it.parse(&parse_inner_expression, "operation", &start)?;
     macro_rules! bin_op {
         ($it:expr, $fun:path, $ast:ident, $arithmetic:expr, $msg:expr) => {{
