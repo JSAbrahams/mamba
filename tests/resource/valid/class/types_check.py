@@ -1,27 +1,15 @@
 from typing import Callable
 
-print("my script")
 
-class MyGeneric(str):
-    def __init__(self):
-        super(str, self).__init__()
-
+MyGeneric = str
 
 class MyType:
-    some_field: str = None
-
     def __init__(self, some_field: str):
         self.some_field = some_field
 
 
-class SomeState(MyClass):
-    def __init__(self):
-        super(MyClass, self).__init__()
-
-
-class OtherState(MyClass):
-    def __init__(self):
-        super(MyClass, self).__init__()
+SomState = MyClass
+OtherState = MyClass
 
 
 class SuperInterface:

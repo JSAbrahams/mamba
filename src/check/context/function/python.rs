@@ -27,6 +27,8 @@ pub const TRUTHY: &str = "__bool__";
 pub const NEXT: &str = "__next__";
 pub const ITER: &str = "__iter__";
 
+pub const SUPER: &str = "super";
+
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {

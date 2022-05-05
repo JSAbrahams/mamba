@@ -45,7 +45,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                 // TODO augment AST in type checker
                 Box::from(match expression {
                     Some(expr) => desugar_node(expr, imp, &state.expand_ty(true))?,
-                    None => Core::Empty
+                    None => Core::Pass
                 })
             },
         },
@@ -250,7 +250,7 @@ mod test {
             ty: None,
             default: None,
         });
-        assert_eq!(*body, Core::Empty);
+        assert_eq!(*body, Core::Pass);
     }
 
     #[test]
@@ -287,7 +287,7 @@ mod test {
             ty: None,
             default: Some(Box::from(Core::Str { string: String::from("asdf") })),
         });
-        assert_eq!(*body, Core::Empty);
+        assert_eq!(*body, Core::Pass);
     }
 
     #[test]

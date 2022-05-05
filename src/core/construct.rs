@@ -14,7 +14,7 @@ pub enum Core {
     ClassDef {
         name: Box<Core>,
         parents: Vec<Core>,
-        definitions: Vec<Core>,
+        body: Box<Core>,
     },
     FunctionCall {
         function: Box<Core>,

@@ -261,7 +261,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, definitions } => format!(
+        Core::ClassDef { name, parents, body } => format!(
             "class {}{}:\n{}\n",
             to_py(name, ind),
             if parents.is_empty() {
@@ -269,7 +269,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             } else {
                 format!("({})", comma_delimited(parents, ind))
             },
-            newline_delimited(definitions, ind + 1)
+            to_py(body, ind + 1)
         ),
 
         Core::Pass => String::from("pass"),
