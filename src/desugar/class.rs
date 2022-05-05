@@ -103,6 +103,9 @@ fn extract_class(
             let name = Box::from(desugar_node(id, imp, state)?);
             Ok(if final_definitions.len() > 1 {
                 Core::ClassDef { name, parents: parent_names, definitions: final_definitions }
+            } else if final_definitions.len() == 1 {
+                let expr = Option::from(Box::from(parent));
+                Core::VarDef { var: name, ty: None, expr }
             } else {
                 let expr = Option::from(Box::from(Core::Tuple { elements: parent_names }));
                 Core::VarDef { var: name, ty: None, expr }
@@ -344,5 +347,58 @@ mod tests {
 
         let result = desugar(&condition);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn type_alias() {
+        let alias = to_pos!(Node::Class {
+            ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("MyErr1") }), generics: vec![] }),
+            args: vec![],
+            parents: vec![
+                to_pos_unboxed!(Node::Parent {
+                    ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("Exception") }), generics: vec![] }),
+                    args: vec![to_pos_unboxed!(Node::Str { lit: String::from("Something went wrong"), expressions: vec![] })]})],
+            body: None });
+
+        let (var, ty, expr) = match desugar(&alias) {
+            Ok(Core::VarDef { var, ty, expr }) => (*var.clone(), ty.clone(), expr.clone()),
+            other => panic!("Expected type alias but got {:?}", other)
+        };
+
+        assert_eq!(var, Core::Id { lit: String::from("MyErr1") });
+        assert_eq!(ty, None);
+        assert!(expr.is_some());
+        match expr.clone().unwrap().deref() {
+            Core::FunctionCall { function, args } => {
+                assert_eq!(*function.deref(), Core::Id { lit: String::from("Exception") });
+                assert_eq!(args.len(), 1);
+                assert_eq!(*args.first().unwrap(), Core::Str { string: String::from("Something went wrong") })
+            }
+            _ => panic!("Expected function call, was {:?}", expr.clone())
+        }
+    }
+
+
+    #[test]
+    fn type_alias_with_arguments() {
+        let alias = to_pos!(Node::Class {
+            ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("MyErr1") }), generics: vec![] }),
+            args: vec![to_pos_unboxed!(Node::FunArg {
+                vararg: false,
+                mutable: false,
+                var: to_pos!(Node::Id {lit: String::from("a1")}),
+                ty: None,
+                default: None
+            })],
+            parents: vec![
+                to_pos_unboxed!(Node::Parent {
+                    ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("Exception") }), generics: vec![] }),
+                    args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]})],
+            body: None });
+
+        let (name, parents, definitions) = match desugar(&alias) {
+            Ok(Core::ClassDef { name, parents, definitions }) => (name, parents, definitions),
+            other => panic!("Expected class def but got {:?}", other)
+        };
     }
 }

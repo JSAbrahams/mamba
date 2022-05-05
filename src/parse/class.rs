@@ -7,7 +7,6 @@ use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::{expected, expected_one_of};
 use crate::parse::result::ParseResult;
-use crate::parse::ty::parse_generics;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
 
@@ -58,12 +57,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
 
 pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("parent")?;
-
-    let id = it.parse(&parse_id, "parent", &start)?;
-    let generics = it.parse_vec_if(&Token::LSBrack, &parse_generics, "parent generics", &start)?;
-    let generics_end =
-        if let Some(end) = it.eat_if(&Token::RSBrack) { end } else { id.pos.clone() };
-    let ty = Box::from(AST { pos: start.union(&generics_end), node: Node::Type { id, generics } });
+    let ty = it.parse(&parse_type, "parent", &start)?;
 
     let mut args = vec![];
     let end = if it.eat_if(&Token::LRBrack).is_some() {
@@ -169,6 +163,50 @@ mod test {
         assert_eq!(import[1].node, Node::Id { lit: String::from("f") });
         assert_eq!(_as[0].node, Node::Id { lit: String::from("e") });
         assert_eq!(_as[1].node, Node::Id { lit: String::from("g") });
+    }
+
+    #[test]
+    fn parse_class_alias() {
+        let source = String::from("class MyErr1: Exception(\"Something went wrong\")");
+        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+
+        let (ty, args, parents, body) = match ast.node {
+            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+                Node::Class { ty, args, parents, body } =>
+                    (ty.clone(), args.clone(), parents.clone(), body.clone()),
+                other => panic!("Was not class: {:?}.", other)
+            },
+            other => panic!("Ast was not script: {:?}", other)
+        };
+
+        match ty.node {
+            Node::Type { id, generics } => {
+                assert_eq!(id.node, Node::Id { lit: String::from("MyErr1") });
+                assert_eq!(generics.len(), 0);
+            }
+            _ => panic!("Expected type: {:?}", ty.node)
+        };
+
+        assert_eq!(args.len(), 0);
+        assert_eq!(body, None);
+
+        assert_eq!(parents.len(), 1);
+        let parent = parents.first().unwrap();
+        match &parent.node {
+            Node::Parent { ty, args } => {
+                match &ty.node {
+                    Node::Type { id, generics } => {
+                        assert_eq!(id.node, Node::Id { lit: String::from("Exception") });
+                        assert_eq!(generics.len(), 0);
+                    }
+                    _ => panic!("Expected type: {:?}", ty.node)
+                }
+                assert_eq!(args.len(), 1);
+                let arg = args.first().unwrap();
+                assert_eq!(arg.node, Node::Str { lit: String::from("Something went wrong"), expressions: vec![] })
+            }
+            _ => panic!("Expected parent: {:?}", parent.node)
+        }
     }
 
     #[test]

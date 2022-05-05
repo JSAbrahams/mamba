@@ -41,7 +41,7 @@ fn test_directory(
     // Convert to newline delimited string for more readable diff
     let check_string = newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
     let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
-    assert_eq!(check_string, out_string);
+    assert_eq!(out_string, check_string);
     Ok(())
 }
 

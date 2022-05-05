@@ -27,7 +27,6 @@ fn types_ast_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // desugar stage fails
 fn tuple_as_class_verify() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "tuple_as_class")
 }
