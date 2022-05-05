@@ -110,10 +110,9 @@ impl GenericField {
         pos: &Position,
     ) -> TypeResult<GenericField> {
         if let Some(NameVariant::Single(class)) = class.map(|t| t.variant.clone()) {
-            Ok(GenericField { in_class: Some(class.clone()), ..self })
+            Ok(GenericField { in_class: Some(class), ..self })
         } else {
-            let msg = format!("Field must be in class");
-            Err(Vec::from(TypeErr::new(pos, &msg)))
+            Err(Vec::from(TypeErr::new(pos, &String::from("Field must be in class"))))
         }
     }
 }

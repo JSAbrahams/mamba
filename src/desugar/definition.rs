@@ -21,7 +21,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             if state.def_as_fun_arg {
                 Core::FunArg {
                     vararg: false,
-                    var: Box::from(var.clone()),
+                    var: Box::from(var),
                     ty: match ty {
                         Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
                         None => None

@@ -68,7 +68,7 @@ fn extract_class(
         _ => return Err(UnimplementedErr::new(ty, "Other than type as class identifier"))
     };
 
-    let args = desugar_vec(args, imp, &state.def_as_fun_arg(true))?;
+    let mut args = desugar_vec(args, imp, &state.def_as_fun_arg(true))?;
     let parents = desugar_vec(parents, imp, state)?;
 
     let body = match body {
@@ -76,20 +76,20 @@ fn extract_class(
         _ => None
     };
 
-    let body = if args.len() > 0 || parents.len() > 1 ||
+    let body = if !args.is_empty() || parents.len() > 1 ||
         (body.is_some() && parents.iter().any(|p| matches!(p, Core::FunctionCall { .. }))) {
         let old_stmts = match body {
-            Some(Core::Block { statements }) => statements.clone(),
+            Some(Core::Block { statements }) => statements,
             None => vec![],
             Some(..) => return Err(UnimplementedErr::new(ty, "Body not block")),
         };
 
         let parents: Vec<(String, Vec<Core>)> = parents.iter().map(|parent| match parent.clone() {
-            Core::FunctionCall { function, args } => match *function.clone() {
+            Core::FunctionCall { function, args } => match *function {
                 Core::Id { lit } => Ok((lit, args)),
                 _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
             }
-            Core::Type { lit, .. } => Ok((lit.clone(), vec![])),
+            Core::Type { lit, .. } => Ok((lit, vec![])),
             _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
         }).collect::<DesugarResult<_>>()?;
 
@@ -132,9 +132,9 @@ fn extract_class(
             ty: None,
             default: None,
         }];
-        new_args.append(&mut args.clone());
+        new_args.append(&mut args);
 
-        let mut statements = old_stmts.clone();
+        let mut statements = old_stmts;
         statements.append(&mut vec![Core::FunDef {
             id: Box::from(Core::Id { lit: String::from(python::INIT) }),
             arg: new_args,
@@ -150,17 +150,17 @@ fn extract_class(
     match body {
         Some(body) => {
             let parent_names = parents.iter().map(|parent| match parent.clone() {
-                Core::FunctionCall { function, .. } => match *function.clone() {
-                    Core::Id { .. } => Ok(*function.clone()),
+                Core::FunctionCall { function, .. } => match *function {
+                    Core::Id { .. } => Ok(*function),
                     _ => Err(UnimplementedErr::new(ty, "Parent"))
                 }
-                Core::Type { lit, .. } => Ok(Core::Id { lit: lit.clone() }),
+                Core::Type { lit, .. } => Ok(Core::Id { lit }),
                 _ => Err(UnimplementedErr::new(ty, "Parent"))
             }).collect::<DesugarResult<Vec<Core>>>()?;
 
             Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
         }
-        None => if parents.len() == 0 {
+        None => if parents.is_empty() {
             Ok(Core::ClassDef { name: Box::from(id), parent_names: vec![], body: Box::from(Core::Pass) })
         } else if parents.len() == 1 {
             Ok(Core::VarDef { var: Box::from(id), ty: None, expr: parents.first().cloned().map(Box::from) })
@@ -312,9 +312,13 @@ mod tests {
                     args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]})],
             body: None });
 
-        let (name, parent_names, definitions) = match desugar(&alias) {
-            Ok(Core::ClassDef { name, parent_names, body: definitions }) => (name, parent_names, definitions),
+        let (name, parent_names, body) = match desugar(&alias) {
+            Ok(Core::ClassDef { name, parent_names, body }) => (*name, parent_names, *body),
             other => panic!("Expected class def but got {:?}", other)
         };
+
+        assert_eq!(name, Core::Id { lit: String::from("MyErr1") });
+        assert_eq!(parent_names.len(), 1);
+        assert_eq!(*parent_names.first().unwrap(), Core::Id { lit: String::from("Exception") });
     }
 }

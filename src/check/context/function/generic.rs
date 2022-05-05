@@ -59,8 +59,7 @@ impl GenericFunction {
                 ..self
             })
         } else {
-            let msg = format!("Function must be in class.");
-            Err(Vec::from(TypeErr::new(pos, &msg)))
+            Err(Vec::from(TypeErr::new(pos, &String::from("Function must be in class."))))
         }
     }
 }

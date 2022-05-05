@@ -183,8 +183,7 @@ impl ClassTuple {
         match &self.variant {
             ClassVariant::Direct(class) => Ok(class.clone()),
             _ => {
-                let msg = format!("Expected a single class.");
-                Err(vec![TypeErr::new(pos, &msg)])
+                Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))])
             }
         }
     }
