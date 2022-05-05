@@ -5,7 +5,6 @@ use crate::check::context::function::python;
 use crate::core::construct::Core;
 use crate::core::construct::Core::FunctionCall;
 use crate::desugar::common::desugar_vec;
-use crate::desugar::desugar;
 use crate::desugar::node::desugar_node;
 use crate::desugar::result::{DesugarResult, UnimplementedErr};
 use crate::desugar::state::Imports;
@@ -34,18 +33,28 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
         Node::Class { ty, body, args, parents } =>
             extract_class(ty, body, args, parents, imp, &state.in_interface(false)),
 
-        Node::Parent { ty, args } => Ok(Core::FunctionCall {
-            function: Box::from(match desugar_node(ty, imp, state)? {
-                Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
-                other => other
-            }),
-            args: desugar_vec(args, imp, state)?,
-        }),
+        Node::Parent { ty, args } => if args.is_empty() {
+            desugar_node(ty, imp, state)
+        } else {
+            Ok(Core::FunctionCall {
+                function: Box::from(match desugar_node(ty, imp, state)? {
+                    Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
+                    other => other
+                }),
+                args: desugar_vec(args, imp, state)?,
+            })
+        },
 
         other => panic!("Expected class or type definition but was {:?}", other)
     }
 }
 
+/// Extract class.
+///
+/// Construct custom constructor to call parents if:
+/// - There are class arguments
+/// - There are multiple parents
+/// - The class has a body and one or more parents has class arguments
 fn extract_class(
     ty: &AST,
     body: &Option<Box<AST>>,
@@ -59,7 +68,7 @@ fn extract_class(
         _ => return Err(UnimplementedErr::new(ty, "Other than type as class identifier"))
     };
 
-    let args = desugar_vec(args, imp, state)?;
+    let args = desugar_vec(args, imp, &state.def_as_fun_arg(true))?;
     let parents = desugar_vec(parents, imp, state)?;
 
     let body = match body {
@@ -67,36 +76,25 @@ fn extract_class(
         _ => None
     };
 
-    // inline arguments are special
-    let body = if args.len() > 0 {
-        let mut old_stmts = match body {
+    let body = if args.len() > 0 || parents.len() > 1 ||
+        (body.is_some() && parents.iter().any(|p| matches!(p, Core::FunctionCall { .. }))) {
+        let old_stmts = match body {
             Some(Core::Block { statements }) => statements.clone(),
             None => vec![],
             Some(..) => return Err(UnimplementedErr::new(ty, "Body not block")),
         };
 
-        for stmt in old_stmts.clone() {
-            match stmt {
-                Core::FunDef { id, .. } => match *id {
-                    Core::Id { lit } if lit == python::INIT => {
-                        return Err(UnimplementedErr::new(ty, "Inline and in-body constructor"));
-                    }
-                    _ => {}
-                }
-                _ => {}
-            }
-        }
-
-        let parent_args: Vec<(String, Vec<Core>)> = parents.iter().map(|parent| match parent.clone() {
+        let parents: Vec<(String, Vec<Core>)> = parents.iter().map(|parent| match parent.clone() {
             Core::FunctionCall { function, args } => match *function.clone() {
                 Core::Id { lit } => Ok((lit, args)),
-                _ => Err(UnimplementedErr::new(ty, "Parent"))
+                _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
             }
-            _ => Err(UnimplementedErr::new(ty, "Parent"))
+            Core::Type { lit, .. } => Ok((lit.clone(), vec![])),
+            _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
         }).collect::<DesugarResult<_>>()?;
 
         // super(<parent>, self).__init__(args)
-        let mut statements: Vec<Core> = parent_args.iter().map(|(parent, args)| Core::PropertyCall {
+        let mut parent_calls: Vec<Core> = parents.iter().map(|(parent, args)| Core::PropertyCall {
             object: Box::from(Core::FunctionCall {
                 function: Box::from(Core::Id { lit: String::from(function::python::SUPER) }),
                 args: vec![
@@ -109,7 +107,40 @@ fn extract_class(
                 args: args.clone(),
             }),
         }).collect();
-        statements.append(&mut old_stmts);
+
+        // Class arguments not in any parent must be assigned here
+        for arg in &args {
+            let arg = match arg {
+                Core::FunArg { var, .. } => var.clone(),
+                _ => return Err(UnimplementedErr::new(ty, "Class argument not in parent"))
+            };
+
+            if !parents.iter().any(|(_, args)| args.iter().any(|a| Box::from(a.clone()) == arg)) {
+                parent_calls.push(Core::Assign {
+                    left: Box::from(Core::PropertyCall {
+                        object: Box::from(Core::Id { lit: String::from(arg::python::SELF) }),
+                        property: arg.clone(),
+                    }),
+                    right: arg,
+                })
+            }
+        }
+
+        let mut new_args = vec![Core::FunArg {
+            vararg: false,
+            var: Box::from(Core::Id { lit: String::from(arg::python::SELF) }),
+            ty: None,
+            default: None,
+        }];
+        new_args.append(&mut args.clone());
+
+        let mut statements = old_stmts.clone();
+        statements.append(&mut vec![Core::FunDef {
+            id: Box::from(Core::Id { lit: String::from(python::INIT) }),
+            arg: new_args,
+            ty: None,
+            body: Box::from(Core::Block { statements: parent_calls }),
+        }]);
 
         Some(Core::Block { statements })
     } else {
@@ -117,14 +148,24 @@ fn extract_class(
     };
 
     match body {
-        Some(body) => Ok(Core::ClassDef { name: Box::from(id), parents, body: Box::from(body) }),
+        Some(body) => {
+            let parent_names = parents.iter().map(|parent| match parent.clone() {
+                Core::FunctionCall { function, .. } => match *function.clone() {
+                    Core::Id { .. } => Ok(*function.clone()),
+                    _ => Err(UnimplementedErr::new(ty, "Parent"))
+                }
+                Core::Type { lit, .. } => Ok(Core::Id { lit: lit.clone() }),
+                _ => Err(UnimplementedErr::new(ty, "Parent"))
+            }).collect::<DesugarResult<Vec<Core>>>()?;
+
+            Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
+        }
         None => if parents.len() == 0 {
-            Ok(Core::ClassDef { name: Box::from(id), parents, body: Box::from(Core::Pass) })
+            Ok(Core::ClassDef { name: Box::from(id), parent_names: vec![], body: Box::from(Core::Pass) })
         } else if parents.len() == 1 {
             Ok(Core::VarDef { var: Box::from(id), ty: None, expr: parents.first().cloned().map(Box::from) })
         } else {
-            let expr = Core::Tuple { elements: parents };
-            Ok(Core::VarDef { var: Box::from(id), ty: None, expr: Some(Box::from(expr)) })
+            Err(UnimplementedErr::new(ty, "More than one parent"))
         }
     }
 }
@@ -271,8 +312,8 @@ mod tests {
                     args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]})],
             body: None });
 
-        let (name, parents, definitions) = match desugar(&alias) {
-            Ok(Core::ClassDef { name, parents, body: definitions }) => (name, parents, definitions),
+        let (name, parent_names, definitions) = match desugar(&alias) {
+            Ok(Core::ClassDef { name, parent_names, body: definitions }) => (name, parent_names, definitions),
             other => panic!("Expected class def but got {:?}", other)
         };
     }

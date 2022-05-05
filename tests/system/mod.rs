@@ -36,12 +36,21 @@ fn test_directory(
 
     let res = fallable(valid, input, &output_path, &output_file, file_name);
     delete_dir(&output_path).map_err(|_| OutTestErr(vec![]))?;
-    let (check_ast, out_ast) = res?;
+    let (check_ast, check_src, out_ast, out_src) = res?;
 
     // Convert to newline delimited string for more readable diff
     let check_string = newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
     let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
-    assert_eq!(out_string, check_string);
+    assert_eq!(out_string, check_string,
+               "AST did not match!\n\
+               Was:\n\
+               ----------------\n\
+               {}\n\
+               ----------------\n\
+               Expected:\n\
+               ----------------\n\
+               {}\n\
+               ----------------", out_src, check_src);
     Ok(())
 }
 
@@ -51,7 +60,7 @@ fn fallable(
     output_path: &str,
     output_file: &str,
     file_name: &str,
-) -> OutTestRet<(Vec<Statement>, Vec<Statement>)> {
+) -> OutTestRet<(Vec<Statement>, String, Vec<Statement>, String)> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
@@ -68,13 +77,23 @@ fn fallable(
         .output()
         .expect("Could not run Python command.");
 
-    if cmd.status.code().unwrap() != 0 {
-        panic!("Error running Python command: {}", String::from_utf8(cmd.stderr).unwrap());
-    }
 
     let check_src = resource_content(true, input, &format!("{}_check.py", file_name));
     let check_ast = python_src_to_stmts(&check_src);
-    let out_ast = python_src_to_stmts(&resource_content_path(output_file));
+    let out_src = resource_content_path(output_file);
+    let out_ast = python_src_to_stmts(&out_src);
 
-    Ok((check_ast, out_ast))
+    if cmd.status.code().unwrap() != 0 {
+        panic!("Error running Python command: {}\n\
+        Source:\n\
+        ----------\n\
+        {}\n\
+        ----------",
+               String::from_utf8(cmd.stderr).unwrap(),
+               out_src.lines().enumerate().map(|(line, src)| {
+                   format!("{}: {}\n", line + 1, src)
+               }).collect::<String>());
+    }
+
+    Ok((check_ast, check_src, out_ast, out_src))
 }

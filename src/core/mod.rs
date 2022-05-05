@@ -261,13 +261,13 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Continue => String::from("continue"),
         Core::Break => String::from("break"),
 
-        Core::ClassDef { name, parents, body } => format!(
+        Core::ClassDef { name, parent_names, body } => format!(
             "class {}{}:\n{}\n",
             to_py(name, ind),
-            if parents.is_empty() {
+            if parent_names.is_empty() {
                 String::new()
             } else {
-                format!("({})", comma_delimited(parents, ind))
+                format!("({})", comma_delimited(parent_names, ind))
             },
             to_py(body, ind + 1)
         ),

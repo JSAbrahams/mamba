@@ -18,18 +18,33 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                 _ => 1
             });
 
-            Core::VarDef {
-                var: Box::from(var.clone()),
-                ty: match ty {
-                    Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
-                    None => None
-                },
-                expr: match (var, expression) {
-                    (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
-                    (Core::Tuple { elements }, None) =>
-                        Some(Box::from(Core::Tuple { elements: vec![Core::None; elements.len()] })),
-                    (_, None) => None
-                },
+            if state.def_as_fun_arg {
+                Core::FunArg {
+                    vararg: false,
+                    var: Box::from(var.clone()),
+                    ty: match ty {
+                        Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
+                        None => None
+                    },
+                    default: match expression {
+                        Some(expression) => Some(Box::from(desugar_node(expression, imp, &state)?)),
+                        None => None
+                    },
+                }
+            } else {
+                Core::VarDef {
+                    var: Box::from(var.clone()),
+                    ty: match ty {
+                        Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
+                        None => None
+                    },
+                    expr: match (var, expression) {
+                        (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
+                        (Core::Tuple { elements }, None) =>
+                            Some(Box::from(Core::Tuple { elements: vec![Core::None; elements.len()] })),
+                        (_, None) => None
+                    },
+                }
             }
         }
         Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => Core::FunDef {

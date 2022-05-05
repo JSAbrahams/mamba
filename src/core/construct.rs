@@ -13,7 +13,7 @@ pub enum Core {
     },
     ClassDef {
         name: Box<Core>,
-        parents: Vec<Core>,
+        parent_names: Vec<Core>,
         body: Box<Core>,
     },
     FunctionCall {
