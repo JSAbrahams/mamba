@@ -10,7 +10,7 @@ use crate::check::context::{arg, Context, function};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::IsSuperSet;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -53,9 +53,9 @@ pub struct Function {
     pub self_mutable: Option<bool>,
     pub pure: bool,
     pub arguments: Vec<FunctionArg>,
-    pub raises: NameUnion,
+    pub raises: Name,
     pub in_class: Option<StringName>,
-    pub ret_ty: NameUnion,
+    pub ret_ty: Name,
 }
 
 impl Hash for Function {
@@ -119,7 +119,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, TrueName>, &Position)> for Func
             },
             ret_ty: match &fun.ret_ty {
                 Some(ty) => ty.substitute(generics, pos)?,
-                None => NameUnion::empty()
+                None => Name::empty()
             },
         })
     }
@@ -128,7 +128,7 @@ impl TryFrom<(&GenericFunction, &HashMap<String, TrueName>, &Position)> for Func
 impl Function {
     pub fn args_compatible(
         &self,
-        args: &[NameUnion],
+        args: &[Name],
         ctx: &Context,
         pos: &Position,
     ) -> TypeResult<()> {
@@ -168,8 +168,8 @@ impl Function {
 
     pub fn simple_fun(
         name: &StringName,
-        self_arg: &NameUnion,
-        ret_ty: &NameUnion,
+        self_arg: &Name,
+        ret_ty: &Name,
         pos: &Position,
     ) -> TypeResult<Function> {
         if self_arg.is_empty() {
@@ -190,7 +190,7 @@ impl Function {
                 mutable: false,
                 ty: Some(self_arg.clone()),
             }],
-            raises: NameUnion::empty(),
+            raises: Name::empty(),
             in_class: None,
             ret_ty: ret_ty.clone(),
         })

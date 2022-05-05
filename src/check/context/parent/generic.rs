@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 use std::hash::Hash;
 
-use crate::check::name::nameunion::NameUnion;
-use crate::check::name::stringname::StringName;
+use crate::check::name::Name;
+use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -10,9 +10,9 @@ use crate::parse::ast::{AST, Node};
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub struct GenericParent {
     pub is_py_type: bool,
-    pub name: StringName,
+    pub name: TrueName,
     pub pos: Position,
-    pub args: Vec<NameUnion>,
+    pub args: Vec<Name>,
 }
 
 impl TryFrom<&AST> for GenericParent {
@@ -24,7 +24,7 @@ impl TryFrom<&AST> for GenericParent {
             // TODO use arguments
             Node::Parent { ty, .. } => Ok(GenericParent {
                 is_py_type: false,
-                name: StringName::try_from(ty)?,
+                name: TrueName::try_from(ty)?,
                 pos: ast.pos.clone(),
                 args: vec![],
             }),

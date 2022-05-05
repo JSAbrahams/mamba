@@ -10,7 +10,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
@@ -20,7 +20,7 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
     let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
-            let arguments_union: Vec<Vec<NameUnion>> = name
+            let arguments_union: Vec<Vec<Name>> = name
                 .names()
                 .map(|n| match n.variant {
                     NameVariant::Fun(arguments, _) => Ok(arguments),
@@ -92,7 +92,7 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
 
 fn field_access(constraints: &mut Constraints,
                 ctx: &Context,
-                entity_name: &NameUnion,
+                entity_name: &Name,
                 name: &str,
                 accessed: &Expected,
                 other: &Expected,
@@ -111,7 +111,7 @@ fn field_access(constraints: &mut Constraints,
 #[allow(clippy::too_many_arguments)]
 fn function_access(constraints: &mut Constraints,
                    ctx: &Context,
-                   entity_name: &NameUnion,
+                   entity_name: &Name,
                    name: &StringName,
                    args: &[Expected],
                    accessed: &Expected,

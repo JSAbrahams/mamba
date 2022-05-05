@@ -1,5 +1,3 @@
-class MyTuple: (Int, Int, String)
-
 def a := (2, 3)
 def b: (Int, Int) := (3, 5)
 

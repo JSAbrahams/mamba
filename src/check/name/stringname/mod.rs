@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::HasParent;
 use crate::check::name::IsSuperSet;
-use crate::check::name::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -21,7 +21,7 @@ pub mod generic;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StringName {
     pub name: String,
-    pub generics: Vec<NameUnion>,
+    pub generics: Vec<Name>,
 }
 
 impl Display for StringName {
@@ -58,7 +58,7 @@ impl IsSuperSet<StringName> for StringName {
 }
 
 impl StringName {
-    pub fn new(lit: &str, generics: &[NameUnion]) -> StringName {
+    pub fn new(lit: &str, generics: &[Name]) -> StringName {
         StringName { name: String::from(lit), generics: Vec::from(generics) }
     }
 

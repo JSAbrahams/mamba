@@ -13,7 +13,7 @@ use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::generic::generics;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
@@ -97,13 +97,13 @@ impl LookupClass<&TrueName, ClassTuple> for Context {
     }
 }
 
-impl LookupClass<&NameUnion, ClassUnion> for Context {
+impl LookupClass<&Name, ClassUnion> for Context {
     /// Look up GenericClass and substitute generics to yield a Class.
     ///
     /// # Error
     ///
     /// If NameUnion is empty.
-    fn class(&self, name: &NameUnion, pos: &Position) -> Result<ClassUnion, Vec<TypeErr>> {
+    fn class(&self, name: &Name, pos: &Position) -> Result<ClassUnion, Vec<TypeErr>> {
         if name.is_empty() {
             return Err(vec![TypeErr::new(pos, &format!("UnExpected a '{}'", name))]);
         }
@@ -129,7 +129,7 @@ impl LookupFunction<&StringName, Function> for Context {
             Function::try_from((generic_fun, &generics, pos))
         } else if let Some(generic_class) = self.classes.iter().find(|c| &c.name == function) {
             let class = Class::try_from((generic_class, &generics, pos))?;
-            class.constructor(true)
+            class.constructor(true, pos)
         } else {
             let msg = format!("Function {} is undefined.", function);
             Err(vec![TypeErr::new(pos, &msg)])
@@ -171,7 +171,7 @@ impl Display for ClassTuple {
         match &self.variant {
             ClassVariant::Direct(class) => write!(f, "{}", class.name),
             ClassVariant::Tuple(classes) => {
-                let names: Vec<NameUnion> = classes.iter().map(|c| c.name()).collect();
+                let names: Vec<Name> = classes.iter().map(|c| c.name()).collect();
                 write!(f, "({})", comma_delm(names))
             }
         }
@@ -179,9 +179,18 @@ impl Display for ClassTuple {
 }
 
 impl ClassTuple {
+    pub fn as_direct(&self, pos: &Position) -> TypeResult<Class> {
+        match &self.variant {
+            ClassVariant::Direct(class) => Ok(class.clone()),
+            _ => {
+                Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))])
+            }
+        }
+    }
+
     pub fn name(&self) -> TrueName {
         let variant = match &self.variant {
-            ClassVariant::Direct(class) => NameVariant::Single(class.name.clone()),
+            ClassVariant::Direct(class) => return class.name.clone(),
             ClassVariant::Tuple(classes) =>
                 NameVariant::Tuple(classes.iter().map(|c| c.name()).collect()),
         };
@@ -209,8 +218,8 @@ impl ClassTuple {
                     }
 
                     let variant = NameVariant::Tuple(classes.iter().map(|c| c.name()).collect());
-                    let self_arg = NameUnion::from(&TrueName::from(&variant));
-                    let ret_ty = NameUnion::from(clss::STRING_PRIMITIVE);
+                    let self_arg = Name::from(&TrueName::from(&variant));
+                    let ret_ty = Name::from(clss::STRING_PRIMITIVE);
                     Function::simple_fun(name, &self_arg, &ret_ty, pos)
                 } else {
                     let msg = format!("Function '{}' undefined on '{}'", name, self);
@@ -292,8 +301,8 @@ impl HasParent<&TrueName> for ClassUnion {
     }
 }
 
-impl HasParent<&NameUnion> for ClassTuple {
-    fn has_parent(&self, name: &NameUnion, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+impl HasParent<&Name> for ClassTuple {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         match &self.variant {
             ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
             ClassVariant::Tuple(_) => {
@@ -304,10 +313,10 @@ impl HasParent<&NameUnion> for ClassTuple {
     }
 }
 
-impl HasParent<&NameUnion> for ClassUnion {
+impl HasParent<&Name> for ClassUnion {
     fn has_parent(
         &self,
-        name: &NameUnion,
+        name: &Name,
         ctx: &Context,
         pos: &Position,
     ) -> Result<bool, Vec<TypeErr>> {
@@ -318,9 +327,9 @@ impl HasParent<&NameUnion> for ClassUnion {
 }
 
 impl ClassUnion {
-    pub fn name(&self) -> NameUnion {
+    pub fn name(&self) -> Name {
         let names: Vec<TrueName> = self.union.iter().map(|u| u.name()).collect();
-        NameUnion::new(&names)
+        Name::new(&names)
     }
 
     pub fn constructor(&self, pos: &Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {

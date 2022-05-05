@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
 use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
-use crate::check::name::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -67,6 +67,15 @@ impl AsNullable for TrueName {
     fn as_nullable(&self) -> Self { TrueName { is_nullable: true, ..self.clone() } }
 }
 
+impl PartialEq<StringName> for TrueName {
+    fn eq(&self, other: &StringName) -> bool {
+        match &self.variant {
+            NameVariant::Single(string_name) => string_name == other,
+            _ => false
+        }
+    }
+}
+
 #[allow(clippy::nonminimal_bool)]
 impl IsSuperSet<TrueName> for TrueName {
     /// Check if name is supertype of other name.
@@ -90,7 +99,7 @@ impl IsSuperSet<TrueName> for TrueName {
 }
 
 impl TrueName {
-    pub fn new(lit: &str, generics: &[NameUnion]) -> TrueName {
+    pub fn new(lit: &str, generics: &[Name]) -> TrueName {
         TrueName::from(&StringName::new(lit, generics))
     }
 

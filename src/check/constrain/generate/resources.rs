@@ -7,7 +7,7 @@ use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 
@@ -21,7 +21,7 @@ pub fn gen_resources(
         Node::Raises { expr_or_stmt, errors } => {
             let mut constr = constr.clone();
             for error in errors {
-                let exp = Expected::new(&error.pos, &Raises { name: NameUnion::try_from(error)? });
+                let exp = Expected::new(&error.pos, &Raises { name: Name::try_from(error)? });
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
@@ -35,7 +35,7 @@ pub fn gen_resources(
             constr.add("with as", &resource_exp, &Expected::new(&resource.pos, &ExpressionAny));
 
             if let Some(ty) = ty {
-                let ty_exp = Type { name: NameUnion::try_from(ty)? };
+                let ty_exp = Type { name: Name::try_from(ty)? };
                 constr.add("with as", &resource_exp, &Expected::new(&ty.pos, &ty_exp));
             }
 

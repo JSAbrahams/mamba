@@ -2,23 +2,22 @@ use std::ops::Deref;
 
 use python_parser::ast::Expression;
 
-use crate::check::name::nameunion::NameUnion;
+use crate::check::name::Name;
 use crate::check::name::truename::python::to_ty_name;
 use crate::check::name::truename::TrueName;
 
-impl From<&Expression> for NameUnion {
+impl From<&Expression> for Name {
     fn from(value: &Expression) -> Self {
         match value {
-            Expression::Name(_) => NameUnion::from(&TrueName::from(value)),
-            Expression::TupleLiteral(_) => NameUnion::from(&TrueName::from(value)),
+            Expression::Name(_) | Expression::TupleLiteral(_) => Name::from(&TrueName::from(value)),
             Expression::Subscript(id, exprs) =>
                 if id.deref() == &Expression::Name(String::from("Union")) {
                     let names: Vec<TrueName> = exprs.iter().map(to_ty_name).collect();
-                    NameUnion::new(&names)
+                    Name::new(&names)
                 } else {
-                    NameUnion::from(&TrueName::from(value))
+                    Name::from(&TrueName::from(value))
                 },
-            _ => NameUnion::from(&TrueName::empty())
+            _ => Name::from(&TrueName::empty())
         }
     }
 }

@@ -6,17 +6,22 @@ pub struct State {
     pub tup: usize,
     pub interface: bool,
     pub expand_ty: bool,
+    pub def_as_fun_arg: bool,
     pub assign_to: Option<Core>,
 }
 
 impl State {
-    pub fn new() -> State { State { tup: 1, interface: false, expand_ty: true, assign_to: None } }
+    pub fn new() -> State { State { tup: 1, interface: false, expand_ty: true, def_as_fun_arg: false, assign_to: None } }
 
     pub fn in_tup(&self, tup: usize) -> State { State { tup, ..self.clone() } }
 
     pub fn in_interface(&self, interface: bool) -> State { State { interface, ..self.clone() } }
 
     pub fn expand_ty(&self, expand_ty: bool) -> State { State { expand_ty, ..self.clone() } }
+
+    pub fn def_as_fun_arg(&self, def_as_fun_arg: bool) -> State {
+        State { def_as_fun_arg, ..self.clone() }
+    }
 
     pub fn assign_to(&self, assign_to: Option<&Core>) -> State {
         State { assign_to: assign_to.cloned(), ..self.clone() }

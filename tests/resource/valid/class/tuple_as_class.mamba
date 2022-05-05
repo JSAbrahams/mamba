@@ -1,0 +1,1 @@
+class MyTuple: (Int, Int, String)
