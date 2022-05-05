@@ -3,6 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
+use crate::check::context::clss;
 use crate::common::position::Position;
 use crate::parse::ast::AST;
 use crate::parse::lex::token::Lex;
@@ -79,12 +80,23 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
     }
 }
 
+fn token_to_name(token: &Token) -> String {
+    match token {
+        Token::Int(_) => format!("an '{}'", clss::INT_PRIMITIVE),
+        Token::Real(_) => format!("a '{}'", clss::FLOAT_PRIMITIVE),
+        Token::Str(..) => format!("a '{}'", clss::STRING_PRIMITIVE),
+        Token::Bool(_) => format!("a '{}'", clss::BOOL_PRIMITIVE),
+        Token::ENum(..) => format!("an '{}'", clss::ENUM_PRIMITIVE),
+        other => format!("{}", other)
+    }
+}
+
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
         position: actual.pos.clone(),
         msg: format!(
             "Expected {} while parsing {} {}, but found {}",
-            expected,
+            token_to_name(expected),
             an_or_a(parsing),
             parsing,
             actual.token
@@ -114,8 +126,7 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
                     an_or_a(parsing),
                     parsing)
         } else {
-            format!("Expected '{}' while parsing {} {}",
-                    comma_separated(tokens),
+            format!("Expected a token while parsing {} {}",
                     an_or_a(parsing),
                     parsing)
         },
@@ -126,7 +137,11 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
 }
 
 fn comma_separated(tokens: &[Token]) -> String {
-    let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", token));
+    comma_separated_map(tokens, token_to_name)
+}
+
+fn comma_separated_map(tokens: &[Token], map: fn(&Token) -> String) -> String {
+    let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", map(token)));
     String::from(&list[0..if list.len() >= 2 { list.len() - 2 } else { 0 }])
 }
 
