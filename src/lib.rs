@@ -1,5 +1,4 @@
 #![feature(drain_filter)]
-#![feature(termination_trait_lib)]
 
 extern crate ansi_term;
 #[macro_use]

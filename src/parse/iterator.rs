@@ -124,23 +124,6 @@ impl<'a> LexIterator<'a> {
         }
     }
 
-    pub fn parse_if_followed_by_both_last(
-        &mut self,
-        token: &Token,
-        final_token: &Token,
-        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
-        err_msg: &str,
-        start: &Position,
-    ) -> ParseResult<Option<Box<AST>>> {
-        if self.peek_if_followed_by(token, final_token) {
-            self.eat(token, err_msg)?;
-            self.eat(final_token, err_msg)?;
-            Ok(Some(self.parse(parse_fun, err_msg, start)?))
-        } else {
-            self.parse_if(final_token, parse_fun, err_msg, start)
-        }
-    }
-
     pub fn parse_vec_if(
         &mut self,
         token: &Token,

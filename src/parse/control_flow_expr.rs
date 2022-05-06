@@ -26,7 +26,15 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
     let cond = it.parse(&parse_expression, "if expression", &start)?;
     it.eat(&Token::Then, "if expression")?;
     let then = it.parse(&parse_expr_or_stmt, "if expression", &start)?;
-    let el = it.parse_if_followed_by_both_last(&Token::NL, &Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
+
+    let el = if it.peek_if(&|lex| lex.token == Token::Else) {
+        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?
+    } else if it.peek_if_followed_by(&Token::NL, &Token::Else) {
+        it.eat(&Token::NL, "if else branch");
+        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?
+    } else {
+        None
+    };
 
     let pos = if let Some(el) = &el { start.union(&el.pos) } else { start.union(&then.pos) };
     let node = Node::IfElse { cond, then, el };
