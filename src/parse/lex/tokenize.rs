@@ -266,3 +266,57 @@ fn as_op_or_id(string: String) -> Token {
         _ => Token::Id(string)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::parse::lex::lex_result::LexErr;
+    use crate::parse::lex::token::Token;
+    use crate::parse::lex::tokenize;
+
+    #[test]
+    fn class_with_body_class_right_after() -> Result<(), LexErr> {
+        let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Class);
+        assert_eq!(tokens[1].token, Token::Id(String::from("MyClass")));
+        assert_eq!(tokens[2].token, Token::NL);
+        assert_eq!(tokens[3].token, Token::Indent);
+        assert_eq!(tokens[4].token, Token::Def);
+        assert_eq!(tokens[5].token, Token::Id(String::from("var")));
+        assert_eq!(tokens[6].token, Token::Assign);
+        assert_eq!(tokens[7].token, Token::Int(String::from("10")));
+        assert_eq!(tokens[8].token, Token::NL);
+        assert_eq!(tokens[9].token, Token::Dedent);
+        assert_eq!(tokens[10].token, Token::NL);
+        assert_eq!(tokens[11].token, Token::Class);
+        assert_eq!(tokens[12].token, Token::Id(String::from("MyClass1")));
+
+        Ok(())
+    }
+
+
+    #[test]
+    fn if_statement() -> Result<(), LexErr> {
+        let source = "if a then\n    b\nelse\n    c";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::If);
+        assert_eq!(tokens[1].token, Token::Id(String::from("a")));
+        assert_eq!(tokens[2].token, Token::Then);
+        assert_eq!(tokens[3].token, Token::NL);
+        assert_eq!(tokens[4].token, Token::Indent);
+        assert_eq!(tokens[5].token, Token::Id(String::from("b")));
+        assert_eq!(tokens[6].token, Token::NL);
+        assert_eq!(tokens[7].token, Token::Dedent);
+        assert_eq!(tokens[8].token, Token::NL);
+        assert_eq!(tokens[9].token, Token::Else);
+        assert_eq!(tokens[10].token, Token::NL);
+        assert_eq!(tokens[11].token, Token::Indent);
+        assert_eq!(tokens[12].token, Token::Id(String::from("c")));
+
+        Ok(())
+    }
+}

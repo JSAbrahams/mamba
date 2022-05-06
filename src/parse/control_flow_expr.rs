@@ -26,7 +26,7 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
     let cond = it.parse(&parse_expression, "if expression", &start)?;
     it.eat(&Token::Then, "if expression")?;
     let then = it.parse(&parse_expr_or_stmt, "if expression", &start)?;
-    let el = it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
+    let el = it.parse_if_followed_by_both_last(&Token::NL, &Token::Else, &parse_expr_or_stmt, "if else branch", &start)?;
 
     let pos = if let Some(el) = &el { start.union(&el.pos) } else { start.union(&then.pos) };
     let node = Node::IfElse { cond, then, el };
@@ -86,6 +86,7 @@ mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
     use crate::parse::lex::tokenize;
+    use crate::parse::result::ParseErr;
     use crate::test_util::resource_content;
 
     #[test]
@@ -134,6 +135,52 @@ mod test {
         assert_eq!(expr1.node, Node::Id { lit: String::from("b") });
         assert_eq!(cond2.node, Node::Id { lit: String::from("c") });
         assert_eq!(expr2.node, Node::Id { lit: String::from("d") });
+    }
+
+    #[test]
+    fn if_expression() -> Result<(), ParseErr> {
+        let source = String::from("if a then\n    b\n");
+        let ast = parse_direct(&tokenize(&source).unwrap())?;
+
+        let (cond, then, el) = match ast.first().map(|a| &a.node) {
+            Some(Node::IfElse { cond, then, el }) => (cond, then, el.clone()),
+            _ => panic!("Expected if, got {:?}", ast)
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        let then = match &then.node {
+            Node::Block { statements } => statements[0].clone(),
+            _ => panic!("Expected then block, got {:?}", then)
+        };
+        assert_eq!(then.node, Node::Id { lit: String::from("b") });
+
+        assert!(el.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn if_else_expression() -> Result<(), ParseErr> {
+        let source = String::from("if a then\n    b\nelse\n    c");
+        let ast = parse_direct(&tokenize(&source).unwrap())?;
+
+        let (cond, then, el) = match ast.first().map(|a| &a.node) {
+            Some(Node::IfElse { cond, then, el }) => (cond, then, el.clone()),
+            _ => panic!("Expected if, got {:?}", ast)
+        };
+
+        assert_eq!(cond.node, Node::Id { lit: String::from("a") });
+        let then = match &then.node {
+            Node::Block { statements } => statements[0].clone(),
+            _ => panic!("Expected then block, got {:?}", then)
+        };
+        assert_eq!(then.node, Node::Id { lit: String::from("b") });
+
+        let el = match &el.unwrap().node {
+            Node::Block { statements } => statements[0].clone(),
+            _ => panic!("Expected then block, got {:?}", then)
+        };
+        assert_eq!(el.node, Node::Id { lit: String::from("c") });
+        Ok(())
     }
 
     #[test]

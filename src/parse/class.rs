@@ -100,7 +100,7 @@ mod test {
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
     use crate::parse::parse;
-    use crate::parse::result::ParseResult;
+    use crate::parse::result::{ParseErr, ParseResult};
     use crate::test_util::resource_content;
 
     #[test]
@@ -219,5 +219,47 @@ mod test {
     fn parse_imports_class() -> ParseResult<()> {
         let source = resource_content(true, &["class"], "import.mamba");
         parse(&tokenize(&source).unwrap()).map(|_| ())
+    }
+
+    #[test]
+    fn single_line_class() {
+        let source = String::from("class MyClass");
+        parse(&tokenize(&source).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn two_classes_no_newline_after() {
+        let source = String::from("class MyClass\nclass MyClass1");
+        parse(&tokenize(&source).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn two_classes_newline_after() {
+        let source = String::from("class MyClass\nclass MyClass1\n");
+        parse(&tokenize(&source).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn class_with_single_line_body_no_newline() -> Result<(), ParseErr> {
+        let source = "class MyClass\n    def var := 10";
+        parse(&tokenize(&source).unwrap())
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
+            .map(|_| ())
+    }
+
+    #[test]
+    fn class_with_single_line_body_newline() -> Result<(), ParseErr> {
+        let source = "class MyClass\n    def var := 10\n";
+        parse(&tokenize(&source).unwrap())
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
+            .map(|_| ())
+    }
+
+    #[test]
+    fn class_with_body_class_right_after() -> Result<(), ParseErr> {
+        let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
+        parse(&tokenize(&source).unwrap())
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
+            .map(|_| ())
     }
 }
