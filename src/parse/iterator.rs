@@ -163,7 +163,7 @@ impl<'a> LexIterator<'a> {
         }
     }
 
-    #[warn(dead_code)] // Useful method when debugging
+    #[allow(dead_code)] // Useful method when debugging
     pub fn peek_next(&mut self) -> Option<Token> {
         self.it.peek().cloned().cloned().map(|e| e.token)
     }
