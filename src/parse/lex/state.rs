@@ -40,13 +40,14 @@ impl State {
 
         self.token_this_line = true;
         let mut res = self.newlines.pop().map_or(vec![], |nl| vec![nl]);
-        res.append(&mut if self.line_indent >= self.cur_indent {
+        if self.line_indent >= self.cur_indent {
             let amount = ((self.line_indent - self.cur_indent) / 4) as usize;
-            vec![Lex::new(&self.pos, Token::Indent); amount]
+            res.append(&mut vec![Lex::new(&self.pos, Token::Indent); amount]);
         } else {
             let amount = ((self.cur_indent - self.line_indent) / 4) as usize;
-            vec![Lex::new(&self.pos, Token::Dedent); amount]
-        });
+            res.append(&mut vec![Lex::new(&self.pos, Token::Dedent); amount]);
+            res.push(Lex::new(&self.pos, Token::NL));
+        }
 
         res.append(&mut self.newlines);
         res.push(Lex::new(&self.pos, token.clone()));

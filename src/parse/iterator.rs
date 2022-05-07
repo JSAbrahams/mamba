@@ -32,17 +32,20 @@ impl<'a> LexIterator<'a> {
         }
 
         let mut multi_peek = multipeek(self.it.clone());
-        let mut last_token = None;
+        let mut first_token: Option<Token> = None;
         while let Some(lex) = multi_peek.peek() {
-            let peeked_token = lex.token.clone();
-            last_token = Some(peeked_token.clone());
+            let second_token = lex.token.clone();
 
-            if last_token == Some(token.clone()) && peeked_token == final_token.clone() {
-                return true;
-            } else if peeked_token != token.clone() { break; }
+            match (&first_token, &second_token) {
+                (Some(first_token), second_token) if Token::same_type(first_token, token) && Token::same_type(second_token, final_token) => { return true; }
+                _ if second_token != token.clone() => { break; }
+                _ => {}
+            }
+
+            first_token = Some(second_token.clone());
         }
 
-        last_token == Some(final_token.clone())
+        first_token == Some(final_token.clone())
     }
 
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
@@ -158,6 +161,11 @@ impl<'a> LexIterator<'a> {
             None => default,
             Some(lex) => match_fun(self, &lex.clone())
         }
+    }
+
+    #[allow(dead_code)] // Useful method when debugging
+    pub fn peek_next(&mut self) -> Option<Token> {
+        self.it.peek().cloned().cloned().map(|e| e.token)
     }
 
     pub fn peek_while_not_tokens(
