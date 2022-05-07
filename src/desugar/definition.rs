@@ -35,8 +35,8 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                 Core::VarDef {
                     var: Box::from(var.clone()),
                     ty: match ty {
-                        Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
-                        None => None
+                        Some(ty) if !var.is_tuple() => Some(Box::from(desugar_node(ty, imp, &state)?)),
+                        _ => None
                     },
                     expr: match (var, expression) {
                         (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
