@@ -224,6 +224,6 @@ mod test {
     #[test]
     fn if_stmt() {
         let source = resource_content(true, &["control_flow"], "if.mamba");
-        assert!(parse(&tokenize(&source).unwrap()).is_ok());
+        parse(&tokenize(&source).unwrap()).unwrap();
     }
 }
