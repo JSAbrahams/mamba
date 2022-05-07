@@ -297,12 +297,3 @@ pub enum Core {
         expr: Box<Core>,
     },
 }
-
-impl Core {
-    pub fn is_tuple(&self) -> bool {
-        match self {
-            Core::Tuple { .. } => true,
-            _ => false
-        }
-    }
-}
