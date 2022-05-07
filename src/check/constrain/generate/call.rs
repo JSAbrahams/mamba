@@ -35,7 +35,7 @@ pub fn gen_call(
                     errors.push(TypeErr::new(&ast.pos, &msg))
                 }
 
-                if let Some((var, expecteds)) = env.get_var(var) {
+                if let Some(expecteds) = env.get_var(var) {
                     if expecteds.iter().any(|(is_mut, _)| !is_mut) {
                         let msg = format!("{} was declared final, cannot reassign", var);
                         errors.push(TypeErr::new(&ast.pos, &msg))
@@ -55,7 +55,7 @@ pub fn gen_call(
             let f_name = StringName::try_from(name)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            if let Some((_, functions)) = env.get_var(&f_name.name) {
+            if let Some(functions) = env.get_var(&f_name.name) {
                 if !f_name.generics.is_empty() {
                     let msg = "Anonymous function call cannot have generics";
                     return Err(vec![TypeErr::new(&name.pos, msg)]);

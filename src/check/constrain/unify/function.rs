@@ -123,7 +123,7 @@ fn function_access(constraints: &mut Constraints,
     let mut pushed = 0;
     for function in &function_union.union {
         let fun_ty_exp = Expected::new(&accessed.pos, &Type { name: function.ret_ty.clone() });
-        constraints.push("function access", &fun_ty_exp, other);
+        constraints.push("function access", other, &fun_ty_exp);
         pushed += 1;
     }
 
