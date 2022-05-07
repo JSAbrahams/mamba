@@ -34,7 +34,6 @@ pub enum Token {
     Pure,
     IsA,
     IsNA,
-    Private,
     Init,
 
     As,
@@ -171,7 +170,6 @@ impl fmt::Display for Token {
             Token::Class => String::from("class"),
             Token::IsA => String::from("isa"),
             Token::IsNA => String::from("isnta"),
-            Token::Private => String::from("private"),
             Token::Init => String::from("init"),
 
             Token::As => String::from("as"),

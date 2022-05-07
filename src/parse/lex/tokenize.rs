@@ -212,7 +212,6 @@ fn as_op_or_id(string: String) -> Token {
         "class" => Token::Class,
         "pure" => Token::Pure,
         "as" => Token::As,
-        "private" => Token::Private,
 
         "import" => Token::Import,
         "forward" => Token::Forward,
