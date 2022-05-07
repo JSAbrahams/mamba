@@ -95,12 +95,12 @@ impl Environment {
     /// This is useful for detecting shadowing.
     ///
     /// Return true variable truename, whether it's mutable and it's expected value
-    pub fn get_var(&self, var: &str) -> Option<(String, HashSet<(bool, Expected)>)> {
+    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
         for (old, new) in &self.var_mappings {
             if old == var { return self.get_var(new); }
         }
 
-        self.vars.get(var).cloned().map(|res| (String::from(var), res))
+        self.vars.get(var).cloned().map(|res| res)
     }
 
     /// Union between two environments
