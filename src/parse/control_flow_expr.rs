@@ -30,7 +30,7 @@ fn parse_if(it: &mut LexIterator) -> ParseResult {
     let el = if it.peek_if(&|lex| lex.token == Token::Else) {
         it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?
     } else if it.peek_if_followed_by(&Token::NL, &Token::Else) {
-        it.eat(&Token::NL, "if else branch");
+        it.eat(&Token::NL, "if else branch")?;
         it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?
     } else {
         None
