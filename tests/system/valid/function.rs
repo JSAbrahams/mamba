@@ -12,7 +12,6 @@ fn definition_ast_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore]  // Problem with access, presumably
 fn function_with_defaults_ast_verify() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "function_with_defaults")
 }

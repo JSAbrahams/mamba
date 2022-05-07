@@ -193,7 +193,7 @@ fn identifier_to_tuple(
     if let Some((_, var)) = &iden.lit {
         let expected = env.get_var(var);
 
-        if let Some((_, expected)) = expected {
+        if let Some(expected) = expected {
             Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
         } else {
             let msg = format!("{} is undefined in this scope", iden);
