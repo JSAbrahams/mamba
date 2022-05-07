@@ -6,7 +6,6 @@ fn long_f_string() -> OutTestRet {
 }
 
 #[test]
-#[ignore]
 fn assign_tuples() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "assign_tuples")
 }
