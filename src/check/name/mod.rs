@@ -150,6 +150,12 @@ impl From<&StringName> for Name {
     }
 }
 
+impl From<&NameVariant> for Name {
+    fn from(name: &NameVariant) -> Self {
+        Name::new(&[TrueName::from(name)])
+    }
+}
+
 impl PartialEq for Name {
     fn eq(&self, other: &Self) -> bool {
         self.names.len() == other.names.len()
@@ -252,11 +258,14 @@ impl Name {
 
 #[cfg(test)]
 mod tests {
+    use crate::check::context::{clss, Context};
     use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
-    use crate::check::context::Context;
-    use crate::check::name::IsSuperSet;
+    use crate::check::ident::Identifier;
+    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
     use crate::check::name::Name;
+    use crate::check::name::namevariant::NameVariant;
     use crate::check::name::truename::TrueName;
+    use crate::check::result::TypeResult;
     use crate::common::position::Position;
 
     #[test]
@@ -297,5 +306,159 @@ mod tests {
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(!union_2.is_superset_of(&union_1, &ctx, &Position::default()).unwrap())
+    }
+
+    #[test]
+    fn test_name_equal() {
+        let name1 = Name::from("MyType");
+        let name2 = Name::from("MyType");
+        assert_eq!(name1, name2);
+    }
+
+    #[test]
+    fn test_name_not_equal() {
+        let name1 = Name::from("MyType");
+        let name2 = Name::from("MyType2");
+        assert_ne!(name1, name2);
+    }
+
+    #[test]
+    fn test_name_is_nullable() {
+        let name1 = Name::from("MyType").as_nullable();
+        assert!(name1.is_nullable());
+    }
+
+    #[test]
+    fn test_name_is_nullable_is_not_null() {
+        let name1 = Name::from("MyType").as_nullable();
+        assert!(!name1.is_null());
+    }
+
+    #[test]
+    fn test_name_none_is_null() {
+        let name1 = Name::from(clss::NONE);
+        assert!(name1.is_null());
+    }
+
+    #[test]
+    fn test_name_none_is_not_nullable() {
+        let name1 = Name::from(clss::NONE);
+        assert!(!name1.is_nullable());
+    }
+
+    #[test]
+    fn test_name_nullable_not_equal() {
+        let name1 = Name::from("MyType").as_nullable();
+        let name2 = Name::from("MyType");
+        assert_ne!(name1, name2);
+    }
+
+    #[test]
+    fn test_tuple_equal() {
+        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
+        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
+        assert_eq!(name1, name2)
+    }
+
+    #[test]
+    fn test_tuple_not_equal_size() {
+        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
+        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2"), Name::from("A2")]));
+        assert_ne!(name1, name2)
+    }
+
+    #[test]
+    fn test_tuple_not_equal() {
+        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
+        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        assert_ne!(name1, name2)
+    }
+
+    #[test]
+    fn test_match_name() -> TypeResult<()> {
+        let iden = Identifier::from((false, "abc"));
+        let name = Name::from("MyType3");
+        let matchings = match_name(&iden, &name, &Position::default())?;
+
+        assert_eq!(matchings.len(), 1);
+        let (mutable, matching) = matchings["abc"].clone();
+        assert!(!mutable);
+        assert_eq!(matching, name);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_name_err_iden_is_tuple() {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from(&vec![iden, iden2]);
+
+        let name = Name::from("MyType3");
+        let err = match_name(&iden3, &name, &Position::default());
+
+        assert!(err.is_err())
+    }
+
+
+    #[test]
+    fn test_match_name_type_is_tuple() -> TypeResult<()> {
+        let iden = Identifier::from((false, "abc"));
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let matchings = match_name(&iden, &name, &Position::default())?;
+
+        assert_eq!(matchings.len(), 1);
+        let (mutable, matching) = matchings["abc"].clone();
+        assert!(!mutable);
+        assert_eq!(matching, name);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_name_iden_and_type_is_tuple() -> TypeResult<()> {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from(&vec![iden, iden2]);
+
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+
+        let matchings = match_name(&iden3, &name, &Position::default())?;
+
+        assert_eq!(matchings.len(), 2);
+        let (mutable1, matching1) = matchings["abc"].clone();
+        let (mutable2, matching2) = matchings["abc2"].clone();
+
+        assert!(!mutable1);
+        assert!(!mutable2);
+        assert_eq!(matching1, Name::from("A2"));
+        assert_eq!(matching2, Name::from("A1"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_name_iden_wrong_size_and_type() {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from((false, "abc2"));
+        let iden4 = Identifier::from(&vec![iden, iden2, iden3]);
+
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+
+        let matchings = match_name(&iden4, &name, &Position::default());
+        assert!(matchings.is_err());
+    }
+
+    #[test]
+    fn test_match_name_iden_and_type_wrong_size() {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from(&vec![iden, iden2]);
+
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1"), Name::from("A0")]));
+
+        let matchings = match_name(&iden3, &name, &Position::default());
+        assert!(matchings.is_err());
     }
 }
