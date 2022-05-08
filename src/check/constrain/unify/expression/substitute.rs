@@ -116,7 +116,7 @@ fn substitute_vec(side: &str, old: &Expected, new: &Expected, elements: &[Expect
 
 fn is_expr_and_structurally_eq(inspected: &Expect, old: &Expect) -> bool {
     match inspected {
-        Expect::Expression { .. } => inspected.structurally_eq(old),
+        Expect::Expression { .. } => inspected.same_value(old),
         _ => false
     }
 }
