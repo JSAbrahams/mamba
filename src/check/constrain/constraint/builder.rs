@@ -43,8 +43,8 @@ impl ConstrBuilder {
             .1
             .clone()
             .drain_filter(|con| {
-                !con.left.expect.structurally_eq(&expected.expect)
-                    && !con.right.expect.structurally_eq(&expected.expect)
+                !con.left.expect.same_value(&expected.expect)
+                    && !con.right.expect.same_value(&expected.expect)
             })
             .collect()
     }

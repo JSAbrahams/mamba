@@ -79,7 +79,6 @@ impl From<&Vec<Identifier>> for Identifier {
 
 impl From<(bool, &str)> for Identifier {
     fn from((mutable, name): (bool, &str)) -> Self {
-        // TODO use mutable field from identifier
         Identifier { lit: Some((mutable, String::from(name))), names: vec![] }
     }
 }

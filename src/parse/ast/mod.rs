@@ -15,7 +15,7 @@ pub struct AST {
 impl AST {
     pub fn new(pos: &Position, node: Node) -> AST { AST { pos: pos.clone(), node } }
 
-    pub fn equal_structure(&self, other: &AST) -> bool { self.node.equal_structure(&other.node) }
+    pub fn same_value(&self, other: &AST) -> bool { self.node.equal_structure(&other.node) }
 
     #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> AST {
@@ -414,5 +414,76 @@ impl Node {
 
             other => mapping(&other)
         }
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use crate::common::position::{CaretPos, Position};
+    use crate::parse::ast::{AST, Node};
+
+    macro_rules! two_ast {
+        ($left:expr, $right: expr) => {{
+            let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+            let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
+            (AST::new(&pos, $left), AST::new(&pos2, $right))
+        }};
+    }
+
+    #[test]
+    fn simple_ast() {
+        let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+        let node = Node::Id { lit: String::from("fd") };
+
+        let ast = AST::new(&pos, node.clone());
+
+        assert_eq!(ast.pos, pos);
+        assert_eq!(ast.node, node);
+    }
+
+    #[test]
+    fn id_equal_structure() {
+        let (ast, ast2) = two_ast!(Node::Id { lit: String::from("fd") }, Node::Id { lit: String::from("fd") });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn break_equal_structure() {
+        let (ast, ast2) = two_ast!(Node::Break, Node::Break);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn break_continue_not_equal_structure() {
+        let (ast, ast2) = two_ast!(Node::Break, Node::Continue);
+        assert!(!ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn simple_map() {
+        let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+        let node = Node::For {
+            expr: Box::new(AST::new(&pos, Node::Id { lit: String::from("a") })),
+            col: Box::new(AST::new(&pos, Node::Id { lit: String::from("b") })),
+            body: Box::new(AST::new(&pos, Node::Id { lit: String::from("c") })),
+        };
+
+        let ast = AST::new(&pos, node);
+
+        let ast2 = ast.map(&|node| {
+            if let Node::Id { lit } = node {
+                if *lit == String::from("a") {
+                    Node::Id { lit: String::from("2012") }
+                } else { node.clone() }
+            } else { node.clone() }
+        });
+
+        assert!(!ast.same_value(&ast2));
+        assert_eq!(ast2.node, Node::For {
+            expr: Box::new(AST::new(&pos, Node::Id { lit: String::from("2012") })),
+            col: Box::new(AST::new(&pos, Node::Id { lit: String::from("b") })),
+            body: Box::new(AST::new(&pos, Node::Id { lit: String::from("c") })),
+        })
     }
 }

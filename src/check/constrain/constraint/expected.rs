@@ -124,9 +124,9 @@ impl Display for Expect {
 }
 
 impl Expect {
-    pub fn structurally_eq(&self, other: &Self) -> bool {
+    pub fn same_value(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l.expect.structurally_eq(&r.expect),
+            (Collection { ty: l }, Collection { ty: r }) => l.expect.same_value(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
             (Raises { name: l }, Raises { name: r }) | (Type { name: l }, Type { name: r }) =>
                 l == r,
@@ -136,13 +136,13 @@ impl Expect {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                     if let EitherOrBoth::Both(left, right) = pair {
-                        left.expect.structurally_eq(&right.expect)
+                        left.expect.same_value(&right.expect)
                     } else {
                         false
                     }
                 }),
 
-            (Expression { ast: l }, Expression { ast: r }) => l.equal_structure(r),
+            (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),
 
             (ExpressionAny, ExpressionAny) => true,
 
