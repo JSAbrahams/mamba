@@ -387,4 +387,78 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_match_name_err_iden_is_tuple() {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from(&vec![iden, iden2]);
+
+        let name = Name::from("MyType3");
+        let err = match_name(&iden3, &name, &Position::default());
+
+        assert!(err.is_err())
+    }
+
+
+    #[test]
+    fn test_match_name_type_is_tuple() -> TypeResult<()> {
+        let iden = Identifier::from((false, "abc"));
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let matchings = match_name(&iden, &name, &Position::default())?;
+
+        assert_eq!(matchings.len(), 1);
+        let (mutable, matching) = matchings["abc"].clone();
+        assert!(!mutable);
+        assert_eq!(matching, name);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_name_iden_and_type_is_tuple() -> TypeResult<()> {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from(&vec![iden, iden2]);
+
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+
+        let matchings = match_name(&iden3, &name, &Position::default())?;
+
+        assert_eq!(matchings.len(), 2);
+        let (mutable1, matching1) = matchings["abc"].clone();
+        let (mutable2, matching2) = matchings["abc2"].clone();
+
+        assert!(!mutable1);
+        assert!(!mutable2);
+        assert_eq!(matching1, Name::from("A2"));
+        assert_eq!(matching2, Name::from("A1"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_name_iden_wrong_size_and_type() {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from((false, "abc2"));
+        let iden4 = Identifier::from(&vec![iden, iden2, iden3]);
+
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+
+        let matchings = match_name(&iden4, &name, &Position::default());
+        assert!(matchings.is_err());
+    }
+
+    #[test]
+    fn test_match_name_iden_and_type_wrong_size() {
+        let iden = Identifier::from((false, "abc"));
+        let iden2 = Identifier::from((false, "abc2"));
+        let iden3 = Identifier::from(&vec![iden, iden2]);
+
+        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1"), Name::from("A0")]));
+
+        let matchings = match_name(&iden3, &name, &Position::default());
+        assert!(matchings.is_err());
+    }
 }
