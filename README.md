@@ -12,6 +12,12 @@
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
     <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
     </a>
+    <a href="https://app.codecov.io/gh/JSAbrahams/mamba/">
+    <img src="https://img.shields.io/codecov/c/github/JSAbrahams/mamba?style=for-the-badge" alt="Codecov coverage">  
+    </a>
+    <a href="https://crates.io/crates/mamba">
+    <img src="https://img.shields.io/crates/v/mamba?style=for-the-badge" alt="Crate">  
+    </a>
     <br/>
     <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
