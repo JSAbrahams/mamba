@@ -15,7 +15,7 @@ pub struct AST {
 impl AST {
     pub fn new(pos: &Position, node: Node) -> AST { AST { pos: pos.clone(), node } }
 
-    pub fn same_value(&self, other: &AST) -> bool { self.node.equal_structure(&other.node) }
+    pub fn same_value(&self, other: &AST) -> bool { self.node.same_value(&other.node) }
 
     #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> AST {
@@ -423,14 +423,6 @@ mod test {
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::{AST, Node};
 
-    macro_rules! two_ast {
-        ($left:expr, $right: expr) => {{
-            let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
-            let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
-            (AST::new(&pos, $left), AST::new(&pos2, $right))
-        }};
-    }
-
     #[test]
     fn simple_ast() {
         let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
@@ -440,65 +432,6 @@ mod test {
 
         assert_eq!(ast.pos, pos);
         assert_eq!(ast.node, node);
-    }
-
-    #[test]
-    fn id_equal_structure() {
-        let (ast, ast2) = two_ast!(Node::Id { lit: String::from("fd") }, Node::Id { lit: String::from("fd") });
-        assert!(ast.same_value(&ast2));
-    }
-
-    #[test]
-    fn tuple_equal_structure() {
-        let pos = Position::default();
-        let node1 = Node::Tuple {
-            elements: vec![
-                AST::new(&pos, Node::Id { lit: String::from("aa") }),
-                AST::new(&pos, Node::Id { lit: String::from("ba") }),
-                AST::new(&pos, Node::Id { lit: String::from("ca") })]
-        };
-        let node2 = Node::Tuple {
-            elements: vec![
-                AST::new(&pos, Node::Id { lit: String::from("aa") }),
-                AST::new(&pos, Node::Id { lit: String::from("ba") }),
-                AST::new(&pos, Node::Id { lit: String::from("ca") })]
-        };
-
-        let (ast, ast2) = two_ast!(node1, node2);
-        assert!(ast.same_value(&ast2));
-    }
-
-    #[test]
-    fn tuple_not_equal_structure() {
-        let pos = Position::default();
-        let node1 = Node::Tuple {
-            elements: vec![
-                AST::new(&pos, Node::Id { lit: String::from("aa") }),
-                AST::new(&pos, Node::Id { lit: String::from("ba") }),
-                AST::new(&pos, Node::Id { lit: String::from("ca") })]
-        };
-        let node2 = Node::Tuple {
-            elements: vec![
-                AST::new(&pos, Node::Id { lit: String::from("aa") }),
-                AST::new(&pos, Node::Id { lit: String::from("ba") }),
-                AST::new(&pos, Node::Id { lit: String::from("ca") }),
-                AST::new(&pos, Node::Id { lit: String::from("ca") })]
-        };
-
-        let (ast, ast2) = two_ast!(node1, node2);
-        assert!(!ast.same_value(&ast2));
-    }
-
-    #[test]
-    fn break_equal_structure() {
-        let (ast, ast2) = two_ast!(Node::Break, Node::Break);
-        assert!(ast.same_value(&ast2));
-    }
-
-    #[test]
-    fn break_continue_not_equal_structure() {
-        let (ast, ast2) = two_ast!(Node::Break, Node::Continue);
-        assert!(!ast.same_value(&ast2));
     }
 
     #[test]

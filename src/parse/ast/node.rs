@@ -141,7 +141,7 @@ impl Display for Node {
 }
 
 impl Node {
-    pub fn equal_structure(&self, other: &Node) -> bool {
+    pub fn same_value(&self, other: &Node) -> bool {
         match (&self, &other) {
             (Node::Import { import: li, aliases: la }, Node::Import { import: ri, aliases: ra }) =>
                 equal_vec(li, ri) && equal_vec(la, ra),
@@ -450,5 +450,370 @@ impl Node {
             | Node::And { .. }
             | Node::Or { .. }
             | Node::In { .. })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::common::position::{CaretPos, Position};
+    use crate::parse::ast::{AST, Node};
+
+    macro_rules! two_ast {
+        ($left:expr) => {{
+            let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+            let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
+
+            let right = $left.clone();
+            (AST::new(&pos, $left), AST::new(&pos2, right))
+        }};
+        ($left:expr, $right: expr) => {{
+            let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+            let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
+            (AST::new(&pos, $left), AST::new(&pos2, $right))
+        }};
+    }
+
+    #[test]
+    fn simple_ast() {
+        let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+        let node = Node::Id { lit: String::from("fd") };
+
+        let ast = AST::new(&pos, node.clone());
+
+        assert_eq!(ast.pos, pos);
+        assert_eq!(ast.node, node);
+    }
+
+    #[test]
+    fn id_equal_structure() {
+        let (ast, ast2) = two_ast!(Node::Id { lit: String::from("fd") }, Node::Id { lit: String::from("fd") });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn tuple_equal_structure() {
+        let node = Node::Tuple {
+            elements: vec![
+                AST::new(&Position::default(), Node::Id { lit: String::from("aa") }),
+                AST::new(&Position::default(), Node::Id { lit: String::from("ba") })]
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn tuple_not_equal_structure() {
+        let pos = Position::default();
+        let node1 = Node::Tuple {
+            elements: vec![
+                AST::new(&pos, Node::Id { lit: String::from("aa") }),
+                AST::new(&pos, Node::Id { lit: String::from("ba") }),
+                AST::new(&pos, Node::Id { lit: String::from("ca") })]
+        };
+        let node2 = Node::Tuple {
+            elements: vec![
+                AST::new(&pos, Node::Id { lit: String::from("aa") }),
+                AST::new(&pos, Node::Id { lit: String::from("ba") }),
+                AST::new(&pos, Node::Id { lit: String::from("ca") }),
+                AST::new(&pos, Node::Id { lit: String::from("ca") })]
+        };
+
+        let (ast, ast2) = two_ast!(node1, node2);
+        assert!(!ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn break_equal_structure() {
+        let (ast, ast2) = two_ast!(Node::Break, Node::Break);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn break_continue_not_equal_structure() {
+        let (ast, ast2) = two_ast!(Node::Break, Node::Continue);
+        assert!(!ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn file_equal_value() {
+        let node = Node::File {
+            pure: true,
+            statements: vec![AST::new(&Position::default(), Node::Continue)],
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn import_equal_value() {
+        let node = Node::Import {
+            import: vec![AST::new(&Position::default(), Node::AddOp)],
+            aliases: vec![AST::new(&Position::default(), Node::Pass)],
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn from_import_equal_value() {
+        let node = Node::Import {
+            import: vec![AST::new(&Position::default(), Node::AddOp)],
+            aliases: vec![AST::new(&Position::default(), Node::Pass)],
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn class_equal_value() {
+        let node = Node::Class {
+            ty: Box::new(AST::new(&Position::default(), Node::SubOp)),
+            args: vec![AST::new(&Position::default(), Node::AddOp)],
+            parents: vec![AST::new(&Position::default(), Node::Pass)],
+            body: Some(Box::from(AST::new(&Position::default(), Node::AddOp))),
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn generic_equal_value() {
+        let node = Node::Generic {
+            id: Box::new(AST::new(&Position::default(), Node::SubOp)),
+            isa: Some(Box::from(AST::new(&Position::default(), Node::AddOp))),
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn parent_equal_value() {
+        let node = Node::Parent {
+            ty: Box::new(AST::new(&Position::default(), Node::SubOp)),
+            args: vec![AST::new(&Position::default(), Node::DivOp)],
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn init_equal_value() {
+        let (ast, ast2) = two_ast!(Node::Init);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn reassign_equal_value() {
+        let node = Node::Reassign {
+            left: Box::new(AST::new(&Position::default(), Node::SubOp)),
+            right: Box::new(AST::new(&Position::default(), Node::LeOp)),
+        };
+
+        let (ast, ast2) = two_ast!(node);
+        assert!(ast.same_value(&ast2));
+    }
+
+    //     VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
+    //     FunDef { pure: bool, id: Box<AST>, args: Vec<AST>, ret: OptAST, raises: Vec<AST>, body: OptAST },
+    //     AnonFun { args: Vec<AST>, body: Box<AST> },
+    //     Raises { expr_or_stmt: Box<AST>, errors: Vec<AST> },
+    //     Raise { error: Box<AST> },
+    //     Handle { expr_or_stmt: Box<AST>, cases: Vec<AST> },
+    //     With { resource: Box<AST>, alias: Option<(Box<AST>, bool, Option<Box<AST>>)>, expr: Box<AST> },
+    //     FunctionCall { name: Box<AST>, args: Vec<AST> },
+    //     PropertyCall { instance: Box<AST>, property: Box<AST> },
+    //     Id { lit: String },
+    //     ExpressionType { expr: Box<AST>, mutable: bool, ty: OptAST },
+    //     TypeDef { ty: Box<AST>, isa: OptAST, body: OptAST },
+    //     TypeAlias { ty: Box<AST>, isa: Box<AST>, conditions: Vec<AST> },
+    //     TypeTup { types: Vec<AST> },
+    //     TypeUnion { types: Vec<AST> },
+    //     Type { id: Box<AST>, generics: Vec<AST> },
+    //     TypeFun { args: Vec<AST>, ret_ty: Box<AST> },
+    //     Condition { cond: Box<AST>, el: OptAST },
+    //     FunArg { vararg: bool, mutable: bool, var: Box<AST>, ty: OptAST, default: OptAST },
+
+    #[test]
+    fn self_equal_value() {
+        let (ast, ast2) = two_ast!(Node::_Self);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn op_equal_value() {
+        let (ast, ast2) = two_ast!(Node::AddOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::SubOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::SqrtOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::MulOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::FDivOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::DivOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::PowOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::ModOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::EqOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::LeOp);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::GeOp);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn literal_value() {
+        let (ast, ast2) = two_ast!(Node::Real { lit:String::from("dgfdh") });
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Int { lit:String::from("sdfdf") });
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Bool { lit: true });
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::ENum { num:String::from("werw"), exp:String::from("reter") });
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Str {
+            lit:String::from("yuk"),
+            expressions: vec![AST::new(&Position::default(), Node::LeOp)] });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn string_different_expression() {
+        let (ast, ast2) = two_ast!(
+            Node::Str {
+                lit:String::from("yuk"),
+                expressions: vec![AST::new(&Position::default(), Node::LeOp)] },
+            Node::Str {
+                lit:String::from("yuk"),
+                expressions: vec![AST::new(&Position::default(), Node::GeOp)] });
+        assert!(!ast.same_value(&ast2));
+    }
+
+    //     Set { elements: Vec<AST> },
+    //     SetBuilder { item: Box<AST>, conditions: Vec<AST> },
+    //     List { elements: Vec<AST> },
+    //     ListBuilder { item: Box<AST>, conditions: Vec<AST> },
+    //     Tuple { elements: Vec<AST> },
+    //     Range { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
+    //     Block { statements: Vec<AST> },
+    //     DocStr { lit: String },
+    //     Add { left: Box<AST>, right: Box<AST> },
+    //     AddU { expr: Box<AST> },
+    //     Sub { left: Box<AST>, right: Box<AST> },
+    //     SubU { expr: Box<AST> },
+    //     Mul { left: Box<AST>, right: Box<AST> },
+    //     Div { left: Box<AST>, right: Box<AST> },
+    //     FDiv { left: Box<AST>, right: Box<AST> },
+    //     Mod { left: Box<AST>, right: Box<AST> },
+    //     Pow { left: Box<AST>, right: Box<AST> },
+    //     Sqrt { expr: Box<AST> },
+    //     BAnd { left: Box<AST>, right: Box<AST> },
+    //     BOr { left: Box<AST>, right: Box<AST> },
+    //     BXOr { left: Box<AST>, right: Box<AST> },
+    //     BOneCmpl { expr: Box<AST> },
+    //     BLShift { left: Box<AST>, right: Box<AST> },
+    //     BRShift { left: Box<AST>, right: Box<AST> },
+    //     Le { left: Box<AST>, right: Box<AST> },
+    //     Ge { left: Box<AST>, right: Box<AST> },
+    //     Leq { left: Box<AST>, right: Box<AST> },
+    //     Geq { left: Box<AST>, right: Box<AST> },
+    //     Is { left: Box<AST>, right: Box<AST> },
+    //     IsN { left: Box<AST>, right: Box<AST> },
+    //     Eq { left: Box<AST>, right: Box<AST> },
+    //     Neq { left: Box<AST>, right: Box<AST> },
+    //     IsA { left: Box<AST>, right: Box<AST> },
+    //     IsNA { left: Box<AST>, right: Box<AST> },
+    //     Not { expr: Box<AST> },
+    //     And { left: Box<AST>, right: Box<AST> },
+    //     Or { left: Box<AST>, right: Box<AST> },
+    //     IfElse { cond: Box<AST>, then: Box<AST>, el: OptAST },
+    //     Match { cond: Box<AST>, cases: Vec<AST> },
+    //     Case { cond: Box<AST>, body: Box<AST> },
+    //     For { expr: Box<AST>, col: Box<AST>, body: Box<AST> },
+    //     In { left: Box<AST>, right: Box<AST> },
+    //     Step { amount: Box<AST> },
+    //     While { cond: Box<AST>, body: Box<AST> },
+
+    #[test]
+    fn cntrl_flow_op_equal_value() {
+        let (ast, ast2) = two_ast!(Node::Break);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Continue);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::ReturnEmpty);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Underscore);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Undefined);
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Pass);
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn return_equal_value() {
+        let (ast, ast2) = two_ast!(Node::Return { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn print_equal_value() {
+        let (ast, ast2) = two_ast!(Node::Print { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn question_equal_value() {
+        let (ast, ast2) = two_ast!(Node::QuestionOp { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
+        assert!(ast.same_value(&ast2));
+
+        let (ast, ast2) = two_ast!(Node::Question { left: Box::from(AST::new(&Position::default(), Node::Continue)), right: Box::from(AST::new(&Position::default(), Node::Break)) });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn comment_op_equal_value() {
+        let (ast, ast2) = two_ast!(Node::Comment { comment: String::from("cca") });
+        assert!(ast.same_value(&ast2));
+    }
+
+    #[test]
+    fn comment_op_equal_value_different_string() {
+        let (ast, ast2) = two_ast!(
+            Node::Comment { comment: String::from("cca") },
+            Node::Comment { comment: String::from("aaa") }
+        );
+
+        assert!(ast.same_value(&ast2));
     }
 }
