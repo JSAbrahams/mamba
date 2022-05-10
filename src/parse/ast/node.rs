@@ -881,4 +881,41 @@ mod test {
     fn comment_op_equal_value_different_string() {
         two_ast!(Node::Comment { comment: String::from("cca") }, Node::Comment { comment: String::from("aaa") });
     }
+
+    #[test]
+    fn test_is_operator() {
+        let left = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("asdf") }));
+        let right = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("lkjh") }));
+
+        assert!(Node::Add { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::AddU { expr: left.clone() }.is_operator());
+        assert!(Node::Sub { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::SubU { expr: right.clone() }.is_operator());
+        assert!(Node::Mul { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Div { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::FDiv { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Mod { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Pow { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Sqrt { expr: right.clone() }.is_operator());
+        assert!(Node::BAnd { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::BOr { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::BXOr { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::BOneCmpl { expr: right.clone() }.is_operator());
+        assert!(Node::BLShift { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::BRShift { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Le { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Ge { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Leq { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Geq { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Is { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::IsN { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Eq { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Neq { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::IsA { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::IsNA { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Not { expr: right.clone() }.is_operator());
+        assert!(Node::And { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::Or { left: left.clone(), right: right.clone() }.is_operator());
+        assert!(Node::In { left: left.clone(), right: right.clone() }.is_operator());
+    }
 }
