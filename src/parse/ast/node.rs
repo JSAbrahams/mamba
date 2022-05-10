@@ -295,7 +295,7 @@ impl Node {
                 ln == rn && le == re,
             (Node::Str { lit: l, expressions: le }, Node::Str { lit: r, expressions: re }) =>
                 l == r && equal_vec(le, re),
-            (Node::DocStr { lit: l }, Node::DocStr { lit: r }) => l == r,
+            (Node::DocStr { .. }, Node::DocStr { .. }) => true,
             (Node::Bool { lit: l }, Node::Bool { lit: r }) => l == r,
             (Node::AddU { expr: l }, Node::AddU { expr: r }) => l.same_value(r),
             (Node::SubU { expr: l }, Node::SubU { expr: r }) => l.same_value(r),
@@ -458,18 +458,29 @@ mod test {
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::{AST, Node};
 
+    macro_rules! two_ast_ne {
+        ($left:expr, $right: expr) => {{
+            let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+            let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
+            let (ast, ast2) = (AST::new(&pos, $left), AST::new(&pos2, $right));
+            assert!(!ast.same_value(&ast2))
+        }};
+    }
+
     macro_rules! two_ast {
         ($left:expr) => {{
             let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
             let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
 
             let right = $left.clone();
-            (AST::new(&pos, $left), AST::new(&pos2, right))
+            let (ast, ast2) = (AST::new(&pos, $left), AST::new(&pos2, right));
+            assert!(ast.same_value(&ast2))
         }};
         ($left:expr, $right: expr) => {{
             let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
             let pos2 = Position::new(&CaretPos::new(32, 4032), &CaretPos::new(3242, 6732));
-            (AST::new(&pos, $left), AST::new(&pos2, $right))
+            let (ast, ast2) = (AST::new(&pos, $left), AST::new(&pos2, $right));
+            assert!(ast.same_value(&ast2))
         }};
     }
 
@@ -486,8 +497,7 @@ mod test {
 
     #[test]
     fn id_equal_structure() {
-        let (ast, ast2) = two_ast!(Node::Id { lit: String::from("fd") }, Node::Id { lit: String::from("fd") });
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Id { lit: String::from("fd") }, Node::Id { lit: String::from("fd") });
     }
 
     #[test]
@@ -498,8 +508,7 @@ mod test {
                 AST::new(&Position::default(), Node::Id { lit: String::from("ba") })]
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
@@ -519,20 +528,17 @@ mod test {
                 AST::new(&pos, Node::Id { lit: String::from("ca") })]
         };
 
-        let (ast, ast2) = two_ast!(node1, node2);
-        assert!(!ast.same_value(&ast2));
+        two_ast_ne!(node1, node2);
     }
 
     #[test]
     fn break_equal_structure() {
-        let (ast, ast2) = two_ast!(Node::Break, Node::Break);
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Break, Node::Break);
     }
 
     #[test]
     fn break_continue_not_equal_structure() {
-        let (ast, ast2) = two_ast!(Node::Break, Node::Continue);
-        assert!(!ast.same_value(&ast2));
+        two_ast_ne!(Node::Break, Node::Continue);
     }
 
     #[test]
@@ -542,8 +548,7 @@ mod test {
             statements: vec![AST::new(&Position::default(), Node::Continue)],
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
@@ -553,8 +558,7 @@ mod test {
             aliases: vec![AST::new(&Position::default(), Node::Pass)],
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
@@ -564,8 +568,7 @@ mod test {
             aliases: vec![AST::new(&Position::default(), Node::Pass)],
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
@@ -577,8 +580,7 @@ mod test {
             body: Some(Box::from(AST::new(&Position::default(), Node::AddOp))),
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
@@ -588,8 +590,7 @@ mod test {
             isa: Some(Box::from(AST::new(&Position::default(), Node::AddOp))),
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
@@ -599,14 +600,12 @@ mod test {
             args: vec![AST::new(&Position::default(), Node::DivOp)],
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     #[test]
     fn init_equal_value() {
-        let (ast, ast2) = two_ast!(Node::Init);
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Init);
     }
 
     #[test]
@@ -616,8 +615,7 @@ mod test {
             right: Box::new(AST::new(&Position::default(), Node::LeOp)),
         };
 
-        let (ast, ast2) = two_ast!(node);
-        assert!(ast.same_value(&ast2));
+        two_ast!(node);
     }
 
     //     VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
@@ -629,7 +627,17 @@ mod test {
     //     With { resource: Box<AST>, alias: Option<(Box<AST>, bool, Option<Box<AST>>)>, expr: Box<AST> },
     //     FunctionCall { name: Box<AST>, args: Vec<AST> },
     //     PropertyCall { instance: Box<AST>, property: Box<AST> },
-    //     Id { lit: String },
+
+    #[test]
+    fn id_equal_value() {
+        two_ast!(Node::Id{ lit:String::from("id") });
+    }
+
+    #[test]
+    fn id_differnt_str_not_equal_value() {
+        two_ast_ne!(Node::Id { lit:String::from("id") }, Node::Id { lit:String::from("id2") });
+    }
+
     //     ExpressionType { expr: Box<AST>, mutable: bool, ty: OptAST },
     //     TypeDef { ty: Box<AST>, isa: OptAST, body: OptAST },
     //     TypeAlias { ty: Box<AST>, isa: Box<AST>, conditions: Vec<AST> },
@@ -642,178 +650,167 @@ mod test {
 
     #[test]
     fn self_equal_value() {
-        let (ast, ast2) = two_ast!(Node::_Self);
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::_Self);
     }
 
     #[test]
     fn op_equal_value() {
-        let (ast, ast2) = two_ast!(Node::AddOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::SubOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::SqrtOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::MulOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::FDivOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::DivOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::PowOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::ModOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::EqOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::LeOp);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::GeOp);
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::AddOp);
+        two_ast!(Node::SubOp);
+        two_ast!(Node::SqrtOp);
+        two_ast!(Node::MulOp);
+        two_ast!(Node::FDivOp);
+        two_ast!(Node::DivOp);
+        two_ast!(Node::PowOp);
+        two_ast!(Node::ModOp);
+        two_ast!(Node::EqOp);
+        two_ast!(Node::LeOp);
+        two_ast!(Node::GeOp);
     }
 
     #[test]
     fn literal_value() {
-        let (ast, ast2) = two_ast!(Node::Real { lit:String::from("dgfdh") });
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Int { lit:String::from("sdfdf") });
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Bool { lit: true });
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::ENum { num:String::from("werw"), exp:String::from("reter") });
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Str {
+        two_ast!(Node::Real { lit:String::from("dgfdh") });
+        two_ast!(Node::Int { lit:String::from("sdfdf") });
+        two_ast!(Node::Bool { lit: true });
+        two_ast!(Node::ENum { num:String::from("werw"), exp:String::from("reter") });
+        two_ast!(Node::Str {
             lit:String::from("yuk"),
             expressions: vec![AST::new(&Position::default(), Node::LeOp)] });
-        assert!(ast.same_value(&ast2));
     }
 
     #[test]
-    fn string_different_expression() {
-        let (ast, ast2) = two_ast!(
-            Node::Str {
-                lit:String::from("yuk"),
-                expressions: vec![AST::new(&Position::default(), Node::LeOp)] },
-            Node::Str {
-                lit:String::from("yuk"),
-                expressions: vec![AST::new(&Position::default(), Node::GeOp)] });
-        assert!(!ast.same_value(&ast2));
+    fn string_different_expression_not_same_value() {
+        two_ast_ne!(Node::Str {
+                    lit:String::from("yuk"),
+                    expressions: vec![AST::new(&Position::default(), Node::LeOp)] },
+                Node::Str {
+                    lit:String::from("yuk"),
+                    expressions: vec![AST::new(&Position::default(), Node::GeOp)] });
     }
 
-    //     Set { elements: Vec<AST> },
-    //     SetBuilder { item: Box<AST>, conditions: Vec<AST> },
-    //     List { elements: Vec<AST> },
-    //     ListBuilder { item: Box<AST>, conditions: Vec<AST> },
-    //     Tuple { elements: Vec<AST> },
-    //     Range { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
-    //     Block { statements: Vec<AST> },
-    //     DocStr { lit: String },
-    //     Add { left: Box<AST>, right: Box<AST> },
-    //     AddU { expr: Box<AST> },
-    //     Sub { left: Box<AST>, right: Box<AST> },
-    //     SubU { expr: Box<AST> },
-    //     Mul { left: Box<AST>, right: Box<AST> },
-    //     Div { left: Box<AST>, right: Box<AST> },
-    //     FDiv { left: Box<AST>, right: Box<AST> },
-    //     Mod { left: Box<AST>, right: Box<AST> },
-    //     Pow { left: Box<AST>, right: Box<AST> },
-    //     Sqrt { expr: Box<AST> },
-    //     BAnd { left: Box<AST>, right: Box<AST> },
-    //     BOr { left: Box<AST>, right: Box<AST> },
-    //     BXOr { left: Box<AST>, right: Box<AST> },
-    //     BOneCmpl { expr: Box<AST> },
-    //     BLShift { left: Box<AST>, right: Box<AST> },
-    //     BRShift { left: Box<AST>, right: Box<AST> },
-    //     Le { left: Box<AST>, right: Box<AST> },
-    //     Ge { left: Box<AST>, right: Box<AST> },
-    //     Leq { left: Box<AST>, right: Box<AST> },
-    //     Geq { left: Box<AST>, right: Box<AST> },
-    //     Is { left: Box<AST>, right: Box<AST> },
-    //     IsN { left: Box<AST>, right: Box<AST> },
-    //     Eq { left: Box<AST>, right: Box<AST> },
-    //     Neq { left: Box<AST>, right: Box<AST> },
-    //     IsA { left: Box<AST>, right: Box<AST> },
-    //     IsNA { left: Box<AST>, right: Box<AST> },
-    //     Not { expr: Box<AST> },
-    //     And { left: Box<AST>, right: Box<AST> },
-    //     Or { left: Box<AST>, right: Box<AST> },
-    //     IfElse { cond: Box<AST>, then: Box<AST>, el: OptAST },
-    //     Match { cond: Box<AST>, cases: Vec<AST> },
-    //     Case { cond: Box<AST>, body: Box<AST> },
-    //     For { expr: Box<AST>, col: Box<AST>, body: Box<AST> },
-    //     In { left: Box<AST>, right: Box<AST> },
-    //     Step { amount: Box<AST> },
-    //     While { cond: Box<AST>, body: Box<AST> },
+    #[test]
+    fn collection_same_value() {
+        let item = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("asdf") }));
+
+        two_ast!(Node::Set {elements: vec![*item.clone()]});
+        two_ast!(Node::List {elements: vec![*item.clone()]});
+        two_ast!(Node::Tuple {elements: vec![*item.clone()]});
+
+        two_ast!(Node::SetBuilder {item: item.clone(), conditions: vec![*item.clone()]});
+        two_ast!(Node::ListBuilder {item: item.clone(), conditions: vec![*item.clone()]});
+    }
+
+    #[test]
+    fn block_same_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("asdf") }));
+        let second = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("lkjh") }));
+
+        two_ast!(Node::Block {statements: vec![*first.clone(), *second.clone()]});
+    }
+
+    #[test]
+    fn docstr_different_str_same_value() {
+        two_ast!(Node::DocStr { lit: String::from("asdf") }, Node::DocStr { lit: String::from("lkjh") });
+    }
+
+    #[test]
+    fn binary_op_same_value() {
+        let left = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("asdf") }));
+        let right = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("lkjh") }));
+
+        two_ast!(Node::Add {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Sub {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Mul {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Div {left: left.clone(), right: right.clone()});
+        two_ast!(Node::FDiv {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Mod {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Pow {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BAnd {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BOr {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BXOr {left: left.clone(), right: right.clone()});
+
+        two_ast!(Node::BAnd {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BOr {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BXOr {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BLShift {left: left.clone(), right: right.clone()});
+        two_ast!(Node::BRShift {left: left.clone(), right: right.clone()});
+
+        two_ast!(Node::Le {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Ge {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Leq {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Geq {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Is {left: left.clone(), right: right.clone()});
+        two_ast!(Node::IsN {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Eq {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Neq {left: left.clone(), right: right.clone()});
+        two_ast!(Node::IsA {left: left.clone(), right: right.clone()});
+        two_ast!(Node::IsNA {left: left.clone(), right: right.clone()});
+
+        two_ast!(Node::And {left: left.clone(), right: right.clone()});
+        two_ast!(Node::Or {left: left.clone(), right: right.clone()});
+    }
+
+    #[test]
+    fn unary_op_same_value() {
+        let expr = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("qwerty") }));
+
+        two_ast!(Node::AddU {expr: expr.clone()});
+        two_ast!(Node::SubU {expr: expr.clone()});
+        two_ast!(Node::Sqrt {expr: expr.clone()});
+        two_ast!(Node::BOneCmpl {expr: expr.clone()});
+        two_ast!(Node::Not {expr: expr.clone()});
+    }
+
+    #[test]
+    fn contrl_flow_same_value() {
+        let cond = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("qwerty") }));
+        let body = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("body") }));
+
+        two_ast!(Node::IfElse {cond: cond.clone(), then: body.clone(), el: Some(body.clone())});
+        two_ast!(Node::Match {cond: cond.clone(), cases: vec![*cond.clone(), *body.clone()]});
+        two_ast!(Node::Case {cond: cond.clone(), body: body.clone()});
+        two_ast!(Node::Range { from: cond.clone(), to: body.clone(), inclusive: true, step: Some(body.clone()) });
+        two_ast!(Node::For {expr: cond.clone(), col: body.clone(), body: body.clone()});
+        two_ast!(Node::In {left:cond.clone(), right: body.clone()});
+        two_ast!(Node::Step {amount: body.clone()});
+
+        two_ast!(Node::While {cond: cond.clone(), body: body.clone()});
+    }
 
     #[test]
     fn cntrl_flow_op_equal_value() {
-        let (ast, ast2) = two_ast!(Node::Break);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Continue);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::ReturnEmpty);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Underscore);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Undefined);
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Pass);
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Break);
+        two_ast!(Node::Continue);
+        two_ast!(Node::ReturnEmpty);
+        two_ast!(Node::Underscore);
+        two_ast!(Node::Undefined);
+        two_ast!(Node::Pass);
     }
 
     #[test]
     fn return_equal_value() {
-        let (ast, ast2) = two_ast!(Node::Return { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Return { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
     }
 
     #[test]
     fn print_equal_value() {
-        let (ast, ast2) = two_ast!(Node::Print { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Print { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
     }
 
     #[test]
     fn question_equal_value() {
-        let (ast, ast2) = two_ast!(Node::QuestionOp { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
-        assert!(ast.same_value(&ast2));
-
-        let (ast, ast2) = two_ast!(Node::Question { left: Box::from(AST::new(&Position::default(), Node::Continue)), right: Box::from(AST::new(&Position::default(), Node::Break)) });
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::QuestionOp { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
+        two_ast!(Node::Question { left: Box::from(AST::new(&Position::default(), Node::Continue)), right: Box::from(AST::new(&Position::default(), Node::Break)) });
     }
 
     #[test]
     fn comment_op_equal_value() {
-        let (ast, ast2) = two_ast!(Node::Comment { comment: String::from("cca") });
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Comment { comment: String::from("cca") });
     }
 
     #[test]
     fn comment_op_equal_value_different_string() {
-        let (ast, ast2) = two_ast!(
-            Node::Comment { comment: String::from("cca") },
-            Node::Comment { comment: String::from("aaa") }
-        );
-
-        assert!(ast.same_value(&ast2));
+        two_ast!(Node::Comment { comment: String::from("cca") }, Node::Comment { comment: String::from("aaa") });
     }
 }
