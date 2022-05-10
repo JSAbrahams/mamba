@@ -141,6 +141,290 @@ impl Display for Node {
 }
 
 impl Node {
+    /// Apply mapping to node, before recursively applying mapping to result
+    #[must_use]
+    pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> Node {
+        match mapping(self) {
+            Node::Import { import, aliases: _as } => Node::Import {
+                import: import.iter().map(|i| i.map(mapping)).collect(),
+                aliases: _as.iter().map(|a| a.map(mapping)).collect(),
+            },
+            Node::FromImport { id, import } => Node::FromImport {
+                id: Box::from(id.map(mapping)),
+                import: Box::from(import.map(mapping)),
+            },
+            Node::Class { ty, args, parents, body } => Node::Class {
+                ty: Box::from(ty.map(mapping)),
+                args: args.iter().map(|a| a.map(mapping)).collect(),
+                parents: parents.iter().map(|p| p.map(mapping)).collect(),
+                body: body.map(|b| Box::from(b.map(mapping))),
+            },
+            Node::Generic { id, isa } => Node::Generic {
+                id: Box::from(id.map(mapping)),
+                isa: isa.map(|isa| Box::from(isa.map(mapping))),
+            },
+            Node::Parent { ty, args } => Node::Parent {
+                ty: Box::from(ty.map(mapping)),
+                args: args.iter().map(|a| a.map(mapping)).collect(),
+            },
+            Node::Reassign { left, right } => Node::Reassign {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::VariableDef { mutable, var, ty, expr: expression, forward } => Node::VariableDef {
+                mutable,
+                var: Box::from(var.map(mapping)),
+                ty: ty.map(|t| Box::from(t.map(mapping))),
+                expr: expression.map(|e| Box::from(e.map(mapping))),
+                forward: forward.iter().map(|f| f.map(mapping)).collect(),
+            },
+            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, body } => Node::FunDef {
+                pure,
+                id: Box::from(id.map(mapping)),
+                args: fun_args.iter().map(|a| a.map(mapping)).collect(),
+                ret: ret_ty.map(|r| Box::from(r.map(mapping))),
+                raises: raises.iter().map(|r| r.map(mapping)).collect(),
+                body: body.map(|b| Box::from(b.map(mapping))),
+            },
+            Node::AnonFun { args, body } => Node::AnonFun {
+                args: args.iter().map(|a| a.map(mapping)).collect(),
+                body: Box::from(body.map(mapping)),
+            },
+            Node::Raises { expr_or_stmt, errors } => Node::Raises {
+                expr_or_stmt: Box::from(expr_or_stmt.map(mapping)),
+                errors: errors.iter().map(|e| e.map(mapping)).collect(),
+            },
+            Node::Raise { error } => Node::Raise { error: Box::from(error.map(mapping)) },
+            Node::Handle { expr_or_stmt, cases } => Node::Handle {
+                expr_or_stmt: Box::from(expr_or_stmt.map(mapping)),
+                cases: cases.iter().map(|c| c.map(mapping)).collect(),
+            },
+            Node::With { resource, alias, expr } => Node::With {
+                resource: Box::from(resource.map(mapping)),
+                alias: alias.map(|(resource, alias, expr)| (
+                    Box::from(resource.map(mapping)),
+                    alias,
+                    expr.map(|expr| Box::from(expr.map(mapping)))
+                )),
+                expr: Box::from(expr.map(mapping)),
+            },
+            Node::FunctionCall { name, args } => Node::FunctionCall {
+                name: Box::from(name.map(mapping)),
+                args: args.iter().map(|a| a.map(mapping)).collect(),
+            },
+            Node::PropertyCall { instance, property } => Node::PropertyCall {
+                instance: Box::from(instance.map(mapping)),
+                property: Box::from(property.map(mapping)),
+            },
+            Node::ExpressionType { expr, mutable, ty } => Node::ExpressionType {
+                expr: Box::from(expr.map(mapping)),
+                mutable,
+                ty: ty.map(|ty| Box::from(ty.map(mapping))),
+            },
+            Node::TypeDef { ty, isa, body } => Node::TypeDef {
+                ty: Box::from(ty.map(mapping)),
+                isa: isa.map(|isa| Box::from(isa.map(mapping))),
+                body: body.map(|body| Box::from(body.map(mapping))),
+            },
+            Node::TypeAlias { ty, isa, conditions } => Node::TypeAlias {
+                ty: Box::from(ty.map(mapping)),
+                isa: Box::from(isa.map(mapping)),
+                conditions: conditions.iter().map(|c| c.map(mapping)).collect(),
+            },
+            Node::TypeTup { types } => Node::TypeTup {
+                types: types.iter().map(|ty| ty.map(mapping)).collect()
+            },
+            Node::TypeUnion { types } => Node::TypeUnion {
+                types: types.iter().map(|ty| ty.map(mapping)).collect()
+            },
+            Node::Type { id, generics } => Node::Type {
+                id: Box::from(id.map(mapping)),
+                generics: generics.iter().map(|gen| gen.map(mapping)).collect(),
+            },
+            Node::TypeFun { args, ret_ty } => Node::TypeFun {
+                args: args.iter().map(|arg| arg.map(mapping)).collect(),
+                ret_ty: Box::from(ret_ty.map(mapping)),
+            },
+            Node::Condition { cond, el } => Node::Condition {
+                cond: Box::from(cond.map(mapping)),
+                el: el.map(|el| Box::from(el.map(mapping))),
+            },
+            Node::FunArg { vararg, mutable, var, ty, default } => Node::FunArg {
+                vararg,
+                mutable,
+                var: Box::from(var.map(mapping)),
+                ty: ty.map(|ty| Box::from(ty.map(mapping))),
+                default: default.map(|d| Box::from(d.map(mapping))),
+            },
+            Node::Set { elements } => Node::Set {
+                elements: elements.iter().map(|e| e.map(mapping)).collect()
+            },
+            Node::SetBuilder { item, conditions } => Node::SetBuilder {
+                item: Box::from(item.map(mapping)),
+                conditions: conditions.iter().map(|cond| cond.map(mapping)).collect(),
+            },
+            Node::List { elements } => Node::List {
+                elements: elements.iter().map(|e| e.map(mapping)).collect()
+            },
+            Node::ListBuilder { item, conditions } => Node::ListBuilder {
+                item: Box::from(item.map(mapping)),
+                conditions: conditions.iter().map(|cond| cond.map(mapping)).collect(),
+            },
+            Node::Tuple { elements } => Node::Tuple {
+                elements: elements.iter().map(|e| e.map(mapping)).collect()
+            },
+            Node::Range { from, to, inclusive, step } => Node::Range {
+                from: Box::from(from.map(mapping)),
+                to: Box::from(to.map(mapping)),
+                inclusive,
+                step: step.map(|ast| Box::from(ast.map(mapping))),
+            },
+            Node::Block { statements } => Node::Block {
+                statements: statements.iter().map(|stmt| stmt.map(mapping)).collect()
+            },
+            Node::Add { left, right } => Node::Add { left: Box::from(left.map(mapping)), right: Box::from(right.map(mapping)) },
+            Node::AddU { expr } => Node::AddU {
+                expr: Box::from(expr.map(mapping))
+            },
+            Node::Sub { left, right } => Node::Sub {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::SubU { expr } => Node::SubU {
+                expr: Box::from(expr.map(mapping))
+            },
+            Node::Mul { left, right } => Node::Mul {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Div { left, right } => Node::Div {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::FDiv { left, right } => Node::FDiv {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Mod { left, right } => Node::Mod {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Pow { left, right } => Node::Pow {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Sqrt { expr } => Node::Sqrt { expr: Box::from(expr.map(mapping)) },
+            Node::BAnd { left, right } => Node::BAnd {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::BOr { left, right } => Node::BOr {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::BXOr { left, right } => Node::BXOr {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::BOneCmpl { expr } => Node::BOneCmpl { expr: Box::from(expr.map(mapping)) },
+            Node::BLShift { left, right } => Node::BLShift {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::BRShift { left, right } => Node::BRShift {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Le { left, right } => Node::Le {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Ge { left, right } => Node::Ge {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Leq { left, right } => Node::Leq {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Geq { left, right } => Node::Geq {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Is { left, right } => Node::Is {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::IsN { left, right } => Node::IsN {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Eq { left, right } => Node::Eq {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Neq { left, right } => Node::Neq {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::IsA { left, right } => Node::IsA {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::IsNA { left, right } => Node::IsNA {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Not { expr } => Node::Not { expr: Box::from(expr.map(mapping)) },
+            Node::And { left, right } => Node::And {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Or { left, right } => Node::Or {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::IfElse { cond, then, el } => Node::IfElse {
+                cond: Box::from(cond.map(mapping)),
+                then: Box::from(then.map(mapping)),
+                el: el.map(|el| Box::from(el.map(mapping))),
+            },
+            Node::Match { cond, cases } => Node::Match {
+                cond: Box::from(cond.map(mapping)),
+                cases: cases.iter().map(|c| c.map(mapping)).collect(),
+            },
+            Node::Case { cond, body } => Node::Case {
+                cond: Box::from(cond.map(mapping)),
+                body: Box::from(body.map(mapping)),
+            },
+            Node::For { expr, col, body } => Node::For {
+                expr: Box::from(expr.map(mapping)),
+                col: Box::from(col.map(mapping)),
+                body: Box::from(body.map(mapping)),
+            },
+            Node::In { left, right } => Node::In {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::Step { amount } => Node::Step { amount: Box::from(amount.map(mapping)) },
+            Node::While { cond, body } => Node::While {
+                cond: Box::from(cond.map(mapping)),
+                body: Box::from(body.map(mapping)),
+            },
+            Node::Return { expr } => Node::Return {
+                expr: Box::from(expr.map(mapping))
+            },
+            Node::Question { left, right } => Node::Question {
+                left: Box::from(left.map(mapping)),
+                right: Box::from(right.map(mapping)),
+            },
+            Node::QuestionOp { expr } => Node::QuestionOp { expr: Box::from(expr.map(mapping)) },
+            Node::Print { expr } => Node::Print { expr: Box::from(expr.map(mapping)) },
+
+            other => mapping(&other)
+        }
+    }
+
     pub fn same_value(&self, other: &Node) -> bool {
         match (&self, &other) {
             (Node::Import { import: li, aliases: la }, Node::Import { import: ri, aliases: ra }) =>
@@ -457,6 +741,83 @@ impl Node {
 mod test {
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::{AST, Node};
+
+    macro_rules! map_ne {
+        ($node:expr, $new_node: expr, $old: expr, $new: expr) => {{
+            let ast = AST::new(&Position::default(), $node);
+            let ast2 = ast.map(&|node| {
+                if let Node::Id { lit } = node {
+                    if *lit == String::from($old) {
+                        Node::Id { lit: String::from($new) }
+                    } else { node.clone() }
+                } else { node.clone() }
+            });
+
+            assert!(!ast.same_value(&ast2));
+            assert_eq!(ast2.node, $new_node)
+        }};
+    }
+
+    macro_rules! map_eq {
+        ($node:expr, $new_node: expr, $old: expr, $new: expr) => {{
+            let ast = AST::new(&Position::default(), $node);
+            let ast2 = ast.map(&|node| {
+                if let Node::Id { lit } = node {
+                    if *lit == String::from($old) {
+                        Node::Id { lit: String::from($new) }
+                    } else { node.clone() }
+                } else { node.clone() }
+            });
+
+            assert!(ast.same_value(&ast2));
+            assert_eq!(ast2.node, $new_node)
+        }};
+    }
+
+    #[test]
+    fn unmappable_ast_map() {
+        let old = "noise";
+        let new = "noise_again";
+
+        map_eq!(Node::Break, Node::Break, old, new);
+        map_eq!(Node::Continue, Node::Continue, old, new);
+        map_eq!(Node::ReturnEmpty, Node::ReturnEmpty, old, new);
+        map_eq!(Node::Underscore, Node::Underscore, old, new);
+        map_eq!(Node::Undefined, Node::Undefined, old, new);
+        map_eq!(Node::Pass, Node::Pass, old, new);
+
+        map_eq!(Node::AddOp, Node::AddOp, old, new);
+        map_eq!(Node::SubOp, Node::SubOp, old, new);
+        map_eq!(Node::SqrtOp, Node::SqrtOp, old, new);
+        map_eq!(Node::MulOp, Node::MulOp, old, new);
+        map_eq!(Node::FDivOp, Node::FDivOp, old, new);
+        map_eq!(Node::DivOp, Node::DivOp, old, new);
+        map_eq!(Node::PowOp, Node::PowOp, old, new);
+        map_eq!(Node::ModOp, Node::ModOp, old, new);
+        map_eq!(Node::EqOp, Node::EqOp, old, new);
+        map_eq!(Node::LeOp, Node::LeOp, old, new);
+        map_eq!(Node::GeOp, Node::GeOp, old, new);
+    }
+
+    #[test]
+    fn for_ast_map() {
+        let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+        let node = Node::For {
+            expr: Box::new(AST::new(&pos, Node::Id { lit: String::from("a") })),
+            col: Box::new(AST::new(&pos, Node::Id { lit: String::from("b") })),
+            body: Box::new(AST::new(&pos, Node::Id { lit: String::from("c") })),
+        };
+
+        let new_node = Node::For {
+            expr: Box::new(AST::new(&pos, Node::Id { lit: String::from("2012") })),
+            col: Box::new(AST::new(&pos, Node::Id { lit: String::from("b") })),
+            body: Box::new(AST::new(&pos, Node::Id { lit: String::from("c") })),
+        };
+
+        let old = "a";
+        let new = "2012";
+        map_ne!(node, new_node, old, new);
+    }
 
     macro_rules! two_ast_ne {
         ($left:expr, $right: expr) => {{
