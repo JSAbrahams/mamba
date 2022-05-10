@@ -618,15 +618,69 @@ mod test {
         two_ast!(node);
     }
 
-    //     VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
-    //     FunDef { pure: bool, id: Box<AST>, args: Vec<AST>, ret: OptAST, raises: Vec<AST>, body: OptAST },
-    //     AnonFun { args: Vec<AST>, body: Box<AST> },
-    //     Raises { expr_or_stmt: Box<AST>, errors: Vec<AST> },
-    //     Raise { error: Box<AST> },
-    //     Handle { expr_or_stmt: Box<AST>, cases: Vec<AST> },
-    //     With { resource: Box<AST>, alias: Option<(Box<AST>, bool, Option<Box<AST>>)>, expr: Box<AST> },
-    //     FunctionCall { name: Box<AST>, args: Vec<AST> },
-    //     PropertyCall { instance: Box<AST>, property: Box<AST> },
+    #[test]
+    fn def_equal_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+        let third = Box::from(AST::new(&Position::default(), Node::Pass));
+
+        two_ast!(Node::VariableDef {
+            mutable: false,
+            var:first.clone(),
+            ty: Some(second.clone()),
+            expr: Some(third.clone()),
+            forward: vec![*first.clone()]
+        });
+        two_ast!(
+        Node::FunDef {
+            pure: false,
+            id: first.clone(),
+            args: vec![*second.clone()],
+            ret: Some(third.clone()),
+            raises: vec![*first.clone(), *second.clone()],
+            body: Some(Box::from(AST::new(&Position::default(), Node::Raise {error:third.clone()})))
+        });
+    }
+
+    #[test]
+    fn anon_fun_same_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+
+        two_ast!(Node::AnonFun {args: vec![*first.clone()], body: second.clone()});
+    }
+
+    #[test]
+    fn anon_raise_same_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+
+        two_ast!(Node::Raises {errors: vec![*first.clone()], expr_or_stmt: second.clone()});
+        two_ast!(Node::Raise {error: second.clone()});
+    }
+
+    #[test]
+    fn handle_same_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+        let third = Box::from(AST::new(&Position::default(), Node::Pass));
+
+        two_ast!(Node::Handle {cases: vec![*first.clone()], expr_or_stmt: second.clone()});
+        two_ast!(Node::With {
+            resource: first.clone(),
+            alias: Some((second.clone(), false, Some(third.clone()))),
+            expr: Box::from(AST::new(&Position::default(), Node::GeOp))
+        });
+    }
+
+    #[test]
+    fn call_same_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+
+        two_ast!(Node::FunctionCall {name: first.clone(), args: vec![*second.clone()]});
+        two_ast!(Node::PropertyCall {instance: first.clone(), property: second.clone()});
+    }
 
     #[test]
     fn id_equal_value() {
@@ -638,15 +692,28 @@ mod test {
         two_ast_ne!(Node::Id { lit:String::from("id") }, Node::Id { lit:String::from("id2") });
     }
 
-    //     ExpressionType { expr: Box<AST>, mutable: bool, ty: OptAST },
-    //     TypeDef { ty: Box<AST>, isa: OptAST, body: OptAST },
-    //     TypeAlias { ty: Box<AST>, isa: Box<AST>, conditions: Vec<AST> },
-    //     TypeTup { types: Vec<AST> },
-    //     TypeUnion { types: Vec<AST> },
-    //     Type { id: Box<AST>, generics: Vec<AST> },
-    //     TypeFun { args: Vec<AST>, ret_ty: Box<AST> },
-    //     Condition { cond: Box<AST>, el: OptAST },
-    //     FunArg { vararg: bool, mutable: bool, var: Box<AST>, ty: OptAST, default: OptAST },
+    #[test]
+    fn expression_type_equal_value() {
+        let expr = Box::from(AST::new(&Position::default(), Node::Continue));
+        let expr2 = Box::from(AST::new(&Position::default(), Node::Pass));
+        two_ast!(Node::ExpressionType {expr: expr.clone(), mutable: false, ty: Some(expr2.clone())});
+    }
+
+    #[test]
+    fn type_equal_value() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+        let third = Box::from(AST::new(&Position::default(), Node::Pass));
+
+        two_ast!(Node::TypeDef {ty: first.clone(), isa: Some(second.clone()), body: Some(third.clone())});
+        two_ast!(Node::TypeAlias {ty: first.clone(), isa: second.clone(), conditions: vec![*third.clone()]});
+        two_ast!(Node::TypeTup {types: vec![*third.clone(), *second.clone()]});
+        two_ast!(Node::TypeUnion {types: vec![*third.clone(), *second.clone()]});
+        two_ast!(Node::Type {id: first.clone(), generics:vec![*second.clone(), *third.clone()]});
+        two_ast!(Node::TypeFun {args: vec![*first.clone(), *second.clone()], ret_ty: third.clone()});
+
+        two_ast!(Node::Condition {cond: first.clone(), el: Some(second.clone())});
+    }
 
     #[test]
     fn self_equal_value() {
@@ -765,13 +832,14 @@ mod test {
     #[test]
     fn contrl_flow_same_value() {
         let cond = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("qwerty") }));
-        let body = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("body") }));
+        let body = Box::from(AST::new(&Position::default(), Node::GeOp));
+        let third = Box::from(AST::new(&Position::default(), Node::LeOp));
 
-        two_ast!(Node::IfElse {cond: cond.clone(), then: body.clone(), el: Some(body.clone())});
-        two_ast!(Node::Match {cond: cond.clone(), cases: vec![*cond.clone(), *body.clone()]});
+        two_ast!(Node::IfElse {cond: cond.clone(), then: body.clone(), el: Some(third.clone())});
+        two_ast!(Node::Match {cond: cond.clone(), cases: vec![*body.clone(), *third.clone()]});
         two_ast!(Node::Case {cond: cond.clone(), body: body.clone()});
-        two_ast!(Node::Range { from: cond.clone(), to: body.clone(), inclusive: true, step: Some(body.clone()) });
-        two_ast!(Node::For {expr: cond.clone(), col: body.clone(), body: body.clone()});
+        two_ast!(Node::Range { from: cond.clone(), to: body.clone(), inclusive: true, step: Some(third.clone()) });
+        two_ast!(Node::For {expr: cond.clone(), col: body.clone(), body: third.clone()});
         two_ast!(Node::In {left:cond.clone(), right: body.clone()});
         two_ast!(Node::Step {amount: body.clone()});
 
