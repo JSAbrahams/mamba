@@ -667,7 +667,10 @@ impl Node {
     }
 
     /// True if node is an expression with certainty.
-    pub fn trivially_expression(&self) -> bool {
+    ///
+    /// If False, then it might still be an expression if for instance it is a function call.
+    /// In such a case, the type checker must determine if it is an expression.
+    pub fn is_expression(&self) -> bool {
         match &self {
             Node::AnonFun { .. }
             | Node::PropertyCall { .. }
@@ -693,7 +696,7 @@ impl Node {
             Node::IfElse { el, .. } => el.is_some(),
 
             Node::Block { statements } => if let Some(stmt) = statements.last() {
-                stmt.node.trivially_expression()
+                stmt.node.is_expression()
             } else {
                 false
             },
@@ -1252,7 +1255,7 @@ mod test {
                 AST::new(&Position::default(), Node::Int { lit: String::from("3") }),
             ]
         };
-        assert!(node.trivially_expression())
+        assert!(node.is_expression())
     }
 
     #[test]
@@ -1263,12 +1266,12 @@ mod test {
                 AST::new(&Position::default(), Node::Pass),
             ]
         };
-        assert!(!node.trivially_expression())
+        assert!(!node.is_expression())
     }
 
     #[test]
     fn empty_block_not_expression() {
-        assert!(!Node::Block { statements: vec![] }.trivially_expression())
+        assert!(!Node::Block { statements: vec![] }.is_expression())
     }
 
     #[test]
@@ -1278,7 +1281,7 @@ mod test {
             then: Box::new(AST::new(&Position::default(), Node::Pass)),
             el: None,
         };
-        assert!(!node.trivially_expression())
+        assert!(!node.is_expression())
     }
 
     #[test]
@@ -1288,7 +1291,35 @@ mod test {
             then: Box::new(AST::new(&Position::default(), Node::Pass)),
             el: Some(Box::new(AST::new(&Position::default(), Node::Pass))),
         };
-        assert!(node.trivially_expression())
+        assert!(node.is_expression())
+    }
+
+    #[test]
+    fn expression_is_expression() {
+        let first = Box::from(AST::new(&Position::default(), Node::Continue));
+        let second = Box::from(AST::new(&Position::default(), Node::Break));
+        let third = Box::from(AST::new(&Position::default(), Node::Pass));
+
+        assert!(Node::AnonFun { args: vec![*first.clone()], body: second.clone() }.is_expression());
+        assert!(Node::PropertyCall { instance: first.clone(), property: second.clone() }.is_expression());
+        assert!(Node::Id { lit: String::from("s") }.is_expression());
+        assert!(Node::Set { elements: vec![*first.clone(), *second.clone()] }.is_expression());
+        assert!(Node::SetBuilder { item: first.clone(), conditions: vec![*third.clone()] }.is_expression());
+        assert!(Node::List { elements: vec![*first.clone(), *second.clone()] }.is_expression());
+        assert!(Node::ListBuilder { item: first.clone(), conditions: vec![*third.clone()] }.is_expression());
+        assert!(Node::Tuple { elements: vec![*first.clone(), *second.clone()] }.is_expression());
+        assert!(Node::Range { from: first.clone(), to: second.clone(), inclusive: false, step: None }.is_expression());
+        assert!(Node::Real { lit: String::from("6.7") }.is_expression());
+        assert!(Node::Int { lit: String::from("3") }.is_expression());
+        assert!(Node::ENum { num: String::from("4"), exp: String::from("4") }.is_expression());
+        assert!(Node::Str { lit: String::from("asdf"), expressions: vec![*third.clone()] }.is_expression());
+        assert!(Node::Bool { lit: false }.is_expression());
+        assert!(Node::Match { cond: first.clone(), cases: vec![*second.clone()] }.is_expression());
+        assert!(Node::Underscore.is_expression());
+        assert!(Node::Undefined.is_expression());
+        assert!(Node::_Self.is_expression());
+        assert!(Node::Question { left: first.clone(), right: third.clone() }.is_expression());
+        assert!(Node::QuestionOp { expr: second.clone() }.is_expression());
     }
 
     #[test]
@@ -1296,36 +1327,36 @@ mod test {
         let left = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("left") }));
         let right = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("right") }));
 
-        assert!(Node::Add { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::AddU { expr: left.clone() }.trivially_expression());
-        assert!(Node::Sub { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::SubU { expr: right.clone() }.trivially_expression());
-        assert!(Node::Mul { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Div { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::FDiv { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Mod { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Pow { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Sqrt { expr: right.clone() }.trivially_expression());
-        assert!(Node::BAnd { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::BOr { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::BXOr { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::BOneCmpl { expr: right.clone() }.trivially_expression());
-        assert!(Node::BLShift { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::BRShift { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Le { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Ge { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Leq { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Geq { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Is { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::IsN { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Eq { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Neq { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::IsA { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::IsNA { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Not { expr: right.clone() }.trivially_expression());
-        assert!(Node::And { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::Or { left: left.clone(), right: right.clone() }.trivially_expression());
-        assert!(Node::In { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Add { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::AddU { expr: left.clone() }.is_expression());
+        assert!(Node::Sub { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::SubU { expr: right.clone() }.is_expression());
+        assert!(Node::Mul { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Div { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::FDiv { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Mod { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Pow { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Sqrt { expr: right.clone() }.is_expression());
+        assert!(Node::BAnd { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::BOr { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::BXOr { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::BOneCmpl { expr: right.clone() }.is_expression());
+        assert!(Node::BLShift { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::BRShift { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Le { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Ge { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Leq { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Geq { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Is { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::IsN { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Eq { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Neq { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::IsA { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::IsNA { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Not { expr: right.clone() }.is_expression());
+        assert!(Node::And { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::Or { left: left.clone(), right: right.clone() }.is_expression());
+        assert!(Node::In { left: left.clone(), right: right.clone() }.is_expression());
     }
 
     #[test]
