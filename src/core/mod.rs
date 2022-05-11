@@ -241,6 +241,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(to.as_ref(), ind),
             to_py(step.as_ref(), ind),
         ),
+        Core::Index { item, range } =>
+            format!("{}[{}]", to_py(item, ind), to_py(range, ind)),
         Core::If { cond, then } =>
             format!("if {}:{}", to_py(cond.as_ref(), ind), newline_if_body(then, ind)),
         Core::IfElse { cond, then, el } => format!(

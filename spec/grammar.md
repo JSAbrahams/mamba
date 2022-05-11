@@ -45,7 +45,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | control-flow-expr 
                       | newline block
                       | collection
-                      | range
                       | index
                       | key-value
                       | operation
@@ -84,7 +83,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operation        ::= relation [ ( equality | instance-eq | binary-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
-    term             ::= inner-term [ multiclative term ]
+    term             ::= inner-term [ ( multiclative | range ) term ]
     inner-term       ::= factor [ power inner-term ]
     factor           ::= [ unary ] ( literal | id | expression )
     

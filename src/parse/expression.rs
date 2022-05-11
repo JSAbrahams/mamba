@@ -45,7 +45,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Sub,
         Token::Undefined,
         Token::BOneCmpl,
-        Token::BSlash
+        Token::BSlash,
     ];
 
     let result = it.peek_or_err(
@@ -63,9 +63,10 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Token::Str(string, tokens) => {
                 let end = it.eat(&Token::Str(string.clone(), tokens.clone()), "factor")?;
 
-                let expressions: Vec<Box<AST>> = tokens.iter().map(|tokens| {
-                    parse_expression(&mut LexIterator::new(tokens.iter().peekable()))
-                }).collect::<Result<_, _>>()?;
+                let expressions: Vec<Box<AST>> = tokens
+                    .iter()
+                    .map(|tokens| parse_expression(&mut LexIterator::new(tokens.iter().peekable())))
+                    .collect::<Result<_, _>>()?;
                 let node = Node::Str {
                     lit: string.clone(),
                     expressions: expressions.iter().map(|expr| expr.deref().clone()).collect(),
@@ -82,12 +83,13 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(&start.union(&end), Node::Undefined)))
             }
 
-            Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl =>
-                parse_expression(it),
+            Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl => {
+                parse_expression(it)
+            }
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(expected_one_of(&expected, lex, "expression"))
+            _ => Err(expected_one_of(&expected, lex, "expression")),
         },
         &expected,
         "expression",
@@ -95,7 +97,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
 
     match result {
         Ok(res) => parse_post_expr(&res, it),
-        err => err
+        err => err,
     }
 }
 
@@ -116,16 +118,32 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let res = parse_call(pre, it)?;
                 parse_post_expr(&res, it)
             }
-            _ =>
+            Token::LSBrack => {
+                let res = parse_index(pre, it)?;
+                parse_post_expr(&res, it)
+            }
+            _ => {
                 if is_start_expression_exclude_unary(lex) {
                     let res = parse_call(pre, it)?;
                     parse_post_expr(&res, it)
                 } else {
                     Ok(Box::from(pre.clone()))
-                },
+                }
+            }
         },
         Ok(Box::from(pre.clone())),
     )
+}
+
+fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
+    let start = it.eat(&Token::LSBrack, "index")?;
+
+    let item = Box::from(pre.clone());
+    let range = it.parse(&parse_expression, "index", &start)?;
+    
+    let node = Node::Index { item, range };
+    let end = it.eat(&Token::RSBrack, "index")?;
+    Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 
 fn parse_return(it: &mut LexIterator) -> ParseResult {
@@ -143,23 +161,25 @@ fn parse_return(it: &mut LexIterator) -> ParseResult {
 
 /// Excluding unary addition and subtraction
 pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
-    matches!(tp.token,
+    matches!(
+        tp.token,
         Token::If
-        | Token::Match
-        | Token::LRBrack
-        | Token::LSBrack
-        | Token::LCBrack
-        | Token::Underscore
-        | Token::BSlash
-        | Token::_Self
-        | Token::Real(_)
-        | Token::Int(_)
-        | Token::ENum(..)
-        | Token::Str(..)
-        | Token::Bool(_)
-        | Token::Not
-        | Token::Undefined
-        | Token::Id(_))
+            | Token::Match
+            | Token::LRBrack
+            | Token::LSBrack
+            | Token::LCBrack
+            | Token::Underscore
+            | Token::BSlash
+            | Token::_Self
+            | Token::Real(_)
+            | Token::Int(_)
+            | Token::ENum(..)
+            | Token::Str(..)
+            | Token::Bool(_)
+            | Token::Not
+            | Token::Undefined
+            | Token::Id(_)
+    )
 }
 
 pub fn is_start_expression(tp: &Lex) -> bool {

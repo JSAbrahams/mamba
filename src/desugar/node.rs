@@ -88,6 +88,10 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Tuple { elements } => Core::Tuple { elements: desugar_vec(elements, imp, state)? },
         Node::List { elements } => Core::List { elements: desugar_vec(elements, imp, state)? },
         Node::Set { elements } => Core::Set { elements: desugar_vec(elements, imp, state)? },
+        Node::Index { item, range } => Core::Index {
+            item: Box::from(desugar_node(item, imp, state)?),
+            range: Box::from(desugar_node(range, imp, state)?),
+        },
 
         Node::ListBuilder { .. } => return Err(UnimplementedErr::new(ast, "list builder")),
         Node::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
