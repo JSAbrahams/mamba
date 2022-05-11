@@ -25,7 +25,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                     reinsert(constraints, constraint, total)?;
                     unify_link(constraints, ctx, total)
                 }
-                node if node.trivially_expression() => {
+                node if node.is_expression() => {
                     let mut constr = substitute(right, left, constraints, count, total)?;
                     unify_link(&mut constr, ctx, total)
                 }
