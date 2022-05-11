@@ -8,10 +8,13 @@ use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
+use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{Context, LookupClass, LookupFunction};
+use crate::check::constrain::generate::operation::constr_range;
+use crate::check::context::{clss, Context, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::Identifier;
+use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -90,6 +93,21 @@ pub fn gen_call(
         }
         Node::PropertyCall { instance, property } =>
             property_call(instance, property, env, ctx, constr),
+        Node::Index { item, range } => {
+            let mut constr = constr_col(item, env, constr)?;
+
+            if let Node::Range { .. } = &range.node {
+                constr_range(range, env, ctx, &mut constr)
+            } else {
+                let name = Name::from(clss::INT_PRIMITIVE);
+                constr.add(
+                    "index access",
+                    &Expected::try_from((range, &env.var_mappings))?,
+                    &Expected::new(&range.pos, &Type { name }),
+                );
+                Ok((constr.clone(), env.clone()))
+            }
+        }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting call")])
     }

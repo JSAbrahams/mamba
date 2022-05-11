@@ -136,14 +136,14 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
-    let start = it.eat(&Token::LSBrack, "index")?;
+    it.eat(&Token::LSBrack, "index")?;
 
     let item = Box::from(pre.clone());
-    let range = it.parse(&parse_expression, "index", &start)?;
+    let range = it.parse(&parse_expression, "index", &pre.pos)?;
     
     let node = Node::Index { item, range };
     let end = it.eat(&Token::RSBrack, "index")?;
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(&pre.pos.union(&end), node)))
 }
 
 fn parse_return(it: &mut LexIterator) -> ParseResult {

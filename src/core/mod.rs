@@ -241,6 +241,11 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(to.as_ref(), ind),
             to_py(step.as_ref(), ind),
         ),
+        Core::Slice { from, to, step } => format!("{}:{}:{}",
+                                                  to_py(from.as_ref(), ind),
+                                                  to_py(to.as_ref(), ind),
+                                                  to_py(step.as_ref(), ind),
+        ),
         Core::Index { item, range } =>
             format!("{}[{}]", to_py(item, ind), to_py(range, ind)),
         Core::If { cond, then } =>
