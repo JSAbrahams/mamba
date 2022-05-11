@@ -19,11 +19,6 @@ fn set_verify() -> OutTestRet {
 }
 
 #[test]
-fn simple_index_verify() -> OutTestRet {
-    test_directory(true, &["collection"], &["collection", "target"], "simple_index")
-}
-
-#[test]
 #[ignore] // Type checker cannot handle assigning to tuples
 fn tuple_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "tuple")

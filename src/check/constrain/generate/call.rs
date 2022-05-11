@@ -44,7 +44,7 @@ pub fn gen_call(
                         errors.push(TypeErr::new(&ast.pos, &msg))
                     }
                 } else {
-                    let msg = format!("{} is undefined here.", var);
+                    let msg = format!("Variable '{}' is undefined in this scope.", var);
                     errors.push(TypeErr::new(&ast.pos, &msg))
                 }
             }

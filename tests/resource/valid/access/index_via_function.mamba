@@ -1,0 +1,4 @@
+def f() -> Slice => 0 ..= 2 step 2
+
+def x := [1, 2, 3]
+x[f()]

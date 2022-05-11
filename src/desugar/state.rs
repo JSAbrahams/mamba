@@ -7,7 +7,6 @@ pub struct State {
     pub interface: bool,
     pub expand_ty: bool,
     pub def_as_fun_arg: bool,
-    pub range_as_slice: bool,
     pub assign_to: Option<Core>,
 }
 
@@ -18,7 +17,6 @@ impl State {
             interface: false,
             expand_ty: true,
             def_as_fun_arg: false,
-            range_as_slice: false,
             assign_to: None,
         }
     }
@@ -33,10 +31,6 @@ impl State {
 
     pub fn expand_ty(&self, expand_ty: bool) -> State {
         State { expand_ty, ..self.clone() }
-    }
-
-    pub fn in_index(&self, in_index: bool) -> State {
-        State { range_as_slice: in_index, ..self.clone() }
     }
 
     pub fn def_as_fun_arg(&self, def_as_fun_arg: bool) -> State {

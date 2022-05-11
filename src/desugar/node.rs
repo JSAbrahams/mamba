@@ -90,7 +90,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Set { elements } => Core::Set { elements: desugar_vec(elements, imp, state)? },
         Node::Index { item, range } => Core::Index {
             item: Box::from(desugar_node(item, imp, state)?),
-            range: Box::from(desugar_node(range, imp, &state.in_index(true))?),
+            range: Box::from(desugar_node(range, imp, state)?),
         },
 
         Node::ListBuilder { .. } => return Err(UnimplementedErr::new(ast, "list builder")),
@@ -267,11 +267,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
                 Core::Int { int: String::from("1") }
             });
 
-            if state.range_as_slice {
-                Core::Slice { from, to, step }
-            } else {
-                Core::Range { from, to, step }
-            }
+            Core::Range { from, to, step }
         }
         Node::Underscore => Core::UnderScore,
         Node::Question { left, right } => Core::Or {
