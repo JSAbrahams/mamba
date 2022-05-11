@@ -686,7 +686,6 @@ impl Node {
             | Node::Match { .. }
             | Node::Underscore
             | Node::Undefined
-            | Node::Pass
             | Node::_Self
             | Node::Question { .. }
             | Node::QuestionOp { .. } => true,
@@ -914,12 +913,14 @@ mod test {
 
     #[test]
     fn import_equal_value() {
-        let node = Node::Import {
+        two_ast!(Node::Import {
             import: vec![AST::new(&Position::default(), Node::AddOp)],
             aliases: vec![AST::new(&Position::default(), Node::Pass)],
-        };
-
-        two_ast!(node);
+        });
+        two_ast!(Node::FromImport {
+            id: Box::from(AST::new(&Position::default(), Node::AddOp)),
+            import: Box::from(AST::new(&Position::default(), Node::Pass)),
+        });
     }
 
     #[test]
@@ -1244,7 +1245,91 @@ mod test {
     }
 
     #[test]
-    fn test_is_operator() {
+    fn block_end_with_expression_is_expression() {
+        let node = Node::Block {
+            statements: vec![
+                AST::new(&Position::default(), Node::Pass),
+                AST::new(&Position::default(), Node::Int { lit: String::from("3") }),
+            ]
+        };
+        assert!(node.trivially_expression())
+    }
+
+    #[test]
+    fn block_end_with_statement_not_expression() {
+        let node = Node::Block {
+            statements: vec![
+                AST::new(&Position::default(), Node::Int { lit: String::from("3") }),
+                AST::new(&Position::default(), Node::Pass),
+            ]
+        };
+        assert!(!node.trivially_expression())
+    }
+
+    #[test]
+    fn empty_block_not_expression() {
+        assert!(!Node::Block { statements: vec![] }.trivially_expression())
+    }
+
+    #[test]
+    fn if_is_not_expression() {
+        let node = Node::IfElse {
+            cond: Box::new(AST::new(&Position::default(), Node::Bool { lit: true })),
+            then: Box::new(AST::new(&Position::default(), Node::Pass)),
+            el: None,
+        };
+        assert!(!node.trivially_expression())
+    }
+
+    #[test]
+    fn if_else_is_not_expression() {
+        let node = Node::IfElse {
+            cond: Box::new(AST::new(&Position::default(), Node::Bool { lit: true })),
+            then: Box::new(AST::new(&Position::default(), Node::Pass)),
+            el: Some(Box::new(AST::new(&Position::default(), Node::Pass))),
+        };
+        assert!(node.trivially_expression())
+    }
+
+    #[test]
+    fn operator_is_expression() {
+        let left = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("left") }));
+        let right = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("right") }));
+
+        assert!(Node::Add { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::AddU { expr: left.clone() }.trivially_expression());
+        assert!(Node::Sub { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::SubU { expr: right.clone() }.trivially_expression());
+        assert!(Node::Mul { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Div { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::FDiv { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Mod { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Pow { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Sqrt { expr: right.clone() }.trivially_expression());
+        assert!(Node::BAnd { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::BOr { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::BXOr { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::BOneCmpl { expr: right.clone() }.trivially_expression());
+        assert!(Node::BLShift { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::BRShift { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Le { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Ge { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Leq { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Geq { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Is { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::IsN { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Eq { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Neq { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::IsA { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::IsNA { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Not { expr: right.clone() }.trivially_expression());
+        assert!(Node::And { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::Or { left: left.clone(), right: right.clone() }.trivially_expression());
+        assert!(Node::In { left: left.clone(), right: right.clone() }.trivially_expression());
+    }
+
+    #[test]
+    fn is_operator() {
         let left = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("asdf") }));
         let right = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("lkjh") }));
 
