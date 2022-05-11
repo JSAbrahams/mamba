@@ -93,6 +93,13 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                     }
                     '.' if float || e_num => break,
                     '.' => {
+                        {
+                            // Check if not range by peeking ahead extra char
+                            let mut it = it.clone();
+                            it.next();
+                            if let Some('.') = it.peek() { break; }
+                        }
+
                         number.push(c);
                         float = true;
                         it.next();
@@ -295,7 +302,6 @@ mod test {
         Ok(())
     }
 
-
     #[test]
     fn if_statement() -> Result<(), LexErr> {
         let source = "if a then\n    b\nelse\n    c";
@@ -315,6 +321,98 @@ mod test {
         assert_eq!(tokens[10].token, Token::NL);
         assert_eq!(tokens[11].token, Token::Indent);
         assert_eq!(tokens[12].token, Token::Id(String::from("c")));
+
+        Ok(())
+    }
+
+    #[test]
+    fn int() -> Result<(), LexErr> {
+        let source = "0";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Int(String::from("0")));
+        Ok(())
+    }
+
+    #[test]
+    fn real() -> Result<(), LexErr> {
+        let source = "0.";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Real(String::from("0.")));
+        Ok(())
+    }
+
+    #[test]
+    fn real2() -> Result<(), LexErr> {
+        let source = "0.0";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Real(String::from("0.0")));
+        Ok(())
+    }
+
+    #[test]
+    fn real3() -> Result<(), LexErr> {
+        let source = "0.0.";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Real(String::from("0.0")));
+        assert_eq!(tokens[1].token, Token::Point);
+        Ok(())
+    }
+
+    #[test]
+    fn range_incl() -> Result<(), LexErr> {
+        let sources = vec!["0 ..= 2", "0..= 2", "0 ..=2", "0..=2"];
+
+        for source in sources {
+            let tokens = tokenize(&source)
+                .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+            assert_eq!(tokens[0].token, Token::Int(String::from("0")), "(0): {}", source);
+            assert_eq!(tokens[1].token, Token::RangeIncl, "(..=): {}", source);
+            assert_eq!(tokens[2].token, Token::Int(String::from("2")), "(2): {}", source);
+        }
+
+        Ok(())
+    }
+
+
+    #[test]
+    fn range() -> Result<(), LexErr> {
+        let sources = vec!["0 .. 2", "0.. 2", "0 ..2", "0..2"];
+
+        for source in sources {
+            let tokens = tokenize(&source)
+                .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+            assert_eq!(tokens[0].token, Token::Int(String::from("0")), "(0): {}", source);
+            assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
+            assert_eq!(tokens[2].token, Token::Int(String::from("2")), "(2): {}", source);
+        }
+
+        Ok(())
+    }
+
+
+    #[test]
+    fn range_tripped_up() -> Result<(), LexErr> {
+        let sources = vec!["0 ... 2", "0... 2", "0 ...2", "0...2"];
+
+        for source in sources {
+            let tokens = tokenize(&source)
+                .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+            assert_eq!(tokens[0].token, Token::Int(String::from("0")), "(0): {}", source);
+            assert_eq!(tokens[1].token, Token::Range, "(..): {}", source);
+            assert_eq!(tokens[2].token, Token::Point, "(.): {}", source);
+            assert_eq!(tokens[3].token, Token::Int(String::from("2")), "(2): {}", source);
+        }
 
         Ok(())
     }
