@@ -97,10 +97,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                             // Check if not range by peeking ahead extra char
                             let mut it = it.clone();
                             it.next();
-                            match it.peek() {
-                                Some('.') => break, // is range
-                                _ => {}
-                            }
+                            if let Some('.') = it.peek() { break; }
                         }
 
                         number.push(c);
