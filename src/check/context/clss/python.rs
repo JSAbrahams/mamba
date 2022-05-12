@@ -24,6 +24,7 @@ pub const ENUM_PRIMITIVE: &str = "enum";
 pub const COMPLEX_PRIMITIVE: &str = "complex";
 
 pub const RANGE: &str = "range";
+pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
 pub const LIST: &str = "list";
 
@@ -96,6 +97,7 @@ pub fn python_to_concrete(name: &str) -> String {
         COMPLEX_PRIMITIVE => String::from(clss::COMPLEX_PRIMITIVE),
 
         RANGE => String::from(clss::RANGE),
+        SLICE => String::from(clss::SLICE),
         SET => String::from(clss::SET),
         LIST => String::from(clss::LIST),
 

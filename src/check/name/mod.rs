@@ -133,6 +133,19 @@ impl Union<TrueName> for Name {
     }
 }
 
+impl From<&HashSet<&str>> for Name {
+    fn from(names: &HashSet<&str, RandomState>) -> Self {
+        let names = names.iter().map(|name| Name::from(*name));
+
+        if let Some(mut name_union) = names.last() {
+            name_union.names().for_each(|name| name_union = name_union.union(&name));
+            name_union
+        } else {
+            Name::empty()
+        }
+    }
+}
+
 impl From<&HashSet<Name>> for Name {
     fn from(names: &HashSet<Name, RandomState>) -> Self {
         if let Some(mut name_union) = names.iter().last().cloned() {

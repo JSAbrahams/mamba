@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::env::Environment;
@@ -30,8 +30,24 @@ pub fn gen_op(
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }
-        Node::Range { .. } => constr_range(ast, env, ctx, constr, "range"),
-        Node::Slice { .. } => constr_range(ast, env, ctx, constr, "slice"),
+        Node::Range { .. } => {
+            let name = Name::from(clss::RANGE);
+            constr.add(
+                "range",
+                &Expected::new(&ast.pos, &Expect::Type { name }),
+                &Expected::try_from((ast, &env.var_mappings))?,
+            );
+            constr_range(ast, env, ctx, constr, "range")
+        }
+        Node::Slice { .. } => {
+            let name = Name::from(clss::SLICE);
+            constr.add(
+                "slice",
+                &Expected::new(&ast.pos, &Expect::Type { name }),
+                &Expected::try_from((ast, &env.var_mappings))?,
+            );
+            constr_range(ast, env, ctx, constr, "slice")
+        }
 
         Node::Real { .. } => primitive(ast, FLOAT_PRIMITIVE, env, constr),
         Node::Int { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
@@ -174,7 +190,7 @@ pub fn constr_range(
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
-    range_slice: &str
+    range_slice: &str,
 ) -> Constrained {
     let (from, to, step) = match &ast.node {
         Node::Range { from, to, step, .. } if range_slice == "range" => (from, to, step),
@@ -188,13 +204,22 @@ pub fn constr_range(
     let name = Name::from(clss::INT_PRIMITIVE);
     let int_exp = &Expected::new(&from.pos, &Type { name });
 
-    constr.add(&format!("{} from", range_slice), &Expected::try_from((from, &env.var_mappings))?, int_exp);
-    constr.add(&format!("{} to", range_slice), &Expected::try_from((to, &env.var_mappings))?, int_exp);
-    let col = Expected::new(&ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
-    constr.add(&format!("{} collection", range_slice), &col, &Expected::try_from((ast, &env.var_mappings))?);
-
+    constr.add(
+        &format!("{} from", range_slice),
+        &Expected::try_from((from, &env.var_mappings))?,
+        int_exp,
+    );
+    constr.add(
+        &format!("{} to", range_slice),
+        &Expected::try_from((to, &env.var_mappings))?,
+        int_exp,
+    );
     if let Some(step) = step {
-        constr.add(&format!("{} step", range_slice), &Expected::try_from((step, &env.var_mappings))?, int_exp);
+        constr.add(
+            &format!("{} step", range_slice),
+            &Expected::try_from((step, &env.var_mappings))?,
+            int_exp,
+        );
     }
 
     let (mut constr, env) = generate(from, env, ctx, constr)?;
