@@ -28,10 +28,7 @@
 # Mamba
 
 This is the Mamba programming language.
-The Documentation can be found [here](https://github.com/JSAbrahams/mamba_doc).
-This documentation outlines the different language features, and also contains a formal specification of the language.
-
-In short, Mamba is like Python, but with a few key features:
+Mamba is like Python, but with a few key features:
 
 - Strict static typing rules, but with type inference so it doesn't get in the way too much
 - Type refinement features
