@@ -1,5 +1,5 @@
 def x := [1, 2, 3]
 
 print(x[3])
-print(x[0 ..= 2])
-print(x[0 ..= 2 step 1])
+print(x[0 ::= 2])
+print(x[0 ::= 2 :: 1])
