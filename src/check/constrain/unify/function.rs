@@ -84,7 +84,7 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
         },
 
         (l_exp, r_exp) => {
-            let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
+            let msg = format!("Unifying function: Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }

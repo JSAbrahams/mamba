@@ -128,32 +128,33 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
         }};
     }
 
+    macro_rules! match_range_slice {
+        ($it:expr, $token:ident, $incl:expr, $node:ident, $msg:expr) => {{
+            $it.eat(&Token::$token, $msg)?;
+            let to = $it.parse(&parse_expression, $msg, &start)?;
+            let (to, step, end) = match to.node {
+                Node::$node { from, to, .. } => (from.clone(), Some(to.clone()), to.pos),
+                _ => {
+                    let step = $it.parse_if(&Token::$node, &parse_expression, $msg, &start)?;
+                    (to.clone(), step.clone(), step.map_or(to.pos, |ast| ast.pos))
+                    }
+            };
+
+            let node = Node::$node { from: arithmetic.clone(), to, inclusive: $incl, step };
+            Ok(Box::from(AST::new(&start.union(&end), node)))
+        }}
+    }
+
     it.peek(
         &|it, lex| match lex.token {
             Token::Mul => bin_op!(it, parse_level_3, Mul, arithmetic.clone(), "mul"),
             Token::Div => bin_op!(it, parse_level_3, Div, arithmetic.clone(), "div"),
             Token::FDiv => bin_op!(it, parse_level_3, FDiv, arithmetic.clone(), "floor div"),
             Token::Mod => bin_op!(it, parse_level_3, Mod, arithmetic.clone(), "mod"),
-            Token::Range => {
-                it.eat(&Token::Range, "operation")?;
-                let to = it.parse(&parse_expression, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
-                let node = Node::Range {
-                    from: arithmetic.clone(),
-                    to: to.clone(),
-                    inclusive: false,
-                    step,
-                };
-                Ok(Box::from(AST::new(&start.union(&to.pos), node)))
-            }
-            Token::RangeIncl => {
-                it.eat(&Token::RangeIncl, "operation")?;
-                let to = it.parse(&parse_expression, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
-                let node =
-                    Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
-                Ok(Box::from(AST::new(&start.union(&to.pos), node)))
-            }
+            Token::Range => match_range_slice!(it, Range, false, Range, "range"),
+            Token::RangeIncl => match_range_slice!(it, RangeIncl, true, Range, "range"),
+            Token::Slice => match_range_slice!(it, Slice, false, Slice, "range"),
+            Token::SliceIncl => match_range_slice!(it, SliceIncl, true, Slice, "range"),
             _ => Ok(arithmetic.clone())
         },
         Ok(arithmetic.clone()),

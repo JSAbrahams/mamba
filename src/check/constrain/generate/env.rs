@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
+use crate::check::name;
 use crate::check::name::Name;
 use crate::common::position::Position;
 
@@ -15,6 +16,7 @@ pub struct Environment {
     pub raises: Option<Expected>,
     pub class_type: Option<Expect>,
     pub var_mappings: HashMap<String, String>,
+    temp_type: usize,
     vars: HashMap<String, HashSet<(bool, Expected)>>,
 }
 
@@ -166,5 +168,13 @@ impl Environment {
         }
 
         Environment { vars, var_mappings, ..self.clone() }
+    }
+
+    /// Get a name for a temporary type.
+    ///
+    /// Useful for when we don't know what a type should be during the generation stage.
+    /// The unification stage should then identify these.
+    pub fn temp_var(&self) -> (String, Environment) {
+        (format!("{}{}", name::TEMP, self.temp_type), Environment { temp_type: self.temp_type + 1, ..self.clone() })
     }
 }

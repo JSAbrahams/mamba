@@ -38,14 +38,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
                       | type-def
                       | "retry"
                       | "pass"
-    expression       ::= "(" expression ")" 
-                      | expression ( ".." | "..=" ) expression
+    expression       ::= "(" expression ")"
                       | expression "?or" expression
                       | "return" [ expression ]
                       | expression "as" id 
                       | control-flow-expr 
                       | newline block
                       | collection
+                      | index
                       | key-value
                       | operation
                       | anon-fun
@@ -66,6 +66,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     list             ::= "[" { expression } "]" | list-builder
     list-builder     ::= "[" expression "|" expression { "," expression } "]"
     
+    slice            ::= expression ( "::" | "::=" ) expression [ "::" expression ]
+    range            ::= expression ( ".." | "..=" ) expression [ ".." expression ]
+    index            ::= expression "[" range "]"
+    
     definition       ::= "def" ( variable-def | fun-def | operator-def )
 
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
@@ -80,7 +84,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operation        ::= relation [ ( equality | instance-eq | binary-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
-    term             ::= inner-term [ multiclative term ]
+    term             ::= inner-term [ ( multiclative | range | slice ) term ]
     inner-term       ::= factor [ power inner-term ]
     factor           ::= [ unary ] ( literal | id | expression )
     

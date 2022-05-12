@@ -81,7 +81,7 @@ mod test {
 
     #[test]
     fn for_range_step_verify() {
-        let source = String::from("for a in c .. d step e do f");
+        let source = String::from("for a in c .. d .. e do f");
         let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
