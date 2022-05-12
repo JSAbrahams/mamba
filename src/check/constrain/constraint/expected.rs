@@ -9,7 +9,9 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
-use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE};
+use crate::check::context::clss::{
+    BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE,
+};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -30,7 +32,9 @@ impl Expected {
 }
 
 impl AsRef<Expected> for Expected {
-    fn as_ref(&self) -> &Expected { self }
+    fn as_ref(&self) -> &Expected {
+        self
+    }
 }
 
 impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
@@ -42,7 +46,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
     fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expected> {
         let ast = match &ast.node {
             Node::Block { statements } => statements.last().unwrap_or(ast),
-            _ => ast
+            _ => ast,
         };
 
         Ok(Expected::new(&ast.pos, &Expect::try_from((ast, mappings))?))
@@ -98,41 +102,53 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
             Node::Undefined => Expect::none(),
             Node::Underscore => ExpressionAny,
             Node::Raise { error } => Raises { name: Name::try_from(error)? },
-            _ => Expression { ast }
+            _ => Expression { ast },
         })
     }
 }
 
 impl Display for Expected {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> { write!(f, "{}", self.expect) }
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}", self.expect)
+    }
 }
 
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", match &self {
-            ExpressionAny => String::from("Any"),
-            Expression { ast } => format!("`{}`", ast.node),
-            Collection { ty, .. } => format!("{{{}}}", ty.expect),
-            Tuple { elements } => format!("({})", comma_delm(elements)),
-            Raises { name: ty } => format!("Raises {}", ty),
-            Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
-            Function { name, args } => format!("{}({})", name, comma_delm(args)),
-            Field { name } => name.clone(),
-            Type { name: ty } => format!("{}", ty)
-        })
+        write!(
+            f,
+            "{}",
+            match &self {
+                ExpressionAny => String::from("Any"),
+                Expression { ast } => format!("`{}`", ast.node),
+                Collection { ty, .. } => format!("{{{}}}", ty.expect),
+                Tuple { elements } => format!("({})", comma_delm(elements)),
+                Raises { name: ty } => format!("Raises {}", ty),
+                Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
+                Function { name, args } => format!("{}({})", name, comma_delm(args)),
+                Field { name } => name.clone(),
+                Type { name: ty } => format!("{}", ty),
+            }
+        )
     }
 }
 
 impl Expect {
+    /// True if same value.
+    ///
+    /// If other is a Raises or Type where the Name is temporary, and either is Raises in former case
+    /// or Type in latter, then also true.
     pub fn same_value(&self, other: &Self) -> bool {
         match (self, other) {
             (Collection { ty: l }, Collection { ty: r }) => l.expect.same_value(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
-            (Raises { name: l }, Raises { name: r }) | (Type { name: l }, Type { name: r }) =>
-                l == r,
-            (Access { entity: le, name: ln }, Access { entity: re, name: rn }) =>
-                le == re && ln == rn,
-            (Function { name: l, args: la }, Function { name: r, args: ra }) =>
+            (Raises { name: l }, Raises { name: r }) | (Type { name: l }, Type { name: r }) => {
+                l == r
+            }
+            (Access { entity: le, name: ln }, Access { entity: re, name: rn }) => {
+                le == re && ln == rn
+            }
+            (Function { name: l, args: la }, Function { name: r, args: ra }) => {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
                     if let EitherOrBoth::Both(left, right) = pair {
@@ -140,7 +156,8 @@ impl Expect {
                     } else {
                         false
                     }
-                }),
+                })
+            }
 
             (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),
 
@@ -149,17 +166,23 @@ impl Expect {
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
             if ty == &Name::from(clss::STRING_PRIMITIVE) =>
-                true,
+                {
+                    true
+                }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
             | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
             if ty == &Name::from(clss::FLOAT_PRIMITIVE) =>
-                true,
+                {
+                    true
+                }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
             if ty == &Name::from(clss::INT_PRIMITIVE) =>
-                true,
+                {
+                    true
+                }
 
-            _ => self.is_none() && other.is_none()
+            _ => self.is_none() && other.is_none(),
         }
     }
 
@@ -170,7 +193,7 @@ impl Expect {
     pub fn is_none(&self) -> bool {
         match &self {
             Expect::Type { name } => name.is_null(),
-            _ => false
+            _ => false,
         }
     }
 }

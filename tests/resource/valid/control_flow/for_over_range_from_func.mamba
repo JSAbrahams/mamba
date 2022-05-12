@@ -1,0 +1,4 @@
+def f() -> Range => 0 .. 2 .. 1
+
+for x in f() do
+    print(x)

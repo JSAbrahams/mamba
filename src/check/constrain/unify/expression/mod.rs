@@ -13,7 +13,7 @@ use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
-mod substitute;
+pub mod substitute;
 
 pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, count: usize, total: usize) -> Unified {
     let (left, right) = (&constraint.left, &constraint.right);

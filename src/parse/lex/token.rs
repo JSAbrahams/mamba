@@ -58,8 +58,11 @@ pub enum Token {
     Str(String, Vec<Vec<Lex>>),
     DocStr(String),
     Bool(bool),
+
     Range,
     RangeIncl,
+    Slice,
+    SliceIncl,
 
     Add,
     Sub,
@@ -110,7 +113,6 @@ pub enum Token {
 
     While,
     For,
-    Step,
     In,
     If,
     Then,
@@ -202,6 +204,8 @@ impl fmt::Display for Token {
 
             Token::Range => String::from(".."),
             Token::RangeIncl => String::from("..="),
+            Token::Slice => String::from("::"),
+            Token::SliceIncl => String::from("::="),
 
             Token::Add => String::from("+"),
             Token::Sub => String::from("-"),
@@ -249,7 +253,6 @@ impl fmt::Display for Token {
 
             Token::While => String::from("while"),
             Token::For => String::from("for"),
-            Token::Step => String::from("step"),
             Token::In => String::from("in"),
             Token::If => String::from("if"),
             Token::Then => String::from("then"),

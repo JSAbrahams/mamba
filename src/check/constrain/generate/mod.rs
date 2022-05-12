@@ -14,7 +14,7 @@ use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::AST;
+use crate::parse::ast::{AST, Node};
 use crate::parse::ast::Node::*;
 
 mod call;
@@ -55,6 +55,7 @@ pub fn generate(
 
         Reassign { .. } => gen_call(ast, env, ctx, constr),
         FunctionCall { .. } | PropertyCall { .. } => gen_call(ast, env, ctx, constr),
+        Index { .. } => gen_call(ast, env, ctx, constr),
 
         TypeTup { .. } => gen_ty(ast, env, ctx, constr),
         TypeUnion { .. } | Type { .. } => gen_ty(ast, env, ctx, constr),
@@ -73,6 +74,7 @@ pub fn generate(
         Tuple { .. } => gen_coll(ast, env, ctx, constr),
 
         Range { .. } => gen_op(ast, env, ctx, constr),
+        Slice { .. } => gen_op(ast, env, ctx, constr),
         Real { .. } | Int { .. } => gen_op(ast, env, ctx, constr),
         ENum { .. } => gen_op(ast, env, ctx, constr),
         Str { .. } => gen_op(ast, env, ctx, constr),
@@ -111,7 +113,28 @@ pub fn generate(
         Print { .. } => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
-        _ => Ok((constr.clone(), env.clone()))
+        Node::Import { .. } |
+        Node::FromImport { .. } |
+        Node::Generic { .. } |
+        Node::Parent { .. } |
+        Init |
+        Node::ExpressionType { .. } |
+        _Self |
+        AddOp |
+        SubOp |
+        SqrtOp |
+        MulOp |
+        FDivOp |
+        DivOp |
+        PowOp |
+        ModOp |
+        EqOp |
+        LeOp |
+        GeOp |
+        Node::DocStr { .. } |
+        Underscore |
+        Undefined |
+        Node::Comment { .. } => Ok((constr.clone(), env.clone()))
     }
 }
 
