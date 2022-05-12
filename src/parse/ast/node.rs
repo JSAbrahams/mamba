@@ -710,6 +710,8 @@ impl Node {
             | Node::ListBuilder { .. }
             | Node::Tuple { .. }
             | Node::Range { .. }
+            | Node::Slice { .. }
+            | Node::Index { .. }
             | Node::Real { .. }
             | Node::Int { .. }
             | Node::ENum { .. }

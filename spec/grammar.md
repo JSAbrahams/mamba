@@ -84,7 +84,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     operation        ::= relation [ ( equality | instance-eq | binary-logic ) relation ]
     relation         ::= arithmetic [ comparison relation ]
     arithmetic       ::= term [ additive arithmetic ]
-    term             ::= inner-term [ ( multiclative | range ) term ]
+    term             ::= inner-term [ ( multiclative | range | slice ) term ]
     inner-term       ::= factor [ power inner-term ]
     factor           ::= [ unary ] ( literal | id | expression )
     

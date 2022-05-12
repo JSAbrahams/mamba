@@ -40,10 +40,10 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                 ctx.class(r_ty, &right.pos)?;
                 unify_link(constraints, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
-                let msg = format!("Expected a '{}', was a '{}'", l_ty, r_ty);
+                let msg = format!("Unifying two types: Expected a '{}', was a '{}'", l_ty, r_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             } else {
-                let msg = format!("Expected a '{}', was a '{}'", r_ty, l_ty);
+                let msg = format!("Unifying two types: Expected a '{}', was a '{}'", r_ty, l_ty);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
             }
         }
@@ -92,7 +92,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
                         }
                     }
                     _ => {
-                        let msg = format!("Expected a '{}', was a '{}'", name, right);
+                        let msg = format!("Unifying type and tuple: Expected a '{}', was a '{}'", name, right);
                         return Err(vec![TypeErr::new(&left.pos, &msg)]);
                     }
                 }
@@ -124,7 +124,7 @@ pub fn unify_type(constraint: &Constraint, constraints: &mut Constraints, ctx: &
         (l_exp, r_exp) => if l_exp.is_none() && r_exp.is_none() {
             unify_link(constraints, ctx, total)
         } else {
-            let msg = format!("Expected a '{}', was a '{}'", l_exp, r_exp);
+            let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);
             Err(vec![TypeErr::new(&left.pos, &msg)])
         }
     }

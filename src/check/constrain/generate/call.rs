@@ -9,6 +9,7 @@ use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
+use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
@@ -43,7 +44,7 @@ pub fn gen_call(
                         errors.push(TypeErr::new(&ast.pos, &msg))
                     }
                 } else {
-                    let msg = format!("Variable '{}' is undefined in this scope.", var);
+                    let msg = format!("'{}' is undefined in this scope.", var);
                     errors.push(TypeErr::new(&ast.pos, &msg))
                 }
             }
@@ -109,17 +110,6 @@ pub fn gen_call(
         Node::Index { item, range } => {
             let (mut constr, _) = generate(range, env, ctx, constr)?;
 
-            constr.add(
-                "index item",
-                &Expected::new(
-                    &item.pos,
-                    &Expect::Collection {
-                        ty: Box::from(Expected::new(&item.pos, &Expect::ExpressionAny)),
-                    },
-                ),
-                &Expected::try_from((item, &env.var_mappings))?,
-            );
-
             let name = Name::from(&HashSet::from([clss::INT_PRIMITIVE, clss::SLICE]));
             constr.add(
                 "index range",
@@ -127,6 +117,7 @@ pub fn gen_call(
                 &Expected::try_from((range, &env.var_mappings))?,
             );
 
+            let mut constr = constr_col(item, env, &mut constr)?;
             generate(item, env, ctx, &mut constr)
         }
 

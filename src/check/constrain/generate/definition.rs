@@ -196,7 +196,7 @@ fn identifier_to_tuple(
         if let Some(expected) = expected {
             Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
         } else {
-            let msg = format!("Variable '{}' is undefined in this scope", iden);
+            let msg = format!("'{}' is undefined in this scope", iden);
             Err(vec![TypeErr::new(pos, &msg)])
         }
     } else {
