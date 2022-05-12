@@ -22,39 +22,37 @@ pub fn substitute(
     let mut substituted = Constraints::new(&constraints.in_class);
     let mut constraint_pos = offset;
 
-    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}",
-        "",
-        offset,
-        total,
-        old,
-        new,
-        width = 14
-    );
+    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 14);
 
     while let Some(mut constr) = constraints.pop_constr() {
         let old_constr = constr.clone();
         constraint_pos += 1;
-        macro_rules! replace { ($left:expr, $new:expr) => {{
-            let pos = format!("({}={}) ", old_constr.left.pos.start, old_constr.right.pos.start);
-            let side = if $left { "l" } else { "r" };
-            trace!(
-                "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
-                pos,
-                constraint_pos,
-                total,
-                side,
-                old_constr,
-                $new,
-                width = 16
-            );
-        }}}
+        macro_rules! replace {
+            ($left:expr, $new:expr) => {{
+                let pos =
+                    format!("({}={}) ", old_constr.left.pos.start, old_constr.right.pos.start);
+                let side = if $left { "l" } else { "r" };
+                trace!(
+                    "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
+                    pos,
+                    constraint_pos,
+                    total,
+                    side,
+                    old_constr,
+                    $new,
+                    width = 16
+                );
+            }};
+        }
 
         let (sub_l, left) = recursive_substitute("l", &constr.left, old, new);
         let (sub_r, right) = recursive_substitute("r", &constr.right, old, new);
 
         constr.left = left;
         constr.right = right;
-        if sub_l || sub_r { replace!(sub_l, constr) }
+        if sub_l || sub_r {
+            replace!(sub_l, constr)
+        }
 
         constr.is_sub = constr.is_sub || sub_l || sub_r;
         substituted.push_constr(&constr)
@@ -70,7 +68,7 @@ fn recursive_substitute(
     old: &Expected,
     new: &Expected,
 ) -> (bool, Expected) {
-    if is_expr_and_structurally_eq(&inspected.expect, &old.expect) {
+    if inspected.expect.same_value(&old.expect) {
         return (true, new.clone());
     }
 
@@ -96,27 +94,28 @@ fn recursive_substitute(
             let func = Expect::Function { name: name.clone(), args };
             (any_substituted, Expected::new(&inspected.pos, &func))
         }
-        _ => (false, inspected.clone())
+        _ => (false, inspected.clone()),
     }
 }
 
 /// Substitues all in vector, and returns True if any substituted.
-fn substitute_vec(side: &str, old: &Expected, new: &Expected, elements: &[Expected]) -> (Vec<Expected>, bool) {
+fn substitute_vec(
+    side: &str,
+    old: &Expected,
+    new: &Expected,
+    elements: &[Expected],
+) -> (Vec<Expected>, bool) {
     let mut any_substituted = false;
 
-    (elements
-         .iter()
-         .map(|e| {
-             let (subs, el) = recursive_substitute(side, e, old, new);
-             any_substituted = any_substituted || subs;
-             el
-         })
-         .collect(), any_substituted)
-}
-
-fn is_expr_and_structurally_eq(inspected: &Expect, old: &Expect) -> bool {
-    match inspected {
-        Expect::Expression { .. } => inspected.same_value(old),
-        _ => false
-    }
+    (
+        elements
+            .iter()
+            .map(|e| {
+                let (subs, el) = recursive_substitute(side, e, old, new);
+                any_substituted = any_substituted || subs;
+                el
+            })
+            .collect(),
+        any_substituted,
+    )
 }
