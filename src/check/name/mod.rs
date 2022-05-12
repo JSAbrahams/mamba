@@ -22,6 +22,8 @@ pub mod truename;
 pub mod generic;
 pub mod python;
 
+pub const TEMP: char = '@';
+
 pub trait Union<T> {
     #[must_use]
     fn union(&self, value: &T) -> Self;
@@ -269,6 +271,16 @@ impl Name {
         self.names.iter().all(|name| name.is_null())
     }
 
+    /// True if this was a temporary name, which is a name which starts with '@'.
+    pub fn is_temporary(&self) -> bool {
+        if let Some(name) = Vec::from_iter(&self.names).first() {
+            match &name.variant {
+                NameVariant::Single(stringname) => stringname.name.starts_with(TEMP),
+                _ => false
+            }
+        } else { false }
+    }
+
     pub fn names(&self) -> IntoIter<TrueName> {
         self.names.clone().into_iter()
     }
@@ -333,6 +345,15 @@ mod tests {
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(!union_1.is_superset_of(&union_2, &ctx, &Position::default()).unwrap())
+    }
+
+    #[test]
+    fn test_temp_name() {
+        let name1 = Name::from("@something");
+        let name2 = Name::from(clss::INT_PRIMITIVE);
+
+        assert!(name1.is_temporary());
+        assert!(!name2.is_temporary())
     }
 
     #[test]

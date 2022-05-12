@@ -74,7 +74,7 @@ impl LookupClass<&StringName, Class> for Context {
             let generics = HashMap::new();
             Class::try_from((generic_class, &generics, pos))
         } else {
-            let msg = format!("Class {} is undefined.", class);
+            let msg = format!("Type '{}' is undefined.", class);
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }

@@ -117,8 +117,16 @@ pub fn gen_call(
                 &Expected::try_from((range, &env.var_mappings))?,
             );
 
-            let mut constr = constr_col(item, env, &mut constr)?;
-            generate(item, env, ctx, &mut constr)
+            let (temp_type, env) = env.temp_var();
+            let name = Name::from(temp_type.as_str());
+            constr.add(
+                "index of collection",
+                &Expected::new(&ast.pos, &Expect::Type { name: name.clone() }),
+                &Expected::try_from((ast, &env.var_mappings))?,
+            );
+
+            let mut constr = constr_col(item, &env, &mut constr, Some(name.clone()))?;
+            generate(item, &env, ctx, &mut constr)
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting call")]),

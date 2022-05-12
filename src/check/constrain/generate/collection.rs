@@ -7,6 +7,7 @@ use crate::check::constrain::generate::{Constrained, gen_vec};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 
@@ -18,7 +19,7 @@ pub fn gen_coll(
 ) -> Constrained {
     match &ast.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
-            gen_vec(elements, env, ctx, &constr_col(ast, env, constr)?)
+            gen_vec(elements, env, ctx, &constr_col(ast, env, constr, None)?)
         }
 
         Node::SetBuilder { .. } => {
@@ -38,6 +39,7 @@ pub fn constr_col(
     collection: &AST,
     env: &Environment,
     constr: &mut ConstrBuilder,
+    temp_type: Option<Name>,
 ) -> TypeResult<ConstrBuilder> {
     let (msg, col) = match &collection.node {
         Node::Set { elements } | Node::List { elements } => {
@@ -60,10 +62,13 @@ pub fn constr_col(
             ("tuple", Expect::Tuple { elements })
         }
 
-        _ => (
-            "collection",
-            Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &ExpressionAny)) },
-        ),
+        _ => {
+            let expect =
+                if let Some(name) = temp_type { Expect::Type { name } } else { ExpressionAny };
+            let expected =
+                Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &expect)) };
+            ("collection", expected)
+        }
     };
 
     let col_exp = Expected::new(&collection.pos, &col);
