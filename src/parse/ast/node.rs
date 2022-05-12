@@ -90,6 +90,7 @@ impl Display for Node {
             }
             Node::Index { item, range } => format!("{}[{}]", item.node, range.node),
             Node::Range { .. } => String::from("range"),
+            Node::Slice { .. } => String::from("slice"),
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
             Node::Int { lit } => lit.clone(),
@@ -579,7 +580,7 @@ impl Node {
             (Node::Str { lit: l, expressions: le }, Node::Str { lit: r, expressions: re }) => {
                 l == r && equal_vec(le, re)
             }
-            (Node::DocStr { lit: l }, Node::DocStr { lit: r }) => true,
+            (Node::DocStr { .. }, Node::DocStr { .. }) => true,
             (Node::Bool { lit: l }, Node::Bool { lit: r }) => l == r,
             (Node::AddU { expr: l }, Node::AddU { expr: r }) => l.same_value(r),
             (Node::SubU { expr: l }, Node::SubU { expr: r }) => l.same_value(r),

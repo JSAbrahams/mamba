@@ -269,6 +269,24 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 
             Core::Range { from, to, step }
         }
+        Node::Slice { from, to, inclusive, step } => {
+            let from = Box::from(desugar_node(from, imp, state)?);
+            let to = Box::from(if !inclusive {
+                Core::Sub {
+                    left: Box::from(desugar_node(to, imp, state)?),
+                    right: Box::from(Core::Int { int: String::from("1") }),
+                }
+            } else {
+                desugar_node(to, imp, state)?
+            });
+            let step = Box::from(if let Some(step) = step {
+                desugar_node(step, imp, state)?
+            } else {
+                Core::Int { int: String::from("1") }
+            });
+
+            Core::Slice { from, to, step }
+        }
         Node::Underscore => Core::UnderScore,
         Node::Question { left, right } => Core::Or {
             left: Box::from(desugar_node(left, imp, state)?),

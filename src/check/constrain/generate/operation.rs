@@ -30,7 +30,8 @@ pub fn gen_op(
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }
-        Node::Range { .. } => constr_range(ast, env, ctx, constr),
+        Node::Range { .. } => constr_range(ast, env, ctx, constr, "range"),
+        Node::Slice { .. } => constr_range(ast, env, ctx, constr, "slice"),
 
         Node::Real { .. } => primitive(ast, FLOAT_PRIMITIVE, env, constr),
         Node::Int { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
@@ -173,24 +174,27 @@ pub fn constr_range(
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
+    range_slice: &str
 ) -> Constrained {
-    let (from, to, step) = if let Node::Range { from, to, step, .. } = &ast.node {
-        (from, to, step)
-    } else {
-        let msg = format!("Expected range, was {}", ast.node);
-        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+    let (from, to, step) = match &ast.node {
+        Node::Range { from, to, step, .. } if range_slice == "range" => (from, to, step),
+        Node::Slice { from, to, step, .. } if range_slice == "slice" => (from, to, step),
+        _ => {
+            let msg = format!("Expected {}, was {}", range_slice, ast.node);
+            return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+        }
     };
 
     let name = Name::from(clss::INT_PRIMITIVE);
     let int_exp = &Expected::new(&from.pos, &Type { name });
 
-    constr.add("range from", &Expected::try_from((from, &env.var_mappings))?, int_exp);
-    constr.add("range to", &Expected::try_from((to, &env.var_mappings))?, int_exp);
+    constr.add(&format!("{} from", range_slice), &Expected::try_from((from, &env.var_mappings))?, int_exp);
+    constr.add(&format!("{} to", range_slice), &Expected::try_from((to, &env.var_mappings))?, int_exp);
     let col = Expected::new(&ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
-    constr.add("range collection", &col, &Expected::try_from((ast, &env.var_mappings))?);
+    constr.add(&format!("{} collection", range_slice), &col, &Expected::try_from((ast, &env.var_mappings))?);
 
     if let Some(step) = step {
-        constr.add("range step", &Expected::try_from((step, &env.var_mappings))?, int_exp);
+        constr.add(&format!("{} step", range_slice), &Expected::try_from((step, &env.var_mappings))?, int_exp);
     }
 
     let (mut constr, env) = generate(from, env, ctx, constr)?;

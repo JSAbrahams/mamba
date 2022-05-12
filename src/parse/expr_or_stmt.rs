@@ -91,7 +91,7 @@ mod test {
 
     #[test]
     fn range_step_verify() {
-        let source = String::from("hello .. world step 2");
+        let source = String::from("hello .. world .. 2");
         let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {

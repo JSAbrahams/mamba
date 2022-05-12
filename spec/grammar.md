@@ -66,7 +66,8 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     list             ::= "[" { expression } "]" | list-builder
     list-builder     ::= "[" expression "|" expression { "," expression } "]"
     
-    range            ::= expression ( ".." | "..=" ) expression [ "step" expression ]
+    slice            ::= expression ( "::" | "::=" ) expression [ "::" expression ]
+    range            ::= expression ( ".." | "..=" ) expression [ ".." expression ]
     index            ::= expression "[" range "]"
     
     definition       ::= "def" ( variable-def | fun-def | operator-def )

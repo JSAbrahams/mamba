@@ -75,6 +75,7 @@ pub enum Node {
     ListBuilder { item: Box<AST>, conditions: Vec<AST> },
     Tuple { elements: Vec<AST> },
     Range { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
+    Slice { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
     Index { item: Box<AST>, range: Box<AST> },
     Block { statements: Vec<AST> },
     Real { lit: String },

@@ -135,23 +135,62 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::FDiv => bin_op!(it, parse_level_3, FDiv, arithmetic.clone(), "floor div"),
             Token::Mod => bin_op!(it, parse_level_3, Mod, arithmetic.clone(), "mod"),
             Token::Range => {
-                it.eat(&Token::Range, "operation")?;
-                let to = it.parse(&parse_expression, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
-                let node = Node::Range {
-                    from: arithmetic.clone(),
-                    to: to.clone(),
-                    inclusive: false,
-                    step,
+                it.eat(&Token::Range, "range")?;
+                let to = it.parse(&parse_expression, "range", &start)?;
+                let (to, step) = match to.node {
+                    Node::Range { from, to, .. } => (from.clone(), Some(to.clone())),
+                    _ => {
+                        (to.clone(),
+                         it.parse_if(&Token::Range, &parse_expression, "range", &start)?)
+                    }
                 };
+
+                let node = Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: false, step };
                 Ok(Box::from(AST::new(&start.union(&to.pos), node)))
             }
             Token::RangeIncl => {
-                it.eat(&Token::RangeIncl, "operation")?;
-                let to = it.parse(&parse_expression, "operation", &start)?;
-                let step = it.parse_if(&Token::Step, &parse_expression, "step", &start)?;
+                it.eat(&Token::RangeIncl, "range")?;
+                let to = it.parse(&parse_expression, "range", &start)?;
+                let (to, step) = match to.node {
+                    Node::Range { from, to, .. } => (from.clone(), Some(to.clone())),
+                    _ => {
+                        (to.clone(),
+                         it.parse_if(&Token::Range, &parse_expression, "range", &start)?)
+                    }
+                };
+
                 let node =
                     Node::Range { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
+                Ok(Box::from(AST::new(&start.union(&to.pos), node)))
+            }
+            Token::Slice => {
+                it.eat(&Token::Slice, "slice")?;
+                let to = it.parse(&parse_expression, "slice", &start)?;
+                let (to, step) = match to.node {
+                    Node::Slice { from, to, .. } => (from.clone(), Some(to.clone())),
+                    _ => {
+                        (to.clone(),
+                         it.parse_if(&Token::Slice, &parse_expression, "range", &start)?)
+                    }
+                };
+
+                let node = Node::Slice { from: arithmetic.clone(), to: to.clone(), inclusive: false, step };
+                Ok(Box::from(AST::new(&start.union(&to.pos), node)))
+            }
+            Token::SliceIncl => {
+                it.eat(&Token::SliceIncl, "slice")?;
+                let to = it.parse(&parse_expression, "slice", &start)?;
+                let step = it.parse_if(&Token::Slice, &parse_expression, "slice", &start)?;
+                let (to, step) = match to.node {
+                    Node::Slice { from, to, .. } => (from.clone(), Some(to.clone())),
+                    _ => {
+                        (to.clone(),
+                         it.parse_if(&Token::Slice, &parse_expression, "range", &start)?)
+                    }
+                };
+
+                let node =
+                    Node::Slice { from: arithmetic.clone(), to: to.clone(), inclusive: true, step };
                 Ok(Box::from(AST::new(&start.union(&to.pos), node)))
             }
             _ => Ok(arithmetic.clone())

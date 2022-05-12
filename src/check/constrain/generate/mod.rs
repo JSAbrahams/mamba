@@ -74,6 +74,7 @@ pub fn generate(
         Tuple { .. } => gen_coll(ast, env, ctx, constr),
 
         Range { .. } => gen_op(ast, env, ctx, constr),
+        Slice { .. } => gen_op(ast, env, ctx, constr),
         Real { .. } | Int { .. } => gen_op(ast, env, ctx, constr),
         ENum { .. } => gen_op(ast, env, ctx, constr),
         Str { .. } => gen_op(ast, env, ctx, constr),

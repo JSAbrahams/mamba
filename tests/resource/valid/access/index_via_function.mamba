@@ -1,4 +1,8 @@
-def f() -> Slice => 0 ::= 2 :: 2
+def f() -> Slice => 0 :: 2 :: 2
+def g() -> Slice => 0 ::= 2 :: 2
+
+def i() -> Range => 0 .. 2 .. 2
+def j() -> Range => 0 ..= 2 .. 2
 
 def x := [1, 2, 3]
 x[f()]
