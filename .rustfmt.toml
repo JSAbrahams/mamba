@@ -12,7 +12,7 @@ format_macro_matchers = true
 
 imports_indent = "Visual"
 
-merge_imports = false
+imports_granularity = "Crate"
 normalize_comments = true
 reorder_impl_items = true
 
@@ -25,6 +25,5 @@ match_arm_blocks = false
 overflow_delimited_expr = true
 use_field_init_shorthand = true
 
-format_doc_comments = true
 wrap_comments = true
 use_try_shorthand = true
