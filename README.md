@@ -23,7 +23,10 @@
     <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
 </p>
 
-# Mamba
+<br/>
+<h1 align="center">
+    Mamba
+</h1>
 
 This is the Mamba programming language.
 Mamba is like Python, but with a few key features:
