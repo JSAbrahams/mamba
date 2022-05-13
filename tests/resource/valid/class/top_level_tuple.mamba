@@ -3,5 +3,5 @@ class A
 
 
 def a := A()
-print a.a
-print a.b
+print(a.a)
+print(a.b)

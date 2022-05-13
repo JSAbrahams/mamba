@@ -205,6 +205,14 @@ fn get_fields_and_functions(
                     .into_iter()
                     .map(|f| f.in_class(Some(class), type_def, &statement.pos))
                     .collect::<Result<_, _>>()?;
+
+                for generic_field in &stmt_fields {
+                    if generic_field.ty.is_none() {
+                        let msg = format!("Class field '{}' was not assigned a type", generic_field.name);
+                        return Err(vec![TypeErr::new(&generic_field.pos, &msg)]);
+                    }
+                }
+
                 fields = fields.union(&stmt_fields).cloned().collect();
             }
             Node::Comment { .. } | Node::DocStr { .. } => {}

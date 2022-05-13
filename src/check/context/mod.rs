@@ -98,14 +98,14 @@ impl LookupClass<&TrueName, ClassTuple> for Context {
 }
 
 impl LookupClass<&Name, ClassUnion> for Context {
-    /// Look up GenericClass and substitute generics to yield a Class.
+    /// Look up GenericClass and substitute generics to field a Class.
     ///
     /// # Error
     ///
     /// If NameUnion is empty.
     fn class(&self, name: &Name, pos: &Position) -> Result<ClassUnion, Vec<TypeErr>> {
         if name.is_empty() {
-            return Err(vec![TypeErr::new(pos, &format!("UnExpected a '{}'", name))]);
+            return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
         }
 
         let union = name.names().map(|n| self.class(&n, pos)).collect::<Result<_, _>>()?;
