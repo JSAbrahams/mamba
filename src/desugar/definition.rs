@@ -8,8 +8,6 @@ use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 
 pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
-    // TODO augment function definition in type checker so that it has return type
-    // when applicable
     Ok(match &ast.node {
         Node::VariableDef { var, expr: expression, ty, .. } => {
             let var = desugar_node(var, imp, &state.tuple_literal())?;
@@ -42,7 +40,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                     },
                     expr: match (var, expression) {
                         (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
-                        (Core::Tuple { elements }, None) => Some(Box::from(Core::Tuple {
+                        (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
                             elements: vec![Core::None; elements.len()],
                         })),
                         (_, None) => None,
@@ -60,7 +58,6 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
             body: if state.interface {
                 Box::from(Core::Pass)
             } else {
-                // TODO augment AST in type checker
                 Box::from(match expression {
                     Some(expr) => desugar_node(expr, imp, &state.expand_ty(true))?,
                     None => Core::Pass,
@@ -172,7 +169,7 @@ mod test {
         assert_eq!(ty, None);
         let elements =
             vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
-        assert_eq!(var, Box::from(Core::Tuple { elements }));
+        assert_eq!(var, Box::from(Core::TupleLiteral { elements }));
         let expressions =
             vec![Core::Id { lit: String::from("c") }, Core::Id { lit: String::from("d") }];
         assert_eq!(expr, Some(Box::from(Core::Tuple { elements: expressions })));
@@ -220,7 +217,7 @@ mod test {
         assert_eq!(ty, None);
         let elements =
             vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
-        assert_eq!(var, Box::from(Core::Tuple { elements }));
+        assert_eq!(var, Box::from(Core::TupleLiteral { elements }));
         assert_eq!(expr, Some(Box::from(Core::Tuple { elements: vec![Core::None, Core::None] })));
     }
 
