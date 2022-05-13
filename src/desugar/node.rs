@@ -85,7 +85,11 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
         Node::Init => Core::Id { lit: String::from("init") },
         Node::Bool { lit } => Core::Bool { boolean: *lit },
 
-        Node::Tuple { elements } => Core::Tuple { elements: desugar_vec(elements, imp, state)? },
+        Node::Tuple { elements } => if state.tup_lit {
+            Core::TupleLiteral { elements: desugar_vec(elements, imp, state)? }
+        } else {
+            Core::Tuple { elements: desugar_vec(elements, imp, state)? }
+        },
         Node::List { elements } => Core::List { elements: desugar_vec(elements, imp, state)? },
         Node::Set { elements } => Core::Set { elements: desugar_vec(elements, imp, state)? },
         Node::Index { item, range } => Core::Index {

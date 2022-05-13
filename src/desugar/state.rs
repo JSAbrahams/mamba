@@ -7,6 +7,7 @@ pub struct State {
     pub interface: bool,
     pub expand_ty: bool,
     pub def_as_fun_arg: bool,
+    pub tup_lit: bool,
     pub assign_to: Option<Core>,
 }
 
@@ -17,12 +18,17 @@ impl State {
             interface: false,
             expand_ty: true,
             def_as_fun_arg: false,
+            tup_lit: false,
             assign_to: None,
         }
     }
 
     pub fn in_tup(&self, tup: usize) -> State {
         State { tup, ..self.clone() }
+    }
+
+    pub fn tuple_literal(&self) -> State {
+        State { tup_lit: true, ..self.clone() }
     }
 
     pub fn in_interface(&self, interface: bool) -> State {

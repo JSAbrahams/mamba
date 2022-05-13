@@ -84,16 +84,18 @@ fn fallable(
     let out_ast = python_src_to_stmts(&out_src);
 
     if cmd.status.code().unwrap() != 0 {
-        panic!("Error running Python command: {}\n\
+        let msg = format!("Running Python command: {}\n\
         Source:\n\
         ----------\n\
         {}\n\
         ----------",
-               String::from_utf8(cmd.stderr).unwrap(),
-               out_src.lines().enumerate().map(|(line, src)| {
-                   format!("{}: {}\n", line + 1, src)
-               }).collect::<String>());
-    }
+                          String::from_utf8(cmd.stderr).unwrap(),
+                          out_src.lines().enumerate().map(|(line, src)| {
+                              format!("{}: {}\n", line + 1, src)
+                          }).collect::<String>());
 
-    Ok((check_ast, check_src, out_ast, out_src))
+        Err(OutTestErr(vec![msg]))
+    } else {
+        Ok((check_ast, check_src, out_ast, out_src))
+    }
 }
