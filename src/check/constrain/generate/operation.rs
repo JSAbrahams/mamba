@@ -30,7 +30,14 @@ pub fn gen_op(
             let (mut constr, env) = generate(right, &env, ctx, &mut constr)?;
             generate(left, &env, ctx, &mut constr)
         }
-        Node::Range { .. } => constr_range(ast, env, ctx, constr, "range", true),
+        Node::Range { .. } => {
+            constr.add(
+                "range",
+                &Expected::new(&ast.pos, &Expect::Type { name: Name::from(clss::RANGE) }),
+                &Expected::try_from((ast, &env.var_mappings))?,
+            );
+            constr_range(ast, env, ctx, constr, "range", true)
+        },
         Node::Slice { .. } => {
             constr.add(
                 "slice",

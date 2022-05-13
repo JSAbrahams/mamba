@@ -4,7 +4,7 @@ use std::hash::Hash;
 
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
-use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
+use crate::check::name::{AsMutable, AsNullable, CollectionType, IsNullable, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
@@ -29,6 +29,12 @@ impl AsMutable for TrueName {
 impl From<&NameVariant> for TrueName {
     fn from(variant: &NameVariant) -> Self {
         TrueName { is_mutable: false, is_nullable: false, variant: variant.clone() }
+    }
+}
+
+impl CollectionType for TrueName {
+    fn collection_type(&self, ctx: &Context) -> Option<Name> {
+        self.variant.collection_type(ctx)
     }
 }
 
@@ -119,7 +125,7 @@ impl TrueName {
         }
     }
 
-    pub fn substitute(&self, generics: &HashMap<String, TrueName>, pos: &Position) -> TypeResult<TrueName> {
+    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: &Position) -> TypeResult<TrueName> {
         let variant = match &self.variant {
             NameVariant::Single(direct_name) =>
                 NameVariant::Single(direct_name.substitute(generics, pos)?),

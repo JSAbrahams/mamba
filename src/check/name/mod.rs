@@ -47,6 +47,10 @@ pub trait AsMutable {
     fn as_mutable(&self) -> Self;
 }
 
+pub trait CollectionType {
+    fn collection_type(&self, ctx: &Context) -> Option<Name>;
+}
+
 pub fn match_name(
     identifier: &Identifier,
     name: &Name,
@@ -134,6 +138,21 @@ impl Union<StringName> for Name {
         let mut names = self.names.clone();
         names.insert(TrueName::from(name));
         Name { names }
+    }
+}
+
+impl CollectionType for Name {
+    fn collection_type(&self, ctx: &Context) -> Option<Name> {
+        let names = self.names.iter().map(|n| n.collection_type(ctx));
+        let mut union = Name::empty();
+        for name in names {
+            if let Some(name) = name {
+                union = union.union(&name)
+            } else {
+                return None;
+            }
+        }
+        Some(union)
     }
 }
 
@@ -276,9 +295,11 @@ impl Name {
         if let Some(name) = Vec::from_iter(&self.names).first() {
             match &name.variant {
                 NameVariant::Single(stringname) => stringname.name.starts_with(TEMP),
-                _ => false
+                _ => false,
             }
-        } else { false }
+        } else {
+            false
+        }
     }
 
     pub fn names(&self) -> IntoIter<TrueName> {
@@ -287,7 +308,7 @@ impl Name {
 
     pub fn substitute(
         &self,
-        generics: &HashMap<String, TrueName>,
+        generics: &HashMap<Name, Name>,
         pos: &Position,
     ) -> TypeResult<Name> {
         let names =
@@ -305,8 +326,8 @@ mod tests {
         BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE,
     };
     use crate::check::ident::Identifier;
+    use crate::check::name::{CollectionType, Name};
     use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
-    use crate::check::name::Name;
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::truename::TrueName;
     use crate::check::result::TypeResult;
@@ -530,5 +551,25 @@ mod tests {
 
         let matchings = match_name(&iden3, &name, &Position::default());
         assert!(matchings.is_err());
+    }
+
+    #[test]
+    fn range_has_collection_int_as_parent() {
+        let range_name = Name::from(clss::RANGE);
+        let int_name = Name::from(clss::INT_PRIMITIVE);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        let collection_ty = range_name.collection_type(&ctx);
+        assert_eq!(collection_ty, Some(int_name));
+    }
+
+
+    #[test]
+    fn slice_not_collection_int_as_parent() {
+        let range_name = Name::from(clss::SLICE);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        let collection_ty = range_name.collection_type(&ctx);
+        assert_eq!(collection_ty, None);
     }
 }

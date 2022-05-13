@@ -4,6 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+use itertools::{EitherOrBoth, Itertools};
+
 use crate::check::CheckInput;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{Class, HasParent};
@@ -67,11 +69,30 @@ pub trait LookupClass<In, Out> {
 }
 
 impl LookupClass<&StringName, Class> for Context {
-    /// Look up union of GenericClass and substitute generics to yield set of
-    /// Classes.
+    /// Look up union of GenericClass and substitute generics to yield set of classes.
+    ///
+    /// Substitutes all generics in the class when found.
     fn class(&self, class: &StringName, pos: &Position) -> Result<Class, Vec<TypeErr>> {
         if let Some(generic_class) = self.classes.iter().find(|c| &c.name == class) {
-            let generics = HashMap::new();
+            let mut generics = HashMap::new();
+            let placeholders = generic_class.name.as_direct("Class name invalid", pos)?;
+
+            for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
+                match name {
+                    EitherOrBoth::Both(placeholder, name) => {
+                        generics.insert(placeholder.clone(), name.clone());
+                    },
+                    EitherOrBoth::Left(placeholder) => {
+                        let msg = format!("No argument for generic: {}", placeholder);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    }
+                    EitherOrBoth::Right(placeholder) => {
+                        let msg = format!("No generic for argument: {}", placeholder);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    }
+                }
+            }
+
             Class::try_from((generic_class, &generics, pos))
         } else {
             let msg = format!("Type '{}' is undefined.", class);

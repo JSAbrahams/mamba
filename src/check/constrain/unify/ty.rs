@@ -11,7 +11,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{IsSuperSet, Name};
+use crate::check::name::{CollectionType, IsSuperSet, Name};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -160,14 +160,26 @@ pub fn unify_type(
             unify_link(constraints, ctx, total + 1)
         }
 
-        (l_exp, r_exp) => {
-            if l_exp.is_none() && r_exp.is_none() {
-                unify_link(constraints, ctx, total)
-            } else {
-                let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);
-                Err(vec![TypeErr::new(&left.pos, &msg)])
+        (l_exp, r_exp) => match (l_exp, r_exp) {
+            (Collection { ty }, Type { name }) | (Type { name }, Collection { ty }) => {
+                if let Some(col_ty) = name.collection_type(ctx) {
+                    let expect = Expect::Type { name: col_ty.clone() };
+                    constraints.push("collection type", ty, &Expected::new(&left.pos, &expect));
+                    unify_link(constraints, ctx, total + 1)
+                } else {
+                    let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                }
             }
-        }
+            _ => {
+                if l_exp.is_none() && r_exp.is_none() {
+                    unify_link(constraints, ctx, total)
+                } else {
+                    let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                }
+            }
+        },
     }
 }
 

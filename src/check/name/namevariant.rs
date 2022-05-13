@@ -2,7 +2,7 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
 use crate::check::context::Context;
-use crate::check::name::IsSuperSet;
+use crate::check::name::{CollectionType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeResult;
@@ -22,6 +22,16 @@ impl Display for NameVariant {
             NameVariant::Single(direct_name) => write!(f, "{}", direct_name),
             NameVariant::Tuple(names) => write!(f, "({})", comma_delm(names)),
             NameVariant::Fun(args, ret) => write!(f, "({}) -> {}", comma_delm(args), ret)
+        }
+    }
+}
+
+impl CollectionType for NameVariant {
+    fn collection_type(&self, ctx: &Context) -> Option<Name> {
+        if let NameVariant::Single(string_name) = self {
+            string_name.collection_type(ctx)
+        } else {
+            None
         }
     }
 }

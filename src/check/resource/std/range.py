@@ -1,4 +1,6 @@
-class range:
+from typing import List
+
+class range(list[int]):
     start: int = 0
     stop: int = 0
     step: int = 0

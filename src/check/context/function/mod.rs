@@ -12,7 +12,6 @@ use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::IsSuperSet;
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -85,11 +84,11 @@ impl Display for Function {
     }
 }
 
-impl TryFrom<(&GenericFunction, &HashMap<String, TrueName>, &Position)> for Function {
+impl TryFrom<(&GenericFunction, &HashMap<Name, Name>, &Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<String, TrueName>, &Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<Name, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         let arguments: Vec<FunctionArg> = fun
             .arguments

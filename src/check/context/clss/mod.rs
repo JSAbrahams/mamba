@@ -77,7 +77,9 @@ impl HasParent<&TrueName> for Class {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         Ok(&self.name == name || self.parents
             .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos).map(|res| {
+                res || p == name
+            }))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
             .any(|b| *b))
@@ -110,11 +112,11 @@ impl Display for Class {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
-impl TryFrom<(&GenericClass, &HashMap<String, TrueName>, &Position)> for Class {
+impl TryFrom<(&GenericClass, &HashMap<Name, Name>, &Position)> for Class {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericClass, &HashMap<String, TrueName>, &Position)
+        (generic, generics, pos): (&GenericClass, &HashMap<Name, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
         let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
