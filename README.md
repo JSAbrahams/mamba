@@ -81,8 +81,8 @@ class ServerError(def message: String): Exception(message)
 def fin always_the_same_message := "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
-    def is_connected: Bool    := False
-    def _last_message: String := None
+    def is_connected: Bool     := False
+    def _last_message: String? := None
 
     def last_sent(fin self) -> String raise ServerError => if self._last_message /= None 
         then self._last_message
@@ -140,8 +140,8 @@ type DisconnectedMyServer: MyServer when not self.is_connected
 class ServerErr(def message: String): Exception(message)
 
 class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
-    def is_connected: Bool    := False
-    def _last_message: String := None
+    def is_connected: Bool     := False
+    def _last_message: String? := None
 
     def last_sent(self) -> String raise ServerErr => if self.last_message /= None 
         then self._last_message
