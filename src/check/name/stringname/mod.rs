@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
-use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::HasParent;
+use crate::check::context::{Context, LookupClass};
+use crate::check::name::namevariant::NameVariant;
 use crate::check::name::IsSuperSet;
 use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
 use crate::check::name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -20,8 +20,8 @@ pub mod generic;
 /// functions are not permitted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StringName {
-    pub name: String,
-    pub generics: Vec<Name>,
+    pub name:     String,
+    pub generics: Vec<Name>
 }
 
 impl Display for StringName {
@@ -44,16 +44,16 @@ impl IsSuperSet<StringName> for StringName {
         &self,
         other: &StringName,
         ctx: &Context,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<bool> {
         Ok(ctx.class(other, pos)?.has_parent(self, ctx, pos)?
             && self
-            .generics
-            .iter()
-            .flat_map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
-            .collect::<Result<Vec<bool>, _>>()?
-            .iter()
-            .all(|b| *b))
+                .generics
+                .iter()
+                .flat_map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
+                .collect::<Result<Vec<bool>, _>>()?
+                .iter()
+                .all(|b| *b))
     }
 }
 
@@ -67,7 +67,7 @@ impl StringName {
     pub fn substitute(
         &self,
         generics: &HashMap<String, TrueName>,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&self.name) {
             match &name.variant {
@@ -80,12 +80,12 @@ impl StringName {
             }
         } else {
             Ok(StringName {
-                name: self.name.clone(),
+                name:     self.name.clone(),
                 generics: self
                     .generics
                     .iter()
                     .map(|generic| generic.substitute(generics, pos))
-                    .collect::<Result<_, _>>()?,
+                    .collect::<Result<_, _>>()?
             })
         }
     }

@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -61,7 +61,7 @@ pub fn parse_definition(it: &mut LexIterator) -> ParseResult {
                 Token::Ge,
                 Token::Le
             ],
-            "definition",
+            "definition"
         )
     }?;
 
@@ -83,13 +83,13 @@ fn parse_var_or_fun_def(it: &mut LexIterator) -> ParseResult {
             {
                 let node = Node::VariableDef {
                     mutable: *mutable,
-                    var: expr.clone(),
-                    ty: None,
-                    expr: None,
-                    forward: vec![],
+                    var:     expr.clone(),
+                    ty:      None,
+                    expr:    None,
+                    forward: vec![]
                 };
                 Ok(Box::from(AST::new(&id.pos.union(&id.pos), node)))
-            },
+            }
         ),
         _ => Err(custom("definition must start with id type", &id.pos))
     }
@@ -170,7 +170,7 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
         _ =>
             return Err(custom(
                 "Expected expression type in function argument",
-                &expression_type.pos,
+                &expression_type.pos
             )),
     };
     let default =
@@ -219,33 +219,33 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     macro_rules! unwrap_func_definition {
-    ($ast:expr) => {{
-        let definition = $ast.first().expect("script empty.").clone();
-        match definition.node {
-            Node::FunDef { id, pure, args, ret, raises, body, .. } =>
-                (pure, id, args, ret, raises, body),
-            other => panic!("Expected variabledef but was {:?}.", other)
-        }
-    }};
-}
+        ($ast:expr) => {{
+            let definition = $ast.first().expect("script empty.").clone();
+            match definition.node {
+                Node::FunDef { id, pure, args, ret, raises, body, .. } =>
+                    (pure, id, args, ret, raises, body),
+                other => panic!("Expected variabledef but was {:?}.", other)
+            }
+        }};
+    }
 
     macro_rules! unwrap_definition {
-    ($ast:expr) => {{
-        let definition = $ast.first().expect("script empty.").node.clone();
-        match definition {
-            Node::VariableDef { mutable, var, ty, expr, forward } =>
-                (mutable, var, ty, expr, forward),
-            other => panic!("Expected variabledef but was {:?}.", other)
-        }
-    }};
-}
+        ($ast:expr) => {{
+            let definition = $ast.first().expect("script empty.").node.clone();
+            match definition {
+                Node::VariableDef { mutable, var, ty, expr, forward } =>
+                    (mutable, var, ty, expr, forward),
+                other => panic!("Expected variabledef but was {:?}.", other)
+            }
+        }};
+    }
 
     #[test]
     fn empty_definition_verify() {
@@ -522,7 +522,6 @@ mod test {
         let source = String::from("def f => print a");
         parse(&tokenize(&source).unwrap()).unwrap_err();
     }
-
 
     #[test]
     fn handle_no_branches() {

@@ -101,7 +101,9 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                             // Check if not range by peeking ahead extra char
                             let mut it = it.clone();
                             it.next();
-                            if let Some('.') = it.peek() { break; }
+                            if let Some('.') = it.peek() {
+                                break;
+                            }
                         }
 
                         number.push(c);
@@ -119,7 +121,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                     Token::Real(number)
                 } else {
                     Token::Int(number)
-                },
+                }
             )
         }
         'a'..='z' | 'A'..='Z' | '_' => {
@@ -206,7 +208,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 fn next_and_create(
     it: &mut Peekable<Chars>,
     state: &mut State,
-    token: Token,
+    token: Token
 ) -> LexResult<Vec<Lex>> {
     it.next();
     create(state, token)
@@ -385,7 +387,6 @@ mod test {
         Ok(())
     }
 
-
     #[test]
     fn range() -> Result<(), LexErr> {
         let sources = vec!["0 .. 2", "0.. 2", "0 ..2", "0..2"];
@@ -401,7 +402,6 @@ mod test {
 
         Ok(())
     }
-
 
     #[test]
     fn range_tripped_up() -> Result<(), LexErr> {

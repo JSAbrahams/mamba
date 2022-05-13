@@ -1,13 +1,13 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::AsNullable;
-use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::AsNullable;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 impl TryFrom<&Box<AST>> for TrueName {
     type Error = Vec<TypeErr>;
@@ -28,7 +28,7 @@ impl TryFrom<&AST> for TrueName {
             Node::Tuple { elements } => {
                 let elements = elements.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                 Ok(TrueName::from(&NameVariant::Tuple(elements)))
-            },
+            }
             Node::QuestionOp { expr } => Ok(TrueName::try_from(expr)?.as_nullable()),
             Node::Type { id, .. } => Ok(TrueName::try_from(id)?),
             Node::TypeTup { types } => {
@@ -37,7 +37,7 @@ impl TryFrom<&AST> for TrueName {
             }
             Node::TypeFun { args, ret_ty } => Ok(TrueName::from(&NameVariant::Fun(
                 args.iter().map(Name::try_from).collect::<Result<_, _>>()?,
-                Box::from(Name::try_from(ret_ty.deref())?),
+                Box::from(Name::try_from(ret_ty.deref())?)
             ))),
             Node::TypeUnion { .. } =>
                 Err(vec![TypeErr::new(&ast.pos, "Expected single type name but was union")]),

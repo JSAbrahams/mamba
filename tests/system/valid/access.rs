@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn simple_index() -> OutTestRet {

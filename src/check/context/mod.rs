@@ -4,20 +4,20 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-use crate::check::CheckInput;
 use crate::check::context::arg::FunctionArg;
-use crate::check::context::clss::{Class, HasParent};
 use crate::check::context::clss::generic::GenericClass;
-use crate::check::context::field::Field;
+use crate::check::context::clss::{Class, HasParent};
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::function::Function;
+use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::function::Function;
 use crate::check::context::generic::generics;
-use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::check::CheckInput;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
@@ -40,9 +40,9 @@ mod python;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug, Default)]
 pub struct Context {
-    classes: HashSet<GenericClass>,
+    classes:   HashSet<GenericClass>,
     functions: HashSet<GenericFunction>,
-    fields: HashSet<GenericField>,
+    fields:    HashSet<GenericField>
 }
 
 impl Context {
@@ -158,12 +158,12 @@ impl LookupField<&str, Field> for Context {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ClassVariant {
     Direct(Class),
-    Tuple(Vec<ClassUnion>),
+    Tuple(Vec<ClassUnion>)
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ClassTuple {
-    variant: ClassVariant,
+    variant: ClassVariant
 }
 
 impl Display for ClassTuple {
@@ -182,9 +182,7 @@ impl ClassTuple {
     pub fn as_direct(&self, pos: &Position) -> TypeResult<Class> {
         match &self.variant {
             ClassVariant::Direct(class) => Ok(class.clone()),
-            _ => {
-                Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))])
-            }
+            _ => Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))])
         }
     }
 
@@ -241,7 +239,7 @@ impl ClassTuple {
 
 #[derive(Debug, Eq)]
 pub struct ClassUnion {
-    union: HashSet<ClassTuple>,
+    union: HashSet<ClassTuple>
 }
 
 impl PartialEq for ClassUnion {
@@ -260,7 +258,7 @@ impl HasParent<&StringName> for ClassUnion {
         &self,
         name: &StringName,
         ctx: &Context,
-        pos: &Position,
+        pos: &Position
     ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
@@ -294,7 +292,12 @@ impl HasParent<&TrueName> for ClassTuple {
 }
 
 impl HasParent<&TrueName> for ClassUnion {
-    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> Result<bool, Vec<TypeErr>> {
+    fn has_parent(
+        &self,
+        name: &TrueName,
+        ctx: &Context,
+        pos: &Position
+    ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -314,12 +317,7 @@ impl HasParent<&Name> for ClassTuple {
 }
 
 impl HasParent<&Name> for ClassUnion {
-    fn has_parent(
-        &self,
-        name: &Name,
-        ctx: &Context,
-        pos: &Position,
-    ) -> Result<bool, Vec<TypeErr>> {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -362,21 +360,21 @@ impl ClassUnion {
 }
 
 pub struct FunUnion {
-    pub union: HashSet<Function>,
+    pub union: HashSet<Function>
 }
 
 #[derive(Debug)]
 pub struct FieldUnion {
-    pub union: HashSet<Field>,
+    pub union: HashSet<Field>
 }
 
 #[cfg(test)]
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::check::CheckInput;
     use crate::check::context::{Context, LookupClass};
     use crate::check::name::stringname::StringName;
+    use crate::check::CheckInput;
     use crate::common::position::Position;
 
     #[test]

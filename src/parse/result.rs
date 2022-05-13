@@ -13,21 +13,21 @@ const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
 pub type ParseResult<T = Box<AST>> = std::result::Result<T, ParseErr>;
 pub type ParseResults =
-std::result::Result<Vec<(AST, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
+    std::result::Result<Vec<(AST, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {
     pub position: Position,
-    pub msg: String,
-    pub source: Option<String>,
-    pub path: Option<PathBuf>,
-    pub causes: Vec<Cause>,
+    pub msg:      String,
+    pub source:   Option<String>,
+    pub path:     Option<PathBuf>,
+    pub causes:   Vec<Cause>
 }
 
 #[derive(Debug, Clone)]
 pub struct Cause {
     pub position: Position,
-    pub cause: String,
+    pub cause:    String
 }
 
 impl Cause {
@@ -41,14 +41,14 @@ impl ParseErr {
     pub fn clone_with_cause(&self, cause: &str, position: &Position) -> ParseErr {
         ParseErr {
             position: self.position.clone(),
-            msg: self.msg.clone(),
-            causes: {
+            msg:      self.msg.clone(),
+            causes:   {
                 let mut new_causes = self.causes.clone();
                 new_causes.push(Cause::new(cause, position.clone()));
                 new_causes
             },
-            source: self.source.clone(),
-            path: self.path.clone(),
+            source:   self.source.clone(),
+            path:     self.path.clone()
         }
     }
 
@@ -56,10 +56,10 @@ impl ParseErr {
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
         ParseErr {
             position: self.position,
-            msg: self.msg,
-            causes: self.causes,
-            source: source.clone(),
-            path: path.clone(),
+            msg:      self.msg,
+            causes:   self.causes,
+            source:   source.clone(),
+            path:     path.clone()
         }
     }
 }
@@ -67,16 +67,16 @@ impl ParseErr {
 pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
         position: actual.pos.clone(),
-        msg: format!(
+        msg:      format!(
             "Expected one of ({}) while parsing {} {}, but found token '{}'",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing,
             actual.token
         ),
-        source: None,
-        path: None,
-        causes: vec![],
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
@@ -94,51 +94,49 @@ fn token_to_name(token: &Token) -> String {
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
         position: actual.pos.clone(),
-        msg: format!(
+        msg:      format!(
             "Expected {} while parsing {} {}, but found {}",
             token_to_name(expected),
             an_or_a(parsing),
             parsing,
             actual.token
         ),
-        source: None,
-        path: None,
-        causes: vec![],
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
 pub fn custom(msg: &str, position: &Position) -> ParseErr {
     ParseErr {
         position: position.clone(),
-        msg: title_case(msg),
-        source: None,
-        path: None,
-        causes: vec![],
+        msg:      title_case(msg),
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
         position: Position::default(),
-        msg: if tokens.len() > 1 {
-            format!("Expected one of '{}' while parsing {} {}",
-                    comma_separated(tokens),
-                    an_or_a(parsing),
-                    parsing)
+        msg:      if tokens.len() > 1 {
+            format!(
+                "Expected one of '{}' while parsing {} {}",
+                comma_separated(tokens),
+                an_or_a(parsing),
+                parsing
+            )
         } else {
-            format!("Expected a token while parsing {} {}",
-                    an_or_a(parsing),
-                    parsing)
+            format!("Expected a token while parsing {} {}", an_or_a(parsing), parsing)
         },
-        source: None,
-        path: None,
-        causes: vec![],
+        source:   None,
+        path:     None,
+        causes:   vec![]
     }
 }
 
-fn comma_separated(tokens: &[Token]) -> String {
-    comma_separated_map(tokens, token_to_name)
-}
+fn comma_separated(tokens: &[Token]) -> String { comma_separated_map(tokens, token_to_name) }
 
 fn comma_separated_map(tokens: &[Token], map: fn(&Token) -> String) -> String {
     let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", map(token)));

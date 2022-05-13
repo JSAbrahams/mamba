@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use crate::check::context::field::generic::GenericField;
-use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -19,10 +19,10 @@ pub mod python;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Field {
     pub is_py_type: bool,
-    pub name: String,
-    pub mutable: bool,
-    pub in_class: Option<StringName>,
-    pub ty: Name,
+    pub name:       String,
+    pub mutable:    bool,
+    pub in_class:   Option<StringName>,
+    pub ty:         Name
 }
 
 impl Display for Field {
@@ -40,16 +40,16 @@ impl TryFrom<(&GenericField, &HashMap<String, TrueName>, &Position)> for Field {
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,
-            name: field.name.clone(),
-            mutable: field.mutable,
-            in_class: match &field.in_class {
+            name:       field.name.clone(),
+            mutable:    field.mutable,
+            in_class:   match &field.in_class {
                 Some(in_class) => Some(in_class.substitute(generics, pos)?),
                 None => None
             },
-            ty: match &field.ty {
+            ty:         match &field.ty {
                 Some(ty) => ty.substitute(generics, pos)?,
                 None => Name::empty()
-            },
+            }
         })
     }
 }

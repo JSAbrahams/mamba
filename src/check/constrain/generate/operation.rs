@@ -1,27 +1,26 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{Constrained, gen_vec, generate};
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context};
+use crate::check::constrain::generate::{gen_vec, generate, Constrained};
 use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
-use crate::check::context::function::{
-    ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT, SUB,
-};
-use crate::check::name::Name;
+use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT,
+                                      SUB};
+use crate::check::context::{clss, Context};
 use crate::check::name::stringname::StringName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_op(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
@@ -35,7 +34,7 @@ pub fn gen_op(
             constr.add(
                 "slice",
                 &Expected::new(&ast.pos, &Expect::Type { name: Name::from(clss::SLICE) }),
-                &Expected::try_from((ast, &env.var_mappings))?,
+                &Expected::try_from((ast, &env.var_mappings))?
             );
             constr_range(ast, env, ctx, constr, "slice", false)
         }
@@ -59,7 +58,7 @@ pub fn gen_op(
         Node::Bool { .. } => {
             constr.add_constr(&Constraint::truthy(
                 "if else",
-                &Expected::try_from((ast, &env.var_mappings))?,
+                &Expected::try_from((ast, &env.var_mappings))?
             ));
             Ok((constr.clone(), env.clone()))
         }
@@ -76,9 +75,8 @@ pub fn gen_op(
         Node::Ge { left, right } => impl_bool_op(GE, ast, left, right, env, ctx, constr),
         Node::Leq { left, right } => impl_bool_op(LEQ, ast, left, right, env, ctx, constr),
         Node::Geq { left, right } => impl_bool_op(GEQ, ast, left, right, env, ctx, constr),
-        Node::Neq { left, right } | Node::Eq { left, right } => {
-            impl_bool_op(EQ, ast, left, right, env, ctx, constr)
-        }
+        Node::Neq { left, right } | Node::Eq { left, right } =>
+            impl_bool_op(EQ, ast, left, right, env, ctx, constr),
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
@@ -86,22 +84,16 @@ pub fn gen_op(
             constr.add(
                 "square root",
                 &Expected::try_from((ast, &env.var_mappings))?,
-                &Expected::new(&ast.pos, &ty),
+                &Expected::new(&ast.pos, &ty)
             );
 
-            let access = Expected::new(
-                &expr.pos,
-                &Access {
-                    entity: Box::new(Expected::try_from((expr, &env.var_mappings))?),
-                    name: Box::from(Expected::new(
-                        &expr.pos,
-                        &Function {
-                            name: StringName::from(SQRT),
-                            args: vec![Expected::try_from((expr, &env.var_mappings))?],
-                        },
-                    )),
-                },
-            );
+            let access = Expected::new(&expr.pos, &Access {
+                entity: Box::new(Expected::try_from((expr, &env.var_mappings))?),
+                name:   Box::from(Expected::new(&expr.pos, &Function {
+                    name: StringName::from(SQRT),
+                    args: vec![Expected::try_from((expr, &env.var_mappings))?]
+                }))
+            });
             constr.add("square root", &Expected::try_from((ast, &env.var_mappings))?, &access);
 
             generate(expr, env, ctx, constr)
@@ -152,7 +144,7 @@ pub fn gen_op(
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             constr.add_constr(&Constraint::truthy(
                 "not",
-                &Expected::try_from((expr, &env.var_mappings))?,
+                &Expected::try_from((expr, &env.var_mappings))?
             ));
             generate(expr, env, ctx, constr)
         }
@@ -162,17 +154,17 @@ pub fn gen_op(
 
             constr.add_constr(&Constraint::truthy(
                 "and",
-                &Expected::try_from((left, &env.var_mappings))?,
+                &Expected::try_from((left, &env.var_mappings))?
             ));
             constr.add_constr(&Constraint::truthy(
                 "and",
-                &Expected::try_from((right, &env.var_mappings))?,
+                &Expected::try_from((right, &env.var_mappings))?
             ));
             let (mut constr, env) = generate(left, env, ctx, constr)?;
             generate(right, &env, ctx, &mut constr)
         }
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting operation or primitive")]),
+        _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting operation or primitive")])
     }
 }
 
@@ -182,7 +174,7 @@ pub fn constr_range(
     ctx: &Context,
     constr: &mut ConstrBuilder,
     range_slice: &str,
-    contr_coll: bool,
+    contr_coll: bool
 ) -> Constrained {
     let (from, to, step) = match &ast.node {
         Node::Range { from, to, step, .. } if range_slice == "range" => (from, to, step),
@@ -199,18 +191,18 @@ pub fn constr_range(
     constr.add(
         &format!("{} from", range_slice),
         &Expected::try_from((from, &env.var_mappings))?,
-        int_exp,
+        int_exp
     );
     constr.add(
         &format!("{} to", range_slice),
         &Expected::try_from((to, &env.var_mappings))?,
-        int_exp,
+        int_exp
     );
     if let Some(step) = step {
         constr.add(
             &format!("{} step", range_slice),
             &Expected::try_from((step, &env.var_mappings))?,
-            int_exp,
+            int_exp
         );
     }
 
@@ -233,7 +225,7 @@ fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder)
     constr.add(
         format!("{} primitive", ty).as_str(),
         &Expected::try_from((ast, &env.var_mappings))?,
-        &Expected::new(&ast.pos, &Type { name }),
+        &Expected::new(&ast.pos, &Type { name })
     );
     Ok((constr.clone(), env.clone()))
 }
@@ -245,27 +237,21 @@ fn impl_magic(
     right: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     constr.add(
         format!("{} operation", fun).as_str(),
         &Expected::try_from((ast, &env.var_mappings))?,
-        &Expected::new(
-            &left.pos,
-            &Access {
-                entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
-                name: Box::new(Expected::new(
-                    &left.pos,
-                    &Function {
-                        name: StringName::from(fun),
-                        args: vec![
-                            Expected::try_from((left, &env.var_mappings))?,
-                            Expected::try_from((right, &env.var_mappings))?,
-                        ],
-                    },
-                )),
-            },
-        ),
+        &Expected::new(&left.pos, &Access {
+            entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
+            name:   Box::new(Expected::new(&left.pos, &Function {
+                name: StringName::from(fun),
+                args: vec![
+                    Expected::try_from((left, &env.var_mappings))?,
+                    Expected::try_from((right, &env.var_mappings))?,
+                ]
+            }))
+        })
     );
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;
@@ -279,33 +265,27 @@ fn impl_bool_op(
     right: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     constr.add(
         "bool operation",
         &Expected::try_from((ast, &env.var_mappings))?,
-        &Expected::new(
-            &left.pos,
-            &Access {
-                entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
-                name: Box::new(Expected::new(
-                    &left.pos,
-                    &Function {
-                        name: StringName::from(fun),
-                        args: vec![
-                            Expected::try_from((left, &env.var_mappings))?,
-                            Expected::try_from((right, &env.var_mappings))?,
-                        ],
-                    },
-                )),
-            },
-        ),
+        &Expected::new(&left.pos, &Access {
+            entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
+            name:   Box::new(Expected::new(&left.pos, &Function {
+                name: StringName::from(fun),
+                args: vec![
+                    Expected::try_from((left, &env.var_mappings))?,
+                    Expected::try_from((right, &env.var_mappings))?,
+                ]
+            }))
+        })
     );
     let ty = Type { name: Name::from(clss::BOOL_PRIMITIVE) };
     constr.add(
         "bool operation",
         &Expected::try_from((ast, &env.var_mappings))?,
-        &Expected::new(&ast.pos, &ty),
+        &Expected::new(&ast.pos, &ty)
     );
 
     let (mut constr, env) = generate(left, env, ctx, constr)?;

@@ -4,8 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::name::Name;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -19,12 +19,12 @@ pub mod python;
 /// May have a type.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FunctionArg {
-    pub is_py_type: bool,
-    pub name: String,
+    pub is_py_type:  bool,
+    pub name:        String,
     pub has_default: bool,
-    pub vararg: bool,
-    pub mutable: bool,
-    pub ty: Option<Name>,
+    pub vararg:      bool,
+    pub mutable:     bool,
+    pub ty:          Option<Name>
 }
 
 impl Display for FunctionArg {
@@ -46,15 +46,15 @@ impl TryFrom<(&GenericFunctionArg, &HashMap<String, TrueName>, &Position)> for F
         (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<String, TrueName>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
-            is_py_type: fun_arg.is_py_type,
-            name: fun_arg.name.clone(),
+            is_py_type:  fun_arg.is_py_type,
+            name:        fun_arg.name.clone(),
             has_default: fun_arg.has_default,
-            vararg: fun_arg.vararg,
-            mutable: fun_arg.mutable,
-            ty: match &fun_arg.ty {
+            vararg:      fun_arg.vararg,
+            mutable:     fun_arg.mutable,
+            ty:          match &fun_arg.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
                 None => None
-            },
+            }
         })
     }
 }

@@ -1,22 +1,22 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{Constrained, generate};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::{clss, Context};
 use crate::check::name::Name;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_flow(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Handle { expr_or_stmt, .. } => {
@@ -70,12 +70,12 @@ pub fn gen_flow(
                         res.0.add(
                             "match case",
                             &Expected::try_from((cond, &env.var_mappings))?,
-                            &Expected::try_from((cond, &env.var_mappings))?,
+                            &Expected::try_from((cond, &env.var_mappings))?
                         );
                         res.0.add(
                             "match body",
                             &Expected::try_from((body, &env.var_mappings))?,
-                            &Expected::try_from((ast, &env.var_mappings))?,
+                            &Expected::try_from((ast, &env.var_mappings))?
                         );
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
@@ -104,7 +104,7 @@ pub fn gen_flow(
             constr.add(
                 "step",
                 &Expected::try_from((amount, &env.var_mappings))?,
-                &Expected::new(&amount.pos, &Type { name }),
+                &Expected::new(&amount.pos, &Type { name })
             );
             Ok((constr.clone(), env.clone()))
         }

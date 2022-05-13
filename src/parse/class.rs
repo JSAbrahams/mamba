@@ -1,12 +1,12 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
 use crate::parse::definition::{parse_definition, parse_fun_arg};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{expected, expected_one_of};
 use crate::parse::result::ParseResult;
+use crate::parse::result::{expected, expected_one_of};
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
 
@@ -83,7 +83,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                     Token::Bool(false)
                 ],
                 lex,
-                "parent arguments",
+                "parent arguments"
             ))
         })?;
         it.eat(&Token::RRBrack, "parent arguments")?
@@ -109,10 +109,11 @@ mod test {
         let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
         let (import, _as) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
-                _ => panic!("first element script was not list.")
-            },
+            Node::File { statements: modules, .. } =>
+                match &modules.first().expect("script empty.").node {
+                    Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
+                    _ => panic!("first element script was not list.")
+                },
             _ => panic!("ast was not script.")
         };
 
@@ -127,10 +128,11 @@ mod test {
         let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
         let (import, _as) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
-                other => panic!("first element script was not import: {:?}.", other)
-            },
+            Node::File { statements: modules, .. } =>
+                match &modules.first().expect("script empty.").node {
+                    Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
+                    other => panic!("first element script was not import: {:?}.", other)
+                },
             other => panic!("ast was not script: {:?}", other)
         };
 
@@ -146,13 +148,15 @@ mod test {
         let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
         let (from, import, _as) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::FromImport { id, import } => match &import.node {
-                    Node::Import { import, aliases: _as } => (id.clone(), import.clone(), _as.clone()),
-                    other => panic!("not import: {:?}.", other)
+            Node::File { statements: modules, .. } =>
+                match &modules.first().expect("script empty.").node {
+                    Node::FromImport { id, import } => match &import.node {
+                        Node::Import { import, aliases: _as } =>
+                            (id.clone(), import.clone(), _as.clone()),
+                        other => panic!("not import: {:?}.", other)
+                    },
+                    other => panic!("first element script was not from: {:?}.", other)
                 },
-                other => panic!("first element script was not from: {:?}.", other)
-            },
             other => panic!("ast was not script: {:?}", other)
         };
 
@@ -171,11 +175,12 @@ mod test {
         let ast = parse(&tokenize(&source).unwrap()).unwrap();
 
         let (ty, args, parents, body) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Class { ty, args, parents, body } =>
-                    (ty.clone(), args.clone(), parents.clone(), body.clone()),
-                other => panic!("Was not class: {:?}.", other)
-            },
+            Node::File { statements: modules, .. } =>
+                match &modules.first().expect("script empty.").node {
+                    Node::Class { ty, args, parents, body } =>
+                        (ty.clone(), args.clone(), parents.clone(), body.clone()),
+                    other => panic!("Was not class: {:?}.", other)
+                },
             other => panic!("Ast was not script: {:?}", other)
         };
 
@@ -203,7 +208,10 @@ mod test {
                 }
                 assert_eq!(args.len(), 1);
                 let arg = args.first().unwrap();
-                assert_eq!(arg.node, Node::Str { lit: String::from("Something went wrong"), expressions: vec![] })
+                assert_eq!(arg.node, Node::Str {
+                    lit:         String::from("Something went wrong"),
+                    expressions: vec![]
+                })
             }
             _ => panic!("Expected parent: {:?}", parent.node)
         }

@@ -14,8 +14,8 @@ use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
 use crate::parse::ast::Node::*;
+use crate::parse::ast::{Node, AST};
 
 mod call;
 mod class;
@@ -41,7 +41,7 @@ pub fn generate(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         File { statements, .. } => gen_vec(statements, env, ctx, constr),
@@ -113,28 +113,28 @@ pub fn generate(
         Print { .. } => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
-        Node::Import { .. } |
-        Node::FromImport { .. } |
-        Node::Generic { .. } |
-        Node::Parent { .. } |
-        Init |
-        Node::ExpressionType { .. } |
-        _Self |
-        AddOp |
-        SubOp |
-        SqrtOp |
-        MulOp |
-        FDivOp |
-        DivOp |
-        PowOp |
-        ModOp |
-        EqOp |
-        LeOp |
-        GeOp |
-        Node::DocStr { .. } |
-        Underscore |
-        Undefined |
-        Node::Comment { .. } => Ok((constr.clone(), env.clone()))
+        Node::Import { .. }
+        | Node::FromImport { .. }
+        | Node::Generic { .. }
+        | Node::Parent { .. }
+        | Init
+        | Node::ExpressionType { .. }
+        | _Self
+        | AddOp
+        | SubOp
+        | SqrtOp
+        | MulOp
+        | FDivOp
+        | DivOp
+        | PowOp
+        | ModOp
+        | EqOp
+        | LeOp
+        | GeOp
+        | Node::DocStr { .. }
+        | Underscore
+        | Undefined
+        | Node::Comment { .. } => Ok((constr.clone(), env.clone()))
     }
 }
 
@@ -142,7 +142,7 @@ pub fn gen_vec(
     asts: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstrBuilder,
+    constr: &ConstrBuilder
 ) -> Constrained {
     let mut constr_env = (constr.clone(), env.clone());
     let mut asts = Vec::from(asts);

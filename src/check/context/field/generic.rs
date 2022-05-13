@@ -5,26 +5,26 @@ use std::ops::Deref;
 
 use crate::check::ident::Identifier;
 use crate::check::name::match_name;
-use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericField {
     pub is_py_type: bool,
-    pub name: String,
-    pub pos: Position,
-    pub mutable: bool,
-    pub in_class: Option<StringName>,
-    pub ty: Option<Name>,
+    pub name:       String,
+    pub pos:        Position,
+    pub mutable:    bool,
+    pub in_class:   Option<StringName>,
+    pub ty:         Option<Name>
 }
 
 pub struct GenericFields {
-    pub fields: HashSet<GenericField>,
+    pub fields: HashSet<GenericField>
 }
 
 impl Hash for GenericField {
@@ -43,14 +43,14 @@ impl TryFrom<&AST> for GenericField {
             // TODO do something with forward
             Node::VariableDef { var, mutable, ty, .. } => Ok(GenericField {
                 is_py_type: false,
-                name: field_name(var.deref())?,
-                mutable: *mutable,
-                pos: ast.pos.clone(),
-                in_class: None,
-                ty: match ty {
+                name:       field_name(var.deref())?,
+                mutable:    *mutable,
+                pos:        ast.pos.clone(),
+                in_class:   None,
+                ty:         match ty {
                     Some(ty) => Some(Name::try_from(ty.deref())?),
                     None => None
-                },
+                }
             }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
         }
@@ -74,11 +74,11 @@ impl TryFrom<&AST> for GenericFields {
                                 .iter()
                                 .map(|(id, (inner_mut, ty))| GenericField {
                                     is_py_type: false,
-                                    name: id.clone(),
-                                    mutable: *mutable || *inner_mut,
-                                    pos: ast.pos.clone(),
-                                    ty: Some(ty.clone()),
-                                    in_class: None,
+                                    name:       id.clone(),
+                                    mutable:    *mutable || *inner_mut,
+                                    pos:        ast.pos.clone(),
+                                    ty:         Some(ty.clone()),
+                                    in_class:   None
                                 })
                                 .collect())
                         }
@@ -87,11 +87,11 @@ impl TryFrom<&AST> for GenericFields {
                             .iter()
                             .map(|(inner_mut, id)| GenericField {
                                 is_py_type: false,
-                                name: id.clone(),
-                                pos: ast.pos.clone(),
-                                mutable: *mutable || *inner_mut,
-                                in_class: None,
-                                ty: None,
+                                name:       id.clone(),
+                                pos:        ast.pos.clone(),
+                                mutable:    *mutable || *inner_mut,
+                                in_class:   None,
+                                ty:         None
                             })
                             .collect())
                     }
@@ -107,7 +107,7 @@ impl GenericField {
         self,
         class: Option<&TrueName>,
         _type_def: bool,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<GenericField> {
         if let Some(NameVariant::Single(class)) = class.map(|t| t.variant.clone()) {
             Ok(GenericField { in_class: Some(class), ..self })

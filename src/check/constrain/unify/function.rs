@@ -2,21 +2,26 @@ use std::collections::HashSet;
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::Unified;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
-use crate::check::context::{Context, LookupClass};
+use crate::check::constrain::Unified;
 use crate::check::context::arg::FunctionArg;
-use crate::check::name::Name;
+use crate::check::context::{Context, LookupClass};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
-pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {
+pub fn unify_function(
+    constraint: &Constraint,
+    constraints: &mut Constraints,
+    ctx: &Context,
+    total: usize
+) -> Unified {
     let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
@@ -56,32 +61,54 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
             unify_link(constraints, ctx, total + count)
         }
 
-        (Access { entity, name }, _) => if let Type { name: entity_name } = &entity.expect {
-            match &name.expect {
-                Field { name } => field_access(constraints, ctx, entity_name, name, left, right, total),
-                Function { name, args } => function_access(constraints, ctx, entity_name, name, args, left, right, total),
-                _ => {
-                    let mut constr = reinsert(constraints, constraint, total)?;
-                    unify_link(&mut constr, ctx, total)
+        (Access { entity, name }, _) =>
+            if let Type { name: entity_name } = &entity.expect {
+                match &name.expect {
+                    Field { name } =>
+                        field_access(constraints, ctx, entity_name, name, left, right, total),
+                    Function { name, args } => function_access(
+                        constraints,
+                        ctx,
+                        entity_name,
+                        name,
+                        args,
+                        left,
+                        right,
+                        total
+                    ),
+                    _ => {
+                        let mut constr = reinsert(constraints, constraint, total)?;
+                        unify_link(&mut constr, ctx, total)
+                    }
                 }
-            }
-        } else {
-            let mut constr = reinsert(constraints, constraint, total)?;
-            unify_link(&mut constr, ctx, total)
-        }
-        (_, Access { entity, name }) => if let Type { name: entity_name } = &entity.expect {
-            match &name.expect {
-                Field { name } => field_access(constraints, ctx, entity_name, name, right, left, total),
-                Function { name, args } => function_access(constraints, ctx, entity_name, name, args, right, left, total),
-                _ => {
-                    let mut constr = reinsert(constraints, constraint, total)?;
-                    unify_link(&mut constr, ctx, total)
+            } else {
+                let mut constr = reinsert(constraints, constraint, total)?;
+                unify_link(&mut constr, ctx, total)
+            },
+        (_, Access { entity, name }) =>
+            if let Type { name: entity_name } = &entity.expect {
+                match &name.expect {
+                    Field { name } =>
+                        field_access(constraints, ctx, entity_name, name, right, left, total),
+                    Function { name, args } => function_access(
+                        constraints,
+                        ctx,
+                        entity_name,
+                        name,
+                        args,
+                        right,
+                        left,
+                        total
+                    ),
+                    _ => {
+                        let mut constr = reinsert(constraints, constraint, total)?;
+                        unify_link(&mut constr, ctx, total)
+                    }
                 }
-            }
-        } else {
-            let mut constr = reinsert(constraints, constraint, total)?;
-            unify_link(&mut constr, ctx, total)
-        },
+            } else {
+                let mut constr = reinsert(constraints, constraint, total)?;
+                unify_link(&mut constr, ctx, total)
+            },
 
         (l_exp, r_exp) => {
             let msg = format!("Unifying function: Expected a '{}', was a '{}'", l_exp, r_exp);
@@ -90,13 +117,15 @@ pub fn unify_function(constraint: &Constraint, constraints: &mut Constraints, ct
     }
 }
 
-fn field_access(constraints: &mut Constraints,
-                ctx: &Context,
-                entity_name: &Name,
-                name: &str,
-                accessed: &Expected,
-                other: &Expected,
-                total: usize) -> Unified {
+fn field_access(
+    constraints: &mut Constraints,
+    ctx: &Context,
+    entity_name: &Name,
+    name: &str,
+    accessed: &Expected,
+    other: &Expected,
+    total: usize
+) -> Unified {
     let mut pushed = 0;
     let fields = ctx.class(entity_name, &accessed.pos)?.field(name, ctx, &accessed.pos)?;
     for field in fields.union {
@@ -109,14 +138,16 @@ fn field_access(constraints: &mut Constraints,
 }
 
 #[allow(clippy::too_many_arguments)]
-fn function_access(constraints: &mut Constraints,
-                   ctx: &Context,
-                   entity_name: &Name,
-                   name: &StringName,
-                   args: &[Expected],
-                   accessed: &Expected,
-                   other: &Expected,
-                   total: usize) -> Unified {
+fn function_access(
+    constraints: &mut Constraints,
+    ctx: &Context,
+    entity_name: &Name,
+    name: &StringName,
+    args: &[Expected],
+    accessed: &Expected,
+    other: &Expected,
+    total: usize
+) -> Unified {
     let class = ctx.class(entity_name, &accessed.pos)?;
     let function_union = class.fun(name, ctx, &accessed.pos)?;
 
@@ -127,7 +158,8 @@ fn function_access(constraints: &mut Constraints,
         pushed += 1;
     }
 
-    let possible_args: HashSet<Vec<FunctionArg>> = function_union.union.iter().map(|f| f.arguments.clone()).collect();
+    let possible_args: HashSet<Vec<FunctionArg>> =
+        function_union.union.iter().map(|f| f.arguments.clone()).collect();
     let (mut constr, added) = unify_fun_arg(&possible_args, args, constraints, &accessed.pos)?;
     unify_link(&mut constr, ctx, total + added + pushed)
 }
@@ -136,7 +168,7 @@ fn unify_fun_arg(
     possible: &HashSet<Vec<FunctionArg>>,
     args: &[Expected],
     constr: &Constraints,
-    pos: &Position,
+    pos: &Position
 ) -> Unified<(Constraints, usize)> {
     let mut constr = constr.clone();
     let mut added = 0;

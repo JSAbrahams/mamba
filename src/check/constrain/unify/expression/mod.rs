@@ -1,21 +1,27 @@
-use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
+use EitherOrBoth::Both;
 
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Expression, ExpressionAny, Tuple};
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::Unified;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::reinsert;
 use crate::check::constrain::unify::link::unify_link;
+use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub mod substitute;
 
-pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, count: usize, total: usize) -> Unified {
+pub fn unify_expression(
+    constraint: &Constraint,
+    constraints: &mut Constraints,
+    ctx: &Context,
+    count: usize,
+    total: usize
+) -> Unified {
     let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
@@ -29,12 +35,21 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                     let mut constr = substitute(right, left, constraints, count, total)?;
                     unify_link(&mut constr, ctx, total)
                 }
-                _ => Err(vec![TypeErr::new(&ast.pos, &format!("Expected an expression but was {}", ast.node))])
+                _ => Err(vec![TypeErr::new(
+                    &ast.pos,
+                    &format!("Expected an expression but was {}", ast.node)
+                )])
             },
 
         // Not sure if necessary, but exception made for tuple
-        (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
-        (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements }) => {
+        (
+            Tuple { elements },
+            Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }
+        )
+        | (
+            Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } },
+            Tuple { elements }
+        ) => {
             let mut constraints = substitute(left, right, constraints, count, total)?;
 
             for pair in ast_elements.iter().cloned().zip_longest(elements.iter()) {
@@ -45,7 +60,11 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                         constraints.push("tuple", &l_ty, exp)
                     }
                     _ => {
-                        let msg = format!("Expected tuple with {} elements, was {}", elements.len(), ast_elements.len());
+                        let msg = format!(
+                            "Expected tuple with {} elements, was {}",
+                            elements.len(),
+                            ast_elements.len()
+                        );
                         return Err(vec![TypeErr::new(&left.pos, &msg)]);
                     }
                 }

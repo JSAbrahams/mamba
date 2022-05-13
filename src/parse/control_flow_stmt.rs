@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -24,11 +24,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[Token::While, Token::For, Token::Break, Token::Continue],
                 lex,
-                "control flow statement",
+                "control flow statement"
             ))
         },
         &[Token::While, Token::For, Token::Break, Token::Continue],
-        "control flow statement",
+        "control flow statement"
     )
 }
 
@@ -58,10 +58,10 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     #[test]

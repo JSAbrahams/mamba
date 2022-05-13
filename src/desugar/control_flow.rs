@@ -4,8 +4,8 @@ use crate::desugar::result::DesugarResult;
 use crate::desugar::result::UnimplementedErr;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 #[allow(clippy::comparison_chain)]
 pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
@@ -14,11 +14,11 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
             Some(el) => Core::IfElse {
                 cond: Box::from(desugar_node(cond, imp, state)?),
                 then: Box::from(desugar_node(then, imp, state)?),
-                el: Box::from(desugar_node(el, imp, state)?),
+                el:   Box::from(desugar_node(el, imp, state)?)
             },
             None => Core::If {
                 cond: Box::from(desugar_node(cond, imp, state)?),
-                then: Box::from(desugar_node(then, imp, state)?),
+                then: Box::from(desugar_node(then, imp, state)?)
             }
         },
         Node::Match { cond, cases } => {
@@ -33,14 +33,14 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
                             Node::Underscore =>
                                 core_defaults.push(desugar_node(body.as_ref(), imp, state)?),
                             _ => core_cases.push(Core::KeyValue {
-                                key: Box::from(desugar_node(cond.as_ref(), imp, state)?),
-                                value: Box::from(desugar_node(body.as_ref(), imp, state)?),
+                                key:   Box::from(desugar_node(cond.as_ref(), imp, state)?),
+                                value: Box::from(desugar_node(body.as_ref(), imp, state)?)
                             })
                         },
                         _ =>
                             return Err(UnimplementedErr::new(
                                 ast,
-                                "match case expression as condition (pattern matching)",
+                                "match case expression as condition (pattern matching)"
                             )),
                     },
                     other => panic!("Expected case but was {:?}", other)
@@ -52,7 +52,7 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
             } else if core_defaults.len() == 1 {
                 let default = Box::from(Core::AnonFun {
                     args: vec![],
-                    body: Box::from(core_defaults[0].clone()),
+                    body: Box::from(core_defaults[0].clone())
                 });
 
                 imp.add_from_import("collections", "defaultdict");
@@ -63,12 +63,12 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
         }
         Node::While { cond, body } => Core::While {
             cond: Box::from(desugar_node(cond, imp, state)?),
-            body: Box::from(desugar_node(body, imp, state)?),
+            body: Box::from(desugar_node(body, imp, state)?)
         },
         Node::For { expr, col, body } => Core::For {
             expr: Box::from(desugar_node(expr, imp, state)?),
-            col: Box::from(desugar_node(col, imp, state)?),
-            body: Box::from(desugar_node(body, imp, state)?),
+            col:  Box::from(desugar_node(col, imp, state)?),
+            body: Box::from(desugar_node(body, imp, state)?)
         },
 
         Node::Break => Core::Break,
@@ -77,14 +77,13 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
     })
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::common::position::Position;
     use crate::core::construct::Core;
     use crate::desugar::desugar;
-    use crate::parse::ast::AST;
     use crate::parse::ast::Node;
+    use crate::parse::ast::AST;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
@@ -191,8 +190,8 @@ mod tests {
 
         assert_eq!(*from, Core::Id { lit: String::from("a") });
         assert_eq!(*to, Core::Add {
-            left: Box::from(Core::Id { lit: String::from("b") }),
-            right: Box::from(Core::Int { int: String::from("1") }),
+            left:  Box::from(Core::Id { lit: String::from("b") }),
+            right: Box::from(Core::Int { int: String::from("1") })
         });
         assert_eq!(*step, Core::Int { int: String::from("1") });
     }

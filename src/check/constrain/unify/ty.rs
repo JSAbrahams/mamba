@@ -1,18 +1,17 @@
-use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
+use EitherOrBoth::Both;
 
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
+use crate::check::constrain::constraint::expected::Expect::{Collection, ExpressionAny, Raises,
+                                                            Tuple, Type};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::constraint::expected::Expect::{
-    Collection, ExpressionAny, Raises, Tuple, Type,
-};
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::Unified;
+use crate::check::constrain::constraint::{ConstrVariant, Constraint};
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::unify_link;
+use crate::check::constrain::Unified;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{IsSuperSet, Name};
 use crate::check::name::namevariant::NameVariant;
+use crate::check::name::{IsSuperSet, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -20,22 +19,21 @@ pub fn unify_type(
     constraint: &Constraint,
     constraints: &mut Constraints,
     ctx: &Context,
-    total: usize,
+    total: usize
 ) -> Unified {
     let (left, right) = (&constraint.left, &constraint.right);
     let count = total - constraints.len();
 
     match (&left.expect, &right.expect) {
         (ExpressionAny, ty) | (ty, ExpressionAny) => match ty {
-            Type { name } => {
+            Type { name } =>
                 if name.is_empty() {
                     let msg = format!("Expected an expression, but was '{}'", name);
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 } else {
                     unify_link(constraints, ctx, total)
-                }
-            }
-            _ => unify_link(constraints, ctx, total),
+                },
+            _ => unify_link(constraints, ctx, total)
         },
 
         (Type { name: l_ty }, Type { name: r_ty }) => {
@@ -45,7 +43,7 @@ pub fn unify_type(
                 && r_ty.is_superset_of(l_ty, ctx, &left.pos)?;
             let either_is_super = (constraint.superset == ConstrVariant::Either)
                 && (l_ty.is_superset_of(r_ty, ctx, &left.pos)?
-                || r_ty.is_superset_of(l_ty, ctx, &left.pos)?);
+                    || r_ty.is_superset_of(l_ty, ctx, &left.pos)?);
 
             if l_ty.is_temporary() {
                 let mut constr =
@@ -160,14 +158,13 @@ pub fn unify_type(
             unify_link(constraints, ctx, total + 1)
         }
 
-        (l_exp, r_exp) => {
+        (l_exp, r_exp) =>
             if l_exp.is_none() && r_exp.is_none() {
                 unify_link(constraints, ctx, total)
             } else {
                 let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);
                 Err(vec![TypeErr::new(&left.pos, &msg)])
-            }
-        }
+            },
     }
 }
 
@@ -178,7 +175,7 @@ fn substitute_ty(
     old: &Name,
     constraints: &mut Constraints,
     offset: usize,
-    total: usize,
+    total: usize
 ) -> TypeResult<Constraints> {
     let new = Expected::new(new_pos, &Expect::Type { name: new.clone() });
     let old = Expected::new(old_pos, &Expect::Type { name: old.clone() });

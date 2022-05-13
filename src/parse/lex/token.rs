@@ -5,8 +5,8 @@ use crate::common::position::{CaretPos, Position};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Lex {
-    pub pos: Position,
-    pub token: Token,
+    pub pos:   Position,
+    pub token: Token
 }
 
 impl Lex {
@@ -131,7 +131,7 @@ pub enum Token {
 
     Pass,
     Undefined,
-    Comment(String),
+    Comment(String)
 }
 
 impl Token {

@@ -2,9 +2,9 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
 use crate::check::context::Context;
+use crate::check::name::stringname::StringName;
 use crate::check::name::IsSuperSet;
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -13,7 +13,7 @@ use crate::common::position::Position;
 pub enum NameVariant {
     Single(StringName),
     Tuple(Vec<Name>),
-    Fun(Vec<Name>, Box<Name>),
+    Fun(Vec<Name>, Box<Name>)
 }
 
 impl Display for NameVariant {
@@ -31,7 +31,7 @@ impl IsSuperSet<NameVariant> for NameVariant {
         &self,
         other: &NameVariant,
         ctx: &Context,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<bool> {
         match (self, other) {
             (NameVariant::Single(left), NameVariant::Single(right)) =>

@@ -1,34 +1,31 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{Constrained, gen_vec};
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::{gen_vec, Constrained};
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
 use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_coll(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
-        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
-            gen_vec(elements, env, ctx, &constr_col(ast, env, constr, None)?)
-        }
+        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } =>
+            gen_vec(elements, env, ctx, &constr_col(ast, env, constr, None)?),
 
-        Node::SetBuilder { .. } => {
-            Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")])
-        }
-        Node::ListBuilder { .. } => {
-            Err(vec![TypeErr::new(&ast.pos, "List builders currently not supported")])
-        }
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected collection")]),
+        Node::SetBuilder { .. } =>
+            Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")]),
+        Node::ListBuilder { .. } =>
+            Err(vec![TypeErr::new(&ast.pos, "List builders currently not supported")]),
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected collection")])
     }
 }
 
@@ -39,7 +36,7 @@ pub fn constr_col(
     collection: &AST,
     env: &Environment,
     constr: &mut ConstrBuilder,
-    temp_type: Option<Name>,
+    temp_type: Option<Name>
 ) -> TypeResult<ConstrBuilder> {
     let (msg, col) = match &collection.node {
         Node::Set { elements } | Node::List { elements } => {
@@ -83,7 +80,7 @@ pub fn gen_collection_lookup(
     lookup: &AST,
     col: &AST,
     env: &Environment,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     let mut env = env.clone();
 
@@ -93,10 +90,9 @@ pub fn gen_collection_lookup(
         env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
     }
 
-    let lookup_exp = Expected::new(
-        &lookup.pos,
-        &Collection { ty: Box::from(Expected::try_from((lookup, &env.var_mappings))?) },
-    );
+    let lookup_exp = Expected::new(&lookup.pos, &Collection {
+        ty: Box::from(Expected::try_from((lookup, &env.var_mappings))?)
+    });
 
     constr.add("collection lookup", &lookup_exp, &col_exp);
     Ok((constr.clone(), env))

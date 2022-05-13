@@ -10,8 +10,8 @@ mod constrain;
 mod ident;
 
 pub mod context;
-pub mod result;
 pub mod name;
+pub mod result;
 
 pub type CheckInput = (AST, Option<String>, Option<PathBuf>);
 

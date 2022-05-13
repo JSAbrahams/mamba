@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use crate::check::context::{arg, function};
 use crate::check::context::function::python;
+use crate::check::context::{arg, function};
 use crate::core::construct::Core;
 use crate::core::construct::Core::FunctionCall;
 use crate::desugar::common::desugar_vec;
@@ -9,8 +9,8 @@ use crate::desugar::node::desugar_node;
 use crate::desugar::result::{DesugarResult, UnimplementedErr};
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 /// Desugar a class.
 ///
@@ -33,17 +33,18 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
         Node::Class { ty, body, args, parents } =>
             extract_class(ty, body, args, parents, imp, &state.in_interface(false)),
 
-        Node::Parent { ty, args } => if args.is_empty() {
-            desugar_node(ty, imp, state)
-        } else {
-            Ok(Core::FunctionCall {
-                function: Box::from(match desugar_node(ty, imp, state)? {
-                    Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
-                    other => other
-                }),
-                args: desugar_vec(args, imp, state)?,
-            })
-        },
+        Node::Parent { ty, args } =>
+            if args.is_empty() {
+                desugar_node(ty, imp, state)
+            } else {
+                Ok(Core::FunctionCall {
+                    function: Box::from(match desugar_node(ty, imp, state)? {
+                        Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
+                        other => other
+                    }),
+                    args:     desugar_vec(args, imp, state)?
+                })
+            },
 
         other => panic!("Expected class or type definition but was {:?}", other)
     }
@@ -61,7 +62,7 @@ fn extract_class(
     args: &[AST],
     parents: &[AST],
     imp: &mut Imports,
-    state: &State,
+    state: &State
 ) -> DesugarResult {
     let id = match &ty.node {
         Node::Type { id, .. } => desugar_node(id, imp, state)?,
@@ -76,37 +77,44 @@ fn extract_class(
         _ => None
     };
 
-    let body = if !args.is_empty() || parents.len() > 1 ||
-        (body.is_some() && parents.iter().any(|p| matches!(p, Core::FunctionCall { .. }))) {
+    let body = if !args.is_empty()
+        || parents.len() > 1
+        || (body.is_some() && parents.iter().any(|p| matches!(p, Core::FunctionCall { .. })))
+    {
         let old_stmts = match body {
             Some(Core::Block { statements }) => statements,
             None => vec![],
-            Some(..) => return Err(UnimplementedErr::new(ty, "Body not block")),
+            Some(..) => return Err(UnimplementedErr::new(ty, "Body not block"))
         };
 
-        let parents: Vec<(String, Vec<Core>)> = parents.iter().map(|parent| match parent.clone() {
-            Core::FunctionCall { function, args } => match *function {
-                Core::Id { lit } => Ok((lit, args)),
+        let parents: Vec<(String, Vec<Core>)> = parents
+            .iter()
+            .map(|parent| match parent.clone() {
+                Core::FunctionCall { function, args } => match *function {
+                    Core::Id { lit } => Ok((lit, args)),
+                    _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
+                },
+                Core::Type { lit, .. } => Ok((lit, vec![])),
                 _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
-            }
-            Core::Type { lit, .. } => Ok((lit, vec![])),
-            _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
-        }).collect::<DesugarResult<_>>()?;
+            })
+            .collect::<DesugarResult<_>>()?;
 
         // super(<parent>, self).__init__(args)
-        let mut parent_calls: Vec<Core> = parents.iter().map(|(parent, args)| Core::PropertyCall {
-            object: Box::from(Core::FunctionCall {
-                function: Box::from(Core::Id { lit: String::from(function::python::SUPER) }),
-                args: vec![
-                    Core::Id { lit: parent.clone() },
-                    Core::Id { lit: String::from(arg::python::SELF) },
-                ],
-            }),
-            property: Box::from(FunctionCall {
-                function: Box::new(Core::Id { lit: String::from(python::INIT) }),
-                args: args.clone(),
-            }),
-        }).collect();
+        let mut parent_calls: Vec<Core> = parents
+            .iter()
+            .map(|(parent, args)| Core::PropertyCall {
+                object:   Box::from(Core::FunctionCall {
+                    function: Box::from(Core::Id { lit: String::from(function::python::SUPER) }),
+                    args:     vec![Core::Id { lit: parent.clone() }, Core::Id {
+                        lit: String::from(arg::python::SELF)
+                    }]
+                }),
+                property: Box::from(FunctionCall {
+                    function: Box::new(Core::Id { lit: String::from(python::INIT) }),
+                    args:     args.clone()
+                })
+            })
+            .collect();
 
         // Class arguments not in any parent must be assigned here
         for arg in &args {
@@ -117,29 +125,29 @@ fn extract_class(
 
             if !parents.iter().any(|(_, args)| args.iter().any(|a| Box::from(a.clone()) == arg)) {
                 parent_calls.push(Core::Assign {
-                    left: Box::from(Core::PropertyCall {
-                        object: Box::from(Core::Id { lit: String::from(arg::python::SELF) }),
-                        property: arg.clone(),
+                    left:  Box::from(Core::PropertyCall {
+                        object:   Box::from(Core::Id { lit: String::from(arg::python::SELF) }),
+                        property: arg.clone()
                     }),
-                    right: arg,
+                    right: arg
                 })
             }
         }
 
         let mut new_args = vec![Core::FunArg {
-            vararg: false,
-            var: Box::from(Core::Id { lit: String::from(arg::python::SELF) }),
-            ty: None,
-            default: None,
+            vararg:  false,
+            var:     Box::from(Core::Id { lit: String::from(arg::python::SELF) }),
+            ty:      None,
+            default: None
         }];
         new_args.append(&mut args);
 
         let mut statements = old_stmts;
         statements.append(&mut vec![Core::FunDef {
-            id: Box::from(Core::Id { lit: String::from(python::INIT) }),
-            arg: new_args,
-            ty: None,
-            body: Box::from(Core::Block { statements: parent_calls }),
+            id:   Box::from(Core::Id { lit: String::from(python::INIT) }),
+            arg:  new_args,
+            ty:   None,
+            body: Box::from(Core::Block { statements: parent_calls })
         }]);
 
         Some(Core::Block { statements })
@@ -149,24 +157,36 @@ fn extract_class(
 
     match body {
         Some(body) => {
-            let parent_names = parents.iter().map(|parent| match parent.clone() {
-                Core::FunctionCall { function, .. } => match *function {
-                    Core::Id { .. } => Ok(*function),
+            let parent_names = parents
+                .iter()
+                .map(|parent| match parent.clone() {
+                    Core::FunctionCall { function, .. } => match *function {
+                        Core::Id { .. } => Ok(*function),
+                        _ => Err(UnimplementedErr::new(ty, "Parent"))
+                    },
+                    Core::Type { lit, .. } => Ok(Core::Id { lit }),
                     _ => Err(UnimplementedErr::new(ty, "Parent"))
-                }
-                Core::Type { lit, .. } => Ok(Core::Id { lit }),
-                _ => Err(UnimplementedErr::new(ty, "Parent"))
-            }).collect::<DesugarResult<Vec<Core>>>()?;
+                })
+                .collect::<DesugarResult<Vec<Core>>>()?;
 
             Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
         }
-        None => if parents.is_empty() {
-            Ok(Core::ClassDef { name: Box::from(id), parent_names: vec![], body: Box::from(Core::Pass) })
-        } else if parents.len() == 1 {
-            Ok(Core::VarDef { var: Box::from(id), ty: None, expr: parents.first().cloned().map(Box::from) })
-        } else {
-            Err(UnimplementedErr::new(ty, "More than one parent"))
-        }
+        None =>
+            if parents.is_empty() {
+                Ok(Core::ClassDef {
+                    name:         Box::from(id),
+                    parent_names: vec![],
+                    body:         Box::from(Core::Pass)
+                })
+            } else if parents.len() == 1 {
+                Ok(Core::VarDef {
+                    var:  Box::from(id),
+                    ty:   None,
+                    expr: parents.first().cloned().map(Box::from)
+                })
+            } else {
+                Err(UnimplementedErr::new(ty, "More than one parent"))
+            },
     }
 }
 
@@ -177,8 +197,8 @@ mod tests {
     use crate::common::position::Position;
     use crate::core::construct::Core;
     use crate::desugar::desugar;
-    use crate::parse::ast::AST;
     use crate::parse::ast::Node;
+    use crate::parse::ast::AST;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
@@ -239,8 +259,10 @@ mod tests {
             to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
             to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
         ];
-        let import =
-            to_pos!(Node::FromImport { id, import: to_pos!(Node::Import { import, aliases: vec![] }) });
+        let import = to_pos!(Node::FromImport {
+            id,
+            import: to_pos!(Node::Import { import, aliases: vec![] })
+        });
 
         let (from, import) = match desugar(&import) {
             Ok(Core::FromImport { from, import }) => match &import.deref() {
@@ -268,13 +290,23 @@ mod tests {
     #[test]
     fn type_alias() {
         let alias = to_pos!(Node::Class {
-            ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("MyErr1") }), generics: vec![] }),
-            args: vec![],
-            parents: vec![
-                to_pos_unboxed!(Node::Parent {
-                    ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("Exception") }), generics: vec![] }),
-                    args: vec![to_pos_unboxed!(Node::Str { lit: String::from("Something went wrong"), expressions: vec![] })]})],
-            body: None });
+            ty:      to_pos!(Node::Type {
+                id:       to_pos!(Node::Id { lit: String::from("MyErr1") }),
+                generics: vec![]
+            }),
+            args:    vec![],
+            parents: vec![to_pos_unboxed!(Node::Parent {
+                ty:   to_pos!(Node::Type {
+                    id:       to_pos!(Node::Id { lit: String::from("Exception") }),
+                    generics: vec![]
+                }),
+                args: vec![to_pos_unboxed!(Node::Str {
+                    lit:         String::from("Something went wrong"),
+                    expressions: vec![]
+                })]
+            })],
+            body:    None
+        });
 
         let (var, ty, expr) = match desugar(&alias) {
             Ok(Core::VarDef { var, ty, expr }) => (*var.clone(), ty.clone(), expr.clone()),
@@ -288,29 +320,37 @@ mod tests {
             Core::FunctionCall { function, args } => {
                 assert_eq!(*function.deref(), Core::Id { lit: String::from("Exception") });
                 assert_eq!(args.len(), 1);
-                assert_eq!(*args.first().unwrap(), Core::Str { string: String::from("Something went wrong") })
+                assert_eq!(*args.first().unwrap(), Core::Str {
+                    string: String::from("Something went wrong")
+                })
             }
             _ => panic!("Expected function call, was {:?}", expr.clone())
         }
     }
 
-
     #[test]
     fn type_alias_with_arguments() {
         let alias = to_pos!(Node::Class {
-            ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("MyErr1") }), generics: vec![] }),
-            args: vec![to_pos_unboxed!(Node::FunArg {
-                vararg: false,
+            ty:      to_pos!(Node::Type {
+                id:       to_pos!(Node::Id { lit: String::from("MyErr1") }),
+                generics: vec![]
+            }),
+            args:    vec![to_pos_unboxed!(Node::FunArg {
+                vararg:  false,
                 mutable: false,
-                var: to_pos!(Node::Id {lit: String::from("a1")}),
-                ty: None,
+                var:     to_pos!(Node::Id { lit: String::from("a1") }),
+                ty:      None,
                 default: None
             })],
-            parents: vec![
-                to_pos_unboxed!(Node::Parent {
-                    ty: to_pos!(Node::Type { id: to_pos!(Node::Id { lit: String::from("Exception") }), generics: vec![] }),
-                    args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]})],
-            body: None });
+            parents: vec![to_pos_unboxed!(Node::Parent {
+                ty:   to_pos!(Node::Type {
+                    id:       to_pos!(Node::Id { lit: String::from("Exception") }),
+                    generics: vec![]
+                }),
+                args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]
+            })],
+            body:    None
+        });
 
         let (name, parent_names, body) = match desugar(&alias) {
             Ok(Core::ClassDef { name, parent_names, body }) => (*name, parent_names, *body),

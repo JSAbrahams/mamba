@@ -8,28 +8,28 @@ use crate::parse::ast::AST;
 
 pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
 pub type DesugarResults =
-std::result::Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
+    std::result::Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone)]
 pub struct UnimplementedErr {
-    pub position: Position,
-    pub msg: String,
+    pub position:    Position,
+    pub msg:         String,
     pub source_line: Option<String>,
-    pub path: Option<PathBuf>,
+    pub path:        Option<PathBuf>
 }
 
 impl UnimplementedErr {
     pub fn new(ast: &AST, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            position: ast.pos.clone(),
-            msg: format!(
+            position:    ast.pos.clone(),
+            msg:         format!(
                 "The {} construct has not yet been implemented as of v{}.",
                 msg, VERSION
             ),
             source_line: None,
-            path: None,
+            path:        None
         }
     }
 
@@ -37,18 +37,18 @@ impl UnimplementedErr {
     pub fn into_with_source(
         self,
         source: &Option<String>,
-        path: &Option<PathBuf>,
+        path: &Option<PathBuf>
     ) -> UnimplementedErr {
         UnimplementedErr {
-            position: self.position.clone(),
-            msg: self.msg.clone(),
+            position:    self.position.clone(),
+            msg:         self.msg.clone(),
             source_line: source.clone().map(|source| {
                 source
                     .lines()
                     .nth(self.position.start.line as usize - 1)
                     .map_or(String::from("unknown"), String::from)
             }),
-            path: path.clone(),
+            path:        path.clone()
         }
     }
 }

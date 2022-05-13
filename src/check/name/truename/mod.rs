@@ -4,10 +4,10 @@ use std::hash::Hash;
 
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
-use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
-use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
+use crate::check::name::Name;
+use crate::check::name::{AsMutable, AsNullable, IsNullable, IsSuperSet};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -18,8 +18,8 @@ pub mod python;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TrueName {
     is_nullable: bool,
-    is_mutable: bool,
-    pub variant: NameVariant,
+    is_mutable:  bool,
+    pub variant: NameVariant
 }
 
 impl AsMutable for TrueName {
@@ -43,8 +43,8 @@ impl From<&StringName> for TrueName {
     fn from(name: &StringName) -> Self {
         TrueName {
             is_nullable: false,
-            is_mutable: false,
-            variant: NameVariant::Single(name.clone()),
+            is_mutable:  false,
+            variant:     NameVariant::Single(name.clone())
         }
     }
 }
@@ -53,8 +53,8 @@ impl From<&str> for TrueName {
     fn from(name: &str) -> Self {
         TrueName {
             is_nullable: false,
-            is_mutable: false,
-            variant: NameVariant::Single(StringName::from(name)),
+            is_mutable:  false,
+            variant:     NameVariant::Single(StringName::from(name))
         }
     }
 }
@@ -82,7 +82,8 @@ impl IsSuperSet<TrueName> for TrueName {
     ///
     /// If self is nullable, then supertype of other if:
     /// - Other is null.
-    /// - Or, variant is supertype of other's variant. (Other may or may not be nullable.)
+    /// - Or, variant is supertype of other's variant. (Other may or may not be
+    ///   nullable.)
     /// If self is not nullable, then only super type if:
     /// - Other is not nullable.
     /// - And, variant is supertype of other's variant.
@@ -114,12 +115,18 @@ impl TrueName {
     pub fn as_direct(&self, exp: &str, pos: &Position) -> TypeResult<StringName> {
         match &self.variant {
             NameVariant::Single(name) => Ok(name.clone()),
-            other =>
-                Err(vec![TypeErr::new(pos, &format!("'{}' is not a valid {} truename", other, exp))]),
+            other => Err(vec![TypeErr::new(
+                pos,
+                &format!("'{}' is not a valid {} truename", other, exp)
+            )])
         }
     }
 
-    pub fn substitute(&self, generics: &HashMap<String, TrueName>, pos: &Position) -> TypeResult<TrueName> {
+    pub fn substitute(
+        &self,
+        generics: &HashMap<String, TrueName>,
+        pos: &Position
+    ) -> TypeResult<TrueName> {
         let variant = match &self.variant {
             NameVariant::Single(direct_name) =>
                 NameVariant::Single(direct_name.substitute(generics, pos)?),
@@ -130,7 +137,7 @@ impl TrueName {
             }
             NameVariant::Fun(args, ret) => NameVariant::Fun(
                 args.iter().map(|a| a.substitute(generics, pos)).collect::<Result<_, _>>()?,
-                Box::from(ret.substitute(generics, pos)?),
+                Box::from(ret.substitute(generics, pos)?)
             )
         };
 

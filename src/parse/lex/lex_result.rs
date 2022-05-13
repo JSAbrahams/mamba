@@ -7,15 +7,15 @@ use crate::parse::lex::token::{Lex, Token};
 
 pub type LexResult<T = Vec<Lex>> = std::result::Result<T, LexErr>;
 pub type LexResults =
-std::result::Result<Vec<(Vec<Lex>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
+    std::result::Result<Vec<(Vec<Lex>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
 
 #[derive(Debug, Clone)]
 pub struct LexErr {
-    pub pos: CaretPos,
-    pub token: Option<Token>,
-    pub msg: String,
+    pub pos:         CaretPos,
+    pub token:       Option<Token>,
+    pub msg:         String,
     pub source_line: Option<String>,
-    pub path: Option<PathBuf>,
+    pub path:        Option<PathBuf>
 }
 
 impl LexErr {
@@ -26,16 +26,16 @@ impl LexErr {
     #[must_use]
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
         LexErr {
-            pos: self.pos.clone(),
-            token: self.token.clone(),
-            msg: self.msg.clone(),
+            pos:         self.pos.clone(),
+            token:       self.token.clone(),
+            msg:         self.msg.clone(),
             source_line: source.clone().map(|source| {
                 source
                     .lines()
                     .nth(self.pos.line as usize - 1)
                     .map_or(String::from("unknown"), String::from)
             }),
-            path: path.clone(),
+            path:        path.clone()
         }
     }
 }

@@ -5,12 +5,12 @@ use std::ops::Deref;
 
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Identifier {
-    pub lit: Option<(bool, String)>,
-    pub names: Vec<Identifier>,
+    pub lit:   Option<(bool, String)>,
+    pub names: Vec<Identifier>
 }
 
 impl Identifier {
@@ -34,8 +34,8 @@ impl Identifier {
         } else {
             // If not mutable, then make everything immutable
             Identifier {
-                lit: self.lit.clone().map(|(_, str)| (false, str)),
-                names: self.names.iter().map(|name| name.as_mutable(false)).collect(),
+                lit:   self.lit.clone().map(|(_, str)| (false, str)),
+                names: self.names.iter().map(|name| name.as_mutable(false)).collect()
             }
         }
     }
@@ -90,7 +90,7 @@ mod tests {
     use crate::check::ident::Identifier;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
-    use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::{Node, AST};
 
     #[test]
     fn from_id() -> TypeResult<()> {
@@ -103,9 +103,9 @@ mod tests {
     #[test]
     fn from_expression_type() -> TypeResult<()> {
         let ast = AST::new(&Position::default(), Node::ExpressionType {
-            expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
+            expr:    Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
             mutable: false,
-            ty: None,
+            ty:      None
         });
         let iden = Identifier::try_from(&ast)?;
 
@@ -116,9 +116,9 @@ mod tests {
     #[test]
     fn from_expression_type_as_mutable() -> TypeResult<()> {
         let ast = AST::new(&Position::default(), Node::ExpressionType {
-            expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
+            expr:    Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
             mutable: false,
-            ty: None,
+            ty:      None
         });
         let iden = Identifier::try_from(&ast)?.as_mutable(true);
 

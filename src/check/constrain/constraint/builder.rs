@@ -1,6 +1,6 @@
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::constraint::{ConstrVariant, Constraint};
 use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -16,9 +16,9 @@ use crate::common::position::Position;
 /// the top-level of a script.
 #[derive(Clone, Debug)]
 pub struct ConstrBuilder {
-    pub level: usize,
-    finished: Vec<(Vec<TrueName>, Vec<Constraint>)>,
-    constraints: Vec<(Vec<TrueName>, Vec<Constraint>)>,
+    pub level:   usize,
+    finished:    Vec<(Vec<TrueName>, Vec<Constraint>)>,
+    constraints: Vec<(Vec<TrueName>, Vec<Constraint>)>
 }
 
 impl ConstrBuilder {
@@ -74,7 +74,13 @@ impl ConstrBuilder {
     }
 
     /// Add new constraint to constraint builder with a message.
-    pub fn add_variant(&mut self, msg: &str, parent: &Expected, child: &Expected, variant: &ConstrVariant) {
+    pub fn add_variant(
+        &mut self,
+        msg: &str,
+        parent: &Expected,
+        child: &Expected,
+        variant: &ConstrVariant
+    ) {
         self.add_constr(&Constraint::new_variant(msg, parent, child, variant));
     }
 

@@ -3,8 +3,8 @@ use std::process::Stdio;
 
 use assert_cmd::prelude::*;
 
-use crate::common::{delete_dir, resource_content_randomize};
 use crate::common::resource_path;
+use crate::common::{delete_dir, resource_content_randomize};
 
 #[macro_use]
 mod common;

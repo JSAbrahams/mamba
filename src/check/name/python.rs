@@ -2,9 +2,9 @@ use std::ops::Deref;
 
 use python_parser::ast::Expression;
 
-use crate::check::name::Name;
 use crate::check::name::truename::python::to_ty_name;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 
 impl From<&Expression> for Name {
     fn from(value: &Expression) -> Self {

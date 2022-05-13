@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use lex::token::Lex;
 
 #[cfg(test)]
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 use crate::parse::iterator::LexIterator;
 use crate::parse::result::{ParseResult, ParseResults};
 
@@ -23,10 +23,10 @@ mod definition;
 mod expr_or_stmt;
 mod expression;
 mod file;
+pub mod lex;
 mod operation;
 mod statement;
 mod ty;
-pub mod lex;
 
 pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
 

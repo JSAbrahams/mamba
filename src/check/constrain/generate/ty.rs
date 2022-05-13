@@ -1,9 +1,9 @@
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::generate::Constrained;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::Constrained;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_ty(ast: &AST, _: &Environment, _: &Context, _: &ConstrBuilder) -> Constrained {
     match &ast.node {

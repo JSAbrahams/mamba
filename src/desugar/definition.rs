@@ -4,8 +4,8 @@ use crate::desugar::node::desugar_node;
 use crate::desugar::result::DesugarResult;
 use crate::desugar::state::Imports;
 use crate::desugar::state::State;
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 
 pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
     // TODO augment function definition in type checker so that it has return type
@@ -20,37 +20,38 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
 
             if state.def_as_fun_arg {
                 Core::FunArg {
-                    vararg: false,
-                    var: Box::from(var),
-                    ty: match ty {
+                    vararg:  false,
+                    var:     Box::from(var),
+                    ty:      match ty {
                         Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
                         None => None
                     },
                     default: match expression {
                         Some(expression) => Some(Box::from(desugar_node(expression, imp, &state)?)),
                         None => None
-                    },
+                    }
                 }
             } else {
                 Core::VarDef {
-                    var: Box::from(var.clone()),
-                    ty: match ty {
+                    var:  Box::from(var.clone()),
+                    ty:   match ty {
                         Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
                         None => None
                     },
                     expr: match (var, expression) {
                         (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
-                        (Core::Tuple { elements }, None) =>
-                            Some(Box::from(Core::Tuple { elements: vec![Core::None; elements.len()] })),
+                        (Core::Tuple { elements }, None) => Some(Box::from(Core::Tuple {
+                            elements: vec![Core::None; elements.len()]
+                        })),
                         (_, None) => None
-                    },
+                    }
                 }
             }
         }
         Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => Core::FunDef {
-            id: Box::from(desugar_node(id, imp, state)?),
-            arg: desugar_vec(fun_args, imp, state)?,
-            ty: match ret_ty {
+            id:   Box::from(desugar_node(id, imp, state)?),
+            arg:  desugar_vec(fun_args, imp, state)?,
+            ty:   match ret_ty {
                 Some(ret_ty) => Some(Box::from(desugar_node(ret_ty, imp, state)?)),
                 None => None
             },
@@ -62,7 +63,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
                     Some(expr) => desugar_node(expr, imp, &state.expand_ty(true))?,
                     None => Core::Pass
                 })
-            },
+            }
         },
         definition => panic!("Expected definition: {:?}.", definition)
     })
@@ -73,8 +74,8 @@ mod test {
     use crate::common::position::Position;
     use crate::core::construct::Core;
     use crate::desugar::desugar;
-    use crate::parse::ast::AST;
     use crate::parse::ast::Node;
+    use crate::parse::ast::AST;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
@@ -106,12 +107,12 @@ mod test {
     #[test]
     fn variable_private_def_verify() {
         let definition = to_pos!(Node::VariableDef {
-        mutable:    false,
-        var:        to_pos!(Node::Id { lit: String::from("d") }),
-        ty:         None,
-        expr: Some(to_pos!(Node::Int { lit: String::from("98") })),
-        forward:    vec![]
-    });
+            mutable: false,
+            var:     to_pos!(Node::Id { lit: String::from("d") }),
+            ty:      None,
+            expr:    Some(to_pos!(Node::Int { lit: String::from("98") })),
+            forward: vec![]
+        });
 
         let (var, ty, expr) = match desugar(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
@@ -126,12 +127,12 @@ mod test {
     #[test]
     fn variable_def_verify() {
         let definition = to_pos!(Node::VariableDef {
-        mutable:    false,
-        var:        to_pos!(Node::Id { lit: String::from("d") }),
-        ty:         None,
-        expr: Some(to_pos!(Node::Int { lit: String::from("98") })),
-        forward:    vec![]
-    });
+            mutable: false,
+            var:     to_pos!(Node::Id { lit: String::from("d") }),
+            ty:      None,
+            expr:    Some(to_pos!(Node::Int { lit: String::from("98") })),
+            forward: vec![]
+        });
 
         let (var, ty, expr) = match desugar(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
@@ -154,12 +155,12 @@ mod test {
             to_pos_unboxed!(Node::Id { lit: String::from("d") }),
         ];
         let definition = to_pos!(Node::VariableDef {
-        mutable:    false,
-        var:        to_pos!(Node::Tuple { elements }),
-        ty:         None,
-        expr: Some(to_pos!(Node::Tuple { elements: expressions })),
-        forward:    vec![]
-    });
+            mutable: false,
+            var:     to_pos!(Node::Tuple { elements }),
+            ty:      None,
+            expr:    Some(to_pos!(Node::Tuple { elements: expressions })),
+            forward: vec![]
+        });
 
         let (var, ty, expr) = match desugar(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
@@ -167,7 +168,8 @@ mod test {
         };
 
         assert_eq!(ty, None);
-        let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
+        let elements =
+            vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
         assert_eq!(var, Box::from(Core::Tuple { elements }));
         let expressions =
             vec![Core::Id { lit: String::from("c") }, Core::Id { lit: String::from("d") }];
@@ -177,12 +179,12 @@ mod test {
     #[test]
     fn variable_def_none_verify() {
         let definition = to_pos!(Node::VariableDef {
-        mutable:    false,
-        var:        to_pos!(Node::Id { lit: String::from("d") }),
-        ty:         None,
-        expr: None,
-        forward:    vec![]
-    });
+            mutable: false,
+            var:     to_pos!(Node::Id { lit: String::from("d") }),
+            ty:      None,
+            expr:    None,
+            forward: vec![]
+        });
 
         let (var, ty, expr) = match desugar(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
@@ -201,12 +203,12 @@ mod test {
             to_pos_unboxed!(Node::Id { lit: String::from("b") }),
         ];
         let definition = to_pos!(Node::VariableDef {
-        mutable:    false,
-        var:        to_pos!(Node::Tuple { elements }),
-        ty:         None,
-        expr: None,
-        forward:    vec![]
-    });
+            mutable: false,
+            var:     to_pos!(Node::Tuple { elements }),
+            ty:      None,
+            expr:    None,
+            forward: vec![]
+        });
 
         let (var, ty, expr) = match desugar(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
@@ -214,7 +216,8 @@ mod test {
         };
 
         assert_eq!(ty, None);
-        let elements = vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
+        let elements =
+            vec![Core::Id { lit: String::from("a") }, Core::Id { lit: String::from("b") }];
         assert_eq!(var, Box::from(Core::Tuple { elements }));
         assert_eq!(expr, Some(Box::from(Core::Tuple { elements: vec![Core::None, Core::None] })));
     }
@@ -222,28 +225,28 @@ mod test {
     #[test]
     fn fun_def_verify() {
         let definition = to_pos!(Node::FunDef {
-        id:       to_pos!(Node::Id { lit: String::from("fun") }),
-        pure:     false,
-        args: vec![
-            to_pos_unboxed!(Node::FunArg {
-                vararg:  false,
-                mutable: false,
-                var:     to_pos!(Node::Id { lit: String::from("arg1") }),
-                ty:      None,
-                default: None
-            }),
-            to_pos_unboxed!(Node::FunArg {
-                vararg:  true,
-                mutable: false,
-                var:     to_pos!(Node::Id { lit: String::from("arg2") }),
-                ty:      None,
-                default: None
-            })
-        ],
-        ret:   None,
-        raises:   vec![],
-        body:     None
-    });
+            id:     to_pos!(Node::Id { lit: String::from("fun") }),
+            pure:   false,
+            args:   vec![
+                to_pos_unboxed!(Node::FunArg {
+                    vararg:  false,
+                    mutable: false,
+                    var:     to_pos!(Node::Id { lit: String::from("arg1") }),
+                    ty:      None,
+                    default: None
+                }),
+                to_pos_unboxed!(Node::FunArg {
+                    vararg:  true,
+                    mutable: false,
+                    var:     to_pos!(Node::Id { lit: String::from("arg2") }),
+                    ty:      None,
+                    default: None
+                })
+            ],
+            ret:    None,
+            raises: vec![],
+            body:   None
+        });
 
         let (id, args, body) = match desugar(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
@@ -254,16 +257,16 @@ mod test {
 
         assert_eq!(args.len(), 2);
         assert_eq!(args[0], Core::FunArg {
-            vararg: false,
-            var: Box::from(Core::Id { lit: String::from("arg1") }),
-            ty: None,
-            default: None,
+            vararg:  false,
+            var:     Box::from(Core::Id { lit: String::from("arg1") }),
+            ty:      None,
+            default: None
         });
         assert_eq!(args[1], Core::FunArg {
-            vararg: true,
-            var: Box::from(Core::Id { lit: String::from("arg2") }),
-            ty: None,
-            default: None,
+            vararg:  true,
+            var:     Box::from(Core::Id { lit: String::from("arg2") }),
+            ty:      None,
+            default: None
         });
         assert_eq!(*body, Core::Pass);
     }
@@ -271,22 +274,22 @@ mod test {
     #[test]
     fn fun_def_default_arg_verify() {
         let definition = to_pos!(Node::FunDef {
-        id:       to_pos!(Node::Id { lit: String::from("fun") }),
-        pure:     false,
-        args: vec![to_pos_unboxed!(Node::FunArg {
-            vararg:  false,
-            mutable: false,
-            var:     to_pos!(Node::Id { lit: String::from("arg1") }),
-            ty:      None,
-            default: Some(to_pos!(Node::Str {
-                lit:         String::from("asdf"),
-                expressions: vec![]
-            }))
-        })],
-        ret:   None,
-        raises:   vec![],
-        body:     None
-    });
+            id:     to_pos!(Node::Id { lit: String::from("fun") }),
+            pure:   false,
+            args:   vec![to_pos_unboxed!(Node::FunArg {
+                vararg:  false,
+                mutable: false,
+                var:     to_pos!(Node::Id { lit: String::from("arg1") }),
+                ty:      None,
+                default: Some(to_pos!(Node::Str {
+                    lit:         String::from("asdf"),
+                    expressions: vec![]
+                }))
+            })],
+            ret:    None,
+            raises: vec![],
+            body:   None
+        });
 
         let (id, args, body) = match desugar(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
@@ -297,10 +300,10 @@ mod test {
 
         assert_eq!(args.len(), 1);
         assert_eq!(args[0], Core::FunArg {
-            vararg: false,
-            var: Box::from(Core::Id { lit: String::from("arg1") }),
-            ty: None,
-            default: Some(Box::from(Core::Str { string: String::from("asdf") })),
+            vararg:  false,
+            var:     Box::from(Core::Id { lit: String::from("arg1") }),
+            ty:      None,
+            default: Some(Box::from(Core::Str { string: String::from("asdf") }))
         });
         assert_eq!(*body, Core::Pass);
     }
@@ -308,16 +311,16 @@ mod test {
     #[test]
     fn fun_def_with_body_verify() {
         let definition = to_pos!(Node::FunDef {
-        id:       to_pos!(Node::Id { lit: String::from("fun") }),
-        pure:     false,
-        args: vec![
-            to_pos_unboxed!(Node::Id { lit: String::from("arg1") }),
-            to_pos_unboxed!(Node::Id { lit: String::from("arg2") })
-        ],
-        ret:   None,
-        raises:   vec![],
-        body:     Some(to_pos!(Node::Real { lit: String::from("2.4") }))
-    });
+            id:     to_pos!(Node::Id { lit: String::from("fun") }),
+            pure:   false,
+            args:   vec![
+                to_pos_unboxed!(Node::Id { lit: String::from("arg1") }),
+                to_pos_unboxed!(Node::Id { lit: String::from("arg2") })
+            ],
+            ret:    None,
+            raises: vec![],
+            body:   Some(to_pos!(Node::Real { lit: String::from("2.4") }))
+        });
 
         let (id, args, body) = match desugar(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
@@ -335,12 +338,15 @@ mod test {
     #[test]
     fn anon_fun_verify() {
         let anon_fun = to_pos!(Node::AnonFun {
-        args: vec![
-            to_pos_unboxed!(Node::Id { lit: String::from("first") }),
-            to_pos_unboxed!(Node::Id { lit: String::from("second") })
-        ],
-        body: to_pos!(Node::Str { lit: String::from("this_string"), expressions: vec![] })
-    });
+            args: vec![
+                to_pos_unboxed!(Node::Id { lit: String::from("first") }),
+                to_pos_unboxed!(Node::Id { lit: String::from("second") })
+            ],
+            body: to_pos!(Node::Str {
+                lit:         String::from("this_string"),
+                expressions: vec![]
+            })
+        });
 
         let (args, body) = match desugar(&anon_fun) {
             Ok(Core::AnonFun { args, body }) => (args, body),

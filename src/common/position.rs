@@ -5,7 +5,7 @@ use std::fmt::{Display, Error, Formatter};
 /// A position represents a rectangle in the source code.
 pub struct Position {
     pub start: CaretPos,
-    pub end: CaretPos,
+    pub end:   CaretPos
 }
 
 impl Display for Position {
@@ -25,7 +25,7 @@ impl Display for Position {
 /// Line's and position's are 1-indexed.
 pub struct CaretPos {
     pub line: usize,
-    pub pos: usize,
+    pub pos:  usize
 }
 
 impl Display for CaretPos {
@@ -44,14 +44,20 @@ impl Position {
     ///
     /// Width is always 1 or greater.
     pub fn get_width(&self) -> i32 {
-        max(1, max(self.end.pos as i32 - self.start.pos as i32, self.start.pos as i32 - self.end.pos as i32))
+        max(
+            1,
+            max(
+                self.end.pos as i32 - self.start.pos as i32,
+                self.start.pos as i32 - self.end.pos as i32
+            )
+        )
     }
 
     #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
         Position {
             start: self.start.clone().offset(offset),
-            end: self.end.clone().offset(offset),
+            end:   self.end.clone().offset(offset)
         }
     }
 
@@ -60,12 +66,12 @@ impl Position {
         Position {
             start: CaretPos {
                 line: min(self.start.line, other.start.line),
-                pos: min(self.start.pos, other.start.pos),
+                pos:  min(self.start.pos, other.start.pos)
             },
-            end: CaretPos {
+            end:   CaretPos {
                 line: max(self.end.line, other.end.line),
-                pos: max(self.end.pos, other.end.pos),
-            },
+                pos:  max(self.end.pos, other.end.pos)
+            }
         }
     }
 }

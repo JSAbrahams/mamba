@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
 use crate::parse::control_flow_expr::parse_match_cases;
 use crate::parse::iterator::LexIterator;
@@ -25,7 +25,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
                 },
         },
         &[],
-        "expression or statement",
+        "expression or statement"
     )?;
 
     it.peek(
@@ -34,7 +34,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
             Token::Handle => parse_handle(*result.clone(), it),
             _ => Ok(result.clone())
         },
-        Ok(result.clone()),
+        Ok(result.clone())
     )
 }
 
@@ -66,10 +66,10 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     #[test]
@@ -298,7 +298,6 @@ mod test {
         let source = String::from("?or");
         parse(&tokenize(&source).unwrap()).unwrap_err();
     }
-
 
     #[test]
     fn handle_verify() -> ParseResult<()> {

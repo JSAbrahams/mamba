@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use crate::check::CheckInput;
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::check::CheckInput;
 use crate::parse::ast::Node;
 
 pub fn generics(

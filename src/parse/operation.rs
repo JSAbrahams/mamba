@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -44,7 +44,7 @@ fn parse_level_7(it: &mut LexIterator) -> ParseResult {
             Token::Question => bin_op!(it, parse_level_7, Question, arithmetic.clone(), "question"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone()),
+        Ok(arithmetic.clone())
     )
 }
 
@@ -72,7 +72,7 @@ fn parse_level_6(it: &mut LexIterator) -> ParseResult {
             Token::In => bin_op!(it, parse_level_6, In, arithmetic.clone(), "in"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone()),
+        Ok(arithmetic.clone())
     )
 }
 
@@ -96,7 +96,7 @@ fn parse_level_5(it: &mut LexIterator) -> ParseResult {
             Token::BXOr => bin_op!(it, parse_level_5, BXOr, arithmetic.clone(), "bitwise xor"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone()),
+        Ok(arithmetic.clone())
     )
 }
 
@@ -115,7 +115,7 @@ fn parse_level_4(it: &mut LexIterator) -> ParseResult {
             Token::Sub => bin_op!(it, parse_level_4, Sub, arithmetic.clone(), "sub"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone()),
+        Ok(arithmetic.clone())
     )
 }
 
@@ -137,12 +137,12 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
                 _ => {
                     let step = $it.parse_if(&Token::$node, &parse_expression, $msg, &start)?;
                     (to.clone(), step.clone(), step.map_or(to.pos, |ast| ast.pos))
-                    }
+                }
             };
 
             let node = Node::$node { from: arithmetic.clone(), to, inclusive: $incl, step };
             Ok(Box::from(AST::new(&start.union(&end), node)))
-        }}
+        }};
     }
 
     it.peek(
@@ -157,7 +157,7 @@ fn parse_level_3(it: &mut LexIterator) -> ParseResult {
             Token::SliceIncl => match_range_slice!(it, SliceIncl, true, Slice, "range"),
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone()),
+        Ok(arithmetic.clone())
     )
 }
 
@@ -206,16 +206,16 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
             }
             _ => Ok(arithmetic.clone())
         },
-        Ok(arithmetic.clone()),
+        Ok(arithmetic.clone())
     )
 }
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::token::Token::*;
     use crate::parse::lex::tokenize;
+    use crate::parse::{parse, parse_direct};
 
     macro_rules! verify_is_operation {
         ($op:ident, $ast:expr) => {{
@@ -440,7 +440,10 @@ mod test {
 
         let (left, right) = verify_is_operation!(Or, ast);
         assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(right.node, Node::Str {
+            lit:         String::from("asdf"),
+            expressions: vec![]
+        });
     }
 
     #[test]
@@ -478,7 +481,10 @@ mod test {
 
         let (left, right) = verify_is_operation!(BOr, ast);
         assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(right.node, Node::Str {
+            lit:         String::from("asdf"),
+            expressions: vec![]
+        });
     }
 
     #[test]
@@ -488,7 +494,10 @@ mod test {
 
         let (left, right) = verify_is_operation!(BXOr, ast);
         assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(right.node, Node::Str {
+            lit:         String::from("asdf"),
+            expressions: vec![]
+        });
     }
 
     #[test]
@@ -507,7 +516,10 @@ mod test {
 
         let (left, right) = verify_is_operation!(BLShift, ast);
         assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(right.node, Node::Str {
+            lit:         String::from("asdf"),
+            expressions: vec![]
+        });
     }
 
     #[test]
@@ -517,7 +529,10 @@ mod test {
 
         let (left, right) = verify_is_operation!(BRShift, ast);
         assert_eq!(left.node, Node::Id { lit: String::from("one") });
-        assert_eq!(right.node, Node::Str { lit: String::from("asdf"), expressions: vec![] });
+        assert_eq!(right.node, Node::Str {
+            lit:         String::from("asdf"),
+            expressions: vec![]
+        });
     }
 
     #[test]

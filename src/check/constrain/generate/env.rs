@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
 use crate::check::name;
 use crate::check::name::Name;
@@ -17,7 +17,7 @@ pub struct Environment {
     pub class_type: Option<Expect>,
     pub var_mappings: HashMap<String, String>,
     temp_type: usize,
-    vars: HashMap<String, HashSet<(bool, Expected)>>,
+    vars: HashMap<String, HashSet<(bool, Expected)>>
 }
 
 impl Environment {
@@ -39,8 +39,9 @@ impl Environment {
 
     /// Insert a variable.
     ///
-    /// If the var was previously defined, it is renamed, and the rename mapping is stored.
-    /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
+    /// If the var was previously defined, it is renamed, and the rename mapping
+    /// is stored. In future, if we get a variable, if it was renamed, the
+    /// mapping is returned instead.
     pub fn insert_var(&mut self, mutable: bool, var: &str, expect: &Expected) -> Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
@@ -91,15 +92,18 @@ impl Environment {
     /// It can contain multiple if the environment was unioned or intersected at
     /// one point.
     ///
-    /// If the variable was mapped to another variable at one point due to a naming conflict,
-    /// the mapped to variable is returned to instead.
+    /// If the variable was mapped to another variable at one point due to a
+    /// naming conflict, the mapped to variable is returned to instead.
     /// In other words, what the variable was mapped to.
     /// This is useful for detecting shadowing.
     ///
-    /// Return true variable truename, whether it's mutable and it's expected value
+    /// Return true variable truename, whether it's mutable and it's expected
+    /// value
     pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
         for (old, new) in &self.var_mappings {
-            if old == var { return self.get_var(new); }
+            if old == var {
+                return self.get_var(new);
+            }
         }
 
         self.vars.get(var).cloned().map(|res| res)
@@ -110,7 +114,8 @@ impl Environment {
     /// Combines all variables.
     ///
     /// Variable mappings combined.
-    /// If mapping occurs in both environments, then those of this environment taken.
+    /// If mapping occurs in both environments, then those of this environment
+    /// taken.
     pub fn union(&self, other: &Environment) -> Environment {
         let mut vars = self.vars.clone();
         for (key, other_set) in &other.vars {
@@ -139,8 +144,8 @@ impl Environment {
     /// Only intersect vars, all other fields of other environment are
     /// discarded.
     ///
-    /// Var mappings from this environment preserved which also occur in the other environment.
-    /// However, mappings of other environment preserved.
+    /// Var mappings from this environment preserved which also occur in the
+    /// other environment. However, mappings of other environment preserved.
     pub fn intersect(&self, other: &Environment) -> Environment {
         let keys = self.vars.keys().filter(|key| other.vars.contains_key(*key));
         let mut vars = HashMap::new();
@@ -157,8 +162,10 @@ impl Environment {
             }
         }
 
-        let to_remove: Vec<String> = self.var_mappings.iter()
-            .filter(|(key, _)| { other.var_mappings.contains_key(*key) })
+        let to_remove: Vec<String> = self
+            .var_mappings
+            .iter()
+            .filter(|(key, _)| other.var_mappings.contains_key(*key))
             .map(|(key, _)| key.clone())
             .collect();
 
@@ -172,9 +179,12 @@ impl Environment {
 
     /// Get a name for a temporary type.
     ///
-    /// Useful for when we don't know what a type should be during the generation stage.
-    /// The unification stage should then identify these.
+    /// Useful for when we don't know what a type should be during the
+    /// generation stage. The unification stage should then identify these.
     pub fn temp_var(&self) -> (String, Environment) {
-        (format!("{}{}", name::TEMP, self.temp_type), Environment { temp_type: self.temp_type + 1, ..self.clone() })
+        (format!("{}{}", name::TEMP, self.temp_type), Environment {
+            temp_type: self.temp_type + 1,
+            ..self.clone()
+        })
     }
 }

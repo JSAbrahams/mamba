@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn call_ast_verify() -> OutTestRet {
@@ -6,7 +6,7 @@ fn call_ast_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore]  // Problem with function argument bindings, presumably
+#[ignore] // Problem with function argument bindings, presumably
 fn definition_ast_verify() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "definition")
 }

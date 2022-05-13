@@ -1,8 +1,8 @@
 use itertools::Itertools;
 
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::unify_link;
+use crate::check::constrain::Unified;
 use crate::check::context::Context;
 use crate::common::delimit::{custom_delimited, newline_delimited};
 

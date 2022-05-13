@@ -1,20 +1,20 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{Constrained, generate};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::resources::constrain_raises;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_stmt(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Raise { error } => {
@@ -25,7 +25,11 @@ pub fn gen_stmt(
         Node::ReturnEmpty => Ok((constr.clone(), env.clone())),
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.return_type {
-                constr.add("return", expected_ret_ty, &Expected::try_from((expr, &env.var_mappings))?);
+                constr.add(
+                    "return",
+                    expected_ret_ty,
+                    &Expected::try_from((expr, &env.var_mappings))?
+                );
                 generate(expr, env, ctx, constr)
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Return outside function with return type")])

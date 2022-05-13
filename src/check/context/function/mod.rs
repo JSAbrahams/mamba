@@ -6,13 +6,13 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::context::{arg, Context, function};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::IsSuperSet;
-use crate::check::name::Name;
+use crate::check::context::{arg, function, Context};
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::IsSuperSet;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -48,14 +48,14 @@ pub mod python;
 /// May raise any Name within raises.
 #[derive(Debug, Clone, Eq)]
 pub struct Function {
-    pub is_py_type: bool,
-    pub name: StringName,
+    pub is_py_type:   bool,
+    pub name:         StringName,
     pub self_mutable: Option<bool>,
-    pub pure: bool,
-    pub arguments: Vec<FunctionArg>,
-    pub raises: Name,
-    pub in_class: Option<StringName>,
-    pub ret_ty: Name,
+    pub pure:         bool,
+    pub arguments:    Vec<FunctionArg>,
+    pub raises:       Name,
+    pub in_class:     Option<StringName>,
+    pub ret_ty:       Name
 }
 
 impl Hash for Function {
@@ -120,18 +120,13 @@ impl TryFrom<(&GenericFunction, &HashMap<String, TrueName>, &Position)> for Func
             ret_ty: match &fun.ret_ty {
                 Some(ty) => ty.substitute(generics, pos)?,
                 None => Name::empty()
-            },
+            }
         })
     }
 }
 
 impl Function {
-    pub fn args_compatible(
-        &self,
-        args: &[Name],
-        ctx: &Context,
-        pos: &Position,
-    ) -> TypeResult<()> {
+    pub fn args_compatible(&self, args: &[Name], ctx: &Context, pos: &Position) -> TypeResult<()> {
         for pair in self.arguments.iter().zip_longest(args) {
             match pair {
                 EitherOrBoth::Both(fun_param, arg) =>
@@ -170,7 +165,7 @@ impl Function {
         name: &StringName,
         self_arg: &Name,
         ret_ty: &Name,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<Function> {
         if self_arg.is_empty() {
             let msg = format!("'{}' self argument of '{}' cannot be empty", arg::SELF, name);
@@ -178,21 +173,21 @@ impl Function {
         }
 
         Ok(Function {
-            is_py_type: false,
-            name: name.clone(),
+            is_py_type:   false,
+            name:         name.clone(),
             self_mutable: None,
-            pure: false,
-            arguments: vec![FunctionArg {
-                is_py_type: false,
-                name: String::from(arg::SELF),
+            pure:         false,
+            arguments:    vec![FunctionArg {
+                is_py_type:  false,
+                name:        String::from(arg::SELF),
                 has_default: false,
-                vararg: false,
-                mutable: false,
-                ty: Some(self_arg.clone()),
+                vararg:      false,
+                mutable:     false,
+                ty:          Some(self_arg.clone())
             }],
-            raises: Name::empty(),
-            in_class: None,
-            ret_ty: ret_ty.clone(),
+            raises:       Name::empty(),
+            in_class:     None,
+            ret_ty:       ret_ty.clone()
         })
     }
 }

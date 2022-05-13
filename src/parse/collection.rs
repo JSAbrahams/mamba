@@ -1,5 +1,5 @@
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::expression::is_start_expression;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
@@ -16,11 +16,11 @@ pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
             _ => Err(expected_one_of(
                 &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
                 lex,
-                "collection",
+                "collection"
             ))
         },
         &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
-        "collection",
+        "collection"
     )
 }
 
@@ -100,10 +100,10 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
+    use crate::parse::{parse, parse_direct};
     use crate::test_util::resource_content;
 
     #[test]

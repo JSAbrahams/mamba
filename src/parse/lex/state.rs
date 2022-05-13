@@ -4,11 +4,11 @@ use crate::parse::lex::token::Token;
 
 #[derive(Clone, Debug)]
 pub struct State {
-    newlines: Vec<Lex>,
-    cur_indent: i32,
-    line_indent: i32,
+    newlines:        Vec<Lex>,
+    cur_indent:      i32,
+    line_indent:     i32,
     token_this_line: bool,
-    pub pos: CaretPos,
+    pub pos:         CaretPos
 }
 
 impl State {

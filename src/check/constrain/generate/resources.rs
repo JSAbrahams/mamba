@@ -3,19 +3,19 @@ use std::convert::TryFrom;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::{ExpressionAny, Raises, Type};
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::Context;
 use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_resources(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::Raises { expr_or_stmt, errors } => {
@@ -25,7 +25,11 @@ pub fn gen_resources(
                 constr = constrain_raises(&exp, &env.raises, &mut constr)?;
             }
             // raises expression has type of contained expression
-            constr.add("raises", &Expected::try_from((ast, &env.var_mappings))?, &Expected::try_from((expr_or_stmt, &env.var_mappings))?);
+            constr.add(
+                "raises",
+                &Expected::try_from((ast, &env.var_mappings))?,
+                &Expected::try_from((expr_or_stmt, &env.var_mappings))?
+            );
             generate(expr_or_stmt, env, ctx, &mut constr)
         }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
@@ -50,7 +54,7 @@ pub fn gen_resources(
                 *mutable,
                 ctx,
                 &mut constr,
-                &env,
+                &env
             )?;
             let (mut constr, env) = generate(expr, &env, ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;
@@ -63,7 +67,7 @@ pub fn gen_resources(
             constr.add(
                 "with",
                 &Expected::try_from((resource, &env.var_mappings))?,
-                &Expected::new(&resource.pos, &ExpressionAny),
+                &Expected::new(&resource.pos, &ExpressionAny)
             );
             let (mut constr, env) = generate(resource, env, ctx, constr)?;
             constr.exit_set(&ast.pos)?;
@@ -82,7 +86,7 @@ pub fn gen_resources(
 pub fn constrain_raises(
     raises: &Expected,
     env_raises: &Option<Expected>,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> TypeResult<ConstrBuilder> {
     if constr.level == 0 {
         return Ok(constr.clone());

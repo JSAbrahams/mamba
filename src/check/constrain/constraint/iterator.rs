@@ -1,14 +1,14 @@
 use std::collections::VecDeque;
 
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
     pub in_class: Vec<TrueName>,
-    constraints: VecDeque<Constraint>,
+    constraints:  VecDeque<Constraint>
 }
 
 impl From<&(Vec<TrueName>, Vec<Constraint>)> for Constraints {

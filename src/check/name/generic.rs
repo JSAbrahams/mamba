@@ -2,10 +2,10 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::Name;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 impl TryFrom<&Box<AST>> for Name {
     type Error = Vec<TypeErr>;

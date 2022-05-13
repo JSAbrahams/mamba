@@ -1,13 +1,13 @@
 use crate::common::position::Position;
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::block::parse_block;
 use crate::parse::class::{parse_class, parse_parent};
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
-use crate::parse::result::{custom, expected};
 use crate::parse::result::ParseResult;
+use crate::parse::result::{custom, expected};
 use crate::parse::ty::parse_conditions;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
@@ -64,8 +64,12 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     it.peek_while_fn(&|_| true, &mut |it, lex| {
         match &lex.token {
             Token::NL => {}
-            Token::Import => { statements.push(*it.parse(&parse_import, "file", &start)?); }
-            Token::From => { statements.push(*it.parse(&parse_from_import, "file", &start)?); }
+            Token::Import => {
+                statements.push(*it.parse(&parse_import, "file", &start)?);
+            }
+            Token::From => {
+                statements.push(*it.parse(&parse_from_import, "file", &start)?);
+            }
             Token::DocStr(string) => {
                 let start = it.start_pos("doc_string")?;
                 let end = it.eat(&Token::DocStr(string.clone()), "file")?;
@@ -78,9 +82,15 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
                 let node = Node::Comment { comment: comment.clone() };
                 statements.push(AST::new(&start.union(&end), node));
             }
-            Token::Type => { statements.push(*it.parse(&parse_type_def, "file", &start)?); }
-            Token::Class => { statements.push(*it.parse(&parse_class, "file", &start)?); }
-            _ => { statements.push(*it.parse(&parse_expr_or_stmt, "file", &start)?); }
+            Token::Type => {
+                statements.push(*it.parse(&parse_type_def, "file", &start)?);
+            }
+            Token::Class => {
+                statements.push(*it.parse(&parse_class, "file", &start)?);
+            }
+            _ => {
+                statements.push(*it.parse(&parse_expr_or_stmt, "file", &start)?);
+            }
         }
 
         let last_pos = it.last_pos();
@@ -125,6 +135,6 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
             let isa = isa.clone();
             let node = Node::TypeDef { ty: ty.clone(), isa, body: None };
             Ok(Box::from(AST::new(&start.union(&ty.pos), node)))
-        },
+        }
     )
 }

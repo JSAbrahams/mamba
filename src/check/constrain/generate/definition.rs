@@ -4,26 +4,26 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::ConstrVariant;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{Constrained, generate};
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::ConstrVariant;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, LookupClass};
+use crate::check::constrain::generate::{generate, Constrained};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::ident::Identifier;
-use crate::check::name::{match_name, Union};
 use crate::check::name::Name;
+use crate::check::name::{match_name, Union};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 pub fn gen_def(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
-    constr: &mut ConstrBuilder,
+    constr: &mut ConstrBuilder
 ) -> Constrained {
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, .. } => {
@@ -75,7 +75,7 @@ pub fn constrain_args(
     args: &[AST],
     env: &Environment,
     ctx: &Context,
-    constr: &ConstrBuilder,
+    constr: &ConstrBuilder
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
     for arg in args {
@@ -111,7 +111,7 @@ pub fn identifier_from_var(
     mutable: bool,
     ctx: &Context,
     constr: &mut ConstrBuilder,
-    env: &Environment,
+    env: &Environment
 ) -> Constrained {
     let (mut constr, mut env) = (constr.clone(), env.clone());
 
@@ -159,9 +159,19 @@ pub fn identifier_from_var(
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: Name::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
-            constr.add_variant("variable, type, and expression", &parent, &var_expect, &ConstrVariant::Left);
+            constr.add_variant(
+                "variable, type, and expression",
+                &parent,
+                &var_expect,
+                &ConstrVariant::Left
+            );
             let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add_variant("variable, type, and expression", &var_expect, &expr_expect, &ConstrVariant::Left);
+            constr.add_variant(
+                "variable, type, and expression",
+                &var_expect,
+                &expr_expect,
+                &ConstrVariant::Left
+            );
             generate(expr, &env, ctx, &mut constr)
         }
         (Some(ty), None) => {
@@ -172,7 +182,12 @@ pub fn identifier_from_var(
         }
         (None, Some(expr)) => {
             let parent = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add_variant("variable and expression", &parent, &var_expect, &ConstrVariant::Left);
+            constr.add_variant(
+                "variable and expression",
+                &parent,
+                &var_expect,
+                &ConstrVariant::Left
+            );
             generate(expr, &env, ctx, &mut constr)
         }
         (None, None) => {
@@ -188,7 +203,7 @@ pub fn identifier_from_var(
 fn identifier_to_tuple(
     pos: &Position,
     iden: &Identifier,
-    env: &Environment,
+    env: &Environment
 ) -> TypeResult<Vec<Expected>> {
     if let Some((_, var)) = &iden.lit {
         let expected = env.get_var(var);

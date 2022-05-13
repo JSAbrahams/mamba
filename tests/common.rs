@@ -25,13 +25,15 @@ pub fn resource_content_path(path: &str) -> String {
 
 /// Get the path of a file at a given location.
 ///
-/// * `valid` - Whether this is a happy or a sad path. See how test resources are structured.
+/// * `valid` - Whether this is a happy or a sad path. See how test resources
+///   are structured.
 /// * `subdirs` - Path to directory of resource under test.
 /// * `file` - Name of file under test.
 ///
 /// Returns:
 /// - The absolute path of the resource, or the directory, as a string.
-/// - The absolute path of the random output directory or file, to be deleted after the test.
+/// - The absolute path of the random output directory or file, to be deleted
+///   after the test.
 pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> (String, String) {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -42,13 +44,12 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
     }
 
     if !source_path.exists() {
-        create_dir(&source_path).expect(format!("Path not found: {}",
-                                                source_path.as_path().display()).as_str());
+        create_dir(&source_path)
+            .expect(format!("Path not found: {}", source_path.as_path().display()).as_str());
     }
 
     let source_path = tempdir_in(source_path.clone())
-        .expect(format!("Could not create temp dir: {}",
-                        source_path.display()).as_str());
+        .expect(format!("Could not create temp dir: {}", source_path.display()).as_str());
     let source = source_path.path();
 
     if file.is_empty() {
@@ -72,8 +73,8 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     }
 
     if !source_path.exists() {
-        create_dir(&source_path).expect(format!("Path not found: {}",
-                                                source_path.as_path().display()).as_str());
+        create_dir(&source_path)
+            .expect(format!("Path not found: {}", source_path.as_path().display()).as_str());
     }
 
     source_path = source_path.join(file);

@@ -39,11 +39,11 @@ impl From<&Expression> for GenericFields {
             fields: (match id {
                 Expression::Name(name) => vec![GenericField {
                     is_py_type: true,
-                    name: name.clone(),
-                    pos: Default::default(),
-                    mutable: false,
-                    in_class: None,
-                    ty: None,
+                    name:       name.clone(),
+                    pos:        Default::default(),
+                    mutable:    false,
+                    in_class:   None,
+                    ty:         None
                 }],
                 Expression::TupleLiteral(items) => items
                     .iter()
@@ -57,18 +57,21 @@ impl From<&Expression> for GenericFields {
                         SetItem::Unique(expression) => match expression {
                             Expression::Name(name) => GenericField {
                                 is_py_type: true,
-                                name: name.clone(),
-                                pos: Default::default(),
-                                mutable: false,
-                                in_class: None,
-                                ty: None,
+                                name:       name.clone(),
+                                pos:        Default::default(),
+                                mutable:    false,
+                                in_class:   None,
+                                ty:         None
                             },
                             _ => unreachable!()
                         }
                     })
                     .collect(),
                 _ => vec![]
-            }).iter().cloned().collect::<HashSet<_>>()
+            })
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>()
         }
     }
 }

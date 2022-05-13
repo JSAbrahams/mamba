@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn for_ast_verify() -> OutTestRet {
@@ -7,7 +7,12 @@ fn for_ast_verify() -> OutTestRet {
 
 #[test]
 fn for_over_collection_of_tuple() -> OutTestRet {
-    test_directory(true, &["control_flow"], &["control_flow", "target"], "for_over_collection_of_tuple")
+    test_directory(
+        true,
+        &["control_flow"],
+        &["control_flow", "target"],
+        "for_over_collection_of_tuple"
+    )
 }
 
 #[test]

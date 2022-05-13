@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
 use std::collections::hash_set::IntoIter;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
@@ -50,7 +50,7 @@ pub trait AsMutable {
 pub fn match_name(
     identifier: &Identifier,
     name: &Name,
-    pos: &Position,
+    pos: &Position
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     let unions: Vec<HashMap<String, (bool, Name)>> =
         name.names().map(|ty| match_type_direct(identifier, &ty, pos)).collect::<Result<_, _>>()?;
@@ -59,7 +59,7 @@ pub fn match_name(
     for union in unions {
         for (id, (mutable, name)) in union {
             if let Some((current_mutable, current_name)) =
-            final_union.insert(id.clone(), (mutable, name.clone()))
+                final_union.insert(id.clone(), (mutable, name.clone()))
             {
                 final_union
                     .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
@@ -73,7 +73,7 @@ pub fn match_name(
 pub fn match_type_direct(
     identifier: &Identifier,
     name: &TrueName,
-    pos: &Position,
+    pos: &Position
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     match &name.variant {
         NameVariant::Single { .. } | NameVariant::Fun { .. } => {
@@ -86,7 +86,7 @@ pub fn match_type_direct(
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
-        NameVariant::Tuple(elements) => {
+        NameVariant::Tuple(elements) =>
             if let Some((mutable, id)) = &identifier.lit {
                 let mut mapping = HashMap::with_capacity(1);
                 mapping.insert(id.clone(), (*mutable, Name::from(name)));
@@ -107,14 +107,13 @@ pub fn match_type_direct(
                     elements.len()
                 );
                 Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
+            },
     }
 }
 
 #[derive(Debug, Clone, Eq)]
 pub struct Name {
-    names: HashSet<TrueName>,
+    names: HashSet<TrueName>
 }
 
 impl AsMutable for Name {
@@ -169,9 +168,7 @@ impl From<&StringName> for Name {
 }
 
 impl From<&NameVariant> for Name {
-    fn from(name: &NameVariant) -> Self {
-        Name::new(&[TrueName::from(name)])
-    }
+    fn from(name: &NameVariant) -> Self { Name::new(&[TrueName::from(name)]) }
 }
 
 impl PartialEq for Name {
@@ -182,9 +179,7 @@ impl PartialEq for Name {
 }
 
 impl Hash for Name {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.names().for_each(|n| n.hash(state))
-    }
+    fn hash<H: Hasher>(&self, state: &mut H) { self.names().for_each(|n| n.hash(state)) }
 }
 
 impl Display for Name {
@@ -209,9 +204,7 @@ impl From<&TrueName> for Name {
 }
 
 impl From<&str> for Name {
-    fn from(name: &str) -> Self {
-        Name::from(&TrueName::from(name))
-    }
+    fn from(name: &str) -> Self { Name::from(&TrueName::from(name)) }
 }
 
 impl IsSuperSet<Name> for Name {
@@ -234,9 +227,7 @@ impl IsSuperSet<Name> for Name {
 }
 
 impl IsNullable for Name {
-    fn is_nullable(&self) -> bool {
-        self.names.iter().all(|n| n.is_nullable())
-    }
+    fn is_nullable(&self) -> bool { self.names.iter().all(|n| n.is_nullable()) }
 }
 
 impl AsNullable for Name {
@@ -251,44 +242,37 @@ impl Name {
         Name { names }
     }
 
-    pub fn is_empty(&self) -> bool {
-        self == &Name::empty()
-    }
+    pub fn is_empty(&self) -> bool { self == &Name::empty() }
 
     pub fn as_direct(&self, msg: &str, pos: &Position) -> TypeResult<HashSet<StringName>> {
         self.names.iter().map(|n| n.as_direct(msg, pos)).collect::<Result<_, _>>()
     }
 
-    pub fn contains(&self, item: &TrueName) -> bool {
-        self.names.contains(item)
-    }
+    pub fn contains(&self, item: &TrueName) -> bool { self.names.contains(item) }
 
-    pub fn empty() -> Name {
-        Name { names: HashSet::new() }
-    }
+    pub fn empty() -> Name { Name { names: HashSet::new() } }
 
-    pub fn is_null(&self) -> bool {
-        self.names.iter().all(|name| name.is_null())
-    }
+    pub fn is_null(&self) -> bool { self.names.iter().all(|name| name.is_null()) }
 
-    /// True if this was a temporary name, which is a name which starts with '@'.
+    /// True if this was a temporary name, which is a name which starts with
+    /// '@'.
     pub fn is_temporary(&self) -> bool {
         if let Some(name) = Vec::from_iter(&self.names).first() {
             match &name.variant {
                 NameVariant::Single(stringname) => stringname.name.starts_with(TEMP),
                 _ => false
             }
-        } else { false }
+        } else {
+            false
+        }
     }
 
-    pub fn names(&self) -> IntoIter<TrueName> {
-        self.names.clone().into_iter()
-    }
+    pub fn names(&self) -> IntoIter<TrueName> { self.names.clone().into_iter() }
 
     pub fn substitute(
         &self,
         generics: &HashMap<String, TrueName>,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
@@ -300,15 +284,14 @@ impl Name {
 mod tests {
     use std::collections::HashSet;
 
+    use crate::check::context::clss::{BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE,
+                                      STRING_PRIMITIVE};
     use crate::check::context::{clss, Context};
-    use crate::check::context::clss::{
-        BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE,
-    };
     use crate::check::ident::Identifier;
-    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
-    use crate::check::name::Name;
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::truename::TrueName;
+    use crate::check::name::Name;
+    use crate::check::name::{match_name, AsNullable, IsNullable, IsSuperSet};
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
 

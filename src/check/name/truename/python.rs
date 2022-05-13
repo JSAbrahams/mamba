@@ -3,9 +3,9 @@ use std::ops::Deref;
 use python_parser::ast::{Expression, SetItem, Subscript};
 
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 
 impl From<&Expression> for TrueName {
     fn from(value: &Expression) -> TrueName {

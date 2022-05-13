@@ -12,7 +12,7 @@ use crate::parse::result::expected;
 use crate::parse::result::ParseResult;
 
 pub struct LexIterator<'a> {
-    it: Peekable<Iter<'a, Lex>>,
+    it: Peekable<Iter<'a, Lex>>
 }
 
 impl<'a> LexIterator<'a> {
@@ -37,8 +37,15 @@ impl<'a> LexIterator<'a> {
             let second_token = lex.token.clone();
 
             match (&first_token, &second_token) {
-                (Some(first_token), second_token) if Token::same_type(first_token, token) && Token::same_type(second_token, final_token) => { return true; }
-                _ if second_token != token.clone() => { break; }
+                (Some(first_token), second_token)
+                    if Token::same_type(first_token, token)
+                        && Token::same_type(second_token, final_token) =>
+                {
+                    return true;
+                }
+                _ if second_token != token.clone() => {
+                    break;
+                }
                 _ => {}
             }
 
@@ -79,8 +86,12 @@ impl<'a> LexIterator<'a> {
         last_pos
     }
 
-    pub fn eat_if_not_empty(&mut self, token: &Token, err_msg: &str, last_pos: &Option<Position>)
-                            -> ParseResult<Option<Position>> {
+    pub fn eat_if_not_empty(
+        &mut self,
+        token: &Token,
+        err_msg: &str,
+        last_pos: &Option<Position>
+    ) -> ParseResult<Option<Position>> {
         if self.it.peek().is_some() {
             self.eat(token, err_msg)
                 .map(Some)
@@ -94,7 +105,7 @@ impl<'a> LexIterator<'a> {
         &mut self,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
         cause: &str,
-        start: &Position,
+        start: &Position
     ) -> ParseResult<Box<AST>> {
         parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
     }
@@ -103,7 +114,7 @@ impl<'a> LexIterator<'a> {
         &mut self,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
         cause: &str,
-        start: &Position,
+        start: &Position
     ) -> ParseResult<Vec<AST>> {
         parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
     }
@@ -113,7 +124,7 @@ impl<'a> LexIterator<'a> {
         token: &Token,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
         err_msg: &str,
-        start: &Position,
+        start: &Position
     ) -> ParseResult<Option<Box<AST>>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -129,7 +140,7 @@ impl<'a> LexIterator<'a> {
         token: &Token,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
         err_msg: &str,
-        start: &Position,
+        start: &Position
     ) -> ParseResult<Vec<AST>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -144,7 +155,7 @@ impl<'a> LexIterator<'a> {
         &mut self,
         match_fun: &dyn Fn(&mut LexIterator, &Lex) -> ParseResult,
         eof_expected: &[Token],
-        eof_err_msg: &str,
+        eof_err_msg: &str
     ) -> ParseResult {
         match self.it.peek().cloned() {
             None => Err(eof_expected_one_of(eof_expected, eof_err_msg)),
@@ -155,7 +166,7 @@ impl<'a> LexIterator<'a> {
     pub fn peek(
         &mut self,
         match_fun: &dyn Fn(&mut LexIterator, &Lex) -> ParseResult,
-        default: ParseResult,
+        default: ParseResult
     ) -> ParseResult {
         match self.it.peek().cloned() {
             None => default,
@@ -171,18 +182,18 @@ impl<'a> LexIterator<'a> {
     pub fn peek_while_not_tokens(
         &mut self,
         tokens: &[Token],
-        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>,
+        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>
     ) -> ParseResult<()> {
         self.peek_while_fn(
             &|lex| tokens.iter().all(|token| !Token::same_type(&lex.token, token)),
-            loop_fn,
+            loop_fn
         )
     }
 
     pub fn peek_while_not_token(
         &mut self,
         token: &Token,
-        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>,
+        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>
     ) -> ParseResult<()> {
         self.peek_while_fn(&|lex| !Token::same_type(&lex.token, token), loop_fn)
     }
@@ -190,7 +201,7 @@ impl<'a> LexIterator<'a> {
     pub fn peek_while_fn(
         &mut self,
         check_fn: &dyn Fn(&Lex) -> bool,
-        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>,
+        loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>
     ) -> ParseResult<()> {
         while let Some(&lex) = self.it.peek() {
             if !check_fn(lex) {
@@ -208,9 +219,7 @@ impl<'a> LexIterator<'a> {
         }
     }
 
-    pub fn last_pos(&mut self) -> Option<Position> {
-        self.it.peek().map(|lex| lex.pos.clone())
-    }
+    pub fn last_pos(&mut self) -> Option<Position> { self.it.peek().map(|lex| lex.pos.clone()) }
 }
 
 #[cfg(test)]
@@ -234,7 +243,6 @@ mod tests {
         assert_eq!(it.peek_if_followed_by(&Token::Eq, &Token::Eq), false);
         assert_eq!(it.peek_if_followed_by(&Token::Not, &Token::Not), false);
     }
-
 
     #[test]
     fn test_peek_followed_by_leaves_iter_unmodified() {

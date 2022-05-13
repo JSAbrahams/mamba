@@ -28,7 +28,7 @@ const IN_FILE: &str = "src";
 pub fn transpile_directory(
     current_dir: &Path,
     maybe_in: Option<&str>,
-    maybe_out: Option<&str>,
+    maybe_out: Option<&str>
 ) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = maybe_in.map_or(current_dir.join(IN_FILE), |p| current_dir.join(p));
     let out_dir = current_dir.join(maybe_out.unwrap_or(OUT_FILE));

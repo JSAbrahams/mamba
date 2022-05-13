@@ -2,9 +2,9 @@ use crate::parse::lex::pass::Pass;
 use crate::parse::lex::token::{Lex, Token};
 
 pub struct DocString {
-    front: Option<Lex>,
+    front:  Option<Lex>,
     middle: Option<Lex>,
-    back: Option<Lex>,
+    back:   Option<Lex>
 }
 
 impl DocString {
@@ -17,8 +17,12 @@ impl DocString {
     }
 
     fn get(&mut self) -> Vec<Lex> {
-        if let (Some(front), Some(middle), Some(back)) = (self.front.clone(), self.middle.clone(), self.back.clone()) {
-            if let (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) = (front.token, middle.token, back.token) {
+        if let (Some(front), Some(middle), Some(back)) =
+            (self.front.clone(), self.middle.clone(), self.back.clone())
+        {
+            if let (Token::Str(f_str, _), Token::Str(doc_str, _), Token::Str(b_str, _)) =
+                (front.token, middle.token, back.token)
+            {
                 if f_str.is_empty()
                     && b_str.is_empty()
                     && front.pos.end.pos == middle.pos.start.pos

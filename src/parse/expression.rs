@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::call::parse_anon_fun;
 use crate::parse::call::parse_call;
 use crate::parse::call::parse_reassignment;
@@ -45,7 +45,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Sub,
         Token::Undefined,
         Token::BOneCmpl,
-        Token::BSlash,
+        Token::BSlash
     ];
 
     let result = it.peek_or_err(
@@ -68,8 +68,8 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                     .map(|tokens| parse_expression(&mut LexIterator::new(tokens.iter().peekable())))
                     .collect::<Result<_, _>>()?;
                 let node = Node::Str {
-                    lit: string.clone(),
-                    expressions: expressions.iter().map(|expr| expr.deref().clone()).collect(),
+                    lit:         string.clone(),
+                    expressions: expressions.iter().map(|expr| expr.deref().clone()).collect()
                 };
                 Ok(Box::from(AST::new(&start.union(&end), node)))
             }
@@ -83,21 +83,20 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(&start.union(&end), Node::Undefined)))
             }
 
-            Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl => {
-                parse_expression(it)
-            }
+            Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl =>
+                parse_expression(it),
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(expected_one_of(&expected, lex, "expression")),
+            _ => Err(expected_one_of(&expected, lex, "expression"))
         },
         &expected,
-        "expression",
+        "expression"
     );
 
     match result {
         Ok(res) => parse_post_expr(&res, it),
-        err => err,
+        err => err
     }
 }
 
@@ -122,16 +121,15 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let res = parse_index(pre, it)?;
                 parse_post_expr(&res, it)
             }
-            _ => {
+            _ =>
                 if is_start_expression_exclude_unary(lex) {
                     let res = parse_call(pre, it)?;
                     parse_post_expr(&res, it)
                 } else {
                     Ok(Box::from(pre.clone()))
-                }
-            }
+                },
         },
-        Ok(Box::from(pre.clone())),
+        Ok(Box::from(pre.clone()))
     )
 }
 
@@ -140,7 +138,7 @@ fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
 
     let item = Box::from(pre.clone());
     let range = it.parse(&parse_expression, "index", &pre.pos)?;
-    
+
     let node = Node::Index { item, range };
     let end = it.eat(&Token::RSBrack, "index")?;
     Ok(Box::from(AST::new(&pre.pos.union(&end), node)))

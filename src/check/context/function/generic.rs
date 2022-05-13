@@ -4,24 +4,24 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
-use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericFunction {
     pub is_py_type: bool,
-    pub name: StringName,
-    pub pure: bool,
-    pub pos: Position,
-    pub arguments: Vec<GenericFunctionArg>,
-    pub raises: Name,
-    pub in_class: Option<StringName>,
-    pub ret_ty: Option<Name>,
+    pub name:       StringName,
+    pub pure:       bool,
+    pub pos:        Position,
+    pub arguments:  Vec<GenericFunctionArg>,
+    pub raises:     Name,
+    pub in_class:   Option<StringName>,
+    pub ret_ty:     Option<Name>
 }
 
 impl Hash for GenericFunction {
@@ -46,7 +46,7 @@ impl GenericFunction {
         self,
         in_class: Option<&TrueName>,
         _type_def: bool,
-        pos: &Position,
+        pos: &Position
     ) -> TypeResult<GenericFunction> {
         if let Some(NameVariant::Single(in_class)) = in_class.map(|t| t.variant.clone()) {
             Ok(GenericFunction {
@@ -81,10 +81,10 @@ impl TryFrom<&AST> for GenericFunction {
             Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, .. } =>
                 Ok(GenericFunction {
                     is_py_type: false,
-                    name: function_name(id.deref())?,
-                    pure: *pure,
-                    pos: ast.pos.clone(),
-                    arguments: {
+                    name:       function_name(id.deref())?,
+                    pure:       *pure,
+                    pos:        ast.pos.clone(),
+                    arguments:  {
                         let args: Vec<GenericFunctionArg> = fun_args
                             .iter()
                             .map(GenericFunctionArg::try_from)
@@ -96,7 +96,7 @@ impl TryFrom<&AST> for GenericFunction {
                                 return Err(vec![TypeErr::new(
                                     &arg.pos,
                                     "Cannot have argument with default followed by argument with \
-                                     no default.",
+                                     no default."
                                 )]);
                             }
                             has_default = arg.has_default;
@@ -104,12 +104,12 @@ impl TryFrom<&AST> for GenericFunction {
 
                         args
                     },
-                    ret_ty: match ret_ty {
+                    ret_ty:     match ret_ty {
                         Some(ty) => Some(Name::try_from(ty.as_ref())?),
                         None => None
                     },
-                    in_class: None,
-                    raises: Name::try_from(raises)?,
+                    in_class:   None,
+                    raises:     Name::try_from(raises)?
                 }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")])
         }

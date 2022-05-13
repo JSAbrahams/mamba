@@ -4,17 +4,17 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-use crate::check::context::{Context, LookupClass};
-use crate::check::context::arg::FunctionArg;
 use crate::check::context::arg::generic::GenericFunctionArg;
+use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::generic::GenericClass;
-use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
-use crate::check::context::function::Function;
+use crate::check::context::field::Field;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::Name;
+use crate::check::context::function::Function;
+use crate::check::context::{Context, LookupClass};
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -47,12 +47,12 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name: TrueName,
-    pub concrete: bool,
-    pub args: Vec<FunctionArg>,
-    pub fields: HashSet<Field>,
-    pub parents: HashSet<TrueName>,
-    pub functions: HashSet<Function>,
+    pub name:       TrueName,
+    pub concrete:   bool,
+    pub args:       Vec<FunctionArg>,
+    pub fields:     HashSet<Field>,
+    pub parents:    HashSet<TrueName>,
+    pub functions:  HashSet<Function>
 }
 
 pub trait HasParent<T> {
@@ -64,23 +64,27 @@ pub trait HasParent<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
-        Ok(&self.name == name || self.parents
-            .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
-            .collect::<Result<Vec<bool>, _>>()?
-            .iter()
-            .any(|b| *b))
+        Ok(&self.name == name
+            || self
+                .parents
+                .iter()
+                .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+                .collect::<Result<Vec<bool>, _>>()?
+                .iter()
+                .any(|b| *b))
     }
 }
 
 impl HasParent<&TrueName> for Class {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
-        Ok(&self.name == name || self.parents
-            .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
-            .collect::<Result<Vec<bool>, _>>()?
-            .iter()
-            .any(|b| *b))
+        Ok(&self.name == name
+            || self
+                .parents
+                .iter()
+                .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+                .collect::<Result<Vec<bool>, _>>()?
+                .iter()
+                .any(|b| *b))
     }
 }
 
@@ -122,12 +126,12 @@ impl TryFrom<(&GenericClass, &HashMap<String, TrueName>, &Position)> for Class {
 
         Ok(Class {
             is_py_type: generic.is_py_type,
-            name: generic.name.substitute(generics, pos)?,
-            concrete: generic.concrete,
-            args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
-            parents: generic.parents.iter().map(|g| g.name.clone()).collect(),
-            fields: generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
-            functions: generic.functions.iter().map(try_function).collect::<Result<_, _>>()?,
+            name:       generic.name.substitute(generics, pos)?,
+            concrete:   generic.concrete,
+            args:       generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
+            parents:    generic.parents.iter().map(|g| g.name.clone()).collect(),
+            fields:     generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
+            functions:  generic.functions.iter().map(try_function).collect::<Result<_, _>>()?
         })
     }
 }
@@ -135,18 +139,18 @@ impl TryFrom<(&GenericClass, &HashMap<String, TrueName>, &Position)> for Class {
 impl Class {
     pub fn constructor(&self, without_self: bool, pos: &Position) -> TypeResult<Function> {
         Ok(Function {
-            is_py_type: false,
-            name: self.name.as_direct("function name", pos)?,
+            is_py_type:   false,
+            name:         self.name.as_direct("function name", pos)?,
             self_mutable: None,
-            pure: false,
-            arguments: if without_self && !self.args.is_empty() {
+            pure:         false,
+            arguments:    if without_self && !self.args.is_empty() {
                 self.args.iter().skip(1).cloned().collect()
             } else {
                 self.args.clone()
             },
-            raises: Name::empty(),
-            in_class: None,
-            ret_ty: Name::from(&self.name),
+            raises:       Name::empty(),
+            in_class:     None,
+            ret_ty:       Name::from(&self.name)
         })
     }
 

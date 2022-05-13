@@ -17,7 +17,7 @@ pub fn substitute(
     old: &Expected,
     constraints: &mut Constraints,
     offset: usize,
-    total: usize,
+    total: usize
 ) -> TypeResult<Constraints> {
     let mut substituted = Constraints::new(&constraints.in_class);
     let mut constraint_pos = offset;
@@ -66,7 +66,7 @@ fn recursive_substitute(
     side: &str,
     inspected: &Expected,
     old: &Expected,
-    new: &Expected,
+    new: &Expected
 ) -> (bool, Expected) {
     if inspected.expect.same_value(&old.expect) {
         return (true, new.clone());
@@ -94,7 +94,7 @@ fn recursive_substitute(
             let func = Expect::Function { name: name.clone(), args };
             (any_substituted, Expected::new(&inspected.pos, &func))
         }
-        _ => (false, inspected.clone()),
+        _ => (false, inspected.clone())
     }
 }
 
@@ -103,7 +103,7 @@ fn substitute_vec(
     side: &str,
     old: &Expected,
     new: &Expected,
-    elements: &[Expected],
+    elements: &[Expected]
 ) -> (Vec<Expected>, bool) {
     let mut any_substituted = false;
 
@@ -116,6 +116,6 @@ fn substitute_vec(
                 el
             })
             .collect(),
-        any_substituted,
+        any_substituted
     )
 }

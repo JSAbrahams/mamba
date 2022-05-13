@@ -14,7 +14,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn main() -> Result<(), String> {
     #[cfg(windows)]
-        ansi_term::enable_ansi_support().unwrap();
+    ansi_term::enable_ansi_support().unwrap();
 
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).version(VERSION).get_matches();

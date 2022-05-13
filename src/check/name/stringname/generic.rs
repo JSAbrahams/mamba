@@ -1,10 +1,10 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 impl TryFrom<&Box<AST>> for StringName {
     type Error = Vec<TypeErr>;
@@ -24,7 +24,10 @@ impl TryFrom<&AST> for StringName {
                         generics.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                     Ok(StringName::new(lit, &generics))
                 }
-                _ => Err(vec![TypeErr::new(&id.pos, &format!("Expected identifier, was {}", ast.node))])
+                _ => Err(vec![TypeErr::new(
+                    &id.pos,
+                    &format!("Expected identifier, was {}", ast.node)
+                )])
             },
             _ => {
                 let msg = format!("Expected class name, was {}", ast.node);

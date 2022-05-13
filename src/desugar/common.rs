@@ -17,7 +17,7 @@ pub fn desugar_vec(node_vec: &[AST], imp: &mut Imports, state: &State) -> Desuga
 pub fn desugar_stmts(
     node_vec: &[AST],
     imp: &mut Imports,
-    state: &State,
+    state: &State
 ) -> DesugarResult<Vec<Core>> {
     let mut result = vec![];
     for (i, ast) in node_vec.iter().enumerate() {
