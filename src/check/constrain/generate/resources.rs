@@ -50,7 +50,7 @@ pub fn gen_resources(
                 *mutable,
                 ctx,
                 &mut constr,
-                &env,
+                &env.define_mode(true),
             )?;
             let (mut constr, env) = generate(expr, &env, ctx, &mut constr)?;
             constr.exit_set(&ast.pos)?;
