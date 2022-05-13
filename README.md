@@ -206,11 +206,19 @@ Mamba has features to ensure that functions are pure, meaning that if `x = y`, f
 By default, functions are not pure, and can read any variable they want, such as in Python. 
 When we make a function `pure`, it cannot:
 
-- Read non-final variables not passed as an argument.
 - Read non-final properties of `self`.
 - Call impure functions.
 
+Some rules hold for calling and assigning to passed arguments to uphold the pure property (meaning, no side-effects):
+
+- Anything defined within the function body is fair game, it may be used whatever way, as it will be destroyed upon exiting the function.
+- An argument may be assigned to, as this will not modify the original reference.
+- The field of an argument may not be assigned to, as this will modify the original reference.
+- One may not read any field of an argument which is not final (`fin`).
+- One may only call a function of an argument which is pure (`pure`), as this has guaranteed no side-effects.
+
 When a function is `pure`, its output is always the same for a given input.
+It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
 When a variable is immutable, when we add `fin`, it can never change. 
 `pure` is a property of functions, and `fin` is a property of variables.
 
