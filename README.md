@@ -1,13 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
-<h1 align="center">
-    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
-    <br />
-    Mamba
-</h1>
-
 <p align="center">
-    <i>Safety first!</i>
+    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
     <br/><br/>
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
     <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
@@ -23,9 +17,15 @@
     <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
     </a>
     <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
+    <br/>
+    <a href="https://github.com/JSAbrahams/mamba/milestones">
+    <img src="https://img.shields.io/github/milestones/open/JSAbrahams/mamba?style=for-the-badge" alt="Active milestones"/>
+    <a/>
 </p>
 
-# Mamba
+<h1 align="center">
+    Mamba
+</h1>
 
 This is the Mamba programming language.
 Mamba is like Python, but with a few key features:
