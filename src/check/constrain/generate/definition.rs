@@ -4,7 +4,6 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::ConstrVariant;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, generate};
@@ -61,13 +60,15 @@ pub fn gen_def(
             constr.exit_set(&ast.pos)?;
             Ok((constr, env.clone()))
         }
-        Node::FunArg { .. } =>
-            Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")]),
+        Node::FunArg { .. } => {
+            Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")])
+        }
 
-        Node::VariableDef { mutable, var, ty, expr: expression, .. } =>
-            identifier_from_var(var, ty, expression, *mutable, ctx, constr, env),
+        Node::VariableDef { mutable, var, ty, expr: expression, .. } => {
+            identifier_from_var(var, ty, expression, *mutable, ctx, constr, env)
+        }
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")])
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")]),
     }
 }
 
@@ -80,7 +81,7 @@ pub fn constrain_args(
     let mut res = (constr.clone(), env.clone());
     for arg in args {
         match &arg.node {
-            Node::FunArg { mutable, var, ty, default, .. } =>
+            Node::FunArg { mutable, var, ty, default, .. } => {
                 if var.node == Node::_Self {
                     let self_type = &env.class_type.clone().ok_or_else(|| {
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
@@ -96,8 +97,9 @@ pub fn constrain_args(
                     res.0.add("arguments", &left, &Expected::new(&var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, default, *mutable, ctx, &mut res.0, &res.1)?;
-                },
-            _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")])
+                }
+            }
+            _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")]),
         }
     }
 
@@ -113,7 +115,11 @@ pub fn identifier_from_var(
     constr: &mut ConstrBuilder,
     env: &Environment,
 ) -> Constrained {
-    let (mut constr, mut env) = (constr.clone(), env.clone());
+    let (mut constr, mut env) = if let Some(expr) = expression {
+        generate(expr, env, ctx, constr)?
+    } else {
+        (constr.clone(), env.clone())
+    };
 
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
@@ -159,28 +165,26 @@ pub fn identifier_from_var(
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: Name::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
-            constr.add_variant("variable, type, and expression", &parent, &var_expect, &ConstrVariant::Left);
+            constr.add("variable, type, and expression", &parent, &var_expect);
             let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add_variant("variable, type, and expression", &var_expect, &expr_expect, &ConstrVariant::Left);
-            generate(expr, &env, ctx, &mut constr)
+            constr.add("variable, type, and expression", &var_expect, &expr_expect);
         }
         (Some(ty), None) => {
             let ty_exp = Type { name: Name::try_from(ty.deref())? };
             let parent = Expected::new(&ty.pos, &ty_exp);
-            constr.add_variant("variable with type", &parent, &var_expect, &ConstrVariant::Left);
-            Ok((constr, env))
+            constr.add("variable with type", &parent, &var_expect);
         }
         (None, Some(expr)) => {
             let parent = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add_variant("variable and expression", &parent, &var_expect, &ConstrVariant::Left);
-            generate(expr, &env, ctx, &mut constr)
+            constr.add("variable and expression", &parent, &var_expect);
         }
         (None, None) => {
             let child = Expected::new(&var.pos, &ExpressionAny);
             constr.add("variable", &var_expect, &child);
-            Ok((constr, env))
         }
-    }
+    };
+
+    Ok((constr, env.clone()))
 }
 
 // Returns every possible tuple. Elements of a tuple are not to be confused with

@@ -23,7 +23,7 @@ pub fn unify_type(
     total: usize,
 ) -> Unified {
     let (left, right) = (&constraint.left, &constraint.right);
-    let count = total - constraints.len();
+    let count = if constraints.len() <= total { total - constraints.len() } else { 0 };
 
     match (&left.expect, &right.expect) {
         (ExpressionAny, ty) | (ty, ExpressionAny) => match ty {
