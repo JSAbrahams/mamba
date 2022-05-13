@@ -1,3 +1,7 @@
+# Grammar
+
+Below is the grammar specification of the language.
+
 ## Notation Of EBNF
 
 The grammar of the language in Extended Backus-Naur Form (EBNF).
@@ -5,8 +9,6 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 - ```( a | b | ... )``` = a or b or ...
 - ```[ ... ]``` = zero or one
 - ```{ ... }``` = zero or more
-
-## Grammar
 
 ```
     file             ::= { ( expr-or-stmt | import | type-def | class | comment ) { newline } }
@@ -68,7 +70,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     slice            ::= expression ( "::" | "::=" ) expression [ "::" expression ]
     range            ::= expression ( ".." | "..=" ) expression [ ".." expression ]
-    index            ::= expression "[" range "]"
+    index            ::= expression "[" expression "]"
     
     definition       ::= "def" ( variable-def | fun-def | operator-def )
 
