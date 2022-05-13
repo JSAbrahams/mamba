@@ -33,7 +33,6 @@ Keyword | Use
 Keyword | Use
 ---|---
 `def`     | Denote definition
-`private` | Denote private variable of class
 `fin`     | Denote defined variable is immutable
 `pure`    | Denote function is pure
 `vararg`  | Denote variable argument
@@ -93,7 +92,6 @@ Keyword | Use
 Keyword | Use
 ---|---
 `print`   | Print value of an expression
-`println` | Print value of an expression
 `return`  | Return from a function or method
 `pass`    | Empty placeholder statement
 
