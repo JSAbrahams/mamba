@@ -19,7 +19,6 @@ fn set_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Type checker cannot handle assigning to tuples
 fn tuple_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "tuple")
 }

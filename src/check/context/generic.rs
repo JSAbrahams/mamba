@@ -3,13 +3,13 @@ use std::convert::TryFrom;
 
 use crate::check::CheckInput;
 use crate::check::context::clss::generic::GenericClass;
-use crate::check::context::field::generic::GenericField;
+use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::Node;
 
 pub fn generics(
-    files: &[CheckInput]
+    files: &[CheckInput],
 ) -> TypeResult<(HashSet<GenericClass>, HashSet<GenericField>, HashSet<GenericFunction>)> {
     let mut types = HashSet::new();
     let mut fields = HashSet::new();
@@ -17,7 +17,7 @@ pub fn generics(
 
     for (file, source, path) in files {
         match &file.node {
-            Node::File { statements: modules, .. } =>
+            Node::File { statements: modules, .. } => {
                 for module in modules {
                     match &module.node {
                         Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
@@ -39,18 +39,21 @@ pub fn generics(
                             functions.insert(generic_type?);
                         }
                         Node::VariableDef { .. } => {
-                            let generic_type: Result<_, Vec<TypeErr>> =
-                                GenericField::try_from(module).map_err(|errs| {
-                                    errs.into_iter()
-                                        .map(|e| e.into_with_source(source, path))
-                                        .collect()
-                                });
-                            fields.insert(generic_type?);
+                            let generic_type = GenericFields::try_from(module).map_err(|errs| {
+                                errs.into_iter()
+                                    .map(|e| e.into_with_source(source, path))
+                                    .collect::<Vec<TypeErr>>()
+                            })?;
+
+                            generic_type.fields.iter().for_each(|ty| {
+                                fields.insert(ty.clone());
+                            });
                         }
-                        _ => {} // TODO process imports
+                        _ => {}
                     }
-                },
-            _ => return Err(vec![TypeErr::new(&file.pos, "Expected file")])
+                }
+            }
+            _ => return Err(vec![TypeErr::new(&file.pos, "Expected file")]),
         }
     }
 

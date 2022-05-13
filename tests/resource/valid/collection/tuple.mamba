@@ -1,7 +1,7 @@
-def a := (a, b)
 def b := ()
-def (e, f) := (2, False)
+def c := 1
+def a := (c, b)
+def (e, f): (Int, Bool) := (2, False)
 
 def a := (a, b)
-def b := ()
 def (e, f) := (2, True)

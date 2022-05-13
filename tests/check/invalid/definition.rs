@@ -113,6 +113,12 @@ fn tuple_modify_mut_entire() {
 }
 
 #[test]
+fn tuple_assign_itself() {
+    let source = resource_content(false, &["type", "definition"], "tuple_assign_itself.mamba");
+    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn wrong_size_tuple() {
     let source = resource_content(false, &["type", "definition"], "wrong_size_tuple.mamba");
     check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();

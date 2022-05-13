@@ -23,6 +23,7 @@ pub enum Core {
     FStr { string: String },
     Bool { boolean: bool },
     Tuple { elements: Vec<Core> },
+    TupleLiteral { elements: Vec<Core> },
     Set { elements: Vec<Core> },
     List { elements: Vec<Core> },
     Range { from: Box<Core>, to: Box<Core>, step: Box<Core> },

@@ -40,7 +40,6 @@ impl TryFrom<&AST> for GenericField {
 
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
-            // TODO do something with forward
             Node::VariableDef { var, mutable, ty, .. } => Ok(GenericField {
                 is_py_type: false,
                 name: field_name(var.deref())?,
@@ -63,10 +62,8 @@ impl TryFrom<&AST> for GenericFields {
     fn try_from(ast: &AST) -> TypeResult<GenericFields> {
         Ok(GenericFields {
             fields: match &ast.node {
-                // TODO do something with forward
                 Node::VariableDef { var, ty, mutable, .. } => {
                     let identifier = Identifier::try_from(var.deref())?;
-                    // TODO infer type if not present
                     match &ty {
                         Some(ty) => {
                             let ty = Name::try_from(ty.deref())?;
@@ -120,6 +117,9 @@ impl GenericField {
 fn field_name(ast: &AST) -> TypeResult<String> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected valid identifier")])
+        _ => {
+            let msg = format!("Expected valid identifier, was '{}'", ast.node);
+            Err(vec![TypeErr::new(&ast.pos, &msg)])
+        }
     }
 }
