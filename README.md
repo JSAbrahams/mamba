@@ -1,13 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="image/logo.ico">
 
-<h1 align="center">
-    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
-    <br />
-    Mamba
-</h1>
-
 <p align="center">
-    <i>Safety first!</i>
+    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
     <br/><br/>
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
     <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
