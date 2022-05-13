@@ -13,6 +13,10 @@
     <img src="https://img.shields.io/crates/v/mamba?style=for-the-badge" alt="Crate">  
     </a>
     <br/>
+    <img src="https://img.shields.io/github/commit-activity/m/JSAbrahams/mamba?style=for-the-badge" alt="Commits per month"/>
+    <img src="https://img.shields.io/github/commit-activity/y/JSAbrahams/mamba?style=for-the-badge" alt="Commits per year"/>
+    <img src="https://img.shields.io/tokei/lines/github/JSAbrahams/mamba?style=for-the-badge" alt="Lines of code"/>
+    <br/>
     <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
     </a>
