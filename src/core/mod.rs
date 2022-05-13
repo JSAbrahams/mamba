@@ -138,7 +138,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{}({})", to_py(function, ind), comma_delimited(args, ind)),
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
-        Core::TupleLiteral { elements } => format!("{}", comma_delimited(elements, ind)),
+        Core::TupleLiteral { elements } => comma_delimited(elements, ind),
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
         Core::KeyValue { key, value } => format!("{}: {}", to_py(key, ind), to_py(value, ind)),

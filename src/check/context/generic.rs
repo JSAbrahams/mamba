@@ -39,12 +39,11 @@ pub fn generics(
                             functions.insert(generic_type?);
                         }
                         Node::VariableDef { .. } => {
-                            let generic_type =
-                                GenericFields::try_from(module).map_err(|errs| {
-                                    errs.into_iter()
-                                        .map(|e| e.into_with_source(source, path))
-                                        .collect::<Vec<TypeErr>>()
-                                })?;
+                            let generic_type = GenericFields::try_from(module).map_err(|errs| {
+                                errs.into_iter()
+                                    .map(|e| e.into_with_source(source, path))
+                                    .collect::<Vec<TypeErr>>()
+                            })?;
 
                             generic_type.fields.iter().for_each(|ty| {
                                 fields.insert(ty.clone());
