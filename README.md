@@ -216,13 +216,20 @@ Mamba has features to ensure that functions are pure, meaning that if `x = y`, f
 By default, functions are not pure, and can read any variable they want, such as in Python. 
 When we make a function `pure`, it cannot:
 
-- Read non-final variables not passed as an argument.
 - Read non-final properties of `self`.
 - Call impure functions.
 
+Some rules hold for calling and assigning to passed arguments to uphold the pure property (meaning, no side-effects):
+
+- Anything defined within the function body is fair game, it may be used whatever way, as it will be destroyed upon exiting the function.
+- An argument may be assigned to, as this will not modify the original reference.
+- The field of an argument may not be assigned to, as this will modify the original reference.
+- One may only read fields of an argument which are final (`fin`).
+- One may only call methods of an argument which are pure (`pure`).
+
 When a function is `pure`, its output is always the same for a given input.
-When a variable is immutable, when we add `fin`, it can never change. 
-`pure` is a property of functions, and `fin` is a property of variables.
+It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
+Immutable variables and pure functions make it easier to write declarative programs with no hidden dependencies.
 
 ```mamba
 # taylor is immutable, its value does not change during execution
@@ -235,9 +242,6 @@ def pure sin(x: Int) =>
         ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
-
-Generally speaking, global variables can cause a lot of headaches. 
-Immutable variables and pure functions make it easy to write declarative programs with no hidden dependencies.
 
 ### ⚠ Error handling (🇻 0.5+)
 
