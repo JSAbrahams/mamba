@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/crates/v/mamba?style=for-the-badge" alt="Crate">  
     </a>
     <br/>
-    <a href="https://github.com/JSAbrahams/mamba/blob/master/LICENSE">
+    <a href="https://github.com/JSAbrahams/mamba/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
     </a>
     <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
