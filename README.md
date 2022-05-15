@@ -67,6 +67,16 @@ else
 Notice how here we specify the type of argument `x`, in this case an `Int`, by writing `x: Int`.
 This means that the compiler will check for us that factorial is only used with integers as argument.
 
+_Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
+```mamba
+def factorial(x: Int) -> Int => match x
+    0 => 1
+    n =>
+        def ans := 1
+        for i in 1 ..= n do ans := ans * i
+        ans
+```
+
 ### 📋 Types, Classes, and Mutability
 
 Classes are similar to classes in Python, though we can for each function state whether we can write to `self` or not by stating whether it is mutable or not.
@@ -74,7 +84,7 @@ If we write `self`, it is mutable, whereas if we write `fin self`, it is immutab
 We can do the same for any field. We showcase this using a simple dummy `Server` object.
 
 ```mamba
-import ipaddress
+from ipaddress import IPv4Address
 
 class ServerError(def message: String): Exception(message)
 
@@ -89,7 +99,7 @@ class MyServer(def ip_address: IPv4Address)
         else raise ServerError("No last message!")
 
     def connect(self) =>
-        self.is_connected := true
+        self.is_connected := True
         print(always_the_same_message)
 
     def send(self, message: String) raise ServerError => if self.is_connected 
@@ -99,7 +109,7 @@ class MyServer(def ip_address: IPv4Address)
     def disconnect(self) => self.is_connected := False
 ```
 
-Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `sel`.
+Notice how `self` is not mutable in `last_sent`, meaning we can only read variables, whereas in connect `self` is mutable, so we can change properties of `self`.
 We can then use `MyServer` as follows:
 
 ```mamba
@@ -125,7 +135,7 @@ Mamba however also has type refinement features to assign additional properties 
 Lets expand our server example from above, and rewrite it slightly:
 
 ```mamba
-import ipaddress
+from ipaddress import IPv4Address
 
 type Server
     def ip_address: IPv4Address
@@ -134,8 +144,8 @@ type Server
     def send(String) -> () raise ServerErr
     def disconnect() -> ()
 
-type ConnectedMyServer: MyServer when self.is_connected
-type DisconnectedMyServer: MyServer when not self.is_connected
+type ConnMyServer: MyServer when self.is_connected
+type DisConnMyServer: MyServer when not self.is_connected
 
 class ServerErr(def message: String): Exception(message)
 
@@ -169,7 +179,7 @@ def my_server   := MyServer(some_ip)
 http_server.connect()
 
 # We check the state
-if my_server isa ConnectedMyServer then
+if my_server isa ConnMyServer then
     # http_server is a Connected Server if the above is true
     my_server.send("Hello World!")
 
@@ -180,10 +190,10 @@ if my_server isa ConnectedMyServer then my_server.disconnect()
 Type refinement also allows us to specify the domain and co-domain of a function, say, one that only takes and returns positive integers:
 
 ```mamba
-type PositiveInt: Int when 
+type PosInt: Int when 
     self >= 0 else "Must be greater than 0"
 
-def factorial(x: PositiveInt) -> PositiveInt => match x
+def factorial(x: PosInt) -> PosInt => match x
     0 => 1
     n => n * factorial(n - 1)
 ```
@@ -221,8 +231,8 @@ def fin taylor := 7
 # the sin function is pure, its output depends solely on the input
 def pure sin(x: Int) =>
     def ans := x
-    for i in 1 ..= taylor step 2 do
-        ans := (x ^ (i + 2)) / (factorial (i + 2))
+    for i in 1 ..= taylor .. 2 do
+        ans := ans + (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
 
