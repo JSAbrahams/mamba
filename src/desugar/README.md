@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="../../image/logo.svg" height="200" alt="Mamba logo"/>
+    <img src="../../image/logo.svg" height="150" alt="Mamba logo"/>
 </p>
 
 # Desugar
@@ -10,7 +10,6 @@ The input `AST` is converted to a special Python-like AST. This is then in turn 
 properly formatted Python file.
 
 We get an error if:
-
 - `AST` not what we expect, which is indicative of an implementation error within the type checker which should catch
   this.
 - We are desugaring a language construct which has not yet been (fully) implemented.

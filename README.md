@@ -196,11 +196,11 @@ def factorial(x: PosInt) -> PosInt => match x
     n => n * factorial(n - 1)
 ```
 
-In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `String`. 
-During execution, a check is done to verify that the variable does conform to the requirements of the refined type. 
-If it does not, an exception is raised.
+In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int`
+or `String`. During execution, a check is done to verify that the variable does conform to the requirements of the
+refined type. If it does not, an exception is raised.
 
-Type refinement allows us to to some additional things:
+Type refinement allows us to do some additional things:
 
 - It allows us to further specify the domain or co-domain of a function
 - It allows us to explicitly name the possible states of an object. This means that we don't constantly have to check

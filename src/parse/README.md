@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="../../image/logo.svg" height="200" alt="Mamba logo"/>
+    <img src="../../image/logo.svg" height="150" alt="Mamba logo"/>
 </p>
 
 # Parse
@@ -18,9 +18,7 @@ The lexer converts a string to a vector of `Token`s. This is in part to simplify
 The lexer also deals with the logic necessary to detect indentations. It produces special tokens `Indent` and `Dedent`,
 which the next stage uses to identify the start and end of blocks.
 
-We get an error if:
-
-- We encounter an illegal character
+We get an error if we encounter an illegal character
 
 ## Parse
 
