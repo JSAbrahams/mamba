@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 use crate::parse::ast::AST;
 
 pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;

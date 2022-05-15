@@ -1,12 +1,12 @@
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 
-pub mod construct;
+pub mod node;
 
-/// Convert [Core](mamba::core::construct::Core) to a String which represent
+/// Convert [Core](mamba::desugar.ast::construct::Core) to a String which represent
 /// python source code.
 ///
-/// Takes [Core](mamba::core::construct::Core) nodes as-is, meaning that this
-/// should never panic, unless a certain core construct can still not be
+/// Takes [Core](mamba::desugar.ast::construct::Core) nodes as-is, meaning that this
+/// should never panic, unless a certain desugar.ast construct can still not be
 /// converted.
 ///
 /// # Examples
@@ -14,8 +14,8 @@ pub mod construct;
 /// Writing a Return statement:
 ///
 /// ```
-/// # use mamba::core::construct::Core;
-/// # use mamba::core::to_source;
+/// # use mamba::desugar::ast::node::Core;
+/// # use mamba::desugar::ast::to_source;
 /// let core_node = Core::Return { expr: Box::from(Core::None) };
 /// let py_source = to_source(&core_node);
 ///
@@ -25,8 +25,8 @@ pub mod construct;
 /// Writing an If statement:
 ///
 /// ```
-/// # use mamba::core::construct::Core;
-/// # use mamba::core::to_source;
+/// # use mamba::desugar::ast::node::Core;
+/// # use mamba::desugar::ast::to_source;
 /// let core_node = Core::IfElse {
 ///     cond:  Box::from(Core::Id { lit: String::from("a") }),
 ///     then:  Box::from(Core::Str { string: String::from("b") }),

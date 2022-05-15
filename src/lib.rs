@@ -8,7 +8,6 @@ extern crate loggerv;
 pub mod common;
 
 pub mod check;
-pub mod core;
 pub mod desugar;
 pub mod parse;
 

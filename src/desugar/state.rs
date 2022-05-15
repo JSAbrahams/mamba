@@ -1,4 +1,4 @@
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 
 // TODO remove expect_expr once type checker augments AST
 #[derive(Clone, Debug)]

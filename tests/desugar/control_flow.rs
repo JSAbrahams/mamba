@@ -1,4 +1,4 @@
-use mamba::core::to_source;
+use mamba::desugar::ast::to_source;
 use mamba::desugar::desugar;
 use mamba::parse::lex::tokenize;
 use mamba::parse::parse;

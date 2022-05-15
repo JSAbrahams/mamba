@@ -1,4 +1,4 @@
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::node::desugar_node;
 use crate::desugar::result::DesugarResult;
@@ -71,7 +71,7 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
 #[cfg(test)]
 mod test {
     use crate::common::position::Position;
-    use crate::core::construct::Core;
+    use crate::desugar::ast::node::Core;
     use crate::desugar::desugar;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;

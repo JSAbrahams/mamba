@@ -2,8 +2,8 @@ use std::ops::Deref;
 
 use crate::check::context::{arg, function};
 use crate::check::context::function::python;
-use crate::core::construct::Core;
-use crate::core::construct::Core::FunctionCall;
+use crate::desugar::ast::node::Core;
+use crate::desugar::ast::node::Core::FunctionCall;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::node::desugar_node;
 use crate::desugar::result::{DesugarResult, UnimplementedErr};
@@ -175,7 +175,7 @@ mod tests {
     use std::ops::Deref;
 
     use crate::common::position::Position;
-    use crate::core::construct::Core;
+    use crate::desugar::ast::node::Core;
     use crate::desugar::desugar;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;

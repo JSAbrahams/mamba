@@ -6,6 +6,8 @@ use crate::desugar::state::Imports;
 use crate::desugar::state::State;
 use crate::parse::ast::AST;
 
+pub mod ast;
+
 mod call;
 mod class;
 mod common;
@@ -20,7 +22,7 @@ pub mod result;
 pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 
 /// Consumes the given [AST](mamba::parser::ast::AST) and produces
-/// a [Core](mamba::core::construct::Core) node.
+/// a [Core](mamba::desugar.ast::construct::Core) node.
 ///
 /// Note that the given [AST](mamba::parser::ast::AST) must be
 /// correctly formed. Therefore, malformed
@@ -33,7 +35,7 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// # use mamba::parse::ast::Node;
 /// # use mamba::parse::ast::AST;
 /// # use mamba::desugar::desugar;
-/// # use mamba::core::construct::Core;
+/// # use mamba::desugar::ast::node::Core;
 /// # use mamba::common::position::{CaretPos, Position};
 /// let node = Node::ReturnEmpty;
 /// let ast = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
@@ -50,7 +52,7 @@ pub type DesugarInput = (AST, Option<String>, Option<PathBuf>);
 /// # use mamba::parse::ast::Node;
 /// # use mamba::parse::ast::AST;
 /// # use mamba::desugar::desugar;
-/// # use mamba::core::construct::Core;
+/// # use mamba::desugar::ast::node::Core;
 /// use mamba::common::position::{CaretPos, Position};
 /// let cond_node = Node::Int { lit: String::from("56") };
 /// let cond_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), cond_node);

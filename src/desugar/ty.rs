@@ -1,5 +1,5 @@
 use crate::check::context::clss::concrete_to_python;
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 use crate::desugar::common::desugar_vec;
 use crate::desugar::node::desugar_node;
 use crate::desugar::result::DesugarResult;

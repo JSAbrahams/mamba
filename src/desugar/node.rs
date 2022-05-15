@@ -1,5 +1,5 @@
 use crate::check::context::clss::concrete_to_python;
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 use crate::desugar::call::desugar_call;
 use crate::desugar::class::desugar_class;
 use crate::desugar::common::{desugar_stmts, desugar_vec};
@@ -386,7 +386,7 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 #[cfg(test)]
 mod tests {
     use crate::common::position::Position;
-    use crate::core::construct::Core;
+    use crate::desugar::ast::node::Core;
     use crate::desugar::desugar;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;

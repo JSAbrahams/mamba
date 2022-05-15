@@ -319,12 +319,12 @@ We do type checking before desugaring to improve the quality of error messages.
 
 ### Desugar to Python
 
-Convert the AST to a simpler core language which looks similar to Python.
-This internal language is then again converted to a string which represents Python code.
-All erros generated here are either indicative of (1) a language construct which is not yet implemented (fully) or (2) an internal error.
+Convert the AST to a simpler desugar.core language which looks similar to Python. This internal language is then again
+converted to a string which represents Python code. All erros generated here are either indicative of (1) a language
+construct which is not yet implemented (fully) or (2) an internal error.
 
-Note that in future, the type checker should annotate the tree such that each node has a type.
-This will allow us to add type hints to all Python code we output, and to perhaps also more easily desugar more complex language construts (such
+Note that in future, the type checker should annotate the tree such that each node has a type. This will allow us to add
+type hints to all Python code we output, and to perhaps also more easily desugar more complex language construts (such
 as classes).
 
 ## 💻 The Command Line Interface

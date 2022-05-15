@@ -1,4 +1,4 @@
-use crate::core::construct::Core;
+use crate::desugar::ast::node::Core;
 use crate::desugar::node::desugar_node;
 use crate::desugar::result::DesugarResult;
 use crate::desugar::result::UnimplementedErr;
@@ -81,7 +81,7 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
 #[cfg(test)]
 mod tests {
     use crate::common::position::Position;
-    use crate::core::construct::Core;
+    use crate::desugar::ast::node::Core;
     use crate::desugar::desugar;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
