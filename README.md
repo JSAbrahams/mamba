@@ -149,7 +149,7 @@ type DisConnMyServer: MyServer when not self.is_connected
 
 class ServerErr(def message: String): Exception(message)
 
-class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
+class MyServer(self: DisConnMyServer, def ip_address: IPv4Address): Server
     def is_connected: Bool     := False
     def _last_message: String? := None
 
@@ -157,11 +157,11 @@ class MyServer(self: DisconnectedMyServer, def ip_address: IPv4Address): Server
         then self._last_message
         else raise ServerError("No last message!")
 
-    def connect(self: DisconnectedMyServer) => self.is_connected := True
+    def connect(self: DisConnMyServer) => self.is_connected := True
 
-    def send(self: ConnectedMyServer, message: String) => self._last_message := message
+    def send(self: ConnMyServer, message: String) => self._last_message := message
 
-    def disconnect(self: ConnectedMyServer) => self.is_connected := False
+    def disconnect(self: ConnMyServer) => self.is_connected := False
 ```
 
 Notice how above, we define the type of `self`.
