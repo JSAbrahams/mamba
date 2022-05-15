@@ -48,11 +48,17 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn class_count(&self) -> usize { self.classes.len() }
+    pub fn class_count(&self) -> usize {
+        self.classes.len()
+    }
 
-    pub fn function_count(&self) -> usize { self.functions.len() }
+    pub fn function_count(&self) -> usize {
+        self.functions.len()
+    }
 
-    pub fn field_count(&self) -> usize { self.fields.len() }
+    pub fn field_count(&self) -> usize {
+        self.fields.len()
+    }
 }
 
 impl TryFrom<&[CheckInput]> for Context {
@@ -73,7 +79,9 @@ impl LookupClass<&StringName, Class> for Context {
     ///
     /// Substitutes all generics in the class when found.
     fn class(&self, class: &StringName, pos: &Position) -> Result<Class, Vec<TypeErr>> {
-        if let Some(generic_class) = self.classes.iter().find(|c| &c.name == class) {
+        if let Some(generic_class) = self.classes.iter().find(|c| {
+            c.name.as_direct("Class name", pos).map(|name| name.name) == Ok(class.name.clone())
+        }) {
             let mut generics = HashMap::new();
             let placeholders = generic_class.name.as_direct("Class name invalid", pos)?;
 
@@ -81,7 +89,7 @@ impl LookupClass<&StringName, Class> for Context {
                 match name {
                     EitherOrBoth::Both(placeholder, name) => {
                         generics.insert(placeholder.clone(), name.clone());
-                    },
+                    }
                     EitherOrBoth::Left(placeholder) => {
                         let msg = format!("No argument for generic: {}", placeholder);
                         return Err(vec![TypeErr::new(pos, &msg)]);
@@ -106,7 +114,7 @@ impl LookupClass<&TrueName, ClassTuple> for Context {
         let variant = match &class.variant {
             NameVariant::Single(direct) => ClassVariant::Direct(self.class(direct, pos)?),
             NameVariant::Tuple(unions) => ClassVariant::Tuple(
-                unions.iter().map(|union| self.class(union, pos)).collect::<Result<_, _>>()?
+                unions.iter().map(|union| self.class(union, pos)).collect::<Result<_, _>>()?,
             ),
             NameVariant::Fun(..) => {
                 let msg = format!("'{}' is not a valid class identifier", class.variant);
@@ -203,17 +211,16 @@ impl ClassTuple {
     pub fn as_direct(&self, pos: &Position) -> TypeResult<Class> {
         match &self.variant {
             ClassVariant::Direct(class) => Ok(class.clone()),
-            _ => {
-                Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))])
-            }
+            _ => Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))]),
         }
     }
 
     pub fn name(&self) -> TrueName {
         let variant = match &self.variant {
             ClassVariant::Direct(class) => return class.name.clone(),
-            ClassVariant::Tuple(classes) =>
-                NameVariant::Tuple(classes.iter().map(|c| c.name()).collect()),
+            ClassVariant::Tuple(classes) => {
+                NameVariant::Tuple(classes.iter().map(|c| c.name()).collect())
+            }
         };
         TrueName::from(&variant)
     }
@@ -231,7 +238,7 @@ impl ClassTuple {
     pub fn fun(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
         match &self.variant {
             ClassVariant::Direct(class) => class.fun(name, ctx, pos),
-            ClassVariant::Tuple(classes) =>
+            ClassVariant::Tuple(classes) => {
                 if name == &StringName::from(function::STR) {
                     // Check that all implement __str__
                     for class in classes {
@@ -245,7 +252,8 @@ impl ClassTuple {
                 } else {
                     let msg = format!("Function '{}' undefined on '{}'", name, self);
                     Err(vec![TypeErr::new(pos, &msg)])
-                },
+                }
+            }
         }
     }
 
@@ -273,7 +281,9 @@ impl PartialEq for ClassUnion {
 }
 
 impl Hash for ClassUnion {
-    fn hash<H: Hasher>(&self, state: &mut H) { self.union.iter().for_each(|c| c.hash(state)) }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.union.iter().for_each(|c| c.hash(state))
+    }
 }
 
 impl HasParent<&StringName> for ClassUnion {
@@ -304,8 +314,9 @@ impl HasParent<&StringName> for ClassTuple {
 impl HasParent<&TrueName> for ClassTuple {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
         match &self.variant {
-            ClassVariant::Direct(class) =>
-                class.has_parent(&name.as_direct("class", pos)?, ctx, pos),
+            ClassVariant::Direct(class) => {
+                class.has_parent(&name.as_direct("class", pos)?, ctx, pos)
+            }
             ClassVariant::Tuple(_) => {
                 let msg = format!("'{}' does not have parents.", self);
                 Err(vec![TypeErr::new(pos, &msg)])
@@ -315,7 +326,12 @@ impl HasParent<&TrueName> for ClassTuple {
 }
 
 impl HasParent<&TrueName> for ClassUnion {
-    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> Result<bool, Vec<TypeErr>> {
+    fn has_parent(
+        &self,
+        name: &TrueName,
+        ctx: &Context,
+        pos: &Position,
+    ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -335,12 +351,7 @@ impl HasParent<&Name> for ClassTuple {
 }
 
 impl HasParent<&Name> for ClassUnion {
-    fn has_parent(
-        &self,
-        name: &Name,
-        ctx: &Context,
-        pos: &Position,
-    ) -> Result<bool, Vec<TypeErr>> {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -397,8 +408,22 @@ mod tests {
 
     use crate::check::CheckInput;
     use crate::check::context::{Context, LookupClass};
+    use crate::check::name::Name;
     use crate::check::name::stringname::StringName;
+    use crate::check::name::truename::TrueName;
+    use crate::check::result::TypeResult;
     use crate::common::position::Position;
+
+    #[test]
+    pub fn lookup_custom_list_type() -> TypeResult<()> {
+        let generics = &[Name::from("Int")];
+        let list_type = StringName::new("List", generics);
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let clss = ctx.class(&list_type, &Position::default())?;
+        assert_eq!(clss.name, TrueName::from(&list_type));
+        Ok(())
+    }
 
     #[test]
     pub fn primitives_present() {

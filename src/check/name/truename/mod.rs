@@ -33,7 +33,7 @@ impl From<&NameVariant> for TrueName {
 }
 
 impl CollectionType for TrueName {
-    fn collection_type(&self, ctx: &Context) -> Option<Name> {
+    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
         self.variant.collection_type(ctx)
     }
 }

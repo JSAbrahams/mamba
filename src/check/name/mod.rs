@@ -48,7 +48,7 @@ pub trait AsMutable {
 }
 
 pub trait CollectionType {
-    fn collection_type(&self, ctx: &Context) -> Option<Name>;
+    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>>;
 }
 
 pub fn match_name(
@@ -142,17 +142,17 @@ impl Union<StringName> for Name {
 }
 
 impl CollectionType for Name {
-    fn collection_type(&self, ctx: &Context) -> Option<Name> {
-        let names = self.names.iter().map(|n| n.collection_type(ctx));
+    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
+        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.collection_type(ctx)).collect::<Result<_, _>>()?;
         let mut union = Name::empty();
         for name in names {
             if let Some(name) = name {
                 union = union.union(&name)
             } else {
-                return None;
+                return Ok(None);
             }
         }
-        Some(union)
+        Ok(Some(union))
     }
 }
 
@@ -306,11 +306,7 @@ impl Name {
         self.names.clone().into_iter()
     }
 
-    pub fn substitute(
-        &self,
-        generics: &HashMap<Name, Name>,
-        pos: &Position,
-    ) -> TypeResult<Name> {
+    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: &Position) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
         Ok(Name { names })
@@ -321,14 +317,15 @@ impl Name {
 mod tests {
     use std::collections::HashSet;
 
-    use crate::check::context::{clss, Context};
+    use crate::check::context::{clss, Context, LookupClass};
     use crate::check::context::clss::{
-        BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE,
+        BOOL_PRIMITIVE, FLOAT_PRIMITIVE, HasParent, INT_PRIMITIVE, STRING_PRIMITIVE,
     };
     use crate::check::ident::Identifier;
-    use crate::check::name::{CollectionType, Name};
     use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
+    use crate::check::name::{CollectionType, Name};
     use crate::check::name::namevariant::NameVariant;
+    use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
@@ -554,22 +551,45 @@ mod tests {
     }
 
     #[test]
-    fn range_has_collection_int_as_parent() {
+    fn range_has_collection_int_as_parent() -> TypeResult<()> {
         let range_name = Name::from(clss::RANGE);
         let int_name = Name::from(clss::INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx);
+        let collection_ty = range_name.collection_type(&ctx)?;
         assert_eq!(collection_ty, Some(int_name));
+        Ok(())
     }
 
+    #[test]
+    fn float_parent_of_int() -> TypeResult<()> {
+        let float_name = Name::from(clss::FLOAT_PRIMITIVE);
+        let int_name = StringName::from(clss::INT_PRIMITIVE);
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let clss = ctx.class(&int_name, &Position::default())?;
+        assert!(clss.has_parent(&float_name, &ctx, &Position::default())?);
+        Ok(())
+    }
 
     #[test]
-    fn slice_not_collection_int_as_parent() {
+    fn int_not_parent_of_float() -> TypeResult<()> {
+        let float_name = StringName::from(clss::FLOAT_PRIMITIVE);
+        let int_name = Name::from(clss::INT_PRIMITIVE);
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let clss = ctx.class(&float_name, &Position::default())?;
+        assert!(!clss.has_parent(&int_name, &ctx, &Position::default())?);
+        Ok(())
+    }
+
+    #[test]
+    fn slice_not_collection_int_as_parent() -> TypeResult<()> {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx);
+        let collection_ty = range_name.collection_type(&ctx)?;
         assert_eq!(collection_ty, None);
+        Ok(())
     }
 }

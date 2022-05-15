@@ -34,18 +34,21 @@ impl Display for StringName {
 }
 
 impl CollectionType for StringName {
-    fn collection_type(&self, ctx: &Context) -> Option<Name> {
+    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
         if let Ok(clss) = ctx.class(self, &Position::default()) {
             // Must either return type as generic for matching, or check type (as here).
             let generics = &[Name::from(clss::INT_PRIMITIVE)];
             let col_string_name = StringName::new(clss::LIST, generics);
 
             let col_name = Name::from(&col_string_name);
-            if let Ok(parent) = clss.has_parent(&col_name, ctx, &Position::default()) {
-                return if parent { Some(Name::from(clss::INT_PRIMITIVE)) } else { None };
-            }
+            let parent = clss.has_parent(&col_name, ctx, &Position::default())?;
+            return if parent {
+                Ok(Some(Name::from(clss::INT_PRIMITIVE)))
+            } else {
+                Ok(None)
+            };
         }
-        None
+        Ok(None)
     }
 }
 
@@ -90,7 +93,7 @@ impl StringName {
         if let Some(name) = generics.get(&Name::from(self)) {
             let msg = format!("{} is not a DirectName", name);
             for string_name in name.as_direct(&msg, pos)? {
-                return Ok(string_name)
+                return Ok(string_name);
             }
 
             let msg = format!("{} incorrect DirectName", name);
