@@ -23,7 +23,9 @@
     </a>
 </p>
 
-This is the Mamba programming language.
+<h1 align="center">Mamba</h1>
+
+This is the Mamba programming language. 
 Mamba is like Python, but with a few key features:
 
 - Strict static typing rules, but with type inference so it doesn't get in the way too much

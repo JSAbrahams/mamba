@@ -4,11 +4,12 @@
 
 # Parse
 
-The parser has two internal packages:
+Converts a `String` to an Abstract Syntax Tree(AST).
 
-- `ast`, which is where `AST` and `Node` are stored.
-  - `AST` is container which stores a `Position` and a `Node`.
-  - `Node` is what is used to construct the langauge.
+Implementation wise, an `AST` is where a `Node` are stored.
+
+- `AST` is container which stores a `Position` and a `Node`.
+- `Node` is what is used to construct the language.
 
 ## Lex
 
@@ -16,6 +17,10 @@ The lexer converts a string to a vector of `Token`s. This is in part to simplify
 
 The lexer also deals with the logic necessary to detect indentations. It produces special tokens `Indent` and `Dedent`,
 which the next stage uses to identify the start and end of blocks.
+
+We get an error if:
+
+- We encounter an illegal character
 
 ## Parse
 
@@ -30,3 +35,5 @@ make it easy to:
 
 The output is an AST. The `Position` within each `AST` also allows one to generate elegant error messages. They allow
 the transpiler to print error messages where it points to where in the source something went wrong.
+
+We get an error if the list of tokens does not conform to the language grammar.
