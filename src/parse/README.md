@@ -1,10 +1,14 @@
+<h1 style="text-align: center;">
+    <img src="image/logo.svg" height="200" alt="Mamba logo"/>
+</h1>
+
 # Parse
 
 The parser has two internal packages:
 
 - `ast`, which is where `AST` and `Node` are stored.
-    - `AST` is container which stores a `Position` and a `Node`.
-    - `Node` is what is used to construct the langauge.
+  - `AST` is container which stores a `Position` and a `Node`.
+  - `Node` is what is used to construct the langauge.
 
 ## Lex
 
