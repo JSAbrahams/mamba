@@ -214,8 +214,8 @@ Some rules hold for calling and assigning to passed arguments to uphold the pure
 - Anything defined within the function body is fair game, it may be used whatever way, as it will be destroyed upon exiting the function.
 - An argument may be assigned to, as this will not modify the original reference.
 - The field of an argument may not be assigned to, as this will modify the original reference.
-- One may not read any field of an argument which is not final (`fin`).
-- One may only call a function of an argument which is pure (`pure`), as this has guaranteed no side-effects.
+- One may only read fields of an argument which are final (`fin`).
+- One may only call methods of an argument which are pure (`pure`).
 
 When a function is `pure`, its output is always the same for a given input.
 It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
