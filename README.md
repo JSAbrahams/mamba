@@ -219,8 +219,7 @@ Some rules hold for calling and assigning to passed arguments to uphold the pure
 
 When a function is `pure`, its output is always the same for a given input.
 It also has no side-effects, meaning that it cannot write anything (assign to mutable variables) or read from them.
-When a variable is immutable, when we add `fin`, it can never change. 
-`pure` is a property of functions, and `fin` is a property of variables.
+Immutable variables and pure functions make it easier to write declarative programs with no hidden dependencies.
 
 ```mamba
 # taylor is immutable, its value does not change during execution
@@ -233,9 +232,6 @@ def pure sin(x: Int) =>
         ans := (x ^ (i + 2)) / (factorial (i + 2))
     ans
 ```
-
-Generally speaking, global variables can cause a lot of headaches. 
-Immutable variables and pure functions make it easy to write declarative programs with no hidden dependencies.
 
 ### ⚠ Error handling (🇻 0.5+)
 
