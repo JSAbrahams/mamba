@@ -12,27 +12,21 @@ pub struct LexErr {
     pub pos: CaretPos,
     pub token: Option<Token>,
     pub msg: String,
-    pub source_line: Option<String>,
+    pub source: Option<String>,
     pub path: Option<PathBuf>,
 }
 
 impl LexErr {
     pub fn new(pos: &CaretPos, token: Option<Token>, msg: &str) -> LexErr {
-        LexErr { pos: pos.clone(), token, msg: String::from(msg), source_line: None, path: None }
+        LexErr { pos: pos.clone(), token, msg: String::from(msg), source: None, path: None }
     }
 
-    #[must_use]
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
         LexErr {
             pos: self.pos.clone(),
             token: self.token.clone(),
             msg: self.msg.clone(),
-            source_line: source.clone().map(|source| {
-                source
-                    .lines()
-                    .nth(self.pos.line as usize - 1)
-                    .map_or(String::from("unknown"), String::from)
-            }),
+            source: source.clone(),
             path: path.clone(),
         }
     }
@@ -40,6 +34,14 @@ impl LexErr {
 
 impl Display for LexErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let source_line = match &self.source {
+            Some(source) => source
+                .lines()
+                .nth(self.pos.line as usize - 1)
+                .unwrap_or("<unknown>"),
+            None => "<unknown>"
+        };
+
         write!(
             f,
             "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     | {}{}",
@@ -48,7 +50,7 @@ impl Display for LexErr {
             self.pos.pos,
             self.msg,
             self.pos.line,
-            self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
+            source_line,
             String::from_utf8(vec![b' '; self.pos.pos as usize]).unwrap(),
             String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width) as usize])
                 .unwrap()

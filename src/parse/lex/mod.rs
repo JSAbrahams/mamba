@@ -1,9 +1,9 @@
-use crate::parse::lex::lex_result::LexResult;
 use crate::parse::lex::pass::pass;
+use crate::parse::lex::result::LexResult;
 use crate::parse::lex::state::State;
 use crate::parse::lex::tokenize::into_tokens;
 
-pub mod lex_result;
+pub mod result;
 pub mod token;
 
 #[macro_use]

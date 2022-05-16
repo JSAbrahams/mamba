@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use crate::check::context::clss;
 use crate::common::position::Position;
 use crate::parse::ast::AST;
-use crate::parse::lex::lex_result::LexErr;
+use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
 use crate::parse::lex::token::Token;
 
@@ -69,7 +69,7 @@ impl From<LexErr> for ParseErr {
         ParseErr {
             position: Position::from(&lex_err.pos),
             msg: lex_err.msg,
-            source: lex_err.source_line,
+            source: lex_err.source,
             path: lex_err.path,
             causes: vec![],
         }
