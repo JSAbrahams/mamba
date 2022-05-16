@@ -2,12 +2,10 @@ use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
-use crate::check::context::{Context, LookupClass};
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::clss::HasParent;
-use crate::check::name::IsSuperSet;
+use crate::check::name::{CollectionType, IsSuperSet};
 use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -35,8 +33,29 @@ impl Display for StringName {
     }
 }
 
+impl CollectionType for StringName {
+    /// Checks if this type has a List\[Int\] as parent, and returns Int if it does.
+    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
+        if let Ok(clss) = ctx.class(self, &Position::default()) {
+            let generics = &[Name::from(clss::INT_PRIMITIVE)];
+            let col_string_name = StringName::new(clss::LIST, generics);
+
+            let col_name = Name::from(&col_string_name);
+            let parent = clss.has_parent(&col_name, ctx, &Position::default())?;
+            return if parent {
+                Ok(Some(Name::from(clss::INT_PRIMITIVE)))
+            } else {
+                Ok(None)
+            };
+        }
+        Ok(None)
+    }
+}
+
 impl From<&str> for StringName {
-    fn from(name: &str) -> Self { StringName { name: String::from(name), generics: vec![] } }
+    fn from(name: &str) -> Self {
+        StringName { name: String::from(name), generics: vec![] }
+    }
 }
 
 impl IsSuperSet<StringName> for StringName {
@@ -62,22 +81,29 @@ impl StringName {
         StringName { name: String::from(lit), generics: Vec::from(generics) }
     }
 
-    pub fn empty() -> StringName { StringName::new("()", &[]) }
+    pub fn empty() -> StringName {
+        StringName::new("()", &[])
+    }
 
     pub fn substitute(
         &self,
-        generics: &HashMap<String, TrueName>,
+        generics: &HashMap<Name, Name>,
         pos: &Position,
     ) -> TypeResult<StringName> {
-        if let Some(name) = generics.get(&self.name) {
-            match &name.variant {
-                NameVariant::Single(direct_name) if direct_name.generics.is_empty() =>
-                    Ok(direct_name.clone()),
-                _ => {
-                    let msg = format!("Cannot substitute '{}' with `{}`", name.variant, name);
-                    Err(vec![TypeErr::new(pos, &msg)])
-                }
+        if let Some(name) = generics.get(&Name::from(self)) {
+            let msg = format!("{} is not a DirectName", name);
+            let string_names = name.as_direct(&msg, pos)?;
+            if string_names.len() > 1 {
+                let msg = format!("Cannot substitute type union {}", name);
+                return Err(vec![TypeErr::new(pos, &msg)])
             }
+
+            if let Some(string_name) = string_names.iter().next() {
+                return Ok(string_name.clone());
+            }
+
+            let msg = format!("{} incorrect DirectName", name);
+            Err(vec![TypeErr::new(pos, &msg)])
         } else {
             Ok(StringName {
                 name: self.name.clone(),

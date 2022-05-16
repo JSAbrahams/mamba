@@ -6,7 +6,6 @@ use std::fmt;
 use crate::check::context::field::generic::GenericField;
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 
@@ -32,11 +31,11 @@ impl Display for Field {
     }
 }
 
-impl TryFrom<(&GenericField, &HashMap<String, TrueName>, &Position)> for Field {
+impl TryFrom<(&GenericField, &HashMap<Name, Name>, &Position)> for Field {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (field, generics, pos): (&GenericField, &HashMap<String, TrueName>, &Position)
+        (field, generics, pos): (&GenericField, &HashMap<Name, Name>, &Position)
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,

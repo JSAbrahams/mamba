@@ -25,6 +25,7 @@ pub const BOOL_PRIMITIVE: &str = "Bool";
 pub const ENUM_PRIMITIVE: &str = "Enum";
 pub const COMPLEX_PRIMITIVE: &str = "Complex";
 
+pub const COLLECTION: &str = "Collection";
 pub const RANGE: &str = "Range";
 pub const SLICE: &str = "Slice";
 pub const SET: &str = "Set";
@@ -64,7 +65,9 @@ pub trait HasParent<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
-        Ok(&self.name == name || self.parents
+        Ok(&self.name == name
+            || self
+            .parents
             .iter()
             .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
             .collect::<Result<Vec<bool>, _>>()?
@@ -75,9 +78,11 @@ impl HasParent<&StringName> for Class {
 
 impl HasParent<&TrueName> for Class {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
-        Ok(&self.name == name || self.parents
+        Ok(&self.name == name
+            || self
+            .parents
             .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos).map(|res| res || p == name))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
             .any(|b| *b))
@@ -90,31 +95,54 @@ impl HasParent<&Name> for Class {
             return Ok(true);
         }
 
-        let res: Vec<bool> = name
-            .names()
-            .map(|true_name| self.has_parent(&true_name, ctx, pos))
+        let names = name.as_direct("Name must be string", pos)?;
+
+        let parent_names: Vec<StringName> = self
+            .parents
+            .iter()
+            .map(|true_name| true_name.as_direct("Has parent", pos))
             .collect::<Result<_, _>>()?;
-        Ok(res.iter().all(|b| *b))
+
+        let parent_classes: Vec<Class> =
+            parent_names.iter().map(|name| ctx.class(name, pos)).collect::<Result<_, _>>()?;
+
+        for name in names {
+            let res = parent_classes
+                .iter()
+                .map(|pc| pc.has_parent(&name, ctx, pos))
+                .collect::<Result<Vec<bool>, _>>()?;
+            if res.iter().any(|a| *a) {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
     }
 }
 
 impl Hash for Class {
-    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
 }
 
 impl PartialEq for Class {
-    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl Display for Class {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result { write!(f, "{}", self.name) }
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
-impl TryFrom<(&GenericClass, &HashMap<String, TrueName>, &Position)> for Class {
+impl TryFrom<(&GenericClass, &HashMap<Name, Name>, &Position)> for Class {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericClass, &HashMap<String, TrueName>, &Position)
+        (generic, generics, pos): (&GenericClass, &HashMap<Name, Name>, &Position),
     ) -> Result<Self, Self::Error> {
         let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
         let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
@@ -194,6 +222,7 @@ pub fn concrete_to_python(name: &str) -> String {
         ENUM_PRIMITIVE => String::from(python::ENUM_PRIMITIVE),
         COMPLEX_PRIMITIVE => String::from(python::COMPLEX_PRIMITIVE),
 
+        COLLECTION => String::from(python::COLLECTION),
         RANGE => String::from(python::RANGE),
         SLICE => String::from(python::SLICE),
         SET => String::from(python::SET),
@@ -201,6 +230,6 @@ pub fn concrete_to_python(name: &str) -> String {
 
         NONE => String::from(python::NONE),
         EXCEPTION => String::from(python::EXCEPTION),
-        other => String::from(other)
+        other => String::from(other),
     }
 }

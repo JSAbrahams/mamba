@@ -102,7 +102,7 @@ impl Environment {
             if old == var { return self.get_var(new); }
         }
 
-        self.vars.get(var).cloned().map(|res| res)
+        self.vars.get(var).cloned()
     }
 
     /// Union between two environments

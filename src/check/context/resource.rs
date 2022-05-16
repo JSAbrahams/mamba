@@ -21,9 +21,9 @@ impl Context {
         let python_dir = resource("std");
         let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
 
-        let classes = classes.union(&py_types).cloned().collect();
-        let functions = functions.union(&py_functions).cloned().collect();
-        let fields = fields.union(&py_fields).cloned().collect();
+        let classes: HashSet<GenericClass> = classes.union(&py_types).cloned().collect();
+        let functions: HashSet<GenericFunction> = functions.union(&py_functions).cloned().collect();
+        let fields: HashSet<GenericField> = fields.union(&py_fields).cloned().collect();
 
         Ok(Context { classes, functions, fields })
     }
