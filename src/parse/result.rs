@@ -6,14 +6,14 @@ use std::path::PathBuf;
 use crate::check::context::clss;
 use crate::common::position::Position;
 use crate::parse::ast::AST;
+use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
 use crate::parse::lex::token::Token;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
-pub type ParseResult<T = Box<AST>> = std::result::Result<T, ParseErr>;
-pub type ParseResults =
-std::result::Result<Vec<(AST, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
+pub type ParseResult<T = Box<AST>> = Result<T, ParseErr>;
+pub type ParseResults = Result<Vec<(AST, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {
@@ -60,6 +60,18 @@ impl ParseErr {
             causes: self.causes,
             source: source.clone(),
             path: path.clone(),
+        }
+    }
+}
+
+impl From<LexErr> for ParseErr {
+    fn from(lex_err: LexErr) -> Self {
+        ParseErr {
+            position: Position::from(&lex_err.pos),
+            msg: lex_err.msg,
+            source: lex_err.source,
+            path: lex_err.path,
+            causes: vec![],
         }
     }
 }

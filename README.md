@@ -20,14 +20,12 @@
     <br/>
     <a href="https://github.com/JSAbrahams/mamba/milestones">
     <img src="https://img.shields.io/github/milestones/open/JSAbrahams/mamba?style=for-the-badge" alt="Active milestones"/>
-    <a/>
+    </a>
 </p>
 
-<h1 align="center">
-    Mamba
-</h1>
+<h1 align="center">Mamba</h1>
 
-This is the Mamba programming language.
+This is the Mamba programming language. 
 Mamba is like Python, but with a few key features:
 
 - Strict static typing rules, but with type inference so it doesn't get in the way too much
@@ -198,11 +196,11 @@ def factorial(x: PosInt) -> PosInt => match x
     n => n * factorial(n - 1)
 ```
 
-In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int` or `String`. 
-During execution, a check is done to verify that the variable does conform to the requirements of the refined type. 
-If it does not, an exception is raised.
+In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int`
+or `String`. During execution, a check is done to verify that the variable does conform to the requirements of the
+refined type. If it does not, an exception is raised.
 
-Type refinement allows us to to some additional things:
+Type refinement allows us to do some additional things:
 
 - It allows us to further specify the domain or co-domain of a function
 - It allows us to explicitly name the possible states of an object. This means that we don't constantly have to check
@@ -289,53 +287,13 @@ print("a has value {a}.")
 If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
 See the sections above for examples where we don't handle errors and simply pass them on using `raise`.
 
-## Structure
-
-The transpiler can be split up into three distinct stages: parsing of the input, checking the input, and converting the
-input to Python code.
-
-### Lexer and Parser: String to AST
-
-Convert a string of characters to a string of tokens.
-For each token we store the starting position within the file and its width.
-This information is used when generating error messages in this and consecutive stages.
-
-During this stage, errors are raised if we encounter an illegal character.
-We then convert the list of tokens to an Abstract Syntax Tree (AST) based on the pre-defined grammar of the language.
-
-During this stage syntax errors are raised if we encounter an illegal strings of tokens.
-I.e. a list of tokens that does not conform to the grammar of the language.
-A lex error is thrown if something goes wrong during the lexing stage.
-
-### Type checking
-
-Check that the AST is correctly formed, beyond what the parser can check.
-We also verify that we only call methods which are members of an object's class and that functions are used properly, which are imported.
-We do mutability checks, that we only call variables which are initalized, and that functions receive only types they expect (at the very least an expression which may be evaluated).
-More complex language features are also type checked.
-
-This stage generates type errors, and contains the bulk of applicationl logic.
-We do type checking before desugaring to improve the quality of error messages.
-
-### Desugar to Python
-
-Convert the AST to a simpler core language which looks similar to Python.
-This internal language is then again converted to a string which represents Python code.
-All erros generated here are either indicative of (1) a language construct which is not yet implemented (fully) or (2) an internal error.
-
-Note that in future, the type checker should annotate the tree such that each node has a type.
-This will allow us to add type hints to all Python code we output, and to perhaps also more easily desugar more complex language construts (such
-as classes).
-
 ## 💻 The Command Line Interface
-
-### Usage
 
 ```
 mamba [FLAGS] [OPTIONS]
 ```
 
-### FLAGS
+## FLAGS
 
 ```
 -d, --debug             Add line numbers to log statements
@@ -350,7 +308,7 @@ mamba [FLAGS] [OPTIONS]
 -V, --version           Prints version information
 ```
 
-### Options
+## Options
 
 ```
 -i, --input <INPUT>      Input file or directory.
@@ -364,7 +322,7 @@ mamba [FLAGS] [OPTIONS]
 
 You can type `mamba -help` for a message containing roughly the above information.
 
-## 👥 Contributing
+# 👥 Contributing
 
 Before submitting your first issue or pull request, please take the time to read both
 our [contribution guidelines](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md).

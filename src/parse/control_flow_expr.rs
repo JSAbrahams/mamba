@@ -93,14 +93,13 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
-    use crate::parse::lex::tokenize;
     use crate::parse::result::ParseErr;
     use crate::test_util::resource_content;
 
     #[test]
     fn if_else_verify() {
         let source = String::from("if a then c else d");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (cond, then, el) = match &statements.first().expect("script empty.").node {
             Node::IfElse { cond, then, el } => (cond, then, el),
@@ -115,7 +114,7 @@ mod test {
     #[test]
     fn match_verify() {
         let source = String::from("match a\n    a => b\n    c => d");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (cond, cases) = match &statements.first().expect("script empty.").node {
             Node::Match { cond, cases } => (cond.clone(), cases.clone()),
@@ -148,7 +147,7 @@ mod test {
     #[test]
     fn if_expression() -> Result<(), ParseErr> {
         let source = String::from("if a then\n    b\n");
-        let ast = parse_direct(&tokenize(&source).unwrap())?;
+        let ast = parse_direct(&source)?;
 
         let (cond, then, el) = match ast.first().map(|a| &a.node) {
             Some(Node::IfElse { cond, then, el }) => (cond, then, el.clone()),
@@ -169,7 +168,7 @@ mod test {
     #[test]
     fn if_else_expression() -> Result<(), ParseErr> {
         let source = String::from("if a then\n    b\nelse\n    c");
-        let ast = parse_direct(&tokenize(&source).unwrap())?;
+        let ast = parse_direct(&source)?;
 
         let (cond, then, el) = match ast.first().map(|a| &a.node) {
             Some(Node::IfElse { cond, then, el }) => (cond, then, el.clone()),
@@ -194,30 +193,30 @@ mod test {
     #[test]
     fn if_then_missing_body() {
         let source = String::from("if a then b else");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn match_missing_condition() {
         let source = String::from("match\n    a => b");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn match_missing_arms() {
         let source = String::from("match a with\n    ");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn match_missing_arms_no_newline() {
         let source = String::from("match a");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn match_statements() {
         let source = resource_content(true, &["control_flow"], "match.mamba");
-        parse(&tokenize(&source).unwrap()).unwrap();
+        parse(&source).unwrap();
     }
 }

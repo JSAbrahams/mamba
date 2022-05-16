@@ -75,7 +75,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator) -> ParseResult {
     match &id.node {
         Node::ExpressionType { ty: Some(_), .. } | Node::TypeTup { .. } =>
             parse_variable_def_id(&id, it),
-        Node::ExpressionType { expr, ty: None, mutable } => it.peek(
+        Node::ExpressionType { expr, ty, mutable } if *ty == None => it.peek(
             &|it, lex| match lex.token {
                 Token::LRBrack => parse_fun_def(&id, false, it),
                 _ => parse_variable_def_id(&id, it)
@@ -221,7 +221,6 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
-    use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -250,7 +249,7 @@ mod test {
     #[test]
     fn empty_definition_verify() {
         let source = String::from("def a");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, _type, expression, forward) = unwrap_definition!(ast);
 
         assert_eq!(mutable, true);
@@ -263,7 +262,7 @@ mod test {
     #[test]
     fn definition_verify() {
         let source = String::from("def a := 10");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert_eq!(mutable, true);
@@ -280,7 +279,7 @@ mod test {
     #[test]
     fn mutable_definition_verify() {
         let source = String::from("def fin a := 10");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert_eq!(mutable, false);
@@ -297,7 +296,7 @@ mod test {
     #[test]
     fn private_definition_verify() {
         let source = String::from("def a := 10");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert_eq!(mutable, true);
@@ -314,7 +313,7 @@ mod test {
     #[test]
     fn typed_definition_verify() {
         let source = String::from("def a: Object := 10");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         let type_id = match ty {
@@ -339,7 +338,7 @@ mod test {
     #[test]
     fn forward_empty_definition_verify() {
         let source = String::from("def a forward b, c");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -354,7 +353,7 @@ mod test {
     #[test]
     fn forward_definition_verify() {
         let source = String::from("def a := MyClass forward b, c");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (mutable, id, ty, expression, forward) = unwrap_definition!(ast);
 
         assert!(mutable);
@@ -369,7 +368,7 @@ mod test {
     #[test]
     fn function_definition_verify() {
         let source = String::from("def f(fin b: Something, vararg c) => d");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, raises, body) = unwrap_func_definition!(ast);
 
         assert!(!pure);
@@ -416,7 +415,7 @@ mod test {
     #[test]
     fn function_no_args_definition_verify() {
         let source = String::from("def f() => d");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
         assert!(!pure);
@@ -433,7 +432,7 @@ mod test {
     #[test]
     fn function_pure_definition_verify() {
         let source = String::from("def pure f() => d");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (pure, id, args, ret, _, body) = unwrap_func_definition!(ast);
 
         assert!(pure);
@@ -450,7 +449,7 @@ mod test {
     #[test]
     fn function_definition_with_literal_verify() {
         let source = String::from("def f(x, vararg b: Something) => d");
-        let ast = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse_direct(&source).unwrap();
         let (pure, id, fun_args, ret, _, body) = unwrap_func_definition!(ast);
 
         assert!(!pure);
@@ -496,61 +495,61 @@ mod test {
     #[test]
     fn def_mut_private_wrong_order() {
         let source = String::from("def mut private a ");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn def_missing_id() {
         let source = String::from("def");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn def_fun_no_closing_brack() {
         let source = String::from("def f(a");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn def_fun_missing_arrow() {
         let source = String::from("def f(a) a * 10");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn def_fun_missing_brackets() {
         let source = String::from("def f => print a");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
 
     #[test]
     fn handle_no_branches() {
         let source = String::from("def a handle");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn handle_no_indentation() {
         let source = String::from("def a handle\nerr: Err => b");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn function_definitions() -> ParseResult<()> {
         let source = resource_content(true, &["function"], "definition.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn function_calling() -> ParseResult<()> {
         let source = resource_content(true, &["function"], "calls.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn type_annotation_in_tuple() {
         let source = resource_content(false, &["syntax"], "type_annotation_in_tuple.mamba");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 }

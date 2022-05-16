@@ -98,7 +98,6 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
 #[cfg(test)]
 mod test {
     use crate::parse::ast::Node;
-    use crate::parse::lex::tokenize;
     use crate::parse::parse;
     use crate::parse::result::{ParseErr, ParseResult};
     use crate::test_util::resource_content;
@@ -106,7 +105,7 @@ mod test {
     #[test]
     fn import_verify() {
         let source = String::from("import d");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let (import, _as) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -124,7 +123,7 @@ mod test {
     #[test]
     fn import_as_verify() {
         let source = String::from("import d as e");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let (import, _as) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -143,7 +142,7 @@ mod test {
     #[test]
     fn from_import_as_verify() {
         let source = String::from("from c import d,f as e,g");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let (from, import, _as) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -168,7 +167,7 @@ mod test {
     #[test]
     fn parse_class_alias() {
         let source = String::from("class MyErr1: Exception(\"Something went wrong\")");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let (ty, args, parents, body) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -212,37 +211,37 @@ mod test {
     #[test]
     fn parse_class() -> ParseResult<()> {
         let source = resource_content(true, &["class"], "types.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn parse_imports_class() -> ParseResult<()> {
         let source = resource_content(true, &["class"], "import.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn single_line_class() {
         let source = String::from("class MyClass");
-        parse(&tokenize(&source).unwrap()).unwrap();
+        parse(&source).unwrap();
     }
 
     #[test]
     fn two_classes_no_newline_after() {
         let source = String::from("class MyClass\nclass MyClass1");
-        parse(&tokenize(&source).unwrap()).unwrap();
+        parse(&source).unwrap();
     }
 
     #[test]
     fn two_classes_newline_after() {
         let source = String::from("class MyClass\nclass MyClass1\n");
-        parse(&tokenize(&source).unwrap()).unwrap();
+        parse(&source).unwrap();
     }
 
     #[test]
     fn class_with_single_line_body_no_newline() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10";
-        parse(&tokenize(&source).unwrap())
+        parse(&source)
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
@@ -250,7 +249,7 @@ mod test {
     #[test]
     fn class_with_single_line_body_newline() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10\n";
-        parse(&tokenize(&source).unwrap())
+        parse(&source)
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
@@ -258,7 +257,7 @@ mod test {
     #[test]
     fn class_with_body_class_right_after() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
-        parse(&tokenize(&source).unwrap())
+        parse(&source)
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }

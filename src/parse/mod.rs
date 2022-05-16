@@ -1,11 +1,10 @@
 use std::path::PathBuf;
 
-use lex::token::Lex;
-
 #[cfg(test)]
 use crate::parse::ast::{AST, Node};
 use crate::parse::iterator::LexIterator;
-use crate::parse::result::{ParseResult, ParseResults};
+use crate::parse::lex::tokenize;
+use crate::parse::result::{ParseErr, ParseResult, ParseResults};
 
 pub mod ast;
 
@@ -23,63 +22,30 @@ mod definition;
 mod expr_or_stmt;
 mod expression;
 mod file;
+mod lex;
 mod operation;
 mod statement;
 mod ty;
-pub mod lex;
 
-pub type ParseInput = (Vec<Lex>, Option<String>, Option<PathBuf>);
+pub type ParseInput = (String, Option<PathBuf>);
 
-/// Parse input, which is a slice of [TokenPos](mamba::lexer::token::TokenPos).
-///
-/// Should never panic.
-///
-/// # Examples
-///
-/// ```
-/// # use mamba::parse::lex::token::Token;
-/// # use mamba::parse::lex::token::Lex;
-/// # use mamba::parse::parse;
-/// # use mamba::common::position::CaretPos;
-/// let def = Lex::new(&CaretPos::new(1, 1), Token::Def);
-/// let id = Lex::new(&CaretPos::new(1, 4), Token::Id(String::from("b")));
-/// let assign = Lex::new(&CaretPos::new(1, 6), Token::Assign);
-/// let number = Lex::new(&CaretPos::new(1, 9), Token::Int(String::from("9")));
-///
-/// let result = parse(&[def, id, assign, number]);
-/// assert_eq!(result.is_ok(), true);
-/// ```
-///
-/// # Failures
-///
-/// If we receive an illegal sequence of tokens it fails.
-///
-/// ```
-/// # use mamba::parse::lex::token::Token;
-/// # use mamba::parse::lex::token::Lex;
-/// # use mamba::parse::parse;
-/// # use mamba::common::position::CaretPos;
-/// let def = Lex::new(&CaretPos::new(0, 0), Token::Def);
-/// let id = Lex::new(&CaretPos::new(0, 0), Token::Id(String::from("b")));
-/// let number = Lex::new(&CaretPos::new(0, 0), Token::Int(String::from("9")));
-///
-/// let result = parse(&[def, id, number]);
-/// assert_eq!(result.is_err(), true);
-/// ```
-pub fn parse(input: &[Lex]) -> ParseResult {
-    file::parse_file(&mut LexIterator::new(input.iter().peekable()))
+/// Parse input, which is a string.
+pub fn parse(input: &str) -> ParseResult {
+    let tokens = tokenize(input).map_err(ParseErr::from)?;
+    file::parse_file(&mut LexIterator::new(tokens.iter().peekable()))
 }
 
 pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
-    let inputs: Vec<_> = inputs
+    let results: Vec<(ParseResult, Option<String>, Option<PathBuf>)> = inputs
         .iter()
-        .map(|(ast, source, path)| (parse(ast), source, path))
+        .map(|(source, path)| (parse(source), source, path))
         .map(|(result, source, path)| {
-            (result.map_err(|err| err.into_with_source(source, path)), source.clone(), path.clone())
+            let result = result.map_err(|err| err.into_with_source(&Some(source.clone()), path));
+            (result, Some(source.clone()), path.clone())
         })
         .collect();
 
-    let (oks, errs): (Vec<_>, Vec<_>) = inputs.iter().partition(|(res, ..)| res.is_ok());
+    let (oks, errs): (Vec<_>, Vec<_>) = results.iter().partition(|(res, ..)| res.is_ok());
     if errs.is_empty() {
         Ok(oks
             .iter()
@@ -91,16 +57,15 @@ pub fn parse_all(inputs: &[ParseInput]) -> ParseResults {
 }
 
 #[cfg(test)]
-fn parse_direct(input: &[Lex]) -> ParseResult<Vec<AST>> {
+fn parse_direct(input: &str) -> ParseResult<Vec<AST>> {
     match parse(input)?.node {
         Node::File { statements, .. } => Ok(statements),
-        _ => Ok(vec![])
+        _ => Ok(vec![]),
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::parse::lex::tokenize;
     use crate::parse::parse;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
@@ -108,6 +73,6 @@ mod test {
     #[test]
     fn parse_empty_file() -> ParseResult<()> {
         let source = resource_content(true, &[], "empty_file.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 }

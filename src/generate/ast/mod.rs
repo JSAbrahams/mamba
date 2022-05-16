@@ -1,41 +1,41 @@
-use crate::core::construct::Core;
+use crate::generate::ast::node::Core;
 
-pub mod construct;
+pub mod node;
 
-/// Convert [Core](mamba::core::construct::Core) to a String which represent
-/// python source code.
-///
-/// Takes [Core](mamba::core::construct::Core) nodes as-is, meaning that this
-/// should never panic, unless a certain core construct can still not be
-/// converted.
-///
-/// # Examples
-///
-/// Writing a Return statement:
-///
-/// ```
-/// # use mamba::core::construct::Core;
-/// # use mamba::core::to_source;
-/// let core_node = Core::Return { expr: Box::from(Core::None) };
-/// let py_source = to_source(&core_node);
-///
-/// assert_eq!(py_source, "return None\n");
-/// ```
-///
-/// Writing an If statement:
-///
-/// ```
-/// # use mamba::core::construct::Core;
-/// # use mamba::core::to_source;
-/// let core_node = Core::IfElse {
-///     cond:  Box::from(Core::Id { lit: String::from("a") }),
-///     then:  Box::from(Core::Str { string: String::from("b") }),
-///     el: Box::from(Core::Str { string: String::from("c") })
-/// };
-///
-/// assert_eq!(to_source(&core_node), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
-/// ```
-pub fn to_source(core: &Core) -> String { format!("{}\n", to_py(core, 0)) }
+impl Core {
+    /// Convert [Core](mamba::generate.ast::construct::Core) to a String which represent
+    /// python source code.
+    ///
+    /// Takes [Core](mamba::generate.ast::construct::Core) nodes as-is, meaning that this
+    /// should never panic, unless a certain generate.ast construct can still not be
+    /// converted.
+    ///
+    /// # Examples
+    ///
+    /// Writing a Return statement:
+    ///
+    /// ```
+    /// # use mamba::generate::ast::node::Core;
+    /// let core_node = Core::Return { expr: Box::from(Core::None) };
+    /// let py_source = core_node.to_source();
+    ///
+    /// assert_eq!(py_source, "return None\n");
+    /// ```
+    ///
+    /// Writing an If statement:
+    ///
+    /// ```
+    /// # use mamba::generate::ast::node::Core;
+    /// let core_node = Core::IfElse {
+    ///  cond:  Box::from(Core::Id { lit: String::from("a") }),
+    /// then:  Box::from(Core::Str { string: String::from("b") }),
+    /// el: Box::from(Core::Str { string: String::from("c") })
+    /// };
+    ///
+    /// assert_eq!(core_node.to_source(), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
+    /// ```
+    pub fn to_source(&self) -> String { format!("{}\n", to_py(self, 0)) }
+}
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
