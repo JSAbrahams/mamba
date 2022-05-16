@@ -14,9 +14,9 @@ The general structure is as follows:
   This is step (1) and (2) above.
 - `check`: Checks that this AST is well typed. Errors if it is not well-typed. This is step (3) above, and is where the
   bulk of the application logic is.
-- `convert`: Converts AST to Python string. Errors if desugaring unsupported language construct. Also errors in certain
-  situations if AST not well-typed, which should've been caught beforehand by the `check` stage. This is step (4) and (
-  5) above.
+- `generate`: Converts AST to Python string. Errors if converting unsupported language construct. Also errors in certain
+  situations if AST not well-typed, which should've been caught beforehand by the `check` stage. This is step (4)
+  and (5) above.
 - `pipeline`: End-to-end pipeline where the compiler attempts to transpile Mamba files within a directory. This brings
   all of the above together.
 

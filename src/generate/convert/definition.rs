@@ -1,14 +1,14 @@
-use crate::convert::ast::node::Core;
-use crate::convert::desugar::common::desugar_vec;
-use crate::convert::desugar::desugar_node;
-use crate::convert::desugar::state::{Imports, State};
-use crate::convert::result::ConvertResult;
+use crate::generate::ast::node::Core;
+use crate::generate::convert::common::convert_vec;
+use crate::generate::convert::convert_node;
+use crate::generate::convert::state::{Imports, State};
+use crate::generate::result::GenResult;
 use crate::parse::ast::{AST, Node};
 
-pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> ConvertResult {
+pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
         Node::VariableDef { var, expr: expression, ty, .. } => {
-            let var = desugar_node(var, imp, &state.tuple_literal())?;
+            let var = convert_node(var, imp, &state.tuple_literal())?;
             let state = state.in_tup(match var.clone() {
                 Core::Tuple { elements } => elements.len(),
                 _ => 1,
@@ -19,11 +19,11 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Conver
                     vararg: false,
                     var: Box::from(var),
                     ty: match ty {
-                        Some(ty) => Some(Box::from(desugar_node(ty, imp, &state)?)),
+                        Some(ty) => Some(Box::from(convert_node(ty, imp, &state)?)),
                         None => None,
                     },
                     default: match expression {
-                        Some(expression) => Some(Box::from(desugar_node(expression, imp, &state)?)),
+                        Some(expression) => Some(Box::from(convert_node(expression, imp, &state)?)),
                         None => None,
                     },
                 }
@@ -32,12 +32,12 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Conver
                     var: Box::from(var.clone()),
                     ty: match ty {
                         Some(ty) if !matches!(var, Core::TupleLiteral { .. }) => {
-                            Some(Box::from(desugar_node(ty, imp, &state)?))
+                            Some(Box::from(convert_node(ty, imp, &state)?))
                         }
                         _ => None,
                     },
                     expr: match (var, expression) {
-                        (_, Some(expr)) => Some(Box::from(desugar_node(expr, imp, &state)?)),
+                        (_, Some(expr)) => Some(Box::from(convert_node(expr, imp, &state)?)),
                         (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
                             elements: vec![Core::None; elements.len()],
                         })),
@@ -47,17 +47,17 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Conver
             }
         }
         Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => Core::FunDef {
-            id: Box::from(desugar_node(id, imp, state)?),
-            arg: desugar_vec(fun_args, imp, state)?,
+            id: Box::from(convert_node(id, imp, state)?),
+            arg: convert_vec(fun_args, imp, state)?,
             ty: match ret_ty {
-                Some(ret_ty) => Some(Box::from(desugar_node(ret_ty, imp, state)?)),
+                Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state)?)),
                 None => None,
             },
             body: if state.interface {
                 Box::from(Core::Pass)
             } else {
                 Box::from(match expression {
-                    Some(expr) => desugar_node(expr, imp, &state.expand_ty(true))?,
+                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true))?,
                     None => Core::Pass,
                 })
             },
@@ -69,8 +69,8 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Conver
 #[cfg(test)]
 mod test {
     use crate::common::position::Position;
-    use crate::convert::ast::node::Core;
-    use crate::convert::convert;
+    use crate::generate::ast::node::Core;
+    use crate::generate::gen;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
 
@@ -92,7 +92,7 @@ mod test {
         let right = to_pos!(Node::Id { lit: String::from("other") });
         let reassign = to_pos!(Node::Reassign { left, right });
 
-        let (left, right) = match convert(&reassign) {
+        let (left, right) = match gen(&reassign) {
             Ok(Core::Assign { left, right }) => (left, right),
             other => panic!("Expected reassign but was {:?}", other),
         };
@@ -111,7 +111,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match convert(&definition) {
+        let (var, ty, expr) = match gen(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -131,7 +131,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match convert(&definition) {
+        let (var, ty, expr) = match gen(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -159,7 +159,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match convert(&definition) {
+        let (var, ty, expr) = match gen(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -183,7 +183,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match convert(&definition) {
+        let (var, ty, expr) = match gen(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -207,7 +207,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match convert(&definition) {
+        let (var, ty, expr) = match gen(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -245,7 +245,7 @@ mod test {
             body: None
         });
 
-        let (id, args, body) = match convert(&definition) {
+        let (id, args, body) = match gen(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -294,7 +294,7 @@ mod test {
             body: None
         });
 
-        let (id, args, body) = match convert(&definition) {
+        let (id, args, body) = match gen(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -328,7 +328,7 @@ mod test {
             body: Some(to_pos!(Node::Real { lit: String::from("2.4") }))
         });
 
-        let (id, args, body) = match convert(&definition) {
+        let (id, args, body) = match gen(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -351,7 +351,7 @@ mod test {
             body: to_pos!(Node::Str { lit: String::from("this_string"), expressions: vec![] })
         });
 
-        let (args, body) = match convert(&anon_fun) {
+        let (args, body) = match gen(&anon_fun) {
             Ok(Core::AnonFun { args, body }) => (args, body),
             other => panic!("Expected anon fun but got: {:?}.", other),
         };

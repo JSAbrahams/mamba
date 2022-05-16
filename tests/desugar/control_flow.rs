@@ -1,4 +1,4 @@
-use mamba::convert::convert;
+use mamba::generate::gen;
 use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 

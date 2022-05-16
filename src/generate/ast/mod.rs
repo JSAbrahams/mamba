@@ -1,13 +1,13 @@
-use crate::convert::ast::node::Core;
+use crate::generate::ast::node::Core;
 
 pub mod node;
 
 impl Core {
-    /// Convert [Core](mamba::convert.ast::construct::Core) to a String which represent
+    /// Convert [Core](mamba::generate.ast::construct::Core) to a String which represent
     /// python source code.
     ///
-    /// Takes [Core](mamba::convert.ast::construct::Core) nodes as-is, meaning that this
-    /// should never panic, unless a certain convert.ast construct can still not be
+    /// Takes [Core](mamba::generate.ast::construct::Core) nodes as-is, meaning that this
+    /// should never panic, unless a certain generate.ast construct can still not be
     /// converted.
     ///
     /// # Examples
@@ -15,7 +15,7 @@ impl Core {
     /// Writing a Return statement:
     ///
     /// ```
-    /// # use mamba::convert::ast::node::Core;
+    /// # use mamba::generate::ast::node::Core;
     /// let core_node = Core::Return { expr: Box::from(Core::None) };
     /// let py_source = core_node.to_source();
     ///
@@ -25,7 +25,7 @@ impl Core {
     /// Writing an If statement:
     ///
     /// ```
-    /// # use mamba::convert::ast::node::Core;
+    /// # use mamba::generate::ast::node::Core;
     /// let core_node = Core::IfElse {
     ///  cond:  Box::from(Core::Id { lit: String::from("a") }),
     /// then:  Box::from(Core::Str { string: String::from("b") }),
@@ -34,7 +34,7 @@ impl Core {
     ///
     /// assert_eq!(core_node.to_source(), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
     /// ```
-    pub fn to_source(&self) -> String { format!("{}\n", to_py(&self, 0)) }
+    pub fn to_source(&self) -> String { format!("{}\n", to_py(self, 0)) }
 }
 
 fn to_py(core: &Core, ind: usize) -> String {

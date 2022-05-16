@@ -2,20 +2,17 @@
     <img src="../../image/logo.svg" height="150" alt="Mamba logo"/>
 </p>
 
-# Convert
+# Generate
 
-Converts `AST` to Python code.
-
-The input `AST` is converted to a special Python-like AST. This is then in turn converted to a String which should be a
-properly formatted Python file.
-
-We get an error if:
+Converts `AST` to Python code. Errors if:
 
 - `AST` is not what we expect, which is indicative of an implementation error within the type checker which should catch
   this.
-- We are desugaring a language construct which has not yet been (fully) implemented.
+- We are converting a language construct which has not yet been (fully) implemented.
 
-## Desugar
+## Convert
+
+First step, converts `AST` to a simpler internal `Core` representation, which is closer to the Python language.
 
 ### State And Imports
 
@@ -26,3 +23,6 @@ Imports are also kept track of and added to the final output. This includes Mamb
 explicitly imported in Python. I.e. tuples are imported as `from typing import Tuples` when one annotates the output.
 
 ## Core
+
+A set of simple `Core` nodes, which are very close to Python constructs. These may almost directly be converted to a
+Python string. This step also keeps track of code blocks and relevant indentation and dedents.

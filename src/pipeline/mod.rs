@@ -3,7 +3,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::check::check_all;
-use crate::convert::convert_all;
+use crate::generate::gen_all;
 use crate::parse::lex::tokenize_all;
 use crate::parse::parse_all;
 
@@ -99,7 +99,7 @@ pub fn mamba_to_python(
     })?;
     trace!("Checked {} files", modified_trees.len());
 
-    let core_tree = convert_all(modified_trees.as_slice()).map_err(|errs| {
+    let core_tree = gen_all(modified_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("unimplemented"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
