@@ -34,9 +34,9 @@ impl Display for StringName {
 }
 
 impl CollectionType for StringName {
+    /// Checks if this type has a List\[Int\] as parent, and returns Int if it does.
     fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
         if let Ok(clss) = ctx.class(self, &Position::default()) {
-            // Must either return type as generic for matching, or check type (as here).
             let generics = &[Name::from(clss::INT_PRIMITIVE)];
             let col_string_name = StringName::new(clss::LIST, generics);
 
@@ -92,8 +92,14 @@ impl StringName {
     ) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&Name::from(self)) {
             let msg = format!("{} is not a DirectName", name);
-            for string_name in name.as_direct(&msg, pos)? {
-                return Ok(string_name);
+            let string_names = name.as_direct(&msg, pos)?;
+            if string_names.len() > 1 {
+                let msg = format!("Cannot substitute type union {}", name);
+                return Err(vec![TypeErr::new(pos, &msg)])
+            }
+
+            if let Some(string_name) = string_names.iter().next() {
+                return Ok(string_name.clone());
             }
 
             let msg = format!("{} incorrect DirectName", name);

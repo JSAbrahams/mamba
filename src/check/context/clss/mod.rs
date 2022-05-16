@@ -25,6 +25,7 @@ pub const BOOL_PRIMITIVE: &str = "Bool";
 pub const ENUM_PRIMITIVE: &str = "Enum";
 pub const COMPLEX_PRIMITIVE: &str = "Complex";
 
+pub const COLLECTION: &str = "Collection";
 pub const RANGE: &str = "Range";
 pub const SLICE: &str = "Slice";
 pub const SET: &str = "Set";
@@ -221,6 +222,7 @@ pub fn concrete_to_python(name: &str) -> String {
         ENUM_PRIMITIVE => String::from(python::ENUM_PRIMITIVE),
         COMPLEX_PRIMITIVE => String::from(python::COMPLEX_PRIMITIVE),
 
+        COLLECTION => String::from(python::COLLECTION),
         RANGE => String::from(python::RANGE),
         SLICE => String::from(python::SLICE),
         SET => String::from(python::SET),

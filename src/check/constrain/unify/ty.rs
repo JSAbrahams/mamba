@@ -163,7 +163,7 @@ pub fn unify_type(
         (l_exp, r_exp) => match (l_exp, r_exp) {
             (Collection { ty }, Type { name }) | (Type { name }, Collection { ty }) => {
                 if let Some(col_ty) = name.collection_type(ctx)? {
-                    let expect = Expect::Type { name: col_ty.clone() };
+                    let expect = Expect::Type { name: col_ty };
                     constraints.push("collection type", ty, &Expected::new(&left.pos, &expect));
                     unify_link(constraints, ctx, total + 1)
                 } else {
