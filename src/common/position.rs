@@ -97,6 +97,12 @@ impl CaretPos {
     pub fn newline(self) -> CaretPos { CaretPos { line: self.line + 1, pos: 1 } }
 }
 
+impl From<&CaretPos> for Position {
+    fn from(caret_pos: &CaretPos) -> Self {
+        Position::new(&caret_pos.clone(), &caret_pos.clone())
+    }
+}
+
 impl Default for CaretPos {
     fn default() -> Self { CaretPos { line: 1, pos: 1 } }
 }

@@ -60,14 +60,13 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
-    use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
     #[test]
     fn for_statement_verify() {
         let source = String::from("for a in c do d");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (expr, collection, body) = match &statements.first().expect("script empty.").node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
@@ -82,7 +81,7 @@ mod test {
     #[test]
     fn for_range_step_verify() {
         let source = String::from("for a in c .. d .. e do f");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
@@ -106,7 +105,7 @@ mod test {
     #[test]
     fn for_range_incl_verify() {
         let source = String::from("for a in c ..= d do f");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (expr, col, body) = match &statements.first().expect("script empty.").node {
             Node::For { expr, col, body } => (expr.clone(), col.clone(), body.clone()),
@@ -130,7 +129,7 @@ mod test {
     #[test]
     fn if_verify() {
         let source = String::from("if a then c");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (cond, then, el) = match &statements.first().expect("script empty.").node {
             Node::IfElse { cond, then, el } => (cond, then, el),
@@ -145,7 +144,7 @@ mod test {
     #[test]
     fn if_with_block_verify() {
         let source = String::from("if a then\n    c\n    d");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (cond, then, el) = match &statements.first().expect("script empty.").node {
             Node::IfElse { cond, then, el } => (cond.clone(), then.clone(), el.clone()),
@@ -168,7 +167,7 @@ mod test {
     #[test]
     fn while_verify() {
         let source = String::from("while a do d");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (cond, body) = match &statements.first().expect("script empty.").node {
             Node::While { cond, body } => (cond.clone(), body.clone()),
@@ -182,48 +181,48 @@ mod test {
     #[test]
     fn for_missing_do() {
         let source = String::from("for a in c d");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn for_missing_body() {
         let source = String::from("for a in c");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn if_missing_then() {
         let source = String::from("if a b");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn if_missing_body() {
         let source = String::from("if a then");
-        parse_direct(&tokenize(&source).unwrap()).unwrap_err();
+        parse_direct(&source).unwrap_err();
     }
 
     #[test]
     fn while_statements() -> ParseResult<()> {
         let source = resource_content(true, &["control_flow"], "while.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn assigns_and_while() {
         let source = resource_content(false, &["syntax"], "assign_and_while.mamba");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn for_statements() {
         let source = resource_content(true, &["control_flow"], "for_statements.mamba");
-        parse(&tokenize(&source).unwrap()).unwrap();
+        parse(&source).unwrap();
     }
 
     #[test]
     fn if_stmt() {
         let source = resource_content(true, &["control_flow"], "if.mamba");
-        parse(&tokenize(&source).unwrap()).unwrap();
+        parse(&source).unwrap();
     }
 }

@@ -6,8 +6,6 @@ use crate::common::position::CaretPos;
 use crate::parse::lex::token::{Lex, Token};
 
 pub type LexResult<T = Vec<Lex>> = std::result::Result<T, LexErr>;
-pub type LexResults =
-std::result::Result<Vec<(Vec<Lex>, Option<String>, Option<PathBuf>)>, Vec<LexErr>>;
 
 #[derive(Debug, Clone)]
 pub struct LexErr {

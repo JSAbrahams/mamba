@@ -2,7 +2,6 @@ use std::fmt::{Debug, Formatter};
 
 use mamba::check::check_all;
 use mamba::check::result::TypeErr;
-use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 
 pub mod invalid;
@@ -13,7 +12,7 @@ struct CheckTestErr(Vec<TypeErr>);
 type CheckTestRet = Result<(), CheckTestErr>;
 
 fn check_test(source: &String) -> CheckTestRet {
-    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)])
+    check_all(&[(*parse(&source).unwrap(), None, None)])
         .map(|_| ())
         .map_err(|errs| CheckTestErr(errs.into_iter().map(|err| {
             err.into_with_source(&Some(source.clone()), &None)
