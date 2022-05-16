@@ -2,7 +2,7 @@
     <img src="../../image/logo.svg" height="150" alt="Mamba logo"/>
 </p>
 
-# Desugar
+# Convert
 
 Converts `AST` to Python code.
 
@@ -15,6 +15,8 @@ We get an error if:
   this.
 - We are desugaring a language construct which has not yet been (fully) implemented.
 
+## Desugar
+
 ### State And Imports
 
 There is not a one-to-one mapping between Mamba and Python code. As such, the desugar stage maintains state as it
@@ -23,4 +25,4 @@ traverses the AST. This is to desugar certain language constructs in a certain m
 Imports are also kept track of and added to the final output. This includes Mamba built-in types which have to be
 explicitly imported in Python. I.e. tuples are imported as `from typing import Tuples` when one annotates the output.
 
-
+## Core
