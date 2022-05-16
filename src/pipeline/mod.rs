@@ -3,8 +3,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::check::check_all;
-use crate::desugar::ast::to_source;
-use crate::desugar::desugar_all;
+use crate::convert::convert_all;
 use crate::parse::lex::tokenize_all;
 use crate::parse::parse_all;
 
@@ -100,12 +99,12 @@ pub fn mamba_to_python(
     })?;
     trace!("Checked {} files", modified_trees.len());
 
-    let core_tree = desugar_all(modified_trees.as_slice()).map_err(|errs| {
+    let core_tree = convert_all(modified_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("unimplemented"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
     trace!("Converted {} checked files to Python", core_tree.len());
 
-    Ok(core_tree.iter().map(|(core, ..)| to_source(core)).collect())
+    Ok(core_tree.iter().map(|(core, ..)| core.to_source()).collect())
 }

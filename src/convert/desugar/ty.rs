@@ -1,14 +1,12 @@
 use crate::check::context::clss::concrete_to_python;
-use crate::desugar::ast::node::Core;
-use crate::desugar::common::desugar_vec;
-use crate::desugar::node::desugar_node;
-use crate::desugar::result::DesugarResult;
-use crate::desugar::state::Imports;
-use crate::desugar::state::State;
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
+use crate::convert::ast::node::Core;
+use crate::convert::desugar::common::desugar_vec;
+use crate::convert::desugar::desugar_node;
+use crate::convert::desugar::state::{Imports, State};
+use crate::convert::result::ConvertResult;
+use crate::parse::ast::{AST, Node};
 
-pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+pub fn desugar_type(ast: &AST, imp: &mut Imports, state: &State) -> ConvertResult {
     Ok(match &ast.node {
         Node::QuestionOp { expr } => {
             imp.add_from_import("typing", "Optional");

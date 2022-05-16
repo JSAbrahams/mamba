@@ -1,14 +1,11 @@
-use crate::desugar::ast::node::Core;
-use crate::desugar::node::desugar_node;
-use crate::desugar::result::DesugarResult;
-use crate::desugar::result::UnimplementedErr;
-use crate::desugar::state::Imports;
-use crate::desugar::state::State;
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
+use crate::convert::ast::node::Core;
+use crate::convert::desugar::desugar_node;
+use crate::convert::desugar::state::{Imports, State};
+use crate::convert::result::{ConvertResult, UnimplementedErr};
+use crate::parse::ast::{AST, Node};
 
 #[allow(clippy::comparison_chain)]
-pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> ConvertResult {
     Ok(match &ast.node {
         Node::IfElse { cond, then, el } => match el {
             Some(el) => Core::IfElse {
@@ -19,7 +16,7 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
             None => Core::If {
                 cond: Box::from(desugar_node(cond, imp, state)?),
                 then: Box::from(desugar_node(then, imp, state)?),
-            }
+            },
         },
         Node::Match { cond, cases } => {
             let expr = Box::from(desugar_node(cond, imp, state)?);
@@ -30,20 +27,22 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
                 match &case.node {
                     Node::Case { cond, body } => match &cond.node {
                         Node::ExpressionType { expr, .. } => match expr.node {
-                            Node::Underscore =>
-                                core_defaults.push(desugar_node(body.as_ref(), imp, state)?),
+                            Node::Underscore => {
+                                core_defaults.push(desugar_node(body.as_ref(), imp, state)?)
+                            }
                             _ => core_cases.push(Core::KeyValue {
                                 key: Box::from(desugar_node(cond.as_ref(), imp, state)?),
                                 value: Box::from(desugar_node(body.as_ref(), imp, state)?),
-                            })
+                            }),
                         },
-                        _ =>
+                        _ => {
                             return Err(UnimplementedErr::new(
                                 ast,
                                 "match case expression as condition (pattern matching)",
-                            )),
+                            ));
+                        }
                     },
-                    other => panic!("Expected case but was {:?}", other)
+                    other => panic!("Expected case but was {:?}", other),
                 }
             }
 
@@ -73,16 +72,15 @@ pub fn desugar_control_flow(ast: &AST, imp: &mut Imports, state: &State) -> Desu
 
         Node::Break => Core::Break,
         Node::Continue => Core::Continue,
-        other => panic!("Expected control flow but was: {:?}.", other)
+        other => panic!("Expected control flow but was: {:?}.", other),
     })
 }
-
 
 #[cfg(test)]
 mod tests {
     use crate::common::position::Position;
-    use crate::desugar::ast::node::Core;
-    use crate::desugar::desugar;
+    use crate::convert::ast::node::Core;
+    use crate::convert::convert;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
 
@@ -104,9 +102,9 @@ mod tests {
         let then = to_pos!(Node::Id { lit: String::from("then") });
         let if_stmt = to_pos!(Node::IfElse { cond, then, el: None });
 
-        let (core_cond, core_then) = match desugar(&if_stmt) {
+        let (core_cond, core_then) = match convert(&if_stmt) {
             Ok(Core::If { cond, then }) => (cond, then),
-            other => panic!("Expected reassign but was {:?}", other)
+            other => panic!("Expected reassign but was {:?}", other),
         };
 
         assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
@@ -120,9 +118,9 @@ mod tests {
         let el = to_pos!(Node::Id { lit: String::from("else") });
         let if_stmt = to_pos!(Node::IfElse { cond, then, el: Some(el) });
 
-        let (core_cond, core_then, core_else) = match desugar(&if_stmt) {
+        let (core_cond, core_then, core_else) = match convert(&if_stmt) {
             Ok(Core::IfElse { cond, then, el }) => (cond, then, el),
-            other => panic!("Expected reassign but was {:?}", other)
+            other => panic!("Expected reassign but was {:?}", other),
         };
 
         assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
@@ -136,9 +134,9 @@ mod tests {
         let body = to_pos!(Node::ENum { num: String::from("num"), exp: String::from("") });
         let while_stmt = to_pos!(Node::While { cond, body });
 
-        let (core_cond, core_body) = match desugar(&while_stmt) {
+        let (core_cond, core_body) = match convert(&while_stmt) {
             Ok(Core::While { cond, body }) => (cond, body),
-            other => panic!("Expected reassign but was {:?}", other)
+            other => panic!("Expected reassign but was {:?}", other),
         };
 
         assert_eq!(*core_cond, Core::Id { lit: String::from("cond") });
@@ -152,9 +150,9 @@ mod tests {
         let body = to_pos!(Node::Id { lit: String::from("body") });
         let for_stmt = to_pos!(Node::For { expr, col, body });
 
-        let (core_expr, core_col, core_body) = match desugar(&for_stmt) {
+        let (core_expr, core_col, core_body) = match convert(&for_stmt) {
             Ok(Core::For { expr, col, body }) => (expr, col, body),
-            other => panic!("Expected for but was {:?}", other)
+            other => panic!("Expected for but was {:?}", other),
         };
 
         assert_eq!(*core_expr, Core::Id { lit: String::from("expr_1") });
@@ -168,9 +166,9 @@ mod tests {
         let to = to_pos!(Node::Id { lit: String::from("b") });
         let range = to_pos!(Node::Range { from, to, inclusive: false, step: None });
 
-        let (from, to, step) = match desugar(&range) {
+        let (from, to, step) = match convert(&range) {
             Ok(Core::Range { from, to, step }) => (from, to, step),
-            other => panic!("Expected range but was {:?}", other)
+            other => panic!("Expected range but was {:?}", other),
         };
 
         assert_eq!(*from, Core::Id { lit: String::from("a") });
@@ -184,16 +182,19 @@ mod tests {
         let to = to_pos!(Node::Id { lit: String::from("b") });
         let range = to_pos!(Node::Range { from, to, inclusive: true, step: None });
 
-        let (from, to, step) = match desugar(&range) {
+        let (from, to, step) = match convert(&range) {
             Ok(Core::Range { from, to, step }) => (from, to, step),
-            other => panic!("Expected range but was {:?}", other)
+            other => panic!("Expected range but was {:?}", other),
         };
 
         assert_eq!(*from, Core::Id { lit: String::from("a") });
-        assert_eq!(*to, Core::Add {
-            left: Box::from(Core::Id { lit: String::from("b") }),
-            right: Box::from(Core::Int { int: String::from("1") }),
-        });
+        assert_eq!(
+            *to,
+            Core::Add {
+                left: Box::from(Core::Id { lit: String::from("b") }),
+                right: Box::from(Core::Int { int: String::from("1") }),
+            }
+        );
         assert_eq!(*step, Core::Int { int: String::from("1") });
     }
 
@@ -204,9 +205,9 @@ mod tests {
         let step = Some(to_pos!(Node::Id { lit: String::from("c") }));
         let range = to_pos!(Node::Range { from, to, inclusive: false, step });
 
-        let (from, to, step) = match desugar(&range) {
+        let (from, to, step) = match convert(&range) {
             Ok(Core::Range { from, to, step }) => (from, to, step),
-            other => panic!("Expected range but was {:?}", other)
+            other => panic!("Expected range but was {:?}", other),
         };
 
         assert_eq!(*from, Core::Id { lit: String::from("a") });

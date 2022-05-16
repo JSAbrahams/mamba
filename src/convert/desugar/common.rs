@@ -1,11 +1,10 @@
-use crate::desugar::ast::node::Core;
-use crate::desugar::node::desugar_node;
-use crate::desugar::result::DesugarResult;
-use crate::desugar::state::Imports;
-use crate::desugar::state::State;
+use crate::convert::ast::node::Core;
+use crate::convert::desugar::desugar_node;
+use crate::convert::desugar::state::{Imports, State};
+use crate::convert::result::ConvertResult;
 use crate::parse::ast::AST;
 
-pub fn desugar_vec(node_vec: &[AST], imp: &mut Imports, state: &State) -> DesugarResult<Vec<Core>> {
+pub fn desugar_vec(node_vec: &[AST], imp: &mut Imports, state: &State) -> ConvertResult<Vec<Core>> {
     let mut result = vec![];
     for ast in node_vec {
         result.push(desugar_node(ast, imp, state)?)
@@ -18,7 +17,7 @@ pub fn desugar_stmts(
     node_vec: &[AST],
     imp: &mut Imports,
     state: &State,
-) -> DesugarResult<Vec<Core>> {
+) -> ConvertResult<Vec<Core>> {
     let mut result = vec![];
     for (i, ast) in node_vec.iter().enumerate() {
         if i == node_vec.len() - 1 {

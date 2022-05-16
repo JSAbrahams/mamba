@@ -47,7 +47,7 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
     }
 
     let source_path = tempdir_in(source_path.clone())
-        .expect(format!("Could not create desugar dir: {}",
+        .expect(format!("Could not create convert dir: {}",
                         source_path.display()).as_str());
     let source = source_path.path();
 

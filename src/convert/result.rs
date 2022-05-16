@@ -3,11 +3,11 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::desugar::ast::node::Core;
+use crate::convert::ast::node::Core;
 use crate::parse::ast::AST;
 
-pub type DesugarResult<T = Core> = std::result::Result<T, UnimplementedErr>;
-pub type DesugarResults =
+pub type ConvertResult<T = Core> = std::result::Result<T, UnimplementedErr>;
+pub type ConvertResults =
 std::result::Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

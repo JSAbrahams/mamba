@@ -1,13 +1,11 @@
-use crate::desugar::ast::node::Core;
-use crate::desugar::common::desugar_vec;
-use crate::desugar::node::desugar_node;
-use crate::desugar::result::DesugarResult;
-use crate::desugar::state::Imports;
-use crate::desugar::state::State;
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
+use crate::convert::ast::node::Core;
+use crate::convert::desugar::common::desugar_vec;
+use crate::convert::desugar::desugar_node;
+use crate::convert::desugar::state::{Imports, State};
+use crate::convert::result::ConvertResult;
+use crate::parse::ast::{AST, Node};
 
-pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> ConvertResult {
     Ok(match &ast.node {
         Node::VariableDef { var, expr: expression, ty, .. } => {
             let var = desugar_node(var, imp, &state.tuple_literal())?;
@@ -71,8 +69,8 @@ pub fn desugar_definition(ast: &AST, imp: &mut Imports, state: &State) -> Desuga
 #[cfg(test)]
 mod test {
     use crate::common::position::Position;
-    use crate::desugar::ast::node::Core;
-    use crate::desugar::desugar;
+    use crate::convert::ast::node::Core;
+    use crate::convert::convert;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
 
@@ -94,7 +92,7 @@ mod test {
         let right = to_pos!(Node::Id { lit: String::from("other") });
         let reassign = to_pos!(Node::Reassign { left, right });
 
-        let (left, right) = match desugar(&reassign) {
+        let (left, right) = match convert(&reassign) {
             Ok(Core::Assign { left, right }) => (left, right),
             other => panic!("Expected reassign but was {:?}", other),
         };
@@ -113,7 +111,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match desugar(&definition) {
+        let (var, ty, expr) = match convert(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -133,7 +131,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match desugar(&definition) {
+        let (var, ty, expr) = match convert(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -161,7 +159,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match desugar(&definition) {
+        let (var, ty, expr) = match convert(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -185,7 +183,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match desugar(&definition) {
+        let (var, ty, expr) = match convert(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -209,7 +207,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match desugar(&definition) {
+        let (var, ty, expr) = match convert(&definition) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -247,7 +245,7 @@ mod test {
             body: None
         });
 
-        let (id, args, body) = match desugar(&definition) {
+        let (id, args, body) = match convert(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -296,7 +294,7 @@ mod test {
             body: None
         });
 
-        let (id, args, body) = match desugar(&definition) {
+        let (id, args, body) = match convert(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -330,7 +328,7 @@ mod test {
             body: Some(to_pos!(Node::Real { lit: String::from("2.4") }))
         });
 
-        let (id, args, body) = match desugar(&definition) {
+        let (id, args, body) = match convert(&definition) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -353,7 +351,7 @@ mod test {
             body: to_pos!(Node::Str { lit: String::from("this_string"), expressions: vec![] })
         });
 
-        let (args, body) = match desugar(&anon_fun) {
+        let (args, body) = match convert(&anon_fun) {
             Ok(Core::AnonFun { args, body }) => (args, body),
             other => panic!("Expected anon fun but got: {:?}.", other),
         };

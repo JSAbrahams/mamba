@@ -1,20 +1,26 @@
 use crate::check::context::clss::concrete_to_python;
-use crate::desugar::ast::node::Core;
-use crate::desugar::call::desugar_call;
-use crate::desugar::class::desugar_class;
-use crate::desugar::common::{desugar_stmts, desugar_vec};
-use crate::desugar::control_flow::desugar_control_flow;
-use crate::desugar::definition::desugar_definition;
-use crate::desugar::result::DesugarResult;
-use crate::desugar::result::UnimplementedErr;
-use crate::desugar::state::Imports;
-use crate::desugar::state::State;
-use crate::desugar::ty::desugar_type;
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
+use crate::convert::ast::node::Core;
+use crate::convert::desugar::call::desugar_call;
+use crate::convert::desugar::class::desugar_class;
+use crate::convert::desugar::common::{desugar_stmts, desugar_vec};
+use crate::convert::desugar::control_flow::desugar_control_flow;
+use crate::convert::desugar::definition::desugar_definition;
+use crate::convert::desugar::state::{Imports, State};
+use crate::convert::desugar::ty::desugar_type;
+use crate::convert::result::{ConvertResult, UnimplementedErr};
+use crate::parse::ast::{AST, Node};
+
+mod call;
+mod class;
+mod common;
+mod control_flow;
+mod definition;
+mod ty;
+
+pub mod state;
 
 // TODO return imports instead of modifying mutable reference
-pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> ConvertResult {
     let assign_to = state.assign_to.clone();
     let state = &state.assign_to(None);
 
@@ -386,8 +392,8 @@ pub fn desugar_node(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResul
 #[cfg(test)]
 mod tests {
     use crate::common::position::Position;
-    use crate::desugar::ast::node::Core;
-    use crate::desugar::desugar;
+    use crate::convert::ast::node::Core;
+    use crate::convert::convert;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
 
@@ -406,19 +412,19 @@ mod tests {
     #[test]
     fn break_verify() {
         let _break = to_pos!(Node::Break);
-        assert_eq!(desugar(&_break).unwrap(), Core::Break);
+        assert_eq!(convert(&_break).unwrap(), Core::Break);
     }
 
     #[test]
     fn continue_verify() {
         let _continue = to_pos!(Node::Continue);
-        assert_eq!(desugar(&_continue).unwrap(), Core::Continue);
+        assert_eq!(convert(&_continue).unwrap(), Core::Continue);
     }
 
     #[test]
     fn pass_verify() {
         let pass = to_pos!(Node::Pass);
-        assert_eq!(desugar(&pass).unwrap(), Core::Pass);
+        assert_eq!(convert(&pass).unwrap(), Core::Pass);
     }
 
     #[test]
@@ -426,7 +432,7 @@ mod tests {
         let expr = to_pos!(Node::Str { lit: String::from("a"), expressions: vec![] });
         let print_stmt = to_pos!(Node::Print { expr });
         assert_eq!(
-            desugar(&print_stmt).unwrap(),
+            convert(&print_stmt).unwrap(),
             Core::Print { expr: Box::from(Core::Str { string: String::from("a") }) }
         );
     }
@@ -437,7 +443,7 @@ mod tests {
         let print_stmt = to_pos!(Node::Return { expr });
 
         assert_eq!(
-            desugar(&print_stmt).unwrap(),
+            convert(&print_stmt).unwrap(),
             Core::Return { expr: Box::from(Core::Str { string: String::from("a") }) }
         );
     }
@@ -445,19 +451,19 @@ mod tests {
     #[test]
     fn return_empty_verify() {
         let print_stmt = to_pos!(Node::ReturnEmpty);
-        assert_eq!(desugar(&print_stmt).unwrap(), Core::Return { expr: Box::from(Core::None) });
+        assert_eq!(convert(&print_stmt).unwrap(), Core::Return { expr: Box::from(Core::None) });
     }
 
     #[test]
     fn init_verify() {
         let _break = to_pos!(Node::Init);
-        assert_eq!(desugar(&_break).unwrap(), Core::Id { lit: String::from("init") });
+        assert_eq!(convert(&_break).unwrap(), Core::Id { lit: String::from("init") });
     }
 
     #[test]
     fn self_verify() {
         let _break = to_pos!(Node::_Self);
-        assert_eq!(desugar(&_break).unwrap(), Core::Id { lit: String::from("self") });
+        assert_eq!(convert(&_break).unwrap(), Core::Id { lit: String::from("self") });
     }
 
     #[test]
@@ -468,7 +474,7 @@ mod tests {
         });
 
         assert_eq!(
-            desugar(&_break).unwrap(),
+            convert(&_break).unwrap(),
             Core::ImportAs {
                 imports: vec![Core::Id { lit: String::from("a") }],
                 alias: vec![Core::Id { lit: String::from("b") }],
@@ -487,7 +493,7 @@ mod tests {
         });
 
         assert_eq!(
-            desugar(&_break).unwrap(),
+            convert(&_break).unwrap(),
             Core::FromImport {
                 from: Box::from(Core::Id { lit: String::from("f") }),
                 import: Box::from(Core::ImportAs {
@@ -504,13 +510,13 @@ mod tests {
             expr_or_stmt: Box::from(to_pos!(Node::Id { lit: String::from("a") })),
             errors: vec![]
         });
-        assert_eq!(desugar(&type_def).unwrap(), Core::Id { lit: String::from("a") });
+        assert_eq!(convert(&type_def).unwrap(), Core::Id { lit: String::from("a") });
     }
 
     macro_rules! verify_op {
         ($op:ident) => {{
             let add_op = to_pos!(Node::$op);
-            let core = desugar(&add_op).unwrap();
+            let core = convert(&add_op).unwrap();
             assert_eq!(core, Core::$op);
         }};
     }
@@ -521,7 +527,7 @@ mod tests {
             let right = Node::Id { lit: String::from("right") };
             let add_node = to_pos!(Node::$ast { left: to_pos!(left), right: to_pos!(right) });
 
-            let (left, right) = match desugar(&add_node) {
+            let (left, right) = match convert(&add_node) {
                 Ok(Core::$ast { left, right }) => (left, right),
                 other => panic!("Expected binary operation but was {:?}", other),
             };
@@ -536,7 +542,7 @@ mod tests {
             let expr = to_pos!(Node::Id { lit: String::from("expression") });
             let add_node = to_pos!(Node::$ast { expr });
 
-            let expr_des = match desugar(&add_node) {
+            let expr_des = match convert(&add_node) {
                 Ok(Core::$ast { expr }) => expr,
                 other => panic!("Expected unary operation but was {:?}", other),
             };
@@ -648,7 +654,7 @@ mod tests {
     #[test]
     fn sqrt_op_verify() {
         let sqrt_node = to_pos!(Node::SqrtOp);
-        let result = desugar(&sqrt_node);
+        let result = convert(&sqrt_node);
         assert!(result.is_ok());
     }
 
@@ -694,7 +700,7 @@ mod tests {
             to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
         ];
         let tuple = to_pos!(Node::Tuple { elements });
-        let core = desugar(&tuple);
+        let core = convert(&tuple);
 
         let core_elements = match core {
             Ok(Core::Tuple { elements }) => elements,
@@ -715,7 +721,7 @@ mod tests {
             to_pos_unboxed!(Node::Bool { lit: true }),
         ];
         let set = to_pos!(Node::Set { elements });
-        let core = desugar(&set);
+        let core = convert(&set);
 
         let core_elements = match core {
             Ok(Core::Set { elements }) => elements,
@@ -733,7 +739,7 @@ mod tests {
             to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
         ];
         let tuple = to_pos!(Node::List { elements });
-        let core = desugar(&tuple);
+        let core = convert(&tuple);
 
         let core_elements = match core {
             Ok(Core::List { elements }) => elements,
@@ -753,7 +759,7 @@ mod tests {
         let conditions = vec![];
         let list_builder = to_pos!(Node::SetBuilder { item, conditions });
 
-        let desugar_result = desugar(&list_builder);
+        let desugar_result = convert(&list_builder);
         assert!(desugar_result.is_err());
     }
 
@@ -763,7 +769,7 @@ mod tests {
         let conditions = vec![];
         let list_builder = to_pos!(Node::ListBuilder { item, conditions });
 
-        let desugar_result = desugar(&list_builder);
+        let desugar_result = convert(&list_builder);
         assert!(desugar_result.is_err());
     }
 
@@ -774,7 +780,7 @@ mod tests {
         let expr = to_pos!(Node::Int { lit: String::from("9") });
         let with = to_pos!(Node::With { resource, alias, expr });
 
-        let (resource, alias, expr) = match desugar(&with) {
+        let (resource, alias, expr) = match convert(&with) {
             Ok(Core::WithAs { resource, alias, expr }) => (resource, alias, expr),
             other => panic!("Expected with as but was {:?}", other),
         };
@@ -790,7 +796,7 @@ mod tests {
         let expr = to_pos!(Node::Int { lit: String::from("2341") });
         let with = to_pos!(Node::With { resource, alias: None, expr });
 
-        let (resource, expr) = match desugar(&with) {
+        let (resource, expr) = match convert(&with) {
             Ok(Core::With { resource, expr }) => (resource, expr),
             other => panic!("Expected with but was {:?}", other),
         };
@@ -804,7 +810,7 @@ mod tests {
         let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
         let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
 
-        let (setup, _try, except) = match desugar(&handle) {
+        let (setup, _try, except) = match convert(&handle) {
             Ok(Core::TryExcept { setup, attempt, except }) => {
                 (setup.clone(), attempt.clone(), except.clone())
             }
@@ -831,7 +837,7 @@ mod tests {
         let case = to_pos_unboxed!(Node::Case { cond, body });
         let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
-        let (setup, _try, except) = match desugar(&handle) {
+        let (setup, _try, except) = match convert(&handle) {
             Ok(Core::TryExcept { setup, attempt, except }) => {
                 (setup.clone(), attempt.clone(), except.clone())
             }
