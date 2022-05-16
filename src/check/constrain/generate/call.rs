@@ -125,7 +125,7 @@ pub fn gen_call(
                 &Expected::try_from((ast, &env.var_mappings))?,
             );
 
-            let mut constr = constr_col(item, &env, &mut constr, Some(name.clone()))?;
+            let mut constr = constr_col(item, &env, &mut constr, Some(name))?;
             generate(item, &env, ctx, &mut constr)
         }
 

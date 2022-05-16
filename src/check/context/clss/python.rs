@@ -23,6 +23,7 @@ pub const BOOL_PRIMITIVE: &str = "bool";
 pub const ENUM_PRIMITIVE: &str = "enum";
 pub const COMPLEX_PRIMITIVE: &str = "complex";
 
+pub const COLLECTION: &str = "collection";
 pub const RANGE: &str = "range";
 pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
