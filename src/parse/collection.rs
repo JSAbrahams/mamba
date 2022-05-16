@@ -102,14 +102,13 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
-    use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
     #[test]
     fn tuple_empty_verify() {
         let source = String::from("()");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let elements = match &statements.first().expect("script empty.").node {
             Node::Tuple { elements } => elements,
@@ -122,7 +121,7 @@ mod test {
     #[test]
     fn tuple_single_is_expr_verify() {
         let source = String::from("(a)");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let lit = match &statements.first().expect("script empty.").node {
             Node::Id { lit } => lit,
@@ -135,7 +134,7 @@ mod test {
     #[test]
     fn tuple_multiple_verify() {
         let source = String::from("(d, c)");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let elements = match &statements.first().expect("script empty.").node {
             Node::Tuple { elements } => elements,
@@ -150,7 +149,7 @@ mod test {
     #[test]
     fn set_verify() {
         let source = String::from("{a, b}");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let elements = match &statements.first().expect("script empty.").node {
             Node::Set { elements } => elements,
@@ -164,7 +163,7 @@ mod test {
     #[test]
     fn set_builder_verify() {
         let source = String::from("{a | c, d}");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (items, conditions) = match &statements.first().expect("script empty.").node {
             Node::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
@@ -181,7 +180,7 @@ mod test {
     #[test]
     fn list_verify() {
         let source = String::from("[a, b]");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let elements = match &statements.first().expect("script empty.").node {
             Node::List { elements } => elements,
@@ -195,7 +194,7 @@ mod test {
     #[test]
     fn list_builder_verify() {
         let source = String::from("[a | c, d]");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (items, conditions) = match &statements.first().expect("script empty.").node {
             Node::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
@@ -213,25 +212,25 @@ mod test {
     #[ignore]
     fn list_expression() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "list.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     #[ignore]
     fn parse_map() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "map.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn parse_set() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "set.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn parse_tuple() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "tuple.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 }

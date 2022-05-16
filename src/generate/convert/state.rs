@@ -1,6 +1,5 @@
-use crate::core::construct::Core;
+use crate::generate::ast::node::Core;
 
-// TODO remove expect_expr once type checker augments AST
 #[derive(Clone, Debug)]
 pub struct State {
     pub tup: usize,

@@ -1,16 +1,12 @@
 use std::ops::Deref;
 
 use crate::check::context::{arg, function};
-use crate::check::context::function::python;
-use crate::core::construct::Core;
-use crate::core::construct::Core::FunctionCall;
-use crate::desugar::common::desugar_vec;
-use crate::desugar::node::desugar_node;
-use crate::desugar::result::{DesugarResult, UnimplementedErr};
-use crate::desugar::state::Imports;
-use crate::desugar::state::State;
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
+use crate::generate::ast::node::Core;
+use crate::generate::convert::common::convert_vec;
+use crate::generate::convert::convert_node;
+use crate::generate::convert::state::{Imports, State};
+use crate::generate::result::{GenResult, UnimplementedErr};
+use crate::parse::ast::{AST, Node};
 
 /// Desugar a class.
 ///
@@ -19,7 +15,7 @@ use crate::parse::ast::Node;
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResult {
+pub fn convert_class(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
     match &ast.node {
         Node::TypeAlias { ty, isa, .. } => {
             let parents = vec![isa.deref().clone()];
@@ -34,14 +30,14 @@ pub fn desugar_class(ast: &AST, imp: &mut Imports, state: &State) -> DesugarResu
             extract_class(ty, body, args, parents, imp, &state.in_interface(false)),
 
         Node::Parent { ty, args } => if args.is_empty() {
-            desugar_node(ty, imp, state)
+            convert_node(ty, imp, state)
         } else {
             Ok(Core::FunctionCall {
-                function: Box::from(match desugar_node(ty, imp, state)? {
+                function: Box::from(match convert_node(ty, imp, state)? {
                     Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
                     other => other
                 }),
-                args: desugar_vec(args, imp, state)?,
+                args: convert_vec(args, imp, state)?,
             })
         },
 
@@ -62,17 +58,17 @@ fn extract_class(
     parents: &[AST],
     imp: &mut Imports,
     state: &State,
-) -> DesugarResult {
+) -> GenResult {
     let id = match &ty.node {
-        Node::Type { id, .. } => desugar_node(id, imp, state)?,
+        Node::Type { id, .. } => convert_node(id, imp, state)?,
         _ => return Err(UnimplementedErr::new(ty, "Other than type as class identifier"))
     };
 
-    let mut args = desugar_vec(args, imp, &state.def_as_fun_arg(true))?;
-    let parents = desugar_vec(parents, imp, state)?;
+    let mut args = convert_vec(args, imp, &state.def_as_fun_arg(true))?;
+    let parents = convert_vec(parents, imp, state)?;
 
     let body = match body {
-        Some(body) => Some(desugar_node(body, imp, state)?),
+        Some(body) => Some(convert_node(body, imp, state)?),
         _ => None
     };
 
@@ -91,7 +87,7 @@ fn extract_class(
             }
             Core::Type { lit, .. } => Ok((lit, vec![])),
             _ => Err(UnimplementedErr::new(ty, "Parent and custom constructor"))
-        }).collect::<DesugarResult<_>>()?;
+        }).collect::<GenResult<_>>()?;
 
         // super(<parent>, self).__init__(args)
         let mut parent_calls: Vec<Core> = parents.iter().map(|(parent, args)| Core::PropertyCall {
@@ -102,8 +98,8 @@ fn extract_class(
                     Core::Id { lit: String::from(arg::python::SELF) },
                 ],
             }),
-            property: Box::from(FunctionCall {
-                function: Box::new(Core::Id { lit: String::from(python::INIT) }),
+            property: Box::from(Core::FunctionCall {
+                function: Box::new(Core::Id { lit: String::from(function::python::INIT) }),
                 args: args.clone(),
             }),
         }).collect();
@@ -136,7 +132,7 @@ fn extract_class(
 
         let mut statements = old_stmts;
         statements.append(&mut vec![Core::FunDef {
-            id: Box::from(Core::Id { lit: String::from(python::INIT) }),
+            id: Box::from(Core::Id { lit: String::from(function::python::INIT) }),
             arg: new_args,
             ty: None,
             body: Box::from(Core::Block { statements: parent_calls }),
@@ -156,7 +152,7 @@ fn extract_class(
                 }
                 Core::Type { lit, .. } => Ok(Core::Id { lit }),
                 _ => Err(UnimplementedErr::new(ty, "Parent"))
-            }).collect::<DesugarResult<Vec<Core>>>()?;
+            }).collect::<GenResult<Vec<Core>>>()?;
 
             Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
         }
@@ -175,8 +171,8 @@ mod tests {
     use std::ops::Deref;
 
     use crate::common::position::Position;
-    use crate::core::construct::Core;
-    use crate::desugar::desugar;
+    use crate::generate::ast::node::Core;
+    use crate::generate::gen;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
 
@@ -201,7 +197,7 @@ mod tests {
         let aliases = vec![];
         let import = to_pos!(Node::Import { import, aliases });
 
-        let core_import = match desugar(&import) {
+        let core_import = match gen(&import) {
             Ok(Core::Import { imports }) => imports,
             other => panic!("Expected tuple but got {:?}", other)
         };
@@ -220,7 +216,7 @@ mod tests {
         let aliases = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
         let import = to_pos!(Node::Import { import, aliases });
 
-        let (core_import, core_as) = match desugar(&import) {
+        let (core_import, core_as) = match gen(&import) {
             Ok(Core::ImportAs { imports, alias }) => (imports, alias),
             other => panic!("Expected import but got {:?}", other)
         };
@@ -242,7 +238,7 @@ mod tests {
         let import =
             to_pos!(Node::FromImport { id, import: to_pos!(Node::Import { import, aliases: vec![] }) });
 
-        let (from, import) = match desugar(&import) {
+        let (from, import) = match gen(&import) {
             Ok(Core::FromImport { from, import }) => match &import.deref() {
                 Core::Import { imports } => (from.clone(), imports.clone()),
                 other => panic!("Expected import but got {:?}", other)
@@ -261,7 +257,7 @@ mod tests {
         let cond = to_pos!(Node::Bool { lit: true });
         let condition = to_pos!(Node::Condition { cond, el: None });
 
-        let result = desugar(&condition);
+        let result = gen(&condition);
         assert!(result.is_err());
     }
 
@@ -276,7 +272,7 @@ mod tests {
                     args: vec![to_pos_unboxed!(Node::Str { lit: String::from("Something went wrong"), expressions: vec![] })]})],
             body: None });
 
-        let (var, ty, expr) = match desugar(&alias) {
+        let (var, ty, expr) = match gen(&alias) {
             Ok(Core::VarDef { var, ty, expr }) => (*var.clone(), ty.clone(), expr.clone()),
             other => panic!("Expected type alias but got {:?}", other)
         };
@@ -312,7 +308,7 @@ mod tests {
                     args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]})],
             body: None });
 
-        let (name, parent_names, body) = match desugar(&alias) {
+        let (name, parent_names, body) = match gen(&alias) {
             Ok(Core::ClassDef { name, parent_names, body }) => (*name, parent_names, *body),
             other => panic!("Expected class def but got {:?}", other)
         };

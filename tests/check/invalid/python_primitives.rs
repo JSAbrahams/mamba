@@ -4,7 +4,6 @@ use mamba::check::{check_all, CheckInput};
 use mamba::check::context::{Context, LookupClass};
 use mamba::check::name::stringname::StringName;
 use mamba::common::position::Position;
-use mamba::parse::lex::tokenize;
 use mamba::parse::parse;
 
 use crate::common::resource_content;
@@ -12,7 +11,7 @@ use crate::common::resource_content;
 #[test]
 fn float_and() {
     let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
-    check_all(&[(*parse(&tokenize(&source).unwrap()).unwrap(), None, None)]).unwrap_err();
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }
 
 #[test]

@@ -68,14 +68,13 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
-    use crate::parse::lex::tokenize;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
     #[test]
     fn range_verify() {
         let source = String::from("hello .. world");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
             Node::Range { from, to, inclusive, step } =>
@@ -92,7 +91,7 @@ mod test {
     #[test]
     fn range_step_verify() {
         let source = String::from("hello .. world .. 2");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
             Node::Range { from, to, inclusive, step } =>
@@ -109,7 +108,7 @@ mod test {
     #[test]
     fn range_incl_verify() {
         let source = String::from("foo ..= bar");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (from, to, inclusive, step) = match &statements.first().expect("script empty.").node {
             Node::Range { from, to, inclusive, step } =>
@@ -126,7 +125,7 @@ mod test {
     #[test]
     fn reassign_verify() {
         let source = String::from("id := new_value");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (left, right) = match &statements.first().expect("script empty.").node {
             Node::Reassign { left, right } => (left.clone(), right.clone()),
@@ -140,7 +139,7 @@ mod test {
     #[test]
     fn print_verify() {
         let source = String::from("print some_value");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let expr = match &statements.first().expect("script empty.").node {
             Node::Print { expr } => expr.clone(),
@@ -153,7 +152,7 @@ mod test {
     #[test]
     fn return_verify() {
         let source = String::from("return some_value");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let expr = match &statements.first().expect("script empty.").node {
             Node::Return { expr } => expr.clone(),
@@ -166,7 +165,7 @@ mod test {
     #[test]
     fn underscore_verify() {
         let source = String::from("_");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let ast = statements.first().expect("script empty.").clone();
         assert_eq!(ast.node, Node::Underscore);
@@ -175,7 +174,7 @@ mod test {
     #[test]
     fn pass_verify() {
         let source = String::from("pass");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let ast = statements.first().expect("script empty.").clone();
         assert_eq!(ast.node, Node::Pass);
@@ -184,7 +183,7 @@ mod test {
     #[test]
     fn from_import_verify() {
         let source = String::from("from a import b");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
             Node::File { statements: modules, .. } => modules,
@@ -209,7 +208,7 @@ mod test {
     #[test]
     fn import_verify() {
         let source = String::from("import c");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
             Node::File { statements: modules, .. } => modules,
@@ -230,7 +229,7 @@ mod test {
     #[test]
     fn import_as_verify() {
         let source = String::from("import a, b as c, d");
-        let ast = parse(&tokenize(&source).unwrap()).unwrap();
+        let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
             Node::File { statements: modules, .. } => modules,
@@ -254,67 +253,67 @@ mod test {
     #[test]
     fn print_missing_arg() {
         let source = String::from("print");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn range_missing_from() {
         let source = String::from(".. b");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn range_inc_missing_from() {
         let source = String::from("..= b");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn range_missing_to() {
         let source = String::from("a ..");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn range_incl_missing_to() {
         let source = String::from("a ..=");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn reassign_missing_value() {
         let source = String::from("a :=");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn quest_or_missing_alternative() {
         let source = String::from("a ?or");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn quest_or_on_nothing() {
         let source = String::from("?or");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
 
     #[test]
     fn handle_verify() -> ParseResult<()> {
         let source = resource_content(true, &["error"], "handle.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn raises_verify() -> ParseResult<()> {
         let source = resource_content(true, &["error"], "raise.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 
     #[test]
     fn with_verify() -> ParseResult<()> {
         let source = resource_content(true, &["error"], "with.mamba");
-        parse(&tokenize(&source).unwrap()).map(|_| ())
+        parse(&source).map(|_| ())
     }
 }

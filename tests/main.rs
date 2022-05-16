@@ -10,7 +10,7 @@ use crate::common::resource_path;
 mod common;
 
 mod check;
-mod core;
+mod generate;
 mod system;
 
 #[test]

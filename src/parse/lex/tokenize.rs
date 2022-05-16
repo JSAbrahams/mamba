@@ -2,7 +2,7 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::common::position::CaretPos;
-use crate::parse::lex::lex_result::{LexErr, LexResult};
+use crate::parse::lex::result::{LexErr, LexResult};
 use crate::parse::lex::state::State;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::lex::tokenize;
@@ -278,7 +278,7 @@ fn as_op_or_id(string: String) -> Token {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::lex::lex_result::LexErr;
+    use crate::parse::lex::result::LexErr;
     use crate::parse::lex::token::Token;
     use crate::parse::lex::tokenize;
 

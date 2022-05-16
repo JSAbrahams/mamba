@@ -3,9 +3,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::check::check_all;
-use crate::core::to_source;
-use crate::desugar::desugar_all;
-use crate::parse::lex::tokenize_all;
+use crate::generate::gen_all;
 use crate::parse::parse_all;
 
 mod io;
@@ -77,16 +75,9 @@ pub fn transpile_directory(
 /// For each mamba source, a path can optionally be given for display in error
 /// messages. This path is not necessary however.
 pub fn mamba_to_python(
-    _source: &[(String, Option<PathBuf>)]
+    source: &[(String, Option<PathBuf>)]
 ) -> Result<Vec<String>, Vec<(String, String)>> {
-    let tokens = tokenize_all(_source).map_err(|errs| {
-        errs.iter()
-            .map(|err| (String::from("token"), format!("{}", err)))
-            .collect::<Vec<(String, String)>>()
-    })?;
-    trace!("Tokenized {} files", tokens.len());
-
-    let asts = parse_all(tokens.as_slice()).map_err(|errs| {
+    let asts = parse_all(source).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("syntax"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
@@ -100,12 +91,12 @@ pub fn mamba_to_python(
     })?;
     trace!("Checked {} files", modified_trees.len());
 
-    let core_tree = desugar_all(modified_trees.as_slice()).map_err(|errs| {
+    let core_tree = gen_all(modified_trees.as_slice()).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("unimplemented"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
     })?;
     trace!("Converted {} checked files to Python", core_tree.len());
 
-    Ok(core_tree.iter().map(|(core, ..)| to_source(core)).collect())
+    Ok(core_tree.iter().map(|(core, ..)| core.to_source()).collect())
 }

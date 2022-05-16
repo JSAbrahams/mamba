@@ -76,12 +76,11 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
-    use crate::parse::lex::tokenize;
 
     #[test]
     fn anon_fun_no_args_verify() {
         let source = String::from("\\ => c");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (args, body) = match &statements.first().expect("script empty.").node {
             Node::AnonFun { args, body } => (args.clone(), body.clone()),
@@ -95,7 +94,7 @@ mod test {
     #[test]
     fn anon_fun_verify() {
         let source = String::from("\\a,b => c");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (args, body) = match &statements.first().expect("script empty.").node {
             Node::AnonFun { args, body } => (args.clone(), body.clone()),
@@ -120,7 +119,7 @@ mod test {
     #[test]
     fn direct_call_verify() {
         let source = String::from("a(b, c)");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (name, args) = match &statements.first().expect("script empty.").node {
             Node::FunctionCall { name, args } => (name.clone(), args.clone()),
@@ -136,7 +135,7 @@ mod test {
     #[test]
     fn method_call_verify() {
         let source = String::from("instance.a(b, c)");
-        let statements = parse_direct(&tokenize(&source).unwrap()).unwrap();
+        let statements = parse_direct(&source).unwrap();
 
         let (instance, name, args) = match &statements.first().expect("script empty.").node {
             Node::PropertyCall { instance, property } => match &property.node {
@@ -157,12 +156,12 @@ mod test {
     #[test]
     fn direct_call_missing_closing_bracket() {
         let source = String::from("a(b");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 
     #[test]
     fn regular_call_missing_closing_bracket() {
         let source = String::from("instance.a(b");
-        parse(&tokenize(&source).unwrap()).unwrap_err();
+        parse(&source).unwrap_err();
     }
 }
