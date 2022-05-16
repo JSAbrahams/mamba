@@ -17,3 +17,5 @@ class slice:
     start: int = 0
     stop: int = 0
     step: int = 0
+
+    def __str__(self) -> str: pass
