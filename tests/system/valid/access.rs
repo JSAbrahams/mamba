@@ -15,3 +15,8 @@ fn dictionary_access() -> OutTestRet {
 fn simple_list_access() -> OutTestRet {
     test_directory(true, &["access"], &["access", "target"], "simple_list_access")
 }
+
+#[test]
+fn index_via_function() -> OutTestRet {
+    test_directory(true, &["access"], &["access", "target"], "index_via_function")
+}
