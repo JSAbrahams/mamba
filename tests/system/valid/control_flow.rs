@@ -11,6 +11,11 @@ fn for_over_collection_of_tuple() -> OutTestRet {
 }
 
 #[test]
+fn for_over_type_union() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "for_over_type_union")
+}
+
+#[test]
 fn for_over_range_from_func() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "for_over_range_from_func")
 }

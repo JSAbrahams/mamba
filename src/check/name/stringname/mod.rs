@@ -4,7 +4,7 @@ use std::hash::Hash;
 
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::HasParent;
-use crate::check::name::{CollectionType, IsSuperSet};
+use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::{Name, Union};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -33,10 +33,10 @@ impl Display for StringName {
     }
 }
 
-impl CollectionType for StringName {
-    /// Checks if has iterator by checking __iter__().
-    /// If so, check the return type of __next__() of this method and return that.
-    fn collection_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+impl ColType for StringName {
+    /// Checks if type has iterator by checking __iter__().
+    /// If so, check the return type of the __next__() method and return that.
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
         if let Ok(clss) = ctx.class(self, pos) {
             let fun_name = StringName::from("__iter__");
             if let Ok(fun) = clss.fun(&fun_name, ctx, pos) {
@@ -60,7 +60,7 @@ impl CollectionType for StringName {
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         } else {
-            let msg = format!("'{}' is not an iterable type.", self);
+            let msg = format!("'{}' is undefined", self);
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }

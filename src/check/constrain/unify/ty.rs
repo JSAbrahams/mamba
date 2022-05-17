@@ -11,7 +11,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{CollectionType, IsSuperSet, Name};
+use crate::check::name::{ColType, IsSuperSet, Name};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -161,10 +161,20 @@ pub fn unify_type(
         }
 
         (l_exp, r_exp) => match (l_exp, r_exp) {
-            (Collection { ty }, Type { name }) | (Type { name }, Collection { ty }) => {
-                if let Some(col_ty) = name.collection_type(ctx, &left.pos)? {
+            (Collection { ty }, Type { name }) => {
+                if let Some(col_ty) = name.col_type(ctx, &right.pos)? {
                     let expect = Expect::Type { name: col_ty };
                     constraints.push("collection type", ty, &Expected::new(&left.pos, &expect));
+                    unify_link(constraints, ctx, total + 1)
+                } else {
+                    let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);
+                    Err(vec![TypeErr::new(&left.pos, &msg)])
+                }
+            }
+            (Type { name }, Collection { ty }) => {
+                if let Some(col_ty) = name.col_type(ctx, &left.pos)? {
+                    let expect = Expect::Type { name: col_ty };
+                    constraints.push("collection type", &Expected::new(&left.pos, &expect), ty);
                     unify_link(constraints, ctx, total + 1)
                 } else {
                     let msg = format!("Unifying type: Expected a '{}', was a '{}'", l_exp, r_exp);

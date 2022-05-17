@@ -47,8 +47,8 @@ pub trait AsMutable {
     fn as_mutable(&self) -> Self;
 }
 
-pub trait CollectionType {
-    fn collection_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>>;
+pub trait ColType {
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>>;
 }
 
 pub fn match_name(
@@ -141,9 +141,9 @@ impl Union<StringName> for Name {
     }
 }
 
-impl CollectionType for Name {
-    fn collection_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
-        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.collection_type(ctx, pos)).collect::<Result<_, _>>()?;
+impl ColType for Name {
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.col_type(ctx, pos)).collect::<Result<_, _>>()?;
         let mut union = Name::empty();
         for name in names {
             if let Some(name) = name {
@@ -323,7 +323,7 @@ mod tests {
     };
     use crate::check::ident::Identifier;
     use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
-    use crate::check::name::{CollectionType, Name};
+    use crate::check::name::{ColType, Name};
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
@@ -556,7 +556,7 @@ mod tests {
         let int_name = Name::from(clss::INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx, &Position::default())?;
+        let collection_ty = range_name.col_type(&ctx, &Position::default())?;
         assert_eq!(collection_ty, Some(int_name));
         Ok(())
     }
@@ -588,7 +588,7 @@ mod tests {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx, &Position::default());
+        let collection_ty = range_name.col_type(&ctx, &Position::default());
         assert!(collection_ty.is_err());
     }
 }
