@@ -116,7 +116,7 @@ pub fn match_type_direct(
     }
 }
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Name {
     names: HashSet<TrueName>,
 }
@@ -143,7 +143,8 @@ impl Union<StringName> for Name {
 
 impl ColType for Name {
     fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
-        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.col_type(ctx, pos)).collect::<Result<_, _>>()?;
+        let names: Vec<Option<Name>> =
+            self.names.iter().map(|n| n.col_type(ctx, pos)).collect::<Result<_, _>>()?;
         let mut union = Name::empty();
         for name in names {
             if let Some(name) = name {
@@ -190,13 +191,6 @@ impl From<&StringName> for Name {
 impl From<&NameVariant> for Name {
     fn from(name: &NameVariant) -> Self {
         Name::new(&[TrueName::from(name)])
-    }
-}
-
-impl PartialEq for Name {
-    fn eq(&self, other: &Self) -> bool {
-        self.names.len() == other.names.len()
-            && self.names.iter().zip(&other.names).all(|(this, that)| this == that)
     }
 }
 
@@ -322,7 +316,7 @@ mod tests {
         BOOL_PRIMITIVE, FLOAT_PRIMITIVE, HasParent, INT_PRIMITIVE, STRING_PRIMITIVE,
     };
     use crate::check::ident::Identifier;
-    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
+    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name, Union};
     use crate::check::name::{ColType, Name};
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
@@ -590,5 +584,15 @@ mod tests {
         let ctx = Context::default().into_with_primitives().unwrap();
         let collection_ty = range_name.col_type(&ctx, &Position::default());
         assert!(collection_ty.is_err());
+    }
+
+    #[test]
+    fn name_fold() {
+        let int_name = Name::from(clss::INT_PRIMITIVE);
+        let float_name = Name::from(clss::FLOAT_PRIMITIVE);
+
+        let name1 = Name::from(&HashSet::from([int_name.clone(), float_name.clone()]));
+        let name2 = [int_name, float_name].iter().fold(Name::empty(), |name, n| name.union(n));
+        assert_eq!(name1, name2);
     }
 }
