@@ -7,11 +7,11 @@ print({
     "d": "e",
 }[a])
 
-(b, bb, bbb) = (0, 1, 2)
+b, bb, bbb = (0, 1, 2)
 
-# TODO handle tuples
-# match (b, bb, bbb)
-#    (0, 1, 2) => print "hello world"
+{
+    (0, 1, 2): print("hello world"),
+}[(b, bb, bbb)]
 
 nested = "other"
 
