@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
-use crate::check::context::{Context, LookupClass};
+use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::HasParent;
 use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::{Name, Union};
@@ -38,11 +38,11 @@ impl ColType for StringName {
     /// If so, check the return type of the __next__() method and return that.
     fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
         if let Ok(clss) = ctx.class(self, pos) {
-            let fun_name = StringName::from("__iter__");
+            let fun_name = StringName::from(function::python::ITER);
             if let Ok(fun) = clss.fun(&fun_name, ctx, pos) {
                 let iter_name = fun.ret_ty;
                 if let Ok(iter_class) = ctx.class(&iter_name, pos) {
-                    let next_name = StringName::from("__next__");
+                    let next_name = StringName::from(function::python::NEXT);
                     let fun = iter_class.fun(&next_name, ctx, pos)?;
                     let ret_name =
                         fun.union.iter().fold(Name::empty(), |name, i| name.union(&i.ret_ty));

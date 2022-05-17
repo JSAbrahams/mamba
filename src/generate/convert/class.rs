@@ -194,6 +194,7 @@ fn extract_class(
 mod tests {
     use std::ops::Deref;
 
+    use crate::check::context::function;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
     use crate::generate::gen;
@@ -395,7 +396,7 @@ mod tests {
                                 ],
                             }),
                             property: Box::from(Core::FunctionCall {
-                                function: Box::from(Core::Id { lit: String::from("__init__") }),
+                                function: Box::from(Core::Id { lit: String::from(function::python::INIT) }),
                                 args: vec![Core::Id { lit: String::from("a1") }],
                             }),
                         }]
