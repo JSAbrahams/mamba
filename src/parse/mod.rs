@@ -63,16 +63,3 @@ fn parse_direct(input: &str) -> ParseResult<Vec<AST>> {
         _ => Ok(vec![]),
     }
 }
-
-#[cfg(test)]
-mod test {
-    use crate::parse::parse;
-    use crate::parse::result::ParseResult;
-    use crate::test_util::resource_content;
-
-    #[test]
-    fn parse_empty_file() -> ParseResult<()> {
-        let source = resource_content(true, &[], "empty_file.mamba");
-        parse(&source).map(|_| ())
-    }
-}

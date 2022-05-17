@@ -47,8 +47,8 @@ pub trait AsMutable {
     fn as_mutable(&self) -> Self;
 }
 
-pub trait CollectionType {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>>;
+pub trait ColType {
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>>;
 }
 
 pub fn match_name(
@@ -141,9 +141,10 @@ impl Union<StringName> for Name {
     }
 }
 
-impl CollectionType for Name {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
-        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.collection_type(ctx)).collect::<Result<_, _>>()?;
+impl ColType for Name {
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+        let names: Vec<Option<Name>> =
+            self.names.iter().map(|n| n.col_type(ctx, pos)).collect::<Result<_, _>>()?;
         let mut union = Name::empty();
         for name in names {
             if let Some(name) = name {
@@ -193,15 +194,16 @@ impl From<&NameVariant> for Name {
     }
 }
 
-impl PartialEq for Name {
+impl PartialEq<Self> for Name {
     fn eq(&self, other: &Self) -> bool {
         self.names.len() == other.names.len()
-            && self.names.iter().zip(&other.names).all(|(this, that)| this == that)
+            && self.names.iter().all(|name| other.names.contains(name))
     }
 }
 
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        self.names.len().hash(state);
         self.names().for_each(|n| n.hash(state))
     }
 }
@@ -322,8 +324,8 @@ mod tests {
         BOOL_PRIMITIVE, FLOAT_PRIMITIVE, HasParent, INT_PRIMITIVE, STRING_PRIMITIVE,
     };
     use crate::check::ident::Identifier;
-    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name};
-    use crate::check::name::{CollectionType, Name};
+    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name, Union};
+    use crate::check::name::{ColType, Name};
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
@@ -556,7 +558,7 @@ mod tests {
         let int_name = Name::from(clss::INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx)?;
+        let collection_ty = range_name.col_type(&ctx, &Position::default())?;
         assert_eq!(collection_ty, Some(int_name));
         Ok(())
     }
@@ -584,12 +586,21 @@ mod tests {
     }
 
     #[test]
-    fn slice_not_collection_int_as_parent() -> TypeResult<()> {
+    fn slice_not_collection_int_as_parent() {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx)?;
-        assert_eq!(collection_ty, None);
-        Ok(())
+        let collection_ty = range_name.col_type(&ctx, &Position::default());
+        assert!(collection_ty.is_err());
+    }
+
+    #[test]
+    fn name_fold() {
+        let int_name = Name::from(clss::INT_PRIMITIVE);
+        let float_name = Name::from(clss::FLOAT_PRIMITIVE);
+
+        let name1 = Name::from(&HashSet::from([int_name.clone(), float_name.clone()]));
+        let name2 = [int_name, float_name].iter().fold(Name::empty(), |name, n| name.union(n));
+        assert_eq!(name1, name2);
     }
 }

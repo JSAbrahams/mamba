@@ -1,3 +1,4 @@
+use crate::check::context::function;
 use crate::generate::ast::node::Core;
 
 pub mod node;
@@ -81,7 +82,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 
                 Core::Id { ref lit, .. } => match lit.as_str() {
                     "size" => String::from("__size__"),
-                    "init" => String::from("__init__"),
+                    function::INIT => String::from("__init__"),
                     other => String::from(other)
                 },
                 other => panic!("Not a valid identifier for a function: {:?}", other)
@@ -242,7 +243,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             to_py(to.as_ref(), ind),
             to_py(step.as_ref(), ind),
         ),
-        Core::Slice { from, to, step } => format!("slice({},{},{})",
+        Core::Slice { from, to, step } => format!("slice({}, {}, {})",
                                                   to_py(from.as_ref(), ind),
                                                   to_py(to.as_ref(), ind),
                                                   to_py(step.as_ref(), ind),

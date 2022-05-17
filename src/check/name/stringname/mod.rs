@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
-use crate::check::context::{clss, Context, LookupClass};
+use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::HasParent;
-use crate::check::name::{CollectionType, IsSuperSet};
-use crate::check::name::Name;
+use crate::check::name::{ColType, IsSuperSet};
+use crate::check::name::{Name, Union};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -33,22 +33,36 @@ impl Display for StringName {
     }
 }
 
-impl CollectionType for StringName {
-    /// Checks if this type has a List\[Int\] as parent, and returns Int if it does.
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
-        if let Ok(clss) = ctx.class(self, &Position::default()) {
-            let generics = &[Name::from(clss::INT_PRIMITIVE)];
-            let col_string_name = StringName::new(clss::LIST, generics);
-
-            let col_name = Name::from(&col_string_name);
-            let parent = clss.has_parent(&col_name, ctx, &Position::default())?;
-            return if parent {
-                Ok(Some(Name::from(clss::INT_PRIMITIVE)))
+impl ColType for StringName {
+    /// Checks if type has iterator by checking __iter__().
+    /// If so, check the return type of the __next__() method and return that.
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+        if let Ok(clss) = ctx.class(self, pos) {
+            let fun_name = StringName::from(function::python::ITER);
+            if let Ok(fun) = clss.fun(&fun_name, ctx, pos) {
+                let iter_name = fun.ret_ty;
+                if let Ok(iter_class) = ctx.class(&iter_name, pos) {
+                    let next_name = StringName::from(function::python::NEXT);
+                    let fun = iter_class.fun(&next_name, ctx, pos)?;
+                    let ret_name =
+                        fun.union.iter().fold(Name::empty(), |name, i| name.union(&i.ret_ty));
+                    Ok(Some(ret_name))
+                } else {
+                    let msg = format!(
+                        "Cannot find iterator '{}' for iterable type '{}'",
+                        iter_name, self
+                    );
+                    Err(vec![TypeErr::new(pos, &msg)])
+                }
             } else {
-                Ok(None)
-            };
+                let msg =
+                    format!("Type '{}' is not iterable, it does not define an iterator.", self);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        } else {
+            let msg = format!("'{}' is undefined", self);
+            Err(vec![TypeErr::new(pos, &msg)])
         }
-        Ok(None)
     }
 }
 
@@ -95,7 +109,7 @@ impl StringName {
             let string_names = name.as_direct(&msg, pos)?;
             if string_names.len() > 1 {
                 let msg = format!("Cannot substitute type union {}", name);
-                return Err(vec![TypeErr::new(pos, &msg)])
+                return Err(vec![TypeErr::new(pos, &msg)]);
             }
 
             if let Some(string_name) = string_names.iter().next() {

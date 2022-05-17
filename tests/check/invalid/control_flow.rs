@@ -16,7 +16,19 @@ fn for_non_iterable() {
 }
 
 #[test]
-fn if_boolean() {
+fn for_over_union_one_not_minus() {
+    let source = resource_content(false, &["type", "control_flow"], "for_over_union_one_not_minus.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn if_not_bool_union() {
+    let source = resource_content(false, &["type", "control_flow"], "if_not_bool_union.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn if_not_boolean() {
     let source = resource_content(false, &["type", "control_flow"], "if_not_boolean.mamba");
     check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }

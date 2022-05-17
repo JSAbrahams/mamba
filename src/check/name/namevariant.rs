@@ -2,7 +2,7 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
 use crate::check::context::Context;
-use crate::check::name::{CollectionType, IsSuperSet};
+use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeResult;
@@ -26,10 +26,10 @@ impl Display for NameVariant {
     }
 }
 
-impl CollectionType for NameVariant {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
+impl ColType for NameVariant {
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
         if let NameVariant::Single(string_name) = self {
-            string_name.collection_type(ctx)
+            string_name.col_type(ctx, pos)
         } else {
             Ok(None)
         }
