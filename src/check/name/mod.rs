@@ -48,7 +48,7 @@ pub trait AsMutable {
 }
 
 pub trait CollectionType {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>>;
+    fn collection_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>>;
 }
 
 pub fn match_name(
@@ -142,8 +142,8 @@ impl Union<StringName> for Name {
 }
 
 impl CollectionType for Name {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
-        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.collection_type(ctx)).collect::<Result<_, _>>()?;
+    fn collection_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+        let names: Vec<Option<Name>> = self.names.iter().map(|n| n.collection_type(ctx, pos)).collect::<Result<_, _>>()?;
         let mut union = Name::empty();
         for name in names {
             if let Some(name) = name {
@@ -556,7 +556,7 @@ mod tests {
         let int_name = Name::from(clss::INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx)?;
+        let collection_ty = range_name.collection_type(&ctx, &Position::default())?;
         assert_eq!(collection_ty, Some(int_name));
         Ok(())
     }
@@ -584,12 +584,11 @@ mod tests {
     }
 
     #[test]
-    fn slice_not_collection_int_as_parent() -> TypeResult<()> {
+    fn slice_not_collection_int_as_parent() {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.collection_type(&ctx)?;
-        assert_eq!(collection_ty, None);
-        Ok(())
+        let collection_ty = range_name.collection_type(&ctx, &Position::default());
+        assert!(collection_ty.is_err());
     }
 }

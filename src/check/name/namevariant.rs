@@ -27,9 +27,9 @@ impl Display for NameVariant {
 }
 
 impl CollectionType for NameVariant {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
+    fn collection_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
         if let NameVariant::Single(string_name) = self {
-            string_name.collection_type(ctx)
+            string_name.collection_type(ctx, pos)
         } else {
             Ok(None)
         }

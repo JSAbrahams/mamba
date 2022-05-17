@@ -20,3 +20,8 @@ fn simple_list_access() -> OutTestRet {
 fn index_via_function() -> OutTestRet {
     test_directory(true, &["access"], &["access", "target"], "index_via_function")
 }
+
+#[test]
+fn access_string() -> OutTestRet {
+    test_directory(true, &["access"], &["access", "target"], "access_string")
+}
