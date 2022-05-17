@@ -32,6 +32,7 @@ pub fn resource_content_path(path: &str) -> String {
 /// Returns:
 /// - The absolute path of the resource, or the directory, as a string.
 /// - The absolute path of the random output directory or file, to be deleted after the test.
+#[allow(dead_code)] // It is actually used
 pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> (String, String) {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -58,10 +59,12 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
     }
 }
 
+#[cfg(test)]
 pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
     resource_content_path(&resource_path(valid, subdirs, file))
 }
 
+#[cfg(test)]
 pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     let mut source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -80,6 +83,7 @@ pub fn resource_path(valid: bool, subdirs: &[&str], file: &str) -> String {
     String::from(source_path.to_string_lossy())
 }
 
+#[allow(dead_code)] // It is actually used
 pub fn delete_dir(resource_path: &String) -> Result<(), Box<dyn std::error::Error>> {
     let path = Path::new(&resource_path);
     if !path.exists() {
@@ -92,6 +96,7 @@ pub fn delete_dir(resource_path: &String) -> Result<(), Box<dyn std::error::Erro
     }
 }
 
+#[allow(dead_code)] // It is actually used
 pub fn python_src_to_stmts(python_src: &String) -> Vec<Statement> {
     python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1
 }
