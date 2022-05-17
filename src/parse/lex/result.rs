@@ -22,13 +22,7 @@ impl LexErr {
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
-        LexErr {
-            pos: self.pos.clone(),
-            token: self.token.clone(),
-            msg: self.msg.clone(),
-            source: source.clone(),
-            path: path.clone(),
-        }
+        LexErr { source: source.clone(), path: path.clone(), ..self.clone() }
     }
 }
 

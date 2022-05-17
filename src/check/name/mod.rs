@@ -116,7 +116,7 @@ pub fn match_type_direct(
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Name {
     names: HashSet<TrueName>,
 }
@@ -194,8 +194,16 @@ impl From<&NameVariant> for Name {
     }
 }
 
+impl PartialEq<Self> for Name {
+    fn eq(&self, other: &Self) -> bool {
+        self.names.len() == other.names.len()
+            && self.names.iter().all(|name| other.names.contains(name))
+    }
+}
+
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        self.names.len().hash(state);
         self.names().for_each(|n| n.hash(state))
     }
 }
