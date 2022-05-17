@@ -33,3 +33,9 @@ fn slice_step_wrong_type() {
     let source = resource_content(false, &["type", "access"], "slice_step_wrong_type.mamba");
     check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }
+
+#[test]
+fn access_int() {
+    let source = resource_content(false, &["type", "access"], "access_int.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}

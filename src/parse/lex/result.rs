@@ -22,24 +22,15 @@ impl LexErr {
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {
-        LexErr {
-            pos: self.pos.clone(),
-            token: self.token.clone(),
-            msg: self.msg.clone(),
-            source: source.clone(),
-            path: path.clone(),
-        }
+        LexErr { source: source.clone(), path: path.clone(), ..self }
     }
 }
 
 impl Display for LexErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let source_line = match &self.source {
-            Some(source) => source
-                .lines()
-                .nth(self.pos.line as usize - 1)
-                .unwrap_or("<unknown>"),
-            None => "<unknown>"
+            Some(source) => source.lines().nth(self.pos.line as usize - 1).unwrap_or("<unknown>"),
+            None => "<unknown>",
         };
 
         write!(

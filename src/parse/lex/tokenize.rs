@@ -329,6 +329,16 @@ mod test {
     }
 
     #[test]
+    fn e_number() -> Result<(), LexErr> {
+        let source = "3E4";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::ENum(String::from("3"), String::from("4")));
+        Ok(())
+    }
+
+    #[test]
     fn int() -> Result<(), LexErr> {
         let source = "0";
         let tokens = tokenize(&source)

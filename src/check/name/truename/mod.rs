@@ -4,7 +4,7 @@ use std::hash::Hash;
 
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
-use crate::check::name::{AsMutable, AsNullable, CollectionType, IsNullable, IsSuperSet};
+use crate::check::name::{AsMutable, AsNullable, ColType, IsNullable, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
@@ -32,9 +32,9 @@ impl From<&NameVariant> for TrueName {
     }
 }
 
-impl CollectionType for TrueName {
-    fn collection_type(&self, ctx: &Context) -> TypeResult<Option<Name>> {
-        self.variant.collection_type(ctx)
+impl ColType for TrueName {
+    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+        self.variant.col_type(ctx, pos)
     }
 }
 

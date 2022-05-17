@@ -9,6 +9,7 @@ def j := 100 // 10
 def l := 100 mod 2
 def n := sqrt l
 def m := n ^ 100
+def o := 6E4
 
 def x := +10
 def y := -30
