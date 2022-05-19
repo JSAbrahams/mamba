@@ -5,10 +5,11 @@ extern crate clap;
 extern crate log;
 extern crate loggerv;
 
+
 use clap::App;
 use itertools::Itertools;
 
-use mamba::pipeline::transpile_directory;
+use mamba::transpile_directory;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
