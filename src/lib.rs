@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use crate::check::check_all;
 use crate::generate::gen_all;
-use crate::parse::parse_all;
+use crate::parse::{parse_all, ParseInput};
 
 pub mod common;
 
@@ -48,6 +48,14 @@ pub fn transpile_directory(
     target: Option<&str>,
 ) -> Result<PathBuf, Vec<(String, String)>> {
     let src_path = source.map_or(current_dir.join(SOURCE), |p| current_dir.join(p));
+    if !src_path.is_file() && !src_path.is_dir() {
+        let msg = format!("Source directory does not exist: {}", src_path.as_os_str().to_str().unwrap());
+        return Err(vec![(String::from("pathfinding"), msg)]);
+    } else if src_path.is_file() && !src_path.exists() {
+        let msg = format!("Source file does not exist: {}", src_path.as_os_str().to_str().unwrap());
+        return Err(vec![(String::from("pathfinding"), msg)]);
+    }
+
     let out_dir = current_dir.join(target.unwrap_or(TARGET));
     if !out_dir.exists() {
         create_dir(&out_dir).map_err(|e| vec![(String::from("io"), e.to_string())])?;
@@ -59,7 +67,7 @@ pub fn transpile_directory(
     let in_absolute_paths = if src_path.is_dir() {
         relative_paths.iter().map(|os_string| src_path.join(os_string)).collect()
     } else {
-        vec![src_path]
+        vec![src_path.clone()]
     };
     let out_absolute_paths: Vec<PathBuf> =
         relative_paths.iter().map(|os_string| out_dir.join(os_string)).collect();
@@ -79,7 +87,7 @@ pub fn transpile_directory(
     let source_pairs = sources.iter().zip(in_absolute_paths.iter());
     let source_option_pairs: Vec<_> =
         source_pairs.map(|(source, path)| (source.clone(), Some(path.clone()))).collect();
-    let mamba_source = mamba_to_python(source_option_pairs.as_slice())?;
+    let mamba_source = mamba_to_python(source_option_pairs.as_slice(), &src_path)?;
 
     for (source, out_path) in mamba_source.iter().zip(out_absolute_paths) {
         let out_path = out_path.with_extension("py");
@@ -94,9 +102,21 @@ pub fn transpile_directory(
 /// For each mamba source, a path can optionally be given for display in error
 /// messages. This path is not necessary however.
 pub fn mamba_to_python(
-    source: &[(String, Option<PathBuf>)]
+    source: &[(String, Option<PathBuf>)],
+    source_dir: &PathBuf,
 ) -> Result<Vec<String>, Vec<(String, String)>> {
-    let asts = parse_all(source).map_err(|errs| {
+    // Strip until source
+    let strip_prefix = |p: PathBuf| {
+        p.strip_prefix(source_dir)
+            .map(|p| {
+                PathBuf::from(&source_dir.iter().last().unwrap_or_else(|| "".as_ref())).join(p)
+            })
+            .unwrap_or(p)
+    };
+    let source: Vec<ParseInput> =
+        source.iter().map(|(src, path)| (src.clone(), path.clone().map(strip_prefix))).collect();
+
+    let asts = parse_all(&source).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("syntax"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
