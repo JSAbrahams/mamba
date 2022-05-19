@@ -26,8 +26,6 @@ pub enum Core {
     TupleLiteral { elements: Vec<Core> },
     Set { elements: Vec<Core> },
     List { elements: Vec<Core> },
-    Range { from: Box<Core>, to: Box<Core>, step: Box<Core> },
-    Slice { from: Box<Core>, to: Box<Core>, step: Box<Core> },
     Index { item: Box<Core>, range: Box<Core> },
     GeOp,
     Ge { left: Box<Core>, right: Box<Core> },
