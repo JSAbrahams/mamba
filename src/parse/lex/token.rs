@@ -231,7 +231,7 @@ impl fmt::Display for Token {
             Token::Eq => String::from("="),
             Token::Is => String::from("is"),
             Token::IsN => String::from("isnt"),
-            Token::Neq => String::from("/="),
+            Token::Neq => String::from("!="),
             Token::And => String::from("and"),
             Token::Or => String::from("or"),
             Token::Not => String::from("not"),

@@ -63,6 +63,12 @@ mod tests {
     }
 
     #[test]
+    fn exclamation_invalid() {
+        let source = String::from("!");
+        assert!(tokenize(&source).is_err());
+    }
+
+    #[test]
     fn operators() {
         let source = String::from("+ - * / ^ mod sqrt i");
         let tokens = tokenize(&source).unwrap();
@@ -92,7 +98,7 @@ mod tests {
 
     #[test]
     fn comparison() {
-        let source = String::from("< > <= >= = /= is isnt i");
+        let source = String::from("< > <= >= = != is isnt i");
         let tokens = tokenize(&source).unwrap();
         assert_eq!(tokens, vec![
             Lex { pos: Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 2)), token: Token::Le },

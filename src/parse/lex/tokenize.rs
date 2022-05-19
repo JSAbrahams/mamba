@@ -56,7 +56,6 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '*' => create(state, Token::Mul),
         '/' => match it.peek() {
             Some('/') => next_and_create(it, state, Token::FDiv),
-            Some('=') => next_and_create(it, state, Token::Neq),
             _ => create(state, Token::Div)
         },
         '\\' => create(state, Token::BSlash),
@@ -72,6 +71,13 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                 comment.push(it.next().unwrap());
             }
             create(state, Token::Comment(comment))
+        }
+        '!' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::Neq),
+            _ => {
+                let msg = String::from("'!' is not a valid character on its own");
+                return Err(LexErr::new(&state.pos, None, &msg));
+            }
         }
         '?' => create(state, Token::Question),
         '0'..='9' => {
