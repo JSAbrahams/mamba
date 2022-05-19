@@ -28,11 +28,6 @@ pub fn gen_call(
 ) -> Constrained {
     match &ast.node {
         Node::Reassign { left, right, op } => {
-            if let Some(op) = op {
-                let msg = format!("Typechecker not implemented yet for reassign: {}", op);
-                return Err(vec![TypeErr::new(&ast.pos, &msg)]);
-            }
-
             let identifier = check_reassignable(left)?;
             // Top-level reassign should be defined in env
             let mut errors = vec![];
@@ -57,11 +52,36 @@ pub fn gen_call(
                 return Err(errors);
             }
 
-            constr.add(
-                "reassign",
-                &Expected::try_from((left, &env.var_mappings))?,
-                &Expected::try_from((right, &env.var_mappings))?,
-            );
+            if let Some(op) = op {
+                // Create temporary nodes and check that
+                let node = match op.as_ref() {
+                    Node::AddOp => Node::Add { left: left.clone(), right: right.clone() },
+                    Node::SubOp => Node::Sub { left: left.clone(), right: right.clone() },
+                    Node::MulOp => Node::Mul { left: left.clone(), right: right.clone() },
+                    Node::DivOp => Node::Div { left: left.clone(), right: right.clone() },
+                    Node::PowOp => Node::Pow { left: left.clone(), right: right.clone() },
+                    Node::BLShiftOp => Node::BLShift { left: left.clone(), right: right.clone() },
+                    Node::BRShiftOp => Node::BRShift { left: left.clone(), right: right.clone() },
+                    other => {
+                        let msg = format!("Cannot reassign using operator '{}'", other);
+                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                    }
+                };
+                let simple_assign_ast = AST::new(&ast.pos, Node::Reassign {
+                    left: left.clone(),
+                    right: Box::from(AST::new(&ast.pos, node)),
+                    op: None,
+                });
+
+                generate(&simple_assign_ast, env, ctx, constr)?; // Come back and try again
+            } else {
+                constr.add(
+                    "reassign",
+                    &Expected::try_from((left, &env.var_mappings))?,
+                    &Expected::try_from((right, &env.var_mappings))?,
+                );
+            }
+
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
@@ -218,11 +238,6 @@ fn property_call(
             Ok((constr.clone(), env.clone()))
         }
         Node::Reassign { left, right, op } => {
-            if let Some(op) = op {
-                let msg = format!("Typechecker not implemented yet for reassign: {}", op);
-                return Err(vec![TypeErr::new(&property.pos, &msg)]);
-            }
-
             check_reassignable(left)?;
             let name = match &left.node {
                 Node::Id { lit } => lit.clone(),
@@ -231,19 +246,49 @@ fn property_call(
                 }
             };
 
-            let left = Expected::new(
-                &property.pos,
-                &Access {
-                    entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
-                    name: Box::new(Expected::new(&property.pos, &Field { name })),
-                },
-            );
+            if let Some(op) = op {
+                let left = Box::from(AST::new(&left.pos, Node::PropertyCall {
+                    instance: Box::from(instance.clone()),
+                    property: left.clone(),
+                }));
 
-            constr.add(
-                "call and reassign",
-                &left,
-                &Expected::try_from((right, &env.var_mappings))?,
-            );
+                // Create temporary nodes and check that
+                let node = match op.as_ref() {
+                    Node::AddOp => Node::Add { left: left.clone(), right: right.clone() },
+                    Node::SubOp => Node::Sub { left: left.clone(), right: right.clone() },
+                    Node::MulOp => Node::Mul { left: left.clone(), right: right.clone() },
+                    Node::DivOp => Node::Div { left: left.clone(), right: right.clone() },
+                    Node::PowOp => Node::Pow { left: left.clone(), right: right.clone() },
+                    Node::BLShiftOp => Node::BLShift { left: left.clone(), right: right.clone() },
+                    Node::BRShiftOp => Node::BRShift { left: left.clone(), right: right.clone() },
+                    other => {
+                        let msg = format!("Cannot reassign using operator '{}'", other);
+                        return Err(vec![TypeErr::new(&property.pos, &msg)]);
+                    }
+                };
+                let simple_assign_ast = AST::new(&instance.pos.union(&property.pos), Node::Reassign {
+                    left,
+                    right: Box::from(AST::new(&property.pos, node)),
+                    op: None,
+                });
+
+                generate(&simple_assign_ast, env, ctx, constr)?; // Come back and try again
+            } else {
+                let left = Expected::new(
+                    &property.pos,
+                    &Access {
+                        entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
+                        name: Box::new(Expected::new(&property.pos, &Field { name })),
+                    },
+                );
+
+                constr.add(
+                    "call and reassign",
+                    &left,
+                    &Expected::try_from((right, &env.var_mappings))?,
+                );
+            }
+
             generate(right, env, ctx, constr)
         }
         Node::FunctionCall { name, args } => {
