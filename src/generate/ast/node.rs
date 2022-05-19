@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
     FromImport { from: Box<Core>, import: Box<Core> },
@@ -9,7 +11,7 @@ pub enum Core {
     Id { lit: String },
     Type { lit: String, generics: Vec<Core> },
     ExpressionType { expr: Box<Core>, ty: Box<Core> },
-    Assign { left: Box<Core>, right: Box<Core>, op: String },
+    Assign { left: Box<Core>, right: Box<Core>, op: CoreOp },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
     FunDef { id: Box<Core>, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },
@@ -88,4 +90,35 @@ pub enum Core {
     Raise { error: Box<Core> },
     With { resource: Box<Core>, expr: Box<Core> },
     WithAs { resource: Box<Core>, alias: Box<Core>, expr: Box<Core> },
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub enum CoreOp {
+    Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    PowAssign,
+    BLShiftAssign,
+    BRShiftAssign,
+}
+
+impl Display for CoreOp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self {
+                CoreOp::Assign => "=",
+                CoreOp::AddAssign => "+=",
+                CoreOp::SubAssign => "-=",
+                CoreOp::MulAssign => "*=",
+                CoreOp::DivAssign => "/=",
+                CoreOp::PowAssign => "**=",
+                CoreOp::BLShiftAssign => "<<=",
+                CoreOp::BRShiftAssign => ">>=",
+            }
+        )
+    }
 }

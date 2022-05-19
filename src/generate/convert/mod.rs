@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
-use crate::generate::ast::node::Core;
+use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::call::convert_call;
 use crate::generate::convert::class::convert_class;
 use crate::generate::convert::common::{convert_stmts, convert_vec};
@@ -47,23 +47,23 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         Node::Reassign { left, right, op } => Core::Assign {
             left: Box::from(convert_node(left, imp, state)?),
             right: Box::from(convert_node(right, imp, state)?),
-            op: String::from(if let Some(op) = op {
+            op: if let Some(op) = op {
                 match op.deref() {
-                    Node::AddOp => "+=",
-                    Node::SubOp => "-=",
-                    Node::MulOp => "*=",
-                    Node::DivOp => "/=",
-                    Node::PowOp => "**=",
-                    Node::BLShiftOp => "<<=",
-                    Node::BRShiftOp => ">>=",
+                    Node::AddOp => CoreOp::AddAssign,
+                    Node::SubOp => CoreOp::SubAssign,
+                    Node::MulOp => CoreOp::MulAssign,
+                    Node::DivOp => CoreOp::DivAssign,
+                    Node::PowOp => CoreOp::PowAssign,
+                    Node::BLShiftOp => CoreOp::BLShiftAssign,
+                    Node::BRShiftOp => CoreOp::BRShiftAssign,
                     op => {
                         let msg = format!("Assign to implemented for {}", op);
                         return Err(UnimplementedErr::new(ast, &msg));
                     }
                 }
             } else {
-                "="
-            }),
+                CoreOp::Assign
+            },
         },
 
         Node::File { statements, .. } => {
@@ -100,10 +100,6 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         Node::LeOp => Core::LeOp,
         Node::GeOp => Core::GeOp,
         Node::QuestionOp { .. } => convert_ty(ast, imp, state)?,
-        Node::BLShiftOp | Node::BRShiftOp => {
-            let msg = format!("Cannot have top level: {}", ast.node);
-            return Err(UnimplementedErr::new(ast, &msg));
-        }
 
         Node::Undefined => Core::None,
         Node::ExpressionType { .. } => convert_ty(ast, imp, state)?,
@@ -139,7 +135,6 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         | Node::Break
         | Node::Continue => convert_cntrl_flow(ast, imp, state)?,
         Node::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false))?,
-        Node::Case { .. } => panic!("Case cannot be top-level"),
 
         Node::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state)?) },
         Node::And { left, right } => Core::And {
@@ -333,16 +328,20 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
             expr: Box::from(convert_node(expr, imp, state)?),
         },
 
-        Node::Step { .. } => panic!("Step cannot be top level."),
         Node::Raises { .. } | Node::Raise { .. } | Node::Handle { .. } => {
             convert_handle(ast, imp, state)?
+        }
+
+        _ => {
+            let msg = format!("Cannot have top level: {}", ast.node);
+            return Err(UnimplementedErr::new(ast, &msg));
         }
     };
 
     let core = if let Some(assign_to) = assign_to {
         match core {
             Core::Block { .. } | Core::Return { .. } => core,
-            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr), op: String::from("=") },
+            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr), op: CoreOp::Assign },
         }
     } else {
         core

@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::check::context::{arg, function};
-use crate::generate::ast::node::Core;
+use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
@@ -129,7 +129,7 @@ fn extract_class(
                         property: arg.clone(),
                     }),
                     right: arg,
-                    op: String::from("="),
+                    op: CoreOp::Assign,
                 })
             }
         }

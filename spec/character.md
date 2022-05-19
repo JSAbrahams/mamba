@@ -56,13 +56,13 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`+=`  | Add left side to right side and assign to left side
-`-=`  | Subtract left side to right side and assign to left side
-`*=`  | Multiply left side to right side and assign to left side
-`/=`  | Divide left side to right side and assign to left side
-`^=`  | Raise left side to right side and assign to left side
-`>>=` | Binary shift left side to the right by the right side amount
-`<<=` | Binary shift left side to the left by the right side amount
+`+=`  | Add value to variable and assign to variable
+`-=`  | Subtract value from variable and assign to variable
+`*=`  | Multiply value with variable and assign to variable
+`/=`  | Multiply value by variable and assign to variable
+`^=`  | Raise value by variable and assign to variable
+`>>=` | Binary shift variable to the right by value
+`<<=` | Binary shift variable to the left by value
 
 ## Context Dependent
 

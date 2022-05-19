@@ -84,7 +84,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 #[cfg(test)]
 mod test {
     use crate::common::position::Position;
-    use crate::generate::ast::node::Core;
+    use crate::generate::ast::node::{Core, CoreOp};
     use crate::generate::gen;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
@@ -114,7 +114,7 @@ mod test {
 
         assert_eq!(*left, Core::Id { lit: String::from("something") });
         assert_eq!(*right, Core::Id { lit: String::from("other") });
-        assert_eq!(op, String::from("="));
+        assert_eq!(op, CoreOp::Assign);
     }
 
     #[test]
