@@ -37,6 +37,8 @@ pub fn python_files(
             })?,
             Err(_) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")])
         };
+
+        let python_src = python_src.replace("\r\n", "\n"); // Replace CRLF
         let statements =
             python_parser::file_input(python_parser::make_strspan(python_src.as_ref())).unwrap().1;
 
