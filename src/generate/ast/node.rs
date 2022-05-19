@@ -2,7 +2,7 @@
 pub enum Core {
     FromImport { from: Box<Core>, import: Box<Core> },
     Import { imports: Vec<Core> },
-    ImportAs { imports: Vec<Core>, alias: Vec<Core> },
+    ImportAs { imports: Vec<Core>, aliases: Vec<Core> },
     ClassDef { name: Box<Core>, parent_names: Vec<Core>, body: Box<Core> },
     FunctionCall { function: Box<Core>, args: Vec<Core> },
     PropertyCall { object: Box<Core>, property: Box<Core> },

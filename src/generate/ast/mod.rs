@@ -50,8 +50,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("from {} {}", to_py(from, ind), to_py(import, ind))
         }
         Core::Import { imports } => format!("import {}", comma_delimited(imports, ind)),
-        Core::ImportAs { imports, alias } => {
-            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(alias, ind))
+        Core::ImportAs { imports, aliases } => {
+            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(aliases, ind))
         }
 
         Core::Id { lit } => lit.clone(),
