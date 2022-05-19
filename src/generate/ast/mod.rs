@@ -50,8 +50,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("from {} {}", to_py(from, ind), to_py(import, ind))
         }
         Core::Import { imports } => format!("import {}", comma_delimited(imports, ind)),
-        Core::ImportAs { imports, alias } => {
-            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(alias, ind))
+        Core::ImportAs { imports, aliases } => {
+            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(aliases, ind))
         }
 
         Core::Id { lit } => lit.clone(),
@@ -154,26 +154,13 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
         Core::KeyValue { key, value } => format!("{}: {}", to_py(key, ind), to_py(value, ind)),
-        Core::Dictionary { expr, cases } => format!(
-            "{{\n{}\n{}}}[{}]",
-            newline_comma_delimited(cases, ind + 1),
-            indent(ind),
-            to_py(expr, ind)
-        ),
-        Core::DefaultDictionary { expr, cases, default } => format!(
-            "defaultdict({}, {{\n{}\n{}}})[{}]",
-            to_py(default, ind),
-            newline_comma_delimited(cases, ind + 1),
-            indent(ind),
-            to_py(expr, ind)
-        ),
 
         Core::GeOp => String::from(">"),
         Core::GeqOp => String::from(">="),
         Core::LeOp => String::from("<"),
         Core::LeqOp => String::from("<="),
         Core::EqOp => String::from("="),
-        Core::NeqOp => String::from("/="),
+        Core::NeqOp => String::from("!="),
         Core::AddOp => String::from("+"),
         Core::SubOp => String::from("-"),
         Core::MulOp => String::from("*"),
@@ -262,7 +249,6 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
 
         Core::Return { expr } => format!("return {}", to_py(expr.as_ref(), ind)),
-        Core::Print { expr } => format!("print({})", to_py(expr.as_ref(), ind)),
 
         Core::For { expr, col, body } => format!(
             "for {} in {}:{}",
@@ -355,12 +341,6 @@ fn newline_if_body(core: &Core, ind: usize) -> String {
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut s = String::new();
     items.iter().for_each(|item| writeln!(s, "{}{}", indent(ind), to_py(item, ind)).unwrap());
-    String::from(s.trim_end())
-}
-
-fn newline_comma_delimited(items: &[Core], ind: usize) -> String {
-    let mut s = String::new();
-    items.iter().for_each(|item| writeln!(s, "{}{},", indent(ind), to_py(item, ind)).unwrap());
     String::from(s.trim_end())
 }
 
