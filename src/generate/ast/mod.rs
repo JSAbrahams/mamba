@@ -160,7 +160,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::LeOp => String::from("<"),
         Core::LeqOp => String::from("<="),
         Core::EqOp => String::from("="),
-        Core::NeqOp => String::from("/="),
+        Core::NeqOp => String::from("!="),
         Core::AddOp => String::from("+"),
         Core::SubOp => String::from("-"),
         Core::MulOp => String::from("*"),
