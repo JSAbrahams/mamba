@@ -49,15 +49,27 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
             if core_defaults.len() > 1 {
                 panic!("Can't have more than one default.")
             } else if core_defaults.len() == 1 {
-                let default = Box::from(Core::AnonFun {
+                let default = Core::AnonFun {
                     args: vec![],
                     body: Box::from(core_defaults[0].clone()),
-                });
+                };
 
                 imp.add_from_import("collections", "defaultdict");
-                Core::DefaultDictionary { expr, cases: core_cases, default }
+                Core::Index {
+                    item: Box::from(Core::FunctionCall {
+                        function: Box::from(Core::Id { lit: String::from("defaultdict") }),
+                        args: vec![
+                            default,
+                            Core::Set { elements: core_cases },
+                        ],
+                    }),
+                    range: expr,
+                }
             } else {
-                Core::Dictionary { expr, cases: core_cases }
+                Core::Index {
+                    item: Box::from(Core::Set { elements: core_cases }),
+                    range: expr,
+                }
             }
         }
         Node::While { cond, body } => Core::While {

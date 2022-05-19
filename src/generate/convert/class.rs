@@ -242,7 +242,7 @@ mod tests {
         let import = to_pos!(Node::Import { import, aliases });
 
         let (core_import, core_as) = match gen(&import) {
-            Ok(Core::ImportAs { imports, alias }) => (imports, alias),
+            Ok(Core::ImportAs { imports, aliases }) => (imports, aliases),
             other => panic!("Expected import but got {:?}", other),
         };
 
