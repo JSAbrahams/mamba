@@ -5,12 +5,13 @@ extern crate ansi_term;
 extern crate log;
 extern crate loggerv;
 
+use std::ffi::OsStr;
 use std::fs::create_dir;
 use std::path::{Path, PathBuf};
 
 use crate::check::check_all;
 use crate::generate::gen_all;
-use crate::parse::parse_all;
+use crate::parse::{parse_all, ParseInput};
 
 pub mod common;
 
@@ -59,7 +60,7 @@ pub fn transpile_directory(
     let in_absolute_paths = if src_path.is_dir() {
         relative_paths.iter().map(|os_string| src_path.join(os_string)).collect()
     } else {
-        vec![src_path]
+        vec![src_path.clone()]
     };
     let out_absolute_paths: Vec<PathBuf> =
         relative_paths.iter().map(|os_string| out_dir.join(os_string)).collect();
@@ -79,7 +80,7 @@ pub fn transpile_directory(
     let source_pairs = sources.iter().zip(in_absolute_paths.iter());
     let source_option_pairs: Vec<_> =
         source_pairs.map(|(source, path)| (source.clone(), Some(path.clone()))).collect();
-    let mamba_source = mamba_to_python(source_option_pairs.as_slice())?;
+    let mamba_source = mamba_to_python(source_option_pairs.as_slice(), current_dir)?;
 
     for (source, out_path) in mamba_source.iter().zip(out_absolute_paths) {
         let out_path = out_path.with_extension("py");
@@ -94,9 +95,22 @@ pub fn transpile_directory(
 /// For each mamba source, a path can optionally be given for display in error
 /// messages. This path is not necessary however.
 pub fn mamba_to_python(
-    source: &[(String, Option<PathBuf>)]
+    source: &[(String, Option<PathBuf>)],
+    source_dir: &Path,
 ) -> Result<Vec<String>, Vec<(String, String)>> {
-    let asts = parse_all(source).map_err(|errs| {
+    // Strip until source
+    let strip_prefix = |p: PathBuf| p.strip_prefix(source_dir)
+        .map(|p| {
+            let dir: &OsStr = source_dir.iter().last().unwrap_or("".as_ref());
+            PathBuf::from(PathBuf::from(&dir).join(p))
+        })
+        .unwrap_or(p);
+    let source: Vec<ParseInput> = source
+        .iter()
+        .map(|(src, path)| (src.clone(), path.clone().map(strip_prefix)))
+        .collect();
+
+    let asts = parse_all(&source).map_err(|errs| {
         errs.iter()
             .map(|err| (String::from("syntax"), format!("{}", err)))
             .collect::<Vec<(String, String)>>()
