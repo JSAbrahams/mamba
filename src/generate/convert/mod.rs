@@ -6,6 +6,7 @@ use crate::generate::convert::class::convert_class;
 use crate::generate::convert::common::{convert_stmts, convert_vec};
 use crate::generate::convert::control_flow::convert_cntrl_flow;
 use crate::generate::convert::definition::convert_def;
+use crate::generate::convert::handle::convert_handle;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::convert::ty::convert_ty;
 use crate::generate::result::{GenResult, UnimplementedErr};
@@ -16,32 +17,31 @@ mod class;
 mod common;
 mod control_flow;
 mod definition;
+mod handle;
 mod ty;
 
 pub mod state;
 
-// TODO return imports instead of modifying mutable reference
 pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
     let assign_to = state.assign_to.clone();
     let state = &state.assign_to(None);
 
     let core = match &ast.node {
-        Node::Import { import, aliases: _as } => {
-            if _as.is_empty() {
-                Core::Import { imports: convert_vec(import, imp, state)? }
-            } else {
-                Core::ImportAs {
-                    imports: convert_vec(import, imp, state)?,
-                    alias: convert_vec(_as, imp, state)?,
-                }
-            }
+        Node::Import { import, aliases } if aliases.is_empty() => {
+            Core::Import { imports: convert_vec(import, imp, state)? }
         }
+        Node::Import { import, aliases } => Core::ImportAs {
+            imports: convert_vec(import, imp, state)?,
+            aliases: convert_vec(aliases, imp, state)?,
+        },
         Node::FromImport { id, import } => Core::FromImport {
             from: Box::from(convert_node(id, imp, state)?),
             import: Box::from(convert_node(import, imp, state)?),
         },
 
-        Node::VariableDef { .. } | Node::FunDef { .. } => convert_def(ast, imp, state)?,
+        Node::VariableDef { .. } | Node::FunDef { .. } | Node::FunArg { .. } => {
+            convert_def(ast, imp, state)?
+        }
         Node::Reassign { left, right } => Core::Assign {
             left: Box::from(convert_node(left, imp, state)?),
             right: Box::from(convert_node(right, imp, state)?),
@@ -64,13 +64,10 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
             exp: if exp.is_empty() { String::from("0") } else { exp.clone() },
         },
         Node::DocStr { lit } => Core::DocStr { string: lit.clone() },
-        Node::Str { lit, expressions } => {
-            if expressions.is_empty() {
-                Core::Str { string: lit.clone() }
-            } else {
-                Core::FStr { string: lit.clone() }
-            }
+        Node::Str { lit, expressions } if expressions.is_empty() => {
+            Core::Str { string: lit.clone() }
         }
+        Node::Str { lit, .. } => Core::FStr { string: lit.clone() },
 
         Node::AddOp => Core::AddOp,
         Node::SubOp => Core::SubOp,
@@ -92,11 +89,10 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         Node::Init => Core::Id { lit: String::from("init") },
         Node::Bool { lit } => Core::Bool { boolean: *lit },
 
-        Node::Tuple { elements } => if state.tup_lit {
+        Node::Tuple { elements } if state.tup_lit => {
             Core::TupleLiteral { elements: convert_vec(elements, imp, state)? }
-        } else {
-            Core::Tuple { elements: convert_vec(elements, imp, state)? }
-        },
+        }
+        Node::Tuple { elements } => Core::Tuple { elements: convert_vec(elements, imp, state)? },
         Node::List { elements } => Core::List { elements: convert_vec(elements, imp, state)? },
         Node::Set { elements } => Core::Set { elements: convert_vec(elements, imp, state)? },
         Node::Index { item, range } => Core::Index {
@@ -109,7 +105,10 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
         Node::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         Node::Return { expr } => Core::Return { expr: Box::from(convert_node(expr, imp, state)?) },
-        Node::Print { expr } => Core::Print { expr: Box::from(convert_node(expr, imp, state)?) },
+        Node::Print { expr } => Core::FunctionCall {
+            function: Box::from(Core::Id { lit: String::from("print") }),
+            args: vec![convert_node(expr, imp, state)?],
+        },
 
         Node::IfElse { .. }
         | Node::While { .. }
@@ -232,26 +231,6 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
             right: Box::from(convert_node(right, imp, state)?),
         },
 
-        Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
-            vararg: *vararg,
-            var: Box::from(convert_node(var, imp, state)?),
-            ty: if state.expand_ty {
-                match ty {
-                    Some(ty) => match &var.node {
-                        Node::_Self => None,
-                        _ => Some(Box::from(convert_node(ty, imp, state)?)),
-                    },
-                    None => None,
-                }
-            } else {
-                None
-            },
-            default: match default {
-                Some(default) => Some(Box::from(convert_node(default, imp, state)?)),
-                None => None,
-            },
-        },
-
         Node::FunctionCall { .. } | Node::PropertyCall { .. } => convert_call(ast, imp, state)?,
         Node::AnonFun { args, body } => Core::AnonFun {
             args: convert_vec(args, imp, &state.expand_ty(false))?,
@@ -262,44 +241,44 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
             left: Box::from(convert_node(left, imp, state)?),
             right: Box::from(convert_node(right, imp, state)?),
         },
-        Node::Range { from, to, inclusive, step } => {
-            let from = convert_node(from, imp, state)?;
-            let to = if *inclusive {
-                Core::Add {
-                    left: Box::from(convert_node(to, imp, state)?),
-                    right: Box::from(Core::Int { int: String::from("1") }),
-                }
-            } else {
-                convert_node(to, imp, state)?
-            };
-            let step = if let Some(step) = step {
-                convert_node(step, imp, state)?
-            } else {
-                Core::Int { int: String::from("1") }
-            };
-
-            let function = Box::from(Core::Id { lit: String::from(clss::python::RANGE) });
-            Core::FunctionCall { function, args: vec![from, to, step] }
-        }
-        Node::Slice { from, to, inclusive, step } => {
-            let from = convert_node(from, imp, state)?;
-            let to = if !inclusive {
-                Core::Sub {
-                    left: Box::from(convert_node(to, imp, state)?),
-                    right: Box::from(Core::Int { int: String::from("1") }),
-                }
-            } else {
-                convert_node(to, imp, state)?
-            };
-            let step = if let Some(step) = step {
-                convert_node(step, imp, state)?
-            } else {
-                Core::Int { int: String::from("1") }
-            };
-
-            let function = Box::from(Core::Id { lit: String::from(clss::python::SLICE) });
-            Core::FunctionCall { function, args: vec![from, to, step] }
-        }
+        Node::Range { from, to, inclusive, step } => Core::FunctionCall {
+            function: Box::from(Core::Id { lit: String::from(clss::python::RANGE) }),
+            args: vec![
+                convert_node(from, imp, state)?,
+                if *inclusive {
+                    Core::Add {
+                        left: Box::from(convert_node(to, imp, state)?),
+                        right: Box::from(Core::Int { int: String::from("1") }),
+                    }
+                } else {
+                    convert_node(to, imp, state)?
+                },
+                if let Some(step) = step {
+                    convert_node(step, imp, state)?
+                } else {
+                    Core::Int { int: String::from("1") }
+                },
+            ],
+        },
+        Node::Slice { from, to, inclusive, step } => Core::FunctionCall {
+            function: Box::from(Core::Id { lit: String::from(clss::python::SLICE) }),
+            args: vec![
+                convert_node(from, imp, state)?,
+                if !inclusive {
+                    Core::Sub {
+                        left: Box::from(convert_node(to, imp, state)?),
+                        right: Box::from(Core::Int { int: String::from("1") }),
+                    }
+                } else {
+                    convert_node(to, imp, state)?
+                },
+                if let Some(step) = step {
+                    convert_node(step, imp, state)?
+                } else {
+                    Core::Int { int: String::from("1") }
+                },
+            ],
+        },
         Node::Underscore => Core::UnderScore,
         Node::Question { left, right } => Core::Or {
             left: Box::from(convert_node(left, imp, state)?),
@@ -332,51 +311,8 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         },
 
         Node::Step { .. } => panic!("Step cannot be top level."),
-        Node::Raises { expr_or_stmt, .. } => convert_node(expr_or_stmt, imp, state)?,
-        Node::Raise { error } => Core::Raise { error: Box::from(convert_node(error, imp, state)?) },
-
-        Node::Handle { expr_or_stmt, cases } => {
-            let (var, ty) = if let Node::VariableDef { var, ty, .. } = &expr_or_stmt.node {
-                (
-                    Some(Box::from(convert_node(var, imp, state)?)),
-                    if let Some(ty) = ty {
-                        Some(Box::from(convert_node(ty, imp, state)?))
-                    } else {
-                        None
-                    },
-                )
-            } else {
-                (None, None)
-            };
-            let assign_state = state.assign_to(var.as_deref());
-
-            Core::TryExcept {
-                setup: var.map(|var| Box::from(Core::VarDef { var, ty, expr: None })),
-                attempt: Box::from(convert_node(&expr_or_stmt.clone(), imp, state)?),
-                except: {
-                    let mut except = Vec::new();
-                    for case in cases {
-                        let (cond, body) = match &case.node {
-                            Node::Case { cond, body } => (cond, body),
-                            other => panic!("Expected case but was {:?}", other),
-                        };
-
-                        match &cond.node {
-                            Node::ExpressionType { expr, ty, .. } => except.push(Core::Except {
-                                id: Box::from(convert_node(expr, imp, state)?),
-                                class: if let Some(ty) = ty {
-                                    Some(Box::from(convert_node(ty, imp, state)?))
-                                } else {
-                                    None
-                                },
-                                body: Box::from(convert_node(body, imp, &assign_state)?),
-                            }),
-                            other => panic!("Expected id type but was {:?}", other),
-                        };
-                    }
-                    except
-                },
-            }
+        Node::Raises { .. } | Node::Raise { .. } | Node::Handle { .. } => {
+            convert_handle(ast, imp, state)?
         }
     };
 
@@ -436,7 +372,10 @@ mod tests {
         let print_stmt = to_pos!(Node::Print { expr });
         assert_eq!(
             gen(&print_stmt).unwrap(),
-            Core::Print { expr: Box::from(Core::Str { string: String::from("a") }) }
+            Core::FunctionCall {
+                function: Box::from(Core::Id { lit: String::from("print") }),
+                args: vec![Core::Str { string: String::from("a") }],
+            }
         );
     }
 
@@ -480,7 +419,7 @@ mod tests {
             gen(&_break).unwrap(),
             Core::ImportAs {
                 imports: vec![Core::Id { lit: String::from("a") }],
-                alias: vec![Core::Id { lit: String::from("b") }],
+                aliases: vec![Core::Id { lit: String::from("b") }],
             }
         );
     }
@@ -501,7 +440,7 @@ mod tests {
                 from: Box::from(Core::Id { lit: String::from("f") }),
                 import: Box::from(Core::ImportAs {
                     imports: vec![Core::Id { lit: String::from("a") }],
-                    alias: vec![Core::Id { lit: String::from("b") }],
+                    aliases: vec![Core::Id { lit: String::from("b") }],
                 }),
             }
         );
