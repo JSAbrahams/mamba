@@ -5,6 +5,8 @@ use crate::generate::ast::node::Core;
 
 pub mod node;
 
+pub const IND_SPACES: usize = 4;
+
 impl Core {
     /// Convert [Core](mamba::generate.ast::construct::Core) to a String which represent
     /// python source code.
@@ -352,7 +354,7 @@ fn to_py(core: &Core, ind: usize) -> String {
 }
 
 fn indent(amount: usize) -> String {
-    " ".repeat(4 * amount)
+    " ".repeat(IND_SPACES * amount)
 }
 
 fn newline_if_body(core: &Core, ind: usize) -> String {
