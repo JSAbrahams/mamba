@@ -1,7 +1,9 @@
+use std::cmp::max;
 use std::fmt::{Debug, Formatter};
 use std::path::Path;
 use std::process::Command;
 
+use itertools::{EitherOrBoth, Itertools};
 use python_parser::ast::Statement;
 
 use mamba::common::delimit::newline_delimited;
@@ -38,19 +40,40 @@ fn test_directory(valid: bool, input: &[&str], _output: &[&str], file_name: &str
     // Convert to newline delimited string for more readable diff
     let check_string = newline_delimited(check_ast.iter().map(|stmt| format!("{:?}", stmt)));
     let out_string = newline_delimited(out_ast.iter().map(|stmt| format!("{:?}", stmt)));
-    assert_eq!(
-        out_string, check_string,
-        "AST did not match!\n\
-               Was:\n\
-               ----------------\n\
-               {}\n\
-               ----------------\n\
-               Expected:\n\
-               ----------------\n\
-               {}\n\
-               ----------------",
-        out_src, check_src
+
+    let longest_line = out_src.lines().max_by(|l1, l2| l1.len().cmp(&l2.len())).unwrap_or("").len();
+    let min_line = 25;
+    let out_line_len = max(min_line, longest_line);
+
+    let gap = 12;
+    let sep_count = 10;
+    let mut msg = format!(
+        "Was AST:{}Expected AST:\n{}{}{}\n",
+        String::from_utf8(vec![b' '; out_line_len - 8 + gap]).unwrap(),
+        String::from_utf8(vec![b'-'; sep_count]).unwrap(),
+        String::from_utf8(vec![b' '; out_line_len - sep_count + gap]).unwrap(),
+        String::from_utf8(vec![b'-'; sep_count]).unwrap()
     );
+    for line in out_src.lines().zip_longest(check_src.lines()) {
+        match line {
+            EitherOrBoth::Both(out, check) => {
+                let left_len = out.len();
+                msg.push_str(&format!(
+                    "{}{}{}\n",
+                    out,
+                    String::from_utf8(vec![b' '; out_line_len + gap - left_len]).unwrap(),
+                    check
+                ))
+            }
+            EitherOrBoth::Left(out) => msg.push_str(&format!("{}\n", out)),
+            EitherOrBoth::Right(check) => msg.push_str(&format!(
+                "{}{}\n",
+                String::from_utf8(vec![b' '; out_line_len + gap]).unwrap(),
+                check
+            )),
+        }
+    }
+    assert_eq!(out_string, check_string, "{}", msg);
     Ok(())
 }
 
