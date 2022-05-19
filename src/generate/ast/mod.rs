@@ -366,13 +366,13 @@ fn newline_if_body(core: &Core, ind: usize) -> String {
 
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut s = String::new();
-    items.iter().for_each(|item| write!(s, "{}{}\n", indent(ind), to_py(item, ind)).unwrap());
+    items.iter().for_each(|item| writeln!(s, "{}{}", indent(ind), to_py(item, ind)).unwrap());
     String::from(s.trim_end())
 }
 
 fn newline_comma_delimited(items: &[Core], ind: usize) -> String {
     let mut s = String::new();
-    items.iter().for_each(|item| write!(s, "{}{},\n", indent(ind), to_py(item, ind)).unwrap());
+    items.iter().for_each(|item| writeln!(s, "{}{},", indent(ind), to_py(item, ind)).unwrap());
     String::from(s.trim_end())
 }
 
