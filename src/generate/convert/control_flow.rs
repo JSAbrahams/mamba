@@ -167,13 +167,16 @@ mod tests {
         let range = to_pos!(Node::Range { from, to, inclusive: false, step: None });
 
         let (from, to, step) = match gen(&range) {
-            Ok(Core::Range { from, to, step }) => (from, to, step),
+            Ok(Core::FunctionCall { function, args }) => {
+                assert_eq!(*function, Core::Id { lit: String::from("range") });
+                (args[0].clone(), args[1].clone(), args[2].clone())
+            }
             other => panic!("Expected range but was {:?}", other),
         };
 
-        assert_eq!(*from, Core::Id { lit: String::from("a") });
-        assert_eq!(*to, Core::Id { lit: String::from("b") });
-        assert_eq!(*step, Core::Int { int: String::from("1") });
+        assert_eq!(from, Core::Id { lit: String::from("a") });
+        assert_eq!(to, Core::Id { lit: String::from("b") });
+        assert_eq!(step, Core::Int { int: String::from("1") });
     }
 
     #[test]
@@ -183,19 +186,22 @@ mod tests {
         let range = to_pos!(Node::Range { from, to, inclusive: true, step: None });
 
         let (from, to, step) = match gen(&range) {
-            Ok(Core::Range { from, to, step }) => (from, to, step),
+            Ok(Core::FunctionCall { function, args }) => {
+                assert_eq!(*function, Core::Id { lit: String::from("range") });
+                (args[0].clone(), args[1].clone(), args[2].clone())
+            }
             other => panic!("Expected range but was {:?}", other),
         };
 
-        assert_eq!(*from, Core::Id { lit: String::from("a") });
+        assert_eq!(from, Core::Id { lit: String::from("a") });
         assert_eq!(
-            *to,
+            to,
             Core::Add {
                 left: Box::from(Core::Id { lit: String::from("b") }),
                 right: Box::from(Core::Int { int: String::from("1") }),
             }
         );
-        assert_eq!(*step, Core::Int { int: String::from("1") });
+        assert_eq!(step, Core::Int { int: String::from("1") });
     }
 
     #[test]
@@ -206,12 +212,15 @@ mod tests {
         let range = to_pos!(Node::Range { from, to, inclusive: false, step });
 
         let (from, to, step) = match gen(&range) {
-            Ok(Core::Range { from, to, step }) => (from, to, step),
+            Ok(Core::FunctionCall { function, args }) => {
+                assert_eq!(*function, Core::Id { lit: String::from("range") });
+                (args[0].clone(), args[1].clone(), args[2].clone())
+            }
             other => panic!("Expected range but was {:?}", other),
         };
 
-        assert_eq!(*from, Core::Id { lit: String::from("a") });
-        assert_eq!(*to, Core::Id { lit: String::from("b") });
-        assert_eq!(*step, Core::Id { lit: String::from("c") });
+        assert_eq!(from, Core::Id { lit: String::from("a") });
+        assert_eq!(to, Core::Id { lit: String::from("b") });
+        assert_eq!(step, Core::Id { lit: String::from("c") });
     }
 }

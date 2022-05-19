@@ -1,3 +1,4 @@
+use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::call::convert_call;
@@ -262,40 +263,42 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
             right: Box::from(convert_node(right, imp, state)?),
         },
         Node::Range { from, to, inclusive, step } => {
-            let from = Box::from(convert_node(from, imp, state)?);
-            let to = Box::from(if *inclusive {
+            let from = convert_node(from, imp, state)?;
+            let to = if *inclusive {
                 Core::Add {
                     left: Box::from(convert_node(to, imp, state)?),
                     right: Box::from(Core::Int { int: String::from("1") }),
                 }
             } else {
                 convert_node(to, imp, state)?
-            });
-            let step = Box::from(if let Some(step) = step {
+            };
+            let step = if let Some(step) = step {
                 convert_node(step, imp, state)?
             } else {
                 Core::Int { int: String::from("1") }
-            });
+            };
 
-            Core::Range { from, to, step }
+            let function = Box::from(Core::Id { lit: String::from(clss::python::RANGE) });
+            Core::FunctionCall { function, args: vec![from, to, step] }
         }
         Node::Slice { from, to, inclusive, step } => {
-            let from = Box::from(convert_node(from, imp, state)?);
-            let to = Box::from(if !inclusive {
+            let from = convert_node(from, imp, state)?;
+            let to = if !inclusive {
                 Core::Sub {
                     left: Box::from(convert_node(to, imp, state)?),
                     right: Box::from(Core::Int { int: String::from("1") }),
                 }
             } else {
                 convert_node(to, imp, state)?
-            });
-            let step = Box::from(if let Some(step) = step {
+            };
+            let step = if let Some(step) = step {
                 convert_node(step, imp, state)?
             } else {
                 Core::Int { int: String::from("1") }
-            });
+            };
 
-            Core::Slice { from, to, step }
+            let function = Box::from(Core::Id { lit: String::from(clss::python::SLICE) });
+            Core::FunctionCall { function, args: vec![from, to, step] }
         }
         Node::Underscore => Core::UnderScore,
         Node::Question { left, right } => Core::Or {
