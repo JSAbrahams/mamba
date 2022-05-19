@@ -105,15 +105,16 @@ mod test {
     fn reassign_verify() {
         let left = to_pos!(Node::Id { lit: String::from("something") });
         let right = to_pos!(Node::Id { lit: String::from("other") });
-        let reassign = to_pos!(Node::Reassign { left, right });
+        let reassign = to_pos!(Node::Reassign { left, right, op: None });
 
-        let (left, right) = match gen(&reassign) {
-            Ok(Core::Assign { left, right }) => (left, right),
+        let (left, right, op) = match gen(&reassign) {
+            Ok(Core::Assign { left, right, op }) => (left, right, op),
             other => panic!("Expected reassign but was {:?}", other),
         };
 
         assert_eq!(*left, Core::Id { lit: String::from("something") });
         assert_eq!(*right, Core::Id { lit: String::from("other") });
+        assert_eq!(op, String::from("="));
     }
 
     #[test]

@@ -9,7 +9,7 @@ pub enum Core {
     Id { lit: String },
     Type { lit: String, generics: Vec<Core> },
     ExpressionType { expr: Box<Core>, ty: Box<Core> },
-    Assign { left: Box<Core>, right: Box<Core> },
+    Assign { left: Box<Core>, right: Box<Core>, op: String },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
     FunDef { id: Box<Core>, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },

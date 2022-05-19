@@ -27,7 +27,12 @@ pub fn gen_call(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::Reassign { left, right } => {
+        Node::Reassign { left, right, op } => {
+            if let Some(op) = op {
+                let msg = format!("Typechecker not implemented yet for reassign: {}", op);
+                return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+            }
+
             let identifier = check_reassignable(left)?;
             // Top-level reassign should be defined in env
             let mut errors = vec![];
@@ -212,12 +217,17 @@ fn property_call(
             constr.add("call property", &instance, &access);
             Ok((constr.clone(), env.clone()))
         }
-        Node::Reassign { left, right } => {
+        Node::Reassign { left, right, op } => {
+            if let Some(op) = op {
+                let msg = format!("Typechecker not implemented yet for reassign: {}", op);
+                return Err(vec![TypeErr::new(&property.pos, &msg)]);
+            }
+
             check_reassignable(left)?;
             let name = match &left.node {
                 Node::Id { lit } => lit.clone(),
                 _ => {
-                    return Err(vec![TypeErr::new(&right.pos, "Expected identifier in reassign.")])
+                    return Err(vec![TypeErr::new(&right.pos, "Expected identifier in reassign.")]);
                 }
             };
 

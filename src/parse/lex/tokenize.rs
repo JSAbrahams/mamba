@@ -93,7 +93,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             Some('=') => next_and_create(it, state, Token::Neq),
             _ => {
                 let msg = String::from("'!' is not a valid character on its own");
-                return Err(LexErr::new(&state.pos, None, &msg));
+                Err(LexErr::new(&state.pos, None, &msg))
             }
         },
         '?' => create(state, Token::Question),

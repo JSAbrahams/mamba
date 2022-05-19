@@ -110,7 +110,14 @@ fn parse_underscore(it: &mut LexIterator) -> ParseResult {
 fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
     it.peek(
         &|it, lex| match lex.token {
-            Token::Assign => {
+            Token::Assign
+            | Token::AddAssign
+            | Token::SubAssign
+            | Token::MulAssign
+            | Token::DivAssign
+            | Token::PowAssign
+            | Token::BLShiftAssign
+            | Token::BRShiftAssign => {
                 let res = parse_reassignment(pre, it)?;
                 parse_post_expr(&res, it)
             }
@@ -140,7 +147,7 @@ fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
 
     let item = Box::from(pre.clone());
     let range = it.parse(&parse_expression, "index", &pre.pos)?;
-    
+
     let node = Node::Index { item, range };
     let end = it.eat(&Token::RSBrack, "index")?;
     Ok(Box::from(AST::new(&pre.pos.union(&end), node)))

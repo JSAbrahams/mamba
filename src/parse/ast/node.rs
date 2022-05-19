@@ -77,6 +77,8 @@ impl Display for Node {
             Node::EqOp => format!("{}", Token::Eq),
             Node::LeOp => format!("{}", Token::Le),
             Node::GeOp => format!("{}", Token::Ge),
+            Node::BLShiftOp => format!("{}", Token::BLShift),
+            Node::BRShiftOp => format!("{}", Token::BRShift),
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
@@ -181,9 +183,10 @@ impl Node {
                 ty: Box::from(ty.map(mapping)),
                 args: args.iter().map(|a| a.map(mapping)).collect(),
             },
-            Node::Reassign { left, right } => Node::Reassign {
+            Node::Reassign { left, right, op } => Node::Reassign {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
+                op, // op is untouched
             },
             Node::VariableDef { mutable, var, ty, expr: expression, forward } => Node::VariableDef {
                 mutable,
@@ -464,8 +467,8 @@ impl Node {
             (Node::Parent { ty: l_ty, args: la }, Node::Parent { ty: r_ty, args: ra }) => {
                 l_ty.same_value(r_ty) && equal_vec(la, ra)
             }
-            (Node::Reassign { left: ll, right: lr }, Node::Reassign { left: rl, right: rr }) => {
-                ll.same_value(rl) && lr.same_value(rr)
+            (Node::Reassign { left: ll, right: lr, op: lop }, Node::Reassign { left: rl, right: rr, op: rop }) => {
+                ll.same_value(rl) && lr.same_value(rr) && lop == rop
             }
             (
                 Node::VariableDef { mutable: lm, var: lv, ty: lt, expr: le, forward: lf },
@@ -1014,6 +1017,7 @@ mod test {
         let node = Node::Reassign {
             left: Box::new(AST::new(&Position::default(), Node::SubOp)),
             right: Box::new(AST::new(&Position::default(), Node::LeOp)),
+            op: Option::from(Box::from(Node::SubOp)),
         };
 
         two_ast!(node);

@@ -110,7 +110,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
 
-        Core::Assign { left, right } => format!("{} = {}", to_py(left, ind), to_py(right, ind)),
+        Core::Assign { left, right, op } => format!("{} {} {}", to_py(left, ind), op, to_py(right, ind)),
         Core::VarDef { var, expr, ty } => format!(
             "{}{} = {}",
             to_py(var, ind),

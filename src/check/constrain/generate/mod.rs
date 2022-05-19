@@ -131,6 +131,8 @@ pub fn generate(
         EqOp |
         LeOp |
         GeOp |
+        Node::BLShiftOp |
+        Node::BRShiftOp |
         Node::DocStr { .. } |
         Underscore |
         Undefined |

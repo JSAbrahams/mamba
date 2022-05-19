@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::Core;
@@ -42,9 +44,26 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         Node::VariableDef { .. } | Node::FunDef { .. } | Node::FunArg { .. } => {
             convert_def(ast, imp, state)?
         }
-        Node::Reassign { left, right } => Core::Assign {
+        Node::Reassign { left, right, op } => Core::Assign {
             left: Box::from(convert_node(left, imp, state)?),
             right: Box::from(convert_node(right, imp, state)?),
+            op: String::from(if let Some(op) = op {
+                match op.deref() {
+                    Node::AddOp => "+=",
+                    Node::SubOp => "-=",
+                    Node::MulOp => "*=",
+                    Node::DivOp => "/=",
+                    Node::PowOp => "**=",
+                    Node::BLShiftOp => "<<=",
+                    Node::BRShiftOp => ">>=",
+                    op => {
+                        let msg = format!("Assign to implemented for {}", op);
+                        return Err(UnimplementedErr::new(ast, &msg));
+                    }
+                }
+            } else {
+                "="
+            }),
         },
 
         Node::File { statements, .. } => {
@@ -81,6 +100,10 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         Node::LeOp => Core::LeOp,
         Node::GeOp => Core::GeOp,
         Node::QuestionOp { .. } => convert_ty(ast, imp, state)?,
+        Node::BLShiftOp | Node::BRShiftOp => {
+            let msg = format!("Cannot have top level: {}", ast.node);
+            return Err(UnimplementedErr::new(ast, &msg));
+        }
 
         Node::Undefined => Core::None,
         Node::ExpressionType { .. } => convert_ty(ast, imp, state)?,
@@ -319,7 +342,7 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
     let core = if let Some(assign_to) = assign_to {
         match core {
             Core::Block { .. } | Core::Return { .. } => core,
-            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr) },
+            expr => Core::Assign { left: Box::from(assign_to), right: Box::from(expr), op: String::from("=") },
         }
     } else {
         core

@@ -128,7 +128,10 @@ mod test {
         let statements = parse_direct(&source).unwrap();
 
         let (left, right) = match &statements.first().expect("script empty.").node {
-            Node::Reassign { left, right } => (left.clone(), right.clone()),
+            Node::Reassign { left, right, op } => {
+                assert!(op.is_none());
+                (left.clone(), right.clone())
+            }
             _ => panic!("first element script was not reassign.")
         };
 

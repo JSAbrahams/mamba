@@ -129,6 +129,7 @@ fn extract_class(
                         property: arg.clone(),
                     }),
                     right: arg,
+                    op: String::from("="),
                 })
             }
         }

@@ -38,7 +38,7 @@ Keyword | Use
 `<`  | Less than operator
 `<=` | Less than or equal to operator
 `=`  | Structurally equal
-`/=` | Structurally not equal
+`!=` | Structurally not equal
 
 ## Assignment and Functions
 
@@ -51,6 +51,18 @@ Keyword | Use
 `.`  | Precedes method call, or fractional digits of real number
 `,`  | Separates arguments in collections or function or method signatures
 `_`  | Anonymous value
+
+## Reassignment Operations
+
+Keyword | Use
+---|---
+`+=`  | Add left side to right side and assign to left side
+`-=`  | Subtract left side to right side and assign to left side
+`*=`  | Multiply left side to right side and assign to left side
+`/=`  | Divide left side to right side and assign to left side
+`^=`  | Raise left side to right side and assign to left side
+`>>=` | Binary shift left side to the right by the right side amount
+`<<=` | Binary shift left side to the left by the right side amount
 
 ## Context Dependent
 

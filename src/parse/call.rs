@@ -3,17 +3,45 @@ use crate::parse::ast::Node;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
+use crate::parse::result::{eof_expected_one_of, ParseResult};
 use crate::parse::result::expected_one_of;
-use crate::parse::result::ParseResult;
 
 pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("reassignment")?;
-    it.eat(&Token::Assign, "reassignment")?;
+    let expect = [
+        Token::Assign,
+        Token::AddAssign,
+        Token::SubAssign,
+        Token::MulAssign,
+        Token::DivAssign,
+        Token::PowAssign,
+        Token::BLShiftAssign,
+        Token::BRShiftAssign
+    ];
+
+    let (token, op) = if let Some(token) = it.peek_next() {
+        match &token {
+            Lex { token: Token::Assign, .. } => (Token::Assign, None),
+            Lex { token: Token::AddAssign, .. } => (Token::AddAssign, Some(Node::AddOp)),
+            Lex { token: Token::SubAssign, .. } => (Token::SubAssign, Some(Node::SubOp)),
+            Lex { token: Token::MulAssign, .. } => (Token::MulAssign, Some(Node::MulOp)),
+            Lex { token: Token::DivAssign, .. } => (Token::DivAssign, Some(Node::DivOp)),
+            Lex { token: Token::PowAssign, .. } => (Token::PowAssign, Some(Node::PowOp)),
+            Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, Some(Node::BLShiftOp)),
+            Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, Some(Node::BRShiftOp)),
+            lex => { return Err(expected_one_of(&expect, lex, "reassignment")); }
+        }
+    } else {
+        return Err(eof_expected_one_of(&expect, "reassignment"));
+    };
+    it.eat(&token, "reassignment")?;
+
     let right = it.parse(&parse_expression, "reassignment", &start)?;
 
-    let node = Node::Reassign { left: Box::new(pre.clone()), right: right.clone() };
+    let op = op.map(Box::from);
+    let node = Node::Reassign { left: Box::new(pre.clone()), right: right.clone(), op };
     Ok(Box::from(AST::new(&start.union(&right.pos), node)))
 }
 
@@ -54,7 +82,7 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let node = Node::FunctionCall { name: Box::from(pre.clone()), args };
                 Ok(Box::from(AST::new(&pre.pos.union(&end), node)))
             }
-            _ => Err(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call"))
+            _ => Err(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call")),
         },
         &[Token::Point, Token::LRBrack],
         "function call",
@@ -78,13 +106,36 @@ mod test {
     use crate::parse::ast::{AST, Node};
 
     #[test]
+    fn op_assign() {
+        let source = String::from("a:=1\nb+=2\nc-=3\nd*=4\ne/=5\nf^=6\ng<<=7\nh>>=8\n");
+        let statements = parse_direct(&source).unwrap();
+
+        let ops: Vec<Option<Node>> = statements
+            .iter()
+            .map(|ast| match &ast.node {
+                Node::Reassign { op, .. } => op.clone().map(|n| *n),
+                other => panic!("Expected reassign {:?}", other)
+            })
+            .collect();
+
+        assert_eq!(ops[0], None);
+        assert_eq!(ops[1], Some(Node::AddOp));
+        assert_eq!(ops[2], Some(Node::SubOp));
+        assert_eq!(ops[3], Some(Node::MulOp));
+        assert_eq!(ops[4], Some(Node::DivOp));
+        assert_eq!(ops[5], Some(Node::PowOp));
+        assert_eq!(ops[6], Some(Node::BLShiftOp));
+        assert_eq!(ops[7], Some(Node::BRShiftOp));
+    }
+
+    #[test]
     fn anon_fun_no_args_verify() {
         let source = String::from("\\ => c");
         let statements = parse_direct(&source).unwrap();
 
         let (args, body) = match &statements.first().expect("script empty.").node {
             Node::AnonFun { args, body } => (args.clone(), body.clone()),
-            _ => panic!("first element script was anon fun.")
+            _ => panic!("first element script was anon fun."),
         };
 
         assert_eq!(args.len(), 0);
@@ -98,16 +149,16 @@ mod test {
 
         let (args, body) = match &statements.first().expect("script empty.").node {
             Node::AnonFun { args, body } => (args.clone(), body.clone()),
-            _ => panic!("first element script was anon fun.")
+            _ => panic!("first element script was anon fun."),
         };
 
         assert_eq!(args.len(), 2);
         let (id1, id2) = match (&args[0], &args[1]) {
             (
                 AST { node: Node::FunArg { var: id1, ty: None, mutable: true, .. }, .. },
-                AST { node: Node::FunArg { var: id2, ty: None, mutable: true, .. }, .. }
+                AST { node: Node::FunArg { var: id2, ty: None, mutable: true, .. }, .. },
             ) => (id1.clone(), id2.clone()),
-            other => panic!("Id's of anon fun not expression type: {:?}", other)
+            other => panic!("Id's of anon fun not expression type: {:?}", other),
         };
 
         assert_eq!(id1.node, Node::Id { lit: String::from("a") });
@@ -123,7 +174,7 @@ mod test {
 
         let (name, args) = match &statements.first().expect("script empty.").node {
             Node::FunctionCall { name, args } => (name.clone(), args.clone()),
-            _ => panic!("first element script was anon fun.")
+            _ => panic!("first element script was anon fun."),
         };
 
         assert_eq!(name.node, Node::Id { lit: String::from("a") });
@@ -140,9 +191,9 @@ mod test {
         let (instance, name, args) = match &statements.first().expect("script empty.").node {
             Node::PropertyCall { instance, property } => match &property.node {
                 Node::FunctionCall { name, args } => (instance.clone(), name.clone(), args.clone()),
-                other => panic!("not function call in property call {:?}", other)
+                other => panic!("not function call in property call {:?}", other),
             },
-            other => panic!("first element script was property call {:?}", other)
+            other => panic!("first element script was property call {:?}", other),
         };
 
         assert_eq!(instance.node, Node::Id { lit: String::from("instance") });
