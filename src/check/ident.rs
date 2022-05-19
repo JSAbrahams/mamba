@@ -5,12 +5,29 @@ use std::ops::Deref;
 
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
+use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Identifier {
-    pub lit: Option<(bool, String)>,
+    pub lit: Option<(bool, IdentiCall)>,
     pub names: Vec<Identifier>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IdentiCall {
+    object: String,
+    pub property: Option<Box<IdentiCall>>,
+}
+
+impl IdentiCall {
+    pub fn object(&self, pos: &Position) -> TypeResult<String> {
+        if self.property.is_none() {
+            Ok(self.object.clone())
+        } else {
+            Err(vec![TypeErr::new(pos, "Call not expected here")])
+        }
+    }
 }
 
 impl Identifier {
@@ -18,7 +35,7 @@ impl Identifier {
 }
 
 impl Identifier {
-    pub fn fields(&self) -> Vec<(bool, String)> {
+    pub fn fields(&self) -> Vec<(bool, IdentiCall)> {
         if let Some(lit) = &self.lit {
             vec![lit.clone()]
         } else {
@@ -51,6 +68,16 @@ impl Display for Identifier {
     }
 }
 
+impl Display for IdentiCall {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(call) = &self.property {
+            write!(f, "{}.{}", self.object, call)
+        } else {
+            write!(f, "{}", self.object)
+        }
+    }
+}
+
 impl TryFrom<&AST> for Identifier {
     type Error = Vec<TypeErr>;
 
@@ -71,6 +98,12 @@ impl TryFrom<&AST> for Identifier {
     }
 }
 
+impl From<&str> for IdentiCall {
+    fn from(name: &str) -> Self {
+        IdentiCall { object: String::from(name), property: None }
+    }
+}
+
 impl From<&Vec<Identifier>> for Identifier {
     fn from(identifiers: &Vec<Identifier>) -> Self {
         Identifier { lit: None, names: identifiers.clone() }
@@ -79,7 +112,7 @@ impl From<&Vec<Identifier>> for Identifier {
 
 impl From<(bool, &str)> for Identifier {
     fn from((mutable, name): (bool, &str)) -> Self {
-        Identifier { lit: Some((mutable, String::from(name))), names: vec![] }
+        Identifier { lit: Some((mutable, IdentiCall::from(name))), names: vec![] }
     }
 }
 

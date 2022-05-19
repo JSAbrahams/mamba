@@ -131,7 +131,7 @@ pub fn identifier_from_var(
     } else {
         let any = Expected::new(&var.pos, &ExpressionAny);
         for (f_mut, f_name) in identifier.fields() {
-            env = env.insert_var(mutable && f_mut, &f_name, &any);
+            env = env.insert_var(mutable && f_mut, &f_name.object(&var.pos)?, &any);
         }
     };
 
@@ -195,7 +195,7 @@ fn identifier_to_tuple(
     env: &Environment,
 ) -> TypeResult<Vec<Expected>> {
     if let Some((_, var)) = &iden.lit {
-        let expected = env.get_var(var);
+        let expected = env.get_var(&var.object(pos)?);
 
         if let Some(expected) = expected {
             Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())

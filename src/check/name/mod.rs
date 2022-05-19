@@ -83,7 +83,7 @@ pub fn match_type_direct(
         NameVariant::Single { .. } | NameVariant::Fun { .. } => {
             if let Some((mutable, id)) = &identifier.lit {
                 let mut mapping = HashMap::with_capacity(1);
-                mapping.insert(id.clone(), (*mutable, Name::from(name)));
+                mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
                 Ok(mapping)
             } else {
                 let msg = format!("Cannot match {} with a '{}'", identifier, name);
@@ -93,7 +93,7 @@ pub fn match_type_direct(
         NameVariant::Tuple(elements) => {
             if let Some((mutable, id)) = &identifier.lit {
                 let mut mapping = HashMap::with_capacity(1);
-                mapping.insert(id.clone(), (*mutable, Name::from(name)));
+                mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
                 Ok(mapping)
             } else if elements.len() == identifier.fields().len() {
                 let sets: Vec<HashMap<_, _>> = identifier

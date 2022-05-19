@@ -1,5 +1,5 @@
 class X:
-    def __init__(self, a):
+    def __init__(self, a: float):
         self.a = a
 
 x = X(10)

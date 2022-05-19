@@ -12,7 +12,6 @@ fn assign_types() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // a is undefined in reassign for some reason
 fn assign_types_nested() -> OutTestRet {
     test_directory(true, &["operation"], &["operation", "target"], "assign_types_nested")
 }

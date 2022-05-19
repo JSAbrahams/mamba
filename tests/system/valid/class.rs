@@ -7,6 +7,17 @@ fn generics_ast_verify() -> OutTestRet {
 }
 
 #[test]
+fn assign_types_nested() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "assign_types_nested")
+}
+
+#[test]
+#[ignore] // Should be fixed within this PR ideally
+fn assign_types_double_nested() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "assign_types_double_nested")
+}
+
+#[test]
 fn import_ast_verify() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "import")
 }

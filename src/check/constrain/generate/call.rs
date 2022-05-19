@@ -38,13 +38,14 @@ pub fn gen_call(
                     errors.push(TypeErr::new(&ast.pos, &msg))
                 }
 
-                if let Some(expecteds) = env.get_var(var) {
+                if let Some(expecteds) = env.get_var(&var.object(&left.pos)?) {
+                    // Because we don't go over this recursively, we can circumvent mutability here
                     if expecteds.iter().any(|(is_mut, _)| !is_mut) {
                         let msg = format!("{} was declared final, cannot reassign", var);
                         errors.push(TypeErr::new(&ast.pos, &msg))
                     }
                 } else {
-                    let msg = format!("'{}' is undefined in this scope.", var);
+                    let msg = format!("Cannot reassign to '{}', it is undefined in this scope.", var);
                     errors.push(TypeErr::new(&ast.pos, &msg))
                 }
             }
@@ -67,23 +68,26 @@ pub fn gen_call(
                         return Err(vec![TypeErr::new(&ast.pos, &msg)]);
                     }
                 };
-                let simple_assign_ast = AST::new(&ast.pos, Node::Reassign {
-                    left: left.clone(),
-                    right: Box::from(AST::new(&ast.pos, node)),
-                    op: None,
-                });
+                let simple_assign_ast = AST::new(
+                    &ast.pos,
+                    Node::Reassign {
+                        left: left.clone(),
+                        right: Box::from(AST::new(&ast.pos, node)),
+                        op: None,
+                    },
+                );
 
-                generate(&simple_assign_ast, env, ctx, constr)?; // Come back and try again
+                generate(&simple_assign_ast, env, ctx, constr) // Come back and try again
             } else {
                 constr.add(
                     "reassign",
                     &Expected::try_from((left, &env.var_mappings))?,
                     &Expected::try_from((right, &env.var_mappings))?,
                 );
-            }
 
-            let (mut constr, env) = generate(right, env, ctx, constr)?;
-            generate(left, &env, ctx, &mut constr)
+                let (mut constr, env) = generate(right, env, ctx, constr)?;
+                generate(left, &env, ctx, &mut constr)
+            }
         }
         Node::FunctionCall { name, args } => {
             let f_name = StringName::try_from(name)?;
@@ -213,6 +217,8 @@ fn property_call(
 ) -> Constrained {
     match &property.node {
         Node::PropertyCall { instance: inner, property } => {
+            // We should actually check what the access type would be and give that as an argument
+            // for further constraint generation as the chain grows.
             let (mut constr, env) = property_call(instance, inner, env, ctx, constr)?;
             property_call(inner, property, &env, ctx, &mut constr)
         }
@@ -247,10 +253,13 @@ fn property_call(
             };
 
             if let Some(op) = op {
-                let left = Box::from(AST::new(&left.pos, Node::PropertyCall {
-                    instance: Box::from(instance.clone()),
-                    property: left.clone(),
-                }));
+                let left = Box::from(AST::new(
+                    &instance.pos,
+                    Node::PropertyCall {
+                        instance: Box::from(instance.clone()),
+                        property: left.clone(),
+                    },
+                ));
 
                 // Create temporary nodes and check that
                 let node = match op.as_ref() {
@@ -266,13 +275,16 @@ fn property_call(
                         return Err(vec![TypeErr::new(&property.pos, &msg)]);
                     }
                 };
-                let simple_assign_ast = AST::new(&instance.pos.union(&property.pos), Node::Reassign {
-                    left,
-                    right: Box::from(AST::new(&property.pos, node)),
-                    op: None,
-                });
+                let simple_assign_ast = AST::new(
+                    &instance.pos.union(&property.pos),
+                    Node::Reassign {
+                        left,
+                        right: Box::from(AST::new(&property.pos, node)),
+                        op: None,
+                    },
+                );
 
-                generate(&simple_assign_ast, env, ctx, constr)?; // Come back and try again
+                generate(&simple_assign_ast, env, ctx, constr) // Come back and try again
             } else {
                 let left = Expected::new(
                     &property.pos,
@@ -287,9 +299,9 @@ fn property_call(
                     &left,
                     &Expected::try_from((right, &env.var_mappings))?,
                 );
-            }
 
-            generate(right, env, ctx, constr)
+                generate(right, env, ctx, constr)
+            }
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
@@ -340,8 +352,9 @@ fn property_call(
 /// A property call may not be a tuple, however.
 fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
     match &ast.node {
-        Node::PropertyCall { property, .. } => {
-            let identifier = check_reassignable(property)?;
+        Node::PropertyCall { instance, .. } => {
+            // We need logic here to check with nested variables if they may be assigned.
+            let identifier = check_reassignable(instance)?;
             if identifier.is_tuple() {
                 let msg = format!("Cannot reassign to {}", &ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])

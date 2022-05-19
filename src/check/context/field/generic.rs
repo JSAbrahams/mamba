@@ -28,11 +28,15 @@ pub struct GenericFields {
 }
 
 impl Hash for GenericField {
-    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
 }
 
 impl PartialEq for GenericField {
-    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl TryFrom<&AST> for GenericField {
@@ -48,10 +52,10 @@ impl TryFrom<&AST> for GenericField {
                 in_class: None,
                 ty: match ty {
                     Some(ty) => Some(Name::try_from(ty.deref())?),
-                    None => None
+                    None => None,
                 },
             }),
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
+            _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
         }
     }
 }
@@ -79,22 +83,32 @@ impl TryFrom<&AST> for GenericFields {
                                 })
                                 .collect())
                         }
-                        None => Ok(identifier
-                            .fields()
-                            .iter()
-                            .map(|(inner_mut, id)| GenericField {
-                                is_py_type: false,
-                                name: id.clone(),
-                                pos: ast.pos.clone(),
-                                mutable: *mutable || *inner_mut,
-                                in_class: None,
-                                ty: None,
-                            })
-                            .collect())
+                        None => {
+                            // assume no calls
+                            let names: Vec<String> = identifier
+                                .fields()
+                                .iter()
+                                .map(|(_, id)| id.object(&var.pos))
+                                .collect::<TypeResult<Vec<String>>>()?;
+
+                            Ok(identifier
+                                .fields()
+                                .iter()
+                                .enumerate()
+                                .map(|(i, (inner_mut, _))| GenericField {
+                                    is_py_type: false,
+                                    name: names[i].clone(),
+                                    pos: ast.pos.clone(),
+                                    mutable: *mutable || *inner_mut,
+                                    in_class: None,
+                                    ty: None,
+                                })
+                                .collect())
+                        }
                     }
                 }
-                _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
-            }?
+                _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
+            }?,
         })
     }
 }
