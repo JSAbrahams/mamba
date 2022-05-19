@@ -50,6 +50,13 @@ pub enum Token {
     Id(String),
     Fin,
     Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    PowAssign,
+    BLShiftAssign,
+    BRShiftAssign,
     Def,
 
     Real(String),
@@ -187,6 +194,13 @@ impl fmt::Display for Token {
 
             Token::Fin => String::from("fin"),
             Token::Assign => String::from(":="),
+            Token::AddAssign => String::from("+="),
+            Token::SubAssign => String::from("-="),
+            Token::MulAssign => String::from("*="),
+            Token::PowAssign => String::from("^="),
+            Token::DivAssign => String::from("/="),
+            Token::BLShiftAssign => String::from("<<="),
+            Token::BRShiftAssign => String::from(">>="),
             Token::Def => String::from("def"),
 
             Token::Id(id) => id,

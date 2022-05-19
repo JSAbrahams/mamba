@@ -14,10 +14,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         ':' => match it.peek() {
             Some(':') => match (it.next(), it.peek()) {
                 (_, Some('=')) => next_and_create(it, state, Token::SliceIncl),
-                _ => create(state, Token::Slice)
+                _ => create(state, Token::Slice),
             },
             Some('=') => next_and_create(it, state, Token::Assign),
-            _ => create(state, Token::DoublePoint)
+            _ => create(state, Token::DoublePoint),
         },
         '(' => create(state, Token::LRBrack),
         ')' => create(state, Token::RRBrack),
@@ -29,40 +29,57 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
-            _ => Err(LexErr::new(&state.pos, None, "return carriage not followed by newline"))
+            _ => Err(LexErr::new(&state.pos, None, "return carriage not followed by newline")),
         },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
                 (_, Some('=')) => next_and_create(it, state, Token::RangeIncl),
-                _ => create(state, Token::Range)
+                _ => create(state, Token::Range),
             },
-            _ => create(state, Token::Point)
+            _ => create(state, Token::Point),
         },
         '<' => match it.peek() {
-            Some('<') => next_and_create(it, state, Token::BLShift),
+            Some('<') => match (it.next(), it.peek()) {
+                (_, Some('=')) => next_and_create(it, state, Token::BLShiftAssign),
+                _ => next_and_create(it, state, Token::BLShift),
+            },
             Some('=') => next_and_create(it, state, Token::Leq),
-            _ => create(state, Token::Le)
+            _ => create(state, Token::Le),
         },
         '>' => match it.peek() {
-            Some('>') => next_and_create(it, state, Token::BRShift),
+            Some('>') => match (it.next(), it.peek()) {
+                (_, Some('=')) => next_and_create(it, state, Token::BRShiftAssign),
+                _ => next_and_create(it, state, Token::BRShift),
+            },
             Some('=') => next_and_create(it, state, Token::Geq),
-            _ => create(state, Token::Ge)
+            _ => create(state, Token::Ge),
         },
-        '+' => create(state, Token::Add),
+        '+' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::AddAssign),
+            _ => create(state, Token::Add),
+        },
         '-' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::SubAssign),
             Some('>') => next_and_create(it, state, Token::To),
-            _ => create(state, Token::Sub)
+            _ => create(state, Token::Sub),
         },
-        '*' => create(state, Token::Mul),
+        '*' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::MulAssign),
+            _ => create(state, Token::Mul),
+        },
         '/' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::DivAssign),
             Some('/') => next_and_create(it, state, Token::FDiv),
-            _ => create(state, Token::Div)
+            _ => create(state, Token::Div),
         },
         '\\' => create(state, Token::BSlash),
-        '^' => create(state, Token::Pow),
+        '^' => match it.peek() {
+            Some('=') => next_and_create(it, state, Token::PowAssign),
+            _ => create(state, Token::Pow),
+        },
         '=' => match it.peek() {
             Some('>') => next_and_create(it, state, Token::BTo),
-            _ => create(state, Token::Eq)
+            _ => create(state, Token::Eq),
         },
         '#' => {
             let mut comment = String::new();
@@ -78,7 +95,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                 let msg = String::from("'!' is not a valid character on its own");
                 return Err(LexErr::new(&state.pos, None, &msg));
             }
-        }
+        },
         '?' => create(state, Token::Question),
         '0'..='9' => {
             let mut number = c.to_string();
@@ -107,14 +124,16 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                             // Check if not range by peeking ahead extra char
                             let mut it = it.clone();
                             it.next();
-                            if let Some('.') = it.peek() { break; }
+                            if let Some('.') = it.peek() {
+                                break;
+                            }
                         }
 
                         number.push(c);
                         float = true;
                         it.next();
                     }
-                    _ => break
+                    _ => break,
                 }
             }
             create(
@@ -136,7 +155,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                         id_or_operation.push(*c);
                         it.next();
                     }
-                    _ => break
+                    _ => break,
                 }
             }
             create(state, as_op_or_id(id_or_operation))
@@ -194,7 +213,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                             .iter()
                             .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
                             .collect()),
-                        Err(err) => Err(err)
+                        Err(err) => Err(err),
                     })
                     .collect::<Result<_, _>>()?;
 
@@ -205,7 +224,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c)))
+        c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c))),
     }
 }
 
@@ -218,7 +237,9 @@ fn next_and_create(
     create(state, token)
 }
 
-fn create(state: &mut State, token: Token) -> LexResult<Vec<Lex>> { Ok(state.token(token)) }
+fn create(state: &mut State, token: Token) -> LexResult<Vec<Lex>> {
+    Ok(state.token(token))
+}
 
 fn as_op_or_id(string: String) -> Token {
     match string.as_ref() {
@@ -278,7 +299,7 @@ fn as_op_or_id(string: String) -> Token {
         "None" => Token::Undefined,
         "pass" => Token::Pass,
 
-        _ => Token::Id(string)
+        _ => Token::Id(string),
     }
 }
 
@@ -401,7 +422,6 @@ mod test {
         Ok(())
     }
 
-
     #[test]
     fn range() -> Result<(), LexErr> {
         let sources = vec!["0 .. 2", "0.. 2", "0 ..2", "0..2"];
@@ -417,7 +437,6 @@ mod test {
 
         Ok(())
     }
-
 
     #[test]
     fn range_tripped_up() -> Result<(), LexErr> {
