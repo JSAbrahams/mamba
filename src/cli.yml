@@ -2,7 +2,6 @@ name: Mamba
 author: Joël Abrahams
 about: |
   Transpile Mamba to Python code.
-  Documentation available at http://joelabrahams.nl/mamba_doc/.
 args:
   - input:
       short: i
