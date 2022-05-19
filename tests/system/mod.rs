@@ -5,7 +5,7 @@ use std::process::Command;
 use python_parser::ast::Statement;
 
 use mamba::common::delimit::newline_delimited;
-use mamba::pipeline::transpile_directory;
+use mamba::transpile_directory;
 
 use crate::common::{
     delete_dir, python_src_to_stmts, resource_content, resource_content_path,
@@ -85,7 +85,8 @@ fn fallable(
         .expect("Could not run Python command.");
 
     let check_src = resource_content(true, input, &format!("{}_check.py", file_name));
-    let check_ast = python_src_to_stmts(&check_src);
+    // Replace CRLF with LF line endings
+    let check_ast = python_src_to_stmts(&check_src.replace("\r\n", "\n"));
 
     let out_src = resource_content_path(output_file);
     let out_ast = python_src_to_stmts(&out_src);
