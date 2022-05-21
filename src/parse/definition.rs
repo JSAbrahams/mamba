@@ -122,8 +122,7 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
         _ => id.pos.clone(),
     };
 
-    let node =
-        Node::FunDef { id: Box::from(id.clone()), pure, args: fun_args, ret: ret_ty, raises, body };
+    let node = Node::FunDef { id, pure, args: fun_args, ret: ret_ty, raises, body };
     Ok(Box::from(AST::new(&start.union(&end), node)))
 }
 

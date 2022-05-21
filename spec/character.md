@@ -59,8 +59,8 @@ Keyword | Use
 `+=`  | Add value to variable and assign to variable
 `-=`  | Subtract value from variable and assign to variable
 `*=`  | Multiply value with variable and assign to variable
-`/=`  | Multiply value by variable and assign to variable
-`^=`  | Raise value by variable and assign to variable
+`/=`  | Divide variable by value and assign to variable
+`^=`  | Raise variable by value and assign to variable
 `>>=` | Binary shift variable to the right by value
 `<<=` | Binary shift variable to the left by value
 

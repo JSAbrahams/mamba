@@ -71,8 +71,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                     Core::FunDef { id: c_id.clone(), arg, ty, body }
                 }
                 _ => {
-                    let msg = format!("Non-id function");
-                    return Err(UnimplementedErr::new(id, &msg));
+                    return Err(UnimplementedErr::new(id, "Non-id function"));
                 }
             }
         }
