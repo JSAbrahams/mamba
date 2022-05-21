@@ -1,5 +1,6 @@
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
+use crate::parse::ast::node_op::NodeOp;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
@@ -23,14 +24,14 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
 
     let (token, op) = if let Some(token) = it.peek_next() {
         match &token {
-            Lex { token: Token::Assign, .. } => (Token::Assign, None),
-            Lex { token: Token::AddAssign, .. } => (Token::AddAssign, Some(Node::AddOp)),
-            Lex { token: Token::SubAssign, .. } => (Token::SubAssign, Some(Node::SubOp)),
-            Lex { token: Token::MulAssign, .. } => (Token::MulAssign, Some(Node::MulOp)),
-            Lex { token: Token::DivAssign, .. } => (Token::DivAssign, Some(Node::DivOp)),
-            Lex { token: Token::PowAssign, .. } => (Token::PowAssign, Some(Node::PowOp)),
-            Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, Some(Node::BLShiftOp)),
-            Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, Some(Node::BRShiftOp)),
+            Lex { token: Token::Assign, .. } => (Token::Assign, NodeOp::Assign),
+            Lex { token: Token::AddAssign, .. } => (Token::AddAssign, NodeOp::Add),
+            Lex { token: Token::SubAssign, .. } => (Token::SubAssign, NodeOp::Sub),
+            Lex { token: Token::MulAssign, .. } => (Token::MulAssign, NodeOp::Mul),
+            Lex { token: Token::DivAssign, .. } => (Token::DivAssign, NodeOp::Div),
+            Lex { token: Token::PowAssign, .. } => (Token::PowAssign, NodeOp::Pow),
+            Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, NodeOp::BLShift),
+            Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, NodeOp::BRShift),
             lex => { return Err(expected_one_of(&expect, lex, "reassignment")); }
         }
     } else {
@@ -40,7 +41,6 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
 
     let right = it.parse(&parse_expression, "reassignment", &start)?;
 
-    let op = op.map(Box::from);
     let node = Node::Reassign { left: Box::new(pre.clone()), right: right.clone(), op };
     Ok(Box::from(AST::new(&start.union(&right.pos), node)))
 }
@@ -104,28 +104,29 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::node_op::NodeOp;
 
     #[test]
     fn op_assign() {
         let source = String::from("a:=1\nb+=2\nc-=3\nd*=4\ne/=5\nf^=6\ng<<=7\nh>>=8\n");
         let statements = parse_direct(&source).unwrap();
 
-        let ops: Vec<Option<Node>> = statements
+        let ops: Vec<NodeOp> = statements
             .iter()
             .map(|ast| match &ast.node {
-                Node::Reassign { op, .. } => op.clone().map(|n| *n),
+                Node::Reassign { op, .. } => op.clone(),
                 other => panic!("Expected reassign {:?}", other)
             })
             .collect();
 
-        assert_eq!(ops[0], None);
-        assert_eq!(ops[1], Some(Node::AddOp));
-        assert_eq!(ops[2], Some(Node::SubOp));
-        assert_eq!(ops[3], Some(Node::MulOp));
-        assert_eq!(ops[4], Some(Node::DivOp));
-        assert_eq!(ops[5], Some(Node::PowOp));
-        assert_eq!(ops[6], Some(Node::BLShiftOp));
-        assert_eq!(ops[7], Some(Node::BRShiftOp));
+        assert_eq!(ops[0], NodeOp::Assign);
+        assert_eq!(ops[1], NodeOp::Add);
+        assert_eq!(ops[2], NodeOp::Sub);
+        assert_eq!(ops[3], NodeOp::Mul);
+        assert_eq!(ops[4], NodeOp::Div);
+        assert_eq!(ops[5], NodeOp::Pow);
+        assert_eq!(ops[6], NodeOp::BLShift);
+        assert_eq!(ops[7], NodeOp::BRShift);
     }
 
     #[test]

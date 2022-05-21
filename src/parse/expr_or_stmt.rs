@@ -68,6 +68,7 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
+    use crate::parse::ast::node_op::NodeOp;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -129,7 +130,7 @@ mod test {
 
         let (left, right) = match &statements.first().expect("script empty.").node {
             Node::Reassign { left, right, op } => {
-                assert!(op.is_none());
+                assert_eq!(*op, NodeOp::Assign);
                 (left.clone(), right.clone())
             }
             _ => panic!("first element script was not reassign.")

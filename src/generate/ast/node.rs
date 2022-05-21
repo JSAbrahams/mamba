@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter};
 
+use crate::check::context::function;
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
     FromImport { from: Box<Core>, import: Box<Core> },
@@ -13,6 +15,7 @@ pub enum Core {
     ExpressionType { expr: Box<Core>, ty: Box<Core> },
     Assign { left: Box<Core>, right: Box<Core>, op: CoreOp },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
+    FunDefOp { op: CoreOp, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunDef { id: Box<Core>, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },
     AnonFun { args: Vec<Core>, body: Box<Core> },
@@ -29,39 +32,26 @@ pub enum Core {
     Set { elements: Vec<Core> },
     List { elements: Vec<Core> },
     Index { item: Box<Core>, range: Box<Core> },
-    GeOp,
     Ge { left: Box<Core>, right: Box<Core> },
-    GeqOp,
     Geq { left: Box<Core>, right: Box<Core> },
-    LeOp,
     Le { left: Box<Core>, right: Box<Core> },
-    LeqOp,
     Leq { left: Box<Core>, right: Box<Core> },
     Not { expr: Box<Core> },
     Is { left: Box<Core>, right: Box<Core> },
     IsN { left: Box<Core>, right: Box<Core> },
-    EqOp,
     Eq { left: Box<Core>, right: Box<Core> },
-    NeqOp,
     Neq { left: Box<Core>, right: Box<Core> },
     IsA { left: Box<Core>, right: Box<Core> },
     And { left: Box<Core>, right: Box<Core> },
     Or { left: Box<Core>, right: Box<Core> },
-    AddOp,
     Add { left: Box<Core>, right: Box<Core> },
     AddU { expr: Box<Core> },
-    SubOp,
     Sub { left: Box<Core>, right: Box<Core> },
     SubU { expr: Box<Core> },
-    MulOp,
     Mul { left: Box<Core>, right: Box<Core> },
-    ModOp,
     Mod { left: Box<Core>, right: Box<Core> },
-    PowOp,
     Pow { left: Box<Core>, right: Box<Core> },
-    DivOp,
     Div { left: Box<Core>, right: Box<Core> },
-    FDivOp,
     FDiv { left: Box<Core>, right: Box<Core> },
     Sqrt { expr: Box<Core> },
     BAnd { left: Box<Core>, right: Box<Core> },
@@ -102,6 +92,43 @@ pub enum CoreOp {
     PowAssign,
     BLShiftAssign,
     BRShiftAssign,
+
+    Ge,
+    Geq,
+    Le,
+    Leq,
+    Eq,
+    Neq,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Mod,
+    FDiv,
+}
+
+impl CoreOp {
+    pub fn maybe_from(lit: &str) -> Option<CoreOp> {
+        Some(match lit {
+            function::GE => CoreOp::Ge,
+            function::GEQ => CoreOp::Geq,
+            function::LE => CoreOp::Le,
+            function::LEQ => CoreOp::Leq,
+
+            function::EQ => CoreOp::Eq,
+            function::NEQ => CoreOp::Neq,
+
+            function::ADD => CoreOp::Add,
+            function::SUB => CoreOp::Sub,
+            function::POW => CoreOp::Pow,
+            function::MUL => CoreOp::Mul,
+            function::MOD => CoreOp::Mod,
+            function::DIV => CoreOp::Div,
+            function::FDIV => CoreOp::FDiv,
+            _ => return None
+        })
+    }
 }
 
 impl Display for CoreOp {
@@ -118,6 +145,22 @@ impl Display for CoreOp {
                 CoreOp::PowAssign => "**=",
                 CoreOp::BLShiftAssign => "<<=",
                 CoreOp::BRShiftAssign => ">>=",
+
+                CoreOp::Ge => "__gt__",
+                CoreOp::Geq => "__ge__",
+                CoreOp::Le => "__lt__",
+                CoreOp::Leq => "__le__",
+
+                CoreOp::Eq => "__eq__",
+                CoreOp::Neq => "__ne__",
+
+                CoreOp::Add => "__add__",
+                CoreOp::Sub => "__sub__",
+                CoreOp::Pow => "__pow__",
+                CoreOp::Mul => "__mul__",
+                CoreOp::Mod => "__mod__",
+                CoreOp::Div => "__truediv__",
+                CoreOp::FDiv => "__floordiv__",
             }
         )
     }

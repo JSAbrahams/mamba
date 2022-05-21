@@ -3,7 +3,6 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::context::function;
 use crate::check::name::Name;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
@@ -117,20 +116,8 @@ impl TryFrom<&AST> for GenericFunction {
 }
 
 pub fn function_name(ast: &AST) -> TypeResult<StringName> {
-    Ok(StringName::from(match &ast.node {
-        Node::Id { lit } => lit.as_str(),
-        Node::Init => "init",
-        Node::SqrtOp => "sqrt",
-        Node::GeOp => function::GE,
-        Node::LeOp => function::LE,
-        Node::EqOp => function::EQ,
-        Node::AddOp => function::ADD,
-        Node::SubOp => function::SUB,
-        Node::PowOp => function::POW,
-        Node::MulOp => function::MUL,
-        Node::ModOp => function::MOD,
-        Node::DivOp => function::DIV,
-        Node::FDivOp => function::FDIV,
-        _ => return Err(vec![TypeErr::new(&ast.pos, "Expected valid function truename")])
-    }))
+    match &ast.node {
+        Node::Id { lit } => Ok(StringName::from(lit.as_str())),
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected valid function truename")])
+    }
 }

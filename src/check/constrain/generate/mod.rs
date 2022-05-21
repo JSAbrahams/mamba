@@ -14,7 +14,7 @@ use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::AST;
 use crate::parse::ast::Node::*;
 
 mod call;
@@ -113,30 +113,17 @@ pub fn generate(
         Print { .. } => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
-        Node::Import { .. } |
-        Node::FromImport { .. } |
-        Node::Generic { .. } |
-        Node::Parent { .. } |
+        Import { .. } |
+        FromImport { .. } |
+        Generic { .. } |
+        Parent { .. } |
         Init |
-        Node::ExpressionType { .. } |
+        ExpressionType { .. } |
         _Self |
-        AddOp |
-        SubOp |
-        SqrtOp |
-        MulOp |
-        FDivOp |
-        DivOp |
-        PowOp |
-        ModOp |
-        EqOp |
-        LeOp |
-        GeOp |
-        Node::BLShiftOp |
-        Node::BRShiftOp |
-        Node::DocStr { .. } |
+        DocStr { .. } |
         Underscore |
         Undefined |
-        Node::Comment { .. } => Ok((constr.clone(), env.clone()))
+        Comment { .. } => Ok((constr.clone(), env.clone()))
     }
 }
 

@@ -1,8 +1,10 @@
-use crate::generate::ast::node::Core;
+use std::ops::Deref;
+
+use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::GenResult;
+use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::parse::ast::{AST, Node};
 
 pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
@@ -46,22 +48,34 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                 }
             }
         }
-        Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => Core::FunDef {
-            id: Box::from(convert_node(id, imp, state)?),
-            arg: convert_vec(fun_args, imp, state)?,
-            ty: match ret_ty {
+        Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => {
+            let arg = convert_vec(fun_args, imp, state)?;
+            let ty = match ret_ty {
                 Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state)?)),
                 None => None,
-            },
-            body: if state.interface {
+            };
+            let body = if state.interface {
                 Box::from(Core::Pass)
             } else {
                 Box::from(match expression {
                     Some(expr) => convert_node(expr, imp, &state.expand_ty(true))?,
                     None => Core::Pass,
                 })
-            },
-        },
+            };
+
+            let c_id = Box::from(convert_node(id, imp, state)?);
+            match c_id.deref() {
+                Core::Id { lit } => if let Some(op) = CoreOp::maybe_from(lit) {
+                    Core::FunDefOp { op, arg, ty, body }
+                } else {
+                    Core::FunDef { id: c_id.clone(), arg, ty, body }
+                }
+                _ => {
+                    let msg = format!("Non-id function");
+                    return Err(UnimplementedErr::new(id, &msg));
+                }
+            }
+        }
         Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
             vararg: *vararg,
             var: Box::from(convert_node(var, imp, state)?),
@@ -88,6 +102,7 @@ mod test {
     use crate::generate::gen;
     use crate::parse::ast::AST;
     use crate::parse::ast::Node;
+    use crate::parse::ast::node_op::NodeOp;
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
@@ -105,7 +120,7 @@ mod test {
     fn reassign_verify() {
         let left = to_pos!(Node::Id { lit: String::from("something") });
         let right = to_pos!(Node::Id { lit: String::from("other") });
-        let reassign = to_pos!(Node::Reassign { left, right, op: None });
+        let reassign = to_pos!(Node::Reassign { left, right, op: NodeOp::Assign });
 
         let (left, right, op) = match gen(&reassign) {
             Ok(Core::Assign { left, right, op }) => (left, right, op),

@@ -66,19 +66,6 @@ impl Display for Node {
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),
             Node::_Self => String::from(arg::SELF),
-            Node::AddOp => format!("{}", Token::Add),
-            Node::SubOp => format!("{}", Token::Sub),
-            Node::SqrtOp => format!("{}", Token::Sqrt),
-            Node::MulOp => format!("{}", Token::Mul),
-            Node::FDivOp => format!("{}", Token::FDiv),
-            Node::DivOp => format!("{}", Token::Div),
-            Node::PowOp => format!("{}", Token::Pow),
-            Node::ModOp => format!("{}", Token::Mod),
-            Node::EqOp => format!("{}", Token::Eq),
-            Node::LeOp => format!("{}", Token::Le),
-            Node::GeOp => format!("{}", Token::Ge),
-            Node::BLShiftOp => format!("{}", Token::BLShift),
-            Node::BRShiftOp => format!("{}", Token::BRShift),
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
@@ -186,7 +173,7 @@ impl Node {
             Node::Reassign { left, right, op } => Node::Reassign {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
-                op, // op is untouched
+                op,
             },
             Node::VariableDef { mutable, var, ty, expr: expression, forward } => Node::VariableDef {
                 mutable,
@@ -782,6 +769,7 @@ impl Node {
 mod test {
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::{AST, Node};
+    use crate::parse::ast::node_op::NodeOp;
 
     macro_rules! map_ne {
         ($node:expr, $new_node: expr, $old: expr, $new: expr) => {{
@@ -826,18 +814,6 @@ mod test {
         map_eq!(Node::Underscore, Node::Underscore, old, new);
         map_eq!(Node::Undefined, Node::Undefined, old, new);
         map_eq!(Node::Pass, Node::Pass, old, new);
-
-        map_eq!(Node::AddOp, Node::AddOp, old, new);
-        map_eq!(Node::SubOp, Node::SubOp, old, new);
-        map_eq!(Node::SqrtOp, Node::SqrtOp, old, new);
-        map_eq!(Node::MulOp, Node::MulOp, old, new);
-        map_eq!(Node::FDivOp, Node::FDivOp, old, new);
-        map_eq!(Node::DivOp, Node::DivOp, old, new);
-        map_eq!(Node::PowOp, Node::PowOp, old, new);
-        map_eq!(Node::ModOp, Node::ModOp, old, new);
-        map_eq!(Node::EqOp, Node::EqOp, old, new);
-        map_eq!(Node::LeOp, Node::LeOp, old, new);
-        map_eq!(Node::GeOp, Node::GeOp, old, new);
     }
 
     #[test]
@@ -956,11 +932,11 @@ mod test {
     #[test]
     fn import_equal_value() {
         two_ast!(Node::Import {
-            import: vec![AST::new(&Position::default(), Node::AddOp)],
+            import: vec![AST::new(&Position::default(), Node::Continue)],
             aliases: vec![AST::new(&Position::default(), Node::Pass)],
         });
         two_ast!(Node::FromImport {
-            id: Box::from(AST::new(&Position::default(), Node::AddOp)),
+            id: Box::from(AST::new(&Position::default(), Node::Continue)),
             import: Box::from(AST::new(&Position::default(), Node::Pass)),
         });
     }
@@ -968,7 +944,7 @@ mod test {
     #[test]
     fn from_import_equal_value() {
         let node = Node::Import {
-            import: vec![AST::new(&Position::default(), Node::AddOp)],
+            import: vec![AST::new(&Position::default(), Node::Continue)],
             aliases: vec![AST::new(&Position::default(), Node::Pass)],
         };
 
@@ -978,10 +954,10 @@ mod test {
     #[test]
     fn class_equal_value() {
         let node = Node::Class {
-            ty: Box::new(AST::new(&Position::default(), Node::SubOp)),
-            args: vec![AST::new(&Position::default(), Node::AddOp)],
+            ty: Box::new(AST::new(&Position::default(), Node::Continue)),
+            args: vec![AST::new(&Position::default(), Node::ReturnEmpty)],
             parents: vec![AST::new(&Position::default(), Node::Pass)],
-            body: Some(Box::from(AST::new(&Position::default(), Node::AddOp))),
+            body: Some(Box::from(AST::new(&Position::default(), Node::_Self))),
         };
 
         two_ast!(node);
@@ -990,8 +966,8 @@ mod test {
     #[test]
     fn generic_equal_value() {
         let node = Node::Generic {
-            id: Box::new(AST::new(&Position::default(), Node::SubOp)),
-            isa: Some(Box::from(AST::new(&Position::default(), Node::AddOp))),
+            id: Box::new(AST::new(&Position::default(), Node::ReturnEmpty)),
+            isa: Some(Box::from(AST::new(&Position::default(), Node::Continue))),
         };
 
         two_ast!(node);
@@ -1000,8 +976,8 @@ mod test {
     #[test]
     fn parent_equal_value() {
         let node = Node::Parent {
-            ty: Box::new(AST::new(&Position::default(), Node::SubOp)),
-            args: vec![AST::new(&Position::default(), Node::DivOp)],
+            ty: Box::new(AST::new(&Position::default(), Node::_Self)),
+            args: vec![AST::new(&Position::default(), Node::Pass)],
         };
 
         two_ast!(node);
@@ -1015,9 +991,9 @@ mod test {
     #[test]
     fn reassign_equal_value() {
         let node = Node::Reassign {
-            left: Box::new(AST::new(&Position::default(), Node::SubOp)),
-            right: Box::new(AST::new(&Position::default(), Node::LeOp)),
-            op: Option::from(Box::from(Node::SubOp)),
+            left: Box::new(AST::new(&Position::default(), Node::Pass)),
+            right: Box::new(AST::new(&Position::default(), Node::ReturnEmpty)),
+            op: NodeOp::Sub,
         };
 
         two_ast!(node);
@@ -1074,7 +1050,7 @@ mod test {
         two_ast!(Node::With {
             resource: first.clone(),
             alias: Some((second.clone(), false, Some(third.clone()))),
-            expr: Box::from(AST::new(&Position::default(), Node::GeOp))
+            expr: Box::from(AST::new(&Position::default(), Node::Pass))
         });
     }
 
@@ -1126,21 +1102,6 @@ mod test {
     }
 
     #[test]
-    fn op_equal_value() {
-        two_ast!(Node::AddOp);
-        two_ast!(Node::SubOp);
-        two_ast!(Node::SqrtOp);
-        two_ast!(Node::MulOp);
-        two_ast!(Node::FDivOp);
-        two_ast!(Node::DivOp);
-        two_ast!(Node::PowOp);
-        two_ast!(Node::ModOp);
-        two_ast!(Node::EqOp);
-        two_ast!(Node::LeOp);
-        two_ast!(Node::GeOp);
-    }
-
-    #[test]
     fn literal_value() {
         two_ast!(Node::Real { lit:String::from("dgfdh") });
         two_ast!(Node::Int { lit:String::from("sdfdf") });
@@ -1148,17 +1109,17 @@ mod test {
         two_ast!(Node::ENum { num:String::from("werw"), exp:String::from("reter") });
         two_ast!(Node::Str {
             lit:String::from("yuk"),
-            expressions: vec![AST::new(&Position::default(), Node::LeOp)] });
+            expressions: vec![AST::new(&Position::default(), Node::Continue)] });
     }
 
     #[test]
     fn string_different_expression_not_same_value() {
         two_ast_ne!(Node::Str {
                     lit:String::from("yuk"),
-                    expressions: vec![AST::new(&Position::default(), Node::LeOp)] },
+                    expressions: vec![AST::new(&Position::default(), Node::Continue)] },
                 Node::Str {
                     lit:String::from("yuk"),
-                    expressions: vec![AST::new(&Position::default(), Node::GeOp)] });
+                    expressions: vec![AST::new(&Position::default(), Node::Pass)] });
     }
 
     #[test]
@@ -1237,8 +1198,8 @@ mod test {
     #[test]
     fn contrl_flow_same_value() {
         let cond = Box::from(AST::new(&Position::default(), Node::Id { lit: String::from("qwerty") }));
-        let body = Box::from(AST::new(&Position::default(), Node::GeOp));
-        let third = Box::from(AST::new(&Position::default(), Node::LeOp));
+        let body = Box::from(AST::new(&Position::default(), Node::ReturnEmpty));
+        let third = Box::from(AST::new(&Position::default(), Node::Continue));
 
         two_ast!(Node::IfElse {cond: cond.clone(), then: body.clone(), el: Some(third.clone())});
         two_ast!(Node::Match {cond: cond.clone(), cases: vec![*body.clone(), *third.clone()]});

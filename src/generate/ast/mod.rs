@@ -71,24 +71,12 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Float { float } => float.clone(),
         Core::Bool { boolean } => String::from(if *boolean { "True" } else { "False" }),
 
-        Core::FunDef { id, arg, ty, body, .. } => {
+        Core::FunDefOp { op, arg, ty, body } => {
+            let id = Box::from(Core::Id { lit: format!("{}", op) });
+            to_py(&Core::FunDef { id, arg: arg.clone(), ty: ty.clone(), body: body.clone() }, ind)
+        }
+        Core::FunDef { id, arg, ty, body } => {
             let name = match id.as_ref() {
-                Core::GeOp => String::from("__gt__"),
-                Core::GeqOp => String::from("__ge__"),
-                Core::LeOp => String::from("__lt__"),
-                Core::LeqOp => String::from("__le__"),
-
-                Core::EqOp => String::from("__eq__"),
-                Core::NeqOp => String::from("__ne__"),
-
-                Core::AddOp => String::from("__add__"),
-                Core::SubOp => String::from("__sub__"),
-                Core::PowOp => String::from("__pow__"),
-                Core::MulOp => String::from("__mul__"),
-                Core::ModOp => String::from("__mod__"),
-                Core::DivOp => String::from("__truediv__"),
-                Core::FDivOp => String::from("__floordiv__"),
-
                 Core::Id { ref lit, .. } => match lit.as_str() {
                     "size" => String::from("__size__"),
                     function::INIT => String::from("__init__"),
@@ -155,19 +143,6 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
         Core::KeyValue { key, value } => format!("{}: {}", to_py(key, ind), to_py(value, ind)),
 
-        Core::GeOp => String::from(">"),
-        Core::GeqOp => String::from(">="),
-        Core::LeOp => String::from("<"),
-        Core::LeqOp => String::from("<="),
-        Core::EqOp => String::from("="),
-        Core::NeqOp => String::from("!="),
-        Core::AddOp => String::from("+"),
-        Core::SubOp => String::from("-"),
-        Core::MulOp => String::from("*"),
-        Core::DivOp => String::from("/"),
-        Core::ModOp => String::from("%"),
-        Core::PowOp => String::from("**"),
-        Core::FDivOp => String::from("//"),
         Core::UnderScore => String::from("_"),
 
         Core::Ge { left, right } => {
