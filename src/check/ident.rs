@@ -9,21 +9,21 @@ use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Identifier {
-    pub lit: Option<(bool, IdentiCall)>,
-    pub names: Vec<Identifier>,
+pub enum Identifier {
+    Single(bool, IdentiCall),
+    Multi(Vec<Identifier>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct IdentiCall {
-    object: String,
-    pub property: Option<Box<IdentiCall>>,
+pub enum IdentiCall {
+    Iden(String),
+    Call(String, Box<IdentiCall>),
 }
 
 impl IdentiCall {
     pub fn object(&self, pos: &Position) -> TypeResult<String> {
-        if self.property.is_none() {
-            Ok(self.object.clone())
+        if let IdentiCall::Iden(object) = &self {
+            Ok(object.clone())
         } else {
             Err(vec![TypeErr::new(pos, "Call not expected here")])
         }
@@ -31,28 +31,32 @@ impl IdentiCall {
 }
 
 impl Identifier {
-    pub fn is_tuple(&self) -> bool { self.names.len() > 1 }
+    pub fn is_tuple(&self) -> bool {
+        matches!(&self, Identifier::Multi(..))
+    }
+
+    pub fn fields(&self, pos: &Position) -> TypeResult<Vec<(bool, String)>> {
+        match &self {
+            Identifier::Single(mutable, call) => Ok(vec![(*mutable, call.object(pos)?)]),
+            Identifier::Multi(ids) => {
+                let ids: Vec<Vec<(bool, String)>> = ids
+                    .iter()
+                    .map(|id| id.fields(pos))
+                    .collect::<TypeResult<Vec<Vec<(bool, String)>>>>()?;
+                Ok(ids.into_iter().flatten().collect())
+            }
+        }
+    }
 }
 
 impl Identifier {
-    pub fn fields(&self) -> Vec<(bool, IdentiCall)> {
-        if let Some(lit) = &self.lit {
-            vec![lit.clone()]
-        } else {
-            self.names.iter().flat_map(|name| name.fields()).collect()
-        }
-    }
-
+    /// Make the top-level [IdentiCall] mutable, of both Single and Multi [Identifier]s.
     pub fn as_mutable(&self, mutable: bool) -> Identifier {
-        if let Some((_, id)) = &self.lit {
-            Identifier { lit: Some((mutable, id.clone())), names: self.names.clone() }
-        } else if mutable {
-            self.clone()
-        } else {
-            // If not mutable, then make everything immutable
-            Identifier {
-                lit: self.lit.clone().map(|(_, str)| (false, str)),
-                names: self.names.iter().map(|name| name.as_mutable(false)).collect(),
+        match &self {
+            Identifier::Single(_, name) => Identifier::Single(mutable, name.clone()),
+            Identifier::Multi(idens) => {
+                let idens = idens.iter().map(|id| id.as_mutable(mutable)).collect();
+                Identifier::Multi(idens)
             }
         }
     }
@@ -60,20 +64,18 @@ impl Identifier {
 
 impl Display for Identifier {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        if let Some((mutable, lit)) = &self.lit {
-            write!(f, "{}{}", if *mutable { "" } else { "fin " }, lit.clone())
-        } else {
-            write!(f, "({})", comma_delm(&self.names))
+        match &self {
+            Identifier::Single(mutable, lit) => write!(f, "{}{}", if *mutable { "" } else { "fin " }, lit.clone()),
+            Identifier::Multi(ids) => write!(f, "({})", comma_delm(ids))
         }
     }
 }
 
 impl Display for IdentiCall {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(call) = &self.property {
-            write!(f, "{}.{}", self.object, call)
-        } else {
-            write!(f, "{}", self.object)
+        match &self {
+            IdentiCall::Iden(name) => write!(f, "{}", name),
+            IdentiCall::Call(object, call) => write!(f, "{}.{}", object, call)
         }
     }
 }
@@ -93,26 +95,26 @@ impl TryFrom<&AST> for Identifier {
                     elements.iter().map(Identifier::try_from).collect::<Result<_, _>>()?;
                 Ok(Identifier::from(&elements))
             }
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected id or tuple of id's")])
+            _ => Err(vec![TypeErr::new(&ast.pos, "Expected id or tuple of id's")]),
         }
     }
 }
 
 impl From<&str> for IdentiCall {
     fn from(name: &str) -> Self {
-        IdentiCall { object: String::from(name), property: None }
+        IdentiCall::Iden(String::from(name))
     }
 }
 
 impl From<&Vec<Identifier>> for Identifier {
     fn from(identifiers: &Vec<Identifier>) -> Self {
-        Identifier { lit: None, names: identifiers.clone() }
+        Identifier::Multi(identifiers.clone())
     }
 }
 
 impl From<(bool, &str)> for Identifier {
     fn from((mutable, name): (bool, &str)) -> Self {
-        Identifier { lit: Some((mutable, IdentiCall::from(name))), names: vec![] }
+        Identifier::Single(mutable, IdentiCall::from(name))
     }
 }
 
@@ -135,11 +137,14 @@ mod tests {
 
     #[test]
     fn from_expression_type() -> TypeResult<()> {
-        let ast = AST::new(&Position::default(), Node::ExpressionType {
-            expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
-            mutable: false,
-            ty: None,
-        });
+        let ast = AST::new(
+            &Position::default(),
+            Node::ExpressionType {
+                expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
+                mutable: false,
+                ty: None,
+            },
+        );
         let iden = Identifier::try_from(&ast)?;
 
         assert_eq!(iden, Identifier::from((false, "h")));
@@ -148,11 +153,14 @@ mod tests {
 
     #[test]
     fn from_expression_type_as_mutable() -> TypeResult<()> {
-        let ast = AST::new(&Position::default(), Node::ExpressionType {
-            expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
-            mutable: false,
-            ty: None,
-        });
+        let ast = AST::new(
+            &Position::default(),
+            Node::ExpressionType {
+                expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
+                mutable: false,
+                ty: None,
+            },
+        );
         let iden = Identifier::try_from(&ast)?.as_mutable(true);
 
         assert_eq!(iden, Identifier::from((true, "h")));
@@ -172,17 +180,17 @@ mod tests {
             elements: vec![
                 AST::new(&Position::default(), Node::Id { lit: String::from("a") }),
                 AST::new(&Position::default(), Node::Id { lit: String::from("b") }),
-            ]
+            ],
         };
         let ast = AST::new(&Position::default(), node);
-        let iden = Identifier::try_from(&ast)?;
-
-        assert!(iden.lit.is_none());
-        let idens = iden.names;
-        assert_eq!(idens.len(), 2);
-        assert_eq!(idens[0], Identifier::from((true, "a")));
-        assert_eq!(idens[1], Identifier::from((true, "b")));
-
+        match Identifier::try_from(&ast)? {
+            Identifier::Single(_, _) => panic!("Expected multi"),
+            Identifier::Multi(idens) => {
+                assert_eq!(idens.len(), 2);
+                assert_eq!(idens[0], Identifier::from((true, "a")));
+                assert_eq!(idens[1], Identifier::from((true, "b")));
+            }
+        }
         Ok(())
     }
 
@@ -192,7 +200,7 @@ mod tests {
             elements: vec![
                 AST::new(&Position::default(), Node::Int { lit: String::from("a") }),
                 AST::new(&Position::default(), Node::Id { lit: String::from("b") }),
-            ]
+            ],
         };
         let ast = AST::new(&Position::default(), node);
         let iden = Identifier::try_from(&ast);

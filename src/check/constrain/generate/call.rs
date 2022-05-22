@@ -30,40 +30,18 @@ pub fn gen_call(
     match &ast.node {
         Node::Reassign { left, right, op } => {
             let identifier = check_reassignable(left)?;
-            // Top-level reassign should be defined in env
-            let mut errors = vec![];
-            for (f_mut, var) in &identifier.fields() {
-                if !f_mut {
-                    // note that this is mutability of reassign iden, not one in env
-                    let msg = format!("Cannot change mutability of {} in reassign", var);
-                    errors.push(TypeErr::new(&ast.pos, &msg))
-                }
-
-                if let Some(expecteds) = env.get_var(&var.object(&left.pos)?) {
-                    // Because we don't go over this recursively, we can circumvent mutability here
-                    if expecteds.iter().any(|(is_mut, _)| !is_mut) {
-                        let msg = format!("{} was declared final, cannot reassign", var);
-                        errors.push(TypeErr::new(&ast.pos, &msg))
-                    }
-                } else {
-                    let msg =
-                        format!("Cannot reassign to '{}', it is undefined in this scope.", var);
-                    errors.push(TypeErr::new(&ast.pos, &msg))
-                }
-            }
-            if !errors.is_empty() {
-                return Err(errors);
-            }
+            check_iden_mut(&identifier, env, ctx, &left.pos)?;
 
             if let NodeOp::Assign = op {
+                let (mut constr, _) = generate(right, env, ctx, constr)?;
+                let (mut constr, _) = generate(left, env, ctx, &mut constr)?;
                 constr.add(
                     "reassign",
                     &Expected::try_from((left, &env.var_mappings))?,
                     &Expected::try_from((right, &env.var_mappings))?,
                 );
 
-                let (mut constr, env) = generate(right, env, ctx, constr)?;
-                generate(left, &env, ctx, &mut constr)
+                Ok((constr, env.clone()))
             } else {
                 reassign_op(ast, left, right, op, env, ctx, constr)
             }
@@ -141,6 +119,39 @@ pub fn gen_call(
     }
 }
 
+fn check_iden_mut(
+    identifier: &Identifier,
+    env: &Environment,
+    _ctx: &Context,
+    pos: &Position,
+) -> TypeResult<()> {
+    let mut errors = vec![];
+    for (f_mut, var) in &identifier.fields(pos)? {
+        if !f_mut {
+            // note that this is mutability of reassign iden, not one in env
+            let msg = format!("Cannot change mutability of {} in reassign", var);
+            errors.push(TypeErr::new(pos, &msg))
+        }
+
+        if let Some(expecteds) = env.get_var(var) {
+            // Because we don't go over this recursively, we can circumvent mutability here
+            if expecteds.iter().any(|(is_mut, _)| !is_mut) {
+                let msg = format!("{} declared final, cannot reassign", var);
+                errors.push(TypeErr::new(pos, &msg))
+            }
+        } else {
+            let msg = format!("Cannot reassign to undefined '{}'", var);
+            errors.push(TypeErr::new(pos, &msg))
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
+}
+
 fn call_parameters(
     self_ast: &AST,
     possible: &[FunctionArg],
@@ -196,8 +207,6 @@ fn property_call(
 ) -> Constrained {
     match &property.node {
         Node::PropertyCall { instance: inner, property } => {
-            // We should actually check what the access type would be and give that as an argument
-            // for further constraint generation as the chain grows.
             let (mut constr, env) = property_call(instance, inner, env, ctx, constr)?;
             property_call(inner, property, &env, ctx, &mut constr)
         }
@@ -232,20 +241,14 @@ fn property_call(
             };
 
             if NodeOp::Assign == *op {
-                let left = Expected::new(
-                    &property.pos,
-                    &Access {
-                        entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
-                        name: Box::new(Expected::new(&property.pos, &Field { name })),
-                    },
-                );
+                let access = &Access {
+                    entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
+                    name: Box::new(Expected::new(&property.pos, &Field { name })),
+                };
+                let left = Expected::new(&property.pos, access);
 
-                constr.add(
-                    "call and reassign",
-                    &left,
-                    &Expected::try_from((right, &env.var_mappings))?,
-                );
-
+                let msg = "call and reassign";
+                constr.add(msg, &left, &Expected::try_from((right, &env.var_mappings))?);
                 generate(right, env, ctx, constr)
             } else {
                 let node = Node::PropertyCall {
@@ -338,23 +341,24 @@ fn reassign_op(
     let left = Box::from(left.clone());
     let right = Box::from(right.clone());
 
-    let node = match op {
-        NodeOp::Add => Node::Add { left: left.clone(), right },
-        NodeOp::Sub => Node::Sub { left: left.clone(), right },
-        NodeOp::Mul => Node::Mul { left: left.clone(), right },
-        NodeOp::Div => Node::Div { left: left.clone(), right },
-        NodeOp::Pow => Node::Pow { left: left.clone(), right },
-        NodeOp::BLShift => Node::BLShift { left: left.clone(), right },
-        NodeOp::BRShift => Node::BRShift { left: left.clone(), right },
-        other => {
-            let msg = format!("Cannot reassign using operator '{}'", other);
-            return Err(vec![TypeErr::new(&ast.pos, &msg)]);
-        }
-    };
-
-    let simple_assign_ast = AST::new(
+    let right = Box::from(AST::new(
         &ast.pos,
-        Node::Reassign { left, right: Box::from(AST::new(&ast.pos, node)), op: NodeOp::Assign },
-    );
+        match op {
+            NodeOp::Add => Node::Add { left: left.clone(), right },
+            NodeOp::Sub => Node::Sub { left: left.clone(), right },
+            NodeOp::Mul => Node::Mul { left: left.clone(), right },
+            NodeOp::Div => Node::Div { left: left.clone(), right },
+            NodeOp::Pow => Node::Pow { left: left.clone(), right },
+            NodeOp::BLShift => Node::BLShift { left: left.clone(), right },
+            NodeOp::BRShift => Node::BRShift { left: left.clone(), right },
+            other => {
+                let msg = format!("Cannot reassign using operator '{}'", other);
+                return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+            }
+        },
+    ));
+
+    let node = Node::Reassign { left, right, op: NodeOp::Assign };
+    let simple_assign_ast = AST::new(&ast.pos, node);
     generate(&simple_assign_ast, env, ctx, constr)
 }

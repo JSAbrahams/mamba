@@ -83,28 +83,18 @@ impl TryFrom<&AST> for GenericFields {
                                 })
                                 .collect())
                         }
-                        None => {
-                            // assume no calls
-                            let names: Vec<String> = identifier
-                                .fields()
-                                .iter()
-                                .map(|(_, id)| id.object(&var.pos))
-                                .collect::<TypeResult<Vec<String>>>()?;
-
-                            Ok(identifier
-                                .fields()
-                                .iter()
-                                .enumerate()
-                                .map(|(i, (inner_mut, _))| GenericField {
-                                    is_py_type: false,
-                                    name: names[i].clone(),
-                                    pos: ast.pos.clone(),
-                                    mutable: *mutable || *inner_mut,
-                                    in_class: None,
-                                    ty: None,
-                                })
-                                .collect())
-                        }
+                        None => Ok(identifier
+                            .fields(&var.pos)?
+                            .iter()
+                            .map(|(inner_mut, name)| GenericField {
+                                is_py_type: false,
+                                name: name.clone(),
+                                pos: ast.pos.clone(),
+                                mutable: *mutable || *inner_mut,
+                                in_class: None,
+                                ty: None,
+                            })
+                            .collect()),
                     }
                 }
                 _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),

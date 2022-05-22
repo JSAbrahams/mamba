@@ -81,7 +81,7 @@ pub fn match_type_direct(
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     match &name.variant {
         NameVariant::Single { .. } | NameVariant::Fun { .. } => {
-            if let Some((mutable, id)) = &identifier.lit {
+            if let Identifier::Single(mutable, id) = &identifier {
                 let mut mapping = HashMap::with_capacity(1);
                 mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
                 Ok(mapping)
@@ -90,29 +90,25 @@ pub fn match_type_direct(
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
-        NameVariant::Tuple(elements) => {
-            if let Some((mutable, id)) = &identifier.lit {
+        NameVariant::Tuple(elements) => match identifier {
+            Identifier::Single(mutable, id) => {
                 let mut mapping = HashMap::with_capacity(1);
                 mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
                 Ok(mapping)
-            } else if elements.len() == identifier.fields().len() {
-                let sets: Vec<HashMap<_, _>> = identifier
-                    .names
+            }
+            Identifier::Multi(fields) if elements.len() == fields.len() => {
+                let sets: Vec<HashMap<_, _>> = fields
                     .iter()
                     .zip(elements)
                     .map(|(identifier, ty)| match_name(identifier, ty, pos))
                     .collect::<Result<_, _>>()?;
-
                 Ok(sets.into_iter().flatten().collect())
-            } else {
-                let msg = format!(
-                    "Expected tuple of {}, but was {}.",
-                    identifier.fields().len(),
-                    elements.len()
-                );
+            }
+            Identifier::Multi(idens) => {
+                let msg = format!("Expected tuple of {}, was {}", elements.len(), idens.len());
                 Err(vec![TypeErr::new(pos, &msg)])
             }
-        }
+        },
     }
 }
 

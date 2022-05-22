@@ -8,7 +8,7 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 use crate::parse::ast::{AST, Node};
 
 pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
-    Ok(match &ast.node {
+    match &ast.node {
         Node::VariableDef { var, expr: expression, ty, .. } => {
             let var = convert_node(var, imp, &state.tuple_literal())?;
             let state = state.in_tup(match var.clone() {
@@ -16,7 +16,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                 _ => 1,
             });
 
-            if state.def_as_fun_arg {
+            Ok(if state.def_as_fun_arg {
                 Core::FunArg {
                     vararg: false,
                     var: Box::from(var),
@@ -46,7 +46,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                         (_, None) => None,
                     },
                 }
-            }
+            })
         }
         Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => {
             let arg = convert_vec(fun_args, imp, state)?;
@@ -65,17 +65,15 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
             let c_id = Box::from(convert_node(id, imp, state)?);
             match c_id.deref() {
-                Core::Id { lit } => if let Some(op) = CoreOp::maybe_from(lit) {
+                Core::Id { lit } => Ok(if let Some(op) = CoreOp::maybe_from(lit) {
                     Core::FunDefOp { op, arg, ty, body }
                 } else {
                     Core::FunDef { id: c_id.clone(), arg, ty, body }
-                }
-                _ => {
-                    return Err(UnimplementedErr::new(id, "Non-id function"));
-                }
+                }),
+                _ => Err(UnimplementedErr::new(id, "Non-id function"))
             }
         }
-        Node::FunArg { vararg, var, ty, default, .. } => Core::FunArg {
+        Node::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {
             vararg: *vararg,
             var: Box::from(convert_node(var, imp, state)?),
             ty: match ty {
@@ -89,9 +87,12 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                 Some(default) => Some(Box::from(convert_node(default, imp, state)?)),
                 None => None,
             },
-        },
-        definition => panic!("Expected definition: {:?}.", definition),
-    })
+        }),
+        definition => {
+            let msg = format!("Expected definition: {:?}", definition);
+            Err(UnimplementedErr::new(ast, &msg))
+        }
+    }
 }
 
 #[cfg(test)]

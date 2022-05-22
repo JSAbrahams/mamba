@@ -89,8 +89,8 @@ pub fn gen_collection_lookup(
 
     // Make col constraint before inserting environment, in case shadowed here
     let col_exp = Expected::try_from((col, &env.var_mappings))?;
-    for (mutable, var) in Identifier::try_from(lookup)?.fields() {
-        env = env.insert_var(mutable, &var.object(&lookup.pos)?, &Expected::new(&lookup.pos, &ExpressionAny));
+    for (mutable, var) in Identifier::try_from(lookup)?.fields(&lookup.pos)? {
+        env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
     }
 
     let lookup_exp = Expected::new(
