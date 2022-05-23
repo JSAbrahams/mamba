@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::function;
-use crate::check::context::function::python;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
@@ -158,19 +157,19 @@ impl Display for CoreFunOp {
             f,
             "{}",
             match &self {
-                CoreFunOp::Ge => python::GE,
-                CoreFunOp::Geq => python::GEQ,
-                CoreFunOp::Le => python::LE,
-                CoreFunOp::Leq => python::LEQ,
-                CoreFunOp::Eq => python::EQ,
-                CoreFunOp::Neq => python::NEQ,
-                CoreFunOp::Add => python::ADD,
-                CoreFunOp::Sub => python::SUB,
-                CoreFunOp::Pow => python::POW,
-                CoreFunOp::Mul => python::MUL,
-                CoreFunOp::Mod => python::MOD,
-                CoreFunOp::Div => python::DIV,
-                CoreFunOp::FDiv => python::FDIV,
+                CoreFunOp::Ge => function::python::GE,
+                CoreFunOp::Geq => function::python::GEQ,
+                CoreFunOp::Le => function::python::LE,
+                CoreFunOp::Leq => function::python::LEQ,
+                CoreFunOp::Eq => function::python::EQ,
+                CoreFunOp::Neq => function::python::NEQ,
+                CoreFunOp::Add => function::python::ADD,
+                CoreFunOp::Sub => function::python::SUB,
+                CoreFunOp::Pow => function::python::POW,
+                CoreFunOp::Mul => function::python::MUL,
+                CoreFunOp::Mod => function::python::MOD,
+                CoreFunOp::Div => function::python::DIV,
+                CoreFunOp::FDiv => function::python::FDIV,
             }
         )
     }
