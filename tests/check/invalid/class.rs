@@ -73,6 +73,13 @@ fn no_generic_arg() {
 }
 
 #[test]
+#[ignore] // See #298
+fn top_level_class_not_assigned_to() {
+    let source = resource_content(false, &["type", "class"], "top_level_class_not_assigned_to.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 #[ignore]
 fn wrong_generic_type() {
     let source = resource_content(false, &["type", "class"], "wrong_generic_type.mamba");
