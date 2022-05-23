@@ -17,9 +17,9 @@ class int(float):
 
     def sqrt(self) -> float: pass
 
-    # def __div__(self, other: float) -> float: pass
-    # def __div__(self, other: complex) -> complex: pass
-    def __div__(self, other: int) -> float: pass
+    # def __truediv__(self, other: float) -> float: pass
+    # def __truediv__(self, other: complex) -> complex: pass
+    def __truediv__(self, other: int) -> float: pass
 
     # def __floordiv__(self, other: float) -> float: pass
     def __floordiv__(self, other: int) -> int: pass

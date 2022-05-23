@@ -1,3 +1,7 @@
+use std::fmt::{Display, Formatter};
+
+use crate::check::context::function;
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
     FromImport { from: Box<Core>, import: Box<Core> },
@@ -9,8 +13,9 @@ pub enum Core {
     Id { lit: String },
     Type { lit: String, generics: Vec<Core> },
     ExpressionType { expr: Box<Core>, ty: Box<Core> },
-    Assign { left: Box<Core>, right: Box<Core> },
+    Assign { left: Box<Core>, right: Box<Core>, op: CoreOp },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
+    FunDefOp { op: CoreFunOp, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunDef { id: Box<Core>, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },
     AnonFun { args: Vec<Core>, body: Box<Core> },
@@ -27,39 +32,26 @@ pub enum Core {
     Set { elements: Vec<Core> },
     List { elements: Vec<Core> },
     Index { item: Box<Core>, range: Box<Core> },
-    GeOp,
     Ge { left: Box<Core>, right: Box<Core> },
-    GeqOp,
     Geq { left: Box<Core>, right: Box<Core> },
-    LeOp,
     Le { left: Box<Core>, right: Box<Core> },
-    LeqOp,
     Leq { left: Box<Core>, right: Box<Core> },
     Not { expr: Box<Core> },
     Is { left: Box<Core>, right: Box<Core> },
     IsN { left: Box<Core>, right: Box<Core> },
-    EqOp,
     Eq { left: Box<Core>, right: Box<Core> },
-    NeqOp,
     Neq { left: Box<Core>, right: Box<Core> },
     IsA { left: Box<Core>, right: Box<Core> },
     And { left: Box<Core>, right: Box<Core> },
     Or { left: Box<Core>, right: Box<Core> },
-    AddOp,
     Add { left: Box<Core>, right: Box<Core> },
     AddU { expr: Box<Core> },
-    SubOp,
     Sub { left: Box<Core>, right: Box<Core> },
     SubU { expr: Box<Core> },
-    MulOp,
     Mul { left: Box<Core>, right: Box<Core> },
-    ModOp,
     Mod { left: Box<Core>, right: Box<Core> },
-    PowOp,
     Pow { left: Box<Core>, right: Box<Core> },
-    DivOp,
     Div { left: Box<Core>, right: Box<Core> },
-    FDivOp,
     FDiv { left: Box<Core>, right: Box<Core> },
     Sqrt { expr: Box<Core> },
     BAnd { left: Box<Core>, right: Box<Core> },
@@ -88,4 +80,97 @@ pub enum Core {
     Raise { error: Box<Core> },
     With { resource: Box<Core>, expr: Box<Core> },
     WithAs { resource: Box<Core>, alias: Box<Core>, expr: Box<Core> },
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub enum CoreOp {
+    Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    PowAssign,
+    BLShiftAssign,
+    BRShiftAssign,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub enum CoreFunOp {
+    Ge,
+    Geq,
+    Le,
+    Leq,
+    Eq,
+    Neq,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Mod,
+    FDiv,
+}
+
+impl CoreFunOp {
+    pub fn from(lit: &str) -> Option<CoreFunOp> {
+        Some(match lit {
+            function::GE => CoreFunOp::Ge,
+            function::GEQ => CoreFunOp::Geq,
+            function::LE => CoreFunOp::Le,
+            function::LEQ => CoreFunOp::Leq,
+            function::EQ => CoreFunOp::Eq,
+            function::NEQ => CoreFunOp::Neq,
+            function::ADD => CoreFunOp::Add,
+            function::SUB => CoreFunOp::Sub,
+            function::POW => CoreFunOp::Pow,
+            function::MUL => CoreFunOp::Mul,
+            function::MOD => CoreFunOp::Mod,
+            function::DIV => CoreFunOp::Div,
+            function::FDIV => CoreFunOp::FDiv,
+            _ => return None
+        })
+    }
+}
+
+impl Display for CoreOp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self {
+                CoreOp::Assign => "=",
+                CoreOp::AddAssign => "+=",
+                CoreOp::SubAssign => "-=",
+                CoreOp::MulAssign => "*=",
+                CoreOp::DivAssign => "/=",
+                CoreOp::PowAssign => "**=",
+                CoreOp::BLShiftAssign => "<<=",
+                CoreOp::BRShiftAssign => ">>=",
+            }
+        )
+    }
+}
+
+impl Display for CoreFunOp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self {
+                CoreFunOp::Ge => function::python::GE,
+                CoreFunOp::Geq => function::python::GEQ,
+                CoreFunOp::Le => function::python::LE,
+                CoreFunOp::Leq => function::python::LEQ,
+                CoreFunOp::Eq => function::python::EQ,
+                CoreFunOp::Neq => function::python::NEQ,
+                CoreFunOp::Add => function::python::ADD,
+                CoreFunOp::Sub => function::python::SUB,
+                CoreFunOp::Pow => function::python::POW,
+                CoreFunOp::Mul => function::python::MUL,
+                CoreFunOp::Mod => function::python::MOD,
+                CoreFunOp::Div => function::python::DIV,
+                CoreFunOp::FDiv => function::python::FDIV,
+            }
+        )
+    }
 }

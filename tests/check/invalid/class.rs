@@ -40,6 +40,18 @@ fn class_with_args_and_init() {
 }
 
 #[test]
+fn assign_to_inner_inner_not_allowed() {
+    let source = resource_content(false, &["type", "class"], "assign_to_inner_inner_not_allowed.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn assign_to_inner_not_allowed() {
+    let source = resource_content(false, &["type", "class"], "assign_to_inner_not_allowed.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 #[ignore]
 fn generic_unknown_type() {
     let source = resource_content(false, &["type", "class"], "generic_unknown_type.mamba");
@@ -57,6 +69,13 @@ fn incompat_parent_generic() {
 #[ignore]
 fn no_generic_arg() {
     let source = resource_content(false, &["type", "class"], "no_generic_arg.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+#[ignore] // See #298
+fn top_level_class_not_assigned_to() {
+    let source = resource_content(false, &["type", "class"], "top_level_class_not_assigned_to.mamba");
     check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }
 

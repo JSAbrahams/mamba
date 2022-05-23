@@ -261,4 +261,10 @@ mod test {
             .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
+
+    #[test]
+    fn top_lvl_class_access() {
+        let source = resource_content(false, &["syntax"], "top_lvl_class_access.mamba");
+        parse(&source).unwrap_err();
+    }
 }
