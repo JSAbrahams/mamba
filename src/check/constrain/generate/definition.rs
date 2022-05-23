@@ -33,7 +33,7 @@ pub fn gen_def(
                 let r_tys: Vec<_> =
                     raises.iter().map(|r| (r.pos.clone(), Name::try_from(r))).collect();
                 let mut r_res = Name::empty();
-                // TODO check this during Context check
+
                 let exception_name = Name::from(clss::EXCEPTION);
                 for (pos, raise) in r_tys {
                     let raise = raise?;
@@ -196,9 +196,7 @@ fn identifier_to_tuple(
 ) -> TypeResult<Vec<Expected>> {
     match &iden {
         Identifier::Single(_, var) => {
-            let expected = env.get_var(&var.object(pos)?);
-
-            if let Some(expected) = expected {
+            if let Some(expected) = env.get_var(&var.object(pos)?) {
                 Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
             } else {
                 let msg = format!("'{}' is undefined in this scope", iden);

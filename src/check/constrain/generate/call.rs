@@ -33,15 +33,13 @@ pub fn gen_call(
             check_iden_mut(&identifier, env, ctx, &left.pos)?;
 
             if let NodeOp::Assign = op {
-                let (mut constr, _) = generate(right, env, ctx, constr)?;
-                let (mut constr, _) = generate(left, env, ctx, &mut constr)?;
                 constr.add(
                     "reassign",
                     &Expected::try_from((left, &env.var_mappings))?,
                     &Expected::try_from((right, &env.var_mappings))?,
                 );
-
-                Ok((constr, env.clone()))
+                let (mut constr, _) = generate(right, env, ctx, constr)?;
+                generate(left, env, ctx, &mut constr)
             } else {
                 reassign_op(ast, left, right, op, env, ctx, constr)
             }
@@ -128,27 +126,22 @@ fn check_iden_mut(
     let mut errors = vec![];
     for (f_mut, var) in &identifier.fields(pos)? {
         if !f_mut {
-            // note that this is mutability of reassign iden, not one in env
-            let msg = format!("Cannot change mutability of {} in reassign", var);
-            errors.push(TypeErr::new(pos, &msg))
-        }
-
-        if let Some(expecteds) = env.get_var(var) {
-            // Because we don't go over this recursively, we can circumvent mutability here
-            if expecteds.iter().any(|(is_mut, _)| !is_mut) {
-                let msg = format!("{} declared final, cannot reassign", var);
-                errors.push(TypeErr::new(pos, &msg))
+            errors.push(format!("Cannot change mutability of {} in reassign", var))
+        } else if let Some(expecteds) = env.get_var(var) {
+            for (is_mut, var) in expecteds {
+                if !is_mut {
+                    errors.push(format!("Cannot change mutability of {} in reassign", var));
+                }
             }
         } else {
-            let msg = format!("Cannot reassign to undefined '{}'", var);
-            errors.push(TypeErr::new(pos, &msg))
+            errors.push(format!("Cannot reassign to undefined '{}'", var))
         }
     }
 
     if errors.is_empty() {
         Ok(())
     } else {
-        Err(errors)
+        Err(errors.iter().map(|msg| TypeErr::new(pos, msg)).collect())
     }
 }
 
@@ -270,14 +263,12 @@ fn property_call(
                     .collect::<Result<_, _>>()?,
             );
 
+            let node = Node::PropertyCall {
+                instance: Box::from(instance.clone()),
+                property: Box::from(property.clone()),
+            };
             let instance_exp = Expected::try_from((
-                &AST {
-                    pos: instance.pos.union(&property.pos),
-                    node: Node::PropertyCall {
-                        instance: Box::from(instance.clone()),
-                        property: Box::from(property.clone()),
-                    },
-                },
+                &AST { pos: instance.pos.union(&property.pos), node },
                 &env.var_mappings,
             ))?;
             let access = Expected::new(
@@ -322,7 +313,8 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
                     }
                 };
 
-                Ok(Identifier::Single(m, IdentiCall::Call(Box::from(inst_call), Box::from(prop_call))))
+                let id_call = IdentiCall::Call(Box::from(inst_call), Box::from(prop_call));
+                Ok(Identifier::Single(m, id_call))
             }
         },
         _ => Identifier::try_from(ast).map_err(|errs| {
