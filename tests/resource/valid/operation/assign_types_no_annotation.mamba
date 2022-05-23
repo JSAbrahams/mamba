@@ -1,4 +1,4 @@
-def a: Float := 10
+def a := 10
 
 a += 2
 a -= 3

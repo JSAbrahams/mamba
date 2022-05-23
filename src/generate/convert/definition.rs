@@ -65,7 +65,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
             let c_id = Box::from(convert_node(id, imp, state)?);
             match c_id.deref() {
-                Core::Id { lit } => Ok(if let Some(op) = CoreOp::maybe_from(lit) {
+                Core::Id { lit } => Ok(if let Some(op) = CoreOp::from(lit.as_str()) {
                     Core::FunDefOp { op, arg, ty, body }
                 } else {
                     Core::FunDef { id: c_id.clone(), arg, ty, body }

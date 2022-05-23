@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::function;
+use crate::check::context::function::python;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
@@ -109,7 +110,7 @@ pub enum CoreOp {
 }
 
 impl CoreOp {
-    pub fn maybe_from(lit: &str) -> Option<CoreOp> {
+    pub fn from(lit: &str) -> Option<CoreOp> {
         Some(match lit {
             function::GE => CoreOp::Ge,
             function::GEQ => CoreOp::Geq,
@@ -146,21 +147,21 @@ impl Display for CoreOp {
                 CoreOp::BLShiftAssign => "<<=",
                 CoreOp::BRShiftAssign => ">>=",
 
-                CoreOp::Ge => "__gt__",
-                CoreOp::Geq => "__ge__",
-                CoreOp::Le => "__lt__",
-                CoreOp::Leq => "__le__",
+                CoreOp::Ge => python::GE,
+                CoreOp::Geq => python::GEQ,
+                CoreOp::Le => python::LE,
+                CoreOp::Leq => python::LEQ,
 
-                CoreOp::Eq => "__eq__",
-                CoreOp::Neq => "__ne__",
+                CoreOp::Eq => python::EQ,
+                CoreOp::Neq => python::NEQ,
 
-                CoreOp::Add => "__add__",
-                CoreOp::Sub => "__sub__",
-                CoreOp::Pow => "__pow__",
-                CoreOp::Mul => "__mul__",
-                CoreOp::Mod => "__mod__",
-                CoreOp::Div => "__truediv__",
-                CoreOp::FDiv => "__floordiv__",
+                CoreOp::Add => python::ADD,
+                CoreOp::Sub => python::SUB,
+                CoreOp::Pow => python::POW,
+                CoreOp::Mul => python::MUL,
+                CoreOp::Mod => python::MOD,
+                CoreOp::Div => python::DIV,
+                CoreOp::FDiv => python::FDIV,
             }
         )
     }
