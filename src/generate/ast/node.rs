@@ -16,7 +16,7 @@ pub enum Core {
     ExpressionType { expr: Box<Core>, ty: Box<Core> },
     Assign { left: Box<Core>, right: Box<Core>, op: CoreOp },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
-    FunDefOp { op: CoreOp, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
+    FunDefOp { op: CoreFunOp, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunDef { id: Box<Core>, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },
     AnonFun { args: Vec<Core>, body: Box<Core> },
@@ -93,7 +93,10 @@ pub enum CoreOp {
     PowAssign,
     BLShiftAssign,
     BRShiftAssign,
+}
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub enum CoreFunOp {
     Ge,
     Geq,
     Le,
@@ -109,24 +112,22 @@ pub enum CoreOp {
     FDiv,
 }
 
-impl CoreOp {
-    pub fn from(lit: &str) -> Option<CoreOp> {
+impl CoreFunOp {
+    pub fn from(lit: &str) -> Option<CoreFunOp> {
         Some(match lit {
-            function::GE => CoreOp::Ge,
-            function::GEQ => CoreOp::Geq,
-            function::LE => CoreOp::Le,
-            function::LEQ => CoreOp::Leq,
-
-            function::EQ => CoreOp::Eq,
-            function::NEQ => CoreOp::Neq,
-
-            function::ADD => CoreOp::Add,
-            function::SUB => CoreOp::Sub,
-            function::POW => CoreOp::Pow,
-            function::MUL => CoreOp::Mul,
-            function::MOD => CoreOp::Mod,
-            function::DIV => CoreOp::Div,
-            function::FDIV => CoreOp::FDiv,
+            function::GE => CoreFunOp::Ge,
+            function::GEQ => CoreFunOp::Geq,
+            function::LE => CoreFunOp::Le,
+            function::LEQ => CoreFunOp::Leq,
+            function::EQ => CoreFunOp::Eq,
+            function::NEQ => CoreFunOp::Neq,
+            function::ADD => CoreFunOp::Add,
+            function::SUB => CoreFunOp::Sub,
+            function::POW => CoreFunOp::Pow,
+            function::MUL => CoreFunOp::Mul,
+            function::MOD => CoreFunOp::Mod,
+            function::DIV => CoreFunOp::Div,
+            function::FDIV => CoreFunOp::FDiv,
             _ => return None
         })
     }
@@ -146,22 +147,30 @@ impl Display for CoreOp {
                 CoreOp::PowAssign => "**=",
                 CoreOp::BLShiftAssign => "<<=",
                 CoreOp::BRShiftAssign => ">>=",
+            }
+        )
+    }
+}
 
-                CoreOp::Ge => python::GE,
-                CoreOp::Geq => python::GEQ,
-                CoreOp::Le => python::LE,
-                CoreOp::Leq => python::LEQ,
-
-                CoreOp::Eq => python::EQ,
-                CoreOp::Neq => python::NEQ,
-
-                CoreOp::Add => python::ADD,
-                CoreOp::Sub => python::SUB,
-                CoreOp::Pow => python::POW,
-                CoreOp::Mul => python::MUL,
-                CoreOp::Mod => python::MOD,
-                CoreOp::Div => python::DIV,
-                CoreOp::FDiv => python::FDIV,
+impl Display for CoreFunOp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self {
+                CoreFunOp::Ge => python::GE,
+                CoreFunOp::Geq => python::GEQ,
+                CoreFunOp::Le => python::LE,
+                CoreFunOp::Leq => python::LEQ,
+                CoreFunOp::Eq => python::EQ,
+                CoreFunOp::Neq => python::NEQ,
+                CoreFunOp::Add => python::ADD,
+                CoreFunOp::Sub => python::SUB,
+                CoreFunOp::Pow => python::POW,
+                CoreFunOp::Mul => python::MUL,
+                CoreFunOp::Mod => python::MOD,
+                CoreFunOp::Div => python::DIV,
+                CoreFunOp::FDiv => python::FDIV,
             }
         )
     }

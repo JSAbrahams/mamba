@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::generate::ast::node::{Core, CoreOp};
+use crate::generate::ast::node::{Core, CoreFunOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
@@ -65,7 +65,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
             let c_id = Box::from(convert_node(id, imp, state)?);
             match c_id.deref() {
-                Core::Id { lit } => Ok(if let Some(op) = CoreOp::from(lit.as_str()) {
+                Core::Id { lit } => Ok(if let Some(op) = CoreFunOp::from(lit.as_str()) {
                     Core::FunDefOp { op, arg, ty, body }
                 } else {
                     Core::FunDef { id: c_id.clone(), arg, ty, body }
