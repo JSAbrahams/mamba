@@ -17,15 +17,35 @@ pub enum Identifier {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum IdentiCall {
     Iden(String),
-    Call(String, Box<IdentiCall>),
+    Call(Box<IdentiCall>, Box<IdentiCall>),
 }
 
 impl IdentiCall {
+    /// Recursively check Identical until [IdentiCall::Iden(String)] found in leftmost leaf.
+    /// This means that object gives the top-level object if this is a chain of calls.
+    ///
+    /// ### Example
+    ///
+    /// An identifier representing a chain of calls `a.b.c` returns String "a".
+    ///
+    /// ### Errors
+    ///
+    /// Errors if no such left-most leaf exists.
+    /// This is indicative of a malformed identifier, as all identifiers should have
+    /// [IdentiCall::Iden] as leaves.
     pub fn object(&self, pos: &Position) -> TypeResult<String> {
-        if let IdentiCall::Iden(object) = &self {
-            Ok(object.clone())
-        } else {
-            Err(vec![TypeErr::new(pos, "Call not expected here")])
+        match &self.object_rec() {
+            IdentiCall::Iden(object) => Ok(object.clone()),
+            IdentiCall::Call(_, _) => {
+                Err(vec![TypeErr::new(pos, "Call not expected here")])
+            }
+        }
+    }
+
+    fn object_rec(&self) -> IdentiCall {
+        match &self {
+            IdentiCall::Iden(_) => self.clone(),
+            IdentiCall::Call(instance, _) => instance.object_rec(),
         }
     }
 }
@@ -39,10 +59,10 @@ impl Identifier {
         match &self {
             Identifier::Single(mutable, call) => Ok(vec![(*mutable, call.object(pos)?)]),
             Identifier::Multi(ids) => {
-                let ids: Vec<Vec<(bool, String)>> = ids
-                    .iter()
-                    .map(|id| id.fields(pos))
-                    .collect::<TypeResult<Vec<Vec<(bool, String)>>>>()?;
+                let ids: Vec<Vec<(bool, String)>> =
+                    ids.iter()
+                        .map(|id| id.fields(pos))
+                        .collect::<TypeResult<Vec<Vec<(bool, String)>>>>()?;
                 Ok(ids.into_iter().flatten().collect())
             }
         }
@@ -65,8 +85,10 @@ impl Identifier {
 impl Display for Identifier {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
-            Identifier::Single(mutable, lit) => write!(f, "{}{}", if *mutable { "" } else { "fin " }, lit.clone()),
-            Identifier::Multi(ids) => write!(f, "({})", comma_delm(ids))
+            Identifier::Single(mutable, lit) => {
+                write!(f, "{}{}", if *mutable { "" } else { "fin " }, lit.clone())
+            }
+            Identifier::Multi(ids) => write!(f, "({})", comma_delm(ids)),
         }
     }
 }
@@ -75,7 +97,7 @@ impl Display for IdentiCall {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match &self {
             IdentiCall::Iden(name) => write!(f, "{}", name),
-            IdentiCall::Call(object, call) => write!(f, "{}.{}", object, call)
+            IdentiCall::Call(object, call) => write!(f, "{}.{}", object, call),
         }
     }
 }

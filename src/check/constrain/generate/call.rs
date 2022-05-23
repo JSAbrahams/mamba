@@ -13,7 +13,7 @@ use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
-use crate::check::ident::Identifier;
+use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -308,16 +308,23 @@ fn property_call(
 /// A property call may not be a tuple, however.
 fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
     match &ast.node {
-        Node::PropertyCall { instance, .. } => {
-            // We need logic here to check with nested variables if they may be assigned.
-            let identifier = check_reassignable(instance)?;
-            if identifier.is_tuple() {
+        Node::PropertyCall { instance, property } => match check_reassignable(property)? {
+            Identifier::Multi(_) => {
                 let msg = format!("Cannot reassign to {}", &ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])
-            } else {
-                Ok(identifier)
             }
-        }
+            Identifier::Single(m, prop_call) => {
+                let (_, inst_call) = match check_reassignable(instance)? {
+                    Identifier::Single(m, call) => (m, call),
+                    Identifier::Multi(_) => {
+                        let msg = format!("Cannot reassign to {}", &ast.node);
+                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                    }
+                };
+
+                Ok(Identifier::Single(m, IdentiCall::Call(Box::from(inst_call), Box::from(prop_call))))
+            }
+        },
         _ => Identifier::try_from(ast).map_err(|errs| {
             errs.iter()
                 .map(|err| {
