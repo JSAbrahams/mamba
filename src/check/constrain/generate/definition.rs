@@ -33,7 +33,7 @@ pub fn gen_def(
                 let r_tys: Vec<_> =
                     raises.iter().map(|r| (r.pos.clone(), Name::try_from(r))).collect();
                 let mut r_res = Name::empty();
-                // TODO check this during Context check
+
                 let exception_name = Name::from(clss::EXCEPTION);
                 for (pos, raise) in r_tys {
                     let raise = raise?;
@@ -130,7 +130,7 @@ pub fn identifier_from_var(
         }
     } else {
         let any = Expected::new(&var.pos, &ExpressionAny);
-        for (f_mut, f_name) in identifier.fields() {
+        for (f_mut, f_name) in identifier.fields(&var.pos)? {
             env = env.insert_var(mutable && f_mut, &f_name, &any);
         }
     };
@@ -194,35 +194,33 @@ fn identifier_to_tuple(
     iden: &Identifier,
     env: &Environment,
 ) -> TypeResult<Vec<Expected>> {
-    if let Some((_, var)) = &iden.lit {
-        let expected = env.get_var(var);
-
-        if let Some(expected) = expected {
-            Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
-        } else {
-            let msg = format!("'{}' is undefined in this scope", iden);
-            Err(vec![TypeErr::new(pos, &msg)])
+    match &iden {
+        Identifier::Single(_, var) => {
+            if let Some(expected) = env.get_var(&var.object(pos)?) {
+                Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
+            } else {
+                let msg = format!("'{}' is undefined in this scope", iden);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
         }
-    } else {
-        // Every item in the tuple is a union of expected
-        let tuple_unions: Vec<Vec<Expected>> = iden
-            .names
-            .iter()
-            .map(|i| identifier_to_tuple(pos, i, env))
-            .collect::<Result<_, _>>()?;
+        Identifier::Multi(idens) => {
+            // Every item in the tuple is a union of expected
+            let tuple_unions: Vec<Vec<Expected>> =
+                idens.iter().map(|i| identifier_to_tuple(pos, i, env)).collect::<Result<_, _>>()?;
 
-        // .. So we create permutation of every possible tuple combination
-        let tuple_unions: Vec<Vec<&Expected>> =
-            tuple_unions.iter().map(|list| list.iter().map(AsRef::as_ref).collect()).collect();
-        let tuple_unions: Vec<&[&Expected]> = tuple_unions.iter().map(AsRef::as_ref).collect();
-        let permutations = Permutator::new(&tuple_unions[..]);
+            // .. So we create permutation of every possible tuple combination
+            let tuple_unions: Vec<Vec<&Expected>> =
+                tuple_unions.iter().map(|list| list.iter().map(AsRef::as_ref).collect()).collect();
+            let tuple_unions: Vec<&[&Expected]> = tuple_unions.iter().map(AsRef::as_ref).collect();
+            let permutations = Permutator::new(&tuple_unions[..]);
 
-        Ok(permutations
-            .into_iter()
-            .map(|elements| {
-                let elements = elements.into_iter().cloned().collect();
-                Expected::new(pos, &Expect::Tuple { elements })
-            })
-            .collect())
+            Ok(permutations
+                .into_iter()
+                .map(|elements| {
+                    let elements = elements.into_iter().cloned().collect();
+                    Expected::new(pos, &Expect::Tuple { elements })
+                })
+                .collect())
+        }
     }
 }

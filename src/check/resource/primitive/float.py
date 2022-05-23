@@ -16,8 +16,8 @@ class float(complex):
 
     def sqrt(self) -> float: pass
 
-    # def __div__(self, other: complex) -> complex: pass
-    def __div__(self, other: Union[int, float]) -> float: pass
+    # def __truediv__(self, other: complex) -> complex: pass
+    def __truediv__(self, other: Union[int, float]) -> float: pass
 
     def __floordiv__(self, other: Union[int, float]) -> float: pass
 

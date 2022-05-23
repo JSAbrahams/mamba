@@ -1,0 +1,6 @@
+class X(x: Int)
+
+x = X(10)
+
+# now assign a float
+x.x = 2.5

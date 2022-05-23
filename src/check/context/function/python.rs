@@ -10,13 +10,14 @@ use crate::common::position::Position;
 pub const INIT: &str = "__init__";
 
 pub const ADD: &str = "__add__";
-pub const DIV: &str = "__div__";
+pub const DIV: &str = "__truediv__";
 pub const EQ: &str = "__eq__";
+pub const NEQ: &str = "__ne__";
 pub const FDIV: &str = "__floordiv__";
-pub const GE: &str = "__ge__";
-pub const GEQ: &str = "__geq__";
-pub const LE: &str = "__le__";
-pub const LEQ: &str = "__leq__";
+pub const GE: &str = "__gt__";
+pub const GEQ: &str = "__ge__";
+pub const LE: &str = "__lt__";
+pub const LEQ: &str = "__le__";
 pub const MOD: &str = "__mod__";
 pub const MUL: &str = "__mul__";
 pub const POW: &str = "__pow__";
@@ -44,7 +45,7 @@ impl From<&Funcdef> for GenericFunction {
                 .collect(),
             raises: Name::empty(),
             in_class: None,
-            ret_ty: func_def.return_type.as_ref().map(Name::from)
+            ret_ty: func_def.return_type.as_ref().map(Name::from),
         }
     }
 }
