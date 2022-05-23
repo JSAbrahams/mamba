@@ -1,8 +1,10 @@
 use std::fmt::Debug;
 
 use crate::common::position::Position;
+use crate::parse::ast::node_op::NodeOp;
 
 pub mod node;
+pub mod node_op;
 
 /// Wrapper of Node, and its start end end position in the source code.
 /// The start and end positions can be used to generate useful error messages.
@@ -37,7 +39,7 @@ pub enum Node {
     Generic { id: Box<AST>, isa: OptAST },
     Parent { ty: Box<AST>, args: Vec<AST> },
     Init,
-    Reassign { left: Box<AST>, right: Box<AST> },
+    Reassign { left: Box<AST>, right: Box<AST>, op: NodeOp },
     VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
     FunDef { pure: bool, id: Box<AST>, args: Vec<AST>, ret: OptAST, raises: Vec<AST>, body: OptAST },
     AnonFun { args: Vec<AST>, body: Box<AST> },
@@ -58,17 +60,6 @@ pub enum Node {
     Condition { cond: Box<AST>, el: OptAST },
     FunArg { vararg: bool, mutable: bool, var: Box<AST>, ty: OptAST, default: OptAST },
     _Self,
-    AddOp,
-    SubOp,
-    SqrtOp,
-    MulOp,
-    FDivOp,
-    DivOp,
-    PowOp,
-    ModOp,
-    EqOp,
-    LeOp,
-    GeOp,
     Set { elements: Vec<AST> },
     SetBuilder { item: Box<AST>, conditions: Vec<AST> },
     List { elements: Vec<AST> },

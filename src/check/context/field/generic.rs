@@ -28,11 +28,15 @@ pub struct GenericFields {
 }
 
 impl Hash for GenericField {
-    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
 }
 
 impl PartialEq for GenericField {
-    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl TryFrom<&AST> for GenericField {
@@ -48,10 +52,10 @@ impl TryFrom<&AST> for GenericField {
                 in_class: None,
                 ty: match ty {
                     Some(ty) => Some(Name::try_from(ty.deref())?),
-                    None => None
+                    None => None,
                 },
             }),
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
+            _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
         }
     }
 }
@@ -80,21 +84,21 @@ impl TryFrom<&AST> for GenericFields {
                                 .collect())
                         }
                         None => Ok(identifier
-                            .fields()
+                            .fields(&var.pos)?
                             .iter()
-                            .map(|(inner_mut, id)| GenericField {
+                            .map(|(inner_mut, name)| GenericField {
                                 is_py_type: false,
-                                name: id.clone(),
+                                name: name.clone(),
                                 pos: ast.pos.clone(),
                                 mutable: *mutable || *inner_mut,
                                 in_class: None,
                                 ty: None,
                             })
-                            .collect())
+                            .collect()),
                     }
                 }
-                _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")])
-            }?
+                _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
+            }?,
         })
     }
 }

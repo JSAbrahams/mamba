@@ -1,0 +1,6 @@
+class X
+    def y: Int
+    def z: Int
+
+    def init(self, x: Int) =>
+        self.y := x

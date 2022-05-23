@@ -34,6 +34,8 @@ pub fn tokenize(input: &str) -> LexResult {
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use crate::common::position::{CaretPos, Position};
     use crate::parse::lex::token::{Lex, Token};
     use crate::parse::lex::tokenize;
@@ -59,6 +61,28 @@ mod tests {
                 pos: Position::new(&CaretPos::new(1, 15), &CaretPos::new(1, 16)),
                 token: Token::Id(String::from("b")),
             },
+        ]);
+    }
+
+    #[test]
+    fn exclamation_invalid() {
+        let source = String::from("!");
+        assert!(tokenize(&source).is_err());
+    }
+
+    #[test]
+    fn assign_operations() {
+        let source = String::from(":= += -= *= /= ^= >>= <<=");
+        let tokens = tokenize(&source).unwrap();
+        assert_eq!(tokens.iter().map(|l| l.token.clone()).collect_vec(), vec![
+            Token::Assign,
+            Token::AddAssign,
+            Token::SubAssign,
+            Token::MulAssign,
+            Token::DivAssign,
+            Token::PowAssign,
+            Token::BRShiftAssign,
+            Token::BLShiftAssign,
         ]);
     }
 
@@ -92,7 +116,7 @@ mod tests {
 
     #[test]
     fn comparison() {
-        let source = String::from("< > <= >= = /= is isnt i");
+        let source = String::from("< > <= >= = != is isnt i");
         let tokens = tokenize(&source).unwrap();
         assert_eq!(tokens, vec![
             Lex { pos: Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 2)), token: Token::Le },

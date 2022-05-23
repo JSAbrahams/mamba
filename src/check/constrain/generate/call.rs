@@ -13,12 +13,13 @@ use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
-use crate::check::ident::Identifier;
+use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
+use crate::parse::ast::node_op::NodeOp;
 
 pub fn gen_call(
     ast: &AST,
@@ -27,38 +28,21 @@ pub fn gen_call(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::Reassign { left, right } => {
+        Node::Reassign { left, right, op } => {
             let identifier = check_reassignable(left)?;
-            // Top-level reassign should be defined in env
-            let mut errors = vec![];
-            for (f_mut, var) in &identifier.fields() {
-                if !f_mut {
-                    // note that this is mutability of reassign iden, not one in env
-                    let msg = format!("Cannot change mutability of {} in reassign", var);
-                    errors.push(TypeErr::new(&ast.pos, &msg))
-                }
+            check_iden_mut(&identifier, env, ctx, &left.pos)?;
 
-                if let Some(expecteds) = env.get_var(var) {
-                    if expecteds.iter().any(|(is_mut, _)| !is_mut) {
-                        let msg = format!("{} was declared final, cannot reassign", var);
-                        errors.push(TypeErr::new(&ast.pos, &msg))
-                    }
-                } else {
-                    let msg = format!("'{}' is undefined in this scope.", var);
-                    errors.push(TypeErr::new(&ast.pos, &msg))
-                }
+            if let NodeOp::Assign = op {
+                constr.add(
+                    "reassign",
+                    &Expected::try_from((left, &env.var_mappings))?,
+                    &Expected::try_from((right, &env.var_mappings))?,
+                );
+                let (mut constr, _) = generate(right, env, ctx, constr)?;
+                generate(left, env, ctx, &mut constr)
+            } else {
+                reassign_op(ast, left, right, op, env, ctx, constr)
             }
-            if !errors.is_empty() {
-                return Err(errors);
-            }
-
-            constr.add(
-                "reassign",
-                &Expected::try_from((left, &env.var_mappings))?,
-                &Expected::try_from((right, &env.var_mappings))?,
-            );
-            let (mut constr, env) = generate(right, env, ctx, constr)?;
-            generate(left, &env, ctx, &mut constr)
         }
         Node::FunctionCall { name, args } => {
             let f_name = StringName::try_from(name)?;
@@ -130,6 +114,34 @@ pub fn gen_call(
         }
 
         _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting call")]),
+    }
+}
+
+fn check_iden_mut(
+    identifier: &Identifier,
+    env: &Environment,
+    _ctx: &Context,
+    pos: &Position,
+) -> TypeResult<()> {
+    let mut errors = vec![];
+    for (f_mut, var) in &identifier.fields(pos)? {
+        if !f_mut {
+            errors.push(format!("Cannot change mutability of {} in reassign", var))
+        } else if let Some(expecteds) = env.get_var(var) {
+            for (is_mut, var) in expecteds {
+                if !is_mut {
+                    errors.push(format!("Cannot change mutability of {} in reassign", var));
+                }
+            }
+        } else {
+            errors.push(format!("Cannot reassign to undefined '{}'", var))
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.iter().map(|msg| TypeErr::new(pos, msg)).collect())
     }
 }
 
@@ -212,29 +224,33 @@ fn property_call(
             constr.add("call property", &instance, &access);
             Ok((constr.clone(), env.clone()))
         }
-        Node::Reassign { left, right } => {
+        Node::Reassign { left, right, op } => {
             check_reassignable(left)?;
             let name = match &left.node {
                 Node::Id { lit } => lit.clone(),
                 _ => {
-                    return Err(vec![TypeErr::new(&right.pos, "Expected identifier in reassign.")])
+                    return Err(vec![TypeErr::new(&right.pos, "Expected identifier in reassign.")]);
                 }
             };
 
-            let left = Expected::new(
-                &property.pos,
-                &Access {
+            if NodeOp::Assign == *op {
+                let access = &Access {
                     entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
                     name: Box::new(Expected::new(&property.pos, &Field { name })),
-                },
-            );
+                };
+                let left = Expected::new(&property.pos, access);
 
-            constr.add(
-                "call and reassign",
-                &left,
-                &Expected::try_from((right, &env.var_mappings))?,
-            );
-            generate(right, env, ctx, constr)
+                let msg = "call and reassign";
+                constr.add(msg, &left, &Expected::try_from((right, &env.var_mappings))?);
+                generate(right, env, ctx, constr)
+            } else {
+                let node = Node::PropertyCall {
+                    instance: Box::from(instance.clone()),
+                    property: left.clone(),
+                };
+                let left = AST::new(&instance.pos, node);
+                reassign_op(property, &left, right, op, env, ctx, constr)
+            }
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
@@ -247,14 +263,12 @@ fn property_call(
                     .collect::<Result<_, _>>()?,
             );
 
+            let node = Node::PropertyCall {
+                instance: Box::from(instance.clone()),
+                property: Box::from(property.clone()),
+            };
             let instance_exp = Expected::try_from((
-                &AST {
-                    pos: instance.pos.union(&property.pos),
-                    node: Node::PropertyCall {
-                        instance: Box::from(instance.clone()),
-                        property: Box::from(property.clone()),
-                    },
-                },
+                &AST { pos: instance.pos.union(&property.pos), node },
                 &env.var_mappings,
             ))?;
             let access = Expected::new(
@@ -285,15 +299,24 @@ fn property_call(
 /// A property call may not be a tuple, however.
 fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
     match &ast.node {
-        Node::PropertyCall { property, .. } => {
-            let identifier = check_reassignable(property)?;
-            if identifier.is_tuple() {
+        Node::PropertyCall { instance, property } => match check_reassignable(property)? {
+            Identifier::Multi(_) => {
                 let msg = format!("Cannot reassign to {}", &ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])
-            } else {
-                Ok(identifier)
             }
-        }
+            Identifier::Single(m, prop_call) => {
+                let (_, inst_call) = match check_reassignable(instance)? {
+                    Identifier::Single(m, call) => (m, call),
+                    Identifier::Multi(_) => {
+                        let msg = format!("Cannot reassign to {}", &ast.node);
+                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                    }
+                };
+
+                let id_call = IdentiCall::Call(Box::from(inst_call), Box::from(prop_call));
+                Ok(Identifier::Single(m, id_call))
+            }
+        },
         _ => Identifier::try_from(ast).map_err(|errs| {
             errs.iter()
                 .map(|err| {
@@ -303,4 +326,38 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
                 .collect()
         }),
     }
+}
+
+fn reassign_op(
+    ast: &AST,
+    left: &AST,
+    right: &AST,
+    op: &NodeOp,
+    env: &Environment,
+    ctx: &Context,
+    constr: &mut ConstrBuilder,
+) -> Constrained {
+    let left = Box::from(left.clone());
+    let right = Box::from(right.clone());
+
+    let right = Box::from(AST::new(
+        &ast.pos,
+        match op {
+            NodeOp::Add => Node::Add { left: left.clone(), right },
+            NodeOp::Sub => Node::Sub { left: left.clone(), right },
+            NodeOp::Mul => Node::Mul { left: left.clone(), right },
+            NodeOp::Div => Node::Div { left: left.clone(), right },
+            NodeOp::Pow => Node::Pow { left: left.clone(), right },
+            NodeOp::BLShift => Node::BLShift { left: left.clone(), right },
+            NodeOp::BRShift => Node::BRShift { left: left.clone(), right },
+            other => {
+                let msg = format!("Cannot reassign using operator '{}'", other);
+                return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+            }
+        },
+    ));
+
+    let node = Node::Reassign { left, right, op: NodeOp::Assign };
+    let simple_assign_ast = AST::new(&ast.pos, node);
+    generate(&simple_assign_ast, env, ctx, constr)
 }
