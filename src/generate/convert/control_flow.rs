@@ -1,7 +1,7 @@
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::{GenResult, UnimplementedErr};
+use crate::generate::result::GenResult;
 use crate::parse::ast::{AST, Node};
 
 #[allow(clippy::comparison_chain)]
@@ -35,10 +35,7 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
                                 body: Box::from(convert_node(body.as_ref(), imp, state)?),
                             }),
                         },
-                        _ => {
-                            let msg = "match case expression as condition (pattern matching)";
-                            return Err(UnimplementedErr::new(ast, msg));
-                        }
+                        _ => {}
                     },
                     other => panic!("Expected case but was {:?}", other),
                 }
