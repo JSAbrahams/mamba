@@ -1,6 +1,6 @@
 def b := 40
 
-if True then print "hello world"
+if True then print("hello world")
 if False then "hello" else "world"
 
 def cond := True and False
@@ -8,7 +8,7 @@ cond := True or False
 
 if cond then
     "asdf"
-    print "hello \"world\""
+    print("hello \"world\"")
 
     if cond or True then
         "bbb"
@@ -21,11 +21,11 @@ if cond then
     else iii
 else
     "other"
-    print "hello \"world\""
+    print("hello \"world\"")
 
     if cond or True then
         "bbb"
     else
         "ccc"
 
-if "as" = "as" then print "hi" else print "asdf"
+if "as" = "as" then print("hi") else print("asdf")

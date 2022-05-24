@@ -294,7 +294,6 @@ fn as_op_or_id(string: String) -> Token {
 
         "True" => Token::Bool(true),
         "False" => Token::Bool(false),
-        "print" => Token::Print,
 
         "None" => Token::Undefined,
         "pass" => Token::Pass,
