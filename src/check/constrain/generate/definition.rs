@@ -8,11 +8,11 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{arg, clss, Context, function, LookupClass};
+use crate::check::context::{clss, Context, function, LookupClass};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
-use crate::check::ident::{IdentiCall, Identifier};
+use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Union};
 use crate::check::name::{IsNullable, Name};
 use crate::check::result::{TypeErr, TypeResult};
@@ -78,10 +78,10 @@ pub fn gen_def(
             let unassigned: Vec<String> = inner_env
                 .unassigned
                 .iter()
-                .map(|v| format!("Non nullable class variable '{}' should be assigned to", v))
+                .map(|v| format!("Non nullable class variable '{}' should be assigned to in constructor", v))
                 .collect();
             if !unassigned.is_empty() {
-                return Err(unassigned.iter().map(|msg| TypeErr::new(&id.pos, &msg)).collect());
+                return Err(unassigned.iter().map(|msg| TypeErr::new(&id.pos, msg)).collect());
             }
 
             constr.exit_set(&ast.pos)?;
@@ -109,7 +109,7 @@ pub fn constrain_args(
     for arg in args {
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
-                if var.node == Node::_Self {
+                if var.node == Node::new_self() {
                     let self_type = &env.class_type.clone().ok_or_else(|| {
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
                     })?;
@@ -187,20 +187,6 @@ pub fn identifier_from_var(
         }
     }
 
-    let env = identifier
-        .all_calls()
-        .iter()
-        .map(|call| call.without_obj(arg::SELF, &var.pos))
-        .filter(Result::is_ok)
-        .map(Result::unwrap)
-        .map(|identi_call| match identi_call {
-            IdentiCall::Iden(var) => Some(var),
-            _ => None,
-        })
-        .filter(Option::is_some)
-        .map(Option::unwrap)
-        .fold(env, |env, self_var| env.assigned_to(&self_var));
-
     let var_expect = Expected::try_from((var, &env.var_mappings))?;
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
@@ -225,7 +211,7 @@ pub fn identifier_from_var(
         }
     };
 
-    Ok((constr, env.clone()))
+    Ok((constr, env))
 }
 
 // Returns every possible tuple. Elements of a tuple are not to be confused with

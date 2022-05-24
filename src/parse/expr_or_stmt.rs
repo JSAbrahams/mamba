@@ -6,7 +6,7 @@ use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
 use crate::parse::result::ParseResult;
-use crate::parse::statement::is_start_statement;
+use crate::parse::statement::{is_start_statement, parse_reassignment};
 use crate::parse::statement::parse_statement;
 use crate::parse::ty::parse_generics;
 
@@ -32,6 +32,14 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::Raise => parse_raise(*result.clone(), it),
             Token::Handle => parse_handle(*result.clone(), it),
+            Token::Assign
+            | Token::AddAssign
+            | Token::SubAssign
+            | Token::MulAssign
+            | Token::DivAssign
+            | Token::PowAssign
+            | Token::BLShiftAssign
+            | Token::BRShiftAssign => parse_reassignment(&*result, it),
             _ => Ok(result.clone())
         },
         Ok(result.clone()),

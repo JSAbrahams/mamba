@@ -11,7 +11,7 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, LookupClass, LookupFunction};
+use crate::check::context::{arg, clss, Context, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::Name;
@@ -33,13 +33,23 @@ pub fn gen_call(
             check_iden_mut(&identifier, env, ctx, &left.pos)?;
 
             if let NodeOp::Assign = op {
+                let env: Environment = identifier
+                    .all_calls()
+                    .iter()
+                    .flat_map(|call| call.without_obj(arg::SELF, &left.pos))
+                    .flat_map(|identi_call| match identi_call {
+                        IdentiCall::Iden(var) => Some(var),
+                        _ => None,
+                    })
+                    .fold(env.clone(), |env, self_var| env.assigned_to(&self_var));
+
                 constr.add(
                     "reassign",
                     &Expected::try_from((left, &env.var_mappings))?,
                     &Expected::try_from((right, &env.var_mappings))?,
                 );
-                let (mut constr, _) = generate(right, env, ctx, constr)?;
-                generate(left, env, ctx, &mut constr)
+                let (mut constr, _) = generate(right, &env, ctx, constr)?;
+                generate(left, &env, ctx, &mut constr)
             } else {
                 reassign_op(ast, left, right, op, env, ctx, constr)
             }
@@ -223,34 +233,6 @@ fn property_call(
             ))?;
             constr.add("call property", &instance, &access);
             Ok((constr.clone(), env.clone()))
-        }
-        Node::Reassign { left, right, op } => {
-            check_reassignable(left)?;
-            let name = match &left.node {
-                Node::Id { lit } => lit.clone(),
-                _ => {
-                    return Err(vec![TypeErr::new(&right.pos, "Expected identifier in reassign.")]);
-                }
-            };
-
-            if NodeOp::Assign == *op {
-                let access = &Access {
-                    entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
-                    name: Box::new(Expected::new(&property.pos, &Field { name })),
-                };
-                let left = Expected::new(&property.pos, access);
-
-                let msg = "call and reassign";
-                constr.add(msg, &left, &Expected::try_from((right, &env.var_mappings))?);
-                generate(right, env, ctx, constr)
-            } else {
-                let node = Node::PropertyCall {
-                    instance: Box::from(instance.clone()),
-                    property: left.clone(),
-                };
-                let left = AST::new(&instance.pos, node);
-                reassign_op(property, &left, right, op, env, ctx, constr)
-            }
         }
         Node::FunctionCall { name, args } => {
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;

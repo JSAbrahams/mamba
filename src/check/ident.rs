@@ -163,7 +163,7 @@ impl From<(bool, &str)> for Identifier {
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::check::ident::Identifier;
+    use crate::check::ident::{IdentiCall, Identifier};
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
     use crate::parse::ast::{AST, Node};
@@ -173,6 +173,40 @@ mod tests {
         let ast = AST::new(&Position::default(), Node::Id { lit: String::from("r") });
         let iden = Identifier::try_from(&ast)?;
         assert_eq!(iden, Identifier::from((true, "r")));
+        Ok(())
+    }
+
+    #[test]
+    fn without_obj() -> TypeResult<()> {
+        let call = IdentiCall::Call(
+            Box::from(IdentiCall::Iden(String::from("a"))),
+            Box::from(IdentiCall::Call(
+                Box::from(IdentiCall::Iden(String::from("b"))),
+                Box::from(IdentiCall::Iden(String::from("c"))),
+            )),
+        );
+
+        assert_eq!(
+            call.without_obj("a", &Position::default())?,
+            IdentiCall::Call(
+                Box::from(IdentiCall::Iden(String::from("b"))),
+                Box::from(IdentiCall::Iden(String::from("c"))),
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn without_obj_to_iden() -> TypeResult<()> {
+        let call = IdentiCall::Call(
+            Box::from(IdentiCall::Iden(String::from("a"))),
+            Box::from(IdentiCall::Iden(String::from("b"))),
+        );
+
+        assert_eq!(
+            call.without_obj("a", &Position::default())?,
+            IdentiCall::Iden(String::from("b"))
+        );
         Ok(())
     }
 
