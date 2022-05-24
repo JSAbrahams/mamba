@@ -110,7 +110,6 @@ pub fn generate(
         Break | Continue => gen_flow(ast, env, ctx, constr),
 
         Return { .. } | ReturnEmpty => gen_stmt(ast, env, ctx, constr),
-        Print { .. } => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
         Import { .. } |

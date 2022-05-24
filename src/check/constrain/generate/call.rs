@@ -6,12 +6,13 @@ use itertools::EitherOrBoth::{Both, Left, Right};
 use itertools::Itertools;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{arg, clss, Context, LookupClass, LookupFunction};
+use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::Name;
@@ -58,7 +59,15 @@ pub fn gen_call(
             let f_name = StringName::try_from(name)?;
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
-            if let Some(functions) = env.get_var(&f_name.name) {
+            if f_name == StringName::from(function::PRINT) {
+                let args = args.iter().map(|arg| Expected::try_from((arg, &env.var_mappings))).collect::<TypeResult<Vec<Expected>>>()?;
+                let args: Vec<Constraint> = args.iter().map(|exp| Constraint::stringy("print", exp)).collect();
+                let constr = args.iter().fold(constr.clone(), |mut acc, a| {
+                    acc.add_constr(a);
+                    acc
+                });
+                return Ok((constr, env));
+            } else if let Some(functions) = env.get_var(&f_name.name) {
                 if !f_name.generics.is_empty() {
                     let msg = "Anonymous function call cannot have generics";
                     return Err(vec![TypeErr::new(&name.pos, msg)]);

@@ -132,7 +132,6 @@ impl Display for Node {
             Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
             Node::QuestionOp { .. } => String::from("unsafe operator"),
-            Node::Print { .. } => format!("{}", Token::Print),
             Node::Comment { .. } => String::from("comment"),
         };
 
@@ -420,7 +419,6 @@ impl Node {
                 right: Box::from(right.map(mapping)),
             },
             Node::QuestionOp { expr } => Node::QuestionOp { expr: Box::from(expr.map(mapping)) },
-            Node::Print { expr } => Node::Print { expr: Box::from(expr.map(mapping)) },
 
             other => mapping(&other)
         }
@@ -674,7 +672,6 @@ impl Node {
             (Node::QuestionOp { expr: left }, Node::QuestionOp { expr: right }) => {
                 left.same_value(right)
             }
-            (Node::Print { expr: left }, Node::Print { expr: right }) => left.same_value(right),
             (Node::Comment { .. }, Node::Comment { .. }) => true,
 
             (left, right) if **left == **right => true,
@@ -1211,11 +1208,6 @@ mod test {
     #[test]
     fn return_equal_value() {
         two_ast!(Node::Return { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
-    }
-
-    #[test]
-    fn print_equal_value() {
-        two_ast!(Node::Print { expr: Box::from(AST::new(&Position::default(), Node::Continue)) });
     }
 
     #[test]

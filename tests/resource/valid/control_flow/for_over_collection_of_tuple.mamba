@@ -1,2 +1,2 @@
 def b := {(1, 4), (2, 5)}
-for (first, second) in b do print first + second
+for (first, second) in b do print(first + second)
