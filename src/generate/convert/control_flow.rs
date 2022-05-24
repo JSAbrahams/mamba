@@ -20,32 +20,20 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
         },
         Node::Match { cond, cases: match_cases } => {
             let expr = Box::from(convert_node(cond, imp, state)?);
-            let mut cases = vec![];
-            let mut default = vec![];
 
+            let mut cases = vec![];
             for case in match_cases {
-                match &case.node {
-                    Node::Case { cond, body } => match &cond.node {
-                        Node::ExpressionType { expr, .. } => match expr.node {
-                            Node::Underscore => {
-                                default.push(convert_node(body.as_ref(), imp, state)?)
-                            }
-                            _ => cases.push(Core::Case {
-                                expr: Box::from(convert_node(cond.as_ref(), imp, state)?),
-                                body: Box::from(convert_node(body.as_ref(), imp, state)?),
-                            }),
-                        },
-                        _ => {}
-                    },
-                    other => panic!("Expected case but was {:?}", other),
+                if let Node::Case { cond, body } = &case.node {
+                    if let Node::ExpressionType { expr, .. } = &cond.node {
+                        cases.push(Core::Case {
+                            expr: Box::from(convert_node(expr.as_ref(), imp, state)?),
+                            body: Box::from(convert_node(body.as_ref(), imp, state)?),
+                        })
+                    }
                 }
             }
 
-            if default.len() > 1 {
-                panic!("Can't have more than one default.")
-            } else {
-                Core::Match { expr, cases, default: default.first().cloned().map(Box::from) }
-            }
+            Core::Match { expr, cases }
         }
         Node::While { cond, body } => Core::While {
             cond: Box::from(convert_node(cond, imp, state)?),

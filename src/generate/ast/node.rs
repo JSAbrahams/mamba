@@ -63,7 +63,7 @@ pub enum Core {
     For { expr: Box<Core>, col: Box<Core>, body: Box<Core> },
     If { cond: Box<Core>, then: Box<Core> },
     IfElse { cond: Box<Core>, then: Box<Core>, el: Box<Core> },
-    Match { expr: Box<Core>, cases: Vec<Core>, default: Option<Box<Core>> },
+    Match { expr: Box<Core>, cases: Vec<Core> },
     Case { expr: Box<Core>, body: Box<Core> },
     Ternary { cond: Box<Core>, then: Box<Core>, el: Box<Core> },
     KeyValue { key: Box<Core>, value: Box<Core> },

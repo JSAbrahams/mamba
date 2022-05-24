@@ -144,16 +144,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
 
-        Core::Match { expr, cases, default } => {
-            let cases = if let Some(default) = default {
-                let mut cases = cases.clone();
-                let expr = Box::from(Core::UnderScore);
-                cases.push(Core::Case { expr, body: default.clone() });
-                cases
-            } else {
-                cases.clone()
-            };
-
+        Core::Match { expr, cases } => {
             format!("match {}:\n{}", to_py(expr, ind), newline_delimited(&cases, ind + 1))
         }
         Core::Case { expr, body } => {
