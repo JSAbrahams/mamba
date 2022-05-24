@@ -4,7 +4,6 @@ use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::GenResult;
 use crate::parse::ast::{AST, Node};
 
-#[allow(clippy::comparison_chain)]
 pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
         Node::IfElse { cond, then, el } => match el {

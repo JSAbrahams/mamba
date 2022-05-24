@@ -145,7 +145,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
 
         Core::Match { expr, cases } => {
-            format!("match {}:\n{}", to_py(expr, ind), newline_delimited(&cases, ind + 1))
+            format!("match {}:\n{}", to_py(expr, ind), newline_delimited(cases, ind + 1))
         }
         Core::Case { expr, body } => {
             format!("case {}:\n{}", to_py(expr, ind), newline_if_body(body, ind))
