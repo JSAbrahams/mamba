@@ -1,7 +1,4 @@
-def c := {}
-def d := { c, d }
-def e := { 1 + 1, e }
-
-def c := {}
-def d := { c, d }
-def e := { 1 + 1, e }
+def a := {}
+def b := { 10, 20 }
+def c := { {}, {} }
+def d := { { "a" }, { "c", "d" } }
