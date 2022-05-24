@@ -30,7 +30,7 @@ pub fn gen_call(
     match &ast.node {
         Node::Reassign { left, right, op } => {
             let identifier = check_reassignable(left)?;
-            check_iden_mut(&identifier, env, ctx, &left.pos)?;
+            check_iden_mut(&identifier, env, &left.pos)?;
 
             if let NodeOp::Assign = op {
                 let env: Environment = identifier
@@ -127,26 +127,20 @@ pub fn gen_call(
     }
 }
 
-fn check_iden_mut(
-    identifier: &Identifier,
-    env: &Environment,
-    _ctx: &Context,
-    pos: &Position,
-) -> TypeResult<()> {
-    let mut errors = vec![];
-    for (f_mut, var) in &identifier.fields(pos)? {
-        if !f_mut {
-            errors.push(format!("Cannot change mutability of {} in reassign", var))
-        } else if let Some(expecteds) = env.get_var(var) {
-            for (is_mut, var) in expecteds {
-                if !is_mut {
-                    errors.push(format!("Cannot change mutability of {} in reassign", var));
-                }
-            }
-        } else {
-            errors.push(format!("Cannot reassign to undefined '{}'", var))
-        }
-    }
+fn check_iden_mut(id: &Identifier, env: &Environment, pos: &Position) -> TypeResult<()> {
+    let errors: Vec<String> = id
+        .fields(pos)?
+        .iter()
+        .flat_map(|(f_mut, var)| match env.get_var(var) {
+            Some(exps) if *f_mut => exps
+                .iter()
+                .filter(|(is_mut, _)| !*is_mut)
+                .map(|(_, var)| format!("Cannot change mutability of '{}' in reassign", var))
+                .collect(),
+            _ if !f_mut => vec![format!("Cannot change mutability of '{}' in reassign", var)],
+            _ => vec![format!("Cannot reassign to undefined '{}'", var)],
+        })
+        .collect();
 
     if errors.is_empty() {
         Ok(())
