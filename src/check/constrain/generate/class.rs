@@ -9,7 +9,7 @@ use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{field, LookupClass};
 use crate::check::context::Context;
 use crate::check::name::Name;
-use crate::check::name::truename::TrueName;
+use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -48,19 +48,19 @@ pub fn constrain_class_body(
 ) -> Constrained {
     let mut res = (constr.clone(), env.clone());
 
-    let class_name = TrueName::try_from(ty.deref())?;
+    let class_name = StringName::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
     let class_ty_exp = Type { name: Name::from(&class_name) };
     res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
 
     // Need way to specify that we are in class itself, not just any class, for position info
-    for field in ctx.class(&class_name, &ty.pos)?.as_direct(&Position::default())?.fields {
+    for field in ctx.class(&class_name, &ty.pos)?.fields {
         res = property_from_field(&ty.pos, &field, &class_name, &mut res.1, &mut res.0)?;
     }
 
     res.0.add(
         "class body",
-        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::_Self }, &env.var_mappings))?,
+        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::new_self() }, &env.var_mappings))?,
         &Expected::new(&ty.pos, &class_ty_exp),
     );
 
@@ -73,14 +73,14 @@ pub fn constrain_class_body(
 pub fn property_from_field(
     pos: &Position,
     field: &field::Field,
-    class: &TrueName,
+    class: &StringName,
     env: &mut Environment,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     // TODO generate constraints are part of interface
     // TODO add constraint for mutable field
     let node = Node::PropertyCall {
-        instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
+        instance: Box::new(AST { pos: pos.clone(), node: Node::new_self() }),
         property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } }),
     };
     let property_call = Expected::try_from((&AST::new(pos, node), &env.var_mappings))?;

@@ -1,49 +1,11 @@
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
-use crate::parse::ast::node_op::NodeOp;
 use crate::parse::definition::parse_fun_arg;
 use crate::parse::expression::parse_inner_expression;
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::{Lex, Token};
+use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{eof_expected_one_of, ParseResult};
-use crate::parse::result::expected_one_of;
-
-pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("reassignment")?;
-    let expect = [
-        Token::Assign,
-        Token::AddAssign,
-        Token::SubAssign,
-        Token::MulAssign,
-        Token::DivAssign,
-        Token::PowAssign,
-        Token::BLShiftAssign,
-        Token::BRShiftAssign
-    ];
-
-    let (token, op) = if let Some(token) = it.peek_next() {
-        match &token {
-            Lex { token: Token::Assign, .. } => (Token::Assign, NodeOp::Assign),
-            Lex { token: Token::AddAssign, .. } => (Token::AddAssign, NodeOp::Add),
-            Lex { token: Token::SubAssign, .. } => (Token::SubAssign, NodeOp::Sub),
-            Lex { token: Token::MulAssign, .. } => (Token::MulAssign, NodeOp::Mul),
-            Lex { token: Token::DivAssign, .. } => (Token::DivAssign, NodeOp::Div),
-            Lex { token: Token::PowAssign, .. } => (Token::PowAssign, NodeOp::Pow),
-            Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, NodeOp::BLShift),
-            Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, NodeOp::BRShift),
-            lex => { return Err(expected_one_of(&expect, lex, "reassignment")); }
-        }
-    } else {
-        return Err(eof_expected_one_of(&expect, "reassignment"));
-    };
-    it.eat(&token, "reassignment")?;
-
-    let right = it.parse(&parse_expression, "reassignment", &start)?;
-
-    let node = Node::Reassign { left: Box::new(pre.clone()), right: right.clone(), op };
-    Ok(Box::from(AST::new(&start.union(&right.pos), node)))
-}
+use crate::parse::result::{expected_one_of, ParseResult};
 
 pub fn parse_anon_fun(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("anonymous function")?;

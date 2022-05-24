@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use crate::check::context::{arg, function};
 use crate::common::position::Position;
 use crate::parse::ast::node_op::NodeOp;
 
@@ -15,16 +16,17 @@ pub struct AST {
 }
 
 impl AST {
-    pub fn new(pos: &Position, node: Node) -> AST { AST { pos: pos.clone(), node } }
+    pub fn new(pos: &Position, node: Node) -> AST {
+        AST { pos: pos.clone(), node }
+    }
 
-    pub fn same_value(&self, other: &AST) -> bool { self.node.same_value(&other.node) }
+    pub fn same_value(&self, other: &AST) -> bool {
+        self.node.same_value(&other.node)
+    }
 
     #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> AST {
-        AST {
-            pos: self.pos.clone(),
-            node: self.node.map(mapping),
-        }
+        AST { pos: self.pos.clone(), node: self.node.map(mapping) }
     }
 }
 
@@ -38,7 +40,6 @@ pub enum Node {
     Class { ty: Box<AST>, args: Vec<AST>, parents: Vec<AST>, body: OptAST },
     Generic { id: Box<AST>, isa: OptAST },
     Parent { ty: Box<AST>, args: Vec<AST> },
-    Init,
     Reassign { left: Box<AST>, right: Box<AST>, op: NodeOp },
     VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
     FunDef { pure: bool, id: Box<AST>, args: Vec<AST>, ret: OptAST, raises: Vec<AST>, body: OptAST },
@@ -59,7 +60,6 @@ pub enum Node {
     TypeFun { args: Vec<AST>, ret_ty: Box<AST> },
     Condition { cond: Box<AST>, el: OptAST },
     FunArg { vararg: bool, mutable: bool, var: Box<AST>, ty: OptAST, default: OptAST },
-    _Self,
     Set { elements: Vec<AST> },
     SetBuilder { item: Box<AST>, conditions: Vec<AST> },
     List { elements: Vec<AST> },
@@ -122,6 +122,16 @@ pub enum Node {
     QuestionOp { expr: Box<AST> },
     Print { expr: Box<AST> },
     Comment { comment: String },
+}
+
+impl Node {
+    pub fn new_self() -> Node {
+        Node::Id { lit: String::from(arg::SELF) }
+    }
+
+    pub fn new_init() -> Node {
+        Node::Id { lit: String::from(function::INIT) }
+    }
 }
 
 #[cfg(test)]

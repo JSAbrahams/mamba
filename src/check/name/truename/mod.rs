@@ -121,7 +121,7 @@ impl TrueName {
         match &self.variant {
             NameVariant::Single(name) => Ok(name.clone()),
             other =>
-                Err(vec![TypeErr::new(pos, &format!("'{}' is not a valid {} truename", other, exp))]),
+                Err(vec![TypeErr::new(pos, &format!("'{}' is not a valid {} name", other, exp))]),
         }
     }
 

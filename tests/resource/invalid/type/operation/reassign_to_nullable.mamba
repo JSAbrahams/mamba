@@ -1,0 +1,3 @@
+def x: Int? := None
+
+x += 10

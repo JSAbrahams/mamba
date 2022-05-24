@@ -26,6 +26,7 @@ impl TryFrom<&AST> for StringName {
                 }
                 _ => Err(vec![TypeErr::new(&id.pos, &format!("Expected identifier, was {}", ast.node))])
             },
+            Node::Parent { ty, .. } => StringName::try_from(ty),
             _ => {
                 let msg = format!("Expected class name, was {}", ast.node);
                 Err(vec![TypeErr::new(&ast.pos, &msg)])

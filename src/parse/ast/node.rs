@@ -1,6 +1,5 @@
 use std::fmt::{Display, Error, Formatter};
 
-use crate::check::context::arg;
 use crate::common::delimit::{comma_delm, custom_delimited};
 use crate::parse::ast::{AST, Node};
 use crate::parse::lex::token::Token;
@@ -40,7 +39,6 @@ impl Display for Node {
             Node::Class { .. } => String::from("class"),
             Node::Generic { .. } => String::from("generic"),
             Node::Parent { .. } => String::from("parent"),
-            Node::Init => String::from("constructor (init)"),
             Node::Reassign { .. } => String::from("reassign"),
             Node::VariableDef { .. } => String::from("variable definition"),
             Node::FunDef { .. } => String::from("function definition"),
@@ -65,7 +63,6 @@ impl Display for Node {
             Node::TypeFun { .. } => String::from("type function"),
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),
-            Node::_Self => String::from(arg::SELF),
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
@@ -710,7 +707,6 @@ impl Node {
             | Node::Match { .. }
             | Node::Underscore
             | Node::Undefined
-            | Node::_Self
             | Node::Question { .. }
             | Node::QuestionOp { .. } => true,
 
@@ -957,7 +953,7 @@ mod test {
             ty: Box::new(AST::new(&Position::default(), Node::Continue)),
             args: vec![AST::new(&Position::default(), Node::ReturnEmpty)],
             parents: vec![AST::new(&Position::default(), Node::Pass)],
-            body: Some(Box::from(AST::new(&Position::default(), Node::_Self))),
+            body: Some(Box::from(AST::new(&Position::default(), Node::new_self()))),
         };
 
         two_ast!(node);
@@ -976,16 +972,11 @@ mod test {
     #[test]
     fn parent_equal_value() {
         let node = Node::Parent {
-            ty: Box::new(AST::new(&Position::default(), Node::_Self)),
+            ty: Box::new(AST::new(&Position::default(), Node::new_self())),
             args: vec![AST::new(&Position::default(), Node::Pass)],
         };
 
         two_ast!(node);
-    }
-
-    #[test]
-    fn init_equal_value() {
-        two_ast!(Node::Init);
     }
 
     #[test]
@@ -1094,11 +1085,6 @@ mod test {
         two_ast!(Node::TypeFun {args: vec![*first.clone(), *second.clone()], ret_ty: third.clone()});
 
         two_ast!(Node::Condition {cond: first.clone(), el: Some(second.clone())});
-    }
-
-    #[test]
-    fn self_equal_value() {
-        two_ast!(Node::_Self);
     }
 
     #[test]
@@ -1318,7 +1304,6 @@ mod test {
         assert!(Node::Match { cond: first.clone(), cases: vec![*second.clone()] }.is_expression());
         assert!(Node::Underscore.is_expression());
         assert!(Node::Undefined.is_expression());
-        assert!(Node::_Self.is_expression());
         assert!(Node::Question { left: first.clone(), right: third.clone() }.is_expression());
         assert!(Node::QuestionOp { expr: second.clone() }.is_expression());
     }
