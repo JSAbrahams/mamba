@@ -1,0 +1,5 @@
+class X
+    def z: Int
+
+    def init(self, x: Int) =>
+        self.z += 10

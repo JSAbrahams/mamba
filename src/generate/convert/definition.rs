@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use crate::check::context::arg;
 use crate::generate::ast::node::{Core, CoreFunOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
@@ -78,7 +79,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
             var: Box::from(convert_node(var, imp, state)?),
             ty: match ty {
                 Some(ty) if state.expand_ty => match &var.node {
-                    Node::_Self => None,
+                    Node::Id { lit } if lit == &String::from(arg::SELF) => None,
                     _ => Some(Box::from(convert_node(ty, imp, state)?)),
                 },
                 _ => None,

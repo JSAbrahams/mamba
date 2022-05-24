@@ -8,12 +8,13 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, LookupClass};
+use crate::check::context::{clss, Context, function, LookupClass};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
+use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Union};
-use crate::check::name::Name;
+use crate::check::name::{IsNullable, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -25,11 +26,28 @@ pub fn gen_def(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::FunDef { args: fun_args, ret: ret_ty, body, raises, .. } => {
+        Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
             constr.new_set(true);
 
+            let non_nullable_class_vars: Vec<String> = match &id.node {
+                Node::Id { lit } if *lit == function::INIT => {
+                    if let Some(class) = constr.current_class() {
+                        let class = ctx.class(&class, &id.pos)?;
+                        let fields: Vec<&Field> =
+                            class.fields.iter().filter(|f| !f.ty.is_nullable()).collect();
+                        fields.iter().map(|f| f.name.clone()).collect()
+                    } else {
+                        let msg = format!("Cannot have {} function outside class", function::INIT);
+                        return Err(vec![TypeErr::new(&id.pos, &msg)]);
+                    }
+                }
+                _ => vec![],
+            };
+
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
-            let mut constr = if let Some(body) = body {
+            let inner_env = inner_env.with_unassigned(non_nullable_class_vars);
+
+            let (mut constr, inner_env) = if let Some(body) = body {
                 let r_tys: Vec<_> =
                     raises.iter().map(|r| (r.pos.clone(), Name::try_from(r))).collect();
                 let mut r_res = Name::empty();
@@ -49,13 +67,22 @@ pub fn gen_def(
                     let name = Name::try_from(ret_ty)?;
                     let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { name });
                     let inner_env = inner_env.return_type(&ret_ty_exp);
-                    generate(body, &inner_env, ctx, &mut constr)?.0
+                    generate(body, &inner_env, ctx, &mut constr)?
                 } else {
-                    generate(body, &inner_env, ctx, &mut constr)?.0
+                    generate(body, &inner_env, ctx, &mut constr)?
                 }
             } else {
-                constr
+                (constr, inner_env)
             };
+
+            let unassigned: Vec<String> = inner_env
+                .unassigned
+                .iter()
+                .map(|v| format!("Non nullable class variable '{}' should be assigned to in constructor", v))
+                .collect();
+            if !unassigned.is_empty() {
+                return Err(unassigned.iter().map(|msg| TypeErr::new(&id.pos, msg)).collect());
+            }
 
             constr.exit_set(&ast.pos)?;
             Ok((constr, env.clone()))
@@ -82,7 +109,7 @@ pub fn constrain_args(
     for arg in args {
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
-                if var.node == Node::_Self {
+                if var.node == Node::new_self() {
                     let self_type = &env.class_type.clone().ok_or_else(|| {
                         TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
                     })?;
@@ -184,7 +211,7 @@ pub fn identifier_from_var(
         }
     };
 
-    Ok((constr, env.clone()))
+    Ok((constr, env))
 }
 
 // Returns every possible tuple. Elements of a tuple are not to be confused with

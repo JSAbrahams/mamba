@@ -4,7 +4,6 @@ use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::call::parse_anon_fun;
 use crate::parse::call::parse_call;
-use crate::parse::call::parse_reassignment;
 use crate::parse::collection::parse_collection;
 use crate::parse::control_flow_expr::parse_cntrl_flow_expr;
 use crate::parse::iterator::LexIterator;
@@ -110,17 +109,6 @@ fn parse_underscore(it: &mut LexIterator) -> ParseResult {
 fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
     it.peek(
         &|it, lex| match lex.token {
-            Token::Assign
-            | Token::AddAssign
-            | Token::SubAssign
-            | Token::MulAssign
-            | Token::DivAssign
-            | Token::PowAssign
-            | Token::BLShiftAssign
-            | Token::BRShiftAssign => {
-                let res = parse_reassignment(pre, it)?;
-                parse_post_expr(&res, it)
-            }
             Token::LRBrack | Token::Point => {
                 let res = parse_call(pre, it)?;
                 parse_post_expr(&res, it)
@@ -192,4 +180,32 @@ pub fn is_start_expression_exclude_unary(tp: &Lex) -> bool {
 pub fn is_start_expression(tp: &Lex) -> bool {
     let start_expr = is_start_expression_exclude_unary(tp);
     start_expr || tp.token == Token::Add || tp.token == Token::Sub
+}
+
+#[cfg(test)]
+mod test {
+    use crate::parse::ast::Node;
+    use crate::parse::parse_direct;
+
+    #[test]
+    fn parse_call() {
+        let source = String::from("a.b.c");
+        let asts = parse_direct(&source).expect("valid AST");
+
+        assert_eq!(asts.len(), 1);
+        let reassignment = asts.first().expect("reassignment");
+        let (first, second, third) = match &reassignment.node {
+            Node::PropertyCall { instance, property } => match &property.node {
+                Node::PropertyCall { instance: inner, property } => {
+                    (instance.clone(), inner.clone(), property.clone())
+                }
+                other => panic!("Expected property call, was {:?}", other),
+            },
+            other => panic!("Expected property call, was {:?}", other),
+        };
+
+        assert_eq!(first.node, Node::Id { lit: String::from("a") });
+        assert_eq!(second.node, Node::Id { lit: String::from("b") });
+        assert_eq!(third.node, Node::Id { lit: String::from("c") });
+    }
 }
