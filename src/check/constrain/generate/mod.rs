@@ -117,9 +117,7 @@ pub fn generate(
         FromImport { .. } |
         Generic { .. } |
         Parent { .. } |
-        Init |
         ExpressionType { .. } |
-        _Self |
         DocStr { .. } |
         Underscore |
         Undefined |

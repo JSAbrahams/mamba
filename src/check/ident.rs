@@ -36,9 +36,7 @@ impl IdentiCall {
     pub fn object(&self, pos: &Position) -> TypeResult<String> {
         match &self.object_rec() {
             IdentiCall::Iden(object) => Ok(object.clone()),
-            IdentiCall::Call(_, _) => {
-                Err(vec![TypeErr::new(pos, "Call not expected here")])
-            }
+            IdentiCall::Call(_, _) => Err(vec![TypeErr::new(pos, "Call not expected here")]),
         }
     }
 
@@ -48,9 +46,30 @@ impl IdentiCall {
             IdentiCall::Call(instance, _) => instance.object_rec(),
         }
     }
+
+    pub fn without_obj(&self, object: &str, pos: &Position) -> TypeResult<IdentiCall> {
+        match &self {
+            IdentiCall::Iden(_) => Err(vec![TypeErr::new(pos, "Call expected here")]),
+            IdentiCall::Call(obj, call) => match obj.deref() {
+                IdentiCall::Iden(str) if str == object => Ok(*call.clone()),
+                IdentiCall::Iden(str) => {
+                    let msg = format!("Call does not have identifier '{}'", str);
+                    Err(vec![TypeErr::new(pos, &msg)])
+                }
+                obj => Ok(IdentiCall::Call(Box::from(obj.without_obj(object, pos)?), call.clone())),
+            },
+        }
+    }
 }
 
 impl Identifier {
+    pub fn all_calls(&self) -> Vec<IdentiCall> {
+        match &self {
+            Identifier::Single(_, call) => vec![call.clone()],
+            Identifier::Multi(idens) => idens.iter().flat_map(|id| id.all_calls()).collect(),
+        }
+    }
+
     pub fn is_tuple(&self) -> bool {
         matches!(&self, Identifier::Multi(..))
     }
@@ -144,7 +163,7 @@ impl From<(bool, &str)> for Identifier {
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::check::ident::Identifier;
+    use crate::check::ident::{IdentiCall, Identifier};
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
     use crate::parse::ast::{AST, Node};
@@ -154,6 +173,40 @@ mod tests {
         let ast = AST::new(&Position::default(), Node::Id { lit: String::from("r") });
         let iden = Identifier::try_from(&ast)?;
         assert_eq!(iden, Identifier::from((true, "r")));
+        Ok(())
+    }
+
+    #[test]
+    fn without_obj() -> TypeResult<()> {
+        let call = IdentiCall::Call(
+            Box::from(IdentiCall::Iden(String::from("a"))),
+            Box::from(IdentiCall::Call(
+                Box::from(IdentiCall::Iden(String::from("b"))),
+                Box::from(IdentiCall::Iden(String::from("c"))),
+            )),
+        );
+
+        assert_eq!(
+            call.without_obj("a", &Position::default())?,
+            IdentiCall::Call(
+                Box::from(IdentiCall::Iden(String::from("b"))),
+                Box::from(IdentiCall::Iden(String::from("c"))),
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn without_obj_to_iden() -> TypeResult<()> {
+        let call = IdentiCall::Call(
+            Box::from(IdentiCall::Iden(String::from("a"))),
+            Box::from(IdentiCall::Iden(String::from("b"))),
+        );
+
+        assert_eq!(
+            call.without_obj("a", &Position::default())?,
+            IdentiCall::Iden(String::from("b"))
+        );
         Ok(())
     }
 
