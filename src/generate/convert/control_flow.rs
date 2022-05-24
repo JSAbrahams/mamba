@@ -1,10 +1,9 @@
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::{GenResult, UnimplementedErr};
+use crate::generate::result::GenResult;
 use crate::parse::ast::{AST, Node};
 
-#[allow(clippy::comparison_chain)]
 pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
         Node::IfElse { cond, then, el } => match el {
@@ -18,59 +17,22 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
                 then: Box::from(convert_node(then, imp, state)?),
             },
         },
-        Node::Match { cond, cases } => {
+        Node::Match { cond, cases: match_cases } => {
             let expr = Box::from(convert_node(cond, imp, state)?);
-            let mut core_cases = vec![];
-            let mut core_defaults = vec![];
 
-            for case in cases {
-                match &case.node {
-                    Node::Case { cond, body } => match &cond.node {
-                        Node::ExpressionType { expr, .. } => match expr.node {
-                            Node::Underscore => {
-                                core_defaults.push(convert_node(body.as_ref(), imp, state)?)
-                            }
-                            _ => core_cases.push(Core::KeyValue {
-                                key: Box::from(convert_node(cond.as_ref(), imp, state)?),
-                                value: Box::from(convert_node(body.as_ref(), imp, state)?),
-                            }),
-                        },
-                        _ => {
-                            return Err(UnimplementedErr::new(
-                                ast,
-                                "match case expression as condition (pattern matching)",
-                            ));
-                        }
-                    },
-                    other => panic!("Expected case but was {:?}", other),
+            let mut cases = vec![];
+            for case in match_cases {
+                if let Node::Case { cond, body } = &case.node {
+                    if let Node::ExpressionType { expr, .. } = &cond.node {
+                        cases.push(Core::Case {
+                            expr: Box::from(convert_node(expr.as_ref(), imp, state)?),
+                            body: Box::from(convert_node(body.as_ref(), imp, state)?),
+                        })
+                    }
                 }
             }
 
-            if core_defaults.len() > 1 {
-                panic!("Can't have more than one default.")
-            } else if core_defaults.len() == 1 {
-                let default = Core::AnonFun {
-                    args: vec![],
-                    body: Box::from(core_defaults[0].clone()),
-                };
-
-                imp.add_from_import("collections", "defaultdict");
-                Core::Index {
-                    item: Box::from(Core::FunctionCall {
-                        function: Box::from(Core::Id { lit: String::from("defaultdict") }),
-                        args: vec![
-                            default,
-                            Core::Set { elements: core_cases },
-                        ],
-                    }),
-                    range: expr,
-                }
-            } else {
-                Core::Index {
-                    item: Box::from(Core::Set { elements: core_cases }),
-                    range: expr,
-                }
-            }
+            Core::Match { expr, cases }
         }
         Node::While { cond, body } => Core::While {
             cond: Box::from(convert_node(cond, imp, state)?),
