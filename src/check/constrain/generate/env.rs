@@ -47,7 +47,8 @@ impl Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
-        let var = if self.vars.contains_key(var) {
+        // Never shadow self
+        let var = if self.vars.contains_key(var) && var != SELF {
             let mut offset = 0;
             let mut new_var = format!("{}@{}", var, offset);
             while self.vars.contains_key(&new_var) {
