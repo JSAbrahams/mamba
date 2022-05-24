@@ -215,8 +215,8 @@ mod test {
     }
 
     #[test]
-    fn match_statements() {
-        let source = resource_content(true, &["control_flow"], "match.mamba");
+    fn match_stmt() {
+        let source = resource_content(true, &["control_flow"], "match_stmt.mamba");
         parse(&source).unwrap();
     }
 }

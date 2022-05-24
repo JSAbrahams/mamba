@@ -98,7 +98,9 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
 
-        Core::Assign { left, right, op } => format!("{} {} {}", to_py(left, ind), op, to_py(right, ind)),
+        Core::Assign { left, right, op } => {
+            format!("{} {} {}", to_py(left, ind), op, to_py(right, ind))
+        }
         Core::VarDef { var, expr, ty } => format!(
             "{}{} = {}",
             to_py(var, ind),
@@ -141,6 +143,22 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::TupleLiteral { elements } => comma_delimited(elements, ind),
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
+
+        Core::Match { expr, cases, default } => {
+            let cases = if let Some(default) = default {
+                let mut cases = cases.clone();
+                let expr = Box::from(Core::UnderScore);
+                cases.push(Core::Case { expr, body: default.clone() });
+                cases
+            } else {
+                cases.clone()
+            };
+
+            format!("match {}:\n{}", to_py(expr, ind), newline_delimited(&cases, ind + 1))
+        }
+        Core::Case { expr, body } => {
+            format!("case {}:\n{}", to_py(expr, ind), newline_if_body(body, ind))
+        }
         Core::KeyValue { key, value } => format!("{}: {}", to_py(key, ind), to_py(value, ind)),
 
         Core::UnderScore => String::from("_"),

@@ -18,58 +18,36 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
                 then: Box::from(convert_node(then, imp, state)?),
             },
         },
-        Node::Match { cond, cases } => {
+        Node::Match { cond, cases: match_cases } => {
             let expr = Box::from(convert_node(cond, imp, state)?);
-            let mut core_cases = vec![];
-            let mut core_defaults = vec![];
+            let mut cases = vec![];
+            let mut default = vec![];
 
-            for case in cases {
+            for case in match_cases {
                 match &case.node {
                     Node::Case { cond, body } => match &cond.node {
                         Node::ExpressionType { expr, .. } => match expr.node {
                             Node::Underscore => {
-                                core_defaults.push(convert_node(body.as_ref(), imp, state)?)
+                                default.push(convert_node(body.as_ref(), imp, state)?)
                             }
-                            _ => core_cases.push(Core::KeyValue {
-                                key: Box::from(convert_node(cond.as_ref(), imp, state)?),
-                                value: Box::from(convert_node(body.as_ref(), imp, state)?),
+                            _ => cases.push(Core::Case {
+                                expr: Box::from(convert_node(cond.as_ref(), imp, state)?),
+                                body: Box::from(convert_node(body.as_ref(), imp, state)?),
                             }),
                         },
                         _ => {
-                            return Err(UnimplementedErr::new(
-                                ast,
-                                "match case expression as condition (pattern matching)",
-                            ));
+                            let msg = "match case expression as condition (pattern matching)";
+                            return Err(UnimplementedErr::new(ast, msg));
                         }
                     },
                     other => panic!("Expected case but was {:?}", other),
                 }
             }
 
-            if core_defaults.len() > 1 {
+            if default.len() > 1 {
                 panic!("Can't have more than one default.")
-            } else if core_defaults.len() == 1 {
-                let default = Core::AnonFun {
-                    args: vec![],
-                    body: Box::from(core_defaults[0].clone()),
-                };
-
-                imp.add_from_import("collections", "defaultdict");
-                Core::Index {
-                    item: Box::from(Core::FunctionCall {
-                        function: Box::from(Core::Id { lit: String::from("defaultdict") }),
-                        args: vec![
-                            default,
-                            Core::Set { elements: core_cases },
-                        ],
-                    }),
-                    range: expr,
-                }
             } else {
-                Core::Index {
-                    item: Box::from(Core::Set { elements: core_cases }),
-                    range: expr,
-                }
+                Core::Match { expr, cases, default: default.first().cloned().map(Box::from) }
             }
         }
         Node::While { cond, body } => Core::While {

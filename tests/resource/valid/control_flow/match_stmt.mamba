@@ -1,18 +1,16 @@
 def a := "d"
 
-print match a
-    "b" => "c"
-    "d" => "e"
-
 def (b, bb, bbb) := (0, 1, 2)
 
 match (b, bb, bbb)
-    (0, 1, 2) => print "hello world"
+    (0, 1, 2) => print("hello world")
 
 def nested := "other"
 
 match nested
-    "a" => "b"
+    "a" =>
+        "b"
+        "c"
     "c" => match nested
         "other" => "even_other"
         "other_one" => "better_one"

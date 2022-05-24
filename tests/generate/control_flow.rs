@@ -18,7 +18,7 @@ fn core_if() {
 #[test]
 #[ignore]
 fn core_match_statements() {
-    let source = resource_content(true, &["control_flow"], "match.mamba");
+    let source = resource_content(true, &["control_flow"], "match_stmt.mamba");
     to_py!(source);
 }
 
