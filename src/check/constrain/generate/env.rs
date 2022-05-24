@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
@@ -16,6 +17,7 @@ pub struct Environment {
     pub raises: Option<Expected>,
     pub class_type: Option<Expect>,
     pub var_mappings: HashMap<String, String>,
+    pub unassigned: HashSet<String>,
     temp_type: usize,
     vars: HashMap<String, HashSet<(bool, Expected)>>,
 }
@@ -74,7 +76,9 @@ impl Environment {
     }
 
     /// Specify that we are in a loop.
-    pub fn in_loop(&self) -> Environment { Environment { in_loop: true, ..self.clone() } }
+    pub fn in_loop(&self) -> Environment {
+        Environment { in_loop: true, ..self.clone() }
+    }
 
     /// Specify the return type of function body.
     pub fn return_type(&self, return_type: &Expected) -> Environment {
@@ -99,7 +103,9 @@ impl Environment {
     /// Return true variable truename, whether it's mutable and it's expected value
     pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
         for (old, new) in &self.var_mappings {
-            if old == var { return self.get_var(new); }
+            if old == var {
+                return self.get_var(new);
+            }
         }
 
         self.vars.get(var).cloned()
@@ -157,8 +163,10 @@ impl Environment {
             }
         }
 
-        let to_remove: Vec<String> = self.var_mappings.iter()
-            .filter(|(key, _)| { other.var_mappings.contains_key(*key) })
+        let to_remove: Vec<String> = self
+            .var_mappings
+            .iter()
+            .filter(|(key, _)| other.var_mappings.contains_key(*key))
             .map(|(key, _)| key.clone())
             .collect();
 
@@ -175,6 +183,26 @@ impl Environment {
     /// Useful for when we don't know what a type should be during the generation stage.
     /// The unification stage should then identify these.
     pub fn temp_var(&self) -> (String, Environment) {
-        (format!("{}{}", name::TEMP, self.temp_type), Environment { temp_type: self.temp_type + 1, ..self.clone() })
+        (
+            format!("{}{}", name::TEMP, self.temp_type),
+            Environment { temp_type: self.temp_type + 1, ..self.clone() },
+        )
+    }
+
+    /// Denote a set of variables which should be assigned to at some point.
+    pub fn with_unassigned<I>(&self, var: I) -> Environment
+        where I: IntoIterator<Item=String> {
+        let unassigned = HashSet::from_iter(var.into_iter());
+        Environment { unassigned, ..self.clone() }
+    }
+
+    /// Denote that a variable was assigned to by removing it from the set of variables which
+    /// should be assigned to.
+    ///
+    /// If not in environment, then nothing happens.
+    pub fn assigned_to(&self, var: &String) -> Environment {
+        let mut unassigned = self.unassigned.clone();
+        unassigned.remove(var);
+        Environment { unassigned, ..self.clone() }
     }
 }

@@ -36,9 +36,7 @@ impl IdentiCall {
     pub fn object(&self, pos: &Position) -> TypeResult<String> {
         match &self.object_rec() {
             IdentiCall::Iden(object) => Ok(object.clone()),
-            IdentiCall::Call(_, _) => {
-                Err(vec![TypeErr::new(pos, "Call not expected here")])
-            }
+            IdentiCall::Call(_, _) => Err(vec![TypeErr::new(pos, "Call not expected here")]),
         }
     }
 
@@ -48,9 +46,30 @@ impl IdentiCall {
             IdentiCall::Call(instance, _) => instance.object_rec(),
         }
     }
+
+    pub fn without_obj(&self, object: &str, pos: &Position) -> TypeResult<IdentiCall> {
+        match &self {
+            IdentiCall::Iden(_) => Err(vec![TypeErr::new(pos, "Call expected here")]),
+            IdentiCall::Call(obj, call) => match obj.deref() {
+                IdentiCall::Iden(str) if str == object => Ok(*call.clone()),
+                IdentiCall::Iden(str) => {
+                    let msg = format!("Call does not have identifier '{}'", str);
+                    Err(vec![TypeErr::new(pos, &msg)])
+                }
+                obj => Ok(IdentiCall::Call(Box::from(obj.without_obj(object, pos)?), call.clone())),
+            },
+        }
+    }
 }
 
 impl Identifier {
+    pub fn all_calls(&self) -> Vec<IdentiCall> {
+        match &self {
+            Identifier::Single(_, call) => vec![call.clone()],
+            Identifier::Multi(idens) => idens.iter().flat_map(|id| id.all_calls()).collect(),
+        }
+    }
+
     pub fn is_tuple(&self) -> bool {
         matches!(&self, Identifier::Multi(..))
     }
