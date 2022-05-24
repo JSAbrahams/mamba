@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
@@ -30,11 +29,6 @@ pub fn gen_stmt(
             } else {
                 Err(vec![TypeErr::new(&ast.pos, "Return outside function with return type")])
             },
-        Node::Print { expr } => {
-            let con = Constraint::stringy("print", &Expected::try_from((expr, &env.var_mappings))?);
-            constr.add_constr(&con);
-            generate(expr, env, ctx, constr)
-        }
         _ => Err(vec![TypeErr::new(&ast.pos, "Expected statement")])
     }
 }

@@ -17,6 +17,7 @@ use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
 pub const INIT: &str = "init";
+pub const PRINT: &str = "print";
 
 pub const ADD: &str = "+";
 pub const DIV: &str = "/";

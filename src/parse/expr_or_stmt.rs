@@ -149,19 +149,6 @@ mod test {
     }
 
     #[test]
-    fn print_verify() {
-        let source = String::from("print some_value");
-        let statements = parse_direct(&source).unwrap();
-
-        let expr = match &statements.first().expect("script empty.").node {
-            Node::Print { expr } => expr.clone(),
-            _ => panic!("first element script was not reassign.")
-        };
-
-        assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
-    }
-
-    #[test]
     fn return_verify() {
         let source = String::from("return some_value");
         let statements = parse_direct(&source).unwrap();
@@ -260,12 +247,6 @@ mod test {
         assert_eq!(_as.len(), 2);
         assert_eq!(_as[0].node, Node::Id { lit: String::from("c") });
         assert_eq!(_as[1].node, Node::Id { lit: String::from("d") });
-    }
-
-    #[test]
-    fn print_missing_arg() {
-        let source = String::from("print");
-        parse(&source).unwrap_err();
     }
 
     #[test]

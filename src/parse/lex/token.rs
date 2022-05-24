@@ -134,8 +134,6 @@ pub enum Token {
     Question,
     Handle,
 
-    Print,
-
     Pass,
     Undefined,
     Comment(String),
@@ -285,7 +283,6 @@ impl fmt::Display for Token {
             Token::When => String::from("when"),
 
             Token::Pass => String::from("pass"),
-            Token::Print => String::from("print"),
             Token::Undefined => String::from("None"),
             Token::Comment(string) => format!("{} (comment)", string)
         })

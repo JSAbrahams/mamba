@@ -106,10 +106,6 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
         Node::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         Node::Return { expr } => Core::Return { expr: Box::from(convert_node(expr, imp, state)?) },
-        Node::Print { expr } => Core::FunctionCall {
-            function: Box::from(Core::Id { lit: String::from("print") }),
-            args: vec![convert_node(expr, imp, state)?],
-        },
 
         Node::IfElse { .. }
         | Node::While { .. }
@@ -372,19 +368,6 @@ mod tests {
     fn pass_verify() {
         let pass = to_pos!(Node::Pass);
         assert_eq!(gen(&pass).unwrap(), Core::Pass);
-    }
-
-    #[test]
-    fn print_verify() {
-        let expr = to_pos!(Node::Str { lit: String::from("a"), expressions: vec![] });
-        let print_stmt = to_pos!(Node::Print { expr });
-        assert_eq!(
-            gen(&print_stmt).unwrap(),
-            Core::FunctionCall {
-                function: Box::from(Core::Id { lit: String::from("print") }),
-                args: vec![Core::Str { string: String::from("a") }],
-            }
-        );
     }
 
     #[test]
