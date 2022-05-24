@@ -31,6 +31,6 @@ fn while_ast_verify() -> OutTestRet {
 }
 
 #[test]
-fn match_ast_verify() -> OutTestRet {
-    test_directory(true, &["control_flow"], &["control_flow", "target"], "match")
+fn match_stmt_ast_verify() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "match_stmt")
 }

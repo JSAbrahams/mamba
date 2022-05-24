@@ -114,6 +114,7 @@ fn fallable(
     let out_src = resource_content_path(output_file);
     let out_ast = python_src_to_stmts(&out_src);
 
+    let width = 3;
     if cmd1.status.code().unwrap() != 0 {
         let msg = format!(
             "Running Python command on reference resource: {}\n\
@@ -125,7 +126,7 @@ fn fallable(
             check_src
                 .lines()
                 .enumerate()
-                .map(|(line, src)| { format!("{}: {}\n", line + 1, src) })
+                .map(|(line, src)| { format!("{:width$} |   {}\n", line + 1, src) })
                 .collect::<String>()
         );
 
@@ -141,7 +142,7 @@ fn fallable(
             out_src
                 .lines()
                 .enumerate()
-                .map(|(line, src)| { format!("{}: {}\n", line + 1, src) })
+                .map(|(line, src)| { format!("{:width$} |   {}\n", line + 1, src) })
                 .collect::<String>()
         );
 
