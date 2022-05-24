@@ -14,12 +14,6 @@ use crate::parse::ty::parse_expression_type;
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
     it.peek_or_err(
         &|it, lex| match lex.token {
-            Token::Print => {
-                it.eat(&Token::Print, "statement")?;
-                let expr = it.parse(&parse_expression, "statement", &lex.pos)?;
-                let node = Node::Print { expr: expr.clone() };
-                Ok(Box::from(AST::new(&lex.pos.union(&expr.pos), node)))
-            }
             Token::Pass => {
                 let end = it.eat(&Token::Pass, "statement")?;
                 Ok(Box::from(AST::new(&end, Node::Pass)))
@@ -35,7 +29,6 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             _ => Err(expected_one_of(
                 &[
-                    Token::Print,
                     Token::Pass,
                     Token::Raise,
                     Token::Def,
@@ -48,7 +41,6 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             )),
         },
         &[
-            Token::Print,
             Token::Pass,
             Token::Raise,
             Token::Def,
@@ -123,7 +115,6 @@ pub fn is_start_statement(tp: &Token) -> bool {
         tp,
         Token::Def
             | Token::Fin
-            | Token::Print
             | Token::For
             | Token::While
             | Token::Pass

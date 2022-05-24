@@ -1,4 +1,4 @@
 def f(x: Int) => x
 
 # f is a statement because it has no return type
-print f(10)
+print(f(10))

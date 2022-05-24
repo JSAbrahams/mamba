@@ -20,7 +20,7 @@ class MyClass(def my_field: Int, other_field: String := "Hello"): MyType(other_f
     def private_field: Int := 20
 
     def fun_a(self: SomeState) => self.some_field := "my field is {self.required_field}"
-    def fun_b(self) => print "this function is private: {self.private_field}!"
+    def fun_b(self) => print("this function is private: {self.private_field}!")
 
     def some_higher_order(self, fun: Int -> Int) -> Int => return fun(self.my_field)
     def higher_order(self) -> Int => return self.some_higher_order(\x: Int => x * 2)

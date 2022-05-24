@@ -91,7 +91,6 @@ Keyword | Use
 
 Keyword | Use
 ---|---
-`print`   | Print value of an expression
 `return`  | Return from a function or method
 `pass`    | Empty placeholder statement
 
