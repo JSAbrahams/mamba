@@ -1,0 +1,5 @@
+class X
+    def (a, b): (Int, Int)
+
+    def init(self, x: Int) =>
+        self.a = x

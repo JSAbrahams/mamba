@@ -1,11 +1,16 @@
-use mamba::check::check_all;
-use mamba::parse::parse;
+use mamba::{check::check_all, parse::parse};
 
 use crate::common::resource_content;
 
 #[test]
 fn reassign_non_existent() {
     let source = resource_content(false, &["type", "class"], "reassign_non_existent.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn assign_to_non_existent_self() {
+    let source = resource_content(false, &["type", "class"], "assign_to_non_existent_self.mamba");
     check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }
 
@@ -41,7 +46,8 @@ fn class_with_args_and_init() {
 
 #[test]
 fn assign_to_inner_inner_not_allowed() {
-    let source = resource_content(false, &["type", "class"], "assign_to_inner_inner_not_allowed.mamba");
+    let source =
+        resource_content(false, &["type", "class"], "assign_to_inner_inner_not_allowed.mamba");
     check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }
 
@@ -73,8 +79,21 @@ fn no_generic_arg() {
 }
 
 #[test]
+fn one_tuple_not_assigned_to() {
+    let source = resource_content(false, &["type", "class"], "one_tuple_not_assigned_to.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
+fn reassign_to_unassigned_class_var() {
+    let source = resource_content(false, &["type", "class"], "reassign_to_unassigned_class_var.mamba");
+    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+}
+
+#[test]
 fn top_level_class_not_assigned_to() {
-    let source = resource_content(false, &["type", "class"], "top_level_class_not_assigned_to.mamba");
+    let source =
+        resource_content(false, &["type", "class"], "top_level_class_not_assigned_to.mamba");
     check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
 }
 

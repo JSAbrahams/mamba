@@ -51,3 +51,8 @@ fn top_level_unassigned_but_nullable() -> OutTestRet {
 fn tuple_as_class_verify() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "tuple_as_class")
 }
+
+#[test]
+fn unassigned_tuple_second_nullable() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "unassigned_tuple_second_nullable")
+}
