@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
   pull_request:
 
 env:
@@ -18,7 +18,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    name: OS ${{ matrix.os }}, Python v${{ matrix.python }}, Rust ${{ matrix.rust }}
+    name: ${{ matrix.os }}, Python v${{ matrix.python }}, Rust ${{ matrix.rust }}
 
     steps:
       - uses: actions/checkout@v2
