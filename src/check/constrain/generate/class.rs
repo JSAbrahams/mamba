@@ -60,7 +60,7 @@ pub fn constrain_class_body(
 
     res.0.add(
         "class body",
-        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::_Self }, &env.var_mappings))?,
+        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::new_self() }, &env.var_mappings))?,
         &Expected::new(&ty.pos, &class_ty_exp),
     );
 
@@ -80,7 +80,7 @@ pub fn property_from_field(
     // TODO generate constraints are part of interface
     // TODO add constraint for mutable field
     let node = Node::PropertyCall {
-        instance: Box::new(AST { pos: pos.clone(), node: Node::_Self }),
+        instance: Box::new(AST { pos: pos.clone(), node: Node::new_self() }),
         property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } }),
     };
     let property_call = Expected::try_from((&AST::new(pos, node), &env.var_mappings))?;

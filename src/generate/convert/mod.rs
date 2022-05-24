@@ -88,8 +88,6 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
         Node::Undefined => Core::None,
         Node::ExpressionType { .. } => convert_ty(ast, imp, state)?,
         Node::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
-        Node::_Self => Core::Id { lit: String::from("self") },
-        Node::Init => Core::Id { lit: String::from("init") },
         Node::Bool { lit } => Core::Bool { boolean: *lit },
 
         Node::Tuple { elements } if state.tup_lit => {
@@ -404,18 +402,6 @@ mod tests {
     fn return_empty_verify() {
         let print_stmt = to_pos!(Node::ReturnEmpty);
         assert_eq!(gen(&print_stmt).unwrap(), Core::Return { expr: Box::from(Core::None) });
-    }
-
-    #[test]
-    fn init_verify() {
-        let _break = to_pos!(Node::Init);
-        assert_eq!(gen(&_break).unwrap(), Core::Id { lit: String::from("init") });
-    }
-
-    #[test]
-    fn self_verify() {
-        let _break = to_pos!(Node::_Self);
-        assert_eq!(gen(&_break).unwrap(), Core::Id { lit: String::from("self") });
     }
 
     #[test]

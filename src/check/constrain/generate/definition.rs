@@ -30,7 +30,7 @@ pub fn gen_def(
             constr.new_set(true);
 
             let non_nullable_class_vars: Vec<String> = match &id.node {
-                Node::Init => {
+                Node::Id { lit } if *lit == function::INIT => {
                     if let Some(class) = constr.current_class() {
                         let class = ctx.class(&class, &id.pos)?;
                         let fields: Vec<&Field> =

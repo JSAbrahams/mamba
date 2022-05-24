@@ -13,11 +13,11 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match &lex.token {
             Token::_Self => {
                 let end = it.eat(&Token::_Self, "identifier")?;
-                Ok(Box::from(AST::new(&end, Node::_Self)))
+                Ok(Box::from(AST::new(&end, Node::new_self())))
             }
             Token::Init => {
                 let end = it.eat(&Token::Init, "identifier")?;
-                Ok(Box::from(AST::new(&end, Node::Init)))
+                Ok(Box::from(AST::new(&end, Node::new_init())))
             }
             Token::Id(id) => {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
