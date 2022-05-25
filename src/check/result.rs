@@ -3,11 +3,11 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 
-use crate::check::CheckInput;
+use crate::check::ast::ASTTy;
 use crate::common::position::Position;
+use crate::common::result::IntoWithSource;
 
-pub type TypeResult<T> = std::result::Result<T, Vec<TypeErr>>;
-pub type TypeResults = std::result::Result<Vec<CheckInput>, Vec<TypeErr>>;
+pub type TypeResult<T = ASTTy> = std::result::Result<T, Vec<TypeErr>>;
 
 #[derive(Debug, Clone, Eq)]
 pub struct TypeErr {
@@ -59,9 +59,10 @@ impl TypeErr {
             source_line: None,
         }
     }
+}
 
-    #[must_use]
-    pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
+impl IntoWithSource for TypeErr {
+    fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
         let (source_before, source_line, source_after) = if let Some(position) = &self.position {
             if let Some(source) = source {
                 (
@@ -96,7 +97,6 @@ impl TypeErr {
 }
 
 impl Display for TypeErr {
-    // TODO deal with Positions that cover multiple lines
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
         let msg = {

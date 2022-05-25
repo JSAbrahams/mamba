@@ -97,6 +97,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use crate::common::result::IntoWithSource;
     use crate::parse::ast::Node;
     use crate::parse::parse;
     use crate::parse::result::{ParseErr, ParseResult};

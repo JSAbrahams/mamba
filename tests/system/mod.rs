@@ -7,7 +7,7 @@ use itertools::{EitherOrBoth, Itertools};
 use python_parser::ast::Statement;
 
 use mamba::common::delimit::newline_delimited;
-use mamba::transpile_directory;
+use mamba::transpile_dir;
 
 use crate::common::{
     delete_dir, python_src_to_stmts, resource_content, resource_content_path,
@@ -87,8 +87,8 @@ fn fallable(
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
-    let map_err = |(ty, msg): &(String, String)| format!("[error | {}] {}", ty, msg);
-    transpile_directory(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path))
+    let map_err = |msg: &String| format!("error: {}", msg);
+    transpile_dir(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path))
         .map_err(|errs| OutTestErr(errs.iter().map(&map_err).collect::<Vec<String>>()))?;
 
     // Check that reference check is proper Python file

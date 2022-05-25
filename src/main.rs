@@ -9,7 +9,7 @@ extern crate loggerv;
 use clap::App;
 use itertools::Itertools;
 
-use mamba::transpile_directory;
+use mamba::transpile_dir;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -37,20 +37,11 @@ pub fn main() -> Result<(), String> {
         format!("Error while finding current directory: {}", err)
     })?;
 
-    transpile_directory(&current_dir, in_path, out_path)
+    transpile_dir(&current_dir, in_path, out_path)
         .map_err(|errors| {
-            errors.iter().unique().for_each(|(ty, msg)| eprintln!("[error | {}] {}", ty, msg));
+            errors.iter().unique().for_each(|msg| eprintln!("error: {}", msg));
             match errors.first() {
-                Some((ty, msg)) => format!(
-                    "{} {} error occurred: {}",
-                    match ty.chars().next() {
-                        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) =>
-                            "An",
-                        _ => "A"
-                    },
-                    ty,
-                    msg
-                ),
+                Some(msg) => format!("error: {}", msg),
                 None => String::new()
             }
         })

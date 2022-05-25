@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use mamba::check::{check_all, CheckInput};
+use mamba::check::check_all;
 use mamba::check::context::{Context, LookupClass};
 use mamba::check::name::stringname::StringName;
 use mamba::common::position::Position;
@@ -11,12 +11,12 @@ use crate::common::resource_content;
 #[test]
 fn float_and() {
     let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
-    check_all(&[(*parse(&source).unwrap(), None, None)]).unwrap_err();
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
 pub fn non_existent_primitive() {
-    let files: Vec<CheckInput> = vec![];
+    let files = vec![];
     let context = Context::try_from(files.as_slice()).unwrap();
     let context = context.into_with_primitives().unwrap();
 
