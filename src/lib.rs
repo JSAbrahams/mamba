@@ -15,7 +15,7 @@ use crate::check::ast::ASTTy;
 use crate::check::check;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::common::result::IntoWithSource;
+use crate::common::result::WithSource;
 use crate::generate::gen;
 use crate::parse::ast::AST;
 use crate::parse::parse;
@@ -129,7 +129,7 @@ pub fn mamba_to_python(
         .iter()
         .map(|(src, path)| {
             parse(src)
-                .map_err(|err| err.into_with_source(&Some(src.clone()), &path.clone()))
+                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
                 .map(|ok| ok.deref().clone())
         })
         .partition(Result::is_ok);
@@ -151,7 +151,7 @@ pub fn mamba_to_python(
                 .map(|(ast, (src, path))| {
                     check(ast, &ctx).map_err(|errs| {
                         errs.iter()
-                            .map(|err| err.clone().into_with_source(&Some(src.clone()), &path.clone()))
+                            .map(|err| err.clone().with_source(&Some(src.clone()), &path.clone()))
                             .collect()
                     })
                 })
@@ -174,7 +174,7 @@ pub fn mamba_to_python(
         .zip(&source)
         .map(|(ast_ty, (src, path))| {
             gen(ast_ty)
-                .map_err(|err| err.into_with_source(&Some(src.clone()), &path.clone()))
+                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
                 .map(|core| core.to_source())
         })
         .partition(Result::is_ok);

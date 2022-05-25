@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::check::ast::ASTTy;
 use crate::common::position::Position;
-use crate::common::result::IntoWithSource;
+use crate::common::result::WithSource;
 
 pub type TypeResult<T = ASTTy> = std::result::Result<T, Vec<TypeErr>>;
 
@@ -61,8 +61,8 @@ impl TypeErr {
     }
 }
 
-impl IntoWithSource for TypeErr {
-    fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
+impl WithSource for TypeErr {
+    fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
         let (source_before, source_line, source_after) = if let Some(position) = &self.position {
             if let Some(source) = source {
                 (

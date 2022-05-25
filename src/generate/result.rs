@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
-use crate::common::result::IntoWithSource;
+use crate::common::result::WithSource;
 use crate::generate::ast::node::Core;
 use crate::parse::ast::AST;
 
@@ -33,8 +33,8 @@ impl UnimplementedErr {
     }
 }
 
-impl IntoWithSource for UnimplementedErr {
-    fn into_with_source(
+impl WithSource for UnimplementedErr {
+    fn with_source(
         self,
         source: &Option<String>,
         path: &Option<PathBuf>,

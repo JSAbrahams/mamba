@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::check::context::clss;
 use crate::common::position::Position;
-use crate::common::result::IntoWithSource;
+use crate::common::result::WithSource;
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
@@ -53,8 +53,8 @@ impl ParseErr {
     }
 }
 
-impl IntoWithSource for ParseErr {
-    fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
+impl WithSource for ParseErr {
+    fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
         ParseErr {
             position: self.position,
             msg: self.msg,

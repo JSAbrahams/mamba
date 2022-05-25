@@ -20,16 +20,13 @@ pub fn generics(
                 for module in modules {
                     match &module.node {
                         Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
-                            let generic_type = GenericClass::try_from(module)?;
-                            types.insert(generic_type);
+                            types.insert(GenericClass::try_from(module)?);
                         }
                         Node::FunDef { .. } => {
-                            let generic_type = GenericFunction::try_from(module)?;
-                            functions.insert(generic_type);
+                            functions.insert(GenericFunction::try_from(module)?);
                         }
                         Node::VariableDef { .. } => {
-                            let generic_type = GenericFields::try_from(module)?;
-                            generic_type.fields.iter().for_each(|ty| {
+                            GenericFields::try_from(module)?.fields.iter().for_each(|ty| {
                                 fields.insert(ty.clone());
                             });
                         }
