@@ -195,6 +195,7 @@ fn extract_class(
 mod tests {
     use std::ops::Deref;
 
+    use crate::check::ast::ASTTy;
     use crate::check::context::function;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
@@ -223,7 +224,7 @@ mod tests {
         let aliases = vec![];
         let import = to_pos!(Node::Import { import, aliases });
 
-        let core_import = match gen(&import) {
+        let core_import = match gen(&ASTTy::from(&*import)) {
             Ok(Core::Import { imports }) => imports,
             other => panic!("Expected tuple but got {:?}", other),
         };
@@ -242,7 +243,7 @@ mod tests {
         let aliases = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
         let import = to_pos!(Node::Import { import, aliases });
 
-        let (core_import, core_as) = match gen(&import) {
+        let (core_import, core_as) = match gen(&ASTTy::from(&import)) {
             Ok(Core::ImportAs { imports, aliases }) => (imports, aliases),
             other => panic!("Expected import but got {:?}", other),
         };
@@ -266,7 +267,7 @@ mod tests {
             import: to_pos!(Node::Import { import, aliases: vec![] })
         });
 
-        let (from, import) = match gen(&import) {
+        let (from, import) = match gen(&ASTTy::from(&import)) {
             Ok(Core::FromImport { from, import }) => match &import.deref() {
                 Core::Import { imports } => (from.clone(), imports.clone()),
                 other => panic!("Expected import but got {:?}", other),
@@ -285,7 +286,7 @@ mod tests {
         let cond = to_pos!(Node::Bool { lit: true });
         let condition = to_pos!(Node::Condition { cond, el: None });
 
-        let result = gen(&condition);
+        let result = gen(&ASTTy::from(&condition));
         assert!(result.is_err());
     }
 
@@ -310,7 +311,7 @@ mod tests {
             body: None
         });
 
-        let (var, ty, expr) = match gen(&alias) {
+        let (var, ty, expr) = match gen(&ASTTy::from(&alias)) {
             Ok(Core::VarDef { var, ty, expr }) => (*var.clone(), ty.clone(), expr.clone()),
             other => panic!("Expected type alias but got {:?}", other),
         };
@@ -355,7 +356,7 @@ mod tests {
             body: None
         });
 
-        let (name, parent_names, body) = match gen(&alias) {
+        let (name, parent_names, body) = match gen(&ASTTy::from(&alias)) {
             Ok(Core::ClassDef { name, parent_names, body }) => (*name, parent_names, *body),
             other => panic!("Expected class def but got {:?}", other),
         };
