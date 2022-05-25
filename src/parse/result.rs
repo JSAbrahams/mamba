@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use crate::check::context::clss;
 use crate::common::position::Position;
+use crate::common::result::WithSource;
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
@@ -13,7 +14,6 @@ use crate::parse::lex::token::Token;
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
 pub type ParseResult<T = Box<AST>> = Result<T, ParseErr>;
-pub type ParseResults = Result<Vec<(AST, Option<String>, Option<PathBuf>)>, Vec<ParseErr>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {
@@ -51,9 +51,10 @@ impl ParseErr {
             path: self.path.clone(),
         }
     }
+}
 
-    #[must_use]
-    pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
+impl WithSource for ParseErr {
+    fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> ParseErr {
         ParseErr {
             position: self.position,
             msg: self.msg,

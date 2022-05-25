@@ -97,6 +97,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use crate::common::result::WithSource;
     use crate::parse::ast::Node;
     use crate::parse::parse;
     use crate::parse::result::{ParseErr, ParseResult};
@@ -242,7 +243,7 @@ mod test {
     fn class_with_single_line_body_no_newline() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10";
         parse(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
+            .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
 
@@ -250,7 +251,7 @@ mod test {
     fn class_with_single_line_body_newline() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10\n";
         parse(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
+            .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
 
@@ -258,7 +259,7 @@ mod test {
     fn class_with_body_class_right_after() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
         parse(&source)
-            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))
+            .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
 

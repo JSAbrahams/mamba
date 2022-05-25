@@ -334,6 +334,7 @@ pub fn convert_node(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
 #[cfg(test)]
 mod tests {
+    use crate::ASTTy;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
     use crate::generate::gen;
@@ -355,19 +356,19 @@ mod tests {
     #[test]
     fn break_verify() {
         let _break = to_pos!(Node::Break);
-        assert_eq!(gen(&_break).unwrap(), Core::Break);
+        assert_eq!(gen(&ASTTy::from(&_break)).unwrap(), Core::Break);
     }
 
     #[test]
     fn continue_verify() {
         let _continue = to_pos!(Node::Continue);
-        assert_eq!(gen(&_continue).unwrap(), Core::Continue);
+        assert_eq!(gen(&ASTTy::from(&_continue)).unwrap(), Core::Continue);
     }
 
     #[test]
     fn pass_verify() {
         let pass = to_pos!(Node::Pass);
-        assert_eq!(gen(&pass).unwrap(), Core::Pass);
+        assert_eq!(gen(&ASTTy::from(&pass)).unwrap(), Core::Pass);
     }
 
     #[test]
@@ -376,7 +377,7 @@ mod tests {
         let print_stmt = to_pos!(Node::Return { expr });
 
         assert_eq!(
-            gen(&print_stmt).unwrap(),
+            gen(&ASTTy::from(&print_stmt)).unwrap(),
             Core::Return { expr: Box::from(Core::Str { string: String::from("a") }) }
         );
     }
@@ -384,7 +385,7 @@ mod tests {
     #[test]
     fn return_empty_verify() {
         let print_stmt = to_pos!(Node::ReturnEmpty);
-        assert_eq!(gen(&print_stmt).unwrap(), Core::Return { expr: Box::from(Core::None) });
+        assert_eq!(gen(&ASTTy::from(&print_stmt)).unwrap(), Core::Return { expr: Box::from(Core::None) });
     }
 
     #[test]
@@ -395,7 +396,7 @@ mod tests {
         });
 
         assert_eq!(
-            gen(&_break).unwrap(),
+            gen(&ASTTy::from(&_break)).unwrap(),
             Core::ImportAs {
                 imports: vec![Core::Id { lit: String::from("a") }],
                 aliases: vec![Core::Id { lit: String::from("b") }],
@@ -414,7 +415,7 @@ mod tests {
         });
 
         assert_eq!(
-            gen(&_break).unwrap(),
+            gen(&ASTTy::from(&_break)).unwrap(),
             Core::FromImport {
                 from: Box::from(Core::Id { lit: String::from("f") }),
                 import: Box::from(Core::ImportAs {
@@ -431,7 +432,7 @@ mod tests {
             expr_or_stmt: Box::from(to_pos!(Node::Id { lit: String::from("a") })),
             errors: vec![]
         });
-        assert_eq!(gen(&type_def).unwrap(), Core::Id { lit: String::from("a") });
+        assert_eq!(gen(&ASTTy::from(&type_def)).unwrap(), Core::Id { lit: String::from("a") });
     }
 
     macro_rules! verify {
@@ -440,7 +441,7 @@ mod tests {
             let right = Node::Id { lit: String::from("right") };
             let add_node = to_pos!(Node::$ast { left: to_pos!(left), right: to_pos!(right) });
 
-            let (left, right) = match gen(&add_node) {
+            let (left, right) = match gen(&ASTTy::from(&add_node)) {
                 Ok(Core::$ast { left, right }) => (left, right),
                 other => panic!("Expected binary operation but was {:?}", other),
             };
@@ -455,7 +456,7 @@ mod tests {
             let expr = to_pos!(Node::Id { lit: String::from("expression") });
             let add_node = to_pos!(Node::$ast { expr });
 
-            let expr_des = match gen(&add_node) {
+            let expr_des = match gen(&ASTTy::from(&add_node)) {
                 Ok(Core::$ast { expr }) => expr,
                 other => panic!("Expected unary operation but was {:?}", other),
             };
@@ -561,7 +562,7 @@ mod tests {
             to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
         ];
         let tuple = to_pos!(Node::Tuple { elements });
-        let core = gen(&tuple);
+        let core = gen(&ASTTy::from(&tuple));
 
         let core_elements = match core {
             Ok(Core::Tuple { elements }) => elements,
@@ -582,7 +583,7 @@ mod tests {
             to_pos_unboxed!(Node::Bool { lit: true }),
         ];
         let set = to_pos!(Node::Set { elements });
-        let core = gen(&set);
+        let core = gen(&ASTTy::from(&set));
 
         let core_elements = match core {
             Ok(Core::Set { elements }) => elements,
@@ -600,7 +601,7 @@ mod tests {
             to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
         ];
         let tuple = to_pos!(Node::List { elements });
-        let core = gen(&tuple);
+        let core = gen(&ASTTy::from(&tuple));
 
         let core_elements = match core {
             Ok(Core::List { elements }) => elements,
@@ -620,7 +621,7 @@ mod tests {
         let conditions = vec![];
         let list_builder = to_pos!(Node::SetBuilder { item, conditions });
 
-        let desugar_result = gen(&list_builder);
+        let desugar_result = gen(&ASTTy::from(&list_builder));
         assert!(desugar_result.is_err());
     }
 
@@ -630,7 +631,7 @@ mod tests {
         let conditions = vec![];
         let list_builder = to_pos!(Node::ListBuilder { item, conditions });
 
-        let desugar_result = gen(&list_builder);
+        let desugar_result = gen(&ASTTy::from(&list_builder));
         assert!(desugar_result.is_err());
     }
 
@@ -641,7 +642,7 @@ mod tests {
         let expr = to_pos!(Node::Int { lit: String::from("9") });
         let with = to_pos!(Node::With { resource, alias, expr });
 
-        let (resource, alias, expr) = match gen(&with) {
+        let (resource, alias, expr) = match gen(&ASTTy::from(&with)) {
             Ok(Core::WithAs { resource, alias, expr }) => (resource, alias, expr),
             other => panic!("Expected with as but was {:?}", other),
         };
@@ -657,7 +658,7 @@ mod tests {
         let expr = to_pos!(Node::Int { lit: String::from("2341") });
         let with = to_pos!(Node::With { resource, alias: None, expr });
 
-        let (resource, expr) = match gen(&with) {
+        let (resource, expr) = match gen(&ASTTy::from(&with)) {
             Ok(Core::With { resource, expr }) => (resource, expr),
             other => panic!("Expected with but was {:?}", other),
         };
@@ -671,7 +672,7 @@ mod tests {
         let expr_or_stmt = to_pos!(Node::Id { lit: String::from("my_fun") });
         let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![] });
 
-        let (setup, _try, except) = match gen(&handle) {
+        let (setup, _try, except) = match gen(&ASTTy::from(&handle)) {
             Ok(Core::TryExcept { setup, attempt, except }) => {
                 (setup.clone(), attempt.clone(), except.clone())
             }
@@ -698,7 +699,7 @@ mod tests {
         let case = to_pos_unboxed!(Node::Case { cond, body });
         let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
-        let (setup, _try, except) = match gen(&handle) {
+        let (setup, _try, except) = match gen(&ASTTy::from(&handle)) {
             Ok(Core::TryExcept { setup, attempt, except }) => {
                 (setup.clone(), attempt.clone(), except.clone())
             }

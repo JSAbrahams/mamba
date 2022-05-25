@@ -6,7 +6,6 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::CheckInput;
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{Class, HasParent};
 use crate::check::context::clss::generic::GenericClass;
@@ -22,6 +21,7 @@ use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
+use crate::parse::ast::AST;
 
 pub mod arg;
 pub mod clss;
@@ -61,12 +61,12 @@ impl Context {
     }
 }
 
-impl TryFrom<&[CheckInput]> for Context {
+impl TryFrom<&[AST]> for Context {
     type Error = Vec<TypeErr>;
 
-    fn try_from(files: &[CheckInput]) -> Result<Self, Self::Error> {
+    fn try_from(files: &[AST]) -> Result<Self, Self::Error> {
         let (classes, fields, functions) = generics(files)?;
-        Ok(Context { classes, functions, fields })
+        Context { classes, functions, fields }.into_with_primitives()?.into_with_std_lib()
     }
 }
 
@@ -406,7 +406,6 @@ pub struct FieldUnion {
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::check::CheckInput;
     use crate::check::context::{Context, LookupClass};
     use crate::check::name::Name;
     use crate::check::name::stringname::StringName;
@@ -427,7 +426,7 @@ mod tests {
 
     #[test]
     pub fn primitives_present() {
-        let files: Vec<CheckInput> = vec![];
+        let files = vec![];
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_primitives().unwrap();
 
@@ -440,7 +439,7 @@ mod tests {
 
     #[test]
     pub fn std_lib_present() {
-        let files: Vec<CheckInput> = vec![];
+        let files = vec![];
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_std_lib().unwrap();
 
