@@ -6,12 +6,19 @@ extern crate core;
 extern crate log;
 extern crate loggerv;
 
+use std::convert::TryFrom;
 use std::fs::create_dir;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use crate::check::check_all;
-use crate::generate::gen_all;
-use crate::parse::{parse_all, ParseInput};
+use crate::check::ast::ASTTy;
+use crate::check::check;
+use crate::check::context::Context;
+use crate::check::result::TypeErr;
+use crate::common::result::WithSource;
+use crate::generate::gen;
+use crate::parse::ast::AST;
+use crate::parse::parse;
 
 pub mod common;
 
@@ -43,23 +50,24 @@ mod test_util {
 /// Output directory structure reflects input directory structure.
 /// If no output given, target directory created in current directory and output
 /// stored here.
-pub fn transpile_directory(
-    current_dir: &Path,
-    source: Option<&str>,
+pub fn transpile_dir(
+    dir: &Path,
+    src: Option<&str>,
     target: Option<&str>,
-) -> Result<PathBuf, Vec<(String, String)>> {
-    let src_path = source.map_or(current_dir.join(SOURCE), |p| current_dir.join(p));
+) -> Result<PathBuf, Vec<String>> {
+    let src_path = src.map_or(dir.join(SOURCE), |p| dir.join(p));
     if !src_path.is_file() && !src_path.is_dir() {
-        let msg = format!("Source directory does not exist: {}", src_path.as_os_str().to_str().unwrap());
-        return Err(vec![(String::from("pathfinding"), msg)]);
+        let msg =
+            format!("Source directory does not exist: {}", src_path.as_os_str().to_str().unwrap());
+        return Err(vec![msg]);
     } else if src_path.is_file() && !src_path.exists() {
         let msg = format!("Source file does not exist: {}", src_path.as_os_str().to_str().unwrap());
-        return Err(vec![(String::from("pathfinding"), msg)]);
+        return Err(vec![msg]);
     }
 
-    let out_dir = current_dir.join(target.unwrap_or(TARGET));
+    let out_dir = dir.join(target.unwrap_or(TARGET));
     if !out_dir.exists() {
-        create_dir(&out_dir).map_err(|e| vec![(String::from("io"), e.to_string())])?;
+        create_dir(&out_dir).map_err(|e| vec![e.to_string()])?;
     }
     info!("Input is '{}'", src_path.display());
     info!("Output will be stored in '{}'", out_dir.display());
@@ -105,7 +113,7 @@ pub fn transpile_directory(
 pub fn mamba_to_python(
     source: &[(String, Option<PathBuf>)],
     source_dir: &PathBuf,
-) -> Result<Vec<String>, Vec<(String, String)>> {
+) -> Result<Vec<String>, Vec<String>> {
     // Strip until source
     let strip_prefix = |p: PathBuf| {
         p.strip_prefix(source_dir)
@@ -114,29 +122,70 @@ pub fn mamba_to_python(
             })
             .unwrap_or(p)
     };
-    let source: Vec<ParseInput> =
-        source.iter().map(|(src, path)| (src.clone(), path.clone().map(strip_prefix))).collect();
+    let source: Vec<(String, Option<PathBuf>)> =
+        source.iter().map(|(src, dir)| (src.clone(), dir.clone().map(strip_prefix))).collect();
 
-    let asts = parse_all(&source).map_err(|errs| {
-        errs.iter()
-            .map(|err| (String::from("syntax"), format!("{}", err)))
-            .collect::<Vec<(String, String)>>()
-    })?;
+    let (asts, parse_errs): (Vec<_>, Vec<_>) = source
+        .iter()
+        .map(|(src, path)| {
+            parse(src)
+                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
+                .map(|ok| ok.deref().clone())
+        })
+        .partition(Result::is_ok);
+
+    let parse_errs: Vec<_> = parse_errs.into_iter().map(Result::unwrap_err).collect();
+    if !parse_errs.is_empty() {
+        return Err(parse_errs.iter().map(|err| format!("{}", err)).collect());
+    }
+
+    let asts: Vec<AST> = asts.into_iter().map(Result::unwrap).collect();
     trace!("Parsed {} files", asts.len());
 
-    let modified_trees = check_all(asts.as_slice()).map_err(|errs| {
-        errs.iter()
-            .map(|err| (String::from("type"), format!("{}", err)))
-            .collect::<Vec<(String, String)>>()
-    })?;
-    trace!("Checked {} files", modified_trees.len());
+    let ctx = Context::try_from(asts.as_ref());
+    let typed_ast: Vec<ASTTy> = match ctx {
+        Ok(ctx) => {
+            let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
+                .iter()
+                .zip(&source)
+                .map(|(ast, (src, path))| {
+                    check(ast, &ctx).map_err(|errs| {
+                        errs.iter()
+                            .map(|err| err.clone().with_source(&Some(src.clone()), &path.clone()))
+                            .collect()
+                    })
+                })
+                .partition(Result::is_ok);
 
-    let core_tree = gen_all(modified_trees.as_slice()).map_err(|errs| {
-        errs.iter()
-            .map(|err| (String::from("unimplemented"), format!("{}", err)))
-            .collect::<Vec<(String, String)>>()
-    })?;
-    trace!("Converted {} checked files to Python", core_tree.len());
+            let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
+            if !type_errs.is_empty() {
+                return Err(type_errs.iter().flatten().map(|err| format!("{}", err)).collect());
+            } else {
+                typed_ast.into_iter().map(Result::unwrap).collect()
+            }
+        }
+        Err(errs) => return Err(errs.iter().map(|e| format!("{}", e)).collect()),
+    };
 
-    Ok(core_tree.iter().map(|(core, ..)| core.to_source()).collect())
+    trace!("Checked {} files", typed_ast.len());
+
+    let (py_sources, gen_errs): (Vec<_>, Vec<_>) = typed_ast
+        .iter()
+        .zip(&source)
+        .map(|(ast_ty, (src, path))| {
+            gen(ast_ty)
+                .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
+                .map(|core| core.to_source())
+        })
+        .partition(Result::is_ok);
+
+    let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
+    if !gen_errs.is_empty() {
+        return Err(gen_errs.iter().map(|err| format!("{}", err)).collect());
+    }
+
+    let py_sources: Vec<String> = py_sources.into_iter().map(Result::unwrap).collect();
+    trace!("Converted {} files to Python source", py_sources.len());
+
+    Ok(py_sources)
 }

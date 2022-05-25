@@ -3,11 +3,11 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 use crate::common::position::Position;
+use crate::common::result::WithSource;
 use crate::generate::ast::node::Core;
 use crate::parse::ast::AST;
 
 pub type GenResult<T = Core> = Result<T, UnimplementedErr>;
-pub type GenResults = Result<Vec<(Core, Option<String>, Option<PathBuf>)>, Vec<UnimplementedErr>>;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -31,9 +31,10 @@ impl UnimplementedErr {
             path: None,
         }
     }
+}
 
-    #[must_use]
-    pub fn into_with_source(
+impl WithSource for UnimplementedErr {
+    fn with_source(
         self,
         source: &Option<String>,
         path: &Option<PathBuf>,
@@ -53,7 +54,6 @@ impl UnimplementedErr {
 }
 
 impl Display for UnimplementedErr {
-    // TODO handle multi-line errors
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,

@@ -98,6 +98,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 
 #[cfg(test)]
 mod test {
+    use crate::ASTTy;
     use crate::common::position::Position;
     use crate::generate::ast::node::{Core, CoreOp};
     use crate::generate::gen;
@@ -123,7 +124,7 @@ mod test {
         let right = to_pos!(Node::Id { lit: String::from("other") });
         let reassign = to_pos!(Node::Reassign { left, right, op: NodeOp::Assign });
 
-        let (left, right, op) = match gen(&reassign) {
+        let (left, right, op) = match gen(&ASTTy::from(&reassign)) {
             Ok(Core::Assign { left, right, op }) => (left, right, op),
             other => panic!("Expected reassign but was {:?}", other),
         };
@@ -143,7 +144,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match gen(&definition) {
+        let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -163,7 +164,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match gen(&definition) {
+        let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -191,7 +192,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match gen(&definition) {
+        let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -215,7 +216,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match gen(&definition) {
+        let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -239,7 +240,7 @@ mod test {
             forward: vec![]
         });
 
-        let (var, ty, expr) = match gen(&definition) {
+        let (var, ty, expr) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::VarDef { var, ty, expr }) => (var, ty, expr),
             other => panic!("Expected var def but got: {:?}.", other),
         };
@@ -277,7 +278,7 @@ mod test {
             body: None
         });
 
-        let (id, args, body) = match gen(&definition) {
+        let (id, args, body) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -326,7 +327,7 @@ mod test {
             body: None
         });
 
-        let (id, args, body) = match gen(&definition) {
+        let (id, args, body) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -360,7 +361,7 @@ mod test {
             body: Some(to_pos!(Node::Real { lit: String::from("2.4") }))
         });
 
-        let (id, args, body) = match gen(&definition) {
+        let (id, args, body) = match gen(&ASTTy::from(&definition)) {
             Ok(Core::FunDef { id, arg, body, .. }) => (id, arg, body),
             other => panic!("Expected fun def but got: {:?}.", other),
         };
@@ -383,7 +384,7 @@ mod test {
             body: to_pos!(Node::Str { lit: String::from("this_string"), expressions: vec![] })
         });
 
-        let (args, body) = match gen(&anon_fun) {
+        let (args, body) = match gen(&ASTTy::from(&anon_fun)) {
             Ok(Core::AnonFun { args, body }) => (args, body),
             other => panic!("Expected anon fun but got: {:?}.", other),
         };
