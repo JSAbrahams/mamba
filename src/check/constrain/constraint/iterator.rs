@@ -1,26 +1,38 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::name::{Name, Union};
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
     pub in_class: Vec<StringName>,
     constraints: VecDeque<Constraint>,
+    pub finished: HashMap<Position, Name>,
 }
 
 impl From<&(Vec<StringName>, Vec<Constraint>)> for Constraints {
     fn from((in_class, constraints): &(Vec<StringName>, Vec<Constraint>)) -> Self {
         let constraints = VecDeque::from(constraints.clone());
-        Constraints { in_class: in_class.clone(), constraints }
+        Constraints { in_class: in_class.clone(), constraints, finished: HashMap::new() }
     }
 }
 
 impl Constraints {
     pub fn new(in_class: &[StringName]) -> Constraints {
-        Constraints { in_class: Vec::from(in_class), constraints: VecDeque::new() }
+        Constraints { in_class: Vec::from(in_class), constraints: VecDeque::new(), finished: HashMap::new() }
+    }
+
+    /// Push name associated with specific position in [AST].
+    ///
+    /// If already present at position, then union is created between current [Name] and given
+    /// [Name].
+    pub fn push_ty(&mut self, pos: &Position, name: &Name) {
+        let name = self.finished.get(pos).map_or(name.clone(), |s_name| s_name.union(name));
+        self.finished.insert(pos.clone(), name);
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }

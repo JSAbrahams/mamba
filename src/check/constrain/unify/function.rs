@@ -60,6 +60,7 @@ pub fn unify_function(
                 }
             }
 
+            constraints.push_ty(&left.pos, name);
             unify_link(constraints, ctx, total + count)
         }
 
