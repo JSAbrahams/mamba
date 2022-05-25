@@ -1,16 +1,17 @@
 use std::ops::Deref;
 
+use crate::ASTTy;
+use crate::check::ast::NodeTy;
 use crate::check::context::arg;
 use crate::generate::ast::node::{Core, CoreFunOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::{GenResult, UnimplementedErr};
-use crate::parse::ast::{AST, Node};
 
-pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     match &ast.node {
-        Node::VariableDef { var, expr: expression, ty, .. } => {
+        NodeTy::VariableDef { var, expr: expression, ty, .. } => {
             let var = convert_node(var, imp, &state.tuple_literal())?;
             let state = state.in_tup(match var.clone() {
                 Core::Tuple { elements } => elements.len(),
@@ -49,7 +50,7 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                 }
             })
         }
-        Node::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => {
+        NodeTy::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => {
             let arg = convert_vec(fun_args, imp, state)?;
             let ty = match ret_ty {
                 Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state)?)),
@@ -74,12 +75,12 @@ pub fn convert_def(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
                 _ => Err(UnimplementedErr::new(id, "Non-id function"))
             }
         }
-        Node::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {
+        NodeTy::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {
             vararg: *vararg,
             var: Box::from(convert_node(var, imp, state)?),
             ty: match ty {
                 Some(ty) if state.expand_ty => match &var.node {
-                    Node::Id { lit } if lit == &String::from(arg::SELF) => None,
+                    NodeTy::Id { lit } if lit == &String::from(arg::SELF) => None,
                     _ => Some(Box::from(convert_node(ty, imp, state)?)),
                 },
                 _ => None,

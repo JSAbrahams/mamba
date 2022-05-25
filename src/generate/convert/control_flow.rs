@@ -1,12 +1,13 @@
+use crate::ASTTy;
+use crate::check::ast::NodeTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::GenResult;
-use crate::parse::ast::{AST, Node};
 
-pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
-        Node::IfElse { cond, then, el } => match el {
+        NodeTy::IfElse { cond, then, el } => match el {
             Some(el) => Core::IfElse {
                 cond: Box::from(convert_node(cond, imp, state)?),
                 then: Box::from(convert_node(then, imp, state)?),
@@ -17,13 +18,13 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
                 then: Box::from(convert_node(then, imp, state)?),
             },
         },
-        Node::Match { cond, cases: match_cases } => {
+        NodeTy::Match { cond, cases: match_cases } => {
             let expr = Box::from(convert_node(cond, imp, state)?);
 
             let mut cases = vec![];
             for case in match_cases {
-                if let Node::Case { cond, body } = &case.node {
-                    if let Node::ExpressionType { expr, .. } = &cond.node {
+                if let NodeTy::Case { cond, body } = &case.node {
+                    if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         cases.push(Core::Case {
                             expr: Box::from(convert_node(expr.as_ref(), imp, state)?),
                             body: Box::from(convert_node(body.as_ref(), imp, state)?),
@@ -34,18 +35,18 @@ pub fn convert_cntrl_flow(ast: &AST, imp: &mut Imports, state: &State) -> GenRes
 
             Core::Match { expr, cases }
         }
-        Node::While { cond, body } => Core::While {
+        NodeTy::While { cond, body } => Core::While {
             cond: Box::from(convert_node(cond, imp, state)?),
             body: Box::from(convert_node(body, imp, state)?),
         },
-        Node::For { expr, col, body } => Core::For {
+        NodeTy::For { expr, col, body } => Core::For {
             expr: Box::from(convert_node(expr, imp, state)?),
             col: Box::from(convert_node(col, imp, state)?),
             body: Box::from(convert_node(body, imp, state)?),
         },
 
-        Node::Break => Core::Break,
-        Node::Continue => Core::Continue,
+        NodeTy::Break => Core::Break,
+        NodeTy::Continue => Core::Continue,
         other => panic!("Expected control flow but was: {:?}.", other),
     })
 }

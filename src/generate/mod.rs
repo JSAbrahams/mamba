@@ -1,4 +1,3 @@
-use crate::AST;
 use crate::check::ast::ASTTy;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
@@ -60,7 +59,6 @@ pub mod result;
 ///
 /// A malformed [AST](crate::parser::ast::AST) causes this stage
 /// to panic.
-pub fn gen(input: &ASTTy) -> GenResult {
-    let ast = AST::new(&input.pos, input.node.clone());
-    convert_node(&ast, &mut Imports::new(), &State::new())
+pub fn gen(ast_ty: &ASTTy) -> GenResult {
+    convert_node(ast_ty, &mut Imports::new(), &State::new())
 }

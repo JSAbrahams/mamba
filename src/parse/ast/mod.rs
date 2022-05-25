@@ -30,7 +30,7 @@ impl AST {
     }
 }
 
-type OptAST = Option<Box<AST>>;
+pub type OptAST = Option<Box<AST>>;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
@@ -109,7 +109,6 @@ pub enum Node {
     Case { cond: Box<AST>, body: Box<AST> },
     For { expr: Box<AST>, col: Box<AST>, body: Box<AST> },
     In { left: Box<AST>, right: Box<AST> },
-    Step { amount: Box<AST> },
     While { cond: Box<AST>, body: Box<AST> },
     Break,
     Continue,
