@@ -1,9 +1,13 @@
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::check::ast::ASTTy;
+use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::constraints;
 use crate::check::context::Context;
+use crate::check::name::Name;
 use crate::check::result::TypeResult;
+use crate::common::position::Position;
 use crate::parse::ast::AST;
 use crate::TypeErr;
 
@@ -29,7 +33,16 @@ pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
         ctx.field_count()
     );
 
-    constraints(ast, ctx).map(|_| ASTTy::from(ast))
+    constraints(ast, ctx).map(|all_constraints| {
+        let pos_to_name: HashMap<Position, Name> = all_constraints
+            .iter()
+            .fold(Constraints::new(&[]), |mut acc, constr| {
+                constr.finished.iter().for_each(|(pos, name)| acc.push_ty(pos, name));
+                acc
+            }).finished;
+
+        ASTTy::from((ast, pos_to_name))
+    })
 }
 
 pub fn check_all(asts: &[AST]) -> TypeResult<Vec<ASTTy>> {

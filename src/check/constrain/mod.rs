@@ -14,6 +14,5 @@ pub type Unified<T = Constraints> = Result<T, Vec<TypeErr>>;
 
 pub fn constraints(ast: &AST, ctx: &Context) -> Unified<Vec<Constraints>> {
     let constrained = gen_all(ast, ctx)?;
-    let unified = unify(&constrained, ctx)?;
-    Ok(unified)
+    unify(&constrained, ctx)
 }

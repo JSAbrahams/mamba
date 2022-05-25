@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::Deref;
 
 use crate::check::name::Name;
@@ -12,6 +13,26 @@ pub struct ASTTy {
     pub pos: Position,
     pub node: NodeTy,
     pub ty: Option<Name>,
+}
+
+impl From<(&AST, HashMap<Position, Name>)> for ASTTy {
+    fn from((ast, names): (&AST, HashMap<Position, Name>)) -> Self {
+        let mut ast_ty = ASTTy::from(ast);
+
+        for (pos, name) in &names {
+            if pos == &ast_ty.pos {
+                ast_ty = ast_ty.to_ty(name);
+            } else if ast_ty.pos.start <= pos.start && pos.end <= ast_ty.pos.end {
+                ast_ty = ASTTy {
+                    pos: ast_ty.pos,
+                    node: NodeTy::from((&ast_ty.node, &names)),
+                    ty: ast_ty.ty,
+                }
+            }
+        }
+
+        ast_ty
+    }
 }
 
 impl From<&AST> for ASTTy {

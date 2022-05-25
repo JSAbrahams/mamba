@@ -47,7 +47,6 @@ pub fn unify_type(
                 && (l_ty.is_superset_of(r_ty, ctx, &left.pos)?
                 || r_ty.is_superset_of(l_ty, ctx, &left.pos)?);
 
-
             if l_ty.is_temporary() {
                 let mut constr =
                     substitute_ty(&right.pos, r_ty, &left.pos, l_ty, constraints, count, total)?;

@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 use std::fmt::{Display, Error, Formatter};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
@@ -28,6 +28,34 @@ pub struct CaretPos {
     pub pos: usize,
 }
 
+impl PartialOrd for CaretPos {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.line == other.line && self.pos == other.pos {
+            Some(Ordering::Equal)
+        } else if self.line < other.line || (self.line == other.line && self.pos < other.pos) {
+            Some(Ordering::Less)
+        } else {
+            Some(Ordering::Greater)
+        }
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        self.line < other.line || (self.line == other.line && self.pos < other.pos)
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        self.line < other.line || (self.line == other.line && self.pos <= other.pos)
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        self.line > other.line || (self.line == other.line && self.pos > other.pos)
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        self.line > other.line || (self.line == other.line && self.pos >= other.pos)
+    }
+}
+
 impl Display for CaretPos {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}:{}", self.line, self.pos)
@@ -44,15 +72,18 @@ impl Position {
     ///
     /// Width is always 1 or greater.
     pub fn get_width(&self) -> i32 {
-        max(1, max(self.end.pos as i32 - self.start.pos as i32, self.start.pos as i32 - self.end.pos as i32))
+        max(
+            1,
+            max(
+                self.end.pos as i32 - self.start.pos as i32,
+                self.start.pos as i32 - self.end.pos as i32,
+            ),
+        )
     }
 
     #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
-        Position {
-            start: self.start.clone().offset(offset),
-            end: self.end.clone().offset(offset),
-        }
+        Position { start: self.start.clone().offset(offset), end: self.end.clone().offset(offset) }
     }
 
     #[must_use]
@@ -72,7 +103,9 @@ impl Position {
 
 impl CaretPos {
     /// Create new endpoint with given line and position.
-    pub fn new(line: usize, pos: usize) -> CaretPos { CaretPos { line, pos } }
+    pub fn new(line: usize, pos: usize) -> CaretPos {
+        CaretPos { line, pos }
+    }
 
     #[must_use]
     pub fn offset(self, offset: &CaretPos) -> CaretPos {
@@ -94,7 +127,9 @@ impl CaretPos {
     }
 
     #[must_use]
-    pub fn newline(self) -> CaretPos { CaretPos { line: self.line + 1, pos: 1 } }
+    pub fn newline(self) -> CaretPos {
+        CaretPos { line: self.line + 1, pos: 1 }
+    }
 }
 
 impl From<&CaretPos> for Position {
@@ -104,5 +139,7 @@ impl From<&CaretPos> for Position {
 }
 
 impl Default for CaretPos {
-    fn default() -> Self { CaretPos { line: 1, pos: 1 } }
+    fn default() -> Self {
+        CaretPos { line: 1, pos: 1 }
+    }
 }

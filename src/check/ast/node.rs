@@ -1,7 +1,10 @@
+use std::collections::HashMap;
 use std::ops::Deref;
 
 use crate::{AST, ASTTy};
 use crate::check::ast::NodeTy;
+use crate::check::name::Name;
+use crate::common::position::Position;
 use crate::parse::ast::Node;
 
 impl From<&Box<AST>> for NodeTy {
@@ -330,5 +333,11 @@ impl From<&Node> for NodeTy {
             Node::Pass => NodeTy::Pass,
             Node::Comment { comment } => NodeTy::Comment { comment: comment.clone() },
         }
+    }
+}
+
+impl From<(&NodeTy, &HashMap<Position, Name>)> for NodeTy {
+    fn from((node, _): (&NodeTy, &HashMap<Position, Name>)) -> Self {
+        node.clone()
     }
 }
