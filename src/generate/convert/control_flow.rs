@@ -3,7 +3,7 @@ use crate::check::ast::NodeTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::GenResult;
+use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
@@ -47,7 +47,10 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenR
 
         NodeTy::Break => Core::Break,
         NodeTy::Continue => Core::Continue,
-        other => panic!("Expected control flow but was: {:?}.", other),
+        other => {
+            let msg = format!("Expected control flow but was: {:?}.", other);
+            return Err(UnimplementedErr::new(ast, &msg));
+        }
     })
 }
 

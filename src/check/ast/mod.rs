@@ -45,8 +45,7 @@ type OptASTTy = Option<Box<ASTTy>>;
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeTy {
     File { pure: bool, statements: Vec<ASTTy> },
-    Import { import: Vec<ASTTy>, aliases: Vec<ASTTy> },
-    FromImport { id: Box<ASTTy>, import: Box<ASTTy> },
+    Import { from: Option<Box<ASTTy>>, import: Vec<ASTTy>, alias: Vec<ASTTy> },
     Class { ty: Box<ASTTy>, args: Vec<ASTTy>, parents: Vec<ASTTy>, body: OptASTTy },
     Generic { id: Box<ASTTy>, isa: OptASTTy },
     Parent { ty: Box<ASTTy>, args: Vec<ASTTy> },

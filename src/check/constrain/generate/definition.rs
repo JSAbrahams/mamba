@@ -173,12 +173,6 @@ pub fn identifier_from_var(
             }
             (_, Some(expr)) => {
                 let expr_expt = Expected::try_from((expr, &env.var_mappings))?;
-                if tup_exps.len() > 1 {
-                    for tup_exp in &tup_exps {
-                        println!("{:?}", tup_exp)
-                    }
-                    panic!()
-                }
                 for tup_exp in tup_exps {
                     constr.add("tuple and expression", &expr_expt, &tup_exp);
                 }

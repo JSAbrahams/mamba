@@ -12,18 +12,14 @@ use crate::parse::ty::parse_conditions;
 use crate::parse::ty::parse_id;
 use crate::parse::ty::parse_type;
 
-pub fn parse_from_import(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("from import")?;
-    it.eat(&Token::From, "from import")?;
-    let id = it.parse(&parse_id, "from import", &start)?;
-    let import = it.parse(&parse_import, "from import", &start)?;
-
-    let node = Node::FromImport { id, import: import.clone() };
-    Ok(Box::from(AST::new(&start.union(&import.pos), node)))
-}
-
 pub fn parse_import(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("import")?;
+    let from = if it.peek_if(&|lex| lex.token == Token::From) {
+        it.parse_if(&Token::From, &parse_id, "import (from)", &start)?
+    } else {
+        None
+    };
+
     let end = it.eat(&Token::Import, "import")?;
     let mut import = vec![];
     it.peek_while_not_tokens(&[Token::As, Token::NL], &mut |it, _| {
@@ -31,29 +27,28 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
         it.eat_if(&Token::Comma);
         Ok(())
     })?;
-    let _as = it.parse_vec_if(&Token::As, &parse_as, "import", &start)?;
 
-    let end = match (import.last(), _as.last()) {
+    let alias = if it.eat_if(&Token::As).is_some() {
+        let mut alias = vec![];
+        it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
+            Token::Id(_) => {
+                alias.push(*it.parse(&parse_id, "as", &start)?);
+                it.eat_if(&Token::Comma);
+                Ok(())
+            }
+            _ => Err(expected(&Token::Id(String::new()), lex, "as"))
+        })?;
+        alias
+    } else {
+        vec![]
+    };
+
+    let end = match (import.last(), alias.last()) {
         (_, Some(ast)) => ast.pos.clone(),
         (Some(ast), _) => ast.pos.clone(),
-        (..) => end
+        (..) => end,
     };
-    Ok(Box::from(AST::new(&start.union(&end), Node::Import { import, aliases: _as })))
-}
-
-fn parse_as(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
-    let start = it.start_pos("as")?;
-    let mut aliases = vec![];
-    it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
-        Token::Id(_) => {
-            aliases.push(*it.parse(&parse_id, "as", &start)?);
-            it.eat_if(&Token::Comma);
-            Ok(())
-        }
-        _ => Err(expected(&Token::Id(String::new()), lex, "as"))
-    })?;
-
-    Ok(aliases)
+    Ok(Box::from(AST::new(&start.union(&end), Node::Import { from, import, alias })))
 }
 
 pub fn parse_file(it: &mut LexIterator) -> ParseResult {
@@ -64,8 +59,9 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
     it.peek_while_fn(&|_| true, &mut |it, lex| {
         match &lex.token {
             Token::NL => {}
-            Token::Import => { statements.push(*it.parse(&parse_import, "file", &start)?); }
-            Token::From => { statements.push(*it.parse(&parse_from_import, "file", &start)?); }
+            Token::Import | Token::From => {
+                statements.push(*it.parse(&parse_import, "file", &start)?);
+            }
             Token::DocStr(string) => {
                 let start = it.start_pos("doc_string")?;
                 let end = it.eat(&Token::DocStr(string.clone()), "file")?;
@@ -78,9 +74,15 @@ pub fn parse_file(it: &mut LexIterator) -> ParseResult {
                 let node = Node::Comment { comment: comment.clone() };
                 statements.push(AST::new(&start.union(&end), node));
             }
-            Token::Type => { statements.push(*it.parse(&parse_type_def, "file", &start)?); }
-            Token::Class => { statements.push(*it.parse(&parse_class, "file", &start)?); }
-            _ => { statements.push(*it.parse(&parse_expr_or_stmt, "file", &start)?); }
+            Token::Type => {
+                statements.push(*it.parse(&parse_type_def, "file", &start)?);
+            }
+            Token::Class => {
+                statements.push(*it.parse(&parse_class, "file", &start)?);
+            }
+            _ => {
+                statements.push(*it.parse(&parse_expr_or_stmt, "file", &start)?);
+            }
         }
 
         let last_pos = it.last_pos();

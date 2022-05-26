@@ -35,7 +35,6 @@ impl Display for Node {
                 )
             }
             Node::Import { .. } => String::from("import"),
-            Node::FromImport { .. } => String::from("from import"),
             Node::Class { .. } => String::from("class"),
             Node::Generic { .. } => String::from("generic"),
             Node::Parent { .. } => String::from("parent"),
@@ -143,13 +142,10 @@ impl Node {
     #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> Node {
         match mapping(self) {
-            Node::Import { import, aliases: _as } => Node::Import {
+            Node::Import { from, import, alias } => Node::Import {
+                from: from.map(|a| a.map(mapping)).map(Box::from),
                 import: import.iter().map(|i| i.map(mapping)).collect(),
-                aliases: _as.iter().map(|a| a.map(mapping)).collect(),
-            },
-            Node::FromImport { id, import } => Node::FromImport {
-                id: Box::from(id.map(mapping)),
-                import: Box::from(import.map(mapping)),
+                alias: alias.iter().map(|a| a.map(mapping)).collect(),
             },
             Node::Class { ty, args, parents, body } => Node::Class {
                 ty: Box::from(ty.map(mapping)),
@@ -425,13 +421,9 @@ impl Node {
     pub fn same_value(&self, other: &Node) -> bool {
         match (&self, &other) {
             (
-                Node::Import { import: li, aliases: la },
-                Node::Import { import: ri, aliases: ra },
-            ) => equal_vec(li, ri) && equal_vec(la, ra),
-            (
-                Node::FromImport { id: lid, import: li },
-                Node::FromImport { id: rid, import: ri },
-            ) => lid.same_value(rid) && li.same_value(ri),
+                Node::Import { from: lf, import: li, alias: la },
+                Node::Import { from: rf, import: ri, alias: ra },
+            ) => lf == rf && equal_vec(li, ri) && equal_vec(la, ra),
             (
                 Node::Class { ty: lt, args: la, parents: lp, body: lb },
                 Node::Class { ty: rt, args: ra, parents: rp, body: rb },
@@ -922,23 +914,10 @@ mod test {
     #[test]
     fn import_equal_value() {
         two_ast!(Node::Import {
+            from: Some(Box::from(AST::new(&Position::default(), Node::Break))),
             import: vec![AST::new(&Position::default(), Node::Continue)],
-            aliases: vec![AST::new(&Position::default(), Node::Pass)],
+            alias: vec![AST::new(&Position::default(), Node::Pass)],
         });
-        two_ast!(Node::FromImport {
-            id: Box::from(AST::new(&Position::default(), Node::Continue)),
-            import: Box::from(AST::new(&Position::default(), Node::Pass)),
-        });
-    }
-
-    #[test]
-    fn from_import_equal_value() {
-        let node = Node::Import {
-            import: vec![AST::new(&Position::default(), Node::Continue)],
-            aliases: vec![AST::new(&Position::default(), Node::Pass)],
-        };
-
-        two_ast!(node);
     }
 
     #[test]
