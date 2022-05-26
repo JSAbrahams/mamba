@@ -25,7 +25,8 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                     var: Box::from(var),
                     ty: match ty {
                         Some(ty) => Some(Box::from(convert_node(ty, imp, &state)?)),
-                        None => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
+                        None if state.annotate => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
+                        _ => None
                     },
                     default: match expression {
                         Some(expression) => Some(Box::from(convert_node(expression, imp, &state)?)),
@@ -35,14 +36,16 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
             } else {
                 Core::VarDef {
                     var: Box::from(var.clone()),
-                    ty: match ty {
-                        Some(ty) if !matches!(var, Core::TupleLiteral { .. }) => {
-                            Some(Box::from(convert_node(ty, imp, &state)?))
+                    ty: if matches!(var, Core::TupleLiteral { .. }) {
+                        None
+                    } else {
+                        match (ty, expression) {
+                            (Some(ty), _) => Some(Box::from(convert_node(ty, imp, &state)?)),
+                            (_, Some(expr)) if state.annotate => {
+                                expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from)
+                            }
+                            _ => None,
                         }
-                        _ => match expression {
-                            Some(expr) => expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
-                            None => None
-                        },
                     },
                     expr: match (var, expression) {
                         (_, Some(expr)) => Some(Box::from(convert_node(expr, imp, &state)?)),
@@ -76,7 +79,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 } else {
                     Core::FunDef { id: c_id.clone(), arg, ty, body }
                 }),
-                _ => Err(UnimplementedErr::new(id, "Non-id function"))
+                _ => Err(UnimplementedErr::new(id, "Non-id function")),
             }
         }
         NodeTy::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {

@@ -40,14 +40,13 @@ impl ToPy for NameVariant {
                 Core::Type { lit: String::from("Tuple"), generics: names }
             }
             NameVariant::Fun(args, ret) => {
-                // def fun_d(h: Callable[[str, str], int])-> Optional[int]: return h("hello", "world")
                 imp.add_from_import("typing", "Callable");
                 let args = args.iter().map(|name| name.to_py(imp)).collect();
                 let ret = ret.to_py(imp);
 
                 Core::Type {
                     lit: String::from("Callable"),
-                    generics: vec![Core::Type { lit: String::new(), generics: args }, ret]
+                    generics: vec![Core::Type { lit: String::new(), generics: args }, ret],
                 }
             }
         }

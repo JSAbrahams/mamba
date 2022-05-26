@@ -2,6 +2,7 @@ use crate::check::ast::ASTTy;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::GenResult;
+use crate::PipelineArguments;
 
 mod convert;
 
@@ -9,6 +10,16 @@ pub mod ast;
 pub mod name;
 
 pub mod result;
+
+pub struct GenArguments {
+    pub annotate: bool,
+}
+
+impl From<&PipelineArguments> for GenArguments {
+    fn from(pipeline_args: &PipelineArguments) -> Self {
+        GenArguments { annotate: pipeline_args.annotate }
+    }
+}
 
 /// Consumes the given [AST](mamba::parser::ast::AST) and produces
 /// a [Core](mamba::generate.ast::construct::Core) node.
@@ -60,6 +71,11 @@ pub mod result;
 ///
 /// A malformed [AST](crate::parser::ast::AST) causes this stage
 /// to panic.
+pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments) -> GenResult {
+    let state = State::from(gen_args);
+    convert_node(ast_ty, &mut Imports::new(), &state)
+}
+
 pub fn gen(ast_ty: &ASTTy) -> GenResult {
     convert_node(ast_ty, &mut Imports::new(), &State::new())
 }

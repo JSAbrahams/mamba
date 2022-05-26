@@ -70,7 +70,7 @@ pub fn unify_function(
                         field_access(constraints, ctx, entity_name, name, left, right, total)
                     }
                     Function { name, args } => function_access(
-                       constraints,
+                        constraints,
                         ctx,
                         entity_name,
                         name,
@@ -80,7 +80,7 @@ pub fn unify_function(
                         total,
                     ),
                     _ => {
-                        let mut constr = reinsert( constraints, constraint, total)?;
+                        let mut constr = reinsert(constraints, constraint, total)?;
                         unify_link(&mut constr, ctx, total)
                     }
                 }
