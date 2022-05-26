@@ -2,13 +2,11 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context};
-use crate::check::name::Name;
+use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -98,15 +96,6 @@ pub fn gen_flow(
 
             constr.exit_set(&ast.pos)?;
             Ok((constr, env.clone()))
-        }
-        Node::Step { amount } => {
-            let name = Name::from(clss::INT_PRIMITIVE);
-            constr.add(
-                "step",
-                &Expected::try_from((amount, &env.var_mappings))?,
-                &Expected::new(&amount.pos, &Type { name }),
-            );
-            Ok((constr.clone(), env.clone()))
         }
         Node::While { cond, body } => {
             constr.new_set(true);

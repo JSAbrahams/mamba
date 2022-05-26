@@ -2,10 +2,10 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
+use crate::ASTTy;
 use crate::common::position::Position;
 use crate::common::result::WithSource;
 use crate::generate::ast::node::Core;
-use crate::parse::ast::AST;
 
 pub type GenResult<T = Core> = Result<T, UnimplementedErr>;
 
@@ -20,7 +20,7 @@ pub struct UnimplementedErr {
 }
 
 impl UnimplementedErr {
-    pub fn new(ast: &AST, msg: &str) -> UnimplementedErr {
+    pub fn new(ast: &ASTTy, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
             position: ast.pos.clone(),
             msg: format!(

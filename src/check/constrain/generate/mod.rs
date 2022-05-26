@@ -50,15 +50,13 @@ pub fn generate(
         Class { .. } | TypeDef { .. } => gen_class(ast, env, ctx, constr),
         TypeAlias { .. } | Condition { .. } => gen_class(ast, env, ctx, constr),
 
-        VariableDef { .. } | FunDef { .. } => gen_def(ast, env, ctx, constr),
-        FunArg { .. } => gen_def(ast, env, ctx, constr),
+        VariableDef { .. } | FunDef { .. } | FunArg { .. } => gen_def(ast, env, ctx, constr),
 
         Reassign { .. } => gen_call(ast, env, ctx, constr),
         FunctionCall { .. } | PropertyCall { .. } => gen_call(ast, env, ctx, constr),
         Index { .. } => gen_call(ast, env, ctx, constr),
 
-        TypeTup { .. } => gen_ty(ast, env, ctx, constr),
-        TypeUnion { .. } | Type { .. } => gen_ty(ast, env, ctx, constr),
+        TypeTup { .. } | TypeUnion { .. } | Type { .. } => gen_ty(ast, env, ctx, constr),
         TypeFun { .. } => gen_ty(ast, env, ctx, constr),
         QuestionOp { .. } => gen_ty(ast, env, ctx, constr),
 
@@ -66,61 +64,49 @@ pub fn generate(
         AnonFun { .. } => gen_expr(ast, env, ctx, constr),
         Pass => gen_expr(ast, env, ctx, constr),
 
-        Raises { .. } => gen_resources(ast, env, ctx, constr),
-        With { .. } => gen_resources(ast, env, ctx, constr),
+        Raises { .. } | With { .. } => gen_resources(ast, env, ctx, constr),
 
         SetBuilder { .. } | ListBuilder { .. } => gen_coll(ast, env, ctx, constr),
-        Set { .. } | List { .. } => gen_coll(ast, env, ctx, constr),
-        Tuple { .. } => gen_coll(ast, env, ctx, constr),
+        Set { .. } | List { .. } | Tuple { .. } => gen_coll(ast, env, ctx, constr),
 
-        Range { .. } => gen_op(ast, env, ctx, constr),
-        Slice { .. } => gen_op(ast, env, ctx, constr),
-        Real { .. } | Int { .. } => gen_op(ast, env, ctx, constr),
-        ENum { .. } => gen_op(ast, env, ctx, constr),
+        Range { .. } | Slice { .. } => gen_op(ast, env, ctx, constr),
+        Real { .. } | Int { .. } | ENum { .. } => gen_op(ast, env, ctx, constr),
         Str { .. } => gen_op(ast, env, ctx, constr),
         Bool { .. } => gen_op(ast, env, ctx, constr),
 
         In { .. } => gen_op(ast, env, ctx, constr),
-        Add { .. } | Sub { .. } => gen_op(ast, env, ctx, constr),
-        Mul { .. } | Div { .. } => gen_op(ast, env, ctx, constr),
+        Add { .. } | Sub { .. } | Mul { .. } | Div { .. } => gen_op(ast, env, ctx, constr),
         FDiv { .. } => gen_op(ast, env, ctx, constr),
         Pow { .. } => gen_op(ast, env, ctx, constr),
-        Le { .. } | Ge { .. } => gen_op(ast, env, ctx, constr),
-        Leq { .. } | Geq { .. } => gen_op(ast, env, ctx, constr),
+        Le { .. } | Ge { .. } | Leq { .. } | Geq { .. } => gen_op(ast, env, ctx, constr),
         Eq { .. } | Neq { .. } => gen_op(ast, env, ctx, constr),
         Mod { .. } => gen_op(ast, env, ctx, constr),
         AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
         Sqrt { .. } => gen_op(ast, env, ctx, constr),
 
         BOneCmpl { .. } => gen_op(ast, env, ctx, constr),
-        BAnd { .. } => gen_op(ast, env, ctx, constr),
-        BOr { .. } | BXOr { .. } => gen_op(ast, env, ctx, constr),
+        BAnd { .. } | BOr { .. } | BXOr { .. } => gen_op(ast, env, ctx, constr),
         BLShift { .. } | BRShift { .. } => gen_op(ast, env, ctx, constr),
 
-        Is { .. } | IsN { .. } => gen_op(ast, env, ctx, constr),
-        IsA { .. } | IsNA { .. } => gen_op(ast, env, ctx, constr),
-        And { .. } | Or { .. } => gen_op(ast, env, ctx, constr),
-        Not { .. } => gen_op(ast, env, ctx, constr),
+        Is { .. } | IsN { .. } | IsA { .. } | IsNA { .. } => gen_op(ast, env, ctx, constr),
+        And { .. } | Or { .. } | Not { .. } => gen_op(ast, env, ctx, constr),
 
         IfElse { .. } => gen_flow(ast, env, ctx, constr),
-        Match { .. } | Handle { .. } => gen_flow(ast, env, ctx, constr),
-        Case { .. } => gen_flow(ast, env, ctx, constr),
-        For { .. } | Step { .. } => gen_flow(ast, env, ctx, constr),
-        While { .. } => gen_flow(ast, env, ctx, constr),
-        Break | Continue => gen_flow(ast, env, ctx, constr),
+        Match { .. } | Handle { .. } | Case { .. } => gen_flow(ast, env, ctx, constr),
+        For { .. } | While { .. } | Break | Continue => gen_flow(ast, env, ctx, constr),
 
         Return { .. } | ReturnEmpty => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
-        Import { .. } |
-        FromImport { .. } |
-        Generic { .. } |
-        Parent { .. } |
-        ExpressionType { .. } |
-        DocStr { .. } |
-        Underscore |
-        Undefined |
-        Comment { .. } => Ok((constr.clone(), env.clone()))
+        Import { .. }
+        | FromImport { .. }
+        | Generic { .. }
+        | Parent { .. }
+        | ExpressionType { .. }
+        | DocStr { .. }
+        | Underscore
+        | Undefined
+        | Comment { .. } => Ok((constr.clone(), env.clone())),
     }
 }
 
