@@ -39,7 +39,10 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                         Some(ty) if !matches!(var, Core::TupleLiteral { .. }) => {
                             Some(Box::from(convert_node(ty, imp, &state)?))
                         }
-                        _ => ast.ty.clone().map(|name| name.to_py()).map(Box::from),
+                        _ => match expression {
+                            Some(expr) => expr.clone().ty.map(|name| name.to_py()).map(Box::from),
+                            None => None
+                        },
                     },
                     expr: match (var, expression) {
                         (_, Some(expr)) => Some(Box::from(convert_node(expr, imp, &state)?)),

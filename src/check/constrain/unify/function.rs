@@ -4,8 +4,8 @@ use std::collections::HashSet;
 use itertools::{EitherOrBoth, enumerate, Itertools};
 
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
@@ -27,6 +27,9 @@ pub fn unify_function(
     let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
+            constraints.push_ty(&left.pos, name);
+            constraints.push_ty(&right.pos, name);
+
             let arguments_union: Vec<Vec<Name>> = name
                 .names()
                 .map(|n| match n.variant {
@@ -60,18 +63,21 @@ pub fn unify_function(
                 }
             }
 
-            constraints.push_ty(&left.pos, name);
             unify_link(constraints, ctx, total + count)
         }
 
-        (Access { entity, name }, _) => {
+        (Access { entity, name }, r_exp) => {
+            if let Expect::Type { name } = r_exp {
+                constraints.push_ty(&right.pos, name);
+            }
+
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
                         field_access(constraints, ctx, entity_name, name, left, right, total)
                     }
                     Function { name, args } => function_access(
-                        constraints,
+                       constraints,
                         ctx,
                         entity_name,
                         name,
@@ -81,7 +87,7 @@ pub fn unify_function(
                         total,
                     ),
                     _ => {
-                        let mut constr = reinsert(constraints, constraint, total)?;
+                        let mut constr = reinsert( constraints, constraint, total)?;
                         unify_link(&mut constr, ctx, total)
                     }
                 }
@@ -90,7 +96,11 @@ pub fn unify_function(
                 unify_link(&mut constr, ctx, total)
             }
         }
-        (_, Access { entity, name }) => {
+        (l_exp, Access { entity, name }) => {
+            if let Expect::Type { name } = l_exp {
+                constraints.push_ty(&right.pos, name);
+            }
+
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
@@ -165,7 +175,6 @@ fn function_access(
         pushed += 1;
     }
 
-
     let largest = function_union.union.iter().fold(0, |m, f| max(m, f.arguments.len()));
     let mut possible_args: Vec<HashSet<FunctionArg>> = vec![HashSet::new(); largest];
     for fun in function_union.union {
@@ -190,10 +199,15 @@ fn unify_fun_arg(
     for either_or_both in f_args.iter().zip_longest(args.iter()) {
         match either_or_both {
             EitherOrBoth::Both(fun_arg, expected) => {
-                let names = fun_arg.iter().map(|f_arg| f_arg.ty.clone().ok_or({
-                    let msg = format!("Argument '{}' has no type", f_arg);
-                    vec![TypeErr::new(pos, &msg)]
-                })).collect::<Result<Vec<Name>, _>>()?;
+                let names = fun_arg
+                    .iter()
+                    .map(|f_arg| {
+                        f_arg.ty.clone().ok_or({
+                            let msg = format!("Argument '{}' has no type", f_arg);
+                            vec![TypeErr::new(pos, &msg)]
+                        })
+                    })
+                    .collect::<Result<Vec<Name>, _>>()?;
 
                 let name = names.iter().fold(Name::empty(), |name, f_name| name.union(f_name));
                 let ty = Expected::new(&expected.pos, &Type { name });

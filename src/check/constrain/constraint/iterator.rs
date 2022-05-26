@@ -30,9 +30,12 @@ impl Constraints {
     ///
     /// If already present at position, then union is created between current [Name] and given
     /// [Name].
+    /// Returns [Name] which was already at that position, which might be [None]
     pub fn push_ty(&mut self, pos: &Position, name: &Name) {
         let name = self.finished.get(pos).map_or(name.clone(), |s_name| s_name.union(name));
-        self.finished.insert(pos.clone(), name);
+        if self.finished.insert(pos.clone(), name.clone()).is_none() {
+            trace!("{:width$}type at {}: {}", "", pos, name, width = 13);
+        }
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }

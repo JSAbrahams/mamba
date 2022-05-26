@@ -118,7 +118,6 @@ pub enum NodeTy {
     Case { cond: Box<ASTTy>, body: Box<ASTTy> },
     For { expr: Box<ASTTy>, col: Box<ASTTy>, body: Box<ASTTy> },
     In { left: Box<ASTTy>, right: Box<ASTTy> },
-    Step { amount: Box<ASTTy> },
     While { cond: Box<ASTTy>, body: Box<ASTTy> },
     Break,
     Continue,

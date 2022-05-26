@@ -36,9 +36,11 @@ pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
     constraints(ast, ctx).map(|all_constraints| {
         let pos_to_name: HashMap<Position, Name> = all_constraints
             .iter()
-            .fold(Constraints::new(&[]), |mut acc, constr| {
-                constr.finished.iter().for_each(|(pos, name)| acc.push_ty(pos, name));
-                acc
+            .fold(Constraints::new(&[]), |acc, constr| {
+                constr.finished.iter().fold(acc, |mut acc, (pos, name)| {
+                    acc.push_ty(pos, name);
+                    acc
+                })
             }).finished;
 
         ASTTy::from((ast, &pos_to_name))

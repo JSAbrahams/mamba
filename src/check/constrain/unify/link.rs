@@ -29,6 +29,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
             // trivially equal
             (Type { name }, Type { name: r_name }) if name == r_name => {
                 constraints.push_ty(&left.pos, name);
+                constraints.push_ty(&right.pos, r_name);
                 unify_link(constraints, ctx, total)
             }
             (left, right) if left == right => unify_link(constraints, ctx, total),
