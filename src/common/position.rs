@@ -143,3 +143,80 @@ impl Default for CaretPos {
         CaretPos { line: 1, pos: 1 }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::cmp::Ordering;
+
+    use crate::common::position::{CaretPos, Position};
+
+    #[test]
+    fn position_eq() {
+        let pos1 = Position::new(&CaretPos::new(3, 8), &CaretPos::new(2, 9));
+        let pos2 = Position::new(&CaretPos::new(3, 8), &CaretPos::new(2, 9));
+        assert_eq!(pos1, pos2);
+    }
+
+    #[test]
+    fn position_ne() {
+        let pos1 = Position::new(&CaretPos::new(3, 8), &CaretPos::new(2, 9));
+        let pos2 = Position::new(&CaretPos::new(3, 5), &CaretPos::new(2, 9));
+        assert_ne!(pos1, pos2);
+    }
+
+    #[test]
+    fn position_line_before_other() {
+        assert!(CaretPos::new(3, 8) < CaretPos::new(4, 5));
+    }
+
+    #[test]
+    fn position_same_line_before_other() {
+        assert!(CaretPos::new(4, 4) < CaretPos::new(4, 5));
+    }
+
+    #[test]
+    fn position_same_line_before_other_leq() {
+        assert!(CaretPos::new(4, 4) <= CaretPos::new(4, 5));
+    }
+
+    #[test]
+    fn position_different_line_before_other_leq() {
+        assert!(CaretPos::new(3, 4) <= CaretPos::new(4, 4));
+    }
+
+    #[test]
+    fn position_same_line_after_other_geq() {
+        assert!(CaretPos::new(4, 6) >= CaretPos::new(4, 5));
+    }
+
+    #[test]
+    fn position_different_line_after_other_geq() {
+        assert!(CaretPos::new(5, 4) >= CaretPos::new(4, 4));
+    }
+
+    #[test]
+    fn position_same_line_before_other_eq() {
+        let pos1 = CaretPos::new(4, 5);
+        let pos2 = CaretPos::new(4, 5);
+
+        assert!(pos1 <= pos2);
+        assert!(pos1 >= pos2);
+    }
+
+    #[test]
+    fn position_line_before_other_le() {
+        assert!(CaretPos::new(4, 5) > CaretPos::new(3, 8));
+    }
+
+    #[test]
+    fn position_same_line_before_other_le() {
+        assert!(CaretPos::new(4, 5) > CaretPos::new(4, 4));
+    }
+
+    #[test]
+    fn partial_ord_caret_pos() {
+        assert_eq!(CaretPos::new(4, 5).partial_cmp(&CaretPos::new(4, 5)), Some(Ordering::Equal));
+        assert_eq!(CaretPos::new(4, 4).partial_cmp(&CaretPos::new(4, 5)), Some(Ordering::Less));
+        assert_eq!(CaretPos::new(4, 6).partial_cmp(&CaretPos::new(4, 5)), Some(Ordering::Greater));
+    }
+}

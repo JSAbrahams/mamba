@@ -3,11 +3,11 @@ use std::ops::Deref;
 use crate::ASTTy;
 use crate::check::ast::NodeTy;
 use crate::check::context::arg;
-use crate::check::name::Name;
 use crate::generate::ast::node::{Core, CoreFunOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
+use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
@@ -25,7 +25,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                     var: Box::from(var),
                     ty: match ty {
                         Some(ty) => Some(Box::from(convert_node(ty, imp, &state)?)),
-                        None => ast.ty.clone().map(|name| name.to_py()).map(Box::from),
+                        None => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
                     },
                     default: match expression {
                         Some(expression) => Some(Box::from(convert_node(expression, imp, &state)?)),
@@ -40,7 +40,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                             Some(Box::from(convert_node(ty, imp, &state)?))
                         }
                         _ => match expression {
-                            Some(expr) => expr.clone().ty.map(|name| name.to_py()).map(Box::from),
+                            Some(expr) => expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
                             None => None
                         },
                     },
@@ -98,12 +98,6 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
             let msg = format!("Expected definition: {:?}", definition);
             Err(UnimplementedErr::new(ast, &msg))
         }
-    }
-}
-
-impl Name {
-    fn to_py(&self) -> Core {
-        todo!()
     }
 }
 

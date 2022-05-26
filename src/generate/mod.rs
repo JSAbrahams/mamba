@@ -6,6 +6,7 @@ use crate::generate::result::GenResult;
 mod convert;
 
 pub mod ast;
+pub mod name;
 
 pub mod result;
 

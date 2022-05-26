@@ -4,8 +4,8 @@ use std::collections::HashSet;
 use itertools::{EitherOrBoth, enumerate, Itertools};
 
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
@@ -27,9 +27,6 @@ pub fn unify_function(
     let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
-            constraints.push_ty(&left.pos, name);
-            constraints.push_ty(&right.pos, name);
-
             let arguments_union: Vec<Vec<Name>> = name
                 .names()
                 .map(|n| match n.variant {
@@ -66,11 +63,7 @@ pub fn unify_function(
             unify_link(constraints, ctx, total + count)
         }
 
-        (Access { entity, name }, r_exp) => {
-            if let Expect::Type { name } = r_exp {
-                constraints.push_ty(&right.pos, name);
-            }
-
+        (Access { entity, name }, _) => {
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
@@ -96,11 +89,7 @@ pub fn unify_function(
                 unify_link(&mut constr, ctx, total)
             }
         }
-        (l_exp, Access { entity, name }) => {
-            if let Expect::Type { name } = l_exp {
-                constraints.push_ty(&right.pos, name);
-            }
-
+        (_, Access { entity, name }) => {
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {

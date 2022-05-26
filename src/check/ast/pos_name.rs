@@ -16,15 +16,18 @@ impl From<(&AST, &PosNameMap)> for ASTTy {
 
 impl ASTTy {
     fn map(&self, names: &PosNameMap) -> Self {
-        names.iter().fold(self.clone(), |acc, (pos, name)| {
-            if pos == &acc.pos {
-                acc.to_ty(name)
-            } else if acc.pos.start <= pos.start && pos.end <= acc.pos.end {
-                ASTTy { pos: acc.pos, node: NodeTy::from((&acc.node, names)), ty: acc.ty }
-            } else {
-                acc
+        for (pos, name) in names {
+            if pos == &self.pos {
+                trace!("Annotated AST at {} with '{}'", self.pos, name);
+                let mut new_names = names.clone();
+                new_names.remove(pos);
+
+                let node = NodeTy::from((&self.node, &new_names));
+                return ASTTy { node, ty: Some(name.clone()), ..self.clone()}
             }
-        })
+        }
+
+        ASTTy { node: NodeTy::from((&self.node, names)), ..self.clone() }
     }
 }
 

@@ -24,14 +24,23 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         let msg =
             if constraint.msg.is_empty() { String::new() } else { format!(" {}", constraint.msg) };
 
+        match (&left.expect, &right.expect) {
+            (Type { name }, Type { name: r_name }) => {
+                constraints.push_ty(&left.pos, name);
+                constraints.push_ty(&right.pos, r_name);
+            }
+            (Type { name }, _) => {
+                constraints.push_ty(&left.pos, name);
+            }
+            (_, Type { name: r_name }) => {
+                constraints.push_ty(&right.pos, r_name);
+            }
+            _ => {}
+        }
+
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 15);
         match (&left.expect, &right.expect) {
             // trivially equal
-            (Type { name }, Type { name: r_name }) if name == r_name => {
-                constraints.push_ty(&left.pos, name);
-                constraints.push_ty(&right.pos, r_name);
-                unify_link(constraints, ctx, total)
-            }
             (left, right) if left == right => unify_link(constraints, ctx, total),
 
             (Function { .. }, Type { .. })

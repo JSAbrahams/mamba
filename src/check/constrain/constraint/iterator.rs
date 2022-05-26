@@ -34,7 +34,7 @@ impl Constraints {
     pub fn push_ty(&mut self, pos: &Position, name: &Name) {
         let name = self.finished.get(pos).map_or(name.clone(), |s_name| s_name.union(name));
         if self.finished.insert(pos.clone(), name.clone()).is_none() {
-            trace!("{:width$}type at {}: {}", "", pos, name, width = 13);
+            trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
         }
     }
 

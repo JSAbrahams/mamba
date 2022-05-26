@@ -34,7 +34,8 @@ impl From<&Box<AST>> for ASTTy {
 }
 
 impl ASTTy {
-    pub fn to_ty(self, ty: &Name) -> ASTTy {
+    pub fn with_ty(self, ty: &Name) -> ASTTy {
+        trace!("Annotated AST at {} with '{}'", self.pos, ty);
         ASTTy { ty: Some(ty.clone()), ..self }
     }
 }
@@ -157,7 +158,7 @@ mod test {
     fn to_ty() {
         let node = Node::Pass;
         let ast = AST::new(&Position::default(), node.clone());
-        let ast_ty = ASTTy::from(&ast).to_ty(&Name::from("Dummy"));
+        let ast_ty = ASTTy::from(&ast).with_ty(&Name::from("Dummy"));
 
         assert_eq!(ast_ty.ty, Some(Name::from("Dummy")));
     }

@@ -32,8 +32,6 @@ pub fn unify_type(
                     let msg = format!("Expected an expression, but was '{}'", name);
                     Err(vec![TypeErr::new(&left.pos, &msg)])
                 } else {
-                    constraints.push_ty(&left.pos, name);
-                    constraints.push_ty(&right.pos, name);
                     unify_link(constraints, ctx, total)
                 }
             }
@@ -60,9 +58,6 @@ pub fn unify_type(
             } else if left_is_super || right_is_super || either_is_super {
                 ctx.class(l_ty, &left.pos)?;
                 ctx.class(r_ty, &right.pos)?;
-
-                constraints.push_ty(&left.pos, l_ty);
-                constraints.push_ty(&right.pos, r_ty);
                 unify_link(constraints, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Unifying two types: Expected a '{}', was a '{}'", l_ty, r_ty);
@@ -102,9 +97,6 @@ pub fn unify_type(
         }
 
         (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
-            constraints.push_ty(&left.pos, name);
-            constraints.push_ty(&right.pos, name);
-
             for name_ty in name.names() {
                 match name_ty.variant {
                     NameVariant::Tuple(names) => {
