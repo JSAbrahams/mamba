@@ -41,7 +41,7 @@ pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
                 acc
             }).finished;
 
-        ASTTy::from((ast, pos_to_name))
+        ASTTy::from((ast, &pos_to_name))
     })
 }
 

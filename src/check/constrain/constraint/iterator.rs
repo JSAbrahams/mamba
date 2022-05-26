@@ -42,7 +42,6 @@ impl Constraints {
     /// Push constraint at front so that it will be analysed next.
     ///
     /// Only used during unification stage.
-    /// Marks constraint as generated.
     pub fn push(&mut self, msg: &str, left: &Expected, right: &Expected) {
         let constraint = Constraint::new(msg, left, right);
         trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 17);
