@@ -22,8 +22,8 @@ impl From<&(Vec<StringName>, Vec<Constraint>)> for Constraints {
 }
 
 impl Constraints {
-    pub fn new(in_class: &[StringName]) -> Constraints {
-        Constraints { in_class: Vec::from(in_class), constraints: VecDeque::new(), finished: HashMap::new() }
+    pub fn new() -> Constraints {
+        Constraints { in_class: Vec::new(), constraints: VecDeque::new(), finished: HashMap::new() }
     }
 
     /// Push name associated with specific position in [AST].
@@ -54,7 +54,11 @@ impl Constraints {
     /// Append in_class and constraints of constraints to self
     pub fn append(&mut self, constraints: &mut Constraints) {
         self.in_class.append(&mut constraints.in_class);
-        self.constraints.append(&mut constraints.constraints)
+        self.constraints.append(&mut constraints.constraints);
+        self.finished = constraints.finished.iter().fold(self.finished.clone(), |mut acc, (pos, name)| {
+            acc.insert(pos.clone(), name.clone());
+            acc
+        });
     }
 
     pub fn push_constr(&mut self, constr: &Constraint) {
@@ -77,5 +81,5 @@ impl Constraints {
 }
 
 impl Default for Constraints {
-    fn default() -> Self { Constraints::new(&[]) }
+    fn default() -> Self { Constraints::new() }
 }

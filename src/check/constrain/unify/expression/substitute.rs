@@ -19,7 +19,7 @@ pub fn substitute(
     offset: usize,
     total: usize,
 ) -> TypeResult<Constraints> {
-    let mut substituted = Constraints::new(&constraints.in_class);
+    let mut substituted = Constraints::new();
     let mut constraint_pos = offset;
 
     trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 14);

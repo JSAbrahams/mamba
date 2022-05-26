@@ -145,7 +145,6 @@ pub fn unify_type(
                 }
             }
 
-            constraints.push_ty(&left.pos, name);
             unify_link(constraints, ctx, total)
         }
 
