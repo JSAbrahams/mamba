@@ -136,6 +136,7 @@ pub fn unify_type(
                     }
                 }
             }
+
             unify_link(constraints, ctx, total)
         }
 

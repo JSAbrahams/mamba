@@ -114,7 +114,7 @@ pub fn match_type_direct(
 
 #[derive(Debug, Clone, Eq)]
 pub struct Name {
-    names: HashSet<TrueName>,
+    pub names: HashSet<TrueName>,
 }
 
 impl AsMutable for Name {

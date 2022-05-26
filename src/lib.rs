@@ -16,7 +16,7 @@ use crate::check::check;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::common::result::WithSource;
-use crate::generate::gen;
+use crate::generate::{gen_arguments, GenArguments};
 use crate::parse::ast::AST;
 use crate::parse::parse;
 
@@ -30,6 +30,11 @@ pub mod io;
 
 const TARGET: &str = "target";
 const SOURCE: &str = "src";
+
+#[derive(Default)]
+pub struct Arguments {
+    pub annotate: bool,
+}
 
 #[cfg(test)]
 mod test_util {
@@ -54,6 +59,7 @@ pub fn transpile_dir(
     dir: &Path,
     src: Option<&str>,
     target: Option<&str>,
+    arguments: &Arguments,
 ) -> Result<PathBuf, Vec<String>> {
     let src_path = src.map_or(dir.join(SOURCE), |p| dir.join(p));
     if !src_path.is_file() && !src_path.is_dir() {
@@ -96,7 +102,9 @@ pub fn transpile_dir(
     let source_pairs = sources.iter().zip(in_absolute_paths.iter());
     let source_option_pairs: Vec<_> =
         source_pairs.map(|(source, path)| (source.clone(), Some(path.clone()))).collect();
-    let mamba_source = mamba_to_python(source_option_pairs.as_slice(), &src_path)?;
+
+    let pipeline_arg = PipelineArguments::from(arguments);
+    let mamba_source = mamba_to_python(source_option_pairs.as_slice(), &src_path, &pipeline_arg)?;
 
     for (source, out_path) in mamba_source.iter().zip(out_absolute_paths) {
         let out_path = out_path.with_extension("py");
@@ -106,6 +114,16 @@ pub fn transpile_dir(
     Ok(out_dir)
 }
 
+pub struct PipelineArguments {
+    pub annotate: bool,
+}
+
+impl From<&Arguments> for PipelineArguments {
+    fn from(arguments: &Arguments) -> Self {
+        PipelineArguments { annotate: arguments.annotate }
+    }
+}
+
 /// Convert mamba source to python source.
 ///
 /// For each mamba source, a path can optionally be given for display in error
@@ -113,6 +131,7 @@ pub fn transpile_dir(
 pub fn mamba_to_python(
     source: &[(String, Option<PathBuf>)],
     source_dir: &PathBuf,
+    pipeline_args: &PipelineArguments,
 ) -> Result<Vec<String>, Vec<String>> {
     // Strip until source
     let strip_prefix = |p: PathBuf| {
@@ -157,7 +176,8 @@ pub fn mamba_to_python(
                 })
                 .partition(Result::is_ok);
 
-            let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
+            let type_errs: Vec<Vec<TypeErr>> =
+                type_errs.into_iter().map(Result::unwrap_err).collect();
             if !type_errs.is_empty() {
                 return Err(type_errs.iter().flatten().map(|err| format!("{}", err)).collect());
             } else {
@@ -169,11 +189,12 @@ pub fn mamba_to_python(
 
     trace!("Checked {} files", typed_ast.len());
 
+    let gen_args = GenArguments::from(pipeline_args);
     let (py_sources, gen_errs): (Vec<_>, Vec<_>) = typed_ast
         .iter()
         .zip(&source)
         .map(|(ast_ty, (src, path))| {
-            gen(ast_ty)
+            gen_arguments(ast_ty, &gen_args)
                 .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
                 .map(|core| core.to_source())
         })
