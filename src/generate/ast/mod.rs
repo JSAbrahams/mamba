@@ -1,6 +1,5 @@
 use std::fmt::Write;
 
-use crate::check::context::function;
 use crate::generate::ast::node::Core;
 
 pub mod node;
@@ -70,22 +69,13 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Bool { boolean } => String::from(if *boolean { "True" } else { "False" }),
 
         Core::FunDefOp { op, arg, ty, body } => {
-            let id = Box::from(Core::Id { lit: format!("{}", op) });
+            let id = format!("{}", op);
             to_py(&Core::FunDef { id, arg: arg.clone(), ty: ty.clone(), body: body.clone() }, ind)
         }
         Core::FunDef { id, arg, ty, body } => {
-            let name = match id.as_ref() {
-                Core::Id { ref lit, .. } => match lit.as_str() {
-                    "size" => String::from("__size__"),
-                    function::INIT => String::from("__init__"),
-                    other => String::from(other),
-                },
-                other => panic!("Not a valid identifier for a function: {:?}", other),
-            };
-
             format!(
                 "def {}({}){}:{}\n",
-                name,
+                id,
                 comma_delimited(arg, ind),
                 if let Some(ret_ty) = ty {
                     format!(" -> {}", to_py(ret_ty.as_ref(), ind))

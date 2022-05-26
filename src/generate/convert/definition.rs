@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use crate::ASTTy;
 use crate::check::ast::NodeTy;
-use crate::check::context::arg;
+use crate::check::context::{arg, function};
 use crate::generate::ast::node::{Core, CoreFunOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
@@ -77,7 +77,19 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 Core::Id { lit } => Ok(if let Some(op) = CoreFunOp::from(lit.as_str()) {
                     Core::FunDefOp { op, arg, ty, body }
                 } else {
-                    Core::FunDef { id: c_id.clone(), arg, ty, body }
+                    let id = match c_id.as_ref() {
+                        Core::Id { ref lit, .. } => match lit.as_str() {
+                            "size" => String::from("__size__"),
+                            function::INIT => String::from("__init__"),
+                            other => String::from(other),
+                        },
+                        other => {
+                            let msg = format!("Expected function identifier, was {:?}", other);
+                            return Err(UnimplementedErr::new(id, &msg));
+                        }
+                    };
+
+                    Core::FunDef { id, arg, ty, body }
                 }),
                 _ => Err(UnimplementedErr::new(id, "Non-id function")),
             }
@@ -291,7 +303,7 @@ mod test {
             other => panic!("Expected fun def but got: {:?}.", other),
         };
 
-        assert_eq!(*id, Core::Id { lit: String::from("fun") });
+        assert_eq!(*id, String::from("fun"));
 
         assert_eq!(args.len(), 2);
         assert_eq!(
@@ -340,7 +352,7 @@ mod test {
             other => panic!("Expected fun def but got: {:?}.", other),
         };
 
-        assert_eq!(*id, Core::Id { lit: String::from("fun") });
+        assert_eq!(*id, String::from("fun"));
 
         assert_eq!(args.len(), 1);
         assert_eq!(
@@ -374,7 +386,7 @@ mod test {
             other => panic!("Expected fun def but got: {:?}.", other),
         };
 
-        assert_eq!(*id, Core::Id { lit: String::from("fun") });
+        assert_eq!(*id, String::from("fun"));
 
         assert_eq!(args.len(), 2);
         assert_eq!(args[0], Core::Id { lit: String::from("arg1") });

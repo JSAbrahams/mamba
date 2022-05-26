@@ -45,7 +45,10 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult
             }
         }
 
-        other => panic!("Expected class or type definition but was {:?}", other),
+        other => {
+            let msg = format!("Expected class or type definition but was {:?}", other);
+            Err(UnimplementedErr::new(ast, &msg))
+        }
     }
 }
 
@@ -145,7 +148,7 @@ fn extract_class(
 
         let mut statements = old_stmts;
         statements.append(&mut vec![Core::FunDef {
-            id: Box::from(Core::Id { lit: String::from(function::python::INIT) }),
+            id: String::from(function::python::INIT),
             arg: new_args,
             ty: None,
             body: Box::from(Core::Block { statements: parent_calls }),
@@ -328,7 +331,7 @@ mod tests {
             assert_eq!(
                 *statement,
                 Core::FunDef {
-                    id: Box::new(Core::Id { lit: String::from("__init__") }),
+                    id: String::from("__init__"),
                     arg: vec![
                         Core::FunArg {
                             vararg: false,
