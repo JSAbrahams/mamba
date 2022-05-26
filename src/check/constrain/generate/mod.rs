@@ -99,7 +99,6 @@ pub fn generate(
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
         Import { .. }
-        | FromImport { .. }
         | Generic { .. }
         | Parent { .. }
         | ExpressionType { .. }

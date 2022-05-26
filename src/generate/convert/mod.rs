@@ -1,6 +1,7 @@
+use std::convert::TryFrom;
+
 use crate::ASTTy;
 use crate::check::ast::NodeTy;
-use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::call::convert_call;
@@ -9,10 +10,10 @@ use crate::generate::convert::common::{convert_stmts, convert_vec};
 use crate::generate::convert::control_flow::convert_cntrl_flow;
 use crate::generate::convert::definition::convert_def;
 use crate::generate::convert::handle::convert_handle;
+use crate::generate::convert::range_slice::convert_range_slice;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::convert::ty::convert_ty;
 use crate::generate::result::{GenResult, UnimplementedErr};
-use crate::parse::ast::node_op::NodeOp;
 
 mod call;
 mod class;
@@ -20,6 +21,7 @@ mod common;
 mod control_flow;
 mod definition;
 mod handle;
+mod range_slice;
 mod ty;
 
 pub mod state;
@@ -29,16 +31,14 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
     let state = &state.assign_to(None);
 
     let core = match &ast.node {
-        NodeTy::Import { import, aliases } if aliases.is_empty() => {
-            Core::Import { imports: convert_vec(import, imp, state)? }
-        }
-        NodeTy::Import { import, aliases } => Core::ImportAs {
-            imports: convert_vec(import, imp, state)?,
-            aliases: convert_vec(aliases, imp, state)?,
-        },
-        NodeTy::FromImport { id, import } => Core::FromImport {
-            from: Box::from(convert_node(id, imp, state)?),
-            import: Box::from(convert_node(import, imp, state)?),
+        NodeTy::Import { from, import, alias } => Core::Import {
+            from: if let Some(from) = from {
+                Some(Box::from(convert_node(from, imp, state)?))
+            } else {
+                None
+            },
+            import: convert_vec(import, imp, state)?,
+            alias: convert_vec(alias, imp, state)?,
         },
 
         NodeTy::VariableDef { .. } | NodeTy::FunDef { .. } | NodeTy::FunArg { .. } => {
@@ -47,19 +47,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
         NodeTy::Reassign { left, right, op } => Core::Assign {
             left: Box::from(convert_node(left, imp, state)?),
             right: Box::from(convert_node(right, imp, state)?),
-            op: match op {
-                NodeOp::Add => CoreOp::AddAssign,
-                NodeOp::Sub => CoreOp::SubAssign,
-                NodeOp::Mul => CoreOp::MulAssign,
-                NodeOp::Div => CoreOp::DivAssign,
-                NodeOp::Pow => CoreOp::PowAssign,
-                NodeOp::BLShift => CoreOp::BLShiftAssign,
-                NodeOp::BRShift => CoreOp::BRShiftAssign,
-                NodeOp::Assign => CoreOp::Assign,
-                op => {
-                    return Err(UnimplementedErr::new(ast, &format!("Reassign with {}", op)));
-                }
-            },
+            op: CoreOp::try_from((ast, op))?,
         },
 
         NodeTy::File { statements, .. } => {
@@ -106,7 +94,9 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
         NodeTy::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
-        NodeTy::Return { expr } => Core::Return { expr: Box::from(convert_node(expr, imp, state)?) },
+        NodeTy::Return { expr } => {
+            Core::Return { expr: Box::from(convert_node(expr, imp, state)?) }
+        }
 
         NodeTy::IfElse { .. }
         | NodeTy::While { .. }
@@ -238,44 +228,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
             left: Box::from(convert_node(left, imp, state)?),
             right: Box::from(convert_node(right, imp, state)?),
         },
-        NodeTy::Range { from, to, inclusive, step } => Core::FunctionCall {
-            function: Box::from(Core::Id { lit: String::from(clss::python::RANGE) }),
-            args: vec![
-                convert_node(from, imp, state)?,
-                if *inclusive {
-                    Core::Add {
-                        left: Box::from(convert_node(to, imp, state)?),
-                        right: Box::from(Core::Int { int: String::from("1") }),
-                    }
-                } else {
-                    convert_node(to, imp, state)?
-                },
-                if let Some(step) = step {
-                    convert_node(step, imp, state)?
-                } else {
-                    Core::Int { int: String::from("1") }
-                },
-            ],
-        },
-        NodeTy::Slice { from, to, inclusive, step } => Core::FunctionCall {
-            function: Box::from(Core::Id { lit: String::from(clss::python::SLICE) }),
-            args: vec![
-                convert_node(from, imp, state)?,
-                if !inclusive {
-                    Core::Sub {
-                        left: Box::from(convert_node(to, imp, state)?),
-                        right: Box::from(Core::Int { int: String::from("1") }),
-                    }
-                } else {
-                    convert_node(to, imp, state)?
-                },
-                if let Some(step) = step {
-                    convert_node(step, imp, state)?
-                } else {
-                    Core::Int { int: String::from("1") }
-                },
-            ],
-        },
+        NodeTy::Range { .. } | NodeTy::Slice { .. } => convert_range_slice(ast, imp, state)?,
+
         NodeTy::Underscore => Core::UnderScore,
         NodeTy::Question { left, right } => Core::Or {
             left: Box::from(convert_node(left, imp, state)?),
@@ -311,7 +265,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
             convert_handle(ast, imp, state)?
         }
 
-        _ => Core::Empty
+        _ => Core::Empty,
     };
 
     let core = if let Some(assign_to) = assign_to {
@@ -383,43 +337,26 @@ mod tests {
     #[test]
     fn return_empty_verify() {
         let print_stmt = to_pos!(Node::ReturnEmpty);
-        assert_eq!(gen(&ASTTy::from(&print_stmt)).unwrap(), Core::Return { expr: Box::from(Core::None) });
+        assert_eq!(
+            gen(&ASTTy::from(&print_stmt)).unwrap(),
+            Core::Return { expr: Box::from(Core::None) }
+        );
     }
 
     #[test]
     fn import_verify() {
         let _break = to_pos!(Node::Import {
+            from: None,
             import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-            aliases: vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
+            alias: vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
         });
 
         assert_eq!(
             gen(&ASTTy::from(&_break)).unwrap(),
-            Core::ImportAs {
-                imports: vec![Core::Id { lit: String::from("a") }],
-                aliases: vec![Core::Id { lit: String::from("b") }],
-            }
-        );
-    }
-
-    #[test]
-    fn from_import_as_verify() {
-        let _break = to_pos!(Node::FromImport {
-            id: to_pos!(Node::Id { lit: String::from("f") }),
-            import: to_pos!(Node::Import {
-                import: vec![to_pos_unboxed!(Node::Id { lit: String::from("a") })],
-                aliases: vec![to_pos_unboxed!(Node::Id { lit: String::from("b") })]
-            })
-        });
-
-        assert_eq!(
-            gen(&ASTTy::from(&_break)).unwrap(),
-            Core::FromImport {
-                from: Box::from(Core::Id { lit: String::from("f") }),
-                import: Box::from(Core::ImportAs {
-                    imports: vec![Core::Id { lit: String::from("a") }],
-                    aliases: vec![Core::Id { lit: String::from("b") }],
-                }),
+            Core::Import {
+                from: None,
+                import: vec![Core::Id { lit: String::from("a") }],
+                alias: vec![Core::Id { lit: String::from("b") }],
             }
         );
     }

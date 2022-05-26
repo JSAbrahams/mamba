@@ -3,7 +3,7 @@ use crate::check::ast::NodeTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::GenResult;
+use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
@@ -33,7 +33,10 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResul
                     for case in cases {
                         let (cond, body) = match &case.node {
                             NodeTy::Case { cond, body } => (cond, body),
-                            other => panic!("Expected case but was {:?}", other),
+                            other => {
+                                let msg = format!("Expected case but was {:?}", other);
+                                return Err(UnimplementedErr::new(case, &msg));
+                            }
                         };
 
                         match &cond.node {
@@ -46,13 +49,19 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResul
                                 },
                                 body: Box::from(convert_node(body, imp, &assign_state)?),
                             }),
-                            other => panic!("Expected id type but was {:?}", other),
+                            other => {
+                                let msg = format!("Expected id type but was {:?}", other);
+                                return Err(UnimplementedErr::new(case, &msg));
+                            }
                         };
                     }
                     except
                 },
             }
         }
-        other => panic!("Expected handle {:?}", other)
+        other => {
+            let msg = format!("Expected handle {:?}", other);
+            return Err(UnimplementedErr::new(ast, &msg));
+        }
     })
 }

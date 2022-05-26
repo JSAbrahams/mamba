@@ -5,7 +5,7 @@ use crate::generate::ast::node::Core;
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::result::GenResult;
+use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     Ok(match &ast.node {
@@ -30,7 +30,10 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 lit: concrete_to_python(lit),
                 generics: convert_vec(generics, imp, state)?,
             },
-            other => panic!("Expected identifier but was {:?}", other)
+            other => {
+                let msg = format!("Expected identifier but was {:?}", other);
+                return Err(UnimplementedErr::new(ast, &msg));
+            }
         },
         NodeTy::TypeFun { args, ret_ty } => {
             imp.add_from_import("typing", "Callable");
@@ -49,6 +52,9 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 generics: convert_vec(types, imp, state)?,
             }
         }
-        ty => panic!("Expected type: {:?}.", ty)
+        ty => {
+            let msg = format!("Expected type: {:?}.", ty);
+            return Err(UnimplementedErr::new(ast, &msg));
+        }
     })
 }

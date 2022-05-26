@@ -73,18 +73,17 @@ impl Imports {
     }
 
     pub fn add_import(&mut self, import: &str) {
-        let import = Core::Import { imports: vec![Core::Id { lit: String::from(import) }] };
+        let import = Core::Import { from: None, import: vec![Core::Id { lit: String::from(import) }], alias: vec![] };
         if !self.imports.contains(&import) {
             self.imports.push(import);
         }
     }
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
-        let import = Core::FromImport {
-            from: Box::from(Core::Id { lit: String::from(from) }),
-            import: Box::from(Core::Import {
-                imports: vec![Core::Id { lit: String::from(import) }],
-            }),
+        let import = Core::Import {
+            from: Some(Box::from(Core::Id { lit: String::from(from) })),
+            import: vec![Core::Id { lit: String::from(import) }],
+            alias: vec![],
         };
 
         if !self.imports.contains(&import) {

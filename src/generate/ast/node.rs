@@ -1,12 +1,14 @@
+use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
 
+use crate::ASTTy;
 use crate::check::context::function;
+use crate::generate::result::UnimplementedErr;
+use crate::parse::ast::node_op::NodeOp;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Core {
-    FromImport { from: Box<Core>, import: Box<Core> },
-    Import { imports: Vec<Core> },
-    ImportAs { imports: Vec<Core>, aliases: Vec<Core> },
+    Import { from: Option<Box<Core>>, import: Vec<Core>, alias: Vec<Core> },
     ClassDef { name: Box<Core>, parent_names: Vec<Core>, body: Box<Core> },
     FunctionCall { function: Box<Core>, args: Vec<Core> },
     PropertyCall { object: Box<Core>, property: Box<Core> },
@@ -16,7 +18,7 @@ pub enum Core {
     Assign { left: Box<Core>, right: Box<Core>, op: CoreOp },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
     FunDefOp { op: CoreFunOp, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
-    FunDef { id: Box<Core>, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
+    FunDef { id: String, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },
     AnonFun { args: Vec<Core>, body: Box<Core> },
     Block { statements: Vec<Core> },
@@ -94,6 +96,24 @@ pub enum CoreOp {
     PowAssign,
     BLShiftAssign,
     BRShiftAssign,
+}
+
+impl TryFrom<(&ASTTy, &NodeOp)> for CoreOp {
+    type Error = UnimplementedErr;
+
+    fn try_from((ast, op): (&ASTTy, &NodeOp)) -> Result<Self, Self::Error> {
+        match &op {
+            NodeOp::Add => Ok(CoreOp::AddAssign),
+            NodeOp::Sub => Ok(CoreOp::SubAssign),
+            NodeOp::Mul => Ok(CoreOp::MulAssign),
+            NodeOp::Div => Ok(CoreOp::DivAssign),
+            NodeOp::Pow => Ok(CoreOp::PowAssign),
+            NodeOp::BLShift => Ok(CoreOp::BLShiftAssign),
+            NodeOp::BRShift => Ok(CoreOp::BRShiftAssign),
+            NodeOp::Assign => Ok(CoreOp::Assign),
+            op => Err(UnimplementedErr::new(ast, &format!("Reassign with {}", op)))
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
