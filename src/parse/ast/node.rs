@@ -122,7 +122,6 @@ impl Display for Node {
             Node::Case { .. } => String::from("case"),
             Node::For { .. } => String::from("for loop"),
             Node::In { left, right } => format!("{} {} {}", left.node, Token::In, right.node),
-            Node::Step { .. } => String::from("step"),
             Node::While { .. } => String::from("while loop"),
             Node::Break => format!("{}", Token::Break),
             Node::Continue => format!("{}", Token::Continue),
@@ -406,7 +405,6 @@ impl Node {
                 left: Box::from(left.map(mapping)),
                 right: Box::from(right.map(mapping)),
             },
-            Node::Step { amount } => Node::Step { amount: Box::from(amount.map(mapping)) },
             Node::While { cond, body } => Node::While {
                 cond: Box::from(cond.map(mapping)),
                 body: Box::from(body.map(mapping)),
@@ -661,7 +659,6 @@ impl Node {
             (Node::In { left: ll, right: lr }, Node::In { left: rl, right: rr }) => {
                 ll.same_value(rl) && lr.same_value(rr)
             }
-            (Node::Step { amount: la }, Node::Step { amount: ra }) => la.same_value(ra),
             (Node::While { cond: lc, body: lb }, Node::While { cond: rc, body: rb }) => {
                 lc.same_value(rc) && lb.same_value(rb)
             }
@@ -1190,7 +1187,6 @@ mod test {
         two_ast!(Node::Range { from: cond.clone(), to: body.clone(), inclusive: true, step: Some(third.clone()) });
         two_ast!(Node::For {expr: cond.clone(), col: body.clone(), body: third.clone()});
         two_ast!(Node::In {left:cond.clone(), right: body.clone()});
-        two_ast!(Node::Step {amount: body.clone()});
 
         two_ast!(Node::While {cond: cond.clone(), body: body.clone()});
     }

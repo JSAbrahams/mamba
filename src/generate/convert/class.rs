@@ -1,12 +1,13 @@
 use std::ops::Deref;
 
+use crate::ASTTy;
+use crate::check::ast::NodeTy;
 use crate::check::context::{arg, function};
 use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::{GenResult, UnimplementedErr};
-use crate::parse::ast::{AST, Node};
 
 /// Desugar a class.
 ///
@@ -15,22 +16,22 @@ use crate::parse::ast::{AST, Node};
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn convert_class(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     match &ast.node {
-        Node::TypeAlias { ty, isa, .. } => {
+        NodeTy::TypeAlias { ty, isa, .. } => {
             let parents = vec![isa.deref().clone()];
             let body = None;
             extract_class(ty, &body, &[], &parents, imp, &state.in_interface(true))
         }
-        Node::TypeDef { ty, body, isa } => {
+        NodeTy::TypeDef { ty, body, isa } => {
             let parents = if let Some(isa) = isa { vec![isa.deref().clone()] } else { vec![] };
             extract_class(ty, body, &[], &parents, imp, &state.in_interface(true))
         }
-        Node::Class { ty, body, args, parents } => {
+        NodeTy::Class { ty, body, args, parents } => {
             extract_class(ty, body, args, parents, imp, &state.in_interface(false))
         }
 
-        Node::Parent { ty, args } => {
+        NodeTy::Parent { ty, args } => {
             if args.is_empty() {
                 convert_node(ty, imp, state)
             } else {
@@ -55,15 +56,15 @@ pub fn convert_class(ast: &AST, imp: &mut Imports, state: &State) -> GenResult {
 /// - There are multiple parents
 /// - The class has a body and one or more parents has class arguments
 fn extract_class(
-    ty: &AST,
-    body: &Option<Box<AST>>,
-    args: &[AST],
-    parents: &[AST],
+    ty: &ASTTy,
+    body: &Option<Box<ASTTy>>,
+    args: &[ASTTy],
+    parents: &[ASTTy],
     imp: &mut Imports,
     state: &State,
 ) -> GenResult {
     let id = match &ty.node {
-        Node::Type { id, .. } => convert_node(id, imp, state)?,
+        NodeTy::Type { id, .. } => convert_node(id, imp, state)?,
         _ => return Err(UnimplementedErr::new(ty, "Other than type as class identifier")),
     };
 

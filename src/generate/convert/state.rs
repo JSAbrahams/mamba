@@ -1,4 +1,5 @@
 use crate::generate::ast::node::Core;
+use crate::generate::GenArguments;
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -8,6 +9,14 @@ pub struct State {
     pub def_as_fun_arg: bool,
     pub tup_lit: bool,
     pub assign_to: Option<Core>,
+
+    pub annotate: bool,
+}
+
+impl From<&GenArguments> for State {
+    fn from(gen_arguments: &GenArguments) -> Self {
+        State { annotate: gen_arguments.annotate, ..State::new() }
+    }
 }
 
 impl State {
@@ -19,6 +28,7 @@ impl State {
             def_as_fun_arg: false,
             tup_lit: false,
             assign_to: None,
+            annotate: false,
         }
     }
 
@@ -49,6 +59,12 @@ impl State {
 
 pub struct Imports {
     pub imports: Vec<Core>,
+}
+
+impl Default for Imports {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Imports {

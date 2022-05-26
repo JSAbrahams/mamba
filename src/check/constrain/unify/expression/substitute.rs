@@ -19,10 +19,10 @@ pub fn substitute(
     offset: usize,
     total: usize,
 ) -> TypeResult<Constraints> {
-    let mut substituted = Constraints::new(&constraints.in_class);
+    let mut substituted = Constraints::new();
     let mut constraint_pos = offset;
 
-    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 14);
+    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
 
     while let Some(mut constr) = constraints.pop_constr() {
         let old_constr = constr.clone();
@@ -30,7 +30,7 @@ pub fn substitute(
         macro_rules! replace {
             ($left:expr, $new:expr) => {{
                 let pos =
-                    format!("({}={}) ", old_constr.left.pos.start, old_constr.right.pos.start);
+                    format!("({}={}) ", old_constr.left.pos, old_constr.right.pos);
                 let side = if $left { "l" } else { "r" };
                 trace!(
                     "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
@@ -40,7 +40,7 @@ pub fn substitute(
                     side,
                     old_constr,
                     $new,
-                    width = 16
+                    width = 32
                 );
             }};
         }

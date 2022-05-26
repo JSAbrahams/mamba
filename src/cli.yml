@@ -44,3 +44,7 @@ args:
       short: l
       long: level
       help: Print log level
+  - annotate:
+      short: a
+      long: annotate
+      help: Enable type annotation of the output source

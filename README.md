@@ -290,34 +290,31 @@ See the sections above for examples where we don't handle errors and simply pass
 ## 💻 The Command Line Interface
 
 ```
-mamba [FLAGS] [OPTIONS]
-```
+USAGE:
+    mamba.exe [FLAGS] [OPTIONS]
 
-## FLAGS
+FLAGS:
+    -a, --annotate          Enable type annotation of the output source
+    -d, --debug             Add line numbers to log statements
+    -h, --help              Prints help information
+    -l, --level             Print log level
+        --no-module-path    Disable the module path in the log statements
+        --no-color          Disable colorized output
+    -v                      Set level of verbosity
+                            - v   : info, error, warning printed to sterr (Default)
+                            - vv  : debug messages are printed
+                            - vvv : trace messages are printed
+    -V, --version           Prints version information
 
-```
--d, --debug             Add line numbers to log statements
--h, --help              Prints help information
--l, --level             Print log level
-    --no-module-path    Disable the module path in the log statements
-    --no-color          Disable colorized output
--v                      Set level of verbosity
-                        -    : info, error, warning printed to sterr (Default)
-                        - v  : debug messages are printed
-                        - vv : trace messages are printed
--V, --version           Prints version information
-```
+OPTIONS:
+    -i, --input <INPUT>      Input file or directory.
+                             If file, file taken as input.
+                             If directory, recursively search all sub-directories for *.mamba files.
+                             If no input given, current directory used as input directory.
+    -o, --output <OUTPUT>    Output directory to store Python files.
+                             Output directory structure reflects input directory structure.
+                             If no output given, 'target' directory created in current directory and is used as ouput.
 
-## Options
-
-```
--i, --input <INPUT>      Input file or directory.
-                         If file, file taken as input.
-                         If directory, recursively search all sub-directories for *.mamba files.
-                         If no input given, current directory used as input directory.
--o, --output <OUTPUT>    Output directory to store Python files.
-                         Output directory structure reflects input directory structure.
-                         If no output given, 'target' directory created in current directory and is used as ouput.
 ```
 
 You can type `mamba -help` for a message containing roughly the above information.
