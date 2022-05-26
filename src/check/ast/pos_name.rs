@@ -23,7 +23,7 @@ impl ASTTy {
                 new_names.remove(pos);
 
                 let node = NodeTy::from((&self.node, &new_names));
-                return ASTTy { node, ty: Some(name.clone()), ..self.clone()}
+                return ASTTy { node, ty: Some(name.clone()), ..self.clone() };
             }
         }
 
@@ -38,13 +38,10 @@ impl From<(&NodeTy, &PosNameMap)> for NodeTy {
                 pure: *pure,
                 statements: statements.iter().map(|stmt| stmt.map(names)).collect(),
             },
-            NodeTy::Import { import, aliases } => NodeTy::Import {
+            NodeTy::Import { from, import, alias } => NodeTy::Import {
+                from: from.clone().map(|ast| ast.map(names)).map(Box::from),
                 import: import.iter().map(|i| i.map(names)).collect(),
-                aliases: aliases.iter().map(|a| a.map(names)).collect(),
-            },
-            NodeTy::FromImport { id, import } => NodeTy::FromImport {
-                id: Box::from(id.map(names)),
-                import: Box::from(import.map(names)),
+                alias: alias.iter().map(|a| a.map(names)).collect(),
             },
             NodeTy::Class { ty, args, parents, body } => NodeTy::Class {
                 ty: Box::from(ty.map(names)),

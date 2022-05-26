@@ -218,68 +218,23 @@ mod tests {
 
     #[test]
     fn import_verify() {
+        let from = Some(to_pos!(Node::Break));
         let import = vec![
             to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
             to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
         ];
-        let aliases = vec![];
-        let import = to_pos!(Node::Import { import, aliases });
+        let alias = vec![];
+        let import = to_pos!(Node::Import { from, import, alias });
 
-        let core_import = match gen(&ASTTy::from(&*import)) {
-            Ok(Core::Import { imports }) => imports,
+        let (from, import, alias) = match gen(&ASTTy::from(&*import)) {
+            Ok(Core::Import { from, import, alias }) => (from.clone(), import.clone(), alias.clone()),
             other => panic!("Expected tuple but got {:?}", other),
         };
 
-        assert_eq!(core_import.len(), 2);
-        assert_eq!(core_import[0], Core::ENum { num: String::from("a"), exp: String::from("100") });
-        assert_eq!(core_import[1], Core::Float { float: String::from("3000.5") });
-    }
-
-    #[test]
-    fn import_as_verify() {
-        let import = vec![
-            to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
-            to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
-        ];
-        let aliases = vec![to_pos_unboxed!(Node::Real { lit: String::from("0.5") })];
-        let import = to_pos!(Node::Import { import, aliases });
-
-        let (core_import, core_as) = match gen(&ASTTy::from(&import)) {
-            Ok(Core::ImportAs { imports, aliases }) => (imports, aliases),
-            other => panic!("Expected import but got {:?}", other),
-        };
-
-        assert_eq!(core_import.len(), 2);
-        assert_eq!(core_import[0], Core::ENum { num: String::from("a"), exp: String::from("100") });
-        assert_eq!(core_import[1], Core::Float { float: String::from("3000.5") });
-        assert_eq!(core_as.len(), 1);
-        assert_eq!(core_as[0], Core::Float { float: String::from("0.5") });
-    }
-
-    #[test]
-    fn from_import_verify() {
-        let id = to_pos!(Node::Id { lit: String::from("afs") });
-        let import = vec![
-            to_pos_unboxed!(Node::ENum { num: String::from("a"), exp: String::from("100") }),
-            to_pos_unboxed!(Node::Real { lit: String::from("3000.5") }),
-        ];
-        let import = to_pos!(Node::FromImport {
-            id,
-            import: to_pos!(Node::Import { import, aliases: vec![] })
-        });
-
-        let (from, import) = match gen(&ASTTy::from(&import)) {
-            Ok(Core::FromImport { from, import }) => match &import.deref() {
-                Core::Import { imports } => (from.clone(), imports.clone()),
-                other => panic!("Expected import but got {:?}", other),
-            },
-            other => panic!("Expected from import but got {:?}", other),
-        };
-
-        assert_eq!(*from, Core::Id { lit: String::from("afs") });
-        assert_eq!(import.len(), 2);
+        assert_eq!(*from.unwrap(), Core::Break);
         assert_eq!(import[0], Core::ENum { num: String::from("a"), exp: String::from("100") });
         assert_eq!(import[1], Core::Float { float: String::from("3000.5") });
+        assert!(alias.is_empty());
     }
 
     #[test]

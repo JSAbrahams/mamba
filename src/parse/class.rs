@@ -108,16 +108,17 @@ mod test {
         let source = String::from("import d");
         let ast = parse(&source).unwrap();
 
-        let (import, _as) = match ast.node {
+        let (from, import, alias) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
+                Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
                 _ => panic!("first element script was not list.")
             },
             _ => panic!("ast was not script.")
         };
 
+        assert_eq!(from, None);
         assert_eq!(import.len(), 1);
-        assert!(_as.is_empty());
+        assert!(alias.is_empty());
         assert_eq!(import[0].node, Node::Id { lit: String::from("d") });
     }
 
@@ -126,18 +127,19 @@ mod test {
         let source = String::from("import d as e");
         let ast = parse(&source).unwrap();
 
-        let (import, _as) = match ast.node {
+        let (from, import, alias) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::Import { import, aliases: _as } => (import.clone(), _as.clone()),
+                Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
                 other => panic!("first element script was not import: {:?}.", other)
             },
             other => panic!("ast was not script: {:?}", other)
         };
 
+        assert_eq!(from, None);
         assert_eq!(import.len(), 1);
-        assert_eq!(_as.len(), 1);
+        assert_eq!(alias.len(), 1);
         assert_eq!(import[0].node, Node::Id { lit: String::from("d") });
-        assert_eq!(_as[0].node, Node::Id { lit: String::from("e") });
+        assert_eq!(alias[0].node, Node::Id { lit: String::from("e") });
     }
 
     #[test]
@@ -145,24 +147,21 @@ mod test {
         let source = String::from("from c import d,f as e,g");
         let ast = parse(&source).unwrap();
 
-        let (from, import, _as) = match ast.node {
+        let (from, import, alias) = match ast.node {
             Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
-                Node::FromImport { id, import } => match &import.node {
-                    Node::Import { import, aliases: _as } => (id.clone(), import.clone(), _as.clone()),
-                    other => panic!("not import: {:?}.", other)
-                },
+                Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
                 other => panic!("first element script was not from: {:?}.", other)
             },
             other => panic!("ast was not script: {:?}", other)
         };
 
-        assert_eq!(from.node, Node::Id { lit: String::from("c") });
+        assert_eq!(from.unwrap().node, Node::Id { lit: String::from("c") });
         assert_eq!(import.len(), 2);
-        assert_eq!(_as.len(), 2);
+        assert_eq!(alias.len(), 2);
         assert_eq!(import[0].node, Node::Id { lit: String::from("d") });
         assert_eq!(import[1].node, Node::Id { lit: String::from("f") });
-        assert_eq!(_as[0].node, Node::Id { lit: String::from("e") });
-        assert_eq!(_as[1].node, Node::Id { lit: String::from("g") });
+        assert_eq!(alias[0].node, Node::Id { lit: String::from("e") });
+        assert_eq!(alias[1].node, Node::Id { lit: String::from("g") });
     }
 
     #[test]

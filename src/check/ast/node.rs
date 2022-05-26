@@ -25,13 +25,10 @@ impl From<&Box<Node>> for NodeTy {
 impl From<&Node> for NodeTy {
     fn from(node: &Node) -> Self {
         match node {
-            Node::Import { import, aliases } => NodeTy::Import {
+            Node::Import { from, import, alias } => NodeTy::Import {
+                from: from.clone().map(ASTTy::from).map(Box::from),
                 import: import.iter().map(ASTTy::from).collect(),
-                aliases: aliases.iter().map(ASTTy::from).collect(),
-            },
-            Node::FromImport { id, import } => NodeTy::FromImport {
-                id: Box::from(ASTTy::from(id)),
-                import: Box::from(ASTTy::from(import)),
+                alias: alias.iter().map(ASTTy::from).collect(),
             },
             Node::Class { ty, args, parents, body } => NodeTy::Class {
                 ty: Box::from(ASTTy::from(ty)),

@@ -46,14 +46,12 @@ impl Core {
 
 fn to_py(core: &Core, ind: usize) -> String {
     match core {
-        Core::FromImport { from, import } => {
-            format!("from {} {}", to_py(from, ind), to_py(import, ind))
-        }
-        Core::Import { imports } => format!("import {}", comma_delimited(imports, ind)),
-        Core::ImportAs { imports, aliases } => {
-            format!("import {} as {}", comma_delimited(imports, ind), comma_delimited(aliases, ind))
-        }
-
+        Core::Import { from, import, alias } => format!(
+            "{}import {}{}",
+            if let Some(from) = from { format!("from {} ", to_py(from, ind)) } else { String::from("") },
+            comma_delimited(import, ind),
+            if !alias.is_empty() { format!(" as {}", comma_delimited(alias, ind)) } else { String::from("") }
+        ),
         Core::Id { lit } => lit.clone(),
         Core::Type { lit, generics } => {
             if generics.is_empty() {
