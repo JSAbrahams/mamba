@@ -20,7 +20,7 @@ args:
       help: |
         Output directory to store Python files.
         Output directory structure reflects input directory structure.
-        If no output given, 'target' directory created in current directory and is used as ouput.
+        If no output given, 'target' directory created in current directory.
       takes_value: true
   - v:
       short: v
@@ -47,4 +47,6 @@ args:
   - annotate:
       short: a
       long: annotate
-      help: Enable type annotation of the output source
+      help: |
+        Enable type annotation of the output source.
+        Currently still buggy feature.

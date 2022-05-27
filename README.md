@@ -294,7 +294,8 @@ USAGE:
     mamba.exe [FLAGS] [OPTIONS]
 
 FLAGS:
-    -a, --annotate          Enable type annotation of the output source
+    -a, --annotate          Enable type annotation of the output source.
+                            Currently still buggy feature.
     -d, --debug             Add line numbers to log statements
     -h, --help              Prints help information
     -l, --level             Print log level
@@ -313,8 +314,7 @@ OPTIONS:
                              If no input given, current directory used as input directory.
     -o, --output <OUTPUT>    Output directory to store Python files.
                              Output directory structure reflects input directory structure.
-                             If no output given, 'target' directory created in current directory and is used as ouput.
-
+                             If no output given, 'target' directory created in current directory.
 ```
 
 You can type `mamba -help` for a message containing roughly the above information.
