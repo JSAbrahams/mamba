@@ -1,13 +1,13 @@
-a = 10
-b = 20
-c = 30
-d = 40
-e = 50
-f = 60
-g = 70
-h = 80
-i = 90
-j = 100
+a: int = 10
+b: int = 20
+c: int = 30
+d: int = 40
+e: int = 50
+f: int = 60
+g: int = 70
+h: int = 80
+i: int = 90
+j: int = 100
 
 a << b
 c >> d

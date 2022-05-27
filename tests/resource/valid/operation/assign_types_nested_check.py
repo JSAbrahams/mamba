@@ -2,7 +2,7 @@ class X:
     def __init__(self, a: float):
         self.a = a
 
-x = X(10)
+x: X = X(10)
 
 x.a += 2
 x.a -= 3

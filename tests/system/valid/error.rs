@@ -1,21 +1,24 @@
-use crate::system::{OutTestRet, test_directory};
+use mamba::Arguments;
+
+use crate::system::{OutTestRet, test_directory, test_directory_args};
 
 #[test]
-fn handle_ast_verify() -> OutTestRet {
-    test_directory(true, &["error"], &["error", "target"], "handle")
+fn handle() -> OutTestRet {
+    let args = Arguments { annotate: false }; // Annotation messes with indentation somehow
+    test_directory_args(true, &["error"], &["error", "target"], "handle", &args)
 }
 
 #[test]
-fn exception_ast_verify() -> OutTestRet {
+fn exception() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "exception")
 }
 
 #[test]
-fn raise_ast_verify() -> OutTestRet {
+fn raise() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "raise")
 }
 
 #[test]
-fn with_ast_verify() -> OutTestRet {
+fn with() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "with")
 }
