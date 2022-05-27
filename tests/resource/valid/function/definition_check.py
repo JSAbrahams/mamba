@@ -26,7 +26,7 @@ def fun_v(y: str, ab: Callable[[str], Callable[[str], bool]]) -> Callable[[str],
 
 class MyClass:
     def some_function(self, c: int) -> int:
-        d = 20
+        d: int = 20
         d = 10 + 30
         return c + 20 + d
 

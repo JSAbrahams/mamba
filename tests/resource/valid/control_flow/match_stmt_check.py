@@ -1,4 +1,4 @@
-a = "d"
+a: str = "d"
 
 b, bb, bbb = (0, 1, 2)
 
@@ -6,7 +6,7 @@ match (b, bb, bbb):
     case (0, 1, 2):
         print("hello world")
 
-nested = "other"
+nested: str = "other"
 
 match nested:
     case "a":

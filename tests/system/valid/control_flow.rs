@@ -1,7 +1,7 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
-fn for_ast_verify() -> OutTestRet {
+fn for_statements() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "for_statements")
 }
 

@@ -1,17 +1,18 @@
+from typing import Union
 import math
 
-a = 10
-b = 20
+a: Union[float, int] = 10
+b: int = 20
 
-c = a + b
-d = 10 - c
-f = 2.4 * d
-h = f / a
-j = 100 // 10
-l = 100 % 2
-n = math.sqrt(l)
-m = n ** 100
-o = (6 * 10 ** 4)
+c: int = a + b
+d: int = 10 - c
+f: float = 2.4 * d
+h: float = f / a
+j: int = 100 // 10
+l: int = 100 % 2
+n: float = math.sqrt(l)
+m: float = n ** 100
+o: int = (6 * 10 ** 4)
 
 x = +10
 y = -30

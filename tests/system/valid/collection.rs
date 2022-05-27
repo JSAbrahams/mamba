@@ -1,4 +1,6 @@
-use crate::system::{OutTestRet, test_directory};
+use mamba::Arguments;
+
+use crate::system::{OutTestRet, test_directory, test_directory_args};
 
 #[test]
 #[ignore] // No list builder construct yet
@@ -20,5 +22,6 @@ fn set_verify() -> OutTestRet {
 
 #[test]
 fn tuple_verify() -> OutTestRet {
-    test_directory(true, &["collection"], &["collection", "target"], "tuple")
+    let args = Arguments { annotate: false }; // Type annotations in output wrong
+    test_directory_args(true, &["collection"], &["collection", "target"], "tuple", &args)
 }
