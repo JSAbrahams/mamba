@@ -109,17 +109,21 @@ mod test {
         assert_eq!(generic_function.arguments[0].name, String::from("a"));
         assert_eq!(generic_function.arguments[0].ty, Some(Name::from("Int")));
         assert!(!generic_function.arguments[0].has_default);
+        assert!(generic_function.arguments[0].mutable);
 
         assert_eq!(generic_function.arguments[1].name, String::from("b"));
         assert_eq!(generic_function.arguments[1].ty, None);
         assert!(!generic_function.arguments[1].has_default);
+        assert!(generic_function.arguments[1].mutable);
 
         assert_eq!(generic_function.arguments[2].name, String::from("c"));
         assert_eq!(generic_function.arguments[2].ty, Some(Name::from("String")));
         assert!(!generic_function.arguments[2].has_default);
+        assert!(generic_function.arguments[2].mutable);
 
         assert_eq!(generic_function.arguments[3].name, String::from("d"));
         assert_eq!(generic_function.arguments[3].ty, Some(Name::from("String")));
         assert!(generic_function.arguments[3].has_default);
+        assert!(generic_function.arguments[3].mutable);
     }
 }

@@ -30,11 +30,15 @@ pub struct GenericClass {
 }
 
 impl PartialEq for GenericClass {
-    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl Hash for GenericClass {
-    fn hash<H: Hasher>(&self, state: &mut H) { self.name.hash(state) }
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
 }
 
 impl GenericClass {
@@ -51,13 +55,12 @@ impl TryFrom<&AST> for GenericClass {
 
     fn try_from(class: &AST) -> TypeResult<GenericClass> {
         match &class.node {
-            // TODO add pure classes
             Node::Class { ty, args, parents, body, .. } => {
                 let name = TrueName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
-                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")])
+                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")]),
                     }
                 } else {
                     vec![]
@@ -66,15 +69,20 @@ impl TryFrom<&AST> for GenericClass {
                 let mut class_args = vec![];
                 let mut arg_errs = vec![];
                 let mut argument_fields = HashSet::new();
-                args.iter().for_each(|arg| match ClassArgument::try_from(arg) {
-                    Err(err) => arg_errs.push(err),
-                    Ok(ClassArgument { field, fun_arg }) => if let Some(field) = field {
-                        class_args.push(fun_arg);
-                        argument_fields.insert(field);
-                    } else {
-                        class_args.push(fun_arg);
+                for arg in args {
+                    match ClassArgument::try_from(arg) {
+                        Err(err) => arg_errs.push(err),
+                        Ok(ClassArgument { field, fun_arg }) => {
+                            if let Some(field) = field {
+                                class_args.push(fun_arg);
+                                argument_fields.insert(field.in_class(Some(&name), false, &arg.pos)?);
+                            } else {
+                                class_args.push(fun_arg);
+                            }
+                        }
                     }
-                });
+                }
+
                 if !arg_errs.is_empty() {
                     return Err(arg_errs.into_iter().flatten().collect());
                 }
@@ -87,7 +95,7 @@ impl TryFrom<&AST> for GenericClass {
                         has_default: false,
                         pos: Default::default(),
                         vararg: false,
-                        mutable: false,
+                        mutable: true,
                         ty: Some(Name::from(&name)),
                     }];
                     new_args.append(&mut class_args);
@@ -114,7 +122,7 @@ impl TryFrom<&AST> for GenericClass {
                         pos: Default::default(),
                         has_default: false,
                         vararg: false,
-                        mutable: false,
+                        mutable: true,
                         ty: Option::from(Name::from(&name)),
                     })
                 }
@@ -122,10 +130,7 @@ impl TryFrom<&AST> for GenericClass {
                 let (parents, parent_errs): (Vec<_>, Vec<_>) =
                     parents.iter().map(GenericParent::try_from).partition(Result::is_ok);
                 if !parent_errs.is_empty() {
-                    return Err(parent_errs
-                        .into_iter()
-                        .flat_map(Result::unwrap_err)
-                        .collect());
+                    return Err(parent_errs.into_iter().flat_map(Result::unwrap_err).collect());
                 }
 
                 Ok(GenericClass {
@@ -144,7 +149,7 @@ impl TryFrom<&AST> for GenericClass {
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
-                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")])
+                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")]),
                     }
                 } else {
                     vec![]
@@ -157,12 +162,19 @@ impl TryFrom<&AST> for GenericClass {
                 };
 
                 let (fields, functions) = get_fields_and_functions(&name, &statements, true)?;
-                // TODO add parents to type definitions
                 Ok(GenericClass {
                     is_py_type: false,
                     name,
                     pos: class.pos.clone(),
-                    args: vec![],
+                    args: vec![GenericFunctionArg {
+                        is_py_type: false,
+                        name: String::from(arg::SELF),
+                        pos: Default::default(),
+                        has_default: false,
+                        vararg: false,
+                        mutable: true,
+                        ty: Option::from(Name::try_from(ty)?),
+                    }],
                     concrete: false,
                     fields,
                     functions,
@@ -173,13 +185,21 @@ impl TryFrom<&AST> for GenericClass {
                 is_py_type: false,
                 name: TrueName::try_from(ty)?,
                 pos: class.pos.clone(),
-                args: vec![],
+                args: vec![GenericFunctionArg {
+                    is_py_type: false,
+                    name: String::from(arg::SELF),
+                    pos: Default::default(),
+                    has_default: false,
+                    vararg: false,
+                    mutable: true,
+                    ty: Option::from(Name::try_from(ty)?),
+                }],
                 concrete: false,
                 fields: HashSet::new(),
                 functions: HashSet::new(),
                 parents: HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]),
             }),
-            _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")])
+            _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")]),
         }
     }
 }
@@ -208,7 +228,8 @@ fn get_fields_and_functions(
 
                 for generic_field in &stmt_fields {
                     if generic_field.ty.is_none() {
-                        let msg = format!("Class field '{}' was not assigned a type", generic_field.name);
+                        let msg =
+                            format!("Class field '{}' was not assigned a type", generic_field.name);
                         return Err(vec![TypeErr::new(&generic_field.pos, &msg)]);
                     }
                 }
@@ -216,13 +237,164 @@ fn get_fields_and_functions(
                 fields = fields.union(&stmt_fields).cloned().collect();
             }
             Node::Comment { .. } | Node::DocStr { .. } => {}
-            _ =>
+            _ => {
                 return Err(vec![TypeErr::new(
                     &statement.pos,
                     "Expected function or variable definition",
-                )]),
+                )]);
+            }
         }
     }
 
     Ok((fields, functions))
+}
+
+#[cfg(test)]
+mod test {
+    use std::convert::TryFrom;
+
+    use itertools::Itertools;
+
+    use crate::check::context::clss::generic::GenericClass;
+    use crate::check::name::Name;
+    use crate::check::name::stringname::StringName;
+    use crate::check::name::truename::TrueName;
+    use crate::parse::parse_direct;
+    use crate::TypeErr;
+
+    #[test]
+    fn from_class_inline_args() -> Result<(), Vec<TypeErr>> {
+        let source = "class MyClass(def fin a: Int, b: Int): Parent(b)\n    def c: Int := a + b\n";
+        let ast = parse_direct(source)
+            .expect("valid class syntax")
+            .into_iter()
+            .next()
+            .expect("class AST");
+
+        let generic_class = GenericClass::try_from(&ast)?;
+
+        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert!(!generic_class.is_py_type);
+        assert!(generic_class.concrete);
+
+        assert_eq!(generic_class.parents.len(), 1);
+        let parent = generic_class.parents.iter().next().expect("Parent");
+        assert_eq!(parent.name, TrueName::from("Parent"));
+        assert!(!parent.is_py_type);
+
+        assert_eq!(generic_class.args.len(), 3);
+        assert_eq!(generic_class.args[0].name, String::from("self"));
+        assert_eq!(generic_class.args[0].ty, Some(Name::from("MyClass")));
+        assert!(!generic_class.args[0].is_py_type);
+        assert!(!generic_class.args[0].vararg);
+        assert!(generic_class.args[0].mutable);
+        assert!(!generic_class.args[0].has_default);
+
+        assert_eq!(generic_class.args[1].name, String::from("a"));
+        assert_eq!(generic_class.args[1].ty, Some(Name::from("Int")));
+        assert!(!generic_class.args[1].vararg);
+        assert!(!generic_class.args[1].mutable);
+        assert!(!generic_class.args[1].is_py_type);
+        assert!(!generic_class.args[1].has_default);
+
+        assert_eq!(generic_class.args[2].name, String::from("b"));
+        assert_eq!(generic_class.args[2].ty, Some(Name::from("Int")));
+        assert!(!generic_class.args[2].vararg);
+        assert!(generic_class.args[2].mutable);
+        assert!(!generic_class.args[2].is_py_type);
+        assert!(!generic_class.args[2].has_default);
+
+        assert_eq!(generic_class.fields.len(), 2);
+        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "a");
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert_eq!(field.ty, Some(Name::from("Int")));
+        assert!(!field.is_py_type);
+        assert!(!field.mutable);
+
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "c");
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert_eq!(field.ty, Some(Name::from("Int")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
+
+        Ok(())
+    }
+
+    #[test]
+    fn from_class() -> Result<(), Vec<TypeErr>> {
+        let source = "class MyClass\n    def c: Int := a + b\n";
+        let ast = parse_direct(source)
+            .expect("valid class syntax")
+            .into_iter()
+            .next()
+            .expect("class AST");
+
+        let generic_class = GenericClass::try_from(&ast)?;
+
+        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert!(!generic_class.is_py_type);
+        assert!(generic_class.concrete);
+
+        assert!(generic_class.parents.is_empty());
+        assert_eq!(generic_class.args.len(), 1);
+        assert_eq!(generic_class.args[0].name, String::from("self"));
+        assert_eq!(generic_class.args[0].ty, Some(Name::from("MyClass")));
+        assert!(!generic_class.args[0].is_py_type);
+        assert!(!generic_class.args[0].vararg);
+        assert!(generic_class.args[0].mutable);
+        assert!(!generic_class.args[0].has_default);
+
+        assert_eq!(generic_class.fields.len(), 1);
+        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "c");
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert_eq!(field.ty, Some(Name::from("Int")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
+
+        Ok(())
+    }
+
+    #[test]
+    fn from_type_def() -> Result<(), Vec<TypeErr>> {
+        let source = "type MyType\n    def c: String\n";
+        let ast = parse_direct(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
+
+        let generic_class = GenericClass::try_from(&ast)?;
+
+        assert_eq!(generic_class.name, TrueName::from("MyType"));
+        assert!(!generic_class.is_py_type);
+        assert!(!generic_class.concrete);
+
+        assert!(generic_class.parents.is_empty());
+        assert_eq!(generic_class.args.len(), 1);
+        assert_eq!(generic_class.args[0].name, String::from("self"));
+        assert_eq!(generic_class.args[0].ty, Some(Name::from("MyType")));
+        assert!(!generic_class.args[0].is_py_type);
+        assert!(!generic_class.args[0].vararg);
+        assert!(generic_class.args[0].mutable);
+        assert!(!generic_class.args[0].has_default);
+
+        assert_eq!(generic_class.fields.len(), 1);
+        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "c");
+        assert_eq!(field.in_class, Some(StringName::from("MyType")));
+        assert_eq!(field.ty, Some(Name::from("String")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
+
+        Ok(())
+    }
 }

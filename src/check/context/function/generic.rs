@@ -39,7 +39,9 @@ impl PartialEq for GenericFunction {
 
 impl GenericFunction {
     #[must_use]
-    pub fn pure(self, pure: bool) -> Self { GenericFunction { pure: self.pure || pure, ..self } }
+    pub fn pure(self, pure: bool) -> Self {
+        GenericFunction { pure: self.pure || pure, ..self }
+    }
 
     pub fn in_class(
         self,
@@ -66,18 +68,15 @@ impl GenericFunction {
 impl TryFrom<&AST> for GenericFunction {
     type Error = Vec<TypeErr>;
 
-    /// Build a function signature from a
-    /// [AST](crate::parser::ast::AST).
+    /// Build a function signature from a [AST](crate::parser::ast::AST).
     ///
     /// # Failures
     ///
     /// If [AST](crate::parser::ast::AST)'s node is not the
-    /// [FunDef](crate::parser::ast::Node::FunDef) variant of the
-    /// [Node](crate::parser::ast::Node).
+    /// [FunDef](crate::parser::ast::Node::FunDef) variant of the [Node](crate::parser::ast::Node).
     fn try_from(ast: &AST) -> TypeResult<GenericFunction> {
         match &ast.node {
-            // TODO add generics to function definitions
-            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, .. } =>
+            Node::FunDef { pure, id, args: fun_args, ret: ret_ty, raises, .. } => {
                 Ok(GenericFunction {
                     is_py_type: false,
                     name: function_name(id.deref())?,
@@ -105,12 +104,13 @@ impl TryFrom<&AST> for GenericFunction {
                     },
                     ret_ty: match ret_ty {
                         Some(ty) => Some(Name::try_from(ty.as_ref())?),
-                        None => None
+                        None => None,
                     },
                     in_class: None,
                     raises: Name::try_from(raises)?,
-                }),
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")])
+                })
+            }
+            _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")]),
         }
     }
 }
@@ -118,6 +118,67 @@ impl TryFrom<&AST> for GenericFunction {
 pub fn function_name(ast: &AST) -> TypeResult<StringName> {
     match &ast.node {
         Node::Id { lit } => Ok(StringName::from(lit.as_str())),
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected function truename")])
+        _ => Err(vec![TypeErr::new(&ast.pos, "Expected function truename")]),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::convert::TryFrom;
+
+    use crate::{AST, TypeErr};
+    use crate::check::context::function::generic::GenericFunction;
+    use crate::check::name::Name;
+    use crate::check::name::stringname::StringName;
+    use crate::common::position::Position;
+    use crate::parse::ast::Node;
+    use crate::parse::parse_direct;
+
+    #[test]
+    fn from_non_fundef_node() {
+        let ast = AST::new(&Position::default(), Node::Pass);
+        assert!(GenericFunction::try_from(&ast).is_err())
+    }
+
+    #[test]
+    fn from_fundef() -> Result<(), Vec<TypeErr>> {
+        let source = "def f(fin a: Int, b: String := \"a\") -> String raise [E] => pass";
+        let ast = parse_direct(source).expect("valid function syntax").into_iter().next().expect("function AST");
+
+        let generic_function = GenericFunction::try_from(&ast)?;
+
+        assert_eq!(generic_function.name, StringName::from("f"));
+        assert_eq!(generic_function.in_class, None);
+        assert!(!generic_function.is_py_type);
+        assert_eq!(generic_function.raises, Name::from("E"));
+        assert!(!generic_function.pure);
+        assert_eq!(generic_function.ret_ty, Some(Name::from("String")));
+        assert_eq!(generic_function.arguments.len(), 2);
+
+        assert_eq!(generic_function.arguments[0].name, String::from("a"));
+        assert_eq!(generic_function.arguments[0].ty, Some(Name::from("Int")));
+        assert!(!generic_function.arguments[0].has_default);
+        assert!(!generic_function.arguments[0].is_py_type);
+        assert!(!generic_function.arguments[0].mutable);
+        assert!(!generic_function.arguments[0].vararg);
+
+        assert_eq!(generic_function.arguments[1].name, String::from("b"));
+        assert_eq!(generic_function.arguments[1].ty, Some(Name::from("String")));
+        assert!(generic_function.arguments[1].has_default);
+        assert!(!generic_function.arguments[1].is_py_type);
+        assert!(generic_function.arguments[1].mutable);
+        assert!(!generic_function.arguments[1].vararg);
+
+        Ok(())
+    }
+
+    #[test]
+    fn from_fundef_no_ret() -> Result<(), Vec<TypeErr>> {
+        let source = "def f() => pass";
+        let ast = parse_direct(source).expect("valid function syntax").into_iter().next().expect("function AST");
+
+        let generic_function = GenericFunction::try_from(&ast)?;
+        assert_eq!(generic_function.ret_ty, None);
+        Ok(())
     }
 }
