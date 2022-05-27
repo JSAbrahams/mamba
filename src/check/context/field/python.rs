@@ -45,6 +45,7 @@ impl From<&Expression> for GenericFields {
                     mutable: true,
                     in_class: None,
                     ty: None,
+                    assigned_to: false, // unknown
                 }],
                 Expression::TupleLiteral(items) => items
                     .iter()
@@ -63,6 +64,7 @@ impl From<&Expression> for GenericFields {
                                 mutable: false,
                                 in_class: None,
                                 ty: None,
+                                assigned_to: false, // unknown
                             },
                             _ => unreachable!()
                         }

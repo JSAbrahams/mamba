@@ -55,7 +55,7 @@ impl TryFrom<&AST> for GenericClass {
 
     fn try_from(class: &AST) -> TypeResult<GenericClass> {
         match &class.node {
-            Node::Class { ty, args, parents, body, .. } => {
+            Node::Class { ty, args, parents, body } => {
                 let name = TrueName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
@@ -355,6 +355,82 @@ mod test {
         assert_eq!(field.name, "c");
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert_eq!(field.ty, Some(Name::from("Int")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
+
+        Ok(())
+    }
+
+    #[test]
+    fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
+        let source = "class MyClass[T]\n    def c: T\n";
+        let ast = parse_direct(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
+
+        let generic_class = GenericClass::try_from(&ast)?;
+
+        let name = StringName::new("MyClass", &[Name::from("T")]);
+        assert_eq!(generic_class.name, TrueName::from(&name));
+        assert!(!generic_class.is_py_type);
+        assert!(generic_class.concrete);
+
+        assert!(generic_class.parents.is_empty());
+        assert_eq!(generic_class.args.len(), 1);
+        assert_eq!(generic_class.args[0].name, String::from("self"));
+        assert_eq!(generic_class.args[0].ty, Some(Name::from(&name)));
+        assert!(!generic_class.args[0].is_py_type);
+        assert!(!generic_class.args[0].vararg);
+        assert!(generic_class.args[0].mutable);
+        assert!(!generic_class.args[0].has_default);
+
+        assert_eq!(generic_class.fields.len(), 1);
+        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "c");
+        assert_eq!(field.in_class, Some(name));
+        assert_eq!(field.ty, Some(Name::from("T")));
+        assert!(!field.is_py_type);
+        assert!(field.mutable);
+
+        Ok(())
+    }
+
+    #[test]
+    fn from_type_with_generic() -> Result<(), Vec<TypeErr>> {
+        let source = "type MyType[T]\n    def c: T\n";
+        let ast = parse_direct(source)
+            .expect("valid type syntax")
+            .into_iter()
+            .next()
+            .expect("type AST");
+
+        let generic_class = GenericClass::try_from(&ast)?;
+
+        let name = StringName::new("MyType", &[Name::from("T")]);
+        assert_eq!(generic_class.name, TrueName::from(&name));
+        assert!(!generic_class.is_py_type);
+        assert!(!generic_class.concrete);
+
+        assert!(generic_class.parents.is_empty());
+        assert_eq!(generic_class.args.len(), 1);
+        assert_eq!(generic_class.args[0].name, String::from("self"));
+        assert_eq!(generic_class.args[0].ty, Some(Name::from(&name)));
+        assert!(!generic_class.args[0].is_py_type);
+        assert!(!generic_class.args[0].vararg);
+        assert!(generic_class.args[0].mutable);
+        assert!(!generic_class.args[0].has_default);
+
+        assert_eq!(generic_class.fields.len(), 1);
+        let mut fields = generic_class.fields.iter().sorted_by_key(|f| f.name.clone()).into_iter();
+
+        let field = fields.next().expect("Field");
+        assert_eq!(field.name, "c");
+        assert_eq!(field.in_class, Some(name));
+        assert_eq!(field.ty, Some(Name::from("T")));
         assert!(!field.is_py_type);
         assert!(field.mutable);
 

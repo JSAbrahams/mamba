@@ -1,7 +1,7 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
-#[ignore]
+#[ignore] // See #320
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }

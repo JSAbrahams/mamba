@@ -11,7 +11,6 @@ pub struct GenericParameters {
     pub parameters: Vec<GenericParameter>,
 }
 
-// TODO add check that Python file does indeed import generic from typing
 impl From<&Vec<Argument>> for GenericParameters {
     fn from(args: &Vec<Argument>) -> Self {
         let mut parameters = vec![];
