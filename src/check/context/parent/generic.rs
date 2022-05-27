@@ -20,8 +20,6 @@ impl TryFrom<&AST> for GenericParent {
 
     fn try_from(ast: &AST) -> TypeResult<GenericParent> {
         match &ast.node {
-            // TODO infer types of arguments passed to parent
-            // TODO use arguments
             Node::Parent { ty, .. } => Ok(GenericParent {
                 is_py_type: false,
                 name: TrueName::try_from(ty)?,

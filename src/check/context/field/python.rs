@@ -3,34 +3,35 @@ use std::collections::HashSet;
 use python_parser::ast::{Expression, SetItem};
 
 use crate::check::context::field::generic::{GenericField, GenericFields};
+use crate::check::name::Name;
 
-impl From<(&Vec<Expression>, &Vec<Vec<Expression>>)> for GenericFields {
-    fn from((ids, values): (&Vec<Expression>, &Vec<Vec<Expression>>)) -> GenericFields {
-        GenericFields {
+impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
+    fn from((ids, ty): (&Vec<Expression>, &Option<Expression>)) -> GenericFields {
+        let fields = GenericFields {
             fields: ids
                 .iter()
-                .zip(values)
-                .flat_map(|(id, values)| GenericFields::from((id, values)).fields)
+                .flat_map(|id| GenericFields::from(id).fields)
                 .collect()
+        };
+
+        if fields.fields.len() > 1 {
+            fields // cannot type annotate tuples in python
+        } else if let Some(ty) = ty {
+            let name = Name::from(ty);
+            if let Some(field) = fields.fields.iter().next() {
+                let field = field.with_ty(&name);
+                GenericFields { fields: HashSet::from([field]) }
+            } else {
+                fields
+            }
+        } else {
+            fields
         }
     }
 }
 
-impl From<(&Vec<Expression>, &Vec<Expression>)> for GenericFields {
-    fn from((ids, values): (&Vec<Expression>, &Vec<Expression>)) -> GenericFields {
-        GenericFields {
-            fields: ids
-                .iter()
-                .zip(values)
-                .flat_map(|(id, _)| GenericFields::from(id).fields)
-                .collect()
-        }
-    }
-}
-
-impl From<(&Expression, &Vec<Expression>)> for GenericFields {
-    // TODO infer type from values
-    fn from((id, _): (&Expression, &Vec<Expression>)) -> GenericFields { GenericFields::from(id) }
+impl From<(&Expression, &Option<Expression>)> for GenericFields {
+    fn from((id, _): (&Expression, &Option<Expression>)) -> GenericFields { GenericFields::from(id) }
 }
 
 impl From<&Expression> for GenericFields {
@@ -41,7 +42,7 @@ impl From<&Expression> for GenericFields {
                     is_py_type: true,
                     name: name.clone(),
                     pos: Default::default(),
-                    mutable: false,
+                    mutable: true,
                     in_class: None,
                     ty: None,
                 }],

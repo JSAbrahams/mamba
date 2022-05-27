@@ -46,24 +46,28 @@ impl TryFrom<&Classdef> for GenericClass {
 
         for statement in &class_def.code {
             match statement {
-                Statement::Assignment(variables, expressions) =>
-                    GenericFields::from((variables, expressions)).fields.iter().for_each(|f| {
+                Statement::Assignment(variables, _) => {
+                    GenericFields::from((variables, &None)).fields.iter().for_each(|f| {
                         fields.insert(f.clone());
-                    }),
-                Statement::TypedAssignment(variables, _, expressions) =>
-                    GenericFields::from((variables, expressions)).fields.iter().for_each(|f| {
-                        fields.insert(f.clone());
-                    }),
-                Statement::Compound(compound) =>
+                    })
+                }
+                Statement::TypedAssignment(variables, ty, _) => {
+                    GenericFields::from((variables, &Some(ty.clone()))).fields.iter().for_each(
+                        |f| {
+                            fields.insert(f.clone());
+                        },
+                    )
+                }
+                Statement::Compound(compound) => {
                     if let CompoundStatement::Funcdef(func_def) = compound.deref() {
                         functions.insert(GenericFunction::from(func_def));
-                    },
+                    }
+                }
                 _ => {}
             }
         }
 
-        let generic_names: Vec<Name> =
-            generics.iter().map(|g| Name::from(&g.name)).collect();
+        let generic_names: Vec<Name> = generics.iter().map(|g| Name::from(&g.name)).collect();
         let class = TrueName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
@@ -80,7 +84,10 @@ impl TryFrom<&Classdef> for GenericClass {
             pos: Position::default(),
             concrete: false,
             args,
-            fields,
+            fields: fields
+                .into_iter()
+                .flat_map(|f| f.in_class(Some(&class.clone()), false, &Position::default()))
+                .collect(),
             functions: functions
                 .into_iter()
                 .filter(|f| f.name != StringName::from(INIT))
@@ -109,7 +116,7 @@ pub fn python_to_concrete(name: &str) -> String {
         NONE => String::from(clss::NONE),
         EXCEPTION => String::from(clss::EXCEPTION),
 
-        other => String::from(other)
+        other => String::from(other),
     }
 }
 
@@ -118,26 +125,59 @@ mod test {
     use std::convert::TryFrom;
     use std::ops::Deref;
 
+    use itertools::Itertools;
     use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
     use crate::check::context::clss::generic::GenericClass;
     use crate::check::name::Name;
+    use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
 
-    #[test]
-    #[ignore] // See #311
+    #[test] // # See 317, #318
     fn from_py_fields() {
-        let source = "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
-        let (_, statements) = python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+        let source = "class MyClass:\n    a: int\n    def __init__(self): pass\n";
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
         let class_def: Classdef = match &first {
             Statement::Compound(compound) => match compound.deref() {
                 CompoundStatement::Classdef(classdef) => classdef.clone(),
-                other => panic!("Not class def but {:?}", other)
-            }
-            other => panic!("Not compound statement but {:?}", other)
+                other => panic!("Not class def but {:?}", other),
+            },
+            other => panic!("Not compound statement but {:?}", other),
+        };
+
+        let generic_class = GenericClass::try_from(&class_def).expect("generic class");
+
+        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert!(generic_class.is_py_type);
+
+        assert_eq!(generic_class.fields.len(), 1);
+        let field = generic_class.fields.iter().next().expect("field in class");
+        assert_eq!(field.name, String::from("a"));
+        assert!(field.is_py_type);
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert!(field.mutable);
+        assert_eq!(field.ty, None); // See #318
+    }
+
+    #[test]
+    #[ignore] // See #311
+    fn from_py_fields_in_init() {
+        let source =
+            "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+
+        let first = statements.first().expect("non empty statements");
+        let class_def: Classdef = match &first {
+            Statement::Compound(compound) => match compound.deref() {
+                CompoundStatement::Classdef(classdef) => classdef.clone(),
+                other => panic!("Not class def but {:?}", other),
+            },
+            other => panic!("Not compound statement but {:?}", other),
         };
 
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
@@ -156,16 +196,18 @@ mod test {
 
     #[test]
     fn from_py_functions() {
-        let source = "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
-        let (_, statements) = python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+        let source =
+            "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
         let class_def: Classdef = match &first {
             Statement::Compound(compound) => match compound.deref() {
                 CompoundStatement::Classdef(classdef) => classdef.clone(),
-                other => panic!("Not class def but {:?}", other)
-            }
-            other => panic!("Not compound statement but {:?}", other)
+                other => panic!("Not class def but {:?}", other),
+            },
+            other => panic!("Not compound statement but {:?}", other),
         };
 
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
@@ -186,5 +228,46 @@ mod test {
         assert_eq!(argument.name, String::from("x"));
         assert_eq!(argument.ty, Some(Name::from("Bool")));
         assert!(!argument.has_default);
+    }
+
+    #[test]
+    fn from_py_parents() {
+        let source = "class MyClass(ParentClass, P2):\n    pass\n";
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+
+        let first = statements.first().expect("non empty statements");
+        let class_def: Classdef = match &first {
+            Statement::Compound(compound) => match compound.deref() {
+                CompoundStatement::Classdef(classdef) => classdef.clone(),
+                other => panic!("Not class def but {:?}", other),
+            },
+            other => panic!("Not compound statement but {:?}", other),
+        };
+
+        let generic_class = GenericClass::try_from(&class_def).expect("generic class");
+
+        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert!(generic_class.is_py_type);
+
+        assert_eq!(generic_class.parents.len(), 2);
+        let mut iter = generic_class
+            .parents
+            .iter()
+            .sorted_by_key(|p| match &p.name.variant {
+                NameVariant::Single(string_name) => string_name.name.clone(),
+                other => panic!("Expected Single, was {:?}", other)
+            })
+            .into_iter();
+
+        let parent2 = iter.next().expect("parent in class");
+        assert_eq!(parent2.name, TrueName::from("P2"));
+        assert!(parent2.is_py_type);
+        assert!(parent2.args.is_empty());
+
+        let parent = iter.next().expect("parent in class");
+        assert_eq!(parent.name, TrueName::from("ParentClass"));
+        assert!(parent.is_py_type);
+        assert!(parent.args.is_empty());
     }
 }

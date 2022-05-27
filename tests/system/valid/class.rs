@@ -2,7 +2,7 @@ use crate::system::{OutTestRet, test_directory};
 
 #[test]
 #[ignore]
-fn generics_ast_verify() -> OutTestRet {
+fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }
 
@@ -23,17 +23,23 @@ fn import_ast_verify() -> OutTestRet {
 }
 
 #[test]
-fn doc_strings_ast_verify() -> OutTestRet {
+fn doc_strings() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "doc_strings")
 }
 
 #[test]
-fn parent_ast_verify() -> OutTestRet {
+#[ignore] // See #314, #315
+fn multiple_parent() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "multiple_parent")
+}
+
+#[test]
+fn parent() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "parent")
 }
 
 #[test]
-fn types_ast_verify() -> OutTestRet {
+fn types() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "types")
 }
 
@@ -48,7 +54,7 @@ fn top_level_unassigned_but_nullable() -> OutTestRet {
 }
 
 #[test]
-fn tuple_as_class_verify() -> OutTestRet {
+fn tuple_as_class() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "tuple_as_class")
 }
 

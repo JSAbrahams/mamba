@@ -116,6 +116,10 @@ impl GenericField {
             Err(Vec::from(TypeErr::new(pos, &String::from("Field must be in class"))))
         }
     }
+
+    pub fn with_ty(&self, name: &Name) -> Self {
+        GenericField { ty: Some(name.clone()), ..self.clone() }
+    }
 }
 
 fn field_name(ast: &AST) -> TypeResult<String> {

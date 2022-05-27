@@ -44,11 +44,10 @@ pub fn python_files(
 
         for statement in statements {
             match &statement {
-                Statement::Assignment(left, right) => fields
-                    .append(&mut GenericFields::from((left, right)).fields.into_iter().collect()),
-                // TODO use type hints
-                Statement::TypedAssignment(left, _, right) => fields
-                    .append(&mut GenericFields::from((left, right)).fields.into_iter().collect()),
+                Statement::Assignment(left, _) => fields
+                    .append(&mut GenericFields::from((left, &None)).fields.into_iter().collect()),
+                Statement::TypedAssignment(left, ty, _) => fields
+                    .append(&mut GenericFields::from((left, &Some(ty.clone()))).fields.into_iter().collect()),
                 Statement::Compound(compound_stmt) => match compound_stmt.deref() {
                     CompoundStatement::Funcdef(func_def) =>
                         functions.push(GenericFunction::from(func_def)),
