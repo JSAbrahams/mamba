@@ -134,9 +134,9 @@ mod test {
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
 
-    #[test] // # See 317, #318
+    #[test] // # See 317, #318, and #319 for why variables are after constructor
     fn from_py_fields() {
-        let source = "class MyClass:\n    a: int\n    def __init__(self): pass\n";
+        let source = "class MyClass:\n    def __init__(self): pass\n    b: int = 10\n    a: int\n";
         let (_, statements) =
             python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
 
@@ -154,13 +154,27 @@ mod test {
         assert_eq!(generic_class.name, TrueName::from("MyClass"));
         assert!(generic_class.is_py_type);
 
-        assert_eq!(generic_class.fields.len(), 1);
-        let field = generic_class.fields.iter().next().expect("field in class");
+        assert_eq!(generic_class.fields.len(), 2);
+        let mut fields = generic_class
+            .fields
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .into_iter();
+
+        let field = fields.next().expect("field");
         assert_eq!(field.name, String::from("a"));
         assert!(field.is_py_type);
         assert_eq!(field.in_class, Some(StringName::from("MyClass")));
         assert!(field.mutable);
         assert_eq!(field.ty, None); // See #318
+
+
+        let field = fields.next().expect("field");
+        assert_eq!(field.name, String::from("b"));
+        assert!(field.is_py_type);
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert!(field.mutable);
+        assert_eq!(field.ty, Some(Name::from("Int")));
     }
 
     #[test]
