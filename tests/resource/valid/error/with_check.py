@@ -1,7 +1,7 @@
 def do_something(x: int):
     print(f"hello world {x}")
 
-my_resource = 10
+my_resource: int = 10
 
 with my_resource as other:
     do_something(other)
