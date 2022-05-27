@@ -8,6 +8,7 @@ use crate::check::context::{clss, function};
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericFields;
 use crate::check::context::function::generic::GenericFunction;
+use crate::check::context::function::INIT;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
@@ -32,7 +33,9 @@ pub const LIST: &str = "list";
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
 
-// TODO handle Python generics
+/// Create a [GenericClass] from [ClassDef].
+///
+/// - Init is removed from function list, it is the built-in constructor
 impl TryFrom<&Classdef> for GenericClass {
     type Error = Vec<TypeErr>;
 
@@ -80,6 +83,7 @@ impl TryFrom<&Classdef> for GenericClass {
             fields,
             functions: functions
                 .into_iter()
+                .filter(|f| f.name != StringName::from(INIT))
                 .map(|f| f.in_class(Some(&class), false, &Position::default()))
                 .filter_map(Result::ok)
                 .collect(),
@@ -106,5 +110,81 @@ pub fn python_to_concrete(name: &str) -> String {
         EXCEPTION => String::from(clss::EXCEPTION),
 
         other => String::from(other)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::convert::TryFrom;
+    use std::ops::Deref;
+
+    use python_parser::ast::{Classdef, CompoundStatement, Statement};
+
+    use crate::check::context::clss::generic::GenericClass;
+    use crate::check::name::Name;
+    use crate::check::name::stringname::StringName;
+    use crate::check::name::truename::TrueName;
+
+    #[test]
+    #[ignore] // See #311
+    fn from_py_fields() {
+        let source = "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
+        let (_, statements) = python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+
+        let first = statements.first().expect("non empty statements");
+        let class_def: Classdef = match &first {
+            Statement::Compound(compound) => match compound.deref() {
+                CompoundStatement::Classdef(classdef) => classdef.clone(),
+                other => panic!("Not class def but {:?}", other)
+            }
+            other => panic!("Not compound statement but {:?}", other)
+        };
+
+        let generic_class = GenericClass::try_from(&class_def).expect("generic class");
+
+        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert!(generic_class.is_py_type);
+
+        assert_eq!(generic_class.fields.len(), 1);
+        let field = generic_class.fields.iter().next().expect("field in class");
+        assert_eq!(field.name, String::from("a"));
+        assert!(field.is_py_type);
+        assert_eq!(field.in_class, Some(StringName::from("MyClass")));
+        assert!(field.mutable);
+        assert_eq!(field.ty, Some(Name::from("Int")));
+    }
+
+    #[test]
+    fn from_py_functions() {
+        let source = "class MyClass:\n    def __init__(self, a: int): self.a=a\n    def g(x: bool): pass\n";
+        let (_, statements) = python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+
+        let first = statements.first().expect("non empty statements");
+        let class_def: Classdef = match &first {
+            Statement::Compound(compound) => match compound.deref() {
+                CompoundStatement::Classdef(classdef) => classdef.clone(),
+                other => panic!("Not class def but {:?}", other)
+            }
+            other => panic!("Not compound statement but {:?}", other)
+        };
+
+        let generic_class = GenericClass::try_from(&class_def).expect("generic class");
+
+        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert!(generic_class.is_py_type);
+
+        assert_eq!(generic_class.functions.len(), 1);
+        let function = generic_class.functions.iter().next().expect("function in class");
+        assert_eq!(function.name, StringName::from("g"));
+        assert_eq!(function.in_class, Some(StringName::from("MyClass")));
+        assert!(function.is_py_type);
+        assert!(!function.pure);
+        assert_eq!(function.raises, Name::empty());
+
+        assert_eq!(function.arguments.len(), 1);
+        let argument = function.arguments.iter().next().expect("function argument");
+        assert_eq!(argument.name, String::from("x"));
+        assert_eq!(argument.ty, Some(Name::from("Bool")));
+        assert!(!argument.has_default);
     }
 }

@@ -28,7 +28,7 @@ pub fn python_files(
         let python_src_path = path
             .as_os_str()
             .to_str()
-            .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for primitive"))?;
+            .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for python resource"))?;
 
         let mut python_src = String::new();
         match File::open(python_src_path) {
