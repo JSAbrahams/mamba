@@ -7,4 +7,4 @@ class MyClass1(MyType):
     other: int = None
 
     def __init__(self):
-        super(MyType, self).__init__("asdf")
+        MyType.__init__(self, "asdf")

@@ -1,8 +1,6 @@
 class Err1(msg: String): Exception(msg)
 class Err2(msg: String): Exception(msg)
 
-class MyGeneric: String
-
 class MyType[A: MyGeneric, C](def super_field: String)
 
 class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over the slow donkey")
@@ -19,16 +17,6 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
 
         def my_bool := True
 
-        def a := self.error_function() handle
-            err1: Err1 =>
-                print(err1)
-                -1
-            err2: Err2 =>
-                print(err2)
-                -2
-
-        print(a)
-
     def error_function(self) -> Int raise [Err1, Err2] => 200
 
     def connect(self) => self.other_field := 200
@@ -42,5 +30,5 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
     def b(self, c: Int) -> Int => self.a()
     def c(self, d: Int) -> Int => self.b(self.c(20))
 
-    def some_higher_order(self, fun: Int -> Int) -> Int => fun(10)
-    def fancy(self) -> Int => self.some_higher_order(\x: Int => x * 2)
+    def some_higher_order(self, fun: Int -> Int) -> Int? => fun(10)
+    def fancy(self) -> Int? => self.some_higher_order(\x: Int => x * 2)
