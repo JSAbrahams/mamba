@@ -1,7 +1,7 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
-fn arithmetic_ast_verify() -> OutTestRet {
+fn arithmetic() -> OutTestRet {
     test_directory(true, &["operation"], &["operation", "target"], "arithmetic")
 }
 

@@ -6,7 +6,7 @@ class X:
     def __init__(self, a: float):
         self.y = Y(a)
 
-x = X(10)
+x: X = X(10)
 
 x.y.a = x.a + 2
 x.y.a = x.a - 3

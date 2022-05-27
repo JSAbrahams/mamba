@@ -29,11 +29,17 @@ impl Debug for OutTestErr {
     }
 }
 
-fn test_directory(valid: bool, input: &[&str], _output: &[&str], file_name: &str) -> OutTestRet {
+/// Test directory with default set to annotate output.
+fn test_directory(valid: bool, input: &[&str], output: &[&str], file_name: &str) -> OutTestRet {
+    let args = Arguments { annotate: true };
+    test_directory_args(valid, input, output, file_name, &args)
+}
+
+fn test_directory_args(valid: bool, input: &[&str], _: &[&str], file_name: &str, args: &Arguments) -> OutTestRet {
     let (output_path, output_file) =
         resource_content_randomize(true, input, &format!("{}.py", file_name));
 
-    let res = fallable(valid, input, &output_path, &output_file, file_name);
+    let res = fallable(valid, input, &output_path, &output_file, file_name, args);
     delete_dir(&output_path).map_err(|_| OutTestErr(vec![]))?;
     let (check_ast, check_src, out_ast, out_src) = res?;
 
@@ -83,12 +89,13 @@ fn fallable(
     output_path: &str,
     output_file: &str,
     file_name: &str,
+    arguments: &Arguments,
 ) -> OutTestRet<(Vec<Statement>, String, Vec<Statement>, String)> {
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
     let map_err = |msg: &String| format!("error: {}", msg);
-    transpile_dir(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path), &Arguments::default())
+    transpile_dir(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path), arguments)
         .map_err(|errs| OutTestErr(errs.iter().map(&map_err).collect::<Vec<String>>()))?;
 
     // Check that reference check is proper Python file

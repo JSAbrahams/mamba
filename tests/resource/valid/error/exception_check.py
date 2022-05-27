@@ -1,2 +1,2 @@
-a = Exception()
-b = Exception("b")
+a: Exception = Exception()
+b: Exception = Exception("b")

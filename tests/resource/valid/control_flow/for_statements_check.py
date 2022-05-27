@@ -1,7 +1,7 @@
 b = {1,2}
 for b in b:
     print(b + 5)
-    new = b + 1
+    new: int = b + 1
     new = 30
     print(new)
 
@@ -18,12 +18,12 @@ for i in range(0, 34, 1):
 for i in range(0, 345 + 1, 1):
     print(i)
 
-a = 1
-b = 112
+a: int = 1
+b: int = 112
 for i in range(a, b, 1):
     print("hello")
 
-c = 2451
+c: int = 2451
 for i in range(a, c + 1, 20):
     print("world")
 

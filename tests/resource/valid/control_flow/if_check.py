@@ -1,4 +1,4 @@
-b = 40
+b: int = 40
 
 if True:
     print("hello world")
@@ -8,7 +8,7 @@ if False:
 else:
     "world"
 
-cond = True and False
+cond: bool = True and False
 cond = True or False
 
 if cond:
@@ -20,7 +20,7 @@ if cond:
     else:
         "ccc"
 
-    iii = "iii"
+    iii: str = "iii"
     if cond or False:
         "hhh"
     else:
