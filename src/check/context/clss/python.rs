@@ -235,4 +235,45 @@ mod test {
         assert_eq!(parent.name, TrueName::from("ParentClass"));
         assert!(parent.is_py_type);
     }
+
+    #[test]
+    fn from_class_with_generic() {
+        let source = "class MyClass(Generic[T], P2):\n    pass\n";
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+
+        let first = statements.first().expect("non empty statements");
+        let class_def: Classdef = match &first {
+            Statement::Compound(compound) => match compound.deref() {
+                CompoundStatement::Classdef(classdef) => classdef.clone(),
+                other => panic!("Not class def but {:?}", other),
+            },
+            other => panic!("Not compound statement but {:?}", other),
+        };
+
+        let generic_class = GenericClass::try_from(&class_def).expect("generic class");
+
+        let name = StringName::new("MyClass", &[Name::from("T")]);
+        assert_eq!(generic_class.name, TrueName::from(&name));
+        assert!(generic_class.is_py_type);
+
+        assert_eq!(generic_class.parents.len(), 2);
+        let mut iter = generic_class
+            .parents
+            .iter()
+            .sorted_by_key(|p| match &p.name.variant {
+                NameVariant::Single(string_name) => string_name.name.clone(),
+                other => panic!("Expected Single, was {:?}", other)
+            })
+            .into_iter();
+
+        let parent = iter.next().expect("parent in class");
+        let name = StringName::new("Generic", &[Name::from("T")]);
+        assert_eq!(parent.name, TrueName::from(&name));
+        assert!(parent.is_py_type);
+
+        let parent = iter.next().expect("parent in class");
+        assert_eq!(parent.name, TrueName::from("P2"));
+        assert!(parent.is_py_type);
+    }
 }
