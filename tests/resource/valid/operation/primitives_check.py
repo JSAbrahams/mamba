@@ -1,6 +1,6 @@
-a = complex(10.0, 20.0)
-b = int(10)
-c = float(2.3)
+a: complex = complex(10.0, 20.0)
+b: int = int(10)
+c: float = float(2.3)
 
-d = bool(True)
-e = str("hello world")
+d: bool = bool(True)
+e: str = str("hello world")
