@@ -230,11 +230,9 @@ mod test {
         let parent2 = iter.next().expect("parent in class");
         assert_eq!(parent2.name, TrueName::from("P2"));
         assert!(parent2.is_py_type);
-        assert!(parent2.args.is_empty());
 
         let parent = iter.next().expect("parent in class");
         assert_eq!(parent.name, TrueName::from("ParentClass"));
         assert!(parent.is_py_type);
-        assert!(parent.args.is_empty());
     }
 }
