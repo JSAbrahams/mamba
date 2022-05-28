@@ -1,0 +1,7 @@
+class MyType(def super_field: String)
+
+class MyClass2: MyType("the quick brown fox jumped over the slow donkey")
+    def fin z_modified: String := "asdf"
+    def other_field: Int := 10
+
+    def init(self, other_field: Int, z: Int) => self.other_field := z + other_field
