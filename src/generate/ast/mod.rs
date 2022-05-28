@@ -285,7 +285,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             } else {
                 String::from("")
             },
-            newline_if_body(attempt, ind + 1),
+            newline_if_body(attempt, ind),
             newline_delimited(except, ind)
         ),
         Core::Except { id, class, body } => format!(

@@ -17,6 +17,14 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
 
         def my_bool := True
 
+        def a := self.error_function() handle
+            err1: Err1 =>
+                print(err1)
+                -1
+            err2: Err2 =>
+                print(err2)
+                -2
+
     def error_function(self) -> Int raise [Err1, Err2] => 200
 
     def connect(self) => self.other_field := 200
