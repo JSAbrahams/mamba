@@ -36,6 +36,6 @@ class MyClass(MyType, MyInterface):
     def higher_order(self) -> int: return self.some_higher_order(lambda x: x * 2)
 
     def __init__(self, my_field: int, other_field: str = "Hello"):
-        super(MyType, self).__init__(other_field)
-        super(MyInterface, self).__init__()
+        MyType.__init__(self, other_field)
+        MyInterface.__init__(self, )
         self.my_field = my_field
