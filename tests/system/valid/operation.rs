@@ -35,3 +35,8 @@ fn bitwise_ast_verify() -> OutTestRet {
 fn boolean_ast_verify() -> OutTestRet {
     test_directory(true, &["operation"], &["operation", "target"], "boolean")
 }
+
+#[test]
+fn type_alias_primitive() -> OutTestRet {
+    test_directory(true, &["operation"], &["operation", "target"], "type_alias_primitive")
+}

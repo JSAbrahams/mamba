@@ -1,15 +1,17 @@
+from typing import NewType
 from typing import Callable
 
 
-MyGeneric = str
+class MyGeneric(str):
+    pass
 
 class MyType:
     def __init__(self, some_field: str):
         self.some_field = some_field
 
 
-SomeState = MyClass
-OtherState = MyClass
+SomeState = NewType("SomeState", MyClass)
+OtherState = NewType("OtherState", MyClass)
 
 
 class SuperInterface:

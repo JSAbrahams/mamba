@@ -260,7 +260,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             } else {
                 format!("({})", comma_delimited(parent_names, ind))
             },
-            to_py(body, ind + 1)
+            newline_if_body(body, ind)
         ),
 
         Core::Pass => String::from("pass"),

@@ -4,7 +4,6 @@ use crate::system::{OutTestRet, test_directory, test_directory_args};
 
 #[test]
 fn handle() -> OutTestRet {
-    let args = Arguments { annotate: false }; // Annotation messes with indentation somehow
     test_directory_args(true, &["error"], &["error", "target"], "handle", &args)
 }
 

@@ -19,9 +19,22 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
     match &ast.node {
         NodeTy::TypeAlias { ty, isa, .. } => {
-            let parents = vec![isa.deref().clone()];
-            let body = None;
-            extract_class(ty, &body, &[], &parents, imp, &state.in_interface(true))
+            imp.add_from_import("typing", "NewType");
+            let lit = if let Core::Type { lit, .. } = convert_node(ty, imp, state)? {
+                lit
+            } else {
+                let msg = format!("identifier, was {:?}", ty);
+                return Err(UnimplementedErr::new(ty, &msg));
+            };
+
+            Ok(Core::Assign {
+                left: Box::new(Core::Id { lit: lit.clone() }),
+                right: Box::new(Core::FunctionCall {
+                    function: Box::new(Core::Id { lit: String::from("NewType") }),
+                    args: vec![Core::Str { string: lit.clone() }, convert_node(isa, imp, state)?],
+                }),
+                op: CoreOp::Assign,
+            })
         }
         NodeTy::TypeDef { ty, body, isa } => {
             let parents = if let Some(isa) = isa { vec![isa.deref().clone()] } else { vec![] };
@@ -185,48 +198,26 @@ fn extract_class(
         body
     };
 
-    match body {
-        Some(body) => {
-            let parent_names = parents
-                .iter()
-                .map(|parent| match parent.clone() {
-                    Core::FunctionCall { function, .. } => match *function {
-                        Core::Id { .. } => Ok(*function),
-                        _ => Err(UnimplementedErr::new(ty, "Parent")),
-                    },
-                    Core::Type { lit, .. } => Ok(Core::Id { lit }),
-                    _ => Err(UnimplementedErr::new(ty, "Parent")),
-                })
-                .collect::<GenResult<Vec<Core>>>()?;
+    let body = if let Some(body) = body { body } else { Core::Pass };
 
-            Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
-        }
-        None => {
-            if parents.is_empty() {
-                Ok(Core::ClassDef {
-                    name: Box::from(id),
-                    parent_names: vec![],
-                    body: Box::from(Core::Pass),
-                })
-            } else if parents.len() == 1 {
-                Ok(Core::VarDef {
-                    var: Box::from(id),
-                    ty: None,
-                    expr: parents.first().cloned().map(Box::from),
-                })
-            } else {
-                Err(UnimplementedErr::new(ty, "More than one parent"))
-            }
-        }
-    }
+    let parent_names = parents
+        .iter()
+        .map(|parent| match parent.clone() {
+            Core::FunctionCall { function, .. } => match *function {
+                Core::Id { .. } => Ok(*function),
+                _ => Err(UnimplementedErr::new(ty, "Parent")),
+            },
+            Core::Type { lit, .. } => Ok(Core::Id { lit }),
+            _ => Err(UnimplementedErr::new(ty, "Parent")),
+        })
+        .collect::<GenResult<Vec<Core>>>()?;
+
+    Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
 }
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
-
     use crate::check::ast::ASTTy;
-    use crate::check::context::function;
     use crate::common::position::Position;
     use crate::generate::ast::node::Core;
     use crate::generate::gen;
@@ -275,124 +266,5 @@ mod tests {
 
         let result = gen(&ASTTy::from(&condition));
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn type_alias() {
-        let alias = to_pos!(Node::Class {
-            ty: to_pos!(Node::Type {
-                id: to_pos!(Node::Id { lit: String::from("MyErr1") }),
-                generics: vec![]
-            }),
-            args: vec![],
-            parents: vec![to_pos_unboxed!(Node::Parent {
-                ty: to_pos!(Node::Type {
-                    id: to_pos!(Node::Id { lit: String::from("Exception") }),
-                    generics: vec![]
-                }),
-                args: vec![to_pos_unboxed!(Node::Str {
-                    lit: String::from("Something went wrong"),
-                    expressions: vec![]
-                })]
-            })],
-            body: None
-        });
-
-        let (var, ty, expr) = match gen(&ASTTy::from(&alias)) {
-            Ok(Core::VarDef { var, ty, expr }) => (*var.clone(), ty.clone(), expr.clone()),
-            other => panic!("Expected type alias but got {:?}", other),
-        };
-
-        assert_eq!(var, Core::Id { lit: String::from("MyErr1") });
-        assert_eq!(ty, None);
-        assert!(expr.is_some());
-        match expr.clone().unwrap().deref() {
-            Core::FunctionCall { function, args } => {
-                assert_eq!(*function.deref(), Core::Id { lit: String::from("Exception") });
-                assert_eq!(args.len(), 1);
-                assert_eq!(
-                    *args.first().unwrap(),
-                    Core::Str { string: String::from("Something went wrong") }
-                )
-            }
-            _ => panic!("Expected function call, was {:?}", expr.clone()),
-        }
-    }
-
-    #[test]
-    fn type_alias_with_arguments() {
-        let alias = to_pos!(Node::Class {
-            ty: to_pos!(Node::Type {
-                id: to_pos!(Node::Id { lit: String::from("MyErr1") }),
-                generics: vec![]
-            }),
-            args: vec![to_pos_unboxed!(Node::FunArg {
-                vararg: false,
-                mutable: false,
-                var: to_pos!(Node::Id { lit: String::from("a1") }),
-                ty: None,
-                default: None
-            })],
-            parents: vec![to_pos_unboxed!(Node::Parent {
-                ty: to_pos!(Node::Type {
-                    id: to_pos!(Node::Id { lit: String::from("Exception") }),
-                    generics: vec![]
-                }),
-                args: vec![to_pos_unboxed!(Node::Id { lit: String::from("a1") })]
-            })],
-            body: None
-        });
-
-        let (name, parent_names, body) = match gen(&ASTTy::from(&alias)) {
-            Ok(Core::ClassDef { name, parent_names, body }) => (*name, parent_names, *body),
-            other => panic!("Expected class def but got {:?}", other),
-        };
-
-        assert_eq!(name, Core::Id { lit: String::from("MyErr1") });
-        assert_eq!(parent_names.len(), 1);
-        assert_eq!(*parent_names.first().unwrap(), Core::Id { lit: String::from("Exception") });
-
-        if let Core::Block { statements } = body {
-            assert_eq!(statements.len(), 1);
-            let statement = statements.first().unwrap();
-
-            assert_eq!(
-                *statement,
-                Core::FunDef {
-                    id: String::from("__init__"),
-                    arg: vec![
-                        Core::FunArg {
-                            vararg: false,
-                            var: Box::from(Core::Id { lit: String::from("self") }),
-                            ty: None,
-                            default: None,
-                        },
-                        Core::FunArg {
-                            vararg: false,
-                            var: Box::from(Core::Id { lit: String::from("a1") }),
-                            ty: None,
-                            default: None,
-                        },
-                    ],
-                    ty: None,
-                    body: Box::from(Core::Block {
-                        statements: vec![Core::PropertyCall {
-                            object: Box::from(Core::Id { lit: String::from("Exception") }),
-                            property: Box::from(Core::FunctionCall {
-                                function: Box::from(Core::Id {
-                                    lit: String::from(function::python::INIT)
-                                }),
-                                args: vec![
-                                    Core::Id { lit: String::from("self") },
-                                    Core::Id { lit: String::from("a1") },
-                                ],
-                            }),
-                        }]
-                    }),
-                }
-            )
-        } else {
-            assert_eq!(body, Core::Block { statements: vec![] });
-        }
     }
 }

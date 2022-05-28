@@ -1,4 +1,5 @@
 from typing import Tuple
 
 
-MyTuple = Tuple[int, int, str]
+class MyTuple(Tuple[int, int, str]):
+    pass

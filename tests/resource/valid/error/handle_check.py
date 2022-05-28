@@ -1,10 +1,10 @@
-MyErr1 = Exception("Something went wrong")
-
+class MyErr1(Exception):
+    def __init__(self):
+        Exception.__init__(self, "Something went wrong")
 
 class MyErr2(Exception):
     def __init__(self, msg: str):
         Exception.__init__(self, msg)
-
 
 def f(x: int) -> int:
     if x < 0:
@@ -14,7 +14,6 @@ def f(x: int) -> int:
             raise MyErr2("Greater than 10.")
         else:
             return x + 2
-
 
 a = None
 try:
