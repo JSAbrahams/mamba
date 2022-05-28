@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
-use crate::check::context::clss;
+use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::common::result::WithSource;
 use crate::parse::ast::AST;
@@ -82,7 +82,7 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
         position: actual.pos,
         msg: format!(
             "Expected one of [{}] while parsing {}{}, but found token '{}'",
-            comma_separated(tokens),
+            comma_delm(tokens),
             an_or_a(parsing),
             parsing,
             actual.token
@@ -93,23 +93,13 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
     }
 }
 
-fn token_to_name(token: &Token) -> String {
-    match token {
-        Token::Int(_) => format!("an '{}'", clss::INT_PRIMITIVE),
-        Token::Real(_) => format!("a '{}'", clss::FLOAT_PRIMITIVE),
-        Token::Str(..) => format!("a '{}'", clss::STRING_PRIMITIVE),
-        Token::Bool(_) => format!("a '{}'", clss::BOOL_PRIMITIVE),
-        Token::ENum(..) => format!("an '{}'", clss::ENUM_PRIMITIVE),
-        other => format!("{}", other),
-    }
-}
-
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
         position: actual.pos,
         msg: format!(
-            "Expected {} token while parsing {}{}, but found {}",
-            token_to_name(expected),
+            "Expected {}{} token while parsing {}{}, but found {}",
+            an_or_a(expected),
+            expected,
             an_or_a(parsing),
             parsing,
             actual.token
@@ -129,14 +119,14 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
         position: Position::default(),
         msg: match tokens {
             tokens if tokens.len() > 1 => format!(
-                "Expected one of [{}] token while parsing {}{}",
-                comma_separated(tokens),
+                "Expected one of [{}] tokens while parsing {}{}",
+                comma_delm(tokens),
                 an_or_a(parsing),
                 parsing
             ),
             tokens if tokens.len() == 1 => format!(
                 "Expected a {} token while parsing {}{}",
-                comma_separated(tokens),
+                comma_delm(tokens),
                 an_or_a(parsing),
                 parsing
             ),
@@ -148,16 +138,9 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     }
 }
 
-fn comma_separated(tokens: &[Token]) -> String {
-    comma_separated_map(tokens, token_to_name)
-}
+fn an_or_a<D>(parsing: D) -> &'static str where D: Display {
+    let parsing = format!("{}", parsing);
 
-fn comma_separated_map(tokens: &[Token], map: fn(&Token) -> String) -> String {
-    let list = tokens.iter().fold(String::new(), |acc, token| acc + &format!("'{}', ", map(token)));
-    String::from(&list[0..if list.len() >= 2 { list.len() - 2 } else { 0 }])
-}
-
-fn an_or_a(parsing: &str) -> &str {
     if let Some('s') = parsing.chars().last() {
         return "";
     } else if parsing.chars().next().is_none() {

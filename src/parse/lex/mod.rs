@@ -84,7 +84,7 @@ mod tests {
                     token: Token::Id(String::from("b")),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 17), CaretPos::new(1, 20)),
+                    pos: Position::new(CaretPos::new(1, 17), CaretPos::new(1, 17)),
                     token: Token::Eof,
                 },
             ]
@@ -157,7 +157,7 @@ mod tests {
                     token: Token::Id(String::from("i")),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 22), CaretPos::new(1, 25)),
+                    pos: Position::new(CaretPos::new(1, 22), CaretPos::new(1, 22)),
                     token: Token::Eof,
                 },
             ]
@@ -208,7 +208,7 @@ mod tests {
                     token: Token::Id(String::from("i")),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 26), CaretPos::new(1, 29)),
+                    pos: Position::new(CaretPos::new(1, 26), CaretPos::new(1, 26)),
                     token: Token::Eof,
                 },
             ]
@@ -233,7 +233,7 @@ mod tests {
                     ),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 22), CaretPos::new(1, 25)),
+                    pos: Position::new(CaretPos::new(1, 22), CaretPos::new(1, 22)),
                     token: Token::Eof,
                 },
             ]
@@ -276,7 +276,7 @@ mod tests {
                     ),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 12), CaretPos::new(1, 15)),
+                    pos: Position::new(CaretPos::new(1, 12), CaretPos::new(1, 12)),
                     token: Token::Eof,
                 },
             ]
@@ -311,7 +311,7 @@ mod tests {
                     ),
                 },
                 Lex {
-                    pos: Position::new(CaretPos::new(1, 11), CaretPos::new(1, 14)),
+                    pos: Position::new(CaretPos::new(1, 11), CaretPos::new(1, 11)),
                     token: Token::Eof,
                 },
             ]

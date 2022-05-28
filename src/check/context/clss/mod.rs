@@ -189,7 +189,7 @@ impl Class {
             }
         }
 
-        Err(vec![TypeErr::new(pos, &format!("'{}' does not define \"{}\"", self, name))])
+        Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
 
     /// Get function of class.
@@ -209,7 +209,7 @@ impl Class {
             }
         }
 
-        Err(vec![TypeErr::new(pos, &format!("'{}' does not define \"{}\"", self, name))])
+        Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
 }
 
