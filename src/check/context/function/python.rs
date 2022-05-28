@@ -69,7 +69,7 @@ fn convert_name(name: &str) -> String {
 
         TRUTHY => String::from(function::TRUTHY),
 
-        other => String::from(other)
+        other => String::from(other),
     }
 }
 
@@ -83,20 +83,24 @@ mod test {
     use crate::check::name::Name;
     use crate::check::name::stringname::StringName;
 
+    fn fun_def(stmt: &Statement) -> Funcdef {
+        match &stmt {
+            Statement::Compound(compound) => match compound.deref() {
+                CompoundStatement::Funcdef(funcdef) => funcdef.clone(),
+                other => panic!("Not func def but {:?}", other),
+            },
+            other => panic!("Not compound statement but {:?}", other),
+        }
+    }
+
     #[test]
     fn from_py() {
         let source = "def f(a: int, b, c: str, d: str = 'default') -> complex: pass";
-        let (_, statements) = python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
+        let (_, statements) =
+            python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
 
         let first = statements.first().expect("non empty statements");
-        let funcdef: Funcdef = match &first {
-            Statement::Compound(compound) => match compound.deref() {
-                CompoundStatement::Funcdef(funcdef) => funcdef.clone(),
-                other => panic!("Not func def but {:?}", other)
-            }
-            other => panic!("Not compound statement but {:?}", other)
-        };
-
+        let funcdef: Funcdef = fun_def(&first);
         let generic_function = GenericFunction::from(&funcdef);
 
         assert!(generic_function.is_py_type);

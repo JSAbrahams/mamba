@@ -8,18 +8,13 @@ use crate::check::name::Name;
 impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
     fn from((ids, ty): (&Vec<Expression>, &Option<Expression>)) -> GenericFields {
         let fields = GenericFields {
-            fields: ids
-                .iter()
-                .flat_map(|id| GenericFields::from(id).fields)
-                .collect()
+            fields: ids.iter().flat_map(|id| GenericFields::from(id).fields).collect(),
         };
 
-        if fields.fields.len() > 1 {
-            fields // cannot type annotate tuples in python
-        } else if let Some(ty) = ty {
+        if let Some(ty) = ty {
             let name = Name::from(ty);
             if let Some(field) = fields.fields.iter().next() {
-                let field = field.with_ty(&name);
+                let field = field.with_ty(&name); // cannot annotate tuples in python
                 GenericFields { fields: HashSet::from([field]) }
             } else {
                 fields
@@ -31,7 +26,9 @@ impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
 }
 
 impl From<(&Expression, &Option<Expression>)> for GenericFields {
-    fn from((id, _): (&Expression, &Option<Expression>)) -> GenericFields { GenericFields::from(id) }
+    fn from((id, _): (&Expression, &Option<Expression>)) -> GenericFields {
+        GenericFields::from(id)
+    }
 }
 
 impl From<&Expression> for GenericFields {
@@ -52,7 +49,7 @@ impl From<&Expression> for GenericFields {
                     .filter(|item| matches!(item, SetItem::Unique(_)))
                     .filter(|item| match &item {
                         SetItem::Star(_) => false,
-                        SetItem::Unique(expr) => matches!(expr, Expression::Name(_))
+                        SetItem::Unique(expr) => matches!(expr, Expression::Name(_)),
                     })
                     .map(|item| match &item {
                         SetItem::Star(_) => unreachable!(),
@@ -66,12 +63,15 @@ impl From<&Expression> for GenericFields {
                                 ty: None,
                                 assigned_to: false, // unknown
                             },
-                            _ => unreachable!()
-                        }
+                            _ => unreachable!(),
+                        },
                     })
                     .collect(),
-                _ => vec![]
-            }).iter().cloned().collect::<HashSet<_>>()
+                _ => vec![],
+            })
+                .iter()
+                .cloned()
+                .collect::<HashSet<_>>(),
         }
     }
 }

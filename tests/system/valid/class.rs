@@ -23,6 +23,11 @@ fn import_ast_verify() -> OutTestRet {
 }
 
 #[test]
+fn generic_unknown_type_unused() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "generic_unknown_type_unused")
+}
+
+#[test]
 fn doc_strings() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "doc_strings")
 }
