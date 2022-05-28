@@ -52,3 +52,13 @@ class MyClass2(MyType):
         (a, b) = (0, 10)
 
         my_bool: bool = True
+
+        a = None
+        try:
+            a: int = self.error_function()
+        except Err1 as err1:
+            print(err1)
+            a = -1
+        except Err2 as err2:
+            print(err2)
+            a = -2
