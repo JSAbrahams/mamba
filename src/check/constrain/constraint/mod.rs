@@ -64,29 +64,29 @@ impl Constraint {
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
         let string =
-            Expected::new(&expected.pos, &Type { name: Name::from(clss::STRING_PRIMITIVE) });
+            Expected::new(expected.pos, &Type { name: Name::from(clss::STRING_PRIMITIVE) });
         let access = Access {
             entity: Box::from(expected.clone()),
-            name: Box::new(Expected::new(&expected.pos, &Function {
+            name: Box::new(Expected::new(expected.pos, &Function {
                 name: StringName::from(function::STR),
                 args: vec![expected.clone()],
             })),
         };
 
-        Constraint::new(msg, &string, &Expected::new(&expected.pos, &access))
+        Constraint::new(msg, &string, &Expected::new(expected.pos, &access))
     }
 
     pub fn truthy(msg: &str, expected: &Expected) -> Constraint {
         let bool =
-            Expected::new(&expected.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
+            Expected::new(expected.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
         let access = Access {
             entity: Box::from(expected.clone()),
-            name: Box::new(Expected::new(&expected.pos, &Function {
+            name: Box::new(Expected::new(expected.pos, &Function {
                 name: StringName::from(function::TRUTHY),
                 args: vec![expected.clone()],
             })),
         };
 
-        Constraint::new(msg, &bool, &Expected::new(&expected.pos, &access))
+        Constraint::new(msg, &bool, &Expected::new(expected.pos, &access))
     }
 }

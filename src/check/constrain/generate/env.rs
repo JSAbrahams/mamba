@@ -67,7 +67,7 @@ impl Environment {
     }
 
     /// Insert raises.
-    pub fn insert_raises(&self, raises: &Name, pos: &Position) -> Environment {
+    pub fn insert_raises(&self, raises: &Name, pos: Position) -> Environment {
         if raises.is_empty() {
             self.clone()
         } else {

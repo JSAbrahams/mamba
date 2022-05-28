@@ -20,7 +20,7 @@ impl State {
     pub fn flush_indents(&mut self) -> Vec<Lex> {
         let amount = ((self.cur_indent) / 4) as usize;
         self.cur_indent = 1;
-        vec![Lex::new(&self.pos, Token::Dedent); amount]
+        vec![Lex::new(self.pos, Token::Dedent); amount]
     }
 
     /// Change state depending on given [Token](lexer::token::Token) and return
@@ -42,37 +42,37 @@ impl State {
         let mut res = self.newlines.pop().map_or(vec![], |nl| vec![nl]);
         if self.line_indent >= self.cur_indent {
             let amount = ((self.line_indent - self.cur_indent) / 4) as usize;
-            res.append(&mut vec![Lex::new(&self.pos, Token::Indent); amount]);
+            res.append(&mut vec![Lex::new(self.pos, Token::Indent); amount]);
         } else {
             let amount = ((self.cur_indent - self.line_indent) / 4) as usize;
-            res.append(&mut vec![Lex::new(&self.pos, Token::Dedent); amount]);
-            res.push(Lex::new(&self.pos, Token::NL));
+            res.append(&mut vec![Lex::new(self.pos, Token::Dedent); amount]);
+            res.push(Lex::new(self.pos, Token::NL));
         }
 
         res.append(&mut self.newlines);
-        res.push(Lex::new(&self.pos, token.clone()));
+        res.push(Lex::new(self.pos, token.clone()));
 
         // TODO streamline application logic for multiline strings
         self.cur_indent = self.line_indent;
-        self.pos = self.pos.clone().offset_pos(token.clone().width());
+        self.pos = self.pos.offset_pos(token.clone().width());
         if let Token::Str(_str, _) = &token {
-            self.pos = self.pos.clone().offset_line((_str.lines().count() as i32 - 1) as usize);
+            self.pos = self.pos.offset_line((_str.lines().count() as i32 - 1) as usize);
         } else if let Token::DocStr(_str) = &token {
-            self.pos = self.pos.clone().offset_line((_str.lines().count() as i32 - 1) as usize);
+            self.pos = self.pos.offset_line((_str.lines().count() as i32 - 1) as usize);
         }
 
         res
     }
 
     fn newline(&mut self) {
-        self.newlines.push(Lex::new(&self.pos, Token::NL));
+        self.newlines.push(Lex::new(self.pos, Token::NL));
         self.token_this_line = false;
         self.line_indent = 1;
-        self.pos = self.pos.clone().newline();
+        self.pos = self.pos.newline();
     }
 
     pub fn space(&mut self) {
-        self.pos = self.pos.clone().offset_pos(1);
+        self.pos = self.pos.offset_pos(1);
         self.line_indent += if self.token_this_line { 0 } else { 1 };
     }
 }

@@ -295,10 +295,6 @@ impl From<&Node> for NodeTy {
                 right: Box::from(ASTTy::from(right)),
             },
             Node::QuestionOp { expr } => NodeTy::QuestionOp { expr: Box::from(ASTTy::from(expr)) },
-            Node::File { pure, statements } => NodeTy::File {
-                pure: *pure,
-                statements: statements.iter().map(ASTTy::from).collect(),
-            },
             Node::Id { lit } => NodeTy::Id { lit: lit.clone() },
             Node::Slice { from, to, inclusive, step } => NodeTy::Slice {
                 from: Box::from(ASTTy::from(from)),

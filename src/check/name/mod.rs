@@ -30,7 +30,7 @@ pub trait Union<T> {
 }
 
 pub trait IsSuperSet<T> {
-    fn is_superset_of(&self, other: &T, ctx: &Context, pos: &Position) -> TypeResult<bool>;
+    fn is_superset_of(&self, other: &T, ctx: &Context, pos: Position) -> TypeResult<bool>;
 }
 
 pub trait IsNullable {
@@ -48,13 +48,13 @@ pub trait AsMutable {
 }
 
 pub trait ColType {
-    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>>;
+    fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>>;
 }
 
 pub fn match_name(
     identifier: &Identifier,
     name: &Name,
-    pos: &Position,
+    pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     let unions: Vec<HashMap<String, (bool, Name)>> =
         name.names().map(|ty| match_type_direct(identifier, &ty, pos)).collect::<Result<_, _>>()?;
@@ -77,7 +77,7 @@ pub fn match_name(
 pub fn match_type_direct(
     identifier: &Identifier,
     name: &TrueName,
-    pos: &Position,
+    pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     match &name.variant {
         NameVariant::Single { .. } | NameVariant::Fun { .. } => {
@@ -138,7 +138,7 @@ impl Union<StringName> for Name {
 }
 
 impl ColType for Name {
-    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+    fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>> {
         let names: Vec<Option<Name>> =
             self.names.iter().map(|n| n.col_type(ctx, pos)).collect::<Result<_, _>>()?;
         let mut union = Name::empty();
@@ -232,7 +232,7 @@ impl From<&str> for Name {
 }
 
 impl IsSuperSet<Name> for Name {
-    fn is_superset_of(&self, other: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn is_superset_of(&self, other: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
         if !self.is_empty() && other.is_empty() {
             return Ok(false);
         }
@@ -272,7 +272,7 @@ impl Name {
         self == &Name::empty()
     }
 
-    pub fn as_direct(&self, msg: &str, pos: &Position) -> TypeResult<HashSet<StringName>> {
+    pub fn as_direct(&self, msg: &str, pos: Position) -> TypeResult<HashSet<StringName>> {
         self.names.iter().map(|n| n.as_direct(msg, pos)).collect::<Result<_, _>>()
     }
 
@@ -304,7 +304,7 @@ impl Name {
         self.names.clone().into_iter()
     }
 
-    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: &Position) -> TypeResult<Name> {
+    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
         Ok(Name { names })
@@ -340,7 +340,7 @@ mod tests {
         let union_2 = Name::from(INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, &Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
     }
 
     #[test]
@@ -349,8 +349,8 @@ mod tests {
         let name2 = Name::from(&HashSet::from([clss::INT_PRIMITIVE]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name1.is_superset_of(&name2, &ctx, &Position::default()).unwrap());
-        assert!(!name2.is_superset_of(&name1, &ctx, &Position::default()).unwrap());
+        assert!(name1.is_superset_of(&name2, &ctx, Position::default()).unwrap());
+        assert!(!name2.is_superset_of(&name1, &ctx, Position::default()).unwrap());
     }
 
     #[test]
@@ -360,7 +360,7 @@ mod tests {
         let union_2 = Name::from(INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_1.is_superset_of(&union_2, &ctx, &Position::default()).unwrap())
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
     }
 
     #[test]
@@ -384,7 +384,7 @@ mod tests {
         let union_2 = Name::from(INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, &Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
     }
 
     #[test]
@@ -461,7 +461,7 @@ mod tests {
     fn test_match_name() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
         let name = Name::from("MyType3");
-        let matchings = match_name(&iden, &name, &Position::default())?;
+        let matchings = match_name(&iden, &name, Position::default())?;
 
         assert_eq!(matchings.len(), 1);
         let (mutable, matching) = matchings["abc"].clone();
@@ -478,7 +478,7 @@ mod tests {
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
         let name = Name::from("MyType3");
-        let err = match_name(&iden3, &name, &Position::default());
+        let err = match_name(&iden3, &name, Position::default());
 
         assert!(err.is_err())
     }
@@ -487,7 +487,7 @@ mod tests {
     fn test_match_name_type_is_tuple() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
         let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
-        let matchings = match_name(&iden, &name, &Position::default())?;
+        let matchings = match_name(&iden, &name, Position::default())?;
 
         assert_eq!(matchings.len(), 1);
         let (mutable, matching) = matchings["abc"].clone();
@@ -505,7 +505,7 @@ mod tests {
 
         let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
 
-        let matchings = match_name(&iden3, &name, &Position::default())?;
+        let matchings = match_name(&iden3, &name, Position::default())?;
 
         assert_eq!(matchings.len(), 2);
         let (mutable1, matching1) = matchings["abc"].clone();
@@ -528,7 +528,7 @@ mod tests {
 
         let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
 
-        let matchings = match_name(&iden4, &name, &Position::default());
+        let matchings = match_name(&iden4, &name, Position::default());
         assert!(matchings.is_err());
     }
 
@@ -544,7 +544,7 @@ mod tests {
             Name::from("A0"),
         ]));
 
-        let matchings = match_name(&iden3, &name, &Position::default());
+        let matchings = match_name(&iden3, &name, Position::default());
         assert!(matchings.is_err());
     }
 
@@ -554,7 +554,7 @@ mod tests {
         let int_name = Name::from(clss::INT_PRIMITIVE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, &Position::default())?;
+        let collection_ty = range_name.col_type(&ctx, Position::default())?;
         assert_eq!(collection_ty, Some(int_name));
         Ok(())
     }
@@ -565,8 +565,8 @@ mod tests {
         let int_name = StringName::from(clss::INT_PRIMITIVE);
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let clss = ctx.class(&int_name, &Position::default())?;
-        assert!(clss.has_parent(&float_name, &ctx, &Position::default())?);
+        let clss = ctx.class(&int_name, Position::default())?;
+        assert!(clss.has_parent(&float_name, &ctx, Position::default())?);
         Ok(())
     }
 
@@ -576,8 +576,8 @@ mod tests {
         let int_name = Name::from(clss::INT_PRIMITIVE);
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let clss = ctx.class(&float_name, &Position::default())?;
-        assert!(!clss.has_parent(&int_name, &ctx, &Position::default())?);
+        let clss = ctx.class(&float_name, Position::default())?;
+        assert!(!clss.has_parent(&int_name, &ctx, Position::default())?);
         Ok(())
     }
 
@@ -586,7 +586,7 @@ mod tests {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, &Position::default());
+        let collection_ty = range_name.col_type(&ctx, Position::default());
         assert!(collection_ty.is_err());
     }
 

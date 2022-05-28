@@ -38,13 +38,13 @@ impl Cause {
 
 impl ParseErr {
     #[must_use]
-    pub fn clone_with_cause(&self, cause: &str, position: &Position) -> ParseErr {
+    pub fn clone_with_cause(&self, cause: &str, position: Position) -> ParseErr {
         ParseErr {
-            position: self.position.clone(),
+            position: self.position,
             msg: self.msg.clone(),
             causes: {
                 let mut new_causes = self.causes.clone();
-                new_causes.push(Cause::new(cause, position.clone()));
+                new_causes.push(Cause::new(cause, position));
                 new_causes
             },
             source: self.source.clone(),
@@ -68,7 +68,7 @@ impl WithSource for ParseErr {
 impl From<LexErr> for ParseErr {
     fn from(lex_err: LexErr) -> Self {
         ParseErr {
-            position: Position::from(&lex_err.pos),
+            position: Position::from(lex_err.pos),
             msg: lex_err.msg,
             source: lex_err.source,
             path: lex_err.path,
@@ -79,9 +79,9 @@ impl From<LexErr> for ParseErr {
 
 pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
-        position: actual.pos.clone(),
+        position: actual.pos,
         msg: format!(
-            "Expected one of ({}) while parsing {} {}, but found token '{}'",
+            "Expected one of [{}] while parsing {}{}, but found token '{}'",
             comma_separated(tokens),
             an_or_a(parsing),
             parsing,
@@ -100,15 +100,15 @@ fn token_to_name(token: &Token) -> String {
         Token::Str(..) => format!("a '{}'", clss::STRING_PRIMITIVE),
         Token::Bool(_) => format!("a '{}'", clss::BOOL_PRIMITIVE),
         Token::ENum(..) => format!("an '{}'", clss::ENUM_PRIMITIVE),
-        other => format!("{}", other)
+        other => format!("{}", other),
     }
 }
 
 pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
-        position: actual.pos.clone(),
+        position: actual.pos,
         msg: format!(
-            "Expected {} while parsing {} {}, but found {}",
+            "Expected {} token while parsing {}{}, but found {}",
             token_to_name(expected),
             an_or_a(parsing),
             parsing,
@@ -120,28 +120,27 @@ pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     }
 }
 
-pub fn custom(msg: &str, position: &Position) -> ParseErr {
-    ParseErr {
-        position: position.clone(),
-        msg: title_case(msg),
-        source: None,
-        path: None,
-        causes: vec![],
-    }
+pub fn custom(msg: &str, position: Position) -> ParseErr {
+    ParseErr { position, msg: title_case(msg), source: None, path: None, causes: vec![] }
 }
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
         position: Position::default(),
-        msg: if tokens.len() > 1 {
-            format!("Expected one of '{}' while parsing {} {}",
-                    comma_separated(tokens),
-                    an_or_a(parsing),
-                    parsing)
-        } else {
-            format!("Expected a token while parsing {} {}",
-                    an_or_a(parsing),
-                    parsing)
+        msg: match tokens {
+            tokens if tokens.len() > 1 => format!(
+                "Expected one of [{}] tokens while parsing {}{}",
+                comma_separated(tokens),
+                an_or_a(parsing),
+                parsing
+            ),
+            tokens if tokens.len() == 1 => format!(
+                "Expected a {} token while parsing {}{}",
+                comma_separated(tokens),
+                an_or_a(parsing),
+                parsing
+            ),
+            _ => format!("Expected a token while parsing {}{}", an_or_a(parsing), parsing),
         },
         source: None,
         path: None,
@@ -159,9 +158,15 @@ fn comma_separated_map(tokens: &[Token], map: fn(&Token) -> String) -> String {
 }
 
 fn an_or_a(parsing: &str) -> &str {
+    if let Some('s') = parsing.chars().last() {
+        return "";
+    } else if parsing.chars().next().is_none() {
+        return "";
+    }
+
     match parsing.chars().next() {
-        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an",
-        _ => "a"
+        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an ",
+        _ => "a "
     }
 }
 
@@ -186,7 +191,7 @@ impl Display for ParseErr {
                         .lines()
                         .nth(cause.position.start.line as usize - 1)
                         .unwrap_or("<unknown>"),
-                    None => "<unknown>"
+                    None => "<unknown>",
                 };
 
                 acc + &format!(
@@ -201,9 +206,10 @@ impl Display for ParseErr {
             });
 
         let source_line = match &self.source {
-            Some(source) =>
-                source.lines().nth(self.position.start.line as usize - 1).unwrap_or("<unknown>"),
-            None => "<unknown>"
+            Some(source) => {
+                source.lines().nth(self.position.start.line as usize - 1).unwrap_or("<unknown>")
+            }
+            None => "<unknown>",
         };
 
         write!(

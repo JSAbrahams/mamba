@@ -33,7 +33,7 @@ impl From<&NameVariant> for TrueName {
 }
 
 impl ColType for TrueName {
-    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+    fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>> {
         self.variant.col_type(ctx, pos)
     }
 }
@@ -92,7 +92,7 @@ impl IsSuperSet<TrueName> for TrueName {
     /// If self is not nullable, then only super type if:
     /// - Other is not nullable.
     /// - And, variant is supertype of other's variant.
-    fn is_superset_of(&self, other: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn is_superset_of(&self, other: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         if !self.is_empty() && other.is_empty() {
             return Ok(false);
         } else if self.is_nullable() && other.is_null() {
@@ -117,7 +117,7 @@ impl TrueName {
 
     pub fn empty() -> TrueName { TrueName::from(&StringName::empty()) }
 
-    pub fn as_direct(&self, exp: &str, pos: &Position) -> TypeResult<StringName> {
+    pub fn as_direct(&self, exp: &str, pos: Position) -> TypeResult<StringName> {
         match &self.variant {
             NameVariant::Single(name) => Ok(name.clone()),
             other =>
@@ -125,7 +125,7 @@ impl TrueName {
         }
     }
 
-    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: &Position) -> TypeResult<TrueName> {
+    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<TrueName> {
         let variant = match &self.variant {
             NameVariant::Single(direct_name) =>
                 NameVariant::Single(direct_name.substitute(generics, pos)?),

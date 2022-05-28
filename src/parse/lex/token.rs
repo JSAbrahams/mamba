@@ -10,14 +10,13 @@ pub struct Lex {
 }
 
 impl Lex {
-    pub fn new(pos: &CaretPos, token: Token) -> Self {
-        let start = pos.clone();
+    pub fn new(start: CaretPos, token: Token) -> Self {
         let end = if let Token::Str(_str, _) = &token {
-            pos.clone().offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
+            start.offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
         } else if let Token::DocStr(_str) = &token {
-            pos.clone().offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
+            start.offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
         } else {
-            pos.clone()
+            start
         };
 
         let end = end.offset_pos(token.clone().width());
@@ -137,6 +136,8 @@ pub enum Token {
     Pass,
     Undefined,
     Comment(String),
+
+    Eof,
 }
 
 impl Token {
@@ -201,7 +202,7 @@ impl fmt::Display for Token {
             Token::BRShiftAssign => String::from(">>="),
             Token::Def => String::from("def"),
 
-            Token::Id(id) => id,
+            Token::Id(_) => String::from("identifier"),
             Token::Real(real) => real,
             Token::Int(int) => int,
             Token::ENum(int, exp) =>
@@ -258,9 +259,9 @@ impl fmt::Display for Token {
             Token::To => String::from("->"),
             Token::BTo => String::from("=>"),
 
-            Token::NL => String::from("<newline>"),
-            Token::Indent => String::from("<indent>"),
-            Token::Dedent => String::from("<dedent>"),
+            Token::NL => String::from("newline"),
+            Token::Indent => String::from("indent"),
+            Token::Dedent => String::from("dedent"),
             Token::Underscore => String::from("_"),
 
             Token::While => String::from("while"),
@@ -283,8 +284,10 @@ impl fmt::Display for Token {
             Token::When => String::from("when"),
 
             Token::Pass => String::from("pass"),
-            Token::Undefined => String::from("None"),
-            Token::Comment(string) => format!("{} (comment)", string)
+            Token::Undefined => String::from("undefined"),
+            Token::Comment(_) => String::from("comment"),
+
+            Token::Eof => String::from("EOF")
         })
     }
 }

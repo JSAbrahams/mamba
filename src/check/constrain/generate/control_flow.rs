@@ -37,13 +37,12 @@ pub fn gen_flow(
 
             constr.new_set(true);
             let (mut constr, then_env) = generate(then, &env, ctx, &mut constr)?;
-            constr.exit_set(&then.pos)?;
+            constr.exit_set(then.pos)?;
             constr.new_set(true);
             let (mut constr, else_env) = generate(el, &env, ctx, &mut constr)?;
-            constr.exit_set(&el.pos)?;
+            constr.exit_set(el.pos)?;
 
-            // TODO apply union to constraints
-            constr.exit_set(&ast.pos)?;
+            constr.exit_set(ast.pos)?;
             Ok((constr, env.union(&then_env.intersect(&else_env))))
         }
         Node::IfElse { cond, then, .. } => {
@@ -53,11 +52,11 @@ pub fn gen_flow(
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
             let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
-            constr.exit_set(&then.pos)?;
+            constr.exit_set(then.pos)?;
             Ok((constr, env))
         }
 
-        Node::Case { .. } => Err(vec![TypeErr::new(&ast.pos, "Case cannot be top level")]),
+        Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
             let mut res = (constr.clone(), env.clone());
             // TODO check that all variants are covered
@@ -77,7 +76,7 @@ pub fn gen_flow(
                         );
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
-                    _ => return Err(vec![TypeErr::new(&case.pos, "Expected case")])
+                    _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
                 }
             }
 
@@ -94,7 +93,7 @@ pub fn gen_flow(
             let (mut constr, _) =
                 generate(body, &for_env.in_loop().define_mode(is_define_mode), ctx, &mut constr)?;
 
-            constr.exit_set(&ast.pos)?;
+            constr.exit_set(ast.pos)?;
             Ok((constr, env.clone()))
         }
         Node::While { cond, body } => {
@@ -103,7 +102,7 @@ pub fn gen_flow(
             constr.add_constr(&Constraint::truthy("if else", &left));
             let (mut constr, env) = generate(cond, env, ctx, constr)?;
             let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
-            constr.exit_set(&ast.pos)?;
+            constr.exit_set(ast.pos)?;
             Ok((constr, env))
         }
 
@@ -111,9 +110,9 @@ pub fn gen_flow(
             if env.in_loop {
                 Ok((constr.clone(), env.clone()))
             } else {
-                Err(vec![TypeErr::new(&ast.pos, "Cannot be outside loop")])
+                Err(vec![TypeErr::new(ast.pos, "Cannot be outside loop")])
             },
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected control flow")])
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected control flow")])
     }
 }

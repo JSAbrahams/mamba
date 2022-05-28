@@ -27,8 +27,8 @@ pub fn gen_stmt(
                 constr.add("return", expected_ret_ty, &Expected::try_from((expr, &env.var_mappings))?);
                 generate(expr, env, ctx, constr)
             } else {
-                Err(vec![TypeErr::new(&ast.pos, "Return outside function with return type")])
+                Err(vec![TypeErr::new(ast.pos, "Return outside function with return type")])
             },
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected statement")])
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected statement")])
     }
 }

@@ -23,12 +23,12 @@ pub fn gen_coll(
         }
 
         Node::SetBuilder { .. } => {
-            Err(vec![TypeErr::new(&ast.pos, "Set builders currently not supported")])
+            Err(vec![TypeErr::new(ast.pos, "Set builders currently not supported")])
         }
         Node::ListBuilder { .. } => {
-            Err(vec![TypeErr::new(&ast.pos, "List builders currently not supported")])
+            Err(vec![TypeErr::new(ast.pos, "List builders currently not supported")])
         }
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected collection")]),
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected collection")]),
     }
 }
 
@@ -49,9 +49,9 @@ pub fn constr_col(
                     let child = Expected::try_from((element, &env.var_mappings))?;
                     constr.add("collection item", &parent, &child)
                 }
-                Box::from(Expected::new(&first.pos, &Expect::try_from((first, &env.var_mappings))?))
+                Box::from(Expected::new(first.pos, &Expect::try_from((first, &env.var_mappings))?))
             } else {
-                Box::from(Expected::new(&collection.pos, &ExpressionAny))
+                Box::from(Expected::new(collection.pos, &ExpressionAny))
             };
 
             ("collection", Expect::Collection { ty })
@@ -66,12 +66,12 @@ pub fn constr_col(
             let expect =
                 if let Some(name) = temp_type { Expect::Type { name } } else { ExpressionAny };
             let expected =
-                Expect::Collection { ty: Box::from(Expected::new(&collection.pos, &expect)) };
+                Expect::Collection { ty: Box::from(Expected::new(collection.pos, &expect)) };
             ("collection", expected)
         }
     };
 
-    let col_exp = Expected::new(&collection.pos, &col);
+    let col_exp = Expected::new(collection.pos, &col);
     constr.add(msg, &col_exp, &Expected::try_from((collection, &env.var_mappings))?);
     Ok(constr.clone())
 }
@@ -89,12 +89,12 @@ pub fn gen_collection_lookup(
 
     // Make col constraint before inserting environment, in case shadowed here
     let col_exp = Expected::try_from((col, &env.var_mappings))?;
-    for (mutable, var) in Identifier::try_from(lookup)?.fields(&lookup.pos)? {
-        env = env.insert_var(mutable, &var, &Expected::new(&lookup.pos, &ExpressionAny));
+    for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
+        env = env.insert_var(mutable, &var, &Expected::new(lookup.pos, &ExpressionAny));
     }
 
     let lookup_exp = Expected::new(
-        &lookup.pos,
+        lookup.pos,
         &Collection { ty: Box::from(Expected::try_from((lookup, &env.var_mappings))?) },
     );
 

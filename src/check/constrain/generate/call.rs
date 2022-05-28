@@ -31,13 +31,13 @@ pub fn gen_call(
     match &ast.node {
         Node::Reassign { left, right, op } => {
             let identifier = check_reassignable(left)?;
-            check_iden_mut(&identifier, env, &left.pos)?;
+            check_iden_mut(&identifier, env, left.pos)?;
 
             if let NodeOp::Assign = op {
                 let env: Environment = identifier
                     .all_calls()
                     .iter()
-                    .flat_map(|call| call.without_obj(arg::SELF, &left.pos))
+                    .flat_map(|call| call.without_obj(arg::SELF, left.pos))
                     .flat_map(|identi_call| match identi_call {
                         IdentiCall::Iden(var) => Some(var),
                         _ => None,
@@ -70,23 +70,23 @@ pub fn gen_call(
             } else if let Some(functions) = env.get_var(&f_name.name) {
                 if !f_name.generics.is_empty() {
                     let msg = "Anonymous function call cannot have generics";
-                    return Err(vec![TypeErr::new(&name.pos, msg)]);
+                    return Err(vec![TypeErr::new(name.pos, msg)]);
                 }
 
                 for (_, fun_exp) in functions {
-                    let last_pos = args.last().map_or_else(|| name.pos.clone(), |a| a.pos.clone());
+                    let last_pos = args.last().map_or_else(|| name.pos, |a| a.pos);
                     let args = args
                         .iter()
                         .map(|a| Expected::try_from((a, &env.var_mappings)))
                         .collect::<Result<_, _>>()?;
-                    let right = Expected::new(&last_pos, &Function { name: f_name.clone(), args });
+                    let right = Expected::new(last_pos, &Function { name: f_name.clone(), args });
                     constr.add("function call", &right, &fun_exp);
                 }
             } else {
                 // Resort to looking up in Context
-                let fun = ctx.function(&f_name, &ast.pos)?;
+                let fun = ctx.function(&f_name, ast.pos)?;
                 constr = call_parameters(ast, &fun.arguments, &None, args, ctx, &constr)?;
-                let fun_ret_exp = Expected::new(&ast.pos, &Type { name: fun.ret_ty });
+                let fun_ret_exp = Expected::new(ast.pos, &Type { name: fun.ret_ty });
                 // entire AST is either fun ret ty or statement
                 constr.add(
                     "function call",
@@ -96,11 +96,11 @@ pub fn gen_call(
 
                 if !fun.raises.is_empty() {
                     if let Some(raises) = &env.raises {
-                        let raises_exp = Expected::new(&ast.pos, &Raises { name: fun.raises });
+                        let raises_exp = Expected::new(ast.pos, &Raises { name: fun.raises });
                         constr.add("function call", raises, &raises_exp);
                     } else if !constr.is_top_level() {
                         let msg = format!("Exceptions not covered: {}", &fun.raises);
-                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                        return Err(vec![TypeErr::new(ast.pos, &msg)]);
                     }
                 }
             }
@@ -116,7 +116,7 @@ pub fn gen_call(
             let name = Name::from(&HashSet::from([clss::INT_PRIMITIVE, clss::SLICE]));
             constr.add(
                 "index range",
-                &Expected::new(&range.pos, &Expect::Type { name }),
+                &Expected::new(range.pos, &Expect::Type { name }),
                 &Expected::try_from((range, &env.var_mappings))?,
             );
 
@@ -124,7 +124,7 @@ pub fn gen_call(
             let name = Name::from(temp_type.as_str());
             constr.add(
                 "index of collection",
-                &Expected::new(&ast.pos, &Expect::Type { name: name.clone() }),
+                &Expected::new(ast.pos, &Expect::Type { name: name.clone() }),
                 &Expected::try_from((ast, &env.var_mappings))?,
             );
 
@@ -132,11 +132,11 @@ pub fn gen_call(
             generate(item, &env, ctx, &mut constr)
         }
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Was expecting call")]),
+        _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
     }
 }
 
-fn check_iden_mut(id: &Identifier, env: &Environment, pos: &Position) -> TypeResult<()> {
+fn check_iden_mut(id: &Identifier, env: &Environment, pos: Position) -> TypeResult<()> {
     let errors: Vec<String> = id
         .fields(pos)?
         .iter()
@@ -168,35 +168,32 @@ fn call_parameters(
 ) -> Result<ConstrBuilder, Vec<TypeErr>> {
     let mut constr = constr.clone();
     let args = if let Some(self_arg) = self_arg {
-        let mut new_args = vec![(self_ast.pos.clone(), self_arg.clone())];
+        let mut new_args = vec![(self_ast.pos, self_arg.clone())];
         new_args.append(
-            &mut args
-                .iter()
-                .map(|arg| (arg.pos.clone(), Expression { ast: arg.clone() }))
-                .collect(),
+            &mut args.iter().map(|arg| (arg.pos, Expression { ast: arg.clone() })).collect(),
         );
         new_args
     } else {
-        args.iter().map(|arg| (arg.pos.clone(), Expression { ast: arg.clone() })).collect()
+        args.iter().map(|arg| (arg.pos, Expression { ast: arg.clone() })).collect()
     };
 
     for either_or_both in possible.iter().zip_longest(args.iter()) {
         match either_or_both {
             Both(fun_arg, (pos, arg)) => {
                 let ty = &fun_arg.ty.clone().ok_or_else(|| {
-                    TypeErr::new(pos, "Function argument must have type parameters")
+                    TypeErr::new(*pos, "Function argument must have type parameters")
                 })?;
 
-                let arg_exp = Expected::new(pos, arg);
-                let name = ctx.class(ty, pos)?.name();
-                constr.add("call parameters", &arg_exp, &Expected::new(pos, &Type { name }))
+                let arg_exp = Expected::new(*pos, arg);
+                let name = ctx.class(ty, *pos)?.name();
+                constr.add("call parameters", &arg_exp, &Expected::new(*pos, &Type { name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {
-                let pos = Position::new(&self_ast.pos.end, &self_ast.pos.end);
+                let pos = Position::new(self_ast.pos.end, self_ast.pos.end);
                 let msg = format!("Expected argument: '{}' has no default", fun_arg);
-                return Err(vec![TypeErr::new(&pos, &msg)]);
+                return Err(vec![TypeErr::new(pos, &msg)]);
             }
-            Right((pos, _)) => return Err(vec![TypeErr::new(pos, "Unexpected argument")]),
+            Right((pos, _)) => return Err(vec![TypeErr::new(*pos, "Unexpected argument")]),
             _ => {}
         }
     }
@@ -218,15 +215,15 @@ fn property_call(
         }
         Node::Id { lit } => {
             let access = Expected::new(
-                &property.pos,
+                property.pos,
                 &Access {
                     entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
-                    name: Box::new(Expected::new(&property.pos, &Field { name: lit.clone() })),
+                    name: Box::new(Expected::new(property.pos, &Field { name: lit.clone() })),
                 },
             );
             let instance = Expected::try_from((
                 &AST {
-                    pos: instance.pos.union(&property.pos),
+                    pos: instance.pos.union(property.pos),
                     node: Node::PropertyCall {
                         instance: Box::from(instance.clone()),
                         property: Box::from(property.clone()),
@@ -253,15 +250,15 @@ fn property_call(
                 property: Box::from(property.clone()),
             };
             let instance_exp = Expected::try_from((
-                &AST { pos: instance.pos.union(&property.pos), node },
+                &AST { pos: instance.pos.union(property.pos), node },
                 &env.var_mappings,
             ))?;
             let access = Expected::new(
-                &property.pos,
+                property.pos,
                 &Access {
                     entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
                     name: Box::new(Expected::new(
-                        &property.pos,
+                        property.pos,
                         &Function {
                             name: StringName::try_from(name.deref())?,
                             args: args_with_self,
@@ -274,7 +271,7 @@ fn property_call(
             Ok((constr, env))
         }
 
-        _ => Err(vec![TypeErr::new(&property.pos, "Expected property call")]),
+        _ => Err(vec![TypeErr::new(property.pos, "Expected property call")]),
     }
 }
 
@@ -287,14 +284,14 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
         Node::PropertyCall { instance, property } => match check_reassignable(property)? {
             Identifier::Multi(_) => {
                 let msg = format!("Cannot reassign to {}", &ast.node);
-                Err(vec![TypeErr::new(&ast.pos, &msg)])
+                Err(vec![TypeErr::new(ast.pos, &msg)])
             }
             Identifier::Single(m, prop_call) => {
                 let (_, inst_call) = match check_reassignable(instance)? {
                     Identifier::Single(m, call) => (m, call),
                     Identifier::Multi(_) => {
                         let msg = format!("Cannot reassign to {}", &ast.node);
-                        return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                        return Err(vec![TypeErr::new(ast.pos, &msg)]);
                     }
                 };
 
@@ -306,7 +303,7 @@ fn check_reassignable(ast: &AST) -> TypeResult<Identifier> {
             errs.iter()
                 .map(|err| {
                     let msg = format!("Cannot reassign to {}: {}", &ast.node, &err.msg);
-                    TypeErr::new(&ast.pos, &msg)
+                    TypeErr::new(ast.pos, &msg)
                 })
                 .collect()
         }),
@@ -326,7 +323,7 @@ fn reassign_op(
     let right = Box::from(right.clone());
 
     let right = Box::from(AST::new(
-        &ast.pos,
+        ast.pos,
         match op {
             NodeOp::Add => Node::Add { left: left.clone(), right },
             NodeOp::Sub => Node::Sub { left: left.clone(), right },
@@ -337,12 +334,12 @@ fn reassign_op(
             NodeOp::BRShift => Node::BRShift { left: left.clone(), right },
             other => {
                 let msg = format!("Cannot reassign using operator '{}'", other);
-                return Err(vec![TypeErr::new(&ast.pos, &msg)]);
+                return Err(vec![TypeErr::new(ast.pos, &msg)]);
             }
         },
     ));
 
     let node = Node::Reassign { left, right, op: NodeOp::Assign };
-    let simple_assign_ast = AST::new(&ast.pos, node);
+    let simple_assign_ast = AST::new(ast.pos, node);
     generate(&simple_assign_ast, env, ctx, constr)
 }

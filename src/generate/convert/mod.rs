@@ -50,12 +50,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
             op: CoreOp::try_from((ast, op))?,
         },
 
-        NodeTy::File { statements, .. } => {
-            let mut modules = convert_vec(statements, imp, state)?;
-            let mut statements = imp.imports.clone();
-            statements.append(&mut modules);
-            Core::Block { statements }
-        }
         NodeTy::Block { statements } => Core::Block {
             statements: convert_stmts(statements, imp, &state.assign_to(assign_to.as_ref()))?,
         },
@@ -442,7 +436,26 @@ mod tests {
 
     #[test]
     fn sqrt_verify() {
-        verify_unary!(Sqrt);
+        let expr = to_pos!(Node::Id { lit: String::from("expression") });
+        let add_node = to_pos!(Node::Sqrt { expr });
+
+        let (import, expr_des) = match gen(&ASTTy::from(&add_node)) {
+            Ok(Core::Block { statements }) => (statements[0].clone(), statements[1].clone()),
+            other => panic!("Expected unary operation but was {:?}", other),
+        };
+
+        assert_eq!(
+            import,
+            Core::Import {
+                from: None,
+                import: vec![Core::Id { lit: String::from("math") }],
+                alias: vec![],
+            }
+        );
+        assert_eq!(
+            expr_des,
+            Core::Sqrt { expr: Box::from(Core::Id { lit: String::from("expression") }) }
+        );
     }
 
     #[test]

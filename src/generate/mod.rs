@@ -1,4 +1,5 @@
 use crate::check::ast::ASTTy;
+use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::GenResult;
@@ -11,6 +12,7 @@ pub mod name;
 
 pub mod result;
 
+#[derive(Default)]
 pub struct GenArguments {
     pub annotate: bool,
 }
@@ -39,7 +41,7 @@ impl From<&PipelineArguments> for GenArguments {
 /// # use mamba::common::position::{CaretPos, Position};
 /// # use mamba::generate::gen;
 /// let node = Node::ReturnEmpty;
-/// let ast = AST::new(&Position::new(&CaretPos::new(1, 1), &CaretPos::new(1, 5)), node);
+/// let ast = AST::new(Position::new(CaretPos::new(1, 1), CaretPos::new(1, 5)), node);
 /// let ast_ty = ASTTy::from(&ast);
 /// let core_result = gen(&ast_ty).unwrap();
 ///
@@ -58,9 +60,9 @@ impl From<&PipelineArguments> for GenArguments {
 /// # use mamba::common::position::{CaretPos, Position};
 /// # use mamba::generate::gen;
 /// let cond_node = Node::Int { lit: String::from("56") };
-/// let cond_pos = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), cond_node);
+/// let cond_pos = AST::new(Position::new(CaretPos::new(0, 0), CaretPos::new(0, 5)), cond_node);
 /// let node = Node::Condition { cond: Box::from(cond_pos), el: None };
-/// let ast = AST::new(&Position::new(&CaretPos::new(0, 0), &CaretPos::new(0, 5)), node);
+/// let ast = AST::new(Position::new(CaretPos::new(0, 0), CaretPos::new(0, 5)), node);
 /// let ast_ty = ASTTy::from(&ast);
 /// let core_result = gen(&ast_ty);
 ///
@@ -73,9 +75,23 @@ impl From<&PipelineArguments> for GenArguments {
 /// to panic.
 pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments) -> GenResult {
     let state = State::from(gen_args);
-    convert_node(ast_ty, &mut Imports::new(), &state)
+
+    let import = &mut Imports::new();
+    match convert_node(ast_ty, import, &state)? {
+        Core::Block { statements: mut old_stmts } => {
+            let mut statements = import.imports.clone();
+            statements.append(&mut old_stmts);
+            Ok(Core::Block { statements })
+        }
+        other if !import.imports.is_empty() => {
+            let mut statements = import.imports.clone();
+            statements.push(other);
+            Ok(Core::Block { statements })
+        }
+        other => Ok(other)
+    }
 }
 
 pub fn gen(ast_ty: &ASTTy) -> GenResult {
-    convert_node(ast_ty, &mut Imports::new(), &State::new())
+    gen_arguments(ast_ty, &GenArguments::default())
 }

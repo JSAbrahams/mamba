@@ -48,7 +48,7 @@ impl GenericFunctionArg {
         if self.name.as_str() == SELF {
             if class.is_none() {
                 let msg = "Cannot have self argument outside class";
-                return Err(vec![TypeErr::new(&self.pos, msg)]);
+                return Err(vec![TypeErr::new(self.pos, msg)]);
             }
 
             if self.ty.is_none() {
@@ -73,7 +73,7 @@ impl TryFrom<&AST> for ClassArgument {
                 let fun_arg = GenericFunctionArg {
                     is_py_type: false,
                     name: argument_name(var)?,
-                    pos: ast.pos.clone(),
+                    pos: ast.pos,
                     has_default: expression.is_some(),
                     vararg: false,
                     mutable: *mutable,
@@ -88,7 +88,7 @@ impl TryFrom<&AST> for ClassArgument {
             }
             Node::FunArg { .. } =>
                 Ok(ClassArgument { field: None, fun_arg: GenericFunctionArg::try_from(ast)? }),
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition or function argument")])
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected definition or function argument")])
         }
     }
 }
@@ -107,7 +107,7 @@ impl TryFrom<&AST> for GenericFunctionArg {
                     has_default: default.is_some(),
                     vararg: *vararg,
                     mutable: *mutable,
-                    pos: ast.pos.clone(),
+                    pos: ast.pos,
                     ty: match ty {
                         Some(ty) => Some(Name::try_from(ty.deref())?),
                         None if name.as_str() == SELF => None,
@@ -119,20 +119,20 @@ impl TryFrom<&AST> for GenericFunctionArg {
                                 Node::Real { .. } => Name::from(clss::python::FLOAT_PRIMITIVE),
                                 Node::ENum { .. } => Name::from(clss::python::INT_PRIMITIVE),
                                 _ => return Err(vec![TypeErr::new(
-                                    &default.pos,
+                                    default.pos,
                                     "Can only infer type of literals",
                                 )]),
                             })
                         } else {
                             return Err(vec![TypeErr::new(
-                                &var.pos,
+                                var.pos,
                                 "Non-self argument must have type if no default present",
                             )]);
                         },
                     },
                 })
             }
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected function argument")])
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected function argument")])
         }
     }
 }
@@ -140,6 +140,6 @@ impl TryFrom<&AST> for GenericFunctionArg {
 pub fn argument_name(ast: &AST) -> Result<String, TypeErr> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
-        _ => Err(TypeErr::new(&ast.pos, "Expected identifier in argument"))
+        _ => Err(TypeErr::new(ast.pos, "Expected identifier in argument"))
     }
 }

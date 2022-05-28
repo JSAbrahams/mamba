@@ -27,7 +27,7 @@ impl Display for NameVariant {
 }
 
 impl ColType for NameVariant {
-    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+    fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>> {
         if let NameVariant::Single(string_name) = self {
             string_name.col_type(ctx, pos)
         } else {
@@ -41,7 +41,7 @@ impl IsSuperSet<NameVariant> for NameVariant {
         &self,
         other: &NameVariant,
         ctx: &Context,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<bool> {
         match (self, other) {
             (NameVariant::Single(left), NameVariant::Single(right)) =>

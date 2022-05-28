@@ -71,14 +71,14 @@ impl TryFrom<&[AST]> for Context {
 }
 
 pub trait LookupClass<In, Out> {
-    fn class(&self, class: In, pos: &Position) -> TypeResult<Out>;
+    fn class(&self, class: In, pos: Position) -> TypeResult<Out>;
 }
 
 impl LookupClass<&StringName, Class> for Context {
     /// Look up union of GenericClass and substitute generics to yield set of classes.
     ///
     /// Substitutes all generics in the class when found.
-    fn class(&self, class: &StringName, pos: &Position) -> Result<Class, Vec<TypeErr>> {
+    fn class(&self, class: &StringName, pos: Position) -> Result<Class, Vec<TypeErr>> {
         if let Some(generic_class) = self.classes.iter().find(|c| {
             c.name.as_direct("Class name", pos).map(|name| name.name) == Ok(class.name.clone())
         }) {
@@ -110,7 +110,7 @@ impl LookupClass<&StringName, Class> for Context {
 }
 
 impl LookupClass<&TrueName, ClassTuple> for Context {
-    fn class(&self, class: &TrueName, pos: &Position) -> TypeResult<ClassTuple> {
+    fn class(&self, class: &TrueName, pos: Position) -> TypeResult<ClassTuple> {
         let variant = match &class.variant {
             NameVariant::Single(direct) => ClassVariant::Direct(self.class(direct, pos)?),
             NameVariant::Tuple(unions) => ClassVariant::Tuple(
@@ -132,7 +132,7 @@ impl LookupClass<&Name, ClassUnion> for Context {
     /// # Error
     ///
     /// If NameUnion is empty.
-    fn class(&self, name: &Name, pos: &Position) -> Result<ClassUnion, Vec<TypeErr>> {
+    fn class(&self, name: &Name, pos: Position) -> Result<ClassUnion, Vec<TypeErr>> {
         if name.is_empty() {
             return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
         }
@@ -143,7 +143,7 @@ impl LookupClass<&Name, ClassUnion> for Context {
 }
 
 pub trait LookupFunction<In, Out> {
-    fn function(&self, function: In, pos: &Position) -> TypeResult<Out>;
+    fn function(&self, function: In, pos: Position) -> TypeResult<Out>;
 }
 
 impl LookupFunction<&StringName, Function> for Context {
@@ -151,7 +151,7 @@ impl LookupFunction<&StringName, Function> for Context {
     ///
     /// If function does not exist, treat function as constructor and see if
     /// there exists a class with the same truename.
-    fn function(&self, function: &StringName, pos: &Position) -> Result<Function, Vec<TypeErr>> {
+    fn function(&self, function: &StringName, pos: Position) -> Result<Function, Vec<TypeErr>> {
         let generics = HashMap::new();
 
         if let Some(generic_fun) = self.functions.iter().find(|c| &c.name == function) {
@@ -167,12 +167,12 @@ impl LookupFunction<&StringName, Function> for Context {
 }
 
 pub trait LookupField<In, Out> {
-    fn field(&self, field: In, pos: &Position) -> TypeResult<Out>;
+    fn field(&self, field: In, pos: Position) -> TypeResult<Out>;
 }
 
 impl LookupField<&str, Field> for Context {
     /// Look up a field and substitutes generics to yield a Field.
-    fn field(&self, field: &str, pos: &Position) -> Result<Field, Vec<TypeErr>> {
+    fn field(&self, field: &str, pos: Position) -> Result<Field, Vec<TypeErr>> {
         if let Some(generic_field) = self.fields.iter().find(|c| c.name == field) {
             let generics = HashMap::new();
             Field::try_from((generic_field, &generics, pos))
@@ -208,7 +208,7 @@ impl Display for ClassTuple {
 }
 
 impl ClassTuple {
-    pub fn as_direct(&self, pos: &Position) -> TypeResult<Class> {
+    pub fn as_direct(&self, pos: Position) -> TypeResult<Class> {
         match &self.variant {
             ClassVariant::Direct(class) => Ok(class.clone()),
             _ => Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))]),
@@ -225,7 +225,7 @@ impl ClassTuple {
         TrueName::from(&variant)
     }
 
-    pub fn args(&self, pos: &Position) -> TypeResult<Vec<FunctionArg>> {
+    pub fn args(&self, pos: Position) -> TypeResult<Vec<FunctionArg>> {
         match &self.variant {
             ClassVariant::Direct(class) => Ok(class.args.clone()),
             ClassVariant::Tuple(_) => {
@@ -235,7 +235,7 @@ impl ClassTuple {
         }
     }
 
-    pub fn fun(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
+    pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<Function> {
         match &self.variant {
             ClassVariant::Direct(class) => class.fun(name, ctx, pos),
             ClassVariant::Tuple(classes) => {
@@ -257,7 +257,7 @@ impl ClassTuple {
         }
     }
 
-    pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<Field> {
+    pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<Field> {
         match &self.variant {
             ClassVariant::Direct(class) => class.field(name, ctx, pos),
             ClassVariant::Tuple(_) => {
@@ -291,7 +291,7 @@ impl HasParent<&StringName> for ClassUnion {
         &self,
         name: &StringName,
         ctx: &Context,
-        pos: &Position,
+        pos: Position,
     ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
@@ -300,7 +300,7 @@ impl HasParent<&StringName> for ClassUnion {
 }
 
 impl HasParent<&StringName> for ClassTuple {
-    fn has_parent(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         match &self.variant {
             ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
             ClassVariant::Tuple(_) => {
@@ -312,7 +312,7 @@ impl HasParent<&StringName> for ClassTuple {
 }
 
 impl HasParent<&TrueName> for ClassTuple {
-    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         match &self.variant {
             ClassVariant::Direct(class) => {
                 class.has_parent(&name.as_direct("class", pos)?, ctx, pos)
@@ -330,7 +330,7 @@ impl HasParent<&TrueName> for ClassUnion {
         &self,
         name: &TrueName,
         ctx: &Context,
-        pos: &Position,
+        pos: Position,
     ) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
@@ -339,7 +339,7 @@ impl HasParent<&TrueName> for ClassUnion {
 }
 
 impl HasParent<&Name> for ClassTuple {
-    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
         match &self.variant {
             ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
             ClassVariant::Tuple(_) => {
@@ -351,7 +351,7 @@ impl HasParent<&Name> for ClassTuple {
 }
 
 impl HasParent<&Name> for ClassUnion {
-    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> Result<bool, Vec<TypeErr>> {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -364,13 +364,13 @@ impl ClassUnion {
         Name::new(&names)
     }
 
-    pub fn constructor(&self, pos: &Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
+    pub fn constructor(&self, pos: Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
         // TODO check raises of constructor
         self.union.iter().map(|c| c.args(pos)).collect::<Result<_, _>>()
     }
 
     /// Check if ClassUnion implements a function.
-    pub fn fun(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<FunUnion> {
+    pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<FunUnion> {
         let union: HashSet<Function> =
             self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
         if union.is_empty() {
@@ -381,7 +381,7 @@ impl ClassUnion {
         Ok(FunUnion { union })
     }
 
-    pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<FieldUnion> {
+    pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<FieldUnion> {
         let union: HashSet<Field> =
             self.union.iter().map(|c| c.field(name, ctx, pos)).collect::<Result<_, _>>()?;
         if union.is_empty() {
@@ -420,13 +420,13 @@ mod tests {
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let pos = Position::default();
-        let clss = ctx.class(&list_type, &pos)?;
+        let clss = ctx.class(&list_type, pos)?;
         assert_eq!(clss.name, TrueName::from(&list_type));
 
-        let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, &pos)?.ret_ty;
-        for name in iter_name.as_direct("iterator", &pos)? {
-            let iter_class = ctx.class(&name, &pos)?;
-            let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, &pos)?.ret_ty;
+        let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
+        for name in iter_name.as_direct("iterator", pos)? {
+            let iter_class = ctx.class(&name, pos)?;
+            let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))
         }
 
@@ -440,13 +440,13 @@ mod tests {
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let pos = Position::default();
-        let clss = ctx.class(&list_type, &pos)?;
+        let clss = ctx.class(&list_type, pos)?;
         assert_eq!(clss.name, TrueName::from(&list_type));
 
-        let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, &pos)?.ret_ty;
-        for name in iter_name.as_direct("iterator", &pos)? {
-            let iter_class = ctx.class(&name, &pos)?;
-            let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, &pos)?.ret_ty;
+        let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
+        for name in iter_name.as_direct("iterator", pos)? {
+            let iter_class = ctx.class(&name, pos)?;
+            let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))
         }
 
@@ -459,11 +459,11 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_primitives().unwrap();
 
-        context.class(&StringName::from("String"), &Position::default()).unwrap();
-        context.class(&StringName::from("Bool"), &Position::default()).unwrap();
-        context.class(&StringName::from("Float"), &Position::default()).unwrap();
-        context.class(&StringName::from("Int"), &Position::default()).unwrap();
-        context.class(&StringName::from("Complex"), &Position::default()).unwrap();
+        context.class(&StringName::from("String"), Position::default()).unwrap();
+        context.class(&StringName::from("Bool"), Position::default()).unwrap();
+        context.class(&StringName::from("Float"), Position::default()).unwrap();
+        context.class(&StringName::from("Int"), Position::default()).unwrap();
+        context.class(&StringName::from("Complex"), Position::default()).unwrap();
     }
 
     #[test]
@@ -472,8 +472,8 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_std_lib().unwrap();
 
-        context.class(&StringName::from("Range"), &Position::default()).unwrap();
-        context.class(&StringName::from("None"), &Position::default()).unwrap();
-        context.class(&StringName::from("Exception"), &Position::default()).unwrap();
+        context.class(&StringName::from("Range"), Position::default()).unwrap();
+        context.class(&StringName::from("None"), Position::default()).unwrap();
+        context.class(&StringName::from("Exception"), Position::default()).unwrap();
     }
 }
