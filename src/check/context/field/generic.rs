@@ -21,6 +21,7 @@ pub struct GenericField {
     pub mutable: bool,
     pub in_class: Option<StringName>,
     pub ty: Option<Name>,
+    pub assigned_to: bool,
 }
 
 pub struct GenericFields {
@@ -44,7 +45,7 @@ impl TryFrom<&AST> for GenericField {
 
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
-            Node::VariableDef { var, mutable, ty, .. } => Ok(GenericField {
+            Node::VariableDef { var, mutable, ty, expr, .. } => Ok(GenericField {
                 is_py_type: false,
                 name: field_name(var.deref())?,
                 mutable: *mutable,
@@ -54,6 +55,7 @@ impl TryFrom<&AST> for GenericField {
                     Some(ty) => Some(Name::try_from(ty.deref())?),
                     None => None,
                 },
+                assigned_to: expr.is_some(),
             }),
             _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
         }
@@ -66,7 +68,7 @@ impl TryFrom<&AST> for GenericFields {
     fn try_from(ast: &AST) -> TypeResult<GenericFields> {
         Ok(GenericFields {
             fields: match &ast.node {
-                Node::VariableDef { var, ty, mutable, .. } => {
+                Node::VariableDef { var, ty, mutable, expr, .. } => {
                     let identifier = Identifier::try_from(var.deref())?;
                     match &ty {
                         Some(ty) => {
@@ -80,6 +82,7 @@ impl TryFrom<&AST> for GenericFields {
                                     pos: ast.pos.clone(),
                                     ty: Some(ty.clone()),
                                     in_class: None,
+                                    assigned_to: expr.is_some(),
                                 })
                                 .collect())
                         }
@@ -93,6 +96,7 @@ impl TryFrom<&AST> for GenericFields {
                                 mutable: *mutable || *inner_mut,
                                 in_class: None,
                                 ty: None,
+                                assigned_to: expr.is_some(),
                             })
                             .collect()),
                     }
@@ -115,6 +119,10 @@ impl GenericField {
         } else {
             Err(Vec::from(TypeErr::new(pos, &String::from("Field must be in class"))))
         }
+    }
+
+    pub fn with_ty(&self, name: &Name) -> Self {
+        GenericField { ty: Some(name.clone()), ..self.clone() }
     }
 }
 

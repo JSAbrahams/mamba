@@ -1,0 +1,2 @@
+class MyClass[A: UnknownType]
+    def f() -> Int => 10

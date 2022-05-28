@@ -28,9 +28,9 @@ impl TryFrom<&AST> for TrueName {
             Node::Tuple { elements } => {
                 let elements = elements.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                 Ok(TrueName::from(&NameVariant::Tuple(elements)))
-            },
+            }
             Node::QuestionOp { expr } => Ok(TrueName::try_from(expr)?.as_nullable()),
-            Node::Type { id, .. } => Ok(TrueName::try_from(id)?),
+            Node::Type { .. } => Ok(TrueName::from(&StringName::try_from(ast)?)),
             Node::TypeTup { types } => {
                 let names = types.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                 Ok(TrueName::from(&NameVariant::Tuple(names)))
