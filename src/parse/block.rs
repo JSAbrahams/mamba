@@ -14,7 +14,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     it.peek_while_not_tokens(
         &[Token::Dedent, Token::Eof],
         &mut |it, lex| match &lex.token {
-            Token::NL => it.eat(&Token::NL, "statements").map(|_| ()),
+            Token::NL => it.eat(&Token::NL, "statements 1").map(|_| ()),
 
             Token::Import | Token::From => {
                 statements.push(*it.parse(&parse_import, "file", start)?);
@@ -32,22 +32,16 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
                 let end = it.eat(&Token::Comment(comment.clone()), "statements")?;
                 let node = Node::Comment { comment: comment.clone() };
                 statements.push(AST::new(lex.pos.union(end), node));
-
-                let last_pos = &it.last_pos();
-                it.eat_if_not_empty(&Token::NL, "statements", last_pos)?;
                 Ok(())
             }
             Token::DocStr(doc_str) => {
                 let end = it.eat(&Token::DocStr(doc_str.clone()), "statements")?;
                 let node = Node::DocStr { lit: doc_str.clone() };
                 statements.push(AST::new(lex.pos.union(end), node));
-
-                let last_pos = &it.last_pos();
-                it.eat_if_not_empty(&Token::NL, "statements", last_pos)?;
                 Ok(())
             }
             _ => {
-                statements.push(*it.parse(&parse_expr_or_stmt, "statements", start)?);
+                statements.push(*it.parse(&parse_expr_or_stmt, "statements 2", start)?);
                 if it.peek_if(&|lex| lex.token != Token::NL && lex.token != Token::Dedent && lex.token != Token::Eof) {
                     Err(expected_one_of(&[Token::NL, Token::Dedent, Token::Eof], lex, "end of statement"))
                 } else {

@@ -180,49 +180,41 @@ mod test {
 
     #[test]
     fn for_missing_do() {
-        let source = String::from("for a in c d");
-        parse_direct(&source).unwrap_err();
+        parse_direct(&String::from("for a in c d")).unwrap_err();
     }
 
     #[test]
     fn for_missing_body() {
-        let source = String::from("for a in c");
-        parse_direct(&source).unwrap_err();
+        parse_direct(&String::from("for a in c")).unwrap_err();
     }
 
     #[test]
     fn if_missing_then() {
-        let source = String::from("if a b");
-        parse_direct(&source).unwrap_err();
+        parse_direct(&String::from("if a b")).unwrap_err();
     }
 
     #[test]
     fn if_missing_body() {
-        let source = String::from("if a then");
-        parse_direct(&source).unwrap_err();
+        parse_direct(&String::from("if a then")).unwrap_err();
     }
 
     #[test]
     fn while_statements() -> ParseResult<()> {
-        let source = resource_content(true, &["control_flow"], "while.mamba");
-        parse(&source).map(|_| ())
+        parse(&resource_content(true, &["control_flow"], "while.mamba")).map(|_| ())
     }
 
     #[test]
     fn assigns_and_while() {
-        let source = resource_content(false, &["syntax"], "assign_and_while.mamba");
-        parse(&source).unwrap_err();
+        parse(&resource_content(false, &["syntax"], "assign_and_while.mamba")).unwrap_err();
     }
 
     #[test]
     fn for_statements() {
-        let source = resource_content(true, &["control_flow"], "for_statements.mamba");
-        parse(&source).unwrap();
+        parse(&resource_content(true, &["control_flow"], "for_statements.mamba")).unwrap();
     }
 
     #[test]
     fn if_stmt() {
-        let source = resource_content(true, &["control_flow"], "if.mamba");
-        parse(&source).unwrap();
+        parse(&resource_content(true, &["control_flow"], "if.mamba")).unwrap();
     }
 }

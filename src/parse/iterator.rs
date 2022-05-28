@@ -79,17 +79,6 @@ impl<'a> LexIterator<'a> {
         last_pos
     }
 
-    pub fn eat_if_not_empty(&mut self, token: &Token, err_msg: &str, last_pos: &Option<Position>)
-                            -> ParseResult<Option<Position>> {
-        if self.it.peek().is_some() {
-            self.eat(token, err_msg)
-                .map(Some)
-                .map_err(|err| err.clone_with_cause(err_msg, last_pos.unwrap_or_default()))
-        } else {
-            Ok(None)
-        }
-    }
-
     pub fn parse(
         &mut self,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
@@ -208,10 +197,6 @@ impl<'a> LexIterator<'a> {
             Some(Lex { pos, .. }) => Ok(*pos),
             None => Err(eof_expected_one_of(&[], &format!("start of a {}", msg)))
         }
-    }
-
-    pub fn last_pos(&mut self) -> Option<Position> {
-        self.it.peek().map(|lex| lex.pos)
     }
 }
 
