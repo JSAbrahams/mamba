@@ -14,7 +14,7 @@ impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
         if let Some(ty) = ty {
             let name = Name::from(ty);
             if let Some(field) = fields.fields.iter().next() {
-                let field = field.with_ty(&name);
+                let field = field.with_ty(&name); // cannot annotate tuples in python
                 GenericFields { fields: HashSet::from([field]) }
             } else {
                 fields
@@ -69,9 +69,9 @@ impl From<&Expression> for GenericFields {
                     .collect(),
                 _ => vec![],
             })
-            .iter()
-            .cloned()
-            .collect::<HashSet<_>>(),
+                .iter()
+                .cloned()
+                .collect::<HashSet<_>>(),
         }
     }
 }

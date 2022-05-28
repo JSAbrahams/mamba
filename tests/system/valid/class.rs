@@ -11,6 +11,11 @@ fn assign_types_nested() -> OutTestRet {
 }
 
 #[test]
+fn class_super_one_line_init() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "class_super_one_line_init")
+}
+
+#[test]
 #[ignore] // Should be fixed within this PR ideally
 fn assign_types_double_nested() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "assign_types_double_nested")
