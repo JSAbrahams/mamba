@@ -246,8 +246,8 @@ impl fmt::Display for Token {
             Token::Pure => String::from("pure"),
             Token::Type => String::from("type"),
             Token::Class => String::from("class"),
-            Token::IsA => String::from("isa"),
-            Token::IsNA => String::from("isnta"),
+            Token::IsA => String::from("is_a"),
+            Token::IsNA => String::from("isn_t_a"),
             Token::Init => String::from("init"),
 
             Token::As => String::from("as"),
@@ -257,9 +257,9 @@ impl fmt::Display for Token {
 
             Token::Point => String::from("point"),
             Token::Comma => String::from("comma"),
-            Token::DoublePoint => String::from("double point"),
+            Token::DoublePoint => String::from("d_point"),
             Token::Vararg => String::from("vararg"),
-            Token::BSlash => String::from("backslash"),
+            Token::BSlash => String::from("b_slash"),
 
             Token::Fin => String::from("final"),
             Token::Assign => String::from("assign"),
@@ -278,7 +278,7 @@ impl fmt::Display for Token {
             Token::ENum(_, _) => String::from("enum_lit"),
             Token::Str(_, _) => String::from("string_lit"),
             Token::DocStr(_) => String::from("doc_string"),
-            Token::Bool(_) => String::from("boolean"),
+            Token::Bool(_) => String::from("bool"),
 
             Token::Range => String::from("range"),
             Token::RangeIncl => String::from("range_incl"),
@@ -294,12 +294,12 @@ impl fmt::Display for Token {
             Token::Mod => String::from("mod"),
             Token::Sqrt => String::from("sqrt"),
 
-            Token::BAnd => String::from("binary_add"),
-            Token::BOr => String::from("binary_or"),
-            Token::BXOr => String::from("binary_xor"),
-            Token::BOneCmpl => String::from("binary_not"),
-            Token::BLShift => String::from("binary_lshift"),
-            Token::BRShift => String::from("binary_rshift"),
+            Token::BAnd => String::from("bin_add"),
+            Token::BOr => String::from("bin_or"),
+            Token::BXOr => String::from("bin_xor"),
+            Token::BOneCmpl => String::from("bin_not"),
+            Token::BLShift => String::from("bin_lshift"),
+            Token::BRShift => String::from("bin_rshift"),
 
             Token::Ge => String::from("ge"),
             Token::Geq => String::from("geq"),
@@ -308,19 +308,19 @@ impl fmt::Display for Token {
 
             Token::Eq => String::from("eq"),
             Token::Is => String::from("is"),
-            Token::IsN => String::from("isnt"),
+            Token::IsN => String::from("isn_t"),
             Token::Neq => String::from("neq"),
             Token::And => String::from("and"),
             Token::Or => String::from("or"),
             Token::Not => String::from("not"),
 
-            Token::LRBrack => String::from("l_rbrack"),
-            Token::RRBrack => String::from("r_rbrack"),
-            Token::LSBrack => String::from("l_sbrack"),
-            Token::RSBrack => String::from("r_sbrack"),
-            Token::LCBrack => String::from("l_cbrack"),
-            Token::RCBrack => String::from("r_cbrack"),
-            Token::Ver => String::from("vartical"),
+            Token::LRBrack => String::from("l_r_brack"),
+            Token::RRBrack => String::from("r_r_brack"),
+            Token::LSBrack => String::from("l_s_brack"),
+            Token::RSBrack => String::from("r_s_brack"),
+            Token::LCBrack => String::from("l_c_brack"),
+            Token::RCBrack => String::from("r_c_brack"),
+            Token::Ver => String::from("vertical"),
             Token::To => String::from("to"),
             Token::BTo => String::from("fun_to"),
 
@@ -352,7 +352,7 @@ impl fmt::Display for Token {
             Token::Undefined => String::from("undefined"),
             Token::Comment(_) => String::from("comment"),
 
-            Token::Eof => String::from("end of file")
+            Token::Eof => String::from("end_of_file")
         })
     }
 }
