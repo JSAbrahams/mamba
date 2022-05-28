@@ -47,7 +47,7 @@ impl GenericFunction {
         self,
         in_class: Option<&TrueName>,
         _type_def: bool,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<GenericFunction> {
         if let Some(NameVariant::Single(in_class)) = in_class.map(|t| t.variant.clone()) {
             Ok(GenericFunction {
@@ -81,7 +81,7 @@ impl TryFrom<&AST> for GenericFunction {
                     is_py_type: false,
                     name: function_name(id.deref())?,
                     pure: *pure,
-                    pos: ast.pos.clone(),
+                    pos: ast.pos,
                     arguments: {
                         let args: Vec<GenericFunctionArg> = fun_args
                             .iter()
@@ -92,7 +92,7 @@ impl TryFrom<&AST> for GenericFunction {
                         for arg in args.clone() {
                             if has_default && !arg.has_default {
                                 return Err(vec![TypeErr::new(
-                                    &arg.pos,
+                                    arg.pos,
                                     "Cannot have argument with default followed by argument with \
                                      no default.",
                                 )]);
@@ -110,7 +110,7 @@ impl TryFrom<&AST> for GenericFunction {
                     raises: Name::try_from(raises)?,
                 })
             }
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected function definition")]),
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected function definition")]),
         }
     }
 }
@@ -118,7 +118,7 @@ impl TryFrom<&AST> for GenericFunction {
 pub fn function_name(ast: &AST) -> TypeResult<StringName> {
     match &ast.node {
         Node::Id { lit } => Ok(StringName::from(lit.as_str())),
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected function truename")]),
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected function truename")]),
     }
 }
 
@@ -136,7 +136,7 @@ mod test {
 
     #[test]
     fn from_non_fundef_node() {
-        let ast = AST::new(&Position::default(), Node::Pass);
+        let ast = AST::new(Position::default(), Node::Pass);
         assert!(GenericFunction::try_from(&ast).is_err())
     }
 

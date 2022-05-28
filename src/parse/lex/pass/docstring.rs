@@ -27,7 +27,7 @@ impl DocString {
                     self.front = None;
                     self.middle = None;
                     self.back = None;
-                    return vec![Lex::new(&front.pos.start, Token::DocStr(doc_str))];
+                    return vec![Lex::new(front.pos.start, Token::DocStr(doc_str))];
                 }
             }
         }

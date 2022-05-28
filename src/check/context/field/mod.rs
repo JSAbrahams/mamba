@@ -32,11 +32,11 @@ impl Display for Field {
     }
 }
 
-impl TryFrom<(&GenericField, &HashMap<Name, Name>, &Position)> for Field {
+impl TryFrom<(&GenericField, &HashMap<Name, Name>, Position)> for Field {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (field, generics, pos): (&GenericField, &HashMap<Name, Name>, &Position)
+        (field, generics, pos): (&GenericField, &HashMap<Name, Name>, Position)
     ) -> Result<Self, Self::Error> {
         Ok(Field {
             is_py_type: field.is_py_type,

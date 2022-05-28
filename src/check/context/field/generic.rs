@@ -49,7 +49,7 @@ impl TryFrom<&AST> for GenericField {
                 is_py_type: false,
                 name: field_name(var.deref())?,
                 mutable: *mutable,
-                pos: ast.pos.clone(),
+                pos: ast.pos,
                 in_class: None,
                 ty: match ty {
                     Some(ty) => Some(Name::try_from(ty.deref())?),
@@ -57,7 +57,7 @@ impl TryFrom<&AST> for GenericField {
                 },
                 assigned_to: expr.is_some(),
             }),
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected variable")]),
         }
     }
 }
@@ -73,13 +73,13 @@ impl TryFrom<&AST> for GenericFields {
                     match &ty {
                         Some(ty) => {
                             let ty = Name::try_from(ty.deref())?;
-                            Ok(match_name(&identifier, &ty, &ast.pos)?
+                            Ok(match_name(&identifier, &ty, ast.pos)?
                                 .iter()
                                 .map(|(id, (inner_mut, ty))| GenericField {
                                     is_py_type: false,
                                     name: id.clone(),
                                     mutable: *mutable || *inner_mut,
-                                    pos: ast.pos.clone(),
+                                    pos: ast.pos,
                                     ty: Some(ty.clone()),
                                     in_class: None,
                                     assigned_to: expr.is_some(),
@@ -87,12 +87,12 @@ impl TryFrom<&AST> for GenericFields {
                                 .collect())
                         }
                         None => Ok(identifier
-                            .fields(&var.pos)?
+                            .fields(var.pos)?
                             .iter()
                             .map(|(inner_mut, name)| GenericField {
                                 is_py_type: false,
                                 name: name.clone(),
-                                pos: ast.pos.clone(),
+                                pos: ast.pos,
                                 mutable: *mutable || *inner_mut,
                                 in_class: None,
                                 ty: None,
@@ -101,7 +101,7 @@ impl TryFrom<&AST> for GenericFields {
                             .collect()),
                     }
                 }
-                _ => Err(vec![TypeErr::new(&ast.pos, "Expected variable")]),
+                _ => Err(vec![TypeErr::new(ast.pos, "Expected variable")]),
             }?,
         })
     }
@@ -112,7 +112,7 @@ impl GenericField {
         self,
         class: Option<&TrueName>,
         _type_def: bool,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<GenericField> {
         if let Some(NameVariant::Single(class)) = class.map(|t| t.variant.clone()) {
             Ok(GenericField { in_class: Some(class), ..self })
@@ -131,7 +131,7 @@ fn field_name(ast: &AST) -> TypeResult<String> {
         Node::Id { lit } => Ok(lit.clone()),
         _ => {
             let msg = format!("Expected valid identifier, was '{}'", ast.node);
-            Err(vec![TypeErr::new(&ast.pos, &msg)])
+            Err(vec![TypeErr::new(ast.pos, &msg)])
         }
     }
 }

@@ -17,8 +17,8 @@ pub struct LexErr {
 }
 
 impl LexErr {
-    pub fn new(pos: &CaretPos, token: Option<Token>, msg: &str) -> LexErr {
-        LexErr { pos: pos.clone(), token, msg: String::from(msg), source: None, path: None }
+    pub fn new(pos: CaretPos, token: Option<Token>, msg: &str) -> LexErr {
+        LexErr { pos, token, msg: String::from(msg), source: None, path: None }
     }
 
     pub fn into_with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> LexErr {

@@ -58,7 +58,7 @@ impl ConstrBuilder {
         self.level += 1;
     }
 
-    pub fn exit_set(&mut self, pos: &Position) -> TypeResult<()> {
+    pub fn exit_set(&mut self, pos: Position) -> TypeResult<()> {
         if self.level == 0 {
             return Err(vec![TypeErr::new(pos, "Cannot exit top-level set")]);
         }

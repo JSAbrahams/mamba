@@ -16,8 +16,8 @@ pub struct AST {
 }
 
 impl AST {
-    pub fn new(pos: &Position, node: Node) -> AST {
-        AST { pos: pos.clone(), node }
+    pub fn new(pos: Position, node: Node) -> AST {
+        AST { pos, node }
     }
 
     pub fn same_value(&self, other: &AST) -> bool {
@@ -26,7 +26,7 @@ impl AST {
 
     #[must_use]
     pub fn map(&self, mapping: &dyn Fn(&Node) -> Node) -> AST {
-        AST { pos: self.pos.clone(), node: self.node.map(mapping) }
+        AST { pos: self.pos, node: self.node.map(mapping) }
     }
 }
 
@@ -34,7 +34,6 @@ pub type OptAST = Option<Box<AST>>;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Node {
-    File { pure: bool, statements: Vec<AST> },
     Import { from: Option<Box<AST>>, import: Vec<AST>, alias: Vec<AST> },
     Class { ty: Box<AST>, args: Vec<AST>, parents: Vec<AST>, body: OptAST },
     Generic { id: Box<AST>, isa: OptAST },
@@ -138,10 +137,10 @@ mod test {
 
     #[test]
     fn simple_ast() {
-        let pos = Position::new(&CaretPos::new(3, 403), &CaretPos::new(324, 673));
+        let pos = Position::new(CaretPos::new(3, 403), CaretPos::new(324, 673));
         let node = Node::Id { lit: String::from("fd") };
 
-        let ast = AST::new(&pos, node.clone());
+        let ast = AST::new(pos, node.clone());
 
         assert_eq!(ast.pos, pos);
         assert_eq!(ast.node, node);

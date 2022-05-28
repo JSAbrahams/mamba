@@ -5,7 +5,7 @@ use crate::common::position::CaretPos;
 use crate::parse::lex::result::{LexErr, LexResult};
 use crate::parse::lex::state::State;
 use crate::parse::lex::token::{Lex, Token};
-use crate::parse::lex::tokenize;
+use crate::parse::lex::tokenize_direct;
 
 #[allow(clippy::cognitive_complexity)]
 pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexResult {
@@ -29,7 +29,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
         '\n' => create(state, Token::NL),
         '\r' => match it.next() {
             Some('\n') => create(state, Token::NL),
-            _ => Err(LexErr::new(&state.pos, None, "return carriage not followed by newline")),
+            _ => Err(LexErr::new(state.pos, None, "return carriage not followed by newline")),
         },
         '.' => match it.peek() {
             Some('.') => match (it.next(), it.peek()) {
@@ -93,7 +93,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             Some('=') => next_and_create(it, state, Token::Neq),
             _ => {
                 let msg = String::from("'!' is not a valid character on its own");
-                Err(LexErr::new(&state.pos, None, &msg))
+                Err(LexErr::new(state.pos, None, &msg))
             }
         },
         '?' => create(state, Token::Question),
@@ -182,7 +182,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 
                     if c == '{' {
                         if build_cur_expr == 0 {
-                            cur_offset = state.pos.clone().offset_pos(string.len() + 1);
+                            cur_offset = state.pos.offset_pos(string.len() + 1);
                         }
                         build_cur_expr += 1;
                     } else if c == '}' {
@@ -193,7 +193,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
                         // Last char is always } due to counter
                         cur_expr = cur_expr[0..cur_expr.len() - 1].to_owned();
                         if !cur_expr.is_empty() {
-                            exprs.push((cur_offset.clone(), cur_expr.clone()));
+                            exprs.push((cur_offset, cur_expr.clone()));
                         }
                         cur_expr.clear()
                     }
@@ -208,10 +208,10 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             } else {
                 let tokens = exprs
                     .iter()
-                    .map(|(offset, string)| match tokenize(string) {
+                    .map(|(offset, string)| match tokenize_direct(string) {
                         Ok(tokens) => Ok(tokens
                             .iter()
-                            .map(|lex| Lex::new(&lex.pos.offset(offset).start, lex.token.clone()))
+                            .map(|lex| Lex::new(lex.pos.offset(offset).start, lex.token.clone()))
                             .collect()),
                         Err(err) => Err(err),
                     })
@@ -224,7 +224,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        c => Err(LexErr::new(&state.pos, None, &format!("unrecognized character: {}", c))),
+        c => Err(LexErr::new(state.pos, None, &format!("unrecognized character: {}", c))),
     }
 }
 

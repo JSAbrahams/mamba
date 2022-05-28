@@ -1,7 +1,7 @@
 use std::cmp::{max, min, Ordering};
 use std::fmt::{Display, Error, Formatter};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Default, Copy)]
 /// A position represents a rectangle in the source code.
 pub struct Position {
     pub start: CaretPos,
@@ -18,7 +18,7 @@ impl Display for Position {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Copy)]
 /// An endpoint represents either the top left or bottom right points of a
 /// [Position] rectangle.
 ///
@@ -63,8 +63,8 @@ impl Display for CaretPos {
 }
 
 impl Position {
-    pub fn new(start: &CaretPos, end: &CaretPos) -> Position {
-        Position { start: start.clone(), end: end.clone() }
+    pub fn new(start: CaretPos, end: CaretPos) -> Position {
+        Position { start, end }
     }
 
     /// Get the absolute width of a position, which represents a rectangle in
@@ -83,11 +83,11 @@ impl Position {
 
     #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
-        Position { start: self.start.clone().offset(offset), end: self.end.clone().offset(offset) }
+        Position { start: self.start.offset(offset), end: self.end.offset(offset) }
     }
 
     #[must_use]
-    pub fn union(&self, other: &Position) -> Position {
+    pub fn union(&self, other: Position) -> Position {
         Position {
             start: CaretPos {
                 line: min(self.start.line, other.start.line),
@@ -132,9 +132,9 @@ impl CaretPos {
     }
 }
 
-impl From<&CaretPos> for Position {
-    fn from(caret_pos: &CaretPos) -> Self {
-        Position::new(&caret_pos.clone(), &caret_pos.clone())
+impl From<CaretPos> for Position {
+    fn from(caret_pos: CaretPos) -> Self {
+        Position::new(caret_pos, caret_pos)
     }
 }
 
@@ -152,15 +152,15 @@ mod test {
 
     #[test]
     fn position_eq() {
-        let pos1 = Position::new(&CaretPos::new(3, 8), &CaretPos::new(2, 9));
-        let pos2 = Position::new(&CaretPos::new(3, 8), &CaretPos::new(2, 9));
+        let pos1 = Position::new(CaretPos::new(3, 8), CaretPos::new(2, 9));
+        let pos2 = Position::new(CaretPos::new(3, 8), CaretPos::new(2, 9));
         assert_eq!(pos1, pos2);
     }
 
     #[test]
     fn position_ne() {
-        let pos1 = Position::new(&CaretPos::new(3, 8), &CaretPos::new(2, 9));
-        let pos2 = Position::new(&CaretPos::new(3, 5), &CaretPos::new(2, 9));
+        let pos1 = Position::new(CaretPos::new(3, 8), CaretPos::new(2, 9));
+        let pos2 = Position::new(CaretPos::new(3, 5), CaretPos::new(2, 9));
         assert_ne!(pos1, pos2);
     }
 

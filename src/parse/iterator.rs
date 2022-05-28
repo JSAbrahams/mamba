@@ -50,7 +50,7 @@ impl<'a> LexIterator<'a> {
 
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
         match self.it.next() {
-            Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(pos.clone()),
+            Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(*pos),
             Some(lex) => Err(expected(token, lex, err_msg)),
             None => Err(eof_expected_one_of(&[token.clone()], err_msg))
         }
@@ -79,22 +79,11 @@ impl<'a> LexIterator<'a> {
         last_pos
     }
 
-    pub fn eat_if_not_empty(&mut self, token: &Token, err_msg: &str, last_pos: &Option<Position>)
-                            -> ParseResult<Option<Position>> {
-        if self.it.peek().is_some() {
-            self.eat(token, err_msg)
-                .map(Some)
-                .map_err(|err| err.clone_with_cause(err_msg, &last_pos.clone().unwrap_or_default()))
-        } else {
-            Ok(None)
-        }
-    }
-
     pub fn parse(
         &mut self,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
         cause: &str,
-        start: &Position,
+        start: Position,
     ) -> ParseResult<Box<AST>> {
         parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
     }
@@ -103,7 +92,7 @@ impl<'a> LexIterator<'a> {
         &mut self,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
         cause: &str,
-        start: &Position,
+        start: Position,
     ) -> ParseResult<Vec<AST>> {
         parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
     }
@@ -113,7 +102,7 @@ impl<'a> LexIterator<'a> {
         token: &Token,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
         err_msg: &str,
-        start: &Position,
+        start: Position,
     ) -> ParseResult<Option<Box<AST>>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -129,7 +118,7 @@ impl<'a> LexIterator<'a> {
         token: &Token,
         parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
         err_msg: &str,
-        start: &Position,
+        start: Position,
     ) -> ParseResult<Vec<AST>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
@@ -187,13 +176,15 @@ impl<'a> LexIterator<'a> {
         self.peek_while_fn(&|lex| !Token::same_type(&lex.token, token), loop_fn)
     }
 
+    /// Peek while certain function evaluates to true.
+    /// Function always evaluates to false if the next token is [Token::EOF].
     pub fn peek_while_fn(
         &mut self,
         check_fn: &dyn Fn(&Lex) -> bool,
         loop_fn: &mut dyn FnMut(&mut LexIterator, &Lex) -> ParseResult<()>,
     ) -> ParseResult<()> {
         while let Some(&lex) = self.it.peek() {
-            if !check_fn(lex) {
+            if !check_fn(lex) || lex.token == Token::Eof {
                 break;
             }
             loop_fn(self, lex)?;
@@ -203,13 +194,9 @@ impl<'a> LexIterator<'a> {
 
     pub fn start_pos(&mut self, msg: &str) -> ParseResult<Position> {
         match self.it.peek() {
-            Some(Lex { pos, .. }) => Ok(pos.clone()),
+            Some(Lex { pos, .. }) => Ok(*pos),
             None => Err(eof_expected_one_of(&[], &format!("start of a {}", msg)))
         }
-    }
-
-    pub fn last_pos(&mut self) -> Option<Position> {
-        self.it.peek().map(|lex| lex.pos.clone())
     }
 }
 
@@ -221,9 +208,9 @@ mod tests {
 
     #[test]
     fn test_peek_followed_by() {
-        let l1 = Lex::new(&CaretPos::default().offset_pos(0), Token::Neq);
-        let l2 = Lex::new(&CaretPos::default().offset_pos(1), Token::Neq);
-        let l3 = Lex::new(&CaretPos::default().offset_pos(2), Token::Eq);
+        let l1 = Lex::new(CaretPos::default().offset_pos(0), Token::Neq);
+        let l2 = Lex::new(CaretPos::default().offset_pos(1), Token::Neq);
+        let l3 = Lex::new(CaretPos::default().offset_pos(2), Token::Eq);
         let lex = vec![l1, l2, l3];
         let mut it = LexIterator::new(lex.iter().peekable());
 
@@ -238,8 +225,8 @@ mod tests {
 
     #[test]
     fn test_peek_followed_by_leaves_iter_unmodified() {
-        let l1 = Lex::new(&CaretPos::default().offset_pos(0), Token::Neq);
-        let l2 = Lex::new(&CaretPos::default().offset_pos(1), Token::Eq);
+        let l1 = Lex::new(CaretPos::default().offset_pos(0), Token::Neq);
+        let l2 = Lex::new(CaretPos::default().offset_pos(1), Token::Eq);
         let lex = vec![l1, l2];
         let mut lex_iter = LexIterator::new(lex.iter().peekable());
 

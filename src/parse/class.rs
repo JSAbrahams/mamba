@@ -5,26 +5,26 @@ use crate::parse::definition::{parse_definition, parse_fun_arg};
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::Token;
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{expected, expected_one_of};
+use crate::parse::result::{custom, expected, expected_one_of};
 use crate::parse::result::ParseResult;
-use crate::parse::ty::parse_id;
+use crate::parse::ty::{parse_conditions, parse_id};
 use crate::parse::ty::parse_type;
 
 pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("class")?;
     it.eat(&Token::Class, "class")?;
-    let ty = it.parse(&parse_type, "class", &start)?;
+    let ty = it.parse(&parse_type, "class", start)?;
 
     let mut args = vec![];
     if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match lex.token {
             Token::Def => {
-                args.push(*it.parse(&parse_definition, "constructor argument", &start)?);
+                args.push(*it.parse(&parse_definition, "constructor argument", start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
             _ => {
-                args.push(*it.parse(&parse_fun_arg, "constructor argument", &start)?);
+                args.push(*it.parse(&parse_fun_arg, "constructor argument", start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
@@ -36,7 +36,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     if it.eat_if(&Token::DoublePoint).is_some() {
         it.peek_while_not_token(&Token::NL, &mut |it, lex| match lex.token {
             Token::Id(_) | Token::LRBrack => {
-                parents.push(*it.parse(&parse_parent, "parents", &start)?);
+                parents.push(*it.parse(&parse_parent, "parents", start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
@@ -45,30 +45,30 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
     }
 
     let (body, pos) = if it.peek_if_followed_by(&Token::NL, &Token::Indent) {
-        let body = it.parse(&parse_block, "class", &start)?;
-        (Some(body.clone()), start.union(&body.pos))
+        let body = it.parse(&parse_block, "class", start)?;
+        (Some(body.clone()), start.union(body.pos))
     } else {
         (None, start)
     };
 
     let node = Node::Class { ty, args, parents, body };
-    Ok(Box::from(AST::new(&pos, node)))
+    Ok(Box::from(AST::new(pos, node)))
 }
 
 pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("parent")?;
-    let ty = it.parse(&parse_type, "parent", &start)?;
+    let ty = it.parse(&parse_type, "parent", start)?;
 
     let mut args = vec![];
     let end = if it.eat_if(&Token::LRBrack).is_some() {
         it.peek_while_not_token(&Token::RRBrack, &mut |it, lex| match &lex.token {
             Token::Id { .. } => {
-                args.push(*it.parse(&parse_id, "parent arguments", &start)?);
+                args.push(*it.parse(&parse_id, "parent arguments", start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
             Token::Str { .. } => {
-                args.push(*it.parse(&parse_expression, "parent arguments", &start)?);
+                args.push(*it.parse(&parse_expression, "parent arguments", start)?);
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
@@ -88,11 +88,48 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
         })?;
         it.eat(&Token::RRBrack, "parent arguments")?
     } else {
-        ty.pos.clone()
+        ty.pos
     };
 
     let node = Node::Parent { ty, args };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(start.union(end), node)))
+}
+
+pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("type definition")?;
+    it.eat(&Token::Type, "type definition")?;
+    let ty = it.parse(&parse_type, "type definition", start)?;
+    let isa = it.parse_if(&Token::DoublePoint, &parse_parent, "type parent", start)?;
+
+    it.peek(
+        &|it, lex| match lex.token {
+            Token::When => {
+                it.eat(&Token::When, "conditional type")?;
+                let isa = isa
+                    .clone()
+                    .ok_or_else(|| custom("conditional type must have parent type", lex.pos))?;
+
+                let conditions = it.parse_vec(&parse_conditions, "conditional type", start)?;
+                let end = conditions.last().map_or(ty.pos, |cond| cond.pos);
+
+                let node = Node::TypeAlias { ty: ty.clone(), isa, conditions };
+                Ok(Box::from(AST::new(start.union(end), node)))
+            }
+            _ => {
+                // TODO fix such that we can have empty interfaces
+                it.eat_if(&Token::NL);
+                let body = it.parse(&parse_block, "type definition", start)?;
+                let isa = isa.clone();
+                let node = Node::TypeDef { ty: ty.clone(), isa, body: Some(body.clone()) };
+                Ok(Box::from(AST::new(start.union(body.pos), node)))
+            }
+        },
+        {
+            let isa = isa.clone();
+            let node = Node::TypeDef { ty: ty.clone(), isa, body: None };
+            Ok(Box::from(AST::new(start.union(ty.pos), node)))
+        },
+    )
 }
 
 #[cfg(test)]
@@ -109,7 +146,7 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (from, import, alias) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
                 Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
                 _ => panic!("first element script was not list.")
             },
@@ -128,7 +165,7 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (from, import, alias) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
                 Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
                 other => panic!("first element script was not import: {:?}.", other)
             },
@@ -148,7 +185,7 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (from, import, alias) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
                 Node::Import { from, import, alias } => (from.clone(), import.clone(), alias.clone()),
                 other => panic!("first element script was not from: {:?}.", other)
             },
@@ -170,7 +207,7 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let (ty, args, parents, body) = match ast.node {
-            Node::File { statements: modules, .. } => match &modules.first().expect("script empty.").node {
+            Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
                 Node::Class { ty, args, parents, body } =>
                     (ty.clone(), args.clone(), parents.clone(), body.clone()),
                 other => panic!("Was not class: {:?}.", other)
