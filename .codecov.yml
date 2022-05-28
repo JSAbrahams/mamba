@@ -1,5 +1,5 @@
 comment:
-  layout: "reach, diff, flags, files"
+  layout: "reach, files"
   behavior: default
 
 coverage:
@@ -8,17 +8,3 @@ coverage:
       default:
         target: auto
         threshold: 0.25%  # allow coverage to drop by at most 0.25
-
-flags:
-  check:
-    paths:
-      - src/check/
-  generate:
-    paths:
-      - src/generate/
-  parse:
-    paths:
-      - src/parse/
-  integration:
-    paths:
-      - tests # integration tests are generally in tests
