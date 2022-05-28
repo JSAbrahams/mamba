@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 use std::hash::Hash;
 
-use crate::check::name::Name;
 use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -12,7 +11,6 @@ pub struct GenericParent {
     pub is_py_type: bool,
     pub name: TrueName,
     pub pos: Position,
-    pub args: Vec<Name>,
 }
 
 impl TryFrom<&AST> for GenericParent {
@@ -20,13 +18,10 @@ impl TryFrom<&AST> for GenericParent {
 
     fn try_from(ast: &AST) -> TypeResult<GenericParent> {
         match &ast.node {
-            // TODO infer types of arguments passed to parent
-            // TODO use arguments
             Node::Parent { ty, .. } => Ok(GenericParent {
                 is_py_type: false,
                 name: TrueName::try_from(ty)?,
                 pos: ast.pos.clone(),
-                args: vec![],
             }),
             _ => {
                 let msg = format!("Expected parent, was {}", ast.node);

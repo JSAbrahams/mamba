@@ -32,7 +32,7 @@ pub fn parse(input: &str) -> ParseResult {
 }
 
 #[cfg(test)]
-fn parse_direct(input: &str) -> ParseResult<Vec<AST>> {
+pub fn parse_direct(input: &str) -> ParseResult<Vec<AST>> {
     match parse(input)?.node {
         Node::File { statements, .. } => Ok(statements),
         _ => Ok(vec![]),

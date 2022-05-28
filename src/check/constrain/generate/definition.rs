@@ -34,7 +34,7 @@ pub fn gen_def(
                     if let Some(class) = constr.current_class() {
                         let class = ctx.class(&class, &id.pos)?;
                         let fields: Vec<&Field> =
-                            class.fields.iter().filter(|f| !f.ty.is_nullable()).collect();
+                            class.fields.iter().filter(|f| !f.ty.is_nullable() && !f.assigned_to).collect();
                         fields.iter().map(|f| f.name.clone()).collect()
                     } else {
                         let msg = format!("Cannot have {} function outside class", function::INIT);

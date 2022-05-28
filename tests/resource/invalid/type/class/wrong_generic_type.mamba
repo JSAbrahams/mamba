@@ -1,4 +1,4 @@
 class MyClass[A: String]
     def my_fun(x: A) -> A => x
 
-def my_class = MyClass[Int]()
+def my_class := MyClass[Int]()

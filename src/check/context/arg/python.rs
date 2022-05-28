@@ -15,7 +15,7 @@ impl From<(&String, &Option<Expression>, &Option<Expression>)> for GenericFuncti
             has_default: default.is_some(),
             pos: Default::default(),
             vararg: false,
-            mutable: false,
+            mutable: true,
             ty: ty.clone().map(|e| Name::from(&e)),
         }
     }
