@@ -1,7 +1,6 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
-#[ignore] // See #320
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }
@@ -9,6 +8,11 @@ fn generics() -> OutTestRet {
 #[test]
 fn assign_types_nested() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "assign_types_nested")
+}
+
+#[test]
+fn class_super_one_line_init() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "class_super_one_line_init")
 }
 
 #[test]

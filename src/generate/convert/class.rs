@@ -101,21 +101,18 @@ fn extract_class(
             })
             .collect::<GenResult<_>>()?;
 
-        // super(<parent>, self).__init__(args)
         let mut parent_calls: Vec<Core> = parents
             .iter()
-            .map(|(parent, args)| Core::PropertyCall {
-                object: Box::from(Core::FunctionCall {
-                    function: Box::from(Core::Id { lit: String::from(function::python::SUPER) }),
-                    args: vec![
-                        Core::Id { lit: parent.clone() },
-                        Core::Id { lit: String::from(arg::python::SELF) },
-                    ],
-                }),
-                property: Box::from(Core::FunctionCall {
-                    function: Box::new(Core::Id { lit: String::from(function::python::INIT) }),
-                    args: args.clone(),
-                }),
+            .map(|(parent, args)| {
+                let mut s_args = vec![Core::Id { lit: String::from(arg::python::SELF) }];
+                s_args.append(&mut args.clone());
+                Core::PropertyCall {
+                    object: Box::from(Core::Id { lit: parent.clone() }),
+                    property: Box::from(Core::FunctionCall {
+                        function: Box::new(Core::Id { lit: String::from(function::python::INIT) }),
+                        args: s_args.clone(),
+                    }),
+                }
             })
             .collect();
 
@@ -147,12 +144,41 @@ fn extract_class(
         new_args.append(&mut args);
 
         let mut statements = old_stmts;
-        statements.append(&mut vec![Core::FunDef {
-            id: String::from(function::python::INIT),
-            arg: new_args,
-            ty: None,
-            body: Box::from(Core::Block { statements: parent_calls }),
-        }]);
+        let statements = if let Some(idx) = statements.iter().position(|s| {
+            if let Core::FunDef { id, .. } = s {
+                id == &String::from(function::python::INIT)
+            } else {
+                false
+            }
+        }) {
+            // Should only find fun def if no class arguments
+            if let Core::FunDef { id, arg, ty, body } = statements.remove(idx) {
+                statements.push(Core::FunDef {
+                    id,
+                    arg,
+                    ty,
+                    body: Box::from(match &body.deref() {
+                        Core::Block { statements } => {
+                            parent_calls.append(&mut statements.clone());
+                            Core::Block { statements: parent_calls }
+                        }
+                        other => {
+                            parent_calls.push((*other).clone());
+                            Core::Block { statements: parent_calls }
+                        }
+                    }),
+                });
+            }
+            statements
+        } else {
+            statements.push(Core::FunDef {
+                id: String::from(function::python::INIT),
+                arg: new_args,
+                ty: None,
+                body: Box::from(Core::Block { statements: parent_calls }),
+            });
+            statements
+        };
 
         Some(Core::Block { statements })
     } else {
@@ -230,7 +256,9 @@ mod tests {
         let import = to_pos!(Node::Import { from, import, alias });
 
         let (from, import, alias) = match gen(&ASTTy::from(&*import)) {
-            Ok(Core::Import { from, import, alias }) => (from.clone(), import.clone(), alias.clone()),
+            Ok(Core::Import { from, import, alias }) => {
+                (from.clone(), import.clone(), alias.clone())
+            }
             other => panic!("Expected tuple but got {:?}", other),
         };
 
@@ -349,16 +377,15 @@ mod tests {
                     ty: None,
                     body: Box::from(Core::Block {
                         statements: vec![Core::PropertyCall {
-                            object: Box::from(Core::FunctionCall {
-                                function: Box::from(Core::Id { lit: String::from("super") }),
-                                args: vec![
-                                    Core::Id { lit: String::from("Exception") },
-                                    Core::Id { lit: String::from("self") },
-                                ],
-                            }),
+                            object: Box::from(Core::Id { lit: String::from("Exception") }),
                             property: Box::from(Core::FunctionCall {
-                                function: Box::from(Core::Id { lit: String::from(function::python::INIT) }),
-                                args: vec![Core::Id { lit: String::from("a1") }],
+                                function: Box::from(Core::Id {
+                                    lit: String::from(function::python::INIT)
+                                }),
+                                args: vec![
+                                    Core::Id { lit: String::from("self") },
+                                    Core::Id { lit: String::from("a1") },
+                                ],
                             }),
                         }]
                     }),
