@@ -60,11 +60,11 @@ pub trait HasParent<T> {
     /// Has name as parent.
     ///
     /// Does recursive search. Is true if any ancestor is equal to name.
-    fn has_parent(&self, name: T, ctx: &Context, pos: &Position) -> TypeResult<bool>;
+    fn has_parent(&self, name: T, ctx: &Context, pos: Position) -> TypeResult<bool>;
 }
 
 impl HasParent<&StringName> for Class {
-    fn has_parent(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         Ok(&self.name == name
             || self
             .parents
@@ -77,7 +77,7 @@ impl HasParent<&StringName> for Class {
 }
 
 impl HasParent<&TrueName> for Class {
-    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         Ok(&self.name == name
             || self
             .parents
@@ -90,7 +90,7 @@ impl HasParent<&TrueName> for Class {
 }
 
 impl HasParent<&Name> for Class {
-    fn has_parent(&self, name: &Name, ctx: &Context, pos: &Position) -> TypeResult<bool> {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
         if name.contains(&self.name) {
             return Ok(true);
         }
@@ -138,11 +138,11 @@ impl Display for Class {
     }
 }
 
-impl TryFrom<(&GenericClass, &HashMap<Name, Name>, &Position)> for Class {
+impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (generic, generics, pos): (&GenericClass, &HashMap<Name, Name>, &Position),
+        (generic, generics, pos): (&GenericClass, &HashMap<Name, Name>, Position),
     ) -> Result<Self, Self::Error> {
         let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
         let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
@@ -161,7 +161,7 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, &Position)> for Class {
 }
 
 impl Class {
-    pub fn constructor(&self, without_self: bool, pos: &Position) -> TypeResult<Function> {
+    pub fn constructor(&self, without_self: bool, pos: Position) -> TypeResult<Function> {
         Ok(Function {
             is_py_type: false,
             name: self.name.as_direct("function name", pos)?,
@@ -178,7 +178,7 @@ impl Class {
         })
     }
 
-    pub fn field(&self, name: &str, ctx: &Context, pos: &Position) -> TypeResult<Field> {
+    pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<Field> {
         if let Some(field) = self.fields.iter().find(|f| f.name == name) {
             return Ok(field.clone());
         }
@@ -189,14 +189,14 @@ impl Class {
             }
         }
 
-        Err(vec![TypeErr::new(pos, &format!("'{}' does not define \"{}\"", self, name))])
+        Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
 
     /// Get function of class.
     ///
     /// If class does not implement function, traverse parents until function
     /// found.
-    pub fn fun(&self, name: &StringName, ctx: &Context, pos: &Position) -> TypeResult<Function> {
+    pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<Function> {
         if let Some(function) = self.functions.iter().find(|f| &f.name == name) {
             return Ok(function.clone());
         }
@@ -209,7 +209,7 @@ impl Class {
             }
         }
 
-        Err(vec![TypeErr::new(pos, &format!("'{}' does not define \"{}\"", self, name))])
+        Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
 }
 

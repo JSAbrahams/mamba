@@ -38,11 +38,11 @@ impl Display for FunctionArg {
     }
 }
 
-impl TryFrom<(&GenericFunctionArg, &HashMap<Name, Name>, &Position)> for FunctionArg {
+impl TryFrom<(&GenericFunctionArg, &HashMap<Name, Name>, Position)> for FunctionArg {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<Name, Name>, &Position)
+        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<Name, Name>, Position)
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
             is_py_type: fun_arg.is_py_type,

@@ -10,14 +10,13 @@ pub struct Lex {
 }
 
 impl Lex {
-    pub fn new(pos: &CaretPos, token: Token) -> Self {
-        let start = pos.clone();
+    pub fn new(start: CaretPos, token: Token) -> Self {
         let end = if let Token::Str(_str, _) = &token {
-            pos.clone().offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
+            start.offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
         } else if let Token::DocStr(_str) = &token {
-            pos.clone().offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
+            start.offset_line(max((_str.lines().count() as i32 - 1) as usize, 0))
         } else {
-            pos.clone()
+            start
         };
 
         let end = end.offset_pos(token.clone().width());
@@ -137,6 +136,8 @@ pub enum Token {
     Pass,
     Undefined,
     Comment(String),
+
+    Eof,
 }
 
 impl Token {
@@ -147,10 +148,80 @@ impl Token {
             Token::Int(int) => int.len(),
             Token::Bool(true) => 4,
             Token::Bool(false) => 5,
-            Token::Str(_str, _) => _str.len() + 2,
-            Token::DocStr(_str) => _str.len() + 6,
+            Token::Str(string, _) => string.len() + 2,
+            Token::DocStr(string) => string.len() + 6,
             Token::ENum(num, exp) => num.len() + 1 + exp.len(),
-            other => format!("{}", other).len()
+            Token::From => 4,
+            Token::Type => 4,
+            Token::Class => 5,
+            Token::Pure => 4,
+            Token::IsA => 3,
+            Token::IsNA => 5,
+            Token::Init => 4,
+            Token::As => 2,
+            Token::Import => 6,
+            Token::Forward => 7,
+            Token::_Self => 4,
+            Token::Point => 1,
+            Token::Comma => 1,
+            Token::DoublePoint => 1,
+            Token::Vararg => 6,
+            Token::BSlash => 1,
+            Token::Fin => 3,
+            Token::Assign => 2,
+            Token::AddAssign | Token::SubAssign => 2,
+            Token::MulAssign | Token::DivAssign | Token::PowAssign => 2,
+            Token::BLShiftAssign | Token::BRShiftAssign => 3,
+            Token::Def => 3,
+            Token::Range | Token::Slice => 2,
+            Token::RangeIncl | Token::SliceIncl => 3,
+            Token::Add | Token::Sub => 1,
+            Token::Mul | Token::Div | Token::Pow => 1,
+            Token::FDiv => 2,
+            Token::Mod => 3,
+            Token::Sqrt => 4,
+            Token::BAnd => 5,
+            Token::BOr => 4,
+            Token::BXOr => 5,
+            Token::BOneCmpl => 5,
+            Token::BLShift | Token::BRShift => 2,
+            Token::Ge | Token::Le => 1,
+            Token::Geq | Token::Leq => 2,
+            Token::Eq => 1,
+            Token::Is => 2,
+            Token::IsN => 4,
+            Token::Neq => 2,
+            Token::And => 3,
+            Token::Or => 2,
+            Token::Not => 3,
+            Token::LRBrack | Token::RRBrack => 1,
+            Token::LSBrack | Token::RSBrack => 1,
+            Token::LCBrack | Token::RCBrack => 1,
+            Token::Ver => 1,
+            Token::To => 2,
+            Token::BTo => 2,
+            Token::NL | Token::Indent | Token::Dedent => 0,
+            Token::Underscore => 1,
+            Token::Raise => 5,
+            Token::When => 4,
+            Token::While => 5,
+            Token::For => 3,
+            Token::In => 2,
+            Token::If => 2,
+            Token::Then => 4,
+            Token::Match => 5,
+            Token::Else => 4,
+            Token::Do => 2,
+            Token::Continue => 8,
+            Token::Break => 5,
+            Token::Ret => 5,
+            Token::With => 4,
+            Token::Question => 1,
+            Token::Handle => 5,
+            Token::Pass => 4,
+            Token::Undefined => 4,
+            Token::Comment(comment) => comment.len(),
+            Token::Eof => 0
         }
     }
 
@@ -175,8 +246,8 @@ impl fmt::Display for Token {
             Token::Pure => String::from("pure"),
             Token::Type => String::from("type"),
             Token::Class => String::from("class"),
-            Token::IsA => String::from("isa"),
-            Token::IsNA => String::from("isnta"),
+            Token::IsA => String::from("is_a"),
+            Token::IsNA => String::from("isn_t_a"),
             Token::Init => String::from("init"),
 
             Token::As => String::from("as"),
@@ -184,84 +255,79 @@ impl fmt::Display for Token {
             Token::Forward => String::from("forward"),
             Token::_Self => String::from("self"),
 
-            Token::Point => String::from("."),
-            Token::Comma => String::from(")"),
-            Token::DoublePoint => String::from(":"),
+            Token::Point => String::from("point"),
+            Token::Comma => String::from("comma"),
+            Token::DoublePoint => String::from("d_point"),
             Token::Vararg => String::from("vararg"),
-            Token::BSlash => String::from("\\"),
+            Token::BSlash => String::from("b_slash"),
 
-            Token::Fin => String::from("fin"),
-            Token::Assign => String::from(":="),
-            Token::AddAssign => String::from("+="),
-            Token::SubAssign => String::from("-="),
-            Token::MulAssign => String::from("*="),
-            Token::PowAssign => String::from("^="),
-            Token::DivAssign => String::from("/="),
-            Token::BLShiftAssign => String::from("<<="),
-            Token::BRShiftAssign => String::from(">>="),
-            Token::Def => String::from("def"),
+            Token::Fin => String::from("final"),
+            Token::Assign => String::from("assign"),
+            Token::AddAssign => String::from("add_assign"),
+            Token::SubAssign => String::from("sub_assign"),
+            Token::MulAssign => String::from("mul_assign"),
+            Token::PowAssign => String::from("pow_assign"),
+            Token::DivAssign => String::from("div_assign"),
+            Token::BLShiftAssign => String::from("blshift_assign"),
+            Token::BRShiftAssign => String::from("brshift_assign"),
+            Token::Def => String::from("define"),
 
-            Token::Id(id) => id,
-            Token::Real(real) => real,
-            Token::Int(int) => int,
-            Token::ENum(int, exp) =>
-                if exp.is_empty() {
-                    int
-                } else {
-                    format!("{}E{}", int, exp)
-                },
-            Token::Str(string, _) => format!("\"{}\"", string),
-            Token::DocStr(string) => format!("\"\"\"{}\"\"\"", string),
-            Token::Bool(boolean) => String::from(if boolean { "True" } else { "False" }),
+            Token::Id(_) => String::from("identifier"),
+            Token::Real(_) => String::from("real_lit"),
+            Token::Int(_) => String::from("int_lit"),
+            Token::ENum(_, _) => String::from("enum_lit"),
+            Token::Str(_, _) => String::from("string_lit"),
+            Token::DocStr(_) => String::from("doc_string"),
+            Token::Bool(_) => String::from("bool"),
 
-            Token::Range => String::from(".."),
-            Token::RangeIncl => String::from("..="),
-            Token::Slice => String::from("::"),
-            Token::SliceIncl => String::from("::="),
+            Token::Range => String::from("range"),
+            Token::RangeIncl => String::from("range_incl"),
+            Token::Slice => String::from("slice"),
+            Token::SliceIncl => String::from("slice_incl"),
 
-            Token::Add => String::from("+"),
-            Token::Sub => String::from("-"),
-            Token::Mul => String::from("*"),
-            Token::Div => String::from("/"),
-            Token::FDiv => String::from("//"),
-            Token::Pow => String::from("^"),
+            Token::Add => String::from("add"),
+            Token::Sub => String::from("sub"),
+            Token::Mul => String::from("mul"),
+            Token::Div => String::from("div"),
+            Token::FDiv => String::from("f_div"),
+            Token::Pow => String::from("pow"),
             Token::Mod => String::from("mod"),
             Token::Sqrt => String::from("sqrt"),
 
-            Token::BAnd => String::from("_and_"),
-            Token::BOr => String::from("_or_"),
-            Token::BXOr => String::from("_xor_"),
-            Token::BOneCmpl => String::from("_not_"),
-            Token::BLShift => String::from("<<"),
-            Token::BRShift => String::from(">>"),
+            Token::BAnd => String::from("bin_add"),
+            Token::BOr => String::from("bin_or"),
+            Token::BXOr => String::from("bin_xor"),
+            Token::BOneCmpl => String::from("bin_not"),
+            Token::BLShift => String::from("bin_lshift"),
+            Token::BRShift => String::from("bin_rshift"),
 
-            Token::Ge => String::from(">"),
-            Token::Geq => String::from(">="),
-            Token::Le => String::from("<"),
-            Token::Leq => String::from("<="),
+            Token::Ge => String::from("ge"),
+            Token::Geq => String::from("geq"),
+            Token::Le => String::from("le"),
+            Token::Leq => String::from("leq"),
 
-            Token::Eq => String::from("="),
+            Token::Eq => String::from("eq"),
             Token::Is => String::from("is"),
-            Token::IsN => String::from("isnt"),
-            Token::Neq => String::from("!="),
+            Token::IsN => String::from("isn_t"),
+            Token::Neq => String::from("neq"),
             Token::And => String::from("and"),
             Token::Or => String::from("or"),
             Token::Not => String::from("not"),
 
-            Token::LRBrack => String::from("("),
-            Token::RRBrack => String::from(")"),
-            Token::LSBrack => String::from("["),
-            Token::RSBrack => String::from("]"),
-            Token::LCBrack => String::from("{"),
-            Token::RCBrack => String::from("}"),
-            Token::Ver => String::from("|"),
-            Token::To => String::from("->"),
-            Token::BTo => String::from("=>"),
+            Token::LRBrack => String::from("l_r_brack"),
+            Token::RRBrack => String::from("r_r_brack"),
+            Token::LSBrack => String::from("l_s_brack"),
+            Token::RSBrack => String::from("r_s_brack"),
+            Token::LCBrack => String::from("l_c_brack"),
+            Token::RCBrack => String::from("r_c_brack"),
+            Token::Ver => String::from("vertical"),
+            Token::To => String::from("to"),
+            Token::BTo => String::from("fun_to"),
 
-            Token::NL => String::from("<newline>"),
-            Token::Indent => String::from("<indent>"),
-            Token::Dedent => String::from("<dedent>"),
-            Token::Underscore => String::from("_"),
+            Token::NL => String::from("newline"),
+            Token::Indent => String::from("indent"),
+            Token::Dedent => String::from("dedent"),
+            Token::Underscore => String::from("underscore"),
 
             Token::While => String::from("while"),
             Token::For => String::from("for"),
@@ -276,15 +342,17 @@ impl fmt::Display for Token {
             Token::Do => String::from("do"),
             Token::With => String::from("with"),
 
-            Token::Question => String::from("?"),
+            Token::Question => String::from("question"),
 
             Token::Handle => String::from("handle"),
             Token::Raise => String::from("raise"),
             Token::When => String::from("when"),
 
             Token::Pass => String::from("pass"),
-            Token::Undefined => String::from("None"),
-            Token::Comment(string) => format!("{} (comment)", string)
+            Token::Undefined => String::from("undefined"),
+            Token::Comment(_) => String::from("comment"),
+
+            Token::Eof => String::from("end_of_file")
         })
     }
 }

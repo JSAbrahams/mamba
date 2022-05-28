@@ -31,9 +31,9 @@ impl Constraints {
     /// If already present at position, then union is created between current [Name] and given
     /// [Name].
     /// Returns [Name] which was already at that position, which might be [None]
-    pub fn push_ty(&mut self, pos: &Position, name: &Name) {
-        let name = self.finished.get(pos).map_or(name.clone(), |s_name| s_name.union(name));
-        if self.finished.insert(pos.clone(), name.clone()).is_none() {
+    pub fn push_ty(&mut self, pos: Position, name: &Name) {
+        let name = self.finished.get(&pos).map_or(name.clone(), |s_name| s_name.union(name));
+        if self.finished.insert(pos, name.clone()).is_none() {
             trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
         }
     }
@@ -56,7 +56,7 @@ impl Constraints {
         self.in_class.append(&mut constraints.in_class);
         self.constraints.append(&mut constraints.constraints);
         self.finished = constraints.finished.iter().fold(self.finished.clone(), |mut acc, (pos, name)| {
-            acc.insert(pos.clone(), name.clone());
+            acc.insert(*pos, name.clone());
             acc
         });
     }
@@ -72,7 +72,7 @@ impl Constraints {
                 "Cannot infer type. Expected a {}, was {}",
                 &constraint.left.expect, &constraint.right.expect
             );
-            return Err(vec![TypeErr::new(&constraint.left.pos, &msg)]);
+            return Err(vec![TypeErr::new(constraint.left.pos, &msg)]);
         }
 
         self.constraints.push_back(constraint.flag());

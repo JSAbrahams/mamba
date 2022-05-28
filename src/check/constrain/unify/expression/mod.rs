@@ -29,7 +29,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                     let mut constr = substitute(right, left, constraints, count, total)?;
                     unify_link(&mut constr, ctx, total)
                 }
-                _ => Err(vec![TypeErr::new(&ast.pos, &format!("Expected an expression but was {}", ast.node))])
+                _ => Err(vec![TypeErr::new(ast.pos, &format!("Expected an expression but was {}", ast.node))])
             },
 
         // Not sure if necessary, but exception made for tuple
@@ -41,12 +41,12 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                 match &pair {
                     Both(ast, exp) => {
                         let expect = Expect::Expression { ast: ast.clone() };
-                        let l_ty = Expected::new(&left.pos, &expect);
+                        let l_ty = Expected::new(left.pos, &expect);
                         constraints.push("tuple", &l_ty, exp)
                     }
                     _ => {
                         let msg = format!("Expected tuple with {} elements, was {}", elements.len(), ast_elements.len());
-                        return Err(vec![TypeErr::new(&left.pos, &msg)]);
+                        return Err(vec![TypeErr::new(left.pos, &msg)]);
                     }
                 }
             }

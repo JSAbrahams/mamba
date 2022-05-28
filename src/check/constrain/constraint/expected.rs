@@ -26,8 +26,8 @@ pub struct Expected {
 }
 
 impl Expected {
-    pub fn new(pos: &Position, expect: &Expect) -> Expected {
-        Expected { pos: pos.clone(), expect: expect.clone() }
+    pub fn new(pos: Position, expect: &Expect) -> Expected {
+        Expected { pos, expect: expect.clone() }
     }
 }
 
@@ -49,7 +49,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
             _ => ast,
         };
 
-        Ok(Expected::new(&ast.pos, &Expect::try_from((ast, mappings))?))
+        Ok(Expected::new(ast.pos, &Expect::try_from((ast, mappings))?))
     }
 }
 

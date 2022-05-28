@@ -38,7 +38,7 @@ pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
             .iter()
             .fold(Constraints::new(), |acc, constr| {
                 constr.finished.iter().fold(acc, |mut acc, (pos, name)| {
-                    acc.push_ty(pos, name);
+                    acc.push_ty(*pos, name);
                     acc
                 })
             }).finished;

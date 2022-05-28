@@ -85,11 +85,11 @@ impl Display for Function {
     }
 }
 
-impl TryFrom<(&GenericFunction, &HashMap<Name, Name>, &Position)> for Function {
+impl TryFrom<(&GenericFunction, &HashMap<Name, Name>, Position)> for Function {
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun, generics, pos): (&GenericFunction, &HashMap<Name, Name>, &Position)
+        (fun, generics, pos): (&GenericFunction, &HashMap<Name, Name>, Position)
     ) -> Result<Self, Self::Error> {
         let arguments: Vec<FunctionArg> = fun
             .arguments
@@ -130,7 +130,7 @@ impl Function {
         &self,
         args: &[Name],
         ctx: &Context,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<()> {
         for pair in self.arguments.iter().zip_longest(args) {
             match pair {
@@ -170,7 +170,7 @@ impl Function {
         name: &StringName,
         self_arg: &Name,
         ret_ty: &Name,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<Function> {
         if self_arg.is_empty() {
             let msg = format!("'{}' self argument of '{}' cannot be empty", arg::SELF, name);

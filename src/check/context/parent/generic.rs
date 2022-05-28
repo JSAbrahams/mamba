@@ -21,11 +21,11 @@ impl TryFrom<&AST> for GenericParent {
             Node::Parent { ty, .. } => Ok(GenericParent {
                 is_py_type: false,
                 name: TrueName::try_from(ty)?,
-                pos: ast.pos.clone(),
+                pos: ast.pos,
             }),
             _ => {
                 let msg = format!("Expected parent, was {}", ast.node);
-                Err(vec![TypeErr::new(&ast.pos.clone(), &msg)])
+                Err(vec![TypeErr::new(ast.pos, &msg)])
             }
         }
     }

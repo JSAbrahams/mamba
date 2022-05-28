@@ -22,7 +22,7 @@ pub struct UnimplementedErr {
 impl UnimplementedErr {
     pub fn new(ast: &ASTTy, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
-            position: ast.pos.clone(),
+            position: ast.pos,
             msg: format!(
                 "The {} construct has not yet been implemented as of v{}.",
                 msg, VERSION
@@ -40,7 +40,7 @@ impl WithSource for UnimplementedErr {
         path: &Option<PathBuf>,
     ) -> UnimplementedErr {
         UnimplementedErr {
-            position: self.position.clone(),
+            position: self.position,
             msg: self.msg.clone(),
             source_line: source.clone().map(|source| {
                 source

@@ -33,7 +33,7 @@ impl IdentiCall {
     /// Errors if no such left-most leaf exists.
     /// This is indicative of a malformed identifier, as all identifiers should have
     /// [IdentiCall::Iden] as leaves.
-    pub fn object(&self, pos: &Position) -> TypeResult<String> {
+    pub fn object(&self, pos: Position) -> TypeResult<String> {
         match &self.object_rec() {
             IdentiCall::Iden(object) => Ok(object.clone()),
             IdentiCall::Call(_, _) => Err(vec![TypeErr::new(pos, "Call not expected here")]),
@@ -47,7 +47,7 @@ impl IdentiCall {
         }
     }
 
-    pub fn without_obj(&self, object: &str, pos: &Position) -> TypeResult<IdentiCall> {
+    pub fn without_obj(&self, object: &str, pos: Position) -> TypeResult<IdentiCall> {
         match &self {
             IdentiCall::Iden(_) => Err(vec![TypeErr::new(pos, "Call expected here")]),
             IdentiCall::Call(obj, call) => match obj.deref() {
@@ -74,7 +74,7 @@ impl Identifier {
         matches!(&self, Identifier::Multi(..))
     }
 
-    pub fn fields(&self, pos: &Position) -> TypeResult<Vec<(bool, String)>> {
+    pub fn fields(&self, pos: Position) -> TypeResult<Vec<(bool, String)>> {
         match &self {
             Identifier::Single(mutable, call) => Ok(vec![(*mutable, call.object(pos)?)]),
             Identifier::Multi(ids) => {
@@ -136,7 +136,7 @@ impl TryFrom<&AST> for Identifier {
                     elements.iter().map(Identifier::try_from).collect::<Result<_, _>>()?;
                 Ok(Identifier::from(&elements))
             }
-            _ => Err(vec![TypeErr::new(&ast.pos, "Expected id or tuple of id's")]),
+            _ => Err(vec![TypeErr::new(ast.pos, "Expected id or tuple of id's")]),
         }
     }
 }
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn from_id() -> TypeResult<()> {
-        let ast = AST::new(&Position::default(), Node::Id { lit: String::from("r") });
+        let ast = AST::new(Position::default(), Node::Id { lit: String::from("r") });
         let iden = Identifier::try_from(&ast)?;
         assert_eq!(iden, Identifier::from((true, "r")));
         Ok(())
@@ -187,7 +187,7 @@ mod tests {
         );
 
         assert_eq!(
-            call.without_obj("a", &Position::default())?,
+            call.without_obj("a", Position::default())?,
             IdentiCall::Call(
                 Box::from(IdentiCall::Iden(String::from("b"))),
                 Box::from(IdentiCall::Iden(String::from("c"))),
@@ -204,7 +204,7 @@ mod tests {
         );
 
         assert_eq!(
-            call.without_obj("a", &Position::default())?,
+            call.without_obj("a", Position::default())?,
             IdentiCall::Iden(String::from("b"))
         );
         Ok(())
@@ -213,9 +213,9 @@ mod tests {
     #[test]
     fn from_expression_type() -> TypeResult<()> {
         let ast = AST::new(
-            &Position::default(),
+            Position::default(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(Position::default(), Node::Id { lit: String::from("h") })),
                 mutable: false,
                 ty: None,
             },
@@ -229,9 +229,9 @@ mod tests {
     #[test]
     fn from_expression_type_as_mutable() -> TypeResult<()> {
         let ast = AST::new(
-            &Position::default(),
+            Position::default(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(&Position::default(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(Position::default(), Node::Id { lit: String::from("h") })),
                 mutable: false,
                 ty: None,
             },
@@ -244,7 +244,7 @@ mod tests {
 
     #[test]
     fn from_int_error() {
-        let ast = AST::new(&Position::default(), Node::Int { lit: String::from("r") });
+        let ast = AST::new(Position::default(), Node::Int { lit: String::from("r") });
         let res = Identifier::try_from(&ast);
         assert!(res.is_err())
     }
@@ -253,11 +253,11 @@ mod tests {
     fn from_tuple() -> TypeResult<()> {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(&Position::default(), Node::Id { lit: String::from("a") }),
-                AST::new(&Position::default(), Node::Id { lit: String::from("b") }),
+                AST::new(Position::default(), Node::Id { lit: String::from("a") }),
+                AST::new(Position::default(), Node::Id { lit: String::from("b") }),
             ],
         };
-        let ast = AST::new(&Position::default(), node);
+        let ast = AST::new(Position::default(), node);
         match Identifier::try_from(&ast)? {
             Identifier::Single(_, _) => panic!("Expected multi"),
             Identifier::Multi(idens) => {
@@ -273,11 +273,11 @@ mod tests {
     fn from_tuple_with_int_err() {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(&Position::default(), Node::Int { lit: String::from("a") }),
-                AST::new(&Position::default(), Node::Id { lit: String::from("b") }),
+                AST::new(Position::default(), Node::Int { lit: String::from("a") }),
+                AST::new(Position::default(), Node::Id { lit: String::from("b") }),
             ],
         };
-        let ast = AST::new(&Position::default(), node);
+        let ast = AST::new(Position::default(), node);
         let iden = Identifier::try_from(&ast);
         assert!(iden.is_err());
     }

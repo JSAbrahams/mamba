@@ -27,10 +27,10 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            constraints.push_ty(&right.pos, name);
+            constraints.push_ty(right.pos, name);
         }
         if let Type { name } = &right.expect {
-            constraints.push_ty(&left.pos, name);
+            constraints.push_ty(left.pos, name);
         }
 
         match (&left.expect, &right.expect) {

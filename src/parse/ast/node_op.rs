@@ -1,6 +1,6 @@
 use std::fmt::{Display, Error, Formatter};
 
-use crate::parse::lex::token::Token;
+use crate::check::context::function;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum NodeOp {
@@ -23,20 +23,20 @@ pub enum NodeOp {
 impl Display for NodeOp {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match &self {
-            NodeOp::Assign => write!(f, "{}", Token::Assign),
-            NodeOp::Add => write!(f, "{}", Token::Add),
-            NodeOp::Sub => write!(f, "{}", Token::Sub),
-            NodeOp::Sqrt => write!(f, "{}", Token::Sqrt),
-            NodeOp::Mul => write!(f, "{}", Token::Mul),
-            NodeOp::FDiv => write!(f, "{}", Token::FDiv),
-            NodeOp::Div => write!(f, "{}", Token::Div),
-            NodeOp::Pow => write!(f, "{}", Token::Pow),
-            NodeOp::Mod => write!(f, "{}", Token::Mod),
-            NodeOp::Eq => write!(f, "{}", Token::Eq),
-            NodeOp::Le => write!(f, "{}", Token::Le),
-            NodeOp::Ge => write!(f, "{}", Token::Ge),
-            NodeOp::BLShift => write!(f, "{}", Token::BLShift),
-            NodeOp::BRShift => write!(f, "{}", Token::BRShift),
+            NodeOp::Assign => write!(f, ":="),
+            NodeOp::Add => write!(f, "{}", function::ADD),
+            NodeOp::Sub => write!(f, "{}", function::SUB),
+            NodeOp::Sqrt => write!(f, "{}", function::SQRT),
+            NodeOp::Mul => write!(f, "{}", function::MUL),
+            NodeOp::FDiv => write!(f, "{}", function::FDIV),
+            NodeOp::Div => write!(f, "{}", function::DIV),
+            NodeOp::Pow => write!(f, "{}", function::POW),
+            NodeOp::Mod => write!(f, "{}", function::MOD),
+            NodeOp::Eq => write!(f, "{}", function::EQ),
+            NodeOp::Le => write!(f, "{}", function::LE),
+            NodeOp::Ge => write!(f, "{}", function::GE),
+            NodeOp::BLShift => write!(f, "<<"),
+            NodeOp::BRShift => write!(f, ">>"),
         }
     }
 }

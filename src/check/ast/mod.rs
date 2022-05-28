@@ -17,7 +17,7 @@ pub struct ASTTy {
 
 impl From<&AST> for ASTTy {
     fn from(ast: &AST) -> Self {
-        ASTTy { pos: ast.pos.clone(), node: NodeTy::from(&ast.node), ty: None }
+        ASTTy { pos: ast.pos, node: NodeTy::from(&ast.node), ty: None }
     }
 }
 
@@ -44,7 +44,6 @@ type OptASTTy = Option<Box<ASTTy>>;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeTy {
-    File { pure: bool, statements: Vec<ASTTy> },
     Import { from: Option<Box<ASTTy>>, import: Vec<ASTTy>, alias: Vec<ASTTy> },
     Class { ty: Box<ASTTy>, args: Vec<ASTTy>, parents: Vec<ASTTy>, body: OptASTTy },
     Generic { id: Box<ASTTy>, isa: OptASTTy },
@@ -142,8 +141,8 @@ mod test {
     #[test]
     fn from_ast() {
         let node = Node::Pass;
-        let pos = Position::from(&CaretPos::new(4, 8));
-        let ast = AST::new(&pos, node.clone());
+        let pos = Position::from(CaretPos::new(4, 8));
+        let ast = AST::new(pos, node.clone());
 
         let ast_ty = ASTTy::from(&ast);
         let ast_ty2 = ASTTy::from(&Box::from(ast));
@@ -156,7 +155,7 @@ mod test {
     #[test]
     fn to_ty() {
         let node = Node::Pass;
-        let ast = AST::new(&Position::default(), node.clone());
+        let ast = AST::new(Position::default(), node.clone());
         let ast_ty = ASTTy::from(&ast).with_ty(&Name::from("Dummy"));
 
         assert_eq!(ast_ty.ty, Some(Name::from("Dummy")));

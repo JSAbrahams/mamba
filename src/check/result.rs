@@ -38,9 +38,9 @@ impl From<TypeErr> for Vec<TypeErr> {
 }
 
 impl TypeErr {
-    pub fn new(position: &Position, msg: &str) -> TypeErr {
+    pub fn new(position: Position, msg: &str) -> TypeErr {
         TypeErr {
-            position: Some(position.clone()),
+            position: Some(position),
             msg: String::from(msg),
             path: None,
             source_before: None,
@@ -86,7 +86,7 @@ impl WithSource for TypeErr {
         };
 
         TypeErr {
-            position: self.position.clone(),
+            position: self.position,
             msg: self.msg,
             source_before: source_before.map(String::from),
             source_line: source_line.map(String::from),
@@ -107,7 +107,7 @@ impl Display for TypeErr {
             string.replace('\n', "\n   > ")
         };
 
-        if let Some(position) = self.position.clone() {
+        if let Some(position) = self.position {
             write!(
                 f,
                 "{}\n --> {}:{}:{}\n{}{:4} | {}\n       {}{}{}",

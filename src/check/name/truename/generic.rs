@@ -40,13 +40,13 @@ impl TryFrom<&AST> for TrueName {
                 Box::from(Name::try_from(ret_ty.deref())?),
             ))),
             Node::TypeUnion { .. } =>
-                Err(vec![TypeErr::new(&ast.pos, "Expected single type name but was union")]),
+                Err(vec![TypeErr::new(ast.pos, "Expected single type name but was union")]),
             Node::Generic { id, .. } => TrueName::try_from(id),
             Node::FunctionCall { name, .. } => TrueName::try_from(name),
             Node::Parent { ty, .. } => TrueName::try_from(ty),
             _ => {
                 let msg = format!("Expected type name, was {}", ast.node);
-                Err(vec![TypeErr::new(&ast.pos, &msg)])
+                Err(vec![TypeErr::new(ast.pos, &msg)])
             }
         }
     }
