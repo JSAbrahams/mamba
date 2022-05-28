@@ -9,7 +9,7 @@ type PosNameMap = HashMap<Position, Name>;
 
 impl From<(&AST, &PosNameMap)> for ASTTy {
     fn from((ast, names): (&AST, &PosNameMap)) -> Self {
-        let ast_ty = ASTTy { pos: ast.pos.clone(), node: NodeTy::from(&ast.node), ty: None };
+        let ast_ty = ASTTy { pos: ast.pos, node: NodeTy::from(&ast.node), ty: None };
         ast_ty.map(names)
     }
 }
@@ -34,10 +34,6 @@ impl ASTTy {
 impl From<(&NodeTy, &PosNameMap)> for NodeTy {
     fn from((node_ty, names): (&NodeTy, &PosNameMap)) -> Self {
         match node_ty {
-            NodeTy::File { pure, statements } => NodeTy::File {
-                pure: *pure,
-                statements: statements.iter().map(|stmt| stmt.map(names)).collect(),
-            },
             NodeTy::Import { from, import, alias } => NodeTy::Import {
                 from: from.clone().map(|ast| ast.map(names)).map(Box::from),
                 import: import.iter().map(|i| i.map(names)).collect(),

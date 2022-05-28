@@ -23,42 +23,42 @@ pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
 fn parse_if(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("if expression")?;
     it.eat(&Token::If, "if expressions")?;
-    let cond = it.parse(&parse_expression, "if expression", &start)?;
+    let cond = it.parse(&parse_expression, "if expression", start)?;
     it.eat(&Token::Then, "if expression")?;
-    let then = it.parse(&parse_expr_or_stmt, "if expression", &start)?;
+    let then = it.parse(&parse_expr_or_stmt, "if expression", start)?;
 
     let el = if it.peek_if(&|lex| lex.token == Token::Else) {
-        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?
+        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", start)?
     } else if it.peek_if_followed_by(&Token::NL, &Token::Else) {
         it.eat(&Token::NL, "if else branch")?;
-        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", &start)?
+        it.parse_if(&Token::Else, &parse_expr_or_stmt, "if else branch", start)?
     } else {
         None
     };
 
-    let pos = if let Some(el) = &el { start.union(&el.pos) } else { start.union(&then.pos) };
+    let pos = if let Some(el) = &el { start.union(el.pos) } else { start.union(then.pos) };
     let node = Node::IfElse { cond, then, el };
 
-    Ok(Box::from(AST::new(&pos, node)))
+    Ok(Box::from(AST::new(pos, node)))
 }
 
 fn parse_match(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match")?;
     it.eat(&Token::Match, "match")?;
-    let cond = it.parse(&parse_expression, "match", &start)?;
+    let cond = it.parse(&parse_expression, "match", start)?;
     it.eat(&Token::NL, "match")?;
-    let cases = it.parse_vec(&parse_match_cases, "match", &start)?;
-    let end = cases.last().cloned().map_or(cond.pos.clone(), |case| case.pos);
+    let cases = it.parse_vec(&parse_match_cases, "match", start)?;
+    let end = cases.last().cloned().map_or(cond.pos, |case| case.pos);
 
     let node = Node::Match { cond, cases };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
     let start = it.eat(&Token::Indent, "match cases")?;
     let mut cases = vec![];
     it.peek_while_not_token(&Token::Dedent, &mut |it, _| {
-        cases.push(*it.parse(&parse_match_case, "match case", &start)?);
+        cases.push(*it.parse(&parse_match_case, "match case", start)?);
         it.eat_if(&Token::NL);
         Ok(())
     })?;
@@ -69,24 +69,24 @@ pub fn parse_match_cases(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 fn parse_match_case(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("match case")?;
-    let cond = it.parse(&parse_expression_maybe_type, "match case", &start)?;
+    let cond = it.parse(&parse_expression_maybe_type, "match case", start)?;
     it.eat(&Token::BTo, "match case")?;
-    let body = it.parse(&parse_expr_or_stmt, "match case", &start)?;
+    let body = it.parse(&parse_expr_or_stmt, "match case", start)?;
 
     let node = Node::Case { cond, body: body.clone() };
-    Ok(Box::from(AST::new(&start.union(&body.pos), node)))
+    Ok(Box::from(AST::new(start.union(body.pos), node)))
 }
 
 fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression maybe type")?;
     let mutable = it.eat_if(&Token::Fin).is_none();
 
-    let expr = it.parse(&parse_expression, "expression maybe type", &start)?;
-    let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression maybe type", &start)?;
-    let end = ty.clone().map_or(expr.pos.clone(), |t| t.pos);
+    let expr = it.parse(&parse_expression, "expression maybe type", start)?;
+    let ty = it.parse_if(&Token::DoublePoint, &parse_type, "expression maybe type", start)?;
+    let end = ty.clone().map_or(expr.pos, |t| t.pos);
 
     let node = Node::ExpressionType { expr, mutable, ty };
-    Ok(Box::from(AST::new(&start.union(&end), node)))
+    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 #[cfg(test)]

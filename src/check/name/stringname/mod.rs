@@ -36,7 +36,7 @@ impl Display for StringName {
 impl ColType for StringName {
     /// Checks if type has iterator by checking __iter__().
     /// If so, check the return type of the __next__() method and return that.
-    fn col_type(&self, ctx: &Context, pos: &Position) -> TypeResult<Option<Name>> {
+    fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>> {
         if let Ok(clss) = ctx.class(self, pos) {
             let fun_name = StringName::from(function::python::ITER);
             if let Ok(fun) = clss.fun(&fun_name, ctx, pos) {
@@ -77,7 +77,7 @@ impl IsSuperSet<StringName> for StringName {
         &self,
         other: &StringName,
         ctx: &Context,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<bool> {
         Ok(ctx.class(other, pos)?.has_parent(self, ctx, pos)?
             && self
@@ -102,7 +102,7 @@ impl StringName {
     pub fn substitute(
         &self,
         generics: &HashMap<Name, Name>,
-        pos: &Position,
+        pos: Position,
     ) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&Name::from(self)) {
             let msg = format!("{} is not a DirectName", name);

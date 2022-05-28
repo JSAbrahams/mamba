@@ -60,7 +60,7 @@ impl TryFrom<&AST> for GenericClass {
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
-                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")]),
+                        _ => return Err(vec![TypeErr::new(class.pos, "Expected block in class")]),
                     }
                 } else {
                     vec![]
@@ -75,7 +75,7 @@ impl TryFrom<&AST> for GenericClass {
                         Ok(ClassArgument { field, fun_arg }) => {
                             if let Some(field) = field {
                                 class_args.push(fun_arg);
-                                argument_fields.insert(field.in_class(Some(&name), false, &arg.pos)?);
+                                argument_fields.insert(field.in_class(Some(&name), false, arg.pos)?);
                             } else {
                                 class_args.push(fun_arg);
                             }
@@ -109,7 +109,7 @@ impl TryFrom<&AST> for GenericClass {
                         class_args.append(&mut function.arguments.clone())
                     } else {
                         return Err(vec![TypeErr::new(
-                            &class.pos,
+                            class.pos,
                             "Cannot have constructor and class arguments",
                         )]);
                     }
@@ -136,7 +136,7 @@ impl TryFrom<&AST> for GenericClass {
                 Ok(GenericClass {
                     is_py_type: false,
                     name,
-                    pos: class.pos.clone(),
+                    pos: class.pos,
                     args: class_args,
                     concrete: true,
                     fields: argument_fields.union(&body_fields).cloned().collect(),
@@ -149,7 +149,7 @@ impl TryFrom<&AST> for GenericClass {
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
-                        _ => return Err(vec![TypeErr::new(&class.pos, "Expected block in class")]),
+                        _ => return Err(vec![TypeErr::new(class.pos, "Expected block in class")]),
                     }
                 } else {
                     vec![]
@@ -165,7 +165,7 @@ impl TryFrom<&AST> for GenericClass {
                 Ok(GenericClass {
                     is_py_type: false,
                     name,
-                    pos: class.pos.clone(),
+                    pos: class.pos,
                     args: vec![GenericFunctionArg {
                         is_py_type: false,
                         name: String::from(arg::SELF),
@@ -184,7 +184,7 @@ impl TryFrom<&AST> for GenericClass {
             Node::TypeAlias { ty, isa, .. } => Ok(GenericClass {
                 is_py_type: false,
                 name: TrueName::try_from(ty)?,
-                pos: class.pos.clone(),
+                pos: class.pos,
                 args: vec![GenericFunctionArg {
                     is_py_type: false,
                     name: String::from(arg::SELF),
@@ -199,7 +199,7 @@ impl TryFrom<&AST> for GenericClass {
                 functions: HashSet::new(),
                 parents: HashSet::from_iter(vec![GenericParent::try_from(isa.deref())?]),
             }),
-            _ => Err(vec![TypeErr::new(&class.pos, "Expected class or type definition")]),
+            _ => Err(vec![TypeErr::new(class.pos, "Expected class or type definition")]),
         }
     }
 }
@@ -216,21 +216,21 @@ fn get_fields_and_functions(
         match &statement.node {
             Node::FunDef { .. } => {
                 let function = GenericFunction::try_from(statement)?;
-                let function = function.in_class(Some(class), type_def, &statement.pos)?;
+                let function = function.in_class(Some(class), type_def, statement.pos)?;
                 functions.insert(function);
             }
             Node::VariableDef { .. } => {
                 let stmt_fields: HashSet<GenericField> = GenericFields::try_from(statement)?
                     .fields
                     .into_iter()
-                    .map(|f| f.in_class(Some(class), type_def, &statement.pos))
+                    .map(|f| f.in_class(Some(class), type_def, statement.pos))
                     .collect::<Result<_, _>>()?;
 
                 for generic_field in &stmt_fields {
                     if generic_field.ty.is_none() {
                         let msg =
                             format!("Class field '{}' was not assigned a type", generic_field.name);
-                        return Err(vec![TypeErr::new(&generic_field.pos, &msg)]);
+                        return Err(vec![TypeErr::new(generic_field.pos, &msg)]);
                     }
                 }
 
@@ -238,10 +238,7 @@ fn get_fields_and_functions(
             }
             Node::Comment { .. } | Node::DocStr { .. } => {}
             _ => {
-                return Err(vec![TypeErr::new(
-                    &statement.pos,
-                    "Expected function or variable definition",
-                )]);
+                return Err(vec![TypeErr::new(statement.pos, "Expected function or variable definition")]);
             }
         }
     }

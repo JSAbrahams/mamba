@@ -32,13 +32,13 @@ pub fn gen_def(
             let non_nullable_class_vars: Vec<String> = match &id.node {
                 Node::Id { lit } if *lit == function::INIT => {
                     if let Some(class) = constr.current_class() {
-                        let class = ctx.class(&class, &id.pos)?;
+                        let class = ctx.class(&class, id.pos)?;
                         let fields: Vec<&Field> =
                             class.fields.iter().filter(|f| !f.ty.is_nullable() && !f.assigned_to).collect();
                         fields.iter().map(|f| f.name.clone()).collect()
                     } else {
                         let msg = format!("Cannot have {} function outside class", function::INIT);
-                        return Err(vec![TypeErr::new(&id.pos, &msg)]);
+                        return Err(vec![TypeErr::new(id.pos, &msg)]);
                     }
                 }
                 _ => vec![],
@@ -49,23 +49,23 @@ pub fn gen_def(
 
             let (mut constr, inner_env) = if let Some(body) = body {
                 let r_tys: Vec<_> =
-                    raises.iter().map(|r| (r.pos.clone(), Name::try_from(r))).collect();
+                    raises.iter().map(|r| (r.pos, Name::try_from(r))).collect();
                 let mut r_res = Name::empty();
 
                 let exception_name = Name::from(clss::EXCEPTION);
                 for (pos, raise) in r_tys {
                     let raise = raise?;
-                    if !ctx.class(&raise, &pos)?.has_parent(&exception_name, ctx, &pos)? {
+                    if !ctx.class(&raise, pos)?.has_parent(&exception_name, ctx, pos)? {
                         let msg = format!("`{}` is not an `{}`", raise, exception_name);
-                        return Err(vec![TypeErr::new(&pos, &msg)]);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                     r_res = r_res.union(&raise)
                 }
 
-                let inner_env = inner_env.insert_raises(&r_res, &ast.pos);
+                let inner_env = inner_env.insert_raises(&r_res, ast.pos);
                 if let Some(ret_ty) = ret_ty {
                     let name = Name::try_from(ret_ty)?;
-                    let ret_ty_exp = Expected::new(&ret_ty.pos, &Type { name });
+                    let ret_ty_exp = Expected::new(ret_ty.pos, &Type { name });
                     let inner_env = inner_env.return_type(&ret_ty_exp);
                     generate(body, &inner_env, ctx, &mut constr)?
                 } else {
@@ -81,21 +81,21 @@ pub fn gen_def(
                 .map(|v| format!("Non nullable class variable '{}' should be assigned to in constructor", v))
                 .collect();
             if !unassigned.is_empty() {
-                return Err(unassigned.iter().map(|msg| TypeErr::new(&id.pos, msg)).collect());
+                return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
             }
 
-            constr.exit_set(&ast.pos)?;
+            constr.exit_set(ast.pos)?;
             Ok((constr, env.clone()))
         }
         Node::FunArg { .. } => {
-            Err(vec![TypeErr::new(&ast.pos, "Function argument cannot be top level")])
+            Err(vec![TypeErr::new(ast.pos, "Function argument cannot be top level")])
         }
 
         Node::VariableDef { mutable, var, ty, expr: expression, .. } => {
             identifier_from_var(var, ty, expression, *mutable, ctx, constr, env)
         }
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected definition")]),
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected definition")]),
     }
 }
 
@@ -111,22 +111,22 @@ pub fn constrain_args(
             Node::FunArg { mutable, var, ty, default, .. } => {
                 if var.node == Node::new_self() {
                     let self_type = &env.class_type.clone().ok_or_else(|| {
-                        TypeErr::new(&var.pos, &format!("{} cannot be outside class", SELF))
+                        TypeErr::new(var.pos, &format!("{} cannot be outside class", SELF))
                     })?;
                     if default.is_some() {
                         let msg = format!("{} cannot have default argument", SELF);
-                        return Err(vec![TypeErr::new(&arg.pos, &msg)]);
+                        return Err(vec![TypeErr::new(arg.pos, &msg)]);
                     }
 
-                    let self_exp = Expected::new(&var.pos, self_type);
+                    let self_exp = Expected::new(var.pos, self_type);
                     res.1 = res.1.insert_var(*mutable, SELF, &self_exp);
                     let left = Expected::try_from((var, &env.var_mappings))?;
-                    res.0.add("arguments", &left, &Expected::new(&var.pos, self_type));
+                    res.0.add("arguments", &left, &Expected::new(var.pos, self_type));
                 } else {
                     res = identifier_from_var(var, ty, default, *mutable, ctx, &mut res.0, &res.1)?;
                 }
             }
-            _ => return Err(vec![TypeErr::new(&arg.pos, "Expected function argument")]),
+            _ => return Err(vec![TypeErr::new(arg.pos, "Expected function argument")]),
         }
     }
 
@@ -151,19 +151,19 @@ pub fn identifier_from_var(
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
         let name = Name::try_from(ty.deref())?;
-        for (f_name, (f_mut, name)) in match_name(&identifier, &name, &var.pos)? {
-            let ty = Expected::new(&var.pos, &Type { name: name.clone() });
+        for (f_name, (f_mut, name)) in match_name(&identifier, &name, var.pos)? {
+            let ty = Expected::new(var.pos, &Type { name: name.clone() });
             env = env.insert_var(mutable && f_mut, &f_name, &ty);
         }
     } else {
-        let any = Expected::new(&var.pos, &ExpressionAny);
-        for (f_mut, f_name) in identifier.fields(&var.pos)? {
+        let any = Expected::new(var.pos, &ExpressionAny);
+        for (f_mut, f_name) in identifier.fields(var.pos)? {
             env = env.insert_var(mutable && f_mut, &f_name, &any);
         }
     };
 
     if identifier.is_tuple() {
-        let tup_exps = identifier_to_tuple(&var.pos, &identifier, &env)?;
+        let tup_exps = identifier_to_tuple(var.pos, &identifier, &env)?;
         match (ty, expression) {
             (Some(ty), _) => {
                 let ty_exp = Expected::try_from((ty, &env.var_mappings))?;
@@ -185,14 +185,14 @@ pub fn identifier_from_var(
     match (ty, expression) {
         (Some(ty), Some(expr)) => {
             let ty_exp = Type { name: Name::try_from(ty.deref())? };
-            let parent = Expected::new(&ty.pos, &ty_exp);
+            let parent = Expected::new(ty.pos, &ty_exp);
             constr.add("variable, type, and expression", &parent, &var_expect);
             let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
             constr.add("variable, type, and expression", &var_expect, &expr_expect);
         }
         (Some(ty), None) => {
             let ty_exp = Type { name: Name::try_from(ty.deref())? };
-            let parent = Expected::new(&ty.pos, &ty_exp);
+            let parent = Expected::new(ty.pos, &ty_exp);
             constr.add("variable with type", &parent, &var_expect);
         }
         (None, Some(expr)) => {
@@ -200,7 +200,7 @@ pub fn identifier_from_var(
             constr.add("variable and expression", &parent, &var_expect);
         }
         (None, None) => {
-            let child = Expected::new(&var.pos, &ExpressionAny);
+            let child = Expected::new(var.pos, &ExpressionAny);
             constr.add("variable", &var_expect, &child);
         }
     };
@@ -211,7 +211,7 @@ pub fn identifier_from_var(
 // Returns every possible tuple. Elements of a tuple are not to be confused with
 // the union of types derived from the current environment.
 fn identifier_to_tuple(
-    pos: &Position,
+    pos: Position,
     iden: &Identifier,
     env: &Environment,
 ) -> TypeResult<Vec<Expected>> {

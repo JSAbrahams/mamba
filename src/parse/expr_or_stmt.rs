@@ -15,7 +15,7 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match &lex.token {
             Token::NL => {
                 it.eat(&Token::NL, "expression or statement")?;
-                it.parse(&parse_block, "expression or statement", &lex.pos)
+                it.parse(&parse_block, "expression or statement", lex.pos)
             }
             token =>
                 if is_start_statement(token) {
@@ -47,29 +47,29 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
 }
 
 pub fn parse_raise(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
-    let start = &it.start_pos("raise")?;
+    let start = it.start_pos("raise")?;
     it.eat(&Token::Raise, "raise")?;
 
     it.eat(&Token::LSBrack, "raise")?;
     let errors = it.parse_vec(&parse_generics, "raise", start)?;
     it.eat(&Token::RSBrack, "raise")?;
     it.eat_if(&Token::RSBrack);
-    let end = errors.last().map_or(start, |stmt| &stmt.pos);
+    let end = errors.last().map_or(start, |stmt| stmt.pos);
 
-    let node = Node::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors: errors.clone() };
-    Ok(Box::from(AST::new(&start.union(end), node)))
+    let node = Node::Raises { expr_or_stmt: Box::from(expr_or_stmt), errors };
+    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
-    let start = &it.start_pos("handle")?;
+    let start = it.start_pos("handle")?;
     it.eat(&Token::Handle, "handle")?;
     it.eat(&Token::NL, "handle")?;
 
     let cases = it.parse_vec(&parse_match_cases, "handle", start)?;
-    let end = cases.last().map_or(start, |stmt| &stmt.pos);
+    let end = cases.last().map_or(start, |stmt| stmt.pos);
 
-    let node = Node::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases: cases.clone() };
-    Ok(Box::from(AST::new(&start.union(end), node)))
+    let node = Node::Handle { expr_or_stmt: Box::from(expr_or_stmt), cases };
+    Ok(Box::from(AST::new(start.union(end), node)))
 }
 
 #[cfg(test)]
@@ -185,7 +185,7 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
-            Node::File { statements: modules, .. } => modules,
+            Node::Block { statements: modules, .. } => modules,
             _ => panic!("ast was not file.")
         };
 
@@ -206,7 +206,7 @@ mod test {
         let ast = parse(&source).unwrap();
 
         let imports = match ast.node {
-            Node::File { statements: modules, .. } => modules,
+            Node::Block { statements: modules, .. } => modules,
             _ => panic!("ast was not file.")
         };
 

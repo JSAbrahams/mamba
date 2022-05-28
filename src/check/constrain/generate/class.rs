@@ -24,7 +24,7 @@ pub fn gen_class(
         Node::Class { body: Some(body), ty, .. } | Node::TypeDef { body: Some(body), ty, .. } =>
             match &body.node {
                 Node::Block { statements } => constrain_class_body(statements, ty, env, ctx, constr),
-                _ => Err(vec![TypeErr::new(&body.pos, "Expected code block")])
+                _ => Err(vec![TypeErr::new(body.pos, "Expected code block")])
             },
         Node::Class { .. } | Node::TypeDef { .. } => Ok((constr.clone(), env.clone())),
 
@@ -35,7 +35,7 @@ pub fn gen_class(
         }
         Node::Condition { cond, .. } => generate(cond, env, ctx, constr),
 
-        _ => Err(vec![TypeErr::new(&ast.pos, "Expected class or type definition")])
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected class or type definition")])
     }
 }
 
@@ -51,37 +51,35 @@ pub fn constrain_class_body(
     let class_name = StringName::try_from(ty.deref())?;
     res.0.new_set_in_class(true, &class_name);
     let class_ty_exp = Type { name: Name::from(&class_name) };
-    res.1 = res.1.in_class(&Expected::new(&ty.pos, &class_ty_exp));
+    res.1 = res.1.in_class(&Expected::new(ty.pos, &class_ty_exp));
 
     // Need way to specify that we are in class itself, not just any class, for position info
-    for field in ctx.class(&class_name, &ty.pos)?.fields {
-        res = property_from_field(&ty.pos, &field, &class_name, &mut res.1, &mut res.0)?;
+    for field in ctx.class(&class_name, ty.pos)?.fields {
+        res = property_from_field(ty.pos, &field, &class_name, &mut res.1, &mut res.0)?;
     }
 
     res.0.add(
         "class body",
-        &Expected::try_from((&AST { pos: ty.pos.clone(), node: Node::new_self() }, &env.var_mappings))?,
-        &Expected::new(&ty.pos, &class_ty_exp),
+        &Expected::try_from((&AST { pos: ty.pos, node: Node::new_self() }, &env.var_mappings))?,
+        &Expected::new(ty.pos, &class_ty_exp),
     );
 
     res = gen_vec(statements, &res.1, ctx, &res.0)?;
-    res.0.exit_set(&ty.pos)?;
+    res.0.exit_set(ty.pos)?;
     Ok((res.0, env.clone()))
 }
 
 /// Generate constraint for a given field.
 pub fn property_from_field(
-    pos: &Position,
+    pos: Position,
     field: &field::Field,
     class: &StringName,
     env: &mut Environment,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    // TODO generate constraints are part of interface
-    // TODO add constraint for mutable field
     let node = Node::PropertyCall {
-        instance: Box::new(AST { pos: pos.clone(), node: Node::new_self() }),
-        property: Box::new(AST { pos: pos.clone(), node: Node::Id { lit: field.name.clone() } }),
+        instance: Box::new(AST { pos, node: Node::new_self() }),
+        property: Box::new(AST { pos, node: Node::Id { lit: field.name.clone() } }),
     };
     let property_call = Expected::try_from((&AST::new(pos, node), &env.var_mappings))?;
     let field_ty = Expected::new(pos, &Type { name: field.ty.clone() });

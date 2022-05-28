@@ -24,12 +24,12 @@ impl TryFrom<&AST> for StringName {
                         generics.iter().map(Name::try_from).collect::<Result<_, _>>()?;
                     Ok(StringName::new(lit, &generics))
                 }
-                _ => Err(vec![TypeErr::new(&id.pos, &format!("Expected identifier, was {}", ast.node))])
+                _ => Err(vec![TypeErr::new(id.pos, &format!("Expected identifier, was {}", ast.node))])
             },
             Node::Parent { ty, .. } => StringName::try_from(ty),
             _ => {
                 let msg = format!("Expected class name, was {}", ast.node);
-                Err(vec![TypeErr::new(&ast.pos, &msg)])
+                Err(vec![TypeErr::new(ast.pos, &msg)])
             }
         }
     }

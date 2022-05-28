@@ -5,13 +5,11 @@ use mamba::parse::parse;
 use crate::common::*;
 
 #[test]
-fn core_function_definitions() {
-    let source = resource_content(true, &["function"], "definition.mamba");
-    to_py!(source);
+fn function_definitions() {
+    to_py!(resource_content(true, &["function"], "definition.mamba"));
 }
 
 #[test]
-fn core_function_calling() {
-    let source = resource_content(true, &["function"], "calls.mamba");
-    to_py!(source);
+fn function_calling() {
+    to_py!(resource_content(true, &["function"], "calls.mamba"));
 }

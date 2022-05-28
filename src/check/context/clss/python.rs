@@ -67,7 +67,7 @@ impl TryFrom<&Classdef> for GenericClass {
         let class = TrueName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
-            .map(|f| f.in_class(Some(&class), false, &Position::default()))
+            .map(|f| f.in_class(Some(&class), false, Position::default()))
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
@@ -82,12 +82,12 @@ impl TryFrom<&Classdef> for GenericClass {
             args,
             fields: fields
                 .into_iter()
-                .flat_map(|f| f.in_class(Some(&class.clone()), false, &Position::default()))
+                .flat_map(|f| f.in_class(Some(&class.clone()), false, Position::default()))
                 .collect(),
             functions: functions
                 .into_iter()
                 .filter(|f| f.name != StringName::from(INIT))
-                .map(|f| f.in_class(Some(&class), false, &Position::default()))
+                .map(|f| f.in_class(Some(&class), false, Position::default()))
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def.arguments.iter().map(GenericParent::from).collect(),

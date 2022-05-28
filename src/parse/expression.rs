@@ -20,7 +20,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         ($it:expr, $factor:expr, $ast:ident) => {{
             let end = $it.eat(&Token::$ast($factor.clone()), "factor")?;
             let node = Node::$ast { lit: $factor };
-            Ok(Box::from(AST::new(&start.union(&end), node)))
+            Ok(Box::from(AST::new(start.union(end), node)))
         }};
     }
     let expected = [
@@ -70,16 +70,16 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
                     lit: string.clone(),
                     expressions: expressions.iter().map(|expr| expr.deref().clone()).collect(),
                 };
-                Ok(Box::from(AST::new(&start.union(&end), node)))
+                Ok(Box::from(AST::new(start.union(end), node)))
             }
             Token::ENum(num, exp) => {
                 let end = it.eat(&Token::ENum(num.clone(), exp.clone()), "factor")?;
                 let node = Node::ENum { num: num.to_string(), exp: exp.to_string() };
-                Ok(Box::from(AST::new(&start.union(&end), node)))
+                Ok(Box::from(AST::new(start.union(end), node)))
             }
             Token::Undefined => {
                 let end = it.eat(&Token::Undefined, "factor")?;
-                Ok(Box::from(AST::new(&start.union(&end), Node::Undefined)))
+                Ok(Box::from(AST::new(start.union(end), Node::Undefined)))
             }
 
             Token::Not | Token::Sqrt | Token::Add | Token::Sub | Token::BOneCmpl => {
@@ -103,7 +103,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
 fn parse_underscore(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("underscore")?;
     let end = it.eat(&Token::Underscore, "underscore")?;
-    Ok(Box::from(AST::new(&start.union(&end), Node::Underscore)))
+    Ok(Box::from(AST::new(start.union(end), Node::Underscore)))
 }
 
 fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
@@ -134,11 +134,11 @@ fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::LSBrack, "index")?;
 
     let item = Box::from(pre.clone());
-    let range = it.parse(&parse_expression, "index", &pre.pos)?;
+    let range = it.parse(&parse_expression, "index", pre.pos)?;
 
     let node = Node::Index { item, range };
     let end = it.eat(&Token::RSBrack, "index")?;
-    Ok(Box::from(AST::new(&pre.pos.union(&end), node)))
+    Ok(Box::from(AST::new(pre.pos.union(end), node)))
 }
 
 fn parse_return(it: &mut LexIterator) -> ParseResult {
@@ -147,11 +147,11 @@ fn parse_return(it: &mut LexIterator) -> ParseResult {
 
     if let Some(end) = it.eat_if(&Token::NL) {
         let node = Node::ReturnEmpty;
-        return Ok(Box::from(AST::new(&start.union(&end), node)));
+        return Ok(Box::from(AST::new(start.union(end), node)));
     }
 
-    let expr = it.parse(&parse_expression, "return", &start)?;
-    Ok(Box::from(AST::new(&start.union(&expr.pos), Node::Return { expr })))
+    let expr = it.parse(&parse_expression, "return", start)?;
+    Ok(Box::from(AST::new(start.union(expr.pos), Node::Return { expr })))
 }
 
 /// Excluding unary addition and subtraction

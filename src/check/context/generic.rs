@@ -16,8 +16,8 @@ pub fn generics(
 
     for file in files {
         match &file.node {
-            Node::File { statements: modules, .. } => {
-                for module in modules {
+            Node::Block { statements } => {
+                for module in statements {
                     match &module.node {
                         Node::Class { .. } | Node::TypeDef { .. } | Node::TypeAlias { .. } => {
                             types.insert(GenericClass::try_from(module)?);
@@ -34,7 +34,7 @@ pub fn generics(
                     }
                 }
             }
-            _ => return Err(vec![TypeErr::new(&file.pos, "Expected file")]),
+            _ => return Err(vec![TypeErr::new(file.pos, "Expected file")]),
         }
     }
 
