@@ -28,7 +28,7 @@ pub fn python_files(
         let python_src_path = path
             .as_os_str()
             .to_str()
-            .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for primitive"))?;
+            .ok_or_else(|| TypeErr::new_no_pos("Unable to build context for python resource"))?;
 
         let mut python_src = String::new();
         match File::open(python_src_path) {
@@ -44,11 +44,10 @@ pub fn python_files(
 
         for statement in statements {
             match &statement {
-                Statement::Assignment(left, right) => fields
-                    .append(&mut GenericFields::from((left, right)).fields.into_iter().collect()),
-                // TODO use type hints
-                Statement::TypedAssignment(left, _, right) => fields
-                    .append(&mut GenericFields::from((left, right)).fields.into_iter().collect()),
+                Statement::Assignment(left, _) => fields
+                    .append(&mut GenericFields::from((left, &None)).fields.into_iter().collect()),
+                Statement::TypedAssignment(left, ty, _) => fields
+                    .append(&mut GenericFields::from((left, &Some(ty.clone()))).fields.into_iter().collect()),
                 Statement::Compound(compound_stmt) => match compound_stmt.deref() {
                     CompoundStatement::Funcdef(func_def) =>
                         functions.push(GenericFunction::from(func_def)),
