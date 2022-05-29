@@ -1,30 +1,7 @@
-coverage:
-  status:
-    project:
-      default:
-        target: 0% # Never actually fail
+comment:
+    layout: "reach, diff"
 
-flag_management:
-  default_rules: # the rules that will be followed for any flag added, generally
-    carryforward: true
-    statuses:
-      - name_prefix: project-
-        type: project
-        target: auto
-        threshold: 80%
-      - name_prefix: patch-
-        type: patch
-        target: 0%
-  individual_flags: # exceptions to the default rules above, stated flag by flag
-    - name: unit
-      paths: 
-      - src
-      carryforward: true
-    - name: integration
-      paths: 
-      - tests
-      carryforward: true
-    - name: smoke
-      paths: 
-      - tests/main.rs
-      carryforward: true
+coverage:
+    status:
+        project: off
+        patch: off
