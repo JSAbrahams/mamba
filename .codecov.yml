@@ -1,7 +1,3 @@
-comment:
-  layout: "reach, files"
-  behavior: default
-
 coverage:
   status:
     project:
