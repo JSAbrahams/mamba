@@ -25,6 +25,10 @@ def fun_e(m: int, o: Tuple[str, str], r: Callable[[int, Tuple[str, str]], int]) 
 def fun_v(y: str, ab: Callable[[str], Callable[[str], bool]]) -> Callable[[str], bool]: return ab(y)
 
 class MyClass:
+    def __init__(self, a: int, b: int):
+        self.a = a
+        self.b = b
+
     def some_function(self, c: int) -> int:
         d: int = 20
         d = 10 + 30
@@ -43,10 +47,6 @@ class MyClass:
 
     def sqrt(self) -> MyClass: return MyClass(self.a // self.b, self.a // self.b)
     def __mod__(self, other: MyClass) -> MyClass: return MyClass(self.a % self.b, self.b)
-
-    def __init__(self, a: int, b: int):
-        self.a = a
-        self.b = b
 
 def factorial(x: int) -> int: return x * factorial(x - 1)
 
