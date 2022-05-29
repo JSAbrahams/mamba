@@ -17,7 +17,7 @@ def f(x: int) -> int:
 
 a = None
 try:
-    a = f(10)
+    a: int = f(10)
 except MyErr1 as err:
     print("Something went wrong")
     a = -1

@@ -47,9 +47,17 @@ fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Import { from, import, alias } => format!(
             "{}import {}{}",
-            if let Some(from) = from { format!("from {} ", to_py(from, ind)) } else { String::from("") },
+            if let Some(from) = from {
+                format!("from {} ", to_py(from, ind))
+            } else {
+                String::from("")
+            },
             comma_delimited(import, ind),
-            if !alias.is_empty() { format!(" as {}", comma_delimited(alias, ind)) } else { String::from("") }
+            if !alias.is_empty() {
+                format!(" as {}", comma_delimited(alias, ind))
+            } else {
+                String::from("")
+            }
         ),
         Core::Id { lit } => lit.clone(),
         Core::Type { lit, generics } => {
@@ -74,7 +82,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
         Core::FunDef { id, arg, ty, body } => {
             format!(
-                "def {}({}){}:{}\n",
+                "def {}({}){}: {}\n",
                 id,
                 comma_delimited(arg, ind),
                 if let Some(ret_ty) = ty {
@@ -253,7 +261,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Break => String::from("break"),
 
         Core::ClassDef { name, parent_names, body } => format!(
-            "class {}{}:\n{}\n",
+            "class {}{}:{}\n",
             to_py(name, ind),
             if parent_names.is_empty() {
                 String::new()

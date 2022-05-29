@@ -1,10 +1,8 @@
-use mamba::Arguments;
-
-use crate::system::{OutTestRet, test_directory, test_directory_args};
+use crate::system::{OutTestRet, test_directory};
 
 #[test]
 fn handle() -> OutTestRet {
-    test_directory_args(true, &["error"], &["error", "target"], "handle", &args)
+    test_directory(true, &["error"], &["error", "target"], "handle")
 }
 
 #[test]
