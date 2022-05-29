@@ -3,4 +3,4 @@ coverage:
     project:
       default:
         target: auto
-        threshold: 0.25%  # allow coverage to drop by at most 0.25
+        threshold: 0.30%  # allow coverage to drop by at most 0.25
