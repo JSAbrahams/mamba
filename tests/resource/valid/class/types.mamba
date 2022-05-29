@@ -14,7 +14,7 @@ type MyInterface: SuperInterface
     def required_field: Int
     def higher_order(self) -> int
 
-# this class has no state
+# some class
 class MyClass(def my_field: Int, other_field: String := "Hello"): MyType(other_field), MyInterface
     def required_field: Int := 100
     def private_field: Int := 20

@@ -32,11 +32,11 @@ impl Core {
     /// # use mamba::generate::ast::node::Core;
     /// let core_node = Core::IfElse {
     ///  cond:  Box::from(Core::Id { lit: String::from("a") }),
-    /// then:  Box::from(Core::Str { string: String::from("b") }),
-    /// el: Box::from(Core::Str { string: String::from("c") })
+    ///  then:  Box::from(Core::Str { string: String::from("b") }),
+    ///  el: Box::from(Core::Str { string: String::from("c") })
     /// };
     ///
-    /// assert_eq!(core_node.to_source(), "if a:\n    \"b\"\nelse:\n    \"c\"\n");
+    /// assert_eq!(core_node.to_source(), "if a: \n    \"b\"\nelse: \n    \"c\"\n");
     /// ```
     pub fn to_source(&self) -> String {
         format!("{}\n", to_py(self, 0))
@@ -47,9 +47,17 @@ fn to_py(core: &Core, ind: usize) -> String {
     match core {
         Core::Import { from, import, alias } => format!(
             "{}import {}{}",
-            if let Some(from) = from { format!("from {} ", to_py(from, ind)) } else { String::from("") },
+            if let Some(from) = from {
+                format!("from {} ", to_py(from, ind))
+            } else {
+                String::from("")
+            },
             comma_delimited(import, ind),
-            if !alias.is_empty() { format!(" as {}", comma_delimited(alias, ind)) } else { String::from("") }
+            if !alias.is_empty() {
+                format!(" as {}", comma_delimited(alias, ind))
+            } else {
+                String::from("")
+            }
         ),
         Core::Id { lit } => lit.clone(),
         Core::Type { lit, generics } => {
@@ -74,7 +82,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
         Core::FunDef { id, arg, ty, body } => {
             format!(
-                "def {}({}){}:{}\n",
+                "def {}({}){}: {}\n",
                 id,
                 comma_delimited(arg, ind),
                 if let Some(ret_ty) = ty {
@@ -136,7 +144,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("match {}:\n{}", to_py(expr, ind), newline_delimited(cases, ind + 1))
         }
         Core::Case { expr, body } => {
-            format!("case {}:\n{}", to_py(expr, ind), newline_if_body(body, ind))
+            format!("case {}: {}", to_py(expr, ind), newline_if_body(body, ind))
         }
         Core::KeyValue { key, value } => format!("{}: {}", to_py(key, ind), to_py(value, ind)),
 
@@ -234,7 +242,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("if {}:{}", to_py(cond.as_ref(), ind), newline_if_body(then, ind))
         }
         Core::IfElse { cond, then, el } => format!(
-            "if {}:{}\n{}else:{}",
+            "if {}: {}\n{}else: {}",
             to_py(cond.as_ref(), ind),
             newline_if_body(then, ind),
             indent(ind),
@@ -253,14 +261,14 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Break => String::from("break"),
 
         Core::ClassDef { name, parent_names, body } => format!(
-            "class {}{}:\n{}\n",
+            "class {}{}: {}\n",
             to_py(name, ind),
             if parent_names.is_empty() {
                 String::new()
             } else {
                 format!("({})", comma_delimited(parent_names, ind))
             },
-            to_py(body, ind + 1)
+            newline_if_body(body, ind)
         ),
 
         Core::Pass => String::from("pass"),
@@ -269,17 +277,17 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Comment { comment } => format!("#{}", comment),
 
         Core::With { resource, expr } => {
-            format!("with {}:{}", to_py(resource, ind), newline_if_body(expr, ind))
+            format!("with {}: {}", to_py(resource, ind), newline_if_body(expr, ind))
         }
         Core::WithAs { resource, alias, expr } => format!(
-            "with {} as {}:{}",
+            "with {} as {}: {}",
             to_py(resource, ind),
             to_py(alias, ind),
             newline_if_body(expr, ind)
         ),
 
         Core::TryExcept { setup, attempt, except } => format!(
-            "{}try:{}\n{}",
+            "{}try: {}\n{}",
             if let Some(setup) = setup {
                 format!("{}\n{}", to_py(setup, ind), indent(ind))
             } else {
@@ -289,7 +297,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_delimited(except, ind)
         ),
         Core::Except { id, class, body } => format!(
-            "except {} as {}:{}",
+            "except {} as {}: {}",
             if let Some(class) = class { to_py(class, ind) } else { String::from("Exception") },
             to_py(id, ind),
             newline_if_body(body, ind)
