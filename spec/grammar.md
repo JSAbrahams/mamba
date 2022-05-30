@@ -18,14 +18,14 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
     type-def         ::= "type" type [ ":" type ] ( newline statements | "when" [ conditions ] )
-    conditions       ::= ( newline indent { condition } dedent | condition )
+    conditions       ::= ( newline indent { condition newline } dedent | condition )
     condition        ::= expression [ "else" expression ]
     type-tuple       ::= "(" [ type ] { "," type } ")"
     
     class            ::= "class" id [ fun-args ] [ ":" ( type | type-tuple ) ] ( newline block )
     generics         ::= "[" id { "," id } "]"
     
-    id               ::= "self" | ( letter | "_" ) { character }
+    id               ::= { character }
     id-maybe-type    ::= id [ ":" type ]
 
     type             ::= ( id [ generics ] | type-tuple ) [ "->" type ]
