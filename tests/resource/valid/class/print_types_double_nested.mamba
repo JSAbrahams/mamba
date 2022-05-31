@@ -1,0 +1,11 @@
+class Y(def a: Float)
+
+class X
+    def y: Y
+
+    def init(self, a: Float) =>
+         self.y := Y(a)
+
+def x := X(10)
+
+print(x.y.a)

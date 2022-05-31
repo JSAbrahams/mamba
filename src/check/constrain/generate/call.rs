@@ -213,9 +213,22 @@ fn property_call(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &property.node {
-        Node::PropertyCall { instance: inner, property } => {
+        Node::PropertyCall { instance: inner, property: inner_prop } => {
+            let parent = Expected::new(instance.pos.union(property.pos), &Expect::Access {
+                entity: Box::new(Expected::new(instance.pos, &Expect::Expression { ast: instance.clone() })),
+                name: Box::new(Expected::new(inner_prop.pos, &Expect::Expression { ast: property.clone() })),
+            });
+
+            let node = Node::PropertyCall { instance: Box::from(instance.clone()), property: Box::from(property.clone()) };
+            let ast = AST::new(instance.pos.union(inner_prop.pos), node);
+            let child = Expected::new(instance.pos.union(inner_prop.pos), &Expect::Expression { ast });
+
+            constr.add("property call", &parent, &child);
+
             let (mut constr, env) = property_call(instance, inner, env, ctx, constr)?;
-            property_call(inner, property, &env, ctx, &mut constr)
+            let (mut constr, env) = property_call(inner, inner_prop, &env, ctx, &mut constr)?;
+
+            Ok((constr, env))
         }
         Node::Id { lit } => {
             match &instance.node {

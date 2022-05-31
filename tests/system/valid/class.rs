@@ -1,3 +1,5 @@
+use log::Level;
+
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
@@ -16,9 +18,14 @@ fn class_super_one_line_init() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Should be fixed within this PR ideally
 fn assign_types_double_nested() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "assign_types_double_nested")
+}
+
+#[test]
+fn print_types_double_nested() -> OutTestRet {
+    loggerv::init_with_level(Level::Trace);
+    test_directory(true, &["class"], &["class", "target"], "print_types_double_nested")
 }
 
 #[test]

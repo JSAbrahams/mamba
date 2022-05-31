@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::path::PathBuf;
+use std::path::{MAIN_SEPARATOR, PathBuf};
 
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -173,6 +173,9 @@ impl Display for ParseErr {
                 )
             });
 
+        let path =
+            self.path.clone().map_or(String::from("<unknown>"), |path| path.display().to_string());
+        let path = path.strip_suffix(MAIN_SEPARATOR).unwrap_or_else(|| &path);
         let source_line = match &self.source {
             Some(source) => {
                 source.lines().nth(self.position.start.line as usize - 1).unwrap_or("<unknown>")
@@ -184,7 +187,7 @@ impl Display for ParseErr {
             f,
             "{}\n --> {}:{}:{}\n {:3} |- {}\n     | {}{}\n{}",
             self.msg,
-            self.path.clone().map_or(String::from("<unknown>"), |path| path.display().to_string()),
+            path,
             self.position.start.line,
             self.position.start.pos,
             self.position.start.line,

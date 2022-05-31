@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::path::PathBuf;
+use std::path::{MAIN_SEPARATOR, PathBuf};
 
 use crate::check::ast::ASTTy;
 use crate::common::position::Position;
@@ -103,6 +103,9 @@ impl WithSource for TypeErr {
 impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
+        // remove trailing slash
+        let path = path.strip_suffix(MAIN_SEPARATOR).unwrap_or_else(|| &path);
+
         let msg = {
             let mut string = String::from(self.msg.trim());
             if string.ends_with('\n') {
