@@ -1,3 +1,5 @@
+use log::Level::Trace;
+
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
@@ -8,4 +10,9 @@ fn long_f_string() -> OutTestRet {
 #[test]
 fn assign_tuples() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "assign_tuples")
+}
+
+#[test]
+fn function_ret_super() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_ret_super")
 }
