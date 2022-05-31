@@ -1,0 +1,3 @@
+class X
+    def init(self) =>
+        print(self.z)
