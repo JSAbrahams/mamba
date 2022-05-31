@@ -11,13 +11,10 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
 - ```{ ... }``` = zero or more
 
 ```
-    file             ::= { ( expr-or-stmt | import | type-def | class | comment ) { newline } }
-    statements       ::= { comment | newline } ( expr-or-stmt | import | type-def | class ) { comment | newline }
-                         { ( expr-or-stmt | import | type-def | class ) { comment | newline } }
-    
+    file             ::= block
     import           ::= [ "from" id ] "import" id { "," id } [ as id { "," id } ]
 
-    type-def         ::= "type" type [ ":" type ] ( newline statements | "when" [ conditions ] )
+    type-def         ::= "type" type [ ":" type ] ( newline block | "when" [ conditions ] )
     conditions       ::= ( newline indent { condition newline } dedent | condition )
     condition        ::= expression [ "else" expression ]
     type-tuple       ::= "(" [ type ] { "," type } ")"
@@ -31,15 +28,19 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     type             ::= ( id [ generics ] | type-tuple ) [ "->" type ]
     type-tuple       ::= "(" [ type { "," type } ] ")"
     
-    block            ::= indent { statements } dedent
+    block            ::= indent { expr-or-stmt } dedent
     
-    expr-or-stmt     ::= statement | expression [ ( raises | handle ) ]
+    expr-or-stmt     ::= ( statement | expression [ ( raises | handle ) ] )
     statement        ::=  control-flow-stmt
                       | definition
                       | reassignment
                       | type-def
                       | "retry"
                       | "pass"
+                      | class
+                      | type-def
+                      | comment
+                      | import
     expression       ::= "(" expression ")"
                       | expression "?or" expression
                       | "return" [ expression ]
