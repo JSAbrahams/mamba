@@ -30,7 +30,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     
     block            ::= indent { expr-or-stmt } dedent
     
-    expr-or-stmt     ::= ( statement | expression [ ( raises | handle ) ] )
+    expr-or-stmt     ::= ( statement | expression ) [ handle ] [ comment ]
     statement        ::=  control-flow-stmt
                       | definition
                       | reassignment
@@ -122,7 +122,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     while            ::= "while" one-or-more-expr "do" newline-block
     foreach          ::= "for" one-or-more-expr "in" expression "do" newline-block
     
-    newline          ::= newline-char [ comment ]
+    newline          ::= newline-char
     newline-char     ::= \n | \r\n
     comment          ::= "#" { character } newline
 ```
