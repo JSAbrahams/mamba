@@ -37,7 +37,6 @@ fn doc_strings() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // See #314, #315
 fn multiple_parent() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "multiple_parent")
 }
