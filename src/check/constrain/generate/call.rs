@@ -60,8 +60,12 @@ pub fn gen_call(
             let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
 
             if f_name == StringName::from(function::PRINT) {
-                let args = args.iter().map(|arg| Expected::try_from((arg, &env.var_mappings))).collect::<TypeResult<Vec<Expected>>>()?;
-                let args: Vec<Constraint> = args.iter().map(|exp| Constraint::stringy("print", exp)).collect();
+                let args = args
+                    .iter()
+                    .map(|arg| Expected::try_from((arg, &env.var_mappings)))
+                    .collect::<TypeResult<Vec<Expected>>>()?;
+                let args: Vec<Constraint> =
+                    args.iter().map(|exp| Constraint::stringy("print", exp)).collect();
                 let constr = args.iter().fold(constr.clone(), |mut acc, a| {
                     acc.add_constr(a);
                     acc
@@ -214,6 +218,17 @@ fn property_call(
             property_call(inner, property, &env, ctx, &mut constr)
         }
         Node::Id { lit } => {
+            match &instance.node {
+                Node::Id { lit: instance } if instance == arg::SELF => {
+                    // no objects has attribute self, so if not top-level error elsewhere
+                    if env.unassigned.contains(lit) {
+                        let msg = format!("Cannot access unassigned field {}", lit);
+                        return Err(vec![TypeErr::new(property.pos, &msg)]);
+                    }
+                }
+                _ => {}
+            }
+
             let access = Expected::new(
                 property.pos,
                 &Access {
@@ -339,7 +354,9 @@ fn reassign_op(
         },
     ));
 
+    let (mut constr, env) = generate(&right, env, ctx, constr)?;
+
     let node = Node::Reassign { left, right, op: NodeOp::Assign };
     let simple_assign_ast = AST::new(ast.pos, node);
-    generate(&simple_assign_ast, env, ctx, constr)
+    generate(&simple_assign_ast, &env, ctx, &mut constr)
 }
