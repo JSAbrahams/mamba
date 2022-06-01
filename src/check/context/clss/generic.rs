@@ -102,6 +102,26 @@ impl TryFrom<&AST> for GenericClass {
                     new_args
                 };
 
+                let parents_pos: Vec<(Position, Node)> = parents.iter().flat_map(|p| match &p.node {
+                    Node::Parent { ty, .. } => match &ty.node {
+                        Node::Type { id, .. } => Some((ty.pos, id.node.clone())),
+                        _ => None
+                    }
+                    _ => None
+                }).collect();
+
+                let mut temp_parents: HashSet<Node> = HashSet::new();
+                let mut errs: Vec<(Position, String)> = Vec::new();
+                for (pos, parent) in parents_pos {
+                    if temp_parents.contains(&parent) {
+                        errs.push((pos, format!("Duplicate parent: {}", parent)));
+                    }
+                    temp_parents.insert(parent.clone());
+                }
+                if !errs.is_empty() {
+                    return Err(errs.iter().map(|(pos, msg)| TypeErr::new(*pos, msg)).collect());
+                }
+
                 let (body_fields, functions) = get_fields_and_functions(&name, &statements, false)?;
                 if let Some(function) = functions.iter().find(|f| f.name == StringName::from(INIT))
                 {
