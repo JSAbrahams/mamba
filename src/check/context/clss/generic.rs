@@ -75,7 +75,11 @@ impl TryFrom<&AST> for GenericClass {
                         Ok(ClassArgument { field, fun_arg }) => {
                             if let Some(field) = field {
                                 class_args.push(fun_arg);
-                                argument_fields.insert(field.in_class(Some(&name), false, arg.pos)?);
+                                argument_fields.insert(field.in_class(
+                                    Some(&name),
+                                    false,
+                                    arg.pos,
+                                )?);
                             } else {
                                 class_args.push(fun_arg);
                             }
@@ -102,22 +106,26 @@ impl TryFrom<&AST> for GenericClass {
                     new_args
                 };
 
-                let parents_pos: Vec<(Position, Node)> = parents.iter().flat_map(|p| match &p.node {
-                    Node::Parent { ty, .. } => match &ty.node {
-                        Node::Type { id, .. } => Some((ty.pos, id.node.clone())),
-                        _ => None
-                    }
-                    _ => None
-                }).collect();
-
                 let mut temp_parents: HashSet<Node> = HashSet::new();
-                let mut errs: Vec<(Position, String)> = Vec::new();
-                for (pos, parent) in parents_pos {
-                    if temp_parents.contains(&parent) {
-                        errs.push((pos, format!("Duplicate parent: {}", parent)));
-                    }
-                    temp_parents.insert(parent.clone());
-                }
+                let errs: Vec<(Position, String)> = parents
+                    .iter()
+                    .flat_map(|p| match &p.node {
+                        Node::Parent { ty, .. } => match &ty.node {
+                            Node::Type { id, .. } => Some((ty.pos, id.node.clone())),
+                            _ => None,
+                        },
+                        _ => None,
+                    })
+                    .flat_map(|(pos, parent)| {
+                        if temp_parents.contains(&parent) {
+                            Some((pos, format!("Duplicate parent: {}", parent)))
+                        } else {
+                            temp_parents.insert(parent);
+                            None
+                        }
+                    })
+                    .collect();
+
                 if !errs.is_empty() {
                     return Err(errs.iter().map(|(pos, msg)| TypeErr::new(*pos, msg)).collect());
                 }
@@ -258,7 +266,10 @@ fn get_fields_and_functions(
             }
             Node::Comment { .. } | Node::DocStr { .. } => {}
             _ => {
-                return Err(vec![TypeErr::new(statement.pos, "Expected function or variable definition")]);
+                return Err(vec![TypeErr::new(
+                    statement.pos,
+                    "Expected function or variable definition",
+                )]);
             }
         }
     }
@@ -381,11 +392,8 @@ mod test {
     #[test]
     fn from_class_with_generic() -> Result<(), Vec<TypeErr>> {
         let source = "class MyClass[T]\n    def c: T\n";
-        let ast = parse_direct(source)
-            .expect("valid type syntax")
-            .into_iter()
-            .next()
-            .expect("type AST");
+        let ast =
+            parse_direct(source).expect("valid type syntax").into_iter().next().expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -419,11 +427,8 @@ mod test {
     #[test]
     fn from_type_with_generic() -> Result<(), Vec<TypeErr>> {
         let source = "type MyType[T]\n    def c: T\n";
-        let ast = parse_direct(source)
-            .expect("valid type syntax")
-            .into_iter()
-            .next()
-            .expect("type AST");
+        let ast =
+            parse_direct(source).expect("valid type syntax").into_iter().next().expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
@@ -457,11 +462,8 @@ mod test {
     #[test]
     fn from_type_def() -> Result<(), Vec<TypeErr>> {
         let source = "type MyType\n    def c: String\n";
-        let ast = parse_direct(source)
-            .expect("valid type syntax")
-            .into_iter()
-            .next()
-            .expect("type AST");
+        let ast =
+            parse_direct(source).expect("valid type syntax").into_iter().next().expect("type AST");
 
         let generic_class = GenericClass::try_from(&ast)?;
 
