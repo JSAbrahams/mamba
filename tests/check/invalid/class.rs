@@ -97,6 +97,12 @@ fn reassign_to_unassigned_class_var() {
 }
 
 #[test]
+fn same_parent_twice() {
+    let source = resource_content(false, &["type", "class"], "same_parent_twice.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn top_level_class_not_assigned_to() {
     let source =
         resource_content(false, &["type", "class"], "top_level_class_not_assigned_to.mamba");
