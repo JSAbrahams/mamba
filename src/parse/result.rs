@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::common::result::WithSource;
+use crate::common::result::{an_or_a, WithSource};
 use crate::parse::ast::AST;
 use crate::parse::lex::result::LexErr;
 use crate::parse::lex::token::Lex;
@@ -135,21 +135,6 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
         source: None,
         path: None,
         causes: vec![],
-    }
-}
-
-fn an_or_a<D>(parsing: D) -> &'static str where D: Display {
-    let parsing = format!("{}", parsing);
-
-    if let Some('s') = parsing.chars().last() {
-        return "";
-    } else if parsing.chars().next().is_none() {
-        return "";
-    }
-
-    match parsing.chars().next() {
-        Some(c) if ['a', 'e', 'i', 'o', 'u'].contains(&c.to_ascii_lowercase()) => "an ",
-        _ => "a "
     }
 }
 
