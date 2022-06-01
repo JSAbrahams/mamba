@@ -1,3 +1,5 @@
 class X
+    def z: Int
+
     def init(self) =>
-        print(self.z)
+        self.z
