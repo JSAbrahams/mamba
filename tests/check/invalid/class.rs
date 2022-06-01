@@ -84,6 +84,12 @@ fn no_generic_arg() {
 }
 
 #[test]
+fn object_has_no_attribute_self() {
+    let source = resource_content(false, &["type", "class"], "object_has_no_attribute_self.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn one_tuple_not_assigned_to() {
     let source = resource_content(false, &["type", "class"], "one_tuple_not_assigned_to.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
