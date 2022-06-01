@@ -1,5 +1,5 @@
 class MyType(a: String)
 class MyType2(b: String)
 
-class MyClass1: MyType("asdf"), MyType("qwerty")
+class MyClass1: MyType("asdf"), MyType2("qwerty")
     def other: Int
