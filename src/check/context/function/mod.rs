@@ -6,8 +6,9 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::context::{arg, Context, function};
+use crate::check::context::{arg, Context, function, LookupFunction};
 use crate::check::context::arg::FunctionArg;
+use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::IsSuperSet;
 use crate::check::name::Name;
@@ -39,6 +40,7 @@ pub const TRUTHY: &str = function::python::TRUTHY;
 pub const NEXT: &str = function::python::NEXT;
 pub const ITER: &str = function::python::ITER;
 
+pub mod concrete;
 pub mod generic;
 pub mod python;
 
@@ -56,6 +58,26 @@ pub struct Function {
     pub raises: Name,
     pub in_class: Option<StringName>,
     pub ret_ty: Name,
+}
+
+impl LookupFunction<&StringName, Function> for Context {
+    /// Look up a function and substitutes generics to yield a Function.
+    ///
+    /// If function does not exist, treat function as constructor and see if
+    /// there exists a class with the same truename.
+    fn function(&self, function: &StringName, pos: Position) -> Result<Function, Vec<TypeErr>> {
+        let generics = HashMap::new();
+
+        if let Some(generic_fun) = self.functions.iter().find(|c| &c.name == function) {
+            Function::try_from((generic_fun, &generics, pos))
+        } else if let Some(generic_class) = self.classes.iter().find(|c| &c.name == function) {
+            let class = Class::try_from((generic_class, &generics, pos))?;
+            class.constructor(true, pos)
+        } else {
+            let msg = format!("Function {} is undefined.", function);
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
+    }
 }
 
 impl Hash for Function {

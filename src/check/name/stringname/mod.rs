@@ -4,9 +4,9 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
 use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::HasParent;
-use crate::check::name::{ColType, IsSuperSet};
-use crate::check::name::{Name, Union};
+use crate::check::context::clss::{GetFun, HasParent};
+use crate::check::name::{ColType, IsSuperSet, Union};
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;

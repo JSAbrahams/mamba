@@ -4,6 +4,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
+use itertools::{EitherOrBoth, Itertools};
+
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::arg::generic::GenericFunctionArg;
@@ -34,6 +36,7 @@ pub const LIST: &str = "List";
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
 
+pub mod concrete;
 pub mod generic;
 pub mod python;
 
@@ -61,6 +64,14 @@ pub trait HasParent<T> {
     ///
     /// Does recursive search. Is true if any ancestor is equal to name.
     fn has_parent(&self, name: T, ctx: &Context, pos: Position) -> TypeResult<bool>;
+}
+
+pub trait GetField<T> {
+    fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<T>;
+}
+
+pub trait GetFun<T> {
+    fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<T>;
 }
 
 impl HasParent<&StringName> for Class {
@@ -117,6 +128,41 @@ impl HasParent<&Name> for Class {
         }
 
         Ok(false)
+    }
+}
+
+impl LookupClass<&StringName, Class> for Context {
+    /// Look up union of GenericClass and substitute generics to yield set of classes.
+    ///
+    /// Substitutes all generics in the class when found.
+    fn class(&self, class: &StringName, pos: Position) -> Result<Class, Vec<TypeErr>> {
+        if let Some(generic_class) = self.classes.iter().find(|c| {
+            c.name.as_direct("Class name", pos).map(|name| name.name) == Ok(class.name.clone())
+        }) {
+            let mut generics = HashMap::new();
+            let placeholders = generic_class.name.as_direct("Class name invalid", pos)?;
+
+            for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
+                match name {
+                    EitherOrBoth::Both(placeholder, name) => {
+                        generics.insert(placeholder.clone(), name.clone());
+                    }
+                    EitherOrBoth::Left(placeholder) => {
+                        let msg = format!("No argument for generic: {}", placeholder);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    }
+                    EitherOrBoth::Right(placeholder) => {
+                        let msg = format!("No generic for argument: {}", placeholder);
+                        return Err(vec![TypeErr::new(pos, &msg)]);
+                    }
+                }
+            }
+
+            Class::try_from((generic_class, &generics, pos))
+        } else {
+            let msg = format!("Type '{}' is undefined.", class);
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
     }
 }
 
@@ -177,8 +223,10 @@ impl Class {
             ret_ty: Name::from(&self.name),
         })
     }
+}
 
-    pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<Field> {
+impl GetField<Field> for Class {
+    fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<Field> {
         if let Some(field) = self.fields.iter().find(|f| f.name == name) {
             return Ok(field.clone());
         }
@@ -190,12 +238,14 @@ impl Class {
         }
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
+}
 
+impl GetFun<Function> for Class {
     /// Get function of class.
     ///
     /// If class does not implement function, traverse parents until function
     /// found.
-    pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<Function> {
+    fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<Function> {
         if let Some(function) = self.functions.iter().find(|f| &f.name == name) {
             return Ok(function.clone());
         }
