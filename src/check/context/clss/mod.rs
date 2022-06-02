@@ -184,11 +184,10 @@ impl Class {
         }
 
         for parent in &self.parents {
-            if let Ok(field) = ctx.class(parent, pos)?.field(name, ctx, pos) {
-                return Ok(field);
+            if let Ok(union) = ctx.class(parent, pos)?.field(name, ctx, pos) {
+                return union.as_direct(pos);
             }
         }
-
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
 
@@ -201,14 +200,11 @@ impl Class {
             return Ok(function.clone());
         }
 
-        // TODO deal with conflicting function names in parents.
-        // TODO check for cyclic dependencies after constructing Context.
         for parent in &self.parents {
-            if let Ok(function) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
-                return Ok(function);
+            if let Ok(union) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
+                return union.as_direct(pos);
             }
         }
-
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
     }
 }

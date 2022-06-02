@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
 use std::collections::hash_set::IntoIter;
@@ -5,6 +6,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
+
+use itertools::Itertools;
 
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
@@ -115,6 +118,20 @@ pub fn match_type_direct(
 #[derive(Debug, Clone, Eq)]
 pub struct Name {
     pub names: HashSet<TrueName>,
+}
+
+impl PartialOrd<Self> for Name {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let self_vec = self.names.iter().sorted();
+        let other_vec = other.names.iter().sorted();
+        self_vec.partial_cmp(other_vec)
+    }
+}
+
+impl Ord for Name {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+    }
 }
 
 impl AsMutable for Name {

@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
-use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
 
@@ -42,23 +42,9 @@ mod python;
 /// we can also check usage of top-level fields and functions.
 #[derive(Debug, Default)]
 pub struct Context {
-    classes: HashSet<GenericClass>,
-    functions: HashSet<GenericFunction>,
-    fields: HashSet<GenericField>,
-}
-
-impl Context {
-    pub fn class_count(&self) -> usize {
-        self.classes.len()
-    }
-
-    pub fn function_count(&self) -> usize {
-        self.functions.len()
-    }
-
-    pub fn field_count(&self) -> usize {
-        self.fields.len()
-    }
+    pub classes: HashSet<GenericClass>,
+    pub functions: HashSet<GenericFunction>,
+    pub fields: HashSet<GenericField>,
 }
 
 impl TryFrom<&[AST]> for Context {
@@ -109,20 +95,20 @@ impl LookupClass<&StringName, Class> for Context {
     }
 }
 
-impl LookupClass<&TrueName, ClassTuple> for Context {
-    fn class(&self, class: &TrueName, pos: Position) -> TypeResult<ClassTuple> {
-        let variant = match &class.variant {
-            NameVariant::Single(direct) => ClassVariant::Direct(self.class(direct, pos)?),
+impl LookupClass<&TrueName, ClassVariant> for Context {
+    fn class(&self, class: &TrueName, pos: Position) -> TypeResult<ClassVariant> {
+        Ok(match &class.variant {
+            NameVariant::Single(direct) => {
+                ClassVariant::Direct(HashSet::from([self.class(direct, pos)?]))
+            }
             NameVariant::Tuple(unions) => ClassVariant::Tuple(
                 unions.iter().map(|union| self.class(union, pos)).collect::<Result<_, _>>()?,
             ),
-            NameVariant::Fun(..) => {
-                let msg = format!("'{}' is not a valid class identifier", class.variant);
-                return Err(vec![TypeErr::new(pos, &msg)]);
-            }
-        };
-
-        Ok(ClassTuple { variant })
+            NameVariant::Fun(args, ret) => ClassVariant::Fun(
+                args.iter().map(|arg| self.class(arg, pos)).collect::<Result<_, _>>()?,
+                self.class(ret.deref(), pos)?,
+            ),
+        })
     }
 }
 
@@ -183,94 +169,69 @@ impl LookupField<&str, Field> for Context {
     }
 }
 
-#[allow(clippy::large_enum_variant)]
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Eq)]
 pub enum ClassVariant {
-    Direct(Class),
+    Direct(HashSet<Class>),
     Tuple(Vec<ClassUnion>),
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ClassTuple {
-    variant: ClassVariant,
-}
-
-impl Display for ClassTuple {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match &self.variant {
-            ClassVariant::Direct(class) => write!(f, "{}", class.name),
-            ClassVariant::Tuple(classes) => {
-                let names: Vec<Name> = classes.iter().map(|c| c.name()).collect();
-                write!(f, "({})", comma_delm(names))
-            }
-        }
-    }
-}
-
-impl ClassTuple {
-    pub fn as_direct(&self, pos: Position) -> TypeResult<Class> {
-        match &self.variant {
-            ClassVariant::Direct(class) => Ok(class.clone()),
-            _ => Err(vec![TypeErr::new(pos, &String::from("Expected a single class."))]),
-        }
-    }
-
-    pub fn name(&self) -> TrueName {
-        let variant = match &self.variant {
-            ClassVariant::Direct(class) => return class.name.clone(),
-            ClassVariant::Tuple(classes) => {
-                NameVariant::Tuple(classes.iter().map(|c| c.name()).collect())
-            }
-        };
-        TrueName::from(&variant)
-    }
-
-    pub fn args(&self, pos: Position) -> TypeResult<Vec<FunctionArg>> {
-        match &self.variant {
-            ClassVariant::Direct(class) => Ok(class.args.clone()),
-            ClassVariant::Tuple(_) => {
-                let msg = format!("Cannot invoke '{}' with arguments.", self);
-                Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
-    }
-
-    pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<Function> {
-        match &self.variant {
-            ClassVariant::Direct(class) => class.fun(name, ctx, pos),
-            ClassVariant::Tuple(classes) => {
-                if name == &StringName::from(function::STR) {
-                    // Check that all implement __str__
-                    for class in classes {
-                        class.fun(name, ctx, pos)?;
-                    }
-
-                    let variant = NameVariant::Tuple(classes.iter().map(|c| c.name()).collect());
-                    let self_arg = Name::from(&TrueName::from(&variant));
-                    let ret_ty = Name::from(clss::STRING_PRIMITIVE);
-                    Function::simple_fun(name, &self_arg, &ret_ty, pos)
-                } else {
-                    let msg = format!("Function '{}' undefined on '{}'", name, self);
-                    Err(vec![TypeErr::new(pos, &msg)])
-                }
-            }
-        }
-    }
-
-    pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<Field> {
-        match &self.variant {
-            ClassVariant::Direct(class) => class.field(name, ctx, pos),
-            ClassVariant::Tuple(_) => {
-                let msg = format!("Attribute '{}' undefined on '{}'", name, self);
-                Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
-    }
+    Fun(Vec<ClassUnion>, ClassUnion),
 }
 
 #[derive(Debug, Eq)]
 pub struct ClassUnion {
-    union: HashSet<ClassTuple>,
+    union: HashSet<ClassVariant>,
+}
+
+impl ClassVariant {
+    pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<FieldUnion> {
+        match &self {
+            ClassVariant::Direct(class_set) => {
+                let fields: HashSet<Field> = class_set
+                    .iter()
+                    .map(|class| class.field(name, ctx, pos))
+                    .collect::<Result<_, _>>()?;
+                Ok(FieldUnion::from(&fields))
+            }
+            other => {
+                let msg = format!("'{}' cannot define a field", other);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+
+    pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<FunUnion> {
+        match &self {
+            ClassVariant::Direct(class_set) => {
+                let funs: HashSet<Function> = class_set
+                    .iter()
+                    .map(|class| class.fun(name, ctx, pos))
+                    .collect::<Result<_, _>>()?;
+                Ok(FunUnion::from(&funs))
+            }
+            other => {
+                let msg = format!("'{}' cannot define a function", other);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+}
+
+impl Display for ClassVariant {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            ClassVariant::Direct(class_set) if class_set.len() == 1 => {
+                write!(f, "{}", class_set.iter().next().unwrap())
+            }
+            ClassVariant::Direct(class_set) => write!(f, "{{{}}}", comma_delm(class_set)),
+            ClassVariant::Tuple(items) => write!(f, "({})", comma_delm(items)),
+            ClassVariant::Fun(args, ret) => write!(f, "({}) -> {}", comma_delm(args), ret),
+        }
+    }
+}
+
+impl Display for ClassUnion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{}}}", comma_delm(&self.union))
+    }
 }
 
 impl PartialEq for ClassUnion {
@@ -283,6 +244,36 @@ impl PartialEq for ClassUnion {
 impl Hash for ClassUnion {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.union.iter().for_each(|c| c.hash(state))
+    }
+}
+
+impl Hash for ClassVariant {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match &self {
+            ClassVariant::Direct(class_set) => {
+                class_set.iter().sorted_by_key(|c| &c.name).for_each(|c| c.hash(state))
+            }
+            ClassVariant::Tuple(classes) => classes.hash(state),
+            ClassVariant::Fun(args, ret) => {
+                args.hash(state);
+                ret.hash(state)
+            }
+        };
+    }
+}
+
+impl PartialEq for ClassVariant {
+    fn eq(&self, other: &Self) -> bool {
+        match (&self, other) {
+            (ClassVariant::Direct(l_set), ClassVariant::Direct(r_set)) => {
+                let l_set: Vec<&Class> = l_set.iter().sorted_by_key(|c| &c.name).collect();
+                let r_set: Vec<&Class> = r_set.iter().sorted_by_key(|c| &c.name).collect();
+                l_set == r_set
+            }
+            (ClassVariant::Tuple(l_c), ClassVariant::Tuple(r_c)) => l_c == r_c,
+            (ClassVariant::Fun(l_a, l_r), ClassVariant::Fun(r_a, r_r)) => l_a == r_a && l_r == r_r,
+            _ => false,
+        }
     }
 }
 
@@ -299,11 +290,13 @@ impl HasParent<&StringName> for ClassUnion {
     }
 }
 
-impl HasParent<&StringName> for ClassTuple {
+impl HasParent<&StringName> for ClassVariant {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        match &self.variant {
-            ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
-            ClassVariant::Tuple(_) => {
+        match &self {
+            ClassVariant::Direct(class_set) => {
+                Ok(class_set.iter().all(|class| class.has_parent(name, ctx, pos).is_ok()))
+            }
+            ClassVariant::Tuple(_) | ClassVariant::Fun(..) => {
                 let msg = format!("'{}' does not have parents.", self);
                 Err(vec![TypeErr::new(pos, &msg)])
             }
@@ -311,14 +304,28 @@ impl HasParent<&StringName> for ClassTuple {
     }
 }
 
-impl HasParent<&TrueName> for ClassTuple {
-    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        match &self.variant {
-            ClassVariant::Direct(class) => {
-                class.has_parent(&name.as_direct("class", pos)?, ctx, pos)
+impl HasParent<&Name> for ClassVariant {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
+        match &self {
+            ClassVariant::Direct(union) => {
+                Ok(union.iter().all(|class| class.has_parent(name, ctx, pos).is_ok()))
             }
-            ClassVariant::Tuple(_) => {
-                let msg = format!("'{}' does not have parents.", self);
+            other => {
+                let msg = format!("{} cannot have parent", other);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+}
+
+impl HasParent<&TrueName> for ClassVariant {
+    fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
+        match &self {
+            ClassVariant::Direct(union) => {
+                Ok(union.iter().all(|class| class.has_parent(name, ctx, pos).is_ok()))
+            }
+            other => {
+                let msg = format!("{} cannot have parent", other);
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
@@ -338,18 +345,6 @@ impl HasParent<&TrueName> for ClassUnion {
     }
 }
 
-impl HasParent<&Name> for ClassTuple {
-    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        match &self.variant {
-            ClassVariant::Direct(class) => class.has_parent(name, ctx, pos),
-            ClassVariant::Tuple(_) => {
-                let msg = format!("'{}' does not have parents", self);
-                Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
-    }
-}
-
 impl HasParent<&Name> for ClassUnion {
     fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> Result<bool, Vec<TypeErr>> {
         let res: Vec<bool> =
@@ -360,46 +355,170 @@ impl HasParent<&Name> for ClassUnion {
 
 impl ClassUnion {
     pub fn name(&self) -> Name {
-        let names: Vec<TrueName> = self.union.iter().map(|u| u.name()).collect();
-        Name::new(&names)
+        let names: HashSet<Name> = self
+            .union
+            .iter()
+            .map(|u| match u {
+                ClassVariant::Direct(class_set) => {
+                    let names: HashSet<TrueName> = class_set.iter().map(|c| c.name.clone()).collect();
+                    let names: HashSet<Name> = names.iter().map(Name::from).collect();
+                    Name::from(&names)
+                }
+                ClassVariant::Tuple(classes) => {
+                    let tuple = NameVariant::Tuple(classes.iter().map(|c| c.name()).collect());
+                    Name::from(&tuple)
+                }
+                ClassVariant::Fun(args, ret) => {
+                    let args = args.iter().map(|c| c.name()).collect();
+                    Name::from(&NameVariant::Fun(args, Box::from(ret.name())))
+                }
+            })
+            .collect();
+
+        Name::from(&names)
     }
 
     pub fn constructor(&self, pos: Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
-        // TODO check raises of constructor
-        self.union.iter().map(|c| c.args(pos)).collect::<Result<_, _>>()
+        let mut fun_args: HashSet<Vec<FunctionArg>> = HashSet::new();
+
+        let res: Vec<HashSet<Vec<FunctionArg>>> = self
+            .union
+            .iter()
+            .map(|c| match c {
+                ClassVariant::Direct(class_set) => Ok(class_set.iter().map(|c| c.args.clone()).collect()),
+                other => {
+                    let msg = format!("'{}' cannot have a constructor", other);
+                    Err(vec![TypeErr::new(pos, &msg)])
+                }
+            })
+            .collect::<Result<Vec<HashSet<Vec<FunctionArg>>>, _>>()?;
+
+        res.iter().for_each(|set| {
+            set.iter().for_each(|args| {
+                fun_args.insert(args.clone());
+            })
+        });
+
+        Ok(fun_args)
     }
 
     /// Check if ClassUnion implements a function.
     pub fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<FunUnion> {
-        let union: HashSet<Function> =
+        let union: HashSet<FunUnion> =
             self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
+
         if union.is_empty() {
             let msg = format!("'{}' does not define function '{}'", self.name(), name);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
-
-        Ok(FunUnion { union })
+        Ok(FunUnion::from(&union))
     }
 
     pub fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<FieldUnion> {
-        let union: HashSet<Field> =
+        let union: HashSet<FieldUnion> =
             self.union.iter().map(|c| c.field(name, ctx, pos)).collect::<Result<_, _>>()?;
+
         if union.is_empty() {
             let msg = format!("'{}' does not define attribute '{}'", self.name(), name);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
 
-        Ok(FieldUnion { union })
+        Ok(FieldUnion::from(&union))
     }
 }
 
+#[derive(Debug, Eq)]
 pub struct FunUnion {
     pub union: HashSet<Function>,
 }
 
-#[derive(Debug)]
+impl PartialEq for FunUnion {
+    fn eq(&self, other: &Self) -> bool {
+        self.union.clone().iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<&Function>>()
+            == other.union.clone().iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<&Function>>()
+    }
+}
+
+impl Hash for FunUnion {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.union.iter().sorted_by_key(|f| &f.name).for_each(|f| f.hash(state))
+    }
+}
+
+impl From<&HashSet<Function>> for FunUnion {
+    fn from(fun_set: &HashSet<Function>) -> Self {
+        FunUnion { union: fun_set.clone() }
+    }
+}
+
+impl From<&HashSet<FunUnion>> for FunUnion {
+    fn from(fun_set: &HashSet<FunUnion>) -> Self {
+        FunUnion { union: fun_set.iter().flat_map(|f| f.union.clone()).collect() }
+    }
+}
+
+impl Display for FunUnion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{}}}", comma_delm(&self.union))
+    }
+}
+
+impl FunUnion {
+    fn as_direct(&self, pos: Position) -> TypeResult<Function> {
+        if self.union.len() == (1_usize) {
+            Ok(self.union.iter().next().unwrap().clone())
+        } else {
+            let msg = format!("Expected single function but was {}", &self);
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
+    }
+}
+
+#[derive(Debug, Eq)]
 pub struct FieldUnion {
     pub union: HashSet<Field>,
+}
+
+impl PartialEq for FieldUnion {
+    fn eq(&self, other: &Self) -> bool {
+        self.union.clone().into_iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<Field>>()
+            == other.union.clone().into_iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<Field>>()
+    }
+}
+
+impl Hash for FieldUnion {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.union.iter().sorted_by_key(|f| &f.name).for_each(|f| f.hash(state))
+    }
+}
+
+impl From<&HashSet<Field>> for FieldUnion {
+    fn from(field_set: &HashSet<Field>) -> Self {
+        FieldUnion { union: field_set.clone() }
+    }
+}
+
+impl From<&HashSet<FieldUnion>> for FieldUnion {
+    fn from(field_set: &HashSet<FieldUnion>) -> Self {
+        FieldUnion { union: field_set.iter().flat_map(|f| f.union.clone()).collect() }
+    }
+}
+
+impl Display for FieldUnion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{}}}", comma_delm(&self.union))
+    }
+}
+
+impl FieldUnion {
+    fn as_direct(&self, pos: Position) -> TypeResult<Field> {
+        if self.union.len() == (1_usize) {
+            Ok(self.union.iter().next().unwrap().clone())
+        } else {
+            let msg = format!("Expected single field but was {}", &self);
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
+    }
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 from typing import Optional
-from typing import Tuple
 from typing import Callable
+from typing import Tuple
 
 def fun_a() -> Optional[int]:
     print(11)
@@ -15,8 +15,6 @@ def fun_a() -> Optional[int]:
         return None
 
 def fun_b(b: int): print(b)
-
-def fun_c(d: Tuple[str, int]): print(d)
 
 def fun_d(h: Callable[[str, str], int])-> Optional[int]: return h("hello", "world")
 

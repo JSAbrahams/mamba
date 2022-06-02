@@ -28,9 +28,9 @@ pub mod result;
 pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
     trace!(
         "Constructed context with\n - {} classes\n - {} functions\n - {} fields",
-        ctx.class_count(),
-        ctx.function_count(),
-        ctx.field_count()
+        ctx.classes.len(),
+        ctx.functions.len(),
+        ctx.fields.len()
     );
 
     constraints(ast, ctx).map(|all_constraints| {

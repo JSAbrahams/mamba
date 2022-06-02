@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
@@ -20,6 +21,26 @@ pub struct TrueName {
     is_nullable: bool,
     is_mutable: bool,
     pub variant: NameVariant,
+}
+
+impl PartialOrd<Self> for TrueName {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.variant == other.variant {
+            if self.is_nullable == other.is_nullable {
+                self.is_mutable.partial_cmp(&other.is_mutable)
+            } else {
+                self.is_nullable.partial_cmp(&other.is_nullable)
+            }
+        } else {
+            self.variant.partial_cmp(&other.variant)
+        }
+    }
+}
+
+impl Ord for TrueName {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+    }
 }
 
 impl AsMutable for TrueName {

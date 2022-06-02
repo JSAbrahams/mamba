@@ -1,3 +1,2 @@
-def f(x: Int) -> Int => 10
 def some_higher_order(fun: Int -> Int) -> Int => fun(10)
 def fancy() -> Int? => some_higher_order(\x: Int => x * 2)

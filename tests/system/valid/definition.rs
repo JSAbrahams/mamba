@@ -1,5 +1,3 @@
-use log::Level::Trace;
-
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
