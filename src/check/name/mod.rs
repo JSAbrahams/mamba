@@ -13,7 +13,7 @@ use crate::check::ident::Identifier;
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::check::result::{TypeErr, TypeResult, TypeTryFrom};
+use crate::check::result::{TryFromPos, TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 

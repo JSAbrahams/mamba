@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use itertools::Itertools;
 
 use crate::check::context::function::Function;
-use crate::check::result::{TypeResult, TypeTryFrom};
+use crate::check::result::{TryFromPos, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::TypeErr;
@@ -46,7 +46,7 @@ impl Display for FunUnion {
     }
 }
 
-impl TypeTryFrom<&FunUnion> for Function {
+impl TryFromPos<&FunUnion> for Function {
     fn try_from_pos(fun_union: &FunUnion, pos: Position) -> TypeResult<Self> {
         if fun_union.union.len() == (1_usize) {
             Ok(fun_union.union.iter().next().unwrap().clone())

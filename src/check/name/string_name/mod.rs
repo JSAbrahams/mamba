@@ -142,7 +142,7 @@ impl Substitute for StringName {
                 return Ok(string_name.clone());
             }
 
-            let msg = format!("{} incorrect DirectName", name);
+            let msg = format!("{} incorrect name", name);
             Err(vec![TypeErr::new(pos, &msg)])
         } else {
             Ok(StringName {

@@ -9,7 +9,7 @@ use crate::common::result::WithSource;
 
 pub type TypeResult<T = ASTTy> = std::result::Result<T, Vec<TypeErr>>;
 
-pub trait TypeTryFrom<T>: Sized {
+pub trait TryFromPos<T>: Sized {
     fn try_from_pos(value: T, pos: Position) -> TypeResult<Self>;
 }
 

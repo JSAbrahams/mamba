@@ -7,7 +7,7 @@ use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::check::result::{TypeResult, TypeTryFrom};
+use crate::check::result::{TryFromPos, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::TypeErr;
@@ -105,7 +105,7 @@ impl IsSuperSet<NameVariant> for NameVariant {
     }
 }
 
-impl TypeTryFrom<&NameVariant> for StringName {
+impl TryFromPos<&NameVariant> for StringName {
     fn try_from_pos(name_variant: &NameVariant, pos: Position) -> TypeResult<Self> {
         match name_variant {
             NameVariant::Single(name) => Ok(name.clone()),
