@@ -5,8 +5,8 @@ use std::hash::Hash;
 use crate::check::context::{clss, Context};
 use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeResult, TypeTryFrom};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -127,8 +127,8 @@ impl From<&NameVariant> for Name {
 mod test {
     use crate::check::context::clss::{BOOL, INT, STRING};
     use crate::check::name::IsSuperSet;
-    use crate::check::name::namevariant::NameVariant;
-    use crate::check::name::stringname::StringName;
+    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::Context;
 

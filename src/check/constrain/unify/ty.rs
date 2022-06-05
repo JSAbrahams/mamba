@@ -12,7 +12,7 @@ use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::{ColType, Empty, IsSuperSet, Name};
-use crate::check::name::namevariant::NameVariant;
+use crate::check::name::name_variant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 

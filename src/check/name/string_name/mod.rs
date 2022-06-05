@@ -8,14 +8,14 @@ use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{GetFun, HasParent};
 use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, Union};
 use crate::check::name::Name;
-use crate::check::name::truename::TrueName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
 pub mod generic;
 
-/// A direct truename is a string with accompanying generics.
+/// A direct true_name is a string with accompanying generics.
 ///
 /// Useful to denote class and function names, where Tuples and Anonymous
 /// functions are not permitted.
@@ -168,7 +168,7 @@ mod test {
     use crate::check::context::clss::{BOOL, HasParent, INT, STRING};
     use crate::check::context::LookupClass;
     use crate::check::name::IsSuperSet;
-    use crate::check::name::stringname::StringName;
+    use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::Context;
 

@@ -3,8 +3,8 @@ use std::ops::Deref;
 use python_parser::ast::Expression;
 
 use crate::check::name::{Empty, Name};
-use crate::check::name::truename::python::to_ty_name;
-use crate::check::name::truename::TrueName;
+use crate::check::name::true_name::python::to_ty_name;
+use crate::check::name::true_name::TrueName;
 
 impl From<&Expression> for Name {
     fn from(value: &Expression) -> Self {

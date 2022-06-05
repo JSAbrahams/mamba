@@ -15,9 +15,9 @@ use crate::check::context::field::Field;
 use crate::check::context::function::concrete::union::FunUnion;
 use crate::check::context::function::Function;
 use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
 

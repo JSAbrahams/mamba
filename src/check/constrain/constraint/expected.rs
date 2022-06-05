@@ -13,7 +13,7 @@ use crate::check::context::clss::{
     BOOL, FLOAT, INT, NONE, STRING,
 };
 use crate::check::name::{Name, Nullable};
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;

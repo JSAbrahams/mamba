@@ -11,8 +11,8 @@ use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -285,8 +285,8 @@ mod test {
 
     use crate::check::context::clss::generic::GenericClass;
     use crate::check::name::Name;
-    use crate::check::name::stringname::StringName;
-    use crate::check::name::truename::TrueName;
+    use crate::check::name::string_name::StringName;
+    use crate::check::name::true_name::TrueName;
     use crate::parse::parse_direct;
     use crate::TypeErr;
 

@@ -1,7 +1,7 @@
 use std::fmt::{Display, Error, Formatter};
 
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct GenericParameter {

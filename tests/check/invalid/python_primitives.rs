@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use mamba::check::check_all;
 use mamba::check::context::{Context, LookupClass};
-use mamba::check::name::stringname::StringName;
+use mamba::check::name::string_name::StringName;
 use mamba::common::position::Position;
 use mamba::parse::parse;
 

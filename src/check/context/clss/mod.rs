@@ -15,8 +15,8 @@ use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::{Empty, Name, Substitute};
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult, TypeTryFrom};
 use crate::common::position::Position;
 

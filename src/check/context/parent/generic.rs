@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::hash::Hash;
 
-use crate::check::name::truename::TrueName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};

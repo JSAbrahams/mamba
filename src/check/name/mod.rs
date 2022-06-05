@@ -10,16 +10,16 @@ use itertools::Itertools;
 
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult, TypeTryFrom};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
-pub mod namevariant;
-pub mod stringname;
-pub mod truename;
+pub mod name_variant;
+pub mod string_name;
+pub mod true_name;
 
 pub mod generic;
 pub mod python;
@@ -304,9 +304,9 @@ mod tests {
     use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, STRING, TUPLE};
     use crate::check::ident::Identifier;
     use crate::check::name::{ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
-    use crate::check::name::namevariant::NameVariant;
-    use crate::check::name::stringname::StringName;
-    use crate::check::name::truename::TrueName;
+    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::string_name::StringName;
+    use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
 

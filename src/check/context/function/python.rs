@@ -4,7 +4,7 @@ use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::function;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::{Empty, Name};
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::common::position::Position;
 
 pub const INIT: &str = "__init__";
@@ -81,7 +81,7 @@ mod test {
 
     use crate::check::context::function::generic::GenericFunction;
     use crate::check::name::{Empty, Name};
-    use crate::check::name::stringname::StringName;
+    use crate::check::name::string_name::StringName;
 
     fn fun_def(stmt: &Statement) -> Funcdef {
         match &stmt {

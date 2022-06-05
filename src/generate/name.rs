@@ -4,9 +4,9 @@ use itertools::Itertools;
 
 use crate::check::context::clss::concrete_to_python;
 use crate::check::name::{Name, Nullable};
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::state::Imports;
 
@@ -102,9 +102,9 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::check::name::{Name, Nullable};
-    use crate::check::name::namevariant::NameVariant;
-    use crate::check::name::stringname::StringName;
-    use crate::check::name::truename::TrueName;
+    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::string_name::StringName;
+    use crate::check::name::true_name::TrueName;
     use crate::generate::ast::node::Core;
     use crate::generate::convert::state::Imports;
     use crate::generate::name::{core_type, ToPy};

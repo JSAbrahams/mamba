@@ -16,7 +16,7 @@ use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFun
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::{Empty, Name};
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
