@@ -11,6 +11,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
+use crate::check::context::clss::{GetField, GetFun};
 use crate::check::name::{Name, Union};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;

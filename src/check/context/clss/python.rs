@@ -29,6 +29,9 @@ pub const RANGE: &str = "range";
 pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
 pub const LIST: &str = "list";
+pub const TUPLE: &str = "tuple";
+
+pub const CALLABLE: &str = "callable";
 
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
@@ -97,18 +100,20 @@ impl TryFrom<&Classdef> for GenericClass {
 
 pub fn python_to_concrete(name: &str) -> String {
     match name {
-        INT_PRIMITIVE => String::from(clss::INT_PRIMITIVE),
-        FLOAT_PRIMITIVE => String::from(clss::FLOAT_PRIMITIVE),
-        STRING_PRIMITIVE => String::from(clss::STRING_PRIMITIVE),
-        BOOL_PRIMITIVE => String::from(clss::BOOL_PRIMITIVE),
-        ENUM_PRIMITIVE => String::from(clss::ENUM_PRIMITIVE),
-        COMPLEX_PRIMITIVE => String::from(clss::COMPLEX_PRIMITIVE),
+        INT_PRIMITIVE => String::from(clss::INT),
+        FLOAT_PRIMITIVE => String::from(clss::FLOAT),
+        STRING_PRIMITIVE => String::from(clss::STRING),
+        BOOL_PRIMITIVE => String::from(clss::BOOL),
+        ENUM_PRIMITIVE => String::from(clss::ENUM),
+        COMPLEX_PRIMITIVE => String::from(clss::COMPLEX),
 
         RANGE => String::from(clss::RANGE),
         SLICE => String::from(clss::SLICE),
         SET => String::from(clss::SET),
         LIST => String::from(clss::LIST),
+        TUPLE => String::from(clss::TUPLE),
 
+        CALLABLE => String::from(clss::CALLABLE),
         NONE => String::from(clss::NONE),
         EXCEPTION => String::from(clss::EXCEPTION),
 

@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
 use std::collections::hash_set::IntoIter;
@@ -5,6 +6,8 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
+
+use itertools::Itertools;
 
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
@@ -63,7 +66,7 @@ pub fn match_name(
     for union in unions {
         for (id, (mutable, name)) in union {
             if let Some((current_mutable, current_name)) =
-            final_union.insert(id.clone(), (mutable, name.clone()))
+                final_union.insert(id.clone(), (mutable, name.clone()))
             {
                 final_union
                     .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
@@ -115,6 +118,20 @@ pub fn match_type_direct(
 #[derive(Debug, Clone, Eq)]
 pub struct Name {
     pub names: HashSet<TrueName>,
+}
+
+impl PartialOrd<Self> for Name {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let self_vec = self.names.iter().sorted();
+        let other_vec = other.names.iter().sorted();
+        self_vec.partial_cmp(other_vec)
+    }
+}
+
+impl Ord for Name {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+    }
 }
 
 impl AsMutable for Name {
@@ -316,9 +333,7 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::check::context::{clss, Context, LookupClass};
-    use crate::check::context::clss::{
-        BOOL_PRIMITIVE, FLOAT_PRIMITIVE, HasParent, INT_PRIMITIVE, STRING_PRIMITIVE,
-    };
+    use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, STRING, TUPLE};
     use crate::check::ident::Identifier;
     use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name, Union};
     use crate::check::name::{ColType, Name};
@@ -331,13 +346,13 @@ mod tests {
     #[test]
     fn test_is_superset_numbers() {
         let names = vec![
-            TrueName::from(BOOL_PRIMITIVE),
-            TrueName::from(STRING_PRIMITIVE),
-            TrueName::from(INT_PRIMITIVE),
-            TrueName::from(FLOAT_PRIMITIVE),
+            TrueName::from(BOOL),
+            TrueName::from(STRING),
+            TrueName::from(INT),
+            TrueName::from(FLOAT),
         ];
         let union_1 = Name::new(&names);
-        let union_2 = Name::from(INT_PRIMITIVE);
+        let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
@@ -345,8 +360,8 @@ mod tests {
 
     #[test]
     fn test_is_superset_slice_int() {
-        let name1 = Name::from(&HashSet::from([clss::INT_PRIMITIVE, clss::SLICE]));
-        let name2 = Name::from(&HashSet::from([clss::INT_PRIMITIVE]));
+        let name1 = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
+        let name2 = Name::from(&HashSet::from([clss::INT]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(name1.is_superset_of(&name2, &ctx, Position::default()).unwrap());
@@ -354,19 +369,61 @@ mod tests {
     }
 
     #[test]
-    fn test_is_superset_does_not_contain() {
-        let names = vec![TrueName::from(BOOL_PRIMITIVE), TrueName::from(STRING_PRIMITIVE)];
-        let union_1 = Name::new(&names);
-        let union_2 = Name::from(INT_PRIMITIVE);
+    fn is_superset_does_not_contain() {
+        let union_1 = Name::new(&[TrueName::from(BOOL), TrueName::from(STRING)]);
+        let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
     }
 
     #[test]
+    fn is_superset_contains() {
+        let union_1 = Name::new(&[TrueName::from(BOOL), TrueName::from(INT)]);
+        let union_2 = Name::from(INT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn nullabel_int_superset_int() {
+        let true_name = TrueName::from(INT).as_nullable();
+        let union_1 = Name::from(&true_name);
+        let union_2 = Name::from(INT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn int_not_superset_nullable_int() {
+        let true_name = TrueName::from(INT).as_nullable();
+        let union_1 = Name::from(INT);
+        let union_2 = Name::from(&true_name);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn is_superset_self() {
+        let (name_1, name_2) = (Name::from(TUPLE), Name::from(TUPLE));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn int_not_superset_string() {
+        let (name_1, name_2) = (Name::from(INT), Name::from(STRING));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
     fn test_temp_name() {
         let name1 = Name::from("@something");
-        let name2 = Name::from(clss::INT_PRIMITIVE);
+        let name2 = Name::from(clss::INT);
 
         assert!(name1.is_temporary());
         assert!(!name2.is_temporary())
@@ -375,13 +432,13 @@ mod tests {
     #[test]
     fn test_superset_wrong_way() {
         let names = vec![
-            TrueName::from(BOOL_PRIMITIVE),
-            TrueName::from(STRING_PRIMITIVE),
-            TrueName::from(INT_PRIMITIVE),
-            TrueName::from(FLOAT_PRIMITIVE),
+            TrueName::from(BOOL),
+            TrueName::from(STRING),
+            TrueName::from(INT),
+            TrueName::from(FLOAT),
         ];
         let union_1 = Name::new(&names);
-        let union_2 = Name::from(INT_PRIMITIVE);
+        let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
@@ -551,7 +608,7 @@ mod tests {
     #[test]
     fn range_has_collection_int_as_parent() -> TypeResult<()> {
         let range_name = Name::from(clss::RANGE);
-        let int_name = Name::from(clss::INT_PRIMITIVE);
+        let int_name = Name::from(clss::INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
         let collection_ty = range_name.col_type(&ctx, Position::default())?;
@@ -561,8 +618,8 @@ mod tests {
 
     #[test]
     fn float_parent_of_int() -> TypeResult<()> {
-        let float_name = Name::from(clss::FLOAT_PRIMITIVE);
-        let int_name = StringName::from(clss::INT_PRIMITIVE);
+        let float_name = Name::from(clss::FLOAT);
+        let int_name = StringName::from(clss::INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let clss = ctx.class(&int_name, Position::default())?;
@@ -572,8 +629,8 @@ mod tests {
 
     #[test]
     fn int_not_parent_of_float() -> TypeResult<()> {
-        let float_name = StringName::from(clss::FLOAT_PRIMITIVE);
-        let int_name = Name::from(clss::INT_PRIMITIVE);
+        let float_name = StringName::from(clss::FLOAT);
+        let int_name = Name::from(clss::INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let clss = ctx.class(&float_name, Position::default())?;
@@ -592,8 +649,8 @@ mod tests {
 
     #[test]
     fn name_fold() {
-        let int_name = Name::from(clss::INT_PRIMITIVE);
-        let float_name = Name::from(clss::FLOAT_PRIMITIVE);
+        let int_name = Name::from(clss::INT);
+        let float_name = Name::from(clss::FLOAT);
 
         let name1 = Name::from(&HashSet::from([int_name.clone(), float_name.clone()]));
         let name2 = [int_name, float_name].iter().fold(Name::empty(), |name, n| name.union(n));

@@ -43,9 +43,9 @@ pub fn main() -> Result<(), String> {
 
     transpile_dir(&current_dir, in_path, out_path, &arguments)
         .map_err(|errors| {
-            errors.iter().unique().for_each(|msg| eprintln!("error: {}", msg));
+            errors.iter().unique().for_each(|msg| eprintln!("{}", msg));
             match errors.first() {
-                Some(msg) => format!("error: {}", msg),
+                Some(msg) => msg.clone(),
                 None => String::new()
             }
         })

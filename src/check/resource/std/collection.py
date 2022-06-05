@@ -29,3 +29,8 @@ class list(Generic[T], collection[T]):
 class list_iterator(Generic[T]):
     def __init__(self): pass
     def __next__(self) -> T: pass
+
+class tuple(collection[T]):
+    def __init__(self): pass
+
+    def __str__(self) -> str: pass

@@ -64,7 +64,7 @@ impl Constraint {
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
         let string =
-            Expected::new(expected.pos, &Type { name: Name::from(clss::STRING_PRIMITIVE) });
+            Expected::new(expected.pos, &Type { name: Name::from(clss::STRING) });
         let access = Access {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(expected.pos, &Function {
@@ -78,7 +78,7 @@ impl Constraint {
 
     pub fn truthy(msg: &str, expected: &Expected) -> Constraint {
         let bool =
-            Expected::new(expected.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
+            Expected::new(expected.pos, &Type { name: Name::from(clss::BOOL) });
         let access = Access {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(expected.pos, &Function {
