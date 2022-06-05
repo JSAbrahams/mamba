@@ -13,7 +13,7 @@ use crate::check::context::function::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT, SUB,
 };
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 

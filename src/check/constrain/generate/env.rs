@@ -5,7 +5,7 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
 use crate::check::name;
-use crate::check::name::Name;
+use crate::check::name::{Empty, Name};
 use crate::common::position::Position;
 
 #[derive(Clone, Debug, Default)]
@@ -101,7 +101,7 @@ impl Environment {
     /// In other words, what the variable was mapped to.
     /// This is useful for detecting shadowing.
     ///
-    /// Return true variable truename, whether it's mutable and it's expected value
+    /// Return true variable [TrueName], whether it's mutable and it's expected value
     pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
         for (old, new) in &self.var_mappings {
             if old == var {

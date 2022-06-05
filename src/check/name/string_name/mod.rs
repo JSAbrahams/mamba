@@ -1,22 +1,21 @@
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
+use std::iter::FromIterator;
 
 use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{GetFun, HasParent};
-use crate::check::name::{ColType, IsSuperSet, Union};
+use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, Union};
 use crate::check::name::Name;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
 pub mod generic;
 
-/// A direct truename is a string with accompanying generics.
-///
-/// Useful to denote class and function names, where Tuples and Anonymous
-/// functions are not permitted.
+/// Useful to denote class and function names, where Tuples and Anonymous functions are not permitted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StringName {
     pub name: String,
@@ -91,12 +90,7 @@ impl From<&str> for StringName {
 }
 
 impl IsSuperSet<StringName> for StringName {
-    fn is_superset_of(
-        &self,
-        other: &StringName,
-        ctx: &Context,
-        pos: Position,
-    ) -> TypeResult<bool> {
+    fn is_superset_of(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         Ok(ctx.class(other, pos)?.has_parent(self, ctx, pos)?
             && self
             .generics
@@ -108,23 +102,34 @@ impl IsSuperSet<StringName> for StringName {
     }
 }
 
-impl StringName {
-    pub fn new(lit: &str, generics: &[Name]) -> StringName {
-        StringName { name: String::from(lit), generics: Vec::from(generics) }
+impl From<&StringName> for Name {
+    fn from(name: &StringName) -> Self {
+        Name { names: HashSet::from_iter(vec![TrueName::from(name)]) }
+    }
+}
+
+impl Union<StringName> for Name {
+    fn union(&self, name: &StringName) -> Self {
+        let mut names = self.names.clone();
+        names.insert(TrueName::from(name));
+        Name { names }
+    }
+}
+
+impl Empty for StringName {
+    fn is_empty(&self) -> bool {
+        self == &StringName::empty()
     }
 
-    pub fn empty() -> StringName {
+    fn empty() -> StringName {
         StringName::new("()", &[])
     }
+}
 
-    pub fn substitute(
-        &self,
-        generics: &HashMap<Name, Name>,
-        pos: Position,
-    ) -> TypeResult<StringName> {
+impl Substitute for StringName {
+    fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&Name::from(self)) {
-            let msg = format!("{} is not a DirectName", name);
-            let string_names = name.as_direct(&msg, pos)?;
+            let string_names = name.as_direct(pos)?;
             if string_names.len() > 1 {
                 let msg = format!("Cannot substitute type union {}", name);
                 return Err(vec![TypeErr::new(pos, &msg)]);
@@ -134,7 +139,7 @@ impl StringName {
                 return Ok(string_name.clone());
             }
 
-            let msg = format!("{} incorrect DirectName", name);
+            let msg = format!("{} incorrect name", name);
             Err(vec![TypeErr::new(pos, &msg)])
         } else {
             Ok(StringName {
@@ -149,13 +154,18 @@ impl StringName {
     }
 }
 
+impl StringName {
+    pub fn new(lit: &str, generics: &[Name]) -> StringName {
+        StringName { name: String::from(lit), generics: Vec::from(generics) }
+    }
+}
 
 #[cfg(test)]
 mod test {
     use crate::check::context::clss::{BOOL, HasParent, INT, STRING};
     use crate::check::context::LookupClass;
     use crate::check::name::IsSuperSet;
-    use crate::check::name::stringname::StringName;
+    use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::Context;
 

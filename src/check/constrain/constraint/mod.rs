@@ -4,7 +4,7 @@ use crate::check::constrain::constraint::expected::Expect::{Access, Function, Ty
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{clss, function};
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 
 pub mod builder;
 pub mod expected;

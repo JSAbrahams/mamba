@@ -9,10 +9,10 @@ use crate::check::context::clss::concrete::variant::ClassVariant;
 use crate::check::context::field::concrete::union::FieldUnion;
 use crate::check::context::function::concrete::union::FunUnion;
 use crate::check::context::LookupClass;
-use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::{Empty, Name};
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -169,7 +169,7 @@ impl LookupClass<&Name, ClassUnion> for Context {
             return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
         }
 
-        let union = name.names().map(|n| self.class(&n, pos)).collect::<Result<_, _>>()?;
+        let union = name.names.iter().map(|n| self.class(n, pos)).collect::<Result<_, _>>()?;
         Ok(ClassUnion { union })
     }
 }
