@@ -148,3 +148,55 @@ impl StringName {
         }
     }
 }
+
+
+#[cfg(test)]
+mod test {
+    use crate::check::context::clss::{BOOL, HasParent, INT, STRING};
+    use crate::check::context::LookupClass;
+    use crate::check::name::IsSuperSet;
+    use crate::check::name::stringname::StringName;
+    use crate::common::position::Position;
+    use crate::Context;
+
+    #[test]
+    fn bool_not_super_of_int() {
+        let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn int_not_parent_of_bool() {
+        let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let bool_class = ctx.class(&name_1, Position::default()).expect("bool class");
+        assert!(!bool_class.has_parent(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn bool_not_parent_of_int() {
+        let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let int_class = ctx.class(&name_2, Position::default()).expect("int class");
+        assert!(!int_class.has_parent(&name_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn string_parent_of_string() {
+        let (name_1, name_2) = (StringName::from(STRING), StringName::from(STRING));
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let string_class = ctx.class(&name_2, Position::default()).expect("int class");
+        assert!(string_class.has_parent(&name_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn string_not_super_of_int() {
+        let (name_1, name_2) = (StringName::from(STRING), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+}

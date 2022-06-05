@@ -20,18 +20,21 @@ use crate::check::name::truename::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
-pub const INT_PRIMITIVE: &str = "Int";
-pub const FLOAT_PRIMITIVE: &str = "Float";
-pub const STRING_PRIMITIVE: &str = "String";
-pub const BOOL_PRIMITIVE: &str = "Bool";
-pub const ENUM_PRIMITIVE: &str = "Enum";
-pub const COMPLEX_PRIMITIVE: &str = "Complex";
+pub const INT: &str = "Int";
+pub const FLOAT: &str = "Float";
+pub const STRING: &str = "String";
+pub const BOOL: &str = "Bool";
+pub const ENUM: &str = "Enum";
+pub const COMPLEX: &str = "Complex";
 
 pub const COLLECTION: &str = "Collection";
 pub const RANGE: &str = "Range";
 pub const SLICE: &str = "Slice";
 pub const SET: &str = "Set";
 pub const LIST: &str = "List";
+pub const TUPLE: &str = "Tuple";
+
+pub const CALLABLE: &str = "Callable";
 
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
@@ -135,7 +138,7 @@ impl LookupClass<&StringName, Class> for Context {
     /// Look up union of GenericClass and substitute generics to yield set of classes.
     ///
     /// Substitutes all generics in the class when found.
-    fn class(&self, class: &StringName, pos: Position) -> Result<Class, Vec<TypeErr>> {
+    fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
         if let Some(generic_class) = self.classes.iter().find(|c| {
             c.name.as_direct("Class name", pos).map(|name| name.name) == Ok(class.name.clone())
         }) {
@@ -261,19 +264,21 @@ impl GetFun<Function> for Class {
 
 pub fn concrete_to_python(name: &str) -> String {
     match name {
-        INT_PRIMITIVE => String::from(python::INT_PRIMITIVE),
-        FLOAT_PRIMITIVE => String::from(python::FLOAT_PRIMITIVE),
-        STRING_PRIMITIVE => String::from(python::STRING_PRIMITIVE),
-        BOOL_PRIMITIVE => String::from(python::BOOL_PRIMITIVE),
-        ENUM_PRIMITIVE => String::from(python::ENUM_PRIMITIVE),
-        COMPLEX_PRIMITIVE => String::from(python::COMPLEX_PRIMITIVE),
+        INT => String::from(python::INT_PRIMITIVE),
+        FLOAT => String::from(python::FLOAT_PRIMITIVE),
+        STRING => String::from(python::STRING_PRIMITIVE),
+        BOOL => String::from(python::BOOL_PRIMITIVE),
+        ENUM => String::from(python::ENUM_PRIMITIVE),
+        COMPLEX => String::from(python::COMPLEX_PRIMITIVE),
 
         COLLECTION => String::from(python::COLLECTION),
         RANGE => String::from(python::RANGE),
         SLICE => String::from(python::SLICE),
         SET => String::from(python::SET),
         LIST => String::from(python::LIST),
+        TUPLE => String::from(python::TUPLE),
 
+        CALLABLE => String::from(python::CALLABLE),
         NONE => String::from(python::NONE),
         EXCEPTION => String::from(python::EXCEPTION),
         other => String::from(other),

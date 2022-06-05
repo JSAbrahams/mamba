@@ -10,7 +10,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
 use crate::check::context::clss::{
-    BOOL_PRIMITIVE, FLOAT_PRIMITIVE, INT_PRIMITIVE, NONE, STRING_PRIMITIVE,
+    BOOL, FLOAT, INT, NONE, STRING,
 };
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
@@ -95,10 +95,10 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
         });
 
         Ok(match &ast.node {
-            Node::Int { .. } | Node::ENum { .. } => Type { name: Name::from(INT_PRIMITIVE) },
-            Node::Real { .. } => Type { name: Name::from(FLOAT_PRIMITIVE) },
-            Node::Bool { .. } => Type { name: Name::from(BOOL_PRIMITIVE) },
-            Node::Str { .. } => Type { name: Name::from(STRING_PRIMITIVE) },
+            Node::Int { .. } | Node::ENum { .. } => Type { name: Name::from(INT) },
+            Node::Real { .. } => Type { name: Name::from(FLOAT) },
+            Node::Bool { .. } => Type { name: Name::from(BOOL) },
+            Node::Str { .. } => Type { name: Name::from(STRING) },
             Node::Undefined => Expect::none(),
             Node::Underscore => ExpressionAny,
             Node::Raise { error } => Raises { name: Name::try_from(error)? },
@@ -165,19 +165,19 @@ impl Expect {
 
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::STRING_PRIMITIVE) =>
+            if ty == &Name::from(clss::STRING) =>
                 {
                     true
                 }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
             | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::FLOAT_PRIMITIVE) =>
+            if ty == &Name::from(clss::FLOAT) =>
                 {
                     true
                 }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::INT_PRIMITIVE) =>
+            if ty == &Name::from(clss::INT) =>
                 {
                     true
                 }

@@ -113,7 +113,7 @@ pub fn gen_call(
         Node::Index { item, range } => {
             let (mut constr, _) = generate(range, env, ctx, constr)?;
 
-            let name = Name::from(&HashSet::from([clss::INT_PRIMITIVE, clss::SLICE]));
+            let name = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
             constr.add(
                 "index range",
                 &Expected::new(range.pos, &Expect::Type { name }),
@@ -185,7 +185,7 @@ fn call_parameters(
                 })?;
 
                 let arg_exp = Expected::new(*pos, arg);
-                let name = ctx.class(ty, *pos)?.name();
+                let name = Name::from(&ctx.class(ty, *pos)?);
                 constr.add("call parameters", &arg_exp, &Expected::new(*pos, &Type { name }))
             }
             Left(fun_arg) if !fun_arg.has_default => {

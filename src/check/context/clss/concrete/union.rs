@@ -22,9 +22,9 @@ pub struct ClassUnion {
     union: HashSet<ClassVariant>,
 }
 
-impl ClassUnion {
-    pub fn name(&self) -> Name {
-        let names: HashSet<Name> = self
+impl From<&ClassUnion> for Name {
+    fn from(class_union: &ClassUnion) -> Self {
+        let names: HashSet<Name> = class_union
             .union
             .iter()
             .map(|u| match u {
@@ -35,19 +35,21 @@ impl ClassUnion {
                     Name::from(&names)
                 }
                 ClassVariant::Tuple(classes) => {
-                    let tuple = NameVariant::Tuple(classes.iter().map(|c| c.name()).collect());
+                    let tuple = NameVariant::Tuple(classes.iter().map(Name::from).collect());
                     Name::from(&tuple)
                 }
                 ClassVariant::Fun(args, ret) => {
-                    let args = args.iter().map(|c| c.name()).collect();
-                    Name::from(&NameVariant::Fun(args, Box::from(ret.name())))
+                    let args = args.iter().map(Name::from).collect();
+                    Name::from(&NameVariant::Fun(args, Box::from(Name::from(ret))))
                 }
             })
             .collect();
 
         Name::from(&names)
     }
+}
 
+impl ClassUnion {
     pub fn constructor(&self, pos: Position) -> TypeResult<HashSet<Vec<FunctionArg>>> {
         let mut fun_args: HashSet<Vec<FunctionArg>> = HashSet::new();
 
@@ -81,7 +83,7 @@ impl GetField<FieldUnion> for ClassUnion {
             self.union.iter().map(|c| c.field(name, ctx, pos)).collect::<Result<_, _>>()?;
 
         if union.is_empty() {
-            let msg = format!("'{}' does not define attribute '{}'", self.name(), name);
+            let msg = format!("'{}' does not define attribute '{}'", Name::from(self), name);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
 
@@ -96,7 +98,7 @@ impl GetFun<FunUnion> for ClassUnion {
             self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
 
         if union.is_empty() {
-            let msg = format!("'{}' does not define function '{}'", self.name(), name);
+            let msg = format!("'{}' does not define function '{}'", Name::from(self), name);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
         Ok(FunUnion::from(&union))
@@ -117,7 +119,7 @@ impl HasParent<&TrueName> for ClassUnion {
 }
 
 impl HasParent<&Name> for ClassUnion {
-    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> Result<bool, Vec<TypeErr>> {
+    fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
         let res: Vec<bool> =
             self.union.iter().map(|c| c.has_parent(name, ctx, pos)).collect::<Result<_, _>>()?;
         Ok(res.iter().all(|b| *b))
@@ -162,7 +164,7 @@ impl LookupClass<&Name, ClassUnion> for Context {
     /// # Error
     ///
     /// If NameUnion is empty.
-    fn class(&self, name: &Name, pos: Position) -> Result<ClassUnion, Vec<TypeErr>> {
+    fn class(&self, name: &Name, pos: Position) -> TypeResult<ClassUnion> {
         if name.is_empty() {
             return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
         }

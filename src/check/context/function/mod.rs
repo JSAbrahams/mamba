@@ -65,7 +65,7 @@ impl LookupFunction<&StringName, Function> for Context {
     ///
     /// If function does not exist, treat function as constructor and see if
     /// there exists a class with the same truename.
-    fn function(&self, function: &StringName, pos: Position) -> Result<Function, Vec<TypeErr>> {
+    fn function(&self, function: &StringName, pos: Position) -> TypeResult<Function> {
         let generics = HashMap::new();
 
         if let Some(generic_fun) = self.functions.iter().find(|c| &c.name == function) {

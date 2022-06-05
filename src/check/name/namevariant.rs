@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
-use crate::check::context::Context;
+use crate::check::context::{clss, Context};
 use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
@@ -74,6 +74,11 @@ impl IsSuperSet<NameVariant> for NameVariant {
             (NameVariant::Single(left), NameVariant::Single(right)) => {
                 left.is_superset_of(right, ctx, pos)
             }
+            (NameVariant::Single(left), right) => match right {
+                NameVariant::Tuple(..) if left.name == clss::TUPLE => Ok(true), // ignore generics
+                NameVariant::Fun(..) if left.name == clss::CALLABLE => Ok(true), // ignore generics
+                _ => Ok(false)
+            }
             (NameVariant::Tuple(left), NameVariant::Tuple(right)) => left
                 .iter()
                 .flat_map(|l| right.iter().map(move |r| l.is_superset_of(r, ctx, pos)))
@@ -90,5 +95,33 @@ impl IsSuperSet<NameVariant> for NameVariant {
             }
             _ => Ok(false),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::check::context::clss::{BOOL, INT, STRING};
+    use crate::check::name::IsSuperSet;
+    use crate::check::name::namevariant::NameVariant;
+    use crate::check::name::stringname::StringName;
+    use crate::common::position::Position;
+    use crate::Context;
+
+    #[test]
+    fn bool_not_super_of_int() {
+        let name_1 = NameVariant::Single(StringName::from(BOOL));
+        let name_2 = NameVariant::Single(StringName::from(INT));
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn string_not_super_of_int() {
+        let name_1 = NameVariant::Single(StringName::from(STRING));
+        let name_2 = NameVariant::Single(StringName::from(INT));
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
     }
 }

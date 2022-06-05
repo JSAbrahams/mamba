@@ -15,7 +15,6 @@ use crate::common::position::Position;
 pub mod generic;
 pub mod python;
 
-/// Name is the actual truename of a Function, Field, or generic.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TrueName {
     is_nullable: bool,
@@ -61,7 +60,7 @@ impl ColType for TrueName {
 
 impl Display for TrueName {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let mutable = if self.is_mutable { "mut " } else { "" };
+        let mutable = if self.is_mutable { "" } else { "fin " };
         write!(f, "{}{}{}", mutable, self.variant, if self.is_nullable { "?" } else { "" })
     }
 }
@@ -103,14 +102,13 @@ impl PartialEq<StringName> for TrueName {
     }
 }
 
-#[allow(clippy::nonminimal_bool)]
 impl IsSuperSet<TrueName> for TrueName {
-    /// Check if name is supertype of other name.
+    /// Check if [TrueName] is supertype of other [TrueName].
     ///
-    /// If self is nullable, then supertype of other if:
+    /// If self is nullable, then super of other iff:
     /// - Other is null.
     /// - Or, variant is supertype of other's variant. (Other may or may not be nullable.)
-    /// If self is not nullable, then only super type if:
+    /// If self is not nullable, then super of other iff:
     /// - Other is not nullable.
     /// - And, variant is supertype of other's variant.
     fn is_superset_of(&self, other: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
@@ -162,5 +160,41 @@ impl TrueName {
         };
 
         Ok(TrueName { variant, ..self.clone() })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::check::context::clss::{BOOL, COMPLEX, INT, STRING};
+    use crate::check::name::IsSuperSet;
+    use crate::check::name::truename::TrueName;
+    use crate::common::position::Position;
+    use crate::Context;
+
+    #[test]
+    fn bool_not_super_of_int() {
+        let name_1 = TrueName::from(BOOL);
+        let name_2 = TrueName::from(INT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn string_not_super_of_int() {
+        let name_1 = TrueName::from(STRING);
+        let name_2 = TrueName::from(INT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn complex_super_of_int() {
+        let name_1 = TrueName::from(COMPLEX);
+        let name_2 = TrueName::from(INT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
     }
 }
