@@ -66,7 +66,7 @@ pub fn match_name(
     for union in unions {
         for (id, (mutable, name)) in union {
             if let Some((current_mutable, current_name)) =
-            final_union.insert(id.clone(), (mutable, name.clone()))
+                final_union.insert(id.clone(), (mutable, name.clone()))
             {
                 final_union
                     .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
