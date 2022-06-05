@@ -1,2 +1,4 @@
-def some_higher_order(fun: Int -> Int) -> Int? => fun(10)
-def fancy(self) -> Int => some_higher_order(\x: Int => x * 2)
+def some_higher_order(fun: Int -> Int) -> Int? => return fun(10)
+def fancy() -> Int => return some_higher_order(\x: Int => x * 2)
+
+fancy()

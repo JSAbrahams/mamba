@@ -32,7 +32,12 @@ impl PartialOrd<Self> for NameVariant {
                     cmp
                 }
             }
-            _ => todo!(),
+            (NameVariant::Single(_), _) => Some(Ordering::Less),
+
+            (NameVariant::Tuple(_), NameVariant::Single(_)) => Some(Ordering::Greater),
+            (NameVariant::Tuple(_), _) => Some(Ordering::Less),
+
+            (NameVariant::Fun(..), _) => Some(Ordering::Greater)
         }
     }
 }

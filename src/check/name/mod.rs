@@ -387,6 +387,26 @@ mod tests {
     }
 
     #[test]
+    fn nullabel_int_superset_int() {
+        let true_name = TrueName::from(INT).as_nullable();
+        let union_1 = Name::from(&true_name);
+        let union_2 = Name::from(INT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn int_not_superset_nullable_int() {
+        let true_name = TrueName::from(INT).as_nullable();
+        let union_1 = Name::from(INT);
+        let union_2 = Name::from(&true_name);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
     fn is_superset_self() {
         let (name_1, name_2) = (Name::from(TUPLE), Name::from(TUPLE));
         let ctx = Context::default().into_with_primitives().unwrap();
