@@ -1,11 +1,12 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 
 use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::HasParent;
-use crate::check::name::{ColType, IsSuperSet};
-use crate::check::name::{Name, Union};
+use crate::check::context::clss::{GetFun, HasParent};
+use crate::check::name::{ColType, IsSuperSet, Union};
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -20,6 +21,23 @@ pub mod generic;
 pub struct StringName {
     pub name: String,
     pub generics: Vec<Name>,
+}
+
+impl PartialOrd<Self> for StringName {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let cmp = self.name.partial_cmp(&other.name);
+        if let Some(Ordering::Equal) = cmp {
+            self.generics.partial_cmp(&other.generics)
+        } else {
+            cmp
+        }
+    }
+}
+
+impl Ord for StringName {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+    }
 }
 
 impl Display for StringName {
@@ -128,5 +146,57 @@ impl StringName {
                     .collect::<Result<_, _>>()?,
             })
         }
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use crate::check::context::clss::{BOOL, HasParent, INT, STRING};
+    use crate::check::context::LookupClass;
+    use crate::check::name::IsSuperSet;
+    use crate::check::name::stringname::StringName;
+    use crate::common::position::Position;
+    use crate::Context;
+
+    #[test]
+    fn bool_not_super_of_int() {
+        let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn int_not_parent_of_bool() {
+        let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let bool_class = ctx.class(&name_1, Position::default()).expect("bool class");
+        assert!(!bool_class.has_parent(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn bool_not_parent_of_int() {
+        let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let int_class = ctx.class(&name_2, Position::default()).expect("int class");
+        assert!(!int_class.has_parent(&name_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn string_parent_of_string() {
+        let (name_1, name_2) = (StringName::from(STRING), StringName::from(STRING));
+        let ctx = Context::default().into_with_primitives().unwrap();
+
+        let string_class = ctx.class(&name_2, Position::default()).expect("int class");
+        assert!(string_class.has_parent(&name_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn string_not_super_of_int() {
+        let (name_1, name_2) = (StringName::from(STRING), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
     }
 }

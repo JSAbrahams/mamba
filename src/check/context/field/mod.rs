@@ -4,11 +4,14 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use crate::check::context::field::generic::GenericField;
+use crate::check::context::LookupField;
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
+use crate::Context;
 
+pub mod concrete;
 pub mod generic;
 pub mod python;
 
@@ -29,6 +32,19 @@ impl Display for Field {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let ty = if self.ty.is_empty() { String::new() } else { format!(": {}", self.ty) };
         write!(f, "{}{}", &self.name, ty)
+    }
+}
+
+impl LookupField<&str, Field> for Context {
+    /// Look up a field and substitutes generics to yield a Field.
+    fn field(&self, field: &str, pos: Position) -> Result<Field, Vec<TypeErr>> {
+        if let Some(generic_field) = self.fields.iter().find(|c| c.name == field) {
+            let generics = HashMap::new();
+            Field::try_from((generic_field, &generics, pos))
+        } else {
+            let msg = format!("Field {} is undefined.", field);
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
     }
 }
 

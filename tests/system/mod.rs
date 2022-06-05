@@ -94,9 +94,8 @@ fn fallable(
     let current_dir_string = resource_path(valid, input, "");
     let current_dir = Path::new(&current_dir_string);
 
-    let map_err = |msg: &String| format!("error: {}", msg);
     transpile_dir(&current_dir, Some(&format!("{}.mamba", file_name)), Some(output_path), arguments)
-        .map_err(|errs| OutTestErr(errs.iter().map(&map_err).collect::<Vec<String>>()))?;
+        .map_err(|errs| OutTestErr(errs))?;
 
     // Check that reference check is proper Python file
     let cmd1 = Command::new(PYTHON)
