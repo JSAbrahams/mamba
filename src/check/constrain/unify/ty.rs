@@ -11,8 +11,8 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{ColType, IsSuperSet, Name};
-use crate::check::name::namevariant::NameVariant;
+use crate::check::name::{ColType, Empty, IsSuperSet, Name};
+use crate::check::name::name_variant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -28,7 +28,7 @@ pub fn unify_type(
     match (&left.expect, &right.expect) {
         (ExpressionAny, ty) | (ty, ExpressionAny) => match ty {
             Type { name } => {
-                if name.is_empty() {
+                if Name::is_empty(name) {
                     let msg = format!("Expected an expression, but was '{}'", name);
                     Err(vec![TypeErr::new(left.pos, &msg)])
                 } else {
@@ -97,8 +97,8 @@ pub fn unify_type(
         }
 
         (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
-            for name_ty in name.names() {
-                match name_ty.variant {
+            for name_ty in &name.names {
+                match &name_ty.variant {
                     NameVariant::Tuple(names) => {
                         if names.len() != elements.len() {
                             let msg = format!(

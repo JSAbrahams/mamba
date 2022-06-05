@@ -1,15 +1,15 @@
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
+use std::iter::FromIterator;
 
 use crate::check::context::clss::NONE;
 use crate::check::context::Context;
-use crate::check::name::{AsMutable, AsNullable, ColType, IsNullable, IsSuperSet};
-use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::name::{ColType, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::result::{TryFromPos, TypeResult};
 use crate::common::position::Position;
 
 pub mod generic;
@@ -42,7 +42,7 @@ impl Ord for TrueName {
     }
 }
 
-impl AsMutable for TrueName {
+impl Mutable for TrueName {
     fn as_mutable(&self) -> Self { TrueName { is_mutable: true, ..self.clone() } }
 }
 
@@ -85,14 +85,6 @@ impl From<&str> for TrueName {
     }
 }
 
-impl IsNullable for TrueName {
-    fn is_nullable(&self) -> bool { self.is_nullable }
-}
-
-impl AsNullable for TrueName {
-    fn as_nullable(&self) -> Self { TrueName { is_nullable: true, ..self.clone() } }
-}
-
 impl PartialEq<StringName> for TrueName {
     fn eq(&self, other: &StringName) -> bool {
         match &self.variant {
@@ -123,28 +115,29 @@ impl IsSuperSet<TrueName> for TrueName {
     }
 }
 
-impl TrueName {
-    pub fn new(lit: &str, generics: &[Name]) -> TrueName {
-        TrueName::from(&StringName::new(lit, generics))
+impl Union<TrueName> for Name {
+    fn union(&self, name: &TrueName) -> Self {
+        let mut names = self.names.clone();
+        names.insert(name.clone());
+        Name { names }
     }
+}
 
-    pub fn is_empty(&self) -> bool { self == &TrueName::empty() }
+impl Empty for TrueName {
+    fn is_empty(&self) -> bool { self == &TrueName::empty() }
+    fn empty() -> TrueName { TrueName::from(&StringName::empty()) }
+}
 
-    pub fn is_null(&self) -> bool {
+impl Nullable for TrueName {
+    fn is_nullable(&self) -> bool { self.is_nullable }
+    fn is_null(&self) -> bool {
         matches!(&self.variant, NameVariant::Single(StringName { name, .. }) if name.clone() == *NONE)
     }
+    fn as_nullable(&self) -> Self { TrueName { is_nullable: true, ..self.clone() } }
+}
 
-    pub fn empty() -> TrueName { TrueName::from(&StringName::empty()) }
-
-    pub fn as_direct(&self, exp: &str, pos: Position) -> TypeResult<StringName> {
-        match &self.variant {
-            NameVariant::Single(name) => Ok(name.clone()),
-            other =>
-                Err(vec![TypeErr::new(pos, &format!("'{}' is not a valid {} name", other, exp))]),
-        }
-    }
-
-    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<TrueName> {
+impl Substitute for TrueName {
+    fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<TrueName> {
         let variant = match &self.variant {
             NameVariant::Single(direct_name) =>
                 NameVariant::Single(direct_name.substitute(generics, pos)?),
@@ -163,11 +156,30 @@ impl TrueName {
     }
 }
 
+impl TryFromPos<&TrueName> for StringName {
+    fn try_from_pos(value: &TrueName, pos: Position) -> TypeResult<Self> {
+        StringName::try_from_pos(&value.variant, pos)
+    }
+}
+
+impl From<&Vec<TrueName>> for Name {
+    fn from(names: &Vec<TrueName>) -> Self {
+        let names: HashSet<TrueName> = HashSet::from_iter(names.iter().cloned());
+        Name { names }
+    }
+}
+
+impl TrueName {
+    pub fn new(lit: &str, generics: &[Name]) -> TrueName {
+        TrueName::from(&StringName::new(lit, generics))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::check::context::clss::{BOOL, COMPLEX, INT, STRING};
     use crate::check::name::IsSuperSet;
-    use crate::check::name::truename::TrueName;
+    use crate::check::name::true_name::TrueName;
     use crate::common::position::Position;
     use crate::Context;
 

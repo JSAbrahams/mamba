@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 

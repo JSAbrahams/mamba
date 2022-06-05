@@ -1,11 +1,10 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::AsNullable;
-use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::{Name, Nullable};
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 
@@ -21,7 +20,7 @@ impl TryFrom<&AST> for TrueName {
     /// Try to construct Name from AST.
     ///
     /// In the case of Generics, isa field is ignored and we only look at the
-    /// truename of the generic itself.
+    /// true_name of the generic itself.
     fn try_from(ast: &AST) -> TypeResult<TrueName> {
         match &ast.node {
             Node::Id { lit } => Ok(TrueName::from(&StringName::from(lit.as_str()))),

@@ -61,8 +61,8 @@ mod tests {
     use crate::check::context::{Context, LookupClass};
     use crate::check::context::clss::GetFun;
     use crate::check::name::Name;
-    use crate::check::name::stringname::StringName;
-    use crate::check::name::truename::TrueName;
+    use crate::check::name::string_name::StringName;
+    use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
 
@@ -77,7 +77,7 @@ mod tests {
         assert_eq!(clss.name, TrueName::from(&list_type));
 
         let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
-        for name in iter_name.as_direct("iterator", pos)? {
+        for name in iter_name.as_direct(pos)? {
             let iter_class = ctx.class(&name, pos)?;
             let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))
@@ -97,7 +97,7 @@ mod tests {
         assert_eq!(clss.name, TrueName::from(&list_type));
 
         let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
-        for name in iter_name.as_direct("iterator", pos)? {
+        for name in iter_name.as_direct(pos)? {
             let iter_class = ctx.class(&name, pos)?;
             let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))

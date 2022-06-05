@@ -4,9 +4,9 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::name::Name;
-use crate::check::name::namevariant::NameVariant;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
+use crate::check::name::name_variant::NameVariant;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -118,7 +118,7 @@ impl TryFrom<&AST> for GenericFunction {
 pub fn function_name(ast: &AST) -> TypeResult<StringName> {
     match &ast.node {
         Node::Id { lit } => Ok(StringName::from(lit.as_str())),
-        _ => Err(vec![TypeErr::new(ast.pos, "Expected function truename")]),
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected function true_name")]),
     }
 }
 
@@ -129,7 +129,7 @@ mod test {
     use crate::{AST, TypeErr};
     use crate::check::context::function::generic::GenericFunction;
     use crate::check::name::Name;
-    use crate::check::name::stringname::StringName;
+    use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::parse::ast::Node;
     use crate::parse::parse_direct;

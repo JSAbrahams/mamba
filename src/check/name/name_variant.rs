@@ -5,10 +5,12 @@ use std::hash::Hash;
 use crate::check::context::{clss, Context};
 use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
-use crate::check::result::TypeResult;
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
+use crate::check::result::{TryFromPos, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
+use crate::TypeErr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NameVariant {
@@ -103,12 +105,30 @@ impl IsSuperSet<NameVariant> for NameVariant {
     }
 }
 
+impl TryFromPos<&NameVariant> for StringName {
+    fn try_from_pos(name_variant: &NameVariant, pos: Position) -> TypeResult<Self> {
+        match name_variant {
+            NameVariant::Single(name) => Ok(name.clone()),
+            other => {
+                let msg = format!("'{}' is not a valid name", other);
+                Err(vec![TypeErr::new(pos, &msg)])
+            }
+        }
+    }
+}
+
+impl From<&NameVariant> for Name {
+    fn from(name: &NameVariant) -> Self {
+        Name::from(&vec![TrueName::from(name)])
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::check::context::clss::{BOOL, INT, STRING};
     use crate::check::name::IsSuperSet;
-    use crate::check::name::namevariant::NameVariant;
-    use crate::check::name::stringname::StringName;
+    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::Context;
 

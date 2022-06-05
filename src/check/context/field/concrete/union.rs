@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use itertools::Itertools;
 
 use crate::check::context::field::Field;
-use crate::check::result::TypeResult;
+use crate::check::result::{TryFromPos, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::TypeErr;
@@ -46,12 +46,12 @@ impl Display for FieldUnion {
     }
 }
 
-impl FieldUnion {
-    pub fn as_direct(&self, pos: Position) -> TypeResult<Field> {
-        if self.union.len() == (1_usize) {
-            Ok(self.union.iter().next().unwrap().clone())
+impl TryFromPos<&FieldUnion> for Field {
+    fn try_from_pos(field_union: &FieldUnion, pos: Position) -> TypeResult<Self> {
+        if field_union.union.len() == (1_usize) {
+            Ok(field_union.union.iter().next().unwrap().clone())
         } else {
-            let msg = format!("Expected single field but was {}", &self);
+            let msg = format!("Expected single field but was {}", field_union);
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }
