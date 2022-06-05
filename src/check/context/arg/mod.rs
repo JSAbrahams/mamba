@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::check::context::arg::generic::GenericFunctionArg;
-use crate::check::name::Name;
+use crate::check::name::{Name, Substitute};
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 

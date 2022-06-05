@@ -5,7 +5,7 @@ use std::ops::Deref;
 use crate::check::context::clss;
 use crate::check::context::field::generic::GenericField;
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};

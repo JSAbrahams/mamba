@@ -10,9 +10,9 @@ use crate::check::context::{arg, Context, function, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::IsSuperSet;
+use crate::check::name::{Empty, IsSuperSet, Substitute};
 use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
+use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -64,7 +64,7 @@ impl LookupFunction<&StringName, Function> for Context {
     /// Look up a function and substitutes generics to yield a Function.
     ///
     /// If function does not exist, treat function as constructor and see if
-    /// there exists a class with the same truename.
+    /// there exists a class with the same true_name.
     fn function(&self, function: &StringName, pos: Position) -> TypeResult<Function> {
         let generics = HashMap::new();
 

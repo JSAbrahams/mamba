@@ -14,10 +14,10 @@ use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::Name;
-use crate::check::name::stringname::StringName;
-use crate::check::name::truename::TrueName;
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::name::{Empty, Name, Substitute};
+use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
+use crate::check::result::{TryFromPos, TypeErr, TypeResult};
 use crate::common::position::Position;
 
 pub const INT: &str = "Int";
@@ -109,12 +109,11 @@ impl HasParent<&Name> for Class {
             return Ok(true);
         }
 
-        let names = name.as_direct("Name must be string", pos)?;
-
+        let names = name.as_direct(pos)?;
         let parent_names: Vec<StringName> = self
             .parents
             .iter()
-            .map(|true_name| true_name.as_direct("Has parent", pos))
+            .map(|true_name| StringName::try_from_pos(true_name, pos))
             .collect::<Result<_, _>>()?;
 
         let parent_classes: Vec<Class> =
@@ -140,10 +139,10 @@ impl LookupClass<&StringName, Class> for Context {
     /// Substitutes all generics in the class when found.
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
         if let Some(generic_class) = self.classes.iter().find(|c| {
-            c.name.as_direct("Class name", pos).map(|name| name.name) == Ok(class.name.clone())
+            StringName::try_from_pos(&c.name, pos).map(|name| name.name) == Ok(class.name.clone())
         }) {
             let mut generics = HashMap::new();
-            let placeholders = generic_class.name.as_direct("Class name invalid", pos)?;
+            let placeholders = StringName::try_from_pos(&generic_class.name, pos)?;
 
             for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
                 match name {
@@ -213,7 +212,7 @@ impl Class {
     pub fn constructor(&self, without_self: bool, pos: Position) -> TypeResult<Function> {
         Ok(Function {
             is_py_type: false,
-            name: self.name.as_direct("function name", pos)?,
+            name: StringName::try_from_pos(&self.name, pos)?,
             self_mutable: None,
             pure: false,
             arguments: if without_self && !self.args.is_empty() {
@@ -236,7 +235,7 @@ impl GetField<Field> for Class {
 
         for parent in &self.parents {
             if let Ok(union) = ctx.class(parent, pos)?.field(name, ctx, pos) {
-                return union.as_direct(pos);
+                return Field::try_from_pos(&union, pos);
             }
         }
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
@@ -255,7 +254,7 @@ impl GetFun<Function> for Class {
 
         for parent in &self.parents {
             if let Ok(union) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
-                return union.as_direct(pos);
+                return Function::try_from_pos(&union, pos);
             }
         }
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
