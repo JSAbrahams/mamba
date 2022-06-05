@@ -101,7 +101,7 @@ impl Environment {
     /// In other words, what the variable was mapped to.
     /// This is useful for detecting shadowing.
     ///
-    /// Return true variable true_name, whether it's mutable and it's expected value
+    /// Return true variable [TrueName], whether it's mutable and it's expected value
     pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
         for (old, new) in &self.var_mappings {
             if old == var {

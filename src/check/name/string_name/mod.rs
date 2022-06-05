@@ -15,10 +15,7 @@ use crate::common::position::Position;
 
 pub mod generic;
 
-/// A direct true_name is a string with accompanying generics.
-///
-/// Useful to denote class and function names, where Tuples and Anonymous
-/// functions are not permitted.
+/// Useful to denote class and function names, where Tuples and Anonymous functions are not permitted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StringName {
     pub name: String,

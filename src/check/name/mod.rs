@@ -68,7 +68,7 @@ pub fn match_name(
     pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     let unions: Vec<HashMap<String, (bool, Name)>> =
-        name.names.iter().map(|ty| match_type_direct(identifier, &ty, pos)).collect::<Result<_, _>>()?;
+        name.names.iter().map(|ty| match_type_direct(identifier, ty, pos)).collect::<Result<_, _>>()?;
 
     let mut final_union: HashMap<String, (bool, Name)> = HashMap::new();
     for union in unions {
