@@ -69,7 +69,7 @@ impl Constraints {
         if constraint.is_flag {
             // Can only reinsert constraint once
             let msg = format!(
-                "Cannot infer type. Expected a {}, was {}",
+                "Cannot infer type. Expected {}, was {}",
                 &constraint.left.expect, &constraint.right.expect
             );
             return Err(vec![TypeErr::new(constraint.left.pos, &msg)]);

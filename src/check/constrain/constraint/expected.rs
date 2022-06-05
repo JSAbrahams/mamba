@@ -17,7 +17,6 @@ use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::common::result::an_or_a;
 use crate::parse::ast::{AST, Node};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -128,7 +127,7 @@ impl Display for Expect {
                 Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
                 Function { name, args } => format!("{}({})", name, comma_delm(args)),
                 Field { name } => name.clone(),
-                Type { name: ty } => format!("{}'{}'", an_or_a(ty), ty),
+                Type { name: ty } => format!("'{}'", ty),
             }
         )
     }
