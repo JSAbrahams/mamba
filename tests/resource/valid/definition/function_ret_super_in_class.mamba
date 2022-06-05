@@ -1,0 +1,6 @@
+class X:
+    def some_higher_order(self, fun: Int -> Int) -> Int => fun(10)
+    def fancy(self) -> Int? => self.some_higher_order(\x: Int => x * 2)
+
+def x := X()
+x.fancy()

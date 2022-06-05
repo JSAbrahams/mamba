@@ -20,6 +20,25 @@ fn assign_wrong_type() {
 }
 
 #[test]
+#[ignore] // see #343
+fn body_is_stmt() {
+    let source = resource_content(false, &["type", "definition"], "body_is_stmt.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn function_ret_in_class_not_super() {
+    let source = resource_content(false, &["type", "definition"], "function_ret_in_class_not_super.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn function_ret_not_super() {
+    let source = resource_content(false, &["type", "definition"], "function_ret_not_super.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn assign_to_function_call() {
     let source = resource_content(false, &["type", "definition"], "assign_to_function_call.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

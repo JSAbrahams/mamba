@@ -8,7 +8,7 @@ use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context};
-use crate::check::context::clss::{FLOAT_PRIMITIVE, INT_PRIMITIVE, STRING_PRIMITIVE};
+use crate::check::context::clss::{FLOAT, INT, STRING};
 use crate::check::context::function::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT, SUB,
 };
@@ -47,9 +47,9 @@ pub fn gen_op(
             constr_range(ast, env, ctx, constr, "slice", false)
         }
 
-        Node::Real { .. } => primitive(ast, FLOAT_PRIMITIVE, env, constr),
-        Node::Int { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
-        Node::ENum { .. } => primitive(ast, INT_PRIMITIVE, env, constr),
+        Node::Real { .. } => primitive(ast, FLOAT, env, constr),
+        Node::Int { .. } => primitive(ast, INT, env, constr),
+        Node::ENum { .. } => primitive(ast, INT, env, constr),
         Node::Str { expressions, .. } => {
             let (mut constr, env) = gen_vec(expressions, env, ctx, constr)?;
             for expr in expressions {
@@ -58,7 +58,7 @@ pub fn gen_op(
                 constr.add_constr(&c);
             }
 
-            let name = Name::from(STRING_PRIMITIVE);
+            let name = Name::from(STRING);
             let left = Expected::try_from((ast, &env.var_mappings))?;
             constr.add("string", &left, &Expected::new(ast.pos, &Type { name }));
             Ok((constr, env))
@@ -89,7 +89,7 @@ pub fn gen_op(
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let ty = Type { name: Name::from(clss::FLOAT_PRIMITIVE) };
+            let ty = Type { name: Name::from(clss::FLOAT) };
             constr.add(
                 "square root",
                 &Expected::try_from((ast, &env.var_mappings))?,
@@ -133,7 +133,7 @@ pub fn gen_op(
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
             constr.add("binary shift", &l_exp, &Expected::new(right.pos, &ExpressionAny));
 
-            let name = Name::from(clss::INT_PRIMITIVE);
+            let name = Name::from(clss::INT);
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
             constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Type { name }));
 
@@ -142,20 +142,20 @@ pub fn gen_op(
         }
 
         Node::Is { left, right } | Node::IsN { left, right } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::IsA { left, right } | Node::IsNA { left, right } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
 
         Node::Not { expr } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             constr.add_constr(&Constraint::truthy(
                 "not",
@@ -164,7 +164,7 @@ pub fn gen_op(
             generate(expr, env, ctx, constr)
         }
         Node::And { left, right } | Node::Or { left, right } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL_PRIMITIVE) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
 
             constr.add_constr(&Constraint::truthy(
@@ -200,7 +200,7 @@ pub fn constr_range(
         }
     };
 
-    let name = Name::from(clss::INT_PRIMITIVE);
+    let name = Name::from(clss::INT);
     let int_exp = &Expected::new(from.pos, &Type { name });
 
     constr.add(
@@ -308,7 +308,7 @@ fn impl_bool_op(
             },
         ),
     );
-    let ty = Type { name: Name::from(clss::BOOL_PRIMITIVE) };
+    let ty = Type { name: Name::from(clss::BOOL) };
     constr.add(
         "bool operation",
         &Expected::try_from((ast, &env.var_mappings))?,

@@ -27,10 +27,10 @@ pub mod result;
 /// Any ill-typed [AST](mamba::parser::ast::AST) results in a failure.
 pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
     trace!(
-        "Constructed context with\n - {} classes\n - {} functions\n - {} fields",
-        ctx.class_count(),
-        ctx.function_count(),
-        ctx.field_count()
+        "Constructed context with {} classes, {} functions, {} fields",
+        ctx.classes.len(),
+        ctx.functions.len(),
+        ctx.fields.len()
     );
 
     constraints(ast, ctx).map(|all_constraints| {
