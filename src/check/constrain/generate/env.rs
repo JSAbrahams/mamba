@@ -5,7 +5,7 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
 use crate::check::name;
-use crate::check::name::Name;
+use crate::check::name::{Empty, Name};
 use crate::common::position::Position;
 
 #[derive(Clone, Debug, Default)]

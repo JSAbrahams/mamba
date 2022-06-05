@@ -12,7 +12,7 @@ use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{GetField, GetFun};
-use crate::check::name::{Name, Union};
+use crate::check::name::{Empty, Name, Union};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
@@ -29,7 +29,9 @@ pub fn unify_function(
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
             let arguments_union: Vec<Vec<Name>> = name
-                .names()
+                .names
+                .iter()
+                .cloned()
                 .map(|n| match n.variant {
                     NameVariant::Fun(arguments, _) => Ok(arguments),
                     other => {

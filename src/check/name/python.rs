@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use python_parser::ast::Expression;
 
-use crate::check::name::Name;
+use crate::check::name::{Empty, Name};
 use crate::check::name::truename::python::to_ty_name;
 use crate::check::name::truename::TrueName;
 
@@ -13,7 +13,7 @@ impl From<&Expression> for Name {
             Expression::Subscript(id, exprs) =>
                 if id.deref() == &Expression::Name(String::from("Union")) {
                     let names: Vec<TrueName> = exprs.iter().map(to_ty_name).collect();
-                    Name::new(&names)
+                    Name::from(&names)
                 } else {
                     Name::from(&TrueName::from(value))
                 },

@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::RandomState;
-use std::collections::hash_set::IntoIter;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
@@ -14,7 +13,7 @@ use crate::check::ident::Identifier;
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::result::{TypeErr, TypeResult, TypeTryFrom};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
@@ -28,7 +27,6 @@ pub mod python;
 pub const TEMP: char = '@';
 
 pub trait Union<T> {
-    #[must_use]
     fn union(&self, value: &T) -> Self;
 }
 
@@ -36,22 +34,32 @@ pub trait IsSuperSet<T> {
     fn is_superset_of(&self, other: &T, ctx: &Context, pos: Position) -> TypeResult<bool>;
 }
 
-pub trait IsNullable {
-    fn is_nullable(&self) -> bool;
+pub trait Empty {
+    fn is_empty(&self) -> bool;
+    fn empty() -> Self;
 }
 
-pub trait AsNullable {
-    #[must_use]
+pub trait Nullable {
+    fn is_nullable(&self) -> bool;
+    fn is_null(&self) -> bool;
     fn as_nullable(&self) -> Self;
 }
 
-pub trait AsMutable {
-    #[must_use]
+pub trait Mutable {
     fn as_mutable(&self) -> Self;
+}
+
+pub trait Substitute {
+    fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Self> where Self: Sized;
 }
 
 pub trait ColType {
     fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>>;
+}
+
+#[derive(Debug, Clone, Eq)]
+pub struct Name {
+    pub names: HashSet<TrueName>,
 }
 
 pub fn match_name(
@@ -60,13 +68,13 @@ pub fn match_name(
     pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
     let unions: Vec<HashMap<String, (bool, Name)>> =
-        name.names().map(|ty| match_type_direct(identifier, &ty, pos)).collect::<Result<_, _>>()?;
+        name.names.iter().map(|ty| match_type_direct(identifier, &ty, pos)).collect::<Result<_, _>>()?;
 
     let mut final_union: HashMap<String, (bool, Name)> = HashMap::new();
     for union in unions {
         for (id, (mutable, name)) in union {
             if let Some((current_mutable, current_name)) =
-                final_union.insert(id.clone(), (mutable, name.clone()))
+            final_union.insert(id.clone(), (mutable, name.clone()))
             {
                 final_union
                     .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
@@ -115,11 +123,6 @@ pub fn match_type_direct(
     }
 }
 
-#[derive(Debug, Clone, Eq)]
-pub struct Name {
-    pub names: HashSet<TrueName>,
-}
-
 impl PartialOrd<Self> for Name {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let self_vec = self.names.iter().sorted();
@@ -134,7 +137,7 @@ impl Ord for Name {
     }
 }
 
-impl AsMutable for Name {
+impl Mutable for Name {
     fn as_mutable(&self) -> Self {
         Name { names: self.names.iter().map(|n| n.as_mutable()).collect() }
     }
@@ -143,14 +146,6 @@ impl AsMutable for Name {
 impl Union<Name> for Name {
     fn union(&self, name: &Name) -> Self {
         Name { names: self.names.union(&name.names).cloned().collect() }
-    }
-}
-
-impl Union<StringName> for Name {
-    fn union(&self, name: &StringName) -> Self {
-        let mut names = self.names.clone();
-        names.insert(TrueName::from(name));
-        Name { names }
     }
 }
 
@@ -167,14 +162,6 @@ impl ColType for Name {
             }
         }
         Ok(Some(union))
-    }
-}
-
-impl Union<TrueName> for Name {
-    fn union(&self, name: &TrueName) -> Self {
-        let mut names = self.names.clone();
-        names.insert(name.clone());
-        Name { names }
     }
 }
 
@@ -195,18 +182,6 @@ impl From<&HashSet<Name>> for Name {
     }
 }
 
-impl From<&StringName> for Name {
-    fn from(name: &StringName) -> Self {
-        Name { names: HashSet::from_iter(vec![TrueName::from(name)]) }
-    }
-}
-
-impl From<&NameVariant> for Name {
-    fn from(name: &NameVariant) -> Self {
-        Name::new(&[TrueName::from(name)])
-    }
-}
-
 impl PartialEq<Self> for Name {
     fn eq(&self, other: &Self) -> bool {
         self.names.len() == other.names.len()
@@ -217,13 +192,13 @@ impl PartialEq<Self> for Name {
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.names.len().hash(state);
-        self.names().for_each(|n| n.hash(state))
+        self.names.iter().for_each(|n| n.hash(state))
     }
 }
 
 impl Display for Name {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        if let Some(first) = &self.names().last() {
+        if let Some(first) = &self.names.iter().last() {
             if self.names.len() > 1 {
                 write!(f, "{{{}}}", comma_delm(&self.names))
             } else {
@@ -267,42 +242,45 @@ impl IsSuperSet<Name> for Name {
     }
 }
 
-impl IsNullable for Name {
+impl Nullable for Name {
     fn is_nullable(&self) -> bool {
         self.names.iter().all(|n| n.is_nullable())
     }
-}
 
-impl AsNullable for Name {
+    fn is_null(&self) -> bool {
+        self.names.iter().all(|name| name.is_null())
+    }
+
     fn as_nullable(&self) -> Self {
         Name { names: self.names.iter().map(|n| n.as_nullable()).collect() }
     }
 }
 
-impl Name {
-    pub fn new(names: &[TrueName]) -> Name {
-        let names: HashSet<TrueName> = HashSet::from_iter(Vec::from(names));
-        Name { names }
-    }
-
-    pub fn is_empty(&self) -> bool {
+impl Empty for Name {
+    fn is_empty(&self) -> bool {
         self == &Name::empty()
     }
 
-    pub fn as_direct(&self, msg: &str, pos: Position) -> TypeResult<HashSet<StringName>> {
-        self.names.iter().map(|n| n.as_direct(msg, pos)).collect::<Result<_, _>>()
+    fn empty() -> Name {
+        Name { names: HashSet::new() }
+    }
+}
+
+impl Substitute for Name {
+    fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
+        let names =
+            self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
+        Ok(Name { names })
+    }
+}
+
+impl Name {
+    pub fn as_direct(&self, pos: Position) -> TypeResult<HashSet<StringName>> {
+        self.names.iter().map(|n| StringName::try_from_pos(n, pos)).collect::<Result<_, _>>()
     }
 
     pub fn contains(&self, item: &TrueName) -> bool {
         self.names.contains(item)
-    }
-
-    pub fn empty() -> Name {
-        Name { names: HashSet::new() }
-    }
-
-    pub fn is_null(&self) -> bool {
-        self.names.iter().all(|name| name.is_null())
     }
 
     /// True if this was a temporary name, which is a name which starts with '@'.
@@ -316,16 +294,6 @@ impl Name {
             false
         }
     }
-
-    pub fn names(&self) -> IntoIter<TrueName> {
-        self.names.clone().into_iter()
-    }
-
-    pub fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
-        let names =
-            self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
-        Ok(Name { names })
-    }
 }
 
 #[cfg(test)]
@@ -335,8 +303,7 @@ mod tests {
     use crate::check::context::{clss, Context, LookupClass};
     use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, STRING, TUPLE};
     use crate::check::ident::Identifier;
-    use crate::check::name::{AsNullable, IsNullable, IsSuperSet, match_name, Union};
-    use crate::check::name::{ColType, Name};
+    use crate::check::name::{ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
@@ -351,7 +318,7 @@ mod tests {
             TrueName::from(INT),
             TrueName::from(FLOAT),
         ];
-        let union_1 = Name::new(&names);
+        let union_1 = Name::from(&names);
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -370,7 +337,7 @@ mod tests {
 
     #[test]
     fn is_superset_does_not_contain() {
-        let union_1 = Name::new(&[TrueName::from(BOOL), TrueName::from(STRING)]);
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(STRING)]);
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -379,7 +346,7 @@ mod tests {
 
     #[test]
     fn is_superset_contains() {
-        let union_1 = Name::new(&[TrueName::from(BOOL), TrueName::from(INT)]);
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]);
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -437,7 +404,7 @@ mod tests {
             TrueName::from(INT),
             TrueName::from(FLOAT),
         ];
-        let union_1 = Name::new(&names);
+        let union_1 = Name::from(&names);
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();

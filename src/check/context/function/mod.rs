@@ -10,7 +10,7 @@ use crate::check::context::{arg, Context, function, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::IsSuperSet;
+use crate::check::name::{Empty, IsSuperSet, Substitute};
 use crate::check::name::Name;
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};

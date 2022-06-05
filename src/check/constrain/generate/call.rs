@@ -15,7 +15,7 @@ use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::{IdentiCall, Identifier};
-use crate::check::name::Name;
+use crate::check::name::{Empty, Name};
 use crate::check::name::stringname::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;

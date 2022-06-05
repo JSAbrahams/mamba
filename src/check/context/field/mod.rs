@@ -5,7 +5,7 @@ use std::fmt;
 
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::LookupField;
-use crate::check::name::Name;
+use crate::check::name::{Empty, Name, Substitute};
 use crate::check::name::stringname::StringName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;

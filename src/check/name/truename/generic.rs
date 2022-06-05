@@ -1,8 +1,7 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::AsNullable;
-use crate::check::name::Name;
+use crate::check::name::{Name, Nullable};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;

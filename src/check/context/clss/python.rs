@@ -130,7 +130,7 @@ mod test {
     use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
     use crate::check::context::clss::generic::GenericClass;
-    use crate::check::name::Name;
+    use crate::check::name::{Empty, Name};
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;

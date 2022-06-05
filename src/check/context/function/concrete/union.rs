@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use itertools::Itertools;
 
 use crate::check::context::function::Function;
-use crate::check::result::TypeResult;
+use crate::check::result::{TypeResult, TypeTryFrom};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::TypeErr;
@@ -46,12 +46,12 @@ impl Display for FunUnion {
     }
 }
 
-impl FunUnion {
-    pub fn as_direct(&self, pos: Position) -> TypeResult<Function> {
-        if self.union.len() == (1_usize) {
-            Ok(self.union.iter().next().unwrap().clone())
+impl TypeTryFrom<&FunUnion> for Function {
+    fn try_from_pos(fun_union: &FunUnion, pos: Position) -> TypeResult<Self> {
+        if fun_union.union.len() == (1_usize) {
+            Ok(fun_union.union.iter().next().unwrap().clone())
         } else {
-            let msg = format!("Expected single function but was {}", &self);
+            let msg = format!("Expected single function but was {}", fun_union);
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use itertools::Itertools;
 
 use crate::check::context::clss::concrete_to_python;
-use crate::check::name::{IsNullable, Name};
+use crate::check::name::{Name, Nullable};
 use crate::check::name::namevariant::NameVariant;
 use crate::check::name::stringname::StringName;
 use crate::check::name::truename::TrueName;
@@ -101,7 +101,7 @@ fn core_type(lit: &str, generics: &[Core]) -> Core {
 mod tests {
     use std::collections::HashSet;
 
-    use crate::check::name::{AsNullable, Name};
+    use crate::check::name::{Name, Nullable};
     use crate::check::name::namevariant::NameVariant;
     use crate::check::name::stringname::StringName;
     use crate::check::name::truename::TrueName;
