@@ -224,19 +224,14 @@ fn property_call(
             return property_call(instance, property, env, ctx, &mut constr);
         }
         Node::Id { lit } => {
-            match &last_inst.node {
-                Node::Id { lit: instance } if instance == arg::SELF => {
-                    // no objects has attribute self, so if not top-level error elsewhere
-                    if env.unassigned.contains(lit) {
-                        let msg = format!("Cannot access unassigned field {}", lit);
-                        return Err(vec![TypeErr::new(property.pos, &msg)]);
-                    }
+            if let Node::Id { lit: instance } = &last_inst.node {
+                if instance == arg::SELF && env.unassigned.contains(lit) {
+                    let msg = format!("Cannot access unassigned field {}", lit);
+                    return Err(vec![TypeErr::new(property.pos, &msg)]);
                 }
-                _ => {}
             }
 
-            let access_exp = Expected::new(property.pos, &Field { name: lit.clone() });
-            (constr.clone(), access_exp)
+            (constr.clone(), Expected::new(property.pos, &Field { name: lit.clone() }))
         }
         Node::FunctionCall { name, args } => {
             let (constr, _) = gen_vec(args, env, ctx, constr)?;

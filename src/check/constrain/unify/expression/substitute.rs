@@ -22,15 +22,14 @@ pub fn substitute(
     let mut substituted = Constraints::new();
     let mut constraint_pos = offset;
 
-    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
+    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 29);
 
     while let Some(mut constr) = constraints.pop_constr() {
         let old_constr = constr.clone();
         constraint_pos += 1;
         macro_rules! replace {
             ($left:expr, $new:expr) => {{
-                let pos =
-                    format!("({}={}) ", old_constr.left.pos, old_constr.right.pos);
+                let pos = format!("({}={}) ", old_constr.left.pos, old_constr.right.pos);
                 let side = if $left { "l" } else { "r" };
                 trace!(
                     "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
@@ -40,7 +39,7 @@ pub fn substitute(
                     side,
                     old_constr,
                     $new,
-                    width = 32
+                    width = 31
                 );
             }};
         }

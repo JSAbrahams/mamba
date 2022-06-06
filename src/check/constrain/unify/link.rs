@@ -74,7 +74,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
     let pos = format!("({}={}) ", constraint.left.pos.start, constraint.right.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
-    trace!("{:width$}{}{}", pos, count, constraint, width = 17);
+    trace!("{:width$}{}{}", pos, count, constraint, width = 27);
 
     constr.reinsert(constraint)?;
     Ok(constr.clone())

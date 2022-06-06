@@ -34,7 +34,7 @@ impl Constraints {
     pub fn push_ty(&mut self, pos: Position, name: &Name) {
         let name = self.finished.get(&pos).map_or(name.clone(), |s_name| s_name.union(name));
         if self.finished.insert(pos, name.clone()).is_none() {
-            trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
+            trace!("{:width$} type: {}", pos, name, width = 27);
         }
     }
 
@@ -47,7 +47,7 @@ impl Constraints {
     /// Only used during unification stage.
     pub fn push(&mut self, msg: &str, left: &Expected, right: &Expected) {
         let constraint = Constraint::new(msg, left, right);
-        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 17);
+        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 27);
         self.constraints.push_front(constraint)
     }
 
