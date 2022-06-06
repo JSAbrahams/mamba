@@ -57,7 +57,7 @@ impl Display for UnimplementedErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let path =
             self.path.clone().map_or(String::from("<unknown>"), |path| path.display().to_string());
-        let path = path.strip_suffix(MAIN_SEPARATOR).unwrap_or_else(|| &path);
+        let path = path.strip_suffix(MAIN_SEPARATOR).unwrap_or(&path);
 
         write!(
             f,
