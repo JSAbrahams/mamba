@@ -219,7 +219,6 @@ fn property_call(
     let (mut constr, access) = match &property.node {
         Node::PropertyCall { instance: inner, property } => {
             let (mut constr, _) = property_call(instance, inner, env, ctx, constr)?;
-
             instance.push(*inner.clone());
             return property_call(instance, property, env, ctx, &mut constr);
         }
@@ -248,20 +247,30 @@ fn property_call(
         _ => return Err(vec![TypeErr::new(property.pos, "Expected property call")]),
     };
 
-    let map_exp = |ast| Expected::try_from((ast, &env.var_mappings));
-    let instance_exp: Vec<Expected> = instance.iter().map(map_exp).collect::<Result<_, _>>()?;
-    let access = instance_exp.iter().rfold(access, |acc, entity| {
-        let access = Access { entity: Box::from(entity.clone()), name: Box::from(acc) };
-        Expected::new(entity.pos, &access)
-    });
-
-    let ast: AST = instance.iter().rfold(property.clone(), |acc, ast| {
+    let entire_call_as_ast: AST = instance.iter().rfold(property.clone(), |acc, ast| {
         let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
         AST::new(ast.pos, Node::PropertyCall { instance, property })
     });
-    let ast = Expected::try_from((&ast, &env.var_mappings))?;
+    let entire_call_as_ast = Expected::try_from((&entire_call_as_ast, &env.var_mappings))?;
 
-    constr.add("call property", &access, &ast);
+    let ast_without_access = if instance.len() == 1 {
+        last_inst.clone()
+    } else {
+        let last = instance.remove(instance.len() - 1);
+        instance.iter().rfold(last, |acc, ast| {
+            let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
+            AST::new(ast.pos, Node::PropertyCall { instance, property })
+        })
+    };
+    let access = Expected::new(
+        ast_without_access.pos.union(access.pos),
+        &Expect::Access {
+            entity: Box::new(Expected::try_from((&ast_without_access, &env.var_mappings))?),
+            name: Box::new(access),
+        },
+    );
+
+    constr.add("call property", &access, &entire_call_as_ast);
     Ok((constr.clone(), env.clone()))
 }
 

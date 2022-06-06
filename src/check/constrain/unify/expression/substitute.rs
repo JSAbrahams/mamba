@@ -22,7 +22,7 @@ pub fn substitute(
     let mut substituted = Constraints::new();
     let mut constraint_pos = offset;
 
-    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 2);
+    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 10);
 
     while let Some(mut constr) = constraints.pop_constr() {
         let old_constr = constr.clone();
@@ -38,7 +38,7 @@ pub fn substitute(
                     side,
                     old_constr,
                     $new,
-                    width = 4
+                    width = 12
                 );
             }};
         }

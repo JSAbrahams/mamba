@@ -127,7 +127,7 @@ impl Display for Expect {
                 Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
                 Function { name, args } => format!("{}({})", name, comma_delm(args)),
                 Field { name } => name.clone(),
-                Type { name: ty } => format!("'{}'", ty),
+                Type { name: ty } => format!("{}", ty),
             }
         )
     }
