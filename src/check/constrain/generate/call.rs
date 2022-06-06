@@ -248,16 +248,14 @@ fn property_call(
         _ => return Err(vec![TypeErr::new(property.pos, "Expected property call")]),
     };
 
-    let instance_exp: Vec<Expected> = instance
-        .iter()
-        .map(|ast| Expected::try_from((ast, &env.var_mappings)))
-        .collect::<Result<Vec<Expected>, _>>()?;
+    let map_exp = |ast| Expected::try_from((ast, &env.var_mappings));
+    let instance_exp: Vec<Expected> = instance.iter().map(map_exp).collect::<Result<_, _>>()?;
     let access = instance_exp.iter().rfold(access, |acc, entity| {
         let access = Access { entity: Box::from(entity.clone()), name: Box::from(acc) };
         Expected::new(entity.pos, &access)
     });
 
-    let ast: AST = instance.iter().fold(property.clone(), |acc, ast| {
+    let ast: AST = instance.iter().rfold(property.clone(), |acc, ast| {
         let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
         AST::new(ast.pos, Node::PropertyCall { instance, property })
     });

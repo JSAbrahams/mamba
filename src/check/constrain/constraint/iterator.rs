@@ -47,7 +47,7 @@ impl Constraints {
     /// Only used during unification stage.
     pub fn push(&mut self, msg: &str, left: &Expected, right: &Expected) {
         let constraint = Constraint::new(msg, left, right);
-        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 27);
+        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 2);
         self.constraints.push_front(constraint)
     }
 

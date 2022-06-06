@@ -18,13 +18,12 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
     if let Some(constraint) = &constraints.pop_constr() {
         let (left, right) = (&constraint.left, &constraint.right);
 
-        let pos = format!("{}={} ", left.pos, right.pos);
         let count = if constraints.len() <= total { total - constraints.len() } else { 0 };
         let unify = format!("{}\\{}", count, total);
         let msg =
             if constraint.msg.is_empty() { String::new() } else { format!(" {}", constraint.msg) };
 
-        trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
+        trace!("{:width$}[{}{}]  {}", "", unify, msg, constraint, width = 0);
 
         if let Type { name } = &left.expect {
             constraints.push_ty(right.pos, name);
