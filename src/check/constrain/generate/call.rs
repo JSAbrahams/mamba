@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -112,7 +113,7 @@ pub fn gen_call(
             Ok((constr, env))
         }
         Node::PropertyCall { instance, property } => {
-            property_call(instance, property, env, ctx, constr)
+            property_call(&mut vec![instance.deref().clone()], property, env, ctx, constr)
         }
         Node::Index { item, range } => {
             let (mut constr, _) = generate(range, env, ctx, constr)?;
@@ -206,88 +207,77 @@ fn call_parameters(
 }
 
 fn property_call(
-    instance: &AST,
+    instance: &mut Vec<AST>,
     property: &AST,
     env: &Environment,
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    match &property.node {
+    let last_inst = instance
+        .last()
+        .ok_or_else(|| vec![TypeErr::new(property.pos, "Internal error in property call")])?;
+
+    let (mut constr, access) = match &property.node {
         Node::PropertyCall { instance: inner, property } => {
-            let (mut constr, env) = property_call(instance, inner, env, ctx, constr)?;
-            property_call(inner, property, &env, ctx, &mut constr)
+            let (mut constr, _) = property_call(instance, inner, env, ctx, constr)?;
+            instance.push(*inner.clone());
+            return property_call(instance, property, env, ctx, &mut constr);
         }
         Node::Id { lit } => {
-            match &instance.node {
-                Node::Id { lit: instance } if instance == arg::SELF => {
-                    // no objects has attribute self, so if not top-level error elsewhere
-                    if env.unassigned.contains(lit) {
-                        let msg = format!("Cannot access unassigned field {}", lit);
-                        return Err(vec![TypeErr::new(property.pos, &msg)]);
-                    }
+            if let Node::Id { lit: instance } = &last_inst.node {
+                if instance == arg::SELF && env.unassigned.contains(lit) {
+                    let msg = format!("Cannot access unassigned field {}", lit);
+                    return Err(vec![TypeErr::new(property.pos, &msg)]);
                 }
-                _ => {}
             }
 
-            let access = Expected::new(
-                property.pos,
-                &Access {
-                    entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
-                    name: Box::new(Expected::new(property.pos, &Field { name: lit.clone() })),
-                },
-            );
-            let instance = Expected::try_from((
-                &AST {
-                    pos: instance.pos.union(property.pos),
-                    node: Node::PropertyCall {
-                        instance: Box::from(instance.clone()),
-                        property: Box::from(property.clone()),
-                    },
-                },
-                &env.var_mappings,
-            ))?;
-            constr.add("call property", &instance, &access);
-            Ok((constr.clone(), env.clone()))
+            (constr.clone(), Expected::new(property.pos, &Field { name: lit.clone() }))
         }
         Node::FunctionCall { name, args } => {
-            let (mut constr, env) = gen_vec(args, env, ctx, constr)?;
-            let instance_exp = Expected::try_from((instance, &env.var_mappings))?;
-            let mut args_with_self: Vec<Expected> = vec![instance_exp];
-            args_with_self.append(
-                &mut args
-                    .iter()
-                    .map(|a| Expected::try_from((a, &env.var_mappings)))
-                    .collect::<Result<_, _>>()?,
-            );
+            let (constr, _) = gen_vec(args, env, ctx, constr)?;
+            let args = vec![last_inst.clone()]
+                .iter()
+                .chain(args)
+                .map(|ast| Expected::try_from((ast, &env.var_mappings)))
+                .collect::<Result<_, _>>()?;
 
-            let node = Node::PropertyCall {
-                instance: Box::from(instance.clone()),
-                property: Box::from(property.clone()),
-            };
-            let instance_exp = Expected::try_from((
-                &AST { pos: instance.pos.union(property.pos), node },
-                &env.var_mappings,
-            ))?;
-            let access = Expected::new(
-                property.pos,
-                &Access {
-                    entity: Box::new(Expected::try_from((instance, &env.var_mappings))?),
-                    name: Box::new(Expected::new(
-                        property.pos,
-                        &Function {
-                            name: StringName::try_from(name.deref())?,
-                            args: args_with_self,
-                        },
-                    )),
-                },
-            );
-
-            constr.add("call class function", &instance_exp, &access);
-            Ok((constr, env))
+            let function = Function { name: StringName::try_from(name)?, args };
+            (constr, Expected::new(property.pos, &function))
         }
 
-        _ => Err(vec![TypeErr::new(property.pos, "Expected property call")]),
-    }
+        _ => return Err(vec![TypeErr::new(property.pos, "Expected property call")]),
+    };
+
+    let entire_call_as_ast: AST = instance.iter().rfold(property.clone(), |acc, ast| {
+        let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
+        AST::new(ast.pos, Node::PropertyCall { instance, property })
+    });
+    let entire_call_as_ast = Expected::try_from((&entire_call_as_ast, &env.var_mappings))?;
+
+    let ast_without_access = match instance.len().cmp(&1) {
+        Ordering::Less => {
+            return Err(vec![TypeErr::new(last_inst.pos, "Internal error in access")]);
+        }
+        Ordering::Equal => last_inst.clone(),
+        Ordering::Greater => {
+            let last = instance.remove(instance.len() - 1);
+            instance.iter().rfold(last, |acc, ast| {
+                let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
+                AST::new(ast.pos, Node::PropertyCall { instance, property })
+            })
+        }
+    };
+
+    let access = Expected::new(
+        ast_without_access.pos.union(access.pos),
+        &Expect::Access {
+            entity: Box::new(Expected::try_from((&ast_without_access, &env.var_mappings))?),
+            name: Box::new(access),
+        },
+    );
+
+    constr.add("call property", &access, &entire_call_as_ast);
+    Ok((constr.clone(), env.clone()))
 }
 
 /// Check if AST is something was can be re-assigned to.
