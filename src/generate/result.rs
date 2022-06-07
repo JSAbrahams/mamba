@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::path::PathBuf;
+use std::path::{MAIN_SEPARATOR, PathBuf};
 
 use crate::ASTTy;
 use crate::common::position::Position;
@@ -55,10 +55,11 @@ impl WithSource for UnimplementedErr {
 
 impl Display for UnimplementedErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let path = self.path.as_ref().map_or("<unknown>", |p| p.to_str().unwrap_or_default());
         write!(
             f,
             "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     | {}{}",
-            self.path.clone().map_or(String::from("<unknown>"), |path| format!("{:#?}", path)),
+            path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
             self.position.start.line,
             self.position.start.pos,
             self.msg,
