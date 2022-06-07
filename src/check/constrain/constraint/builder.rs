@@ -74,7 +74,7 @@ impl ConstrBuilder {
     }
 
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        trace!("Constr: {}", constraint);
+        trace!("Constr: {} == {}, {}: {}", constraint.left.pos, constraint.right.pos, self.level, constraint);
         self.constraints[self.level].1.push(constraint.clone())
     }
 

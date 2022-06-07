@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::path::PathBuf;
+use std::path::{MAIN_SEPARATOR, PathBuf};
 
 use crate::check::ast::ASTTy;
 use crate::common::position::Position;
@@ -38,7 +38,9 @@ impl PartialEq for TypeErr {
 }
 
 impl From<TypeErr> for Vec<TypeErr> {
-    fn from(type_err: TypeErr) -> Self { vec![type_err] }
+    fn from(type_err: TypeErr) -> Self {
+        vec![type_err]
+    }
 }
 
 impl TypeErr {
@@ -80,7 +82,7 @@ impl WithSource for TypeErr {
                     } else {
                         None
                     },
-                    source.lines().nth(position.start.line as usize)
+                    source.lines().nth(position.start.line as usize),
                 )
             } else {
                 (None, None, None)
@@ -102,7 +104,8 @@ impl WithSource for TypeErr {
 
 impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let path = self.path.clone().map_or(String::from("<unknown>"), |p| p.display().to_string());
+        let path = self.path.as_ref().map_or("<unknown>", |p| p.to_str().unwrap_or_default());
+
         let msg = {
             let mut string = String::from(self.msg.trim());
             if string.ends_with('\n') {
@@ -116,7 +119,7 @@ impl Display for TypeErr {
                 f,
                 "{}\n --> {}:{}:{}\n{}{:4} | {}\n       {}{}{}",
                 msg,
-                path,
+                path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
                 position.start.line,
                 position.start.pos,
                 self.source_before.clone().map_or_else(String::new, |src| if src.is_empty() {

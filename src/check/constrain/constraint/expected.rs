@@ -9,9 +9,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss;
-use crate::check::context::clss::{
-    BOOL, FLOAT, INT, NONE, STRING,
-};
+use crate::check::context::clss::{BOOL, FLOAT, INT, NONE, STRING};
 use crate::check::name::{Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -24,11 +22,16 @@ use crate::parse::ast::{AST, Node};
 pub struct Expected {
     pub pos: Position,
     pub expect: Expect,
+    an_or_a: bool,
 }
 
 impl Expected {
     pub fn new(pos: Position, expect: &Expect) -> Expected {
-        Expected { pos, expect: expect.clone() }
+        Expected { pos, expect: expect.clone(), an_or_a: true }
+    }
+
+    pub fn and_or_a(&self, and_or_a: bool) -> Expected {
+        Expected { an_or_a: and_or_a, ..self.clone() }
     }
 }
 
@@ -110,27 +113,32 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
 
 impl Display for Expected {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}", self.expect)
+        match &self.expect {
+            Type { name } if self.an_or_a => write!(f, "{}{}", an_or_a(name), name),
+            _ => write!(f, "{}", self.expect)
+        }
     }
 }
 
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match &self {
-                ExpressionAny => String::from("Any"),
-                Expression { ast } => format!("`{}`", ast.node),
-                Collection { ty, .. } => format!("{{{}}}", ty.expect),
-                Tuple { elements } => format!("({})", comma_delm(elements)),
-                Raises { name: ty } => format!("Raises {}", ty),
-                Access { entity, name } => format!("{}.{}", entity.expect, name.expect),
-                Function { name, args } => format!("{}({})", name, comma_delm(args)),
-                Field { name } => name.clone(),
-                Type { name: ty } => format!("{}'{}'", an_or_a(ty), ty),
+        match &self {
+            ExpressionAny => write!(f, "Any"),
+            Expression { ast } => write!(f, "`{}`", ast.node),
+            Collection { ty, .. } => write!(f, "{{{}}}", ty.and_or_a(false)),
+            Tuple { elements } => {
+                let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
+                write!(f, "({})", comma_delm(elements))
             }
-        )
+            Raises { name: ty } => write!(f, "Raises {}", ty),
+            Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
+            Function { name, args } => {
+                let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
+                write!(f, "{}({})", name, comma_delm(args))
+            }
+            Field { name } => write!(f, "{}", name),
+            Type { name } => write!(f, "{}", name),
+        }
     }
 }
 
