@@ -69,7 +69,7 @@ impl From<&StringName> for TrueName {
     fn from(name: &StringName) -> Self {
         TrueName {
             is_nullable: false,
-            is_mutable: false,
+            is_mutable: true,
             variant: NameVariant::Single(name.clone()),
         }
     }
@@ -79,7 +79,7 @@ impl From<&str> for TrueName {
     fn from(name: &str) -> Self {
         TrueName {
             is_nullable: false,
-            is_mutable: false,
+            is_mutable: true,
             variant: NameVariant::Single(StringName::from(name)),
         }
     }

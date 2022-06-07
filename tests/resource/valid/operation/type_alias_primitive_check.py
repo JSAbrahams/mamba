@@ -1,6 +1,6 @@
-from typing import NewType
+class MyType(str):
+    def __init__(self):
+        str.__init__(self)
 
-MyType = NewType('MyType', str)
-
-a: MyType = "MyString"
+a: MyType = "my_string"
 print(a)
