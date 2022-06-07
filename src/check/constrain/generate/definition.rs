@@ -32,8 +32,11 @@ pub fn gen_def(
                 Node::Id { lit } if *lit == function::INIT => {
                     if let Some(class) = constr.current_class() {
                         let class = ctx.class(&class, id.pos)?;
-                        let fields: Vec<&Field> =
-                            class.fields.iter().filter(|f| !f.ty.is_nullable() && !f.assigned_to).collect();
+                        let fields: Vec<&Field> = class
+                            .fields
+                            .iter()
+                            .filter(|f| !f.ty.is_nullable() && !f.assigned_to)
+                            .collect();
                         fields.iter().map(|f| f.name.clone()).collect()
                     } else {
                         let msg = format!("Cannot have {} function outside class", function::INIT);
@@ -47,8 +50,7 @@ pub fn gen_def(
             let inner_env = inner_env.with_unassigned(non_nullable_class_vars);
 
             let (mut constr, inner_env) = if let Some(body) = body {
-                let r_tys: Vec<_> =
-                    raises.iter().map(|r| (r.pos, Name::try_from(r))).collect();
+                let r_tys: Vec<_> = raises.iter().map(|r| (r.pos, Name::try_from(r))).collect();
                 let mut r_res = Name::empty();
 
                 let exception_name = Name::from(clss::EXCEPTION);
@@ -77,7 +79,12 @@ pub fn gen_def(
             let unassigned: Vec<String> = inner_env
                 .unassigned
                 .iter()
-                .map(|v| format!("Non nullable class variable '{}' should be assigned to in constructor", v))
+                .map(|v| {
+                    format!(
+                        "Non nullable class variable '{}' should be assigned to in constructor",
+                        v
+                    )
+                })
                 .collect();
             if !unassigned.is_empty() {
                 return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
@@ -135,13 +142,13 @@ pub fn constrain_args(
 pub fn identifier_from_var(
     var: &AST,
     ty: &Option<Box<AST>>,
-    expression: &Option<Box<AST>>,
+    expr: &Option<Box<AST>>,
     mutable: bool,
     ctx: &Context,
     constr: &mut ConstrBuilder,
     env: &Environment,
 ) -> Constrained {
-    let (mut constr, mut env) = if let Some(expr) = expression {
+    let (mut constr, mut env) = if let Some(expr) = expr {
         generate(expr, env, ctx, constr)?
     } else {
         (constr.clone(), env.clone())
@@ -163,46 +170,29 @@ pub fn identifier_from_var(
 
     if identifier.is_tuple() {
         let tup_exps = identifier_to_tuple(var.pos, &identifier, &env)?;
-        match (ty, expression) {
-            (Some(ty), _) => {
-                let ty_exp = Expected::try_from((ty, &env.var_mappings))?;
-                for tup_exp in tup_exps {
-                    constr.add("type and tuple", &ty_exp, &tup_exp);
-                }
+        if let Some(ty) = ty {
+            let ty_exp = Expected::try_from((ty, &env.var_mappings))?;
+            for tup_exp in &tup_exps {
+                constr.add("type and tuple", &ty_exp, tup_exp);
             }
-            (_, Some(expr)) => {
-                let expr_expt = Expected::try_from((expr, &env.var_mappings))?;
-                for tup_exp in tup_exps {
-                    constr.add("tuple and expression", &expr_expt, &tup_exp);
-                }
+        }
+        if let Some(expr) = expr {
+            let expr_expt = Expected::try_from((expr, &env.var_mappings))?;
+            for tup_exp in &tup_exps {
+                constr.add("tuple and expression", &expr_expt, tup_exp);
             }
-            _ => {}
         }
     }
 
     let var_expect = Expected::try_from((var, &env.var_mappings))?;
-    match (ty, expression) {
-        (Some(ty), Some(expr)) => {
-            let ty_exp = Type { name: Name::try_from(ty.deref())? };
-            let parent = Expected::new(ty.pos, &ty_exp);
-            constr.add("variable, type, and expression", &parent, &var_expect);
-            let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add("variable, type, and expression", &var_expect, &expr_expect);
-        }
-        (Some(ty), None) => {
-            let ty_exp = Type { name: Name::try_from(ty.deref())? };
-            let parent = Expected::new(ty.pos, &ty_exp);
-            constr.add("variable with type", &parent, &var_expect);
-        }
-        (None, Some(expr)) => {
-            let parent = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add("variable and expression", &parent, &var_expect);
-        }
-        (None, None) => {
-            let child = Expected::new(var.pos, &ExpressionAny);
-            constr.add("variable", &var_expect, &child);
-        }
-    };
+    if let Some(ty) = ty {
+        let ty_exp = Expected::new(ty.pos, &Type { name: Name::try_from(ty.deref())? });
+        constr.add("variable, type, and expression", &ty_exp, &var_expect);
+    }
+    if let Some(expr) = expr {
+        let expr_expect = Expected::try_from((expr, &env.var_mappings))?;
+        constr.add("variable, type, and expression", &var_expect, &expr_expect);
+    }
 
     Ok((constr, env))
 }
