@@ -262,6 +262,7 @@ fn property_call(
             AST::new(ast.pos, Node::PropertyCall { instance, property })
         })
     };
+
     let access = Expected::new(
         ast_without_access.pos.union(access.pos),
         &Expect::Access {
