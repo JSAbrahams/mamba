@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -253,16 +254,18 @@ fn property_call(
     });
     let entire_call_as_ast = Expected::try_from((&entire_call_as_ast, &env.var_mappings))?;
 
-    let ast_without_access = if instance.len() == 1 {
-        last_inst.clone()
-    } else if instance.len() > 1 {
-        let last = instance.remove(instance.len() - 1);
-        instance.iter().rfold(last, |acc, ast| {
-            let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
-            AST::new(ast.pos, Node::PropertyCall { instance, property })
-        })
-    } else {
-        return Err(vec![TypeErr::new(last_inst.pos, "Internal error in access")]);
+    let ast_without_access = match instance.len().cmp(&1) {
+        Ordering::Less => {
+            return Err(vec![TypeErr::new(last_inst.pos, "Internal error in access")]);
+        }
+        Ordering::Equal => last_inst.clone(),
+        Ordering::Greater => {
+            let last = instance.remove(instance.len() - 1);
+            instance.iter().rfold(last, |acc, ast| {
+                let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
+                AST::new(ast.pos, Node::PropertyCall { instance, property })
+            })
+        }
     };
 
     let access = Expected::new(
