@@ -255,12 +255,14 @@ fn property_call(
 
     let ast_without_access = if instance.len() == 1 {
         last_inst.clone()
-    } else {
+    } else if instance.len() > 1 {
         let last = instance.remove(instance.len() - 1);
         instance.iter().rfold(last, |acc, ast| {
             let (instance, property) = (Box::from(ast.clone()), Box::from(acc));
             AST::new(ast.pos, Node::PropertyCall { instance, property })
         })
+    } else {
+        return Err(vec![TypeErr::new(last_inst.pos, "Internal error in access")]);
     };
 
     let access = Expected::new(
