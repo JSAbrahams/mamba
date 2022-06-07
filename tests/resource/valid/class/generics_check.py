@@ -32,7 +32,7 @@ class MyClass2(MyType):
 
         a = None
         try:
-            a: int = self.error_function()
+            a = self.error_function()
         except Err1 as err1:
             print(err1)
             a = -1
