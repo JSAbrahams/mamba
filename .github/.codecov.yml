@@ -2,7 +2,7 @@ codecov:
     branch: main
 
 comment:
-    layout: "reach, diff"
+    layout: "diff, files"
 
 coverage:
     status:
