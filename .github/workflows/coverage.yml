@@ -27,7 +27,6 @@ jobs:
 
       # Checkout and use nigthly toolchain
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           override: true
