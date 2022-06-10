@@ -9,7 +9,7 @@ use crate::check::context::Context;
 use crate::check::name::{ColType, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::result::{TryFromPos, TypeResult};
+use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
 pub mod generic;
@@ -152,9 +152,9 @@ impl Substitute for TrueName {
     }
 }
 
-impl TryFromPos<&TrueName> for StringName {
-    fn try_from_pos(value: &TrueName, pos: Position) -> TypeResult<Self> {
-        StringName::try_from_pos(&value.variant, pos)
+impl From<&TrueName> for StringName {
+    fn from(value: &TrueName) -> Self {
+        StringName::from(&value.variant)
     }
 }
 

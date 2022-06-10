@@ -23,7 +23,7 @@ impl From<&Vec<Argument>> for GenericParameters {
                         if let Some(Simple(Expression::Name(name))) = name {
                             parameters.push(GenericParameter {
                                 is_py_type: true,
-                                name: StringName::from(python_to_concrete(name).as_ref()),
+                                name: StringName::from(python_to_concrete(name).as_str()),
                                 parent: None,
                             })
                         }
@@ -46,7 +46,7 @@ impl From<&Vec<Subscript>> for GenericParameters {
             if let Subscript::Simple(Expression::Name(name)) = subscript {
                 parameters.push(GenericParameter {
                     is_py_type: true,
-                    name: StringName::from(python_to_concrete(name).as_ref()),
+                    name: StringName::from(python_to_concrete(name).as_str()),
                     parent: None,
                 })
             }

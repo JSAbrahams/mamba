@@ -29,7 +29,7 @@ impl From<&ClassUnion> for Name {
             .iter()
             .map(|u| match u {
                 ClassVariant::Direct(class_set) => {
-                    let names: HashSet<TrueName> =
+                    let names: HashSet<StringName> =
                         class_set.iter().map(|c| c.name.clone()).collect();
                     let names: HashSet<Name> = names.iter().map(Name::from).collect();
                     Name::from(&names)

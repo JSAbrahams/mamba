@@ -72,7 +72,7 @@ impl LookupFunction<&StringName, Function> for Context {
             Function::try_from((generic_fun, &generics, pos))
         } else if let Some(generic_class) = self.classes.iter().find(|c| &c.name == function) {
             let class = Class::try_from((generic_class, &generics, pos))?;
-            class.constructor(true, pos)
+            Ok(class.constructor(true))
         } else {
             let msg = format!("Function {} is undefined.", function);
             Err(vec![TypeErr::new(pos, &msg)])

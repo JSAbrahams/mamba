@@ -7,10 +7,9 @@ use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::check::result::{TryFromPos, TypeResult};
+use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-use crate::TypeErr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NameVariant {
@@ -105,13 +104,16 @@ impl IsSuperSet<NameVariant> for NameVariant {
     }
 }
 
-impl TryFromPos<&NameVariant> for StringName {
-    fn try_from_pos(name_variant: &NameVariant, pos: Position) -> TypeResult<Self> {
+impl From<&NameVariant> for StringName {
+    fn from(name_variant: &NameVariant) -> Self {
         match name_variant {
-            NameVariant::Single(name) => Ok(name.clone()),
-            other => {
-                let msg = format!("'{}' is not a valid name", other);
-                Err(vec![TypeErr::new(pos, &msg)])
+            NameVariant::Single(name) => name.clone(),
+            NameVariant::Tuple(names) => {
+                StringName::new(clss::TUPLE, names)
+            }
+            NameVariant::Fun(args, ret) => {
+                let args = Name::from(&NameVariant::Tuple(args.clone()));
+                StringName::new(clss::CALLABLE, &[args, *ret.clone()])
             }
         }
     }

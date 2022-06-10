@@ -32,10 +32,10 @@ impl From<&ClassVariant> for Name {
     fn from(class_variant: &ClassVariant) -> Self {
         let name_variant = match &class_variant {
             ClassVariant::Direct(class) if class.len() == 1 => {
-                class.iter().next().unwrap().name.variant.clone()
+                NameVariant::Single(class.iter().next().unwrap().name.clone())
             }
             ClassVariant::Direct(classes) => {
-                let names = classes.iter().map(|class| &class.name.variant).map(Name::from);
+                let names = classes.iter().map(|class| &class.name).map(Name::from);
                 return Name::from(&HashSet::from_iter(names));
             }
             ClassVariant::Tuple(class_unions) => {
@@ -58,13 +58,20 @@ impl HasParent<&StringName> for ClassVariant {
                 .collect::<Result<Vec<bool>, _>>()?
                 .iter()
                 .any(|b| *b)),
-            ClassVariant::Tuple(_) => {
-                let tuple = ctx.class(&StringName::from(clss::TUPLE), pos)?;
+            ClassVariant::Tuple(class) => {
+                let generics: Vec<Name> = class.iter().map(Name::from).collect();
+
+                let tuple = ctx.class(&StringName::new(clss::TUPLE, &generics), pos)?;
                 let class = ClassVariant::Direct(HashSet::from([tuple]));
                 class.has_parent(name, ctx, pos)
             }
-            ClassVariant::Fun(..) => {
-                let tuple = ctx.class(&StringName::from(clss::CALLABLE), pos)?;
+            ClassVariant::Fun(args, ret) => {
+                let generics = vec![
+                    Name::from(&NameVariant::Tuple(args.iter().map(Name::from).collect())),
+                    Name::from(ret),
+                ];
+
+                let tuple = ctx.class(&StringName::new(clss::CALLABLE, &generics), pos)?;
                 let class = ClassVariant::Direct(HashSet::from([tuple]));
                 class.has_parent(name, ctx, pos)
             }

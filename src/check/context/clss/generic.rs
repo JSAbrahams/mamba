@@ -12,7 +12,6 @@ use crate::check::context::function::INIT;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -20,7 +19,7 @@ use crate::parse::ast::{AST, Node};
 #[derive(Debug, Clone, Eq)]
 pub struct GenericClass {
     pub is_py_type: bool,
-    pub name: TrueName,
+    pub name: StringName,
     pub pos: Position,
     pub concrete: bool,
     pub args: Vec<GenericFunctionArg>,
@@ -56,7 +55,7 @@ impl TryFrom<&AST> for GenericClass {
     fn try_from(class: &AST) -> TypeResult<GenericClass> {
         match &class.node {
             Node::Class { ty, args, parents, body } => {
-                let name = TrueName::try_from(ty)?;
+                let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -173,7 +172,7 @@ impl TryFrom<&AST> for GenericClass {
                 })
             }
             Node::TypeDef { ty, isa, body, .. } => {
-                let name = TrueName::try_from(ty)?;
+                let name = StringName::try_from(ty)?;
                 let statements = if let Some(body) = body {
                     match &body.node {
                         Node::Block { statements } => statements.clone(),
@@ -211,7 +210,7 @@ impl TryFrom<&AST> for GenericClass {
             }
             Node::TypeAlias { ty, isa, .. } => Ok(GenericClass {
                 is_py_type: false,
-                name: TrueName::try_from(ty)?,
+                name: StringName::try_from(ty)?,
                 pos: class.pos,
                 args: vec![GenericFunctionArg {
                     is_py_type: false,
@@ -233,7 +232,7 @@ impl TryFrom<&AST> for GenericClass {
 }
 
 fn get_fields_and_functions(
-    class: &TrueName,
+    class: &StringName,
     statements: &[AST],
     type_def: bool,
 ) -> TypeResult<(HashSet<GenericField>, HashSet<GenericFunction>)> {
@@ -301,7 +300,7 @@ mod test {
 
         let generic_class = GenericClass::try_from(&ast)?;
 
-        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(!generic_class.is_py_type);
         assert!(generic_class.concrete);
 
@@ -363,7 +362,7 @@ mod test {
 
         let generic_class = GenericClass::try_from(&ast)?;
 
-        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(!generic_class.is_py_type);
         assert!(generic_class.concrete);
 
@@ -398,7 +397,7 @@ mod test {
         let generic_class = GenericClass::try_from(&ast)?;
 
         let name = StringName::new("MyClass", &[Name::from("T")]);
-        assert_eq!(generic_class.name, TrueName::from(&name));
+        assert_eq!(generic_class.name, name.clone());
         assert!(!generic_class.is_py_type);
         assert!(generic_class.concrete);
 
@@ -433,7 +432,7 @@ mod test {
         let generic_class = GenericClass::try_from(&ast)?;
 
         let name = StringName::new("MyType", &[Name::from("T")]);
-        assert_eq!(generic_class.name, TrueName::from(&name));
+        assert_eq!(generic_class.name, name.clone());
         assert!(!generic_class.is_py_type);
         assert!(!generic_class.concrete);
 
@@ -467,7 +466,7 @@ mod test {
 
         let generic_class = GenericClass::try_from(&ast)?;
 
-        assert_eq!(generic_class.name, TrueName::from("MyType"));
+        assert_eq!(generic_class.name, StringName::from("MyType"));
         assert!(!generic_class.is_py_type);
         assert!(!generic_class.concrete);
 

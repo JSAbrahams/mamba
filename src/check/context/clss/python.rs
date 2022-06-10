@@ -13,8 +13,7 @@ use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::TrueName;
-use crate::check::result::{TryFromPos, TypeErr, TypeResult};
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
 pub const INT_PRIMITIVE: &str = "int";
@@ -67,7 +66,7 @@ impl TryFrom<&Classdef> for GenericClass {
         }
 
         let generic_names: Vec<Name> = generics.iter().map(|g| Name::from(&g.name)).collect();
-        let class = TrueName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
+        let class = StringName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
             .map(|f| f.in_class(Some(&class), false, Position::default()))
@@ -97,10 +96,7 @@ impl TryFrom<&Classdef> for GenericClass {
                 .arguments
                 .iter()
                 .map(GenericParent::from)
-                .filter(|parent| {
-                    StringName::try_from_pos(&parent.name, Position::default())
-                        .map_or(true, |s_n| s_n.name != "Generic")
-                })
+                .filter(|parent| StringName::from(&parent.name).name != "Generic")
                 .collect(),
         })
     }
@@ -164,7 +160,7 @@ mod test {
         let class_def: Classdef = class_def(&first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
-        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.fields.len(), 2);
@@ -197,7 +193,7 @@ mod test {
         let class_def: Classdef = class_def(&first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
-        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.fields.len(), 1);
@@ -220,7 +216,7 @@ mod test {
         let class_def: Classdef = class_def(&first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
-        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.functions.len(), 1);
@@ -248,7 +244,7 @@ mod test {
         let class_def: Classdef = class_def(&first);
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
-        assert_eq!(generic_class.name, TrueName::from("MyClass"));
+        assert_eq!(generic_class.name, StringName::from("MyClass"));
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.parents.len(), 2);
@@ -281,7 +277,7 @@ mod test {
         let generic_class = GenericClass::try_from(&class_def).expect("generic class");
 
         let name = StringName::new("MyClass", &[Name::from("T")]);
-        assert_eq!(generic_class.name, TrueName::from(&name));
+        assert_eq!(generic_class.name, StringName::from(name));
         assert!(generic_class.is_py_type);
 
         assert_eq!(generic_class.parents.len(), 1);

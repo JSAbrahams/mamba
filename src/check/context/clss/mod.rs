@@ -54,7 +54,7 @@ pub mod python;
 #[derive(Debug, Clone, Eq)]
 pub struct Class {
     pub is_py_type: bool,
-    pub name: TrueName,
+    pub name: StringName,
     pub concrete: bool,
     pub args: Vec<FunctionArg>,
     pub fields: HashSet<Field>,
@@ -82,41 +82,32 @@ impl HasParent<&StringName> for Class {
         let class = ctx.class(name, pos)?; // lookup to substitute generics first
 
         Ok(&class.name == name
-            || class
+            || (class.name.name == name.name
+            && class
             .parents
             .iter()
             .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
-            .any(|b| *b))
+            .any(|b| *b)))
     }
 }
 
 impl HasParent<&TrueName> for Class {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(&self.name == name
-            || self
-            .parents
-            .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos).map(|res| res || p == name))
-            .collect::<Result<Vec<bool>, _>>()?
-            .iter()
-            .any(|b| *b))
+        self.has_parent(&StringName::from(name), ctx, pos)
     }
 }
 
 impl HasParent<&Name> for Class {
     fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        if name.contains(&self.name) {
+        if name.contains(&TrueName::from(&self.name)) {
             return Ok(true);
         }
 
-        let names = name.as_direct(pos)?;
-        let parent_names: Vec<StringName> = self
-            .parents
-            .iter()
-            .map(|true_name| StringName::try_from_pos(true_name, pos))
-            .collect::<Result<_, _>>()?;
+        let names = name.as_direct();
+        let parent_names: Vec<StringName> =
+            self.parents.iter().map(|true_name| StringName::from(true_name)).collect();
 
         let parent_classes: Vec<Class> =
             parent_names.iter().map(|name| ctx.class(name, pos)).collect::<Result<_, _>>()?;
@@ -140,11 +131,10 @@ impl LookupClass<&StringName, Class> for Context {
     ///
     /// Substitutes all generics in the class when found.
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
-        if let Some(generic_class) = self.classes.iter().find(|c| {
-            StringName::try_from_pos(&c.name, pos).map(|name| name.name) == Ok(class.name.clone())
-        }) {
+        if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name.clone())
+        {
             let mut generics = HashMap::new();
-            let placeholders = StringName::try_from_pos(&generic_class.name, pos)?;
+            let placeholders = generic_class.name.clone();
 
             for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
                 match name {
@@ -211,10 +201,10 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 }
 
 impl Class {
-    pub fn constructor(&self, without_self: bool, pos: Position) -> TypeResult<Function> {
-        Ok(Function {
+    pub fn constructor(&self, without_self: bool) -> Function {
+        Function {
             is_py_type: false,
-            name: StringName::try_from_pos(&self.name, pos)?,
+            name: self.name.clone(),
             self_mutable: None,
             pure: false,
             arguments: if without_self && !self.args.is_empty() {
@@ -225,7 +215,7 @@ impl Class {
             raises: Name::empty(),
             in_class: None,
             ret_ty: Name::from(&self.name),
-        })
+        }
     }
 }
 

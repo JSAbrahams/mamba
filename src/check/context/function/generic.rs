@@ -4,9 +4,7 @@ use std::ops::Deref;
 
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::name::Name;
-use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -38,18 +36,17 @@ impl PartialEq for GenericFunction {
 }
 
 impl GenericFunction {
-    #[must_use]
     pub fn pure(self, pure: bool) -> Self {
         GenericFunction { pure: self.pure || pure, ..self }
     }
 
     pub fn in_class(
         self,
-        in_class: Option<&TrueName>,
+        in_class: Option<&StringName>,
         _type_def: bool,
         pos: Position,
     ) -> TypeResult<GenericFunction> {
-        if let Some(NameVariant::Single(in_class)) = in_class.map(|t| t.variant.clone()) {
+        if let Some(in_class) = in_class {
             Ok(GenericFunction {
                 in_class: Some(in_class.clone()),
                 arguments: self

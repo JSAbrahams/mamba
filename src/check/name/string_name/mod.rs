@@ -129,7 +129,7 @@ impl Empty for StringName {
 impl Substitute for StringName {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&Name::from(self)) {
-            let string_names = name.as_direct(pos)?;
+            let string_names = name.as_direct();
             if string_names.len() > 1 {
                 let msg = format!("Cannot substitute type union {}", name);
                 return Err(vec![TypeErr::new(pos, &msg)]);
