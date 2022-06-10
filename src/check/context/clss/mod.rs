@@ -79,8 +79,10 @@ pub trait GetFun<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(&self.name == name
-            || self
+        let class = ctx.class(name, pos)?; // lookup to substitute generics first
+
+        Ok(&class.name == name
+            || class
             .parents
             .iter()
             .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
@@ -150,11 +152,11 @@ impl LookupClass<&StringName, Class> for Context {
                         generics.insert(placeholder.clone(), name.clone());
                     }
                     EitherOrBoth::Left(placeholder) => {
-                        let msg = format!("No argument for generic: {}", placeholder);
+                        let msg = format!("No argument for generic {} in {}", placeholder, class);
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                     EitherOrBoth::Right(placeholder) => {
-                        let msg = format!("No generic for argument: {}", placeholder);
+                        let msg = format!("No generic for argument {} in {}", placeholder, class);
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                 }

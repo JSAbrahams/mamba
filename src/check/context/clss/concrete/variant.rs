@@ -6,7 +6,6 @@ use std::ops::Deref;
 
 use itertools::Itertools;
 
-use crate::{Context, TypeErr};
 use crate::check::context::{clss, LookupClass};
 use crate::check::context::clss::{CALLABLE, Class, GetField, GetFun, HasParent, TUPLE};
 use crate::check::context::clss::concrete::union::ClassUnion;
@@ -20,6 +19,7 @@ use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
+use crate::Context;
 
 #[derive(Debug, Eq)]
 pub enum ClassVariant {
@@ -58,9 +58,15 @@ impl HasParent<&StringName> for ClassVariant {
                 .collect::<Result<Vec<bool>, _>>()?
                 .iter()
                 .any(|b| *b)),
-            ClassVariant::Tuple(_) | ClassVariant::Fun(..) => {
-                let msg = format!("'{}' does not have parents.", self);
-                Err(vec![TypeErr::new(pos, &msg)])
+            ClassVariant::Tuple(_) => {
+                let tuple = ctx.class(&StringName::from(clss::TUPLE), pos)?;
+                let class = ClassVariant::Direct(HashSet::from([tuple]));
+                class.has_parent(name, ctx, pos)
+            }
+            ClassVariant::Fun(..) => {
+                let tuple = ctx.class(&StringName::from(clss::CALLABLE), pos)?;
+                let class = ClassVariant::Direct(HashSet::from([tuple]));
+                class.has_parent(name, ctx, pos)
             }
         }
     }

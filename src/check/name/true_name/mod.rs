@@ -77,11 +77,7 @@ impl From<&StringName> for TrueName {
 
 impl From<&str> for TrueName {
     fn from(name: &str) -> Self {
-        TrueName {
-            is_nullable: false,
-            is_mutable: true,
-            variant: NameVariant::Single(StringName::from(name)),
-        }
+        TrueName::from(&StringName::from(name))
     }
 }
 

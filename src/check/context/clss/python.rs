@@ -14,7 +14,7 @@ use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::result::{TryFromPos, TypeErr, TypeResult};
 use crate::common::position::Position;
 
 pub const INT_PRIMITIVE: &str = "int";
@@ -93,7 +93,15 @@ impl TryFrom<&Classdef> for GenericClass {
                 .map(|f| f.in_class(Some(&class), false, Position::default()))
                 .filter_map(Result::ok)
                 .collect(),
-            parents: class_def.arguments.iter().map(GenericParent::from).collect(),
+            parents: class_def
+                .arguments
+                .iter()
+                .map(GenericParent::from)
+                .filter(|parent| {
+                    StringName::try_from_pos(&parent.name, Position::default())
+                        .map_or(true, |s_n| s_n.name != "Generic")
+                })
+                .collect(),
         })
     }
 }
@@ -107,6 +115,7 @@ pub fn python_to_concrete(name: &str) -> String {
         ENUM_PRIMITIVE => String::from(clss::ENUM),
         COMPLEX_PRIMITIVE => String::from(clss::COMPLEX),
 
+        COLLECTION => String::from(clss::COLLECTION),
         RANGE => String::from(clss::RANGE),
         SLICE => String::from(clss::SLICE),
         SET => String::from(clss::SET),
@@ -275,22 +284,8 @@ mod test {
         assert_eq!(generic_class.name, TrueName::from(&name));
         assert!(generic_class.is_py_type);
 
-        assert_eq!(generic_class.parents.len(), 2);
-        let mut iter = generic_class
-            .parents
-            .iter()
-            .sorted_by_key(|p| match &p.name.variant {
-                NameVariant::Single(string_name) => string_name.name.clone(),
-                other => panic!("Expected Single, was {:?}", other),
-            })
-            .into_iter();
-
-        let parent = iter.next().expect("parent in class");
-        let name = StringName::new("Generic", &[Name::from("T")]);
-        assert_eq!(parent.name, TrueName::from(&name));
-        assert!(parent.is_py_type);
-
-        let parent = iter.next().expect("parent in class");
+        assert_eq!(generic_class.parents.len(), 1);
+        let parent = generic_class.parents.iter().next().expect("parent in class");
         assert_eq!(parent.name, TrueName::from("P2"));
         assert!(parent.is_py_type);
     }
