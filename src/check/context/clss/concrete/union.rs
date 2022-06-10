@@ -28,9 +28,8 @@ impl From<&ClassUnion> for Name {
             .union
             .iter()
             .map(|u| match u {
-                ClassVariant::Direct(class_set) => {
-                    let names: HashSet<StringName> =
-                        class_set.iter().map(|c| c.name.clone()).collect();
+                ClassVariant::Direct(set) => {
+                    let names: HashSet<StringName> = set.iter().map(|c| c.name.clone()).collect();
                     let names: HashSet<Name> = names.iter().map(Name::from).collect();
                     Name::from(&names)
                 }
@@ -57,8 +56,8 @@ impl ClassUnion {
             .union
             .iter()
             .map(|c| match c {
-                ClassVariant::Direct(class_set) => {
-                    Ok(class_set.iter().map(|c| c.args.clone()).collect())
+                ClassVariant::Direct(set) => {
+                    Ok(set.iter().map(|c| c.args.clone()).collect())
                 }
                 other => {
                     let msg = format!("'{}' cannot have a constructor", other);

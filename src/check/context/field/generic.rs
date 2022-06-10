@@ -112,10 +112,10 @@ impl GenericField {
         _type_def: bool,
         pos: Position,
     ) -> TypeResult<GenericField> {
-        if let Some(class) = class {
-            Ok(GenericField { in_class: Some(class.clone()), ..self })
+        if class.is_some() {
+            Ok(GenericField { in_class: class.cloned(), ..self })
         } else {
-            Err(Vec::from(TypeErr::new(pos, &String::from("Field must be in class"))))
+            Err(vec![TypeErr::new(pos, &String::from("Field must be in class"))])
         }
     }
 

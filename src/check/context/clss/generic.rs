@@ -42,10 +42,8 @@ impl Hash for GenericClass {
 
 impl GenericClass {
     pub fn all_pure(self, pure: bool) -> TypeResult<Self> {
-        Ok(GenericClass {
-            functions: self.functions.iter().map(|f| f.clone().pure(pure)).collect(),
-            ..self
-        })
+        let functions = self.functions.iter().map(|f| f.clone().pure(pure)).collect();
+        Ok(GenericClass { functions, ..self })
     }
 }
 
@@ -265,10 +263,8 @@ fn get_fields_and_functions(
             }
             Node::Comment { .. } | Node::DocStr { .. } => {}
             _ => {
-                return Err(vec![TypeErr::new(
-                    statement.pos,
-                    "Expected function or variable definition",
-                )]);
+                let msg = "Expected function or variable definition";
+                return Err(vec![TypeErr::new(statement.pos, &msg)]);
             }
         }
     }

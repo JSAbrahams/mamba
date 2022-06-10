@@ -40,21 +40,19 @@ impl GenericFunction {
         GenericFunction { pure: self.pure || pure, ..self }
     }
 
-    pub fn in_class(self,
-                    in_class: Option<&StringName>,
-                    _type_def: bool,
-                    pos: Position,
+    pub fn in_class(
+        self,
+        clss: Option<&StringName>,
+        _ty_def: bool,
+        pos: Position,
     ) -> TypeResult<GenericFunction> {
-        if let Some(in_class) = in_class {
-            Ok(GenericFunction {
-                in_class: Some(in_class.clone()),
-                arguments: self
-                    .arguments
-                    .iter()
-                    .map(|arg| arg.clone().in_class(Some(in_class)))
-                    .collect::<Result<_, _>>()?,
-                ..self
-            })
+        if clss.is_some() {
+            let arguments = self
+                .arguments
+                .into_iter()
+                .map(|arg| arg.in_class(clss))
+                .collect::<Result<_, _>>()?;
+            Ok(GenericFunction { in_class: clss.cloned(), arguments, ..self })
         } else {
             Err(Vec::from(TypeErr::new(pos, &String::from("Function must be in class."))))
         }
@@ -139,7 +137,11 @@ mod test {
     #[test]
     fn from_fundef() -> Result<(), Vec<TypeErr>> {
         let source = "def f(fin a: Int, b: String := \"a\") -> String raise [E] => pass";
-        let ast = parse_direct(source).expect("valid function syntax").into_iter().next().expect("function AST");
+        let ast = parse_direct(source)
+            .expect("valid function syntax")
+            .into_iter()
+            .next()
+            .expect("function AST");
 
         let generic_function = GenericFunction::try_from(&ast)?;
 
@@ -171,7 +173,11 @@ mod test {
     #[test]
     fn from_fundef_no_ret() -> Result<(), Vec<TypeErr>> {
         let source = "def f() => pass";
-        let ast = parse_direct(source).expect("valid function syntax").into_iter().next().expect("function AST");
+        let ast = parse_direct(source)
+            .expect("valid function syntax")
+            .into_iter()
+            .next()
+            .expect("function AST");
 
         let generic_function = GenericFunction::try_from(&ast)?;
         assert_eq!(generic_function.ret_ty, None);
