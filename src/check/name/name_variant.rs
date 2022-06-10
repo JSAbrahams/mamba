@@ -108,9 +108,7 @@ impl From<&NameVariant> for StringName {
     fn from(name_variant: &NameVariant) -> Self {
         match name_variant {
             NameVariant::Single(name) => name.clone(),
-            NameVariant::Tuple(names) => {
-                StringName::new(clss::TUPLE, names)
-            }
+            NameVariant::Tuple(names) => StringName::new(clss::TUPLE, names),
             NameVariant::Fun(args, ret) => {
                 let args = Name::from(&NameVariant::Tuple(args.clone()));
                 StringName::new(clss::CALLABLE, &[args, *ret.clone()])

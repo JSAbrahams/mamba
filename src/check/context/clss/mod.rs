@@ -79,17 +79,14 @@ pub trait GetFun<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        let class = ctx.class(name, pos)?; // lookup to substitute generics first
-
-        Ok(&class.name == name
-            || (class.name.name == name.name
-            && class
+        Ok(&self.name == name
+            || self
             .parents
             .iter()
             .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
-            .any(|b| *b)))
+            .any(|b| *b))
     }
 }
 
@@ -106,9 +103,7 @@ impl HasParent<&Name> for Class {
         }
 
         let names = name.as_direct();
-        let parent_names: Vec<StringName> =
-            self.parents.iter().map(|true_name| StringName::from(true_name)).collect();
-
+        let parent_names: Vec<StringName> = self.parents.iter().map(StringName::from).collect();
         let parent_classes: Vec<Class> =
             parent_names.iter().map(|name| ctx.class(name, pos)).collect::<Result<_, _>>()?;
 
@@ -146,7 +141,7 @@ impl LookupClass<&StringName, Class> for Context {
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                     EitherOrBoth::Right(placeholder) => {
-                        let msg = format!("No generic for argument {} in {}", placeholder, class);
+                        let msg = format!("Generic {} left generic in {}", placeholder, class);
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                 }

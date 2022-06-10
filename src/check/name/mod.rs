@@ -276,7 +276,7 @@ impl Substitute for Name {
 
 impl Name {
     pub fn as_direct(&self) -> HashSet<StringName> {
-        self.names.iter().map(|n| StringName::from(n)).collect()
+        self.names.iter().map(StringName::from).collect()
     }
 
     pub fn contains(&self, item: &TrueName) -> bool {

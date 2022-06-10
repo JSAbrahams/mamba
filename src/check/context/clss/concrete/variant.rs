@@ -90,8 +90,11 @@ impl HasParent<&NameVariant> for ClassVariant {
     fn has_parent(&self, name: &NameVariant, ctx: &Context, pos: Position) -> TypeResult<bool> {
         let name = match &name {
             NameVariant::Single(string_name) => string_name.clone(),
-            NameVariant::Tuple(_) => StringName::from(TUPLE),
-            NameVariant::Fun(..) => StringName::from(CALLABLE),
+            NameVariant::Tuple(items) => StringName::new(TUPLE, items),
+            NameVariant::Fun(args, ret) => {
+                let args = Name::from(&NameVariant::Tuple(args.clone()));
+                StringName::new(CALLABLE, &[args, *ret.clone()])
+            }
         };
         self.has_parent(&name, ctx, pos)
     }

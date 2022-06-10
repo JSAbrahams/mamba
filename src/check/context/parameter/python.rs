@@ -44,11 +44,8 @@ impl From<&Vec<Subscript>> for GenericParameters {
         let mut parameters = vec![];
         args.iter().for_each(|subscript| {
             if let Subscript::Simple(Expression::Name(name)) = subscript {
-                parameters.push(GenericParameter {
-                    is_py_type: true,
-                    name: StringName::from(python_to_concrete(name).as_str()),
-                    parent: None,
-                })
+                let name = StringName::from(python_to_concrete(name).as_str());
+                parameters.push(GenericParameter { is_py_type: true, name, parent: None })
             }
         });
 

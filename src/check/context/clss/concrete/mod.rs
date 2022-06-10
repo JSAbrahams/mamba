@@ -19,7 +19,7 @@ mod test {
         let pos = Position::default();
         let tuple = ctx.class(&Name::from(clss::TUPLE), pos)?;
 
-        let collection = StringName::new(clss::COLLECTION, &[Name::from("GENERIC")]);
+        let collection = StringName::new(clss::COLLECTION, &[]);
         assert!(tuple.has_parent(&TrueName::from(&collection), &ctx, pos)?);
         Ok(())
     }
@@ -32,9 +32,9 @@ mod test {
             Name::from("Int"),
             Name::from("Float"),
         ])));
-        let tuple = ctx.class(&name, pos)?;
+        let tuple = ctx.class(&name, pos).expect("Tuple");
 
-        let collection = StringName::new(clss::COLLECTION, &[Name::from("GENERIC")]);
+        let collection = StringName::new(clss::COLLECTION, &[Name::from("GENERIC"), Name::from("GENERIC")]);
         assert!(tuple.has_parent(&TrueName::from(&collection), &ctx, pos)?);
         Ok(())
     }
@@ -47,10 +47,10 @@ mod test {
             Name::from("Int"),
             Name::from("Float"),
         ], Box::from(Name::from("Float")))));
-        let tuple = ctx.class(&name, pos)?;
+        let callable = ctx.class(&name, pos).expect("Callable");
 
         let collection = StringName::new(clss::CALLABLE, &[]);
-        assert!(tuple.has_parent(&TrueName::from(&collection), &ctx, pos)?);
+        assert!(callable.has_parent(&TrueName::from(&collection), &ctx, pos)?);
         Ok(())
     }
 }

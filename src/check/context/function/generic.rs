@@ -40,11 +40,10 @@ impl GenericFunction {
         GenericFunction { pure: self.pure || pure, ..self }
     }
 
-    pub fn in_class(
-        self,
-        in_class: Option<&StringName>,
-        _type_def: bool,
-        pos: Position,
+    pub fn in_class(self,
+                    in_class: Option<&StringName>,
+                    _type_def: bool,
+                    pos: Position,
     ) -> TypeResult<GenericFunction> {
         if let Some(in_class) = in_class {
             Ok(GenericFunction {
@@ -52,7 +51,7 @@ impl GenericFunction {
                 arguments: self
                     .arguments
                     .iter()
-                    .map(|arg| arg.clone().in_class(Some(&in_class)))
+                    .map(|arg| arg.clone().in_class(Some(in_class)))
                     .collect::<Result<_, _>>()?,
                 ..self
             })
