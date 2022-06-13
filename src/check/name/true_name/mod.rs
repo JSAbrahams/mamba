@@ -17,8 +17,8 @@ pub mod python;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TrueName {
-    is_nullable: bool,
-    is_mutable: bool,
+    pub is_nullable: bool,
+    pub is_mutable: bool,
     pub variant: NameVariant,
 }
 
@@ -48,7 +48,7 @@ impl Mutable for TrueName {
 
 impl From<&NameVariant> for TrueName {
     fn from(variant: &NameVariant) -> Self {
-        TrueName { is_mutable: false, is_nullable: false, variant: variant.clone() }
+        TrueName { is_mutable: true, is_nullable: false, variant: variant.clone() }
     }
 }
 

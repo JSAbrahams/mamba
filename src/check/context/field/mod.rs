@@ -11,7 +11,7 @@ use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::Context;
 
-pub mod concrete;
+pub mod union;
 pub mod generic;
 pub mod python;
 

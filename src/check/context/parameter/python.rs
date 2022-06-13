@@ -19,13 +19,14 @@ impl From<&Vec<Argument>> for GenericParameters {
                 Expression::Subscript(name, generics)
                 if &Expression::Name(String::from("Generic")) == name.deref() =>
                     {
-                        let name = generics.first();
-                        if let Some(Simple(Expression::Name(name))) = name {
-                            parameters.push(GenericParameter {
-                                is_py_type: true,
-                                name: StringName::from(python_to_concrete(name).as_str()),
-                                parent: None,
-                            })
+                        for name in generics {
+                            if let Simple(Expression::Name(name)) = name {
+                                parameters.push(GenericParameter {
+                                    is_py_type: true,
+                                    name: StringName::from(python_to_concrete(name).as_str()),
+                                    parent: None,
+                                })
+                            }
                         }
                     }
                 _ => {}

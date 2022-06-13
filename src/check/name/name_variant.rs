@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt::{Display, Error, Formatter};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 
 use crate::check::context::{clss, Context};
 use crate::check::name::{ColType, IsSuperSet};
@@ -11,11 +11,23 @@ use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Eq)]
 pub enum NameVariant {
     Single(StringName),
     Tuple(Vec<Name>),
     Fun(Vec<Name>, Box<Name>),
+}
+
+impl PartialEq for NameVariant {
+    fn eq(&self, other: &Self) -> bool {
+        StringName::from(self) == StringName::from(other)
+    }
+}
+
+impl Hash for NameVariant {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        StringName::from(self).hash(state);
+    }
 }
 
 impl PartialOrd<Self> for NameVariant {

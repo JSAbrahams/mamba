@@ -264,7 +264,7 @@ fn get_fields_and_functions(
             Node::Comment { .. } | Node::DocStr { .. } => {}
             _ => {
                 let msg = "Expected function or variable definition";
-                return Err(vec![TypeErr::new(statement.pos, &msg)]);
+                return Err(vec![TypeErr::new(statement.pos, msg)]);
             }
         }
     }

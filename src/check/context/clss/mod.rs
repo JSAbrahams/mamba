@@ -4,9 +4,9 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-use itertools::{EitherOrBoth, Itertools};
+use itertools::{EitherOrBoth, enumerate, Itertools};
 
-use crate::check::context::{Context, LookupClass};
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::clss::generic::GenericClass;
@@ -17,7 +17,7 @@ use crate::check::context::function::generic::GenericFunction;
 use crate::check::name::{Empty, Name, Substitute};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::check::result::{TryFromPos, TypeErr, TypeResult};
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
 pub const INT: &str = "Int";
@@ -39,9 +39,9 @@ pub const CALLABLE: &str = "Callable";
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
 
-pub mod concrete;
 pub mod generic;
 pub mod python;
+pub mod union;
 
 /// Concrete type.
 ///
@@ -79,7 +79,8 @@ pub trait GetFun<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(&self.name == name
+        Ok(self.name.name == clss::COLLECTION && self.name.name == name.name
+            || &self.name == name
             || self
             .parents
             .iter()
@@ -121,14 +122,33 @@ impl HasParent<&Name> for Class {
     }
 }
 
+impl LookupClass<&TrueName, Class> for Context {
+    fn class(&self, class: &TrueName, pos: Position) -> TypeResult<Class> {
+        self.class(&StringName::from(class), pos)
+    }
+}
+
 impl LookupClass<&StringName, Class> for Context {
     /// Look up union of GenericClass and substitute generics to yield set of classes.
     ///
     /// Substitutes all generics in the class when found.
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
-        if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name.clone())
-        {
+        if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name) {
             let mut generics = HashMap::new();
+            if class.name == clss::TUPLE || class.name == clss::COLLECTION {
+                // Tuple and collection exception, variable generic count
+                let mut generic_keys: Vec<Name> = vec![];
+                for (i, gen) in enumerate(&class.generics) {
+                    generic_keys.push(Name::from(format!("G{}", i).as_str()));
+                    generics.insert(Name::from(format!("G{}", i).as_str()), gen.clone());
+                }
+
+                let name = StringName::new(class.name.as_str(), &generic_keys);
+                let generic_class = GenericClass { name, ..generic_class.clone() };
+                let class = Class::try_from((&generic_class, &generics, pos));
+                return class;
+            }
+
             let placeholders = generic_class.name.clone();
 
             for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
@@ -141,7 +161,7 @@ impl LookupClass<&StringName, Class> for Context {
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                     EitherOrBoth::Right(placeholder) => {
-                        let msg = format!("Generic {} left generic in {}", placeholder, class);
+                        let msg = format!("Gave unexpected generic {} to {}", placeholder, class);
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                 }
@@ -221,8 +241,8 @@ impl GetField<Field> for Class {
         }
 
         for parent in &self.parents {
-            if let Ok(union) = ctx.class(parent, pos)?.field(name, ctx, pos) {
-                return Field::try_from_pos(&union, pos);
+            if let Ok(ok) = ctx.class(parent, pos)?.field(name, ctx, pos) {
+                return Ok(ok);
             }
         }
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
@@ -240,8 +260,8 @@ impl GetFun<Function> for Class {
         }
 
         for parent in &self.parents {
-            if let Ok(union) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
-                return Function::try_from_pos(&union, pos);
+            if let Ok(function) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
+                return Ok(function);
             }
         }
         Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
