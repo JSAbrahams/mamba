@@ -62,7 +62,6 @@ mod tests {
     use crate::check::context::clss::GetFun;
     use crate::check::name::Name;
     use crate::check::name::string_name::StringName;
-    use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
 
@@ -74,10 +73,10 @@ mod tests {
 
         let pos = Position::default();
         let clss = ctx.class(&list_type, pos)?;
-        assert_eq!(clss.name, TrueName::from(&list_type));
+        assert_eq!(clss.name, list_type);
 
         let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
-        for name in iter_name.as_direct(pos)? {
+        for name in iter_name.as_direct() {
             let iter_class = ctx.class(&name, pos)?;
             let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))
@@ -89,15 +88,15 @@ mod tests {
     #[test]
     pub fn lookup_custom_set_type() -> TypeResult<()> {
         let generics = &[Name::from("Custom")];
-        let list_type = StringName::new("Set", generics);
+        let set_type = StringName::new("Set", generics);
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let pos = Position::default();
-        let clss = ctx.class(&list_type, pos)?;
-        assert_eq!(clss.name, TrueName::from(&list_type));
+        let clss = ctx.class(&set_type, pos)?;
+        assert_eq!(clss.name, set_type);
 
         let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
-        for name in iter_name.as_direct(pos)? {
+        for name in iter_name.as_direct() {
             let iter_class = ctx.class(&name, pos)?;
             let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))

@@ -19,13 +19,14 @@ impl From<&Vec<Argument>> for GenericParameters {
                 Expression::Subscript(name, generics)
                 if &Expression::Name(String::from("Generic")) == name.deref() =>
                     {
-                        let name = generics.first();
-                        if let Some(Simple(Expression::Name(name))) = name {
-                            parameters.push(GenericParameter {
-                                is_py_type: true,
-                                name: StringName::from(python_to_concrete(name).as_ref()),
-                                parent: None,
-                            })
+                        for name in generics {
+                            if let Simple(Expression::Name(name)) = name {
+                                parameters.push(GenericParameter {
+                                    is_py_type: true,
+                                    name: StringName::from(python_to_concrete(name).as_str()),
+                                    parent: None,
+                                })
+                            }
                         }
                     }
                 _ => {}
@@ -44,11 +45,8 @@ impl From<&Vec<Subscript>> for GenericParameters {
         let mut parameters = vec![];
         args.iter().for_each(|subscript| {
             if let Subscript::Simple(Expression::Name(name)) = subscript {
-                parameters.push(GenericParameter {
-                    is_py_type: true,
-                    name: StringName::from(python_to_concrete(name).as_ref()),
-                    parent: None,
-                })
+                let name = StringName::from(python_to_concrete(name).as_str());
+                parameters.push(GenericParameter { is_py_type: true, name, parent: None })
             }
         });
 
