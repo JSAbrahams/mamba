@@ -244,4 +244,36 @@ mod test {
         assert!(callable.has_parent(&TrueName::from(&collection), &ctx, pos)?);
         Ok(())
     }
+
+    #[test]
+    fn callable_parent_wrong_ret_type() -> TypeResult<()> {
+        let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
+        let pos = Position::default();
+        let name = Name::from(&TrueName::from(&NameVariant::Fun(vec![
+            Name::from("Int"),
+            Name::from("Float"),
+        ], Box::from(Name::from("Float")))));
+        let callable = ctx.class(&name, pos).expect("Callable");
+
+        let args = Name::from(&StringName::new(clss::TUPLE, &[Name::from("Int"), Name::from("Float")]));
+        let collection = StringName::new(clss::CALLABLE, &[args, Name::from("String")]);
+        assert!(!callable.has_parent(&TrueName::from(&collection), &ctx, pos).expect("Is Parent"));
+        Ok(())
+    }
+
+    #[test]
+    fn callable_parent_wrong_arg_type() -> TypeResult<()> {
+        let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
+        let pos = Position::default();
+        let name = Name::from(&TrueName::from(&NameVariant::Fun(vec![
+            Name::from("Int"),
+            Name::from("Float"),
+        ], Box::from(Name::from("Float")))));
+        let callable = ctx.class(&name, pos).expect("Callable");
+
+        let args = Name::from(&StringName::new(clss::TUPLE, &[Name::from("String"), Name::from("Float")]));
+        let collection = StringName::new(clss::CALLABLE, &[args, Name::from("Float")]);
+        assert!(!callable.has_parent(&TrueName::from(&collection), &ctx, pos).expect("Is Parent"));
+        Ok(())
+    }
 }
