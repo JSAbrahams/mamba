@@ -1,13 +1,15 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Error, Formatter};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{GetFun, HasParent};
+use crate::check::context::function::union::FunUnion;
 use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, Union};
 use crate::check::name::Name;
+use crate::check::name::name_variant::NameVariant;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -16,10 +18,48 @@ use crate::common::position::Position;
 pub mod generic;
 
 /// Useful to denote class and function names, where Tuples and Anonymous functions are not permitted.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Eq)]
 pub struct StringName {
     pub name: String,
     pub generics: Vec<Name>,
+}
+
+impl PartialEq for StringName {
+    /// Tuple and Callable are converted to their full names internally before checking equality.
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && {
+            // Force conversion
+            let s_generics: Vec<Name> = self.generics.iter().map(Name::full_name).collect();
+            let o_generics: Vec<Name> = other.generics.iter().map(Name::full_name).collect();
+
+            s_generics == o_generics
+        }
+    }
+}
+
+impl Name {
+    fn full_name(&self) -> Self {
+        Name { names: self.names.iter().map(TrueName::full_name).collect() }
+    }
+}
+
+impl TrueName {
+    fn full_name(&self) -> Self {
+        TrueName { variant: self.variant.full_name(), ..self.clone() }
+    }
+}
+
+impl NameVariant {
+    fn full_name(&self) -> Self {
+        NameVariant::Single(StringName::from(self))
+    }
+}
+
+impl Hash for StringName {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.generics.iter().map(Name::full_name).for_each(|n| n.hash(state));
+    }
 }
 
 impl PartialOrd<Self> for StringName {
@@ -60,7 +100,7 @@ impl ColType for StringName {
                 let iter_name = fun.ret_ty;
                 if let Ok(iter_class) = ctx.class(&iter_name, pos) {
                     let next_name = StringName::from(function::python::NEXT);
-                    let fun = iter_class.fun(&next_name, ctx, pos)?;
+                    let fun: FunUnion = iter_class.fun(&next_name, ctx, pos)?;
                     let ret_name =
                         fun.union.iter().fold(Name::empty(), |name, i| name.union(&i.ret_ty));
                     Ok(Some(ret_name))
@@ -129,7 +169,7 @@ impl Empty for StringName {
 impl Substitute for StringName {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&Name::from(self)) {
-            let string_names = name.as_direct(pos)?;
+            let string_names = name.as_direct();
             if string_names.len() > 1 {
                 let msg = format!("Cannot substitute type union {}", name);
                 return Err(vec![TypeErr::new(pos, &msg)]);

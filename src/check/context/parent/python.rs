@@ -13,7 +13,7 @@ impl From<&Argument> for GenericParent {
     fn from(argument: &Argument) -> GenericParent {
         let name = match argument {
             Argument::Positional(Expression::Name(name)) =>
-                StringName::from(python_to_concrete(name).as_ref()),
+                StringName::from(python_to_concrete(name).as_str()),
             Argument::Positional(Expression::Subscript(expr, generics)) =>
                 if let Expression::Name(name) = expr.deref() {
                     let generics: Vec<Name> = generics.iter().map(Name::from).collect();

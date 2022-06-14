@@ -9,7 +9,7 @@ use crate::check::context::Context;
 use crate::check::name::{ColType, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::result::{TryFromPos, TypeResult};
+use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
 pub mod generic;
@@ -17,8 +17,8 @@ pub mod python;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TrueName {
-    is_nullable: bool,
-    is_mutable: bool,
+    pub is_nullable: bool,
+    pub is_mutable: bool,
     pub variant: NameVariant,
 }
 
@@ -48,7 +48,7 @@ impl Mutable for TrueName {
 
 impl From<&NameVariant> for TrueName {
     fn from(variant: &NameVariant) -> Self {
-        TrueName { is_mutable: false, is_nullable: false, variant: variant.clone() }
+        TrueName { is_mutable: true, is_nullable: false, variant: variant.clone() }
     }
 }
 
@@ -77,11 +77,7 @@ impl From<&StringName> for TrueName {
 
 impl From<&str> for TrueName {
     fn from(name: &str) -> Self {
-        TrueName {
-            is_nullable: false,
-            is_mutable: true,
-            variant: NameVariant::Single(StringName::from(name)),
-        }
+        TrueName::from(&StringName::from(name))
     }
 }
 
@@ -156,9 +152,9 @@ impl Substitute for TrueName {
     }
 }
 
-impl TryFromPos<&TrueName> for StringName {
-    fn try_from_pos(value: &TrueName, pos: Position) -> TypeResult<Self> {
-        StringName::try_from_pos(&value.variant, pos)
+impl From<&TrueName> for StringName {
+    fn from(value: &TrueName) -> Self {
+        StringName::from(&value.variant)
     }
 }
 

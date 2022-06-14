@@ -6,9 +6,7 @@ use std::ops::Deref;
 use crate::check::ident::Identifier;
 use crate::check::name::match_name;
 use crate::check::name::Name;
-use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -110,14 +108,14 @@ impl TryFrom<&AST> for GenericFields {
 impl GenericField {
     pub fn in_class(
         self,
-        class: Option<&TrueName>,
+        class: Option<&StringName>,
         _type_def: bool,
         pos: Position,
     ) -> TypeResult<GenericField> {
-        if let Some(NameVariant::Single(class)) = class.map(|t| t.variant.clone()) {
-            Ok(GenericField { in_class: Some(class), ..self })
+        if class.is_some() {
+            Ok(GenericField { in_class: class.cloned(), ..self })
         } else {
-            Err(Vec::from(TypeErr::new(pos, &String::from("Field must be in class"))))
+            Err(vec![TypeErr::new(pos, &String::from("Field must be in class"))])
         }
     }
 
