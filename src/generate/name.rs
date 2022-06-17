@@ -195,19 +195,11 @@ mod tests {
         let mut imports = Imports::new();
         let core_name = name.to_py(&mut imports);
 
-        macro_rules! assert_import_contains_type {
-            ($ty: expr) => {{
-                let import = vec![Core::Id { lit: String::from($ty) }];
-                let core = Box::from(Core::Id { lit: String::from("typing") });
-                let import = Core::Import { from: Some(core), import, alias: vec![] };
-                assert!(imports.imports.contains(&import));
-            }};
-        }
-
-        assert_import_contains_type!("Union");
-        assert_import_contains_type!("Callable");
-        assert_import_contains_type!("Tuple");
-        assert_import_contains_type!("Optional");
+        let import = vec!["Callable", "Optional", "Tuple", "Union"];
+        let import = import.iter().map(|ty| Core::Id { lit: String::from(*ty) }).collect();
+        let core = Box::from(Core::Id { lit: String::from("typing") });
+        let import = Core::Import { from: Some(core), import, alias: vec![] };
+        assert!(imports.from_imports.into_iter().map(|(_, v)| v).collect::<Vec<Core>>().contains(&import));
 
         assert_eq!(
             core_name,

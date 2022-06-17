@@ -63,13 +63,14 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state)?)),
                 None => None,
             };
-            let body = if state.interface {
-                Box::from(Core::Pass)
+            let (dec, body) = if state.interface {
+                imp.add_from_import("abc", "abstractmethod");
+                (vec![String::from("abstractmethod")], Box::from(Core::Pass))
             } else {
-                Box::from(match expression {
+                (vec![], Box::from(match expression {
                     Some(expr) => convert_node(expr, imp, &state.expand_ty(true))?,
                     None => Core::Pass,
-                })
+                }))
             };
 
             let c_id = Box::from(convert_node(id, imp, state)?);
@@ -89,7 +90,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                         }
                     };
 
-                    Core::FunDef { id, arg, ty, body }
+                    Core::FunDef { dec, id, arg, ty, body }
                 }),
                 _ => Err(UnimplementedErr::new(id, "Non-id function")),
             }

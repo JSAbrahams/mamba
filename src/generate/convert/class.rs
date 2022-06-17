@@ -145,6 +145,13 @@ fn extract_class(
         })
         .collect::<GenResult<Vec<Core>>>()?;
 
+    let parent_names = if state.interface {
+        imp.add_from_import("abc", "ABC");
+        parent_names.into_iter().chain(vec![Core::Id { lit: String::from("ABC") }]).collect()
+    } else {
+        parent_names
+    };
+
     let body_stmts: Vec<Core> = body_name_stmts
         .values()
         .into_iter()
@@ -250,7 +257,8 @@ fn init(
 
     let id = String::from(function::python::INIT);
     Ok(if !statements.is_empty() {
-        Some(Core::FunDef { id, arg: args, ty: None, body: Box::new(Core::Block { statements }) })
+        let dec = vec![];
+        Some(Core::FunDef { dec, id, arg: args, ty: None, body: Box::new(Core::Block { statements }) })
     } else {
         None
     })

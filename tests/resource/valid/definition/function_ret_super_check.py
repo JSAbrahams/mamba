@@ -1,5 +1,4 @@
-from typing import Callable
-from typing import Optional
+from typing import Callable, Optional
 
 def some_higher_order(fun: Callable[[int], int]) -> int:
     fun(10)

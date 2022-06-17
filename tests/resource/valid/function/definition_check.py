@@ -1,6 +1,4 @@
-from typing import Optional
-from typing import Tuple
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 def fun_a() -> Optional[int]:
     print(11)

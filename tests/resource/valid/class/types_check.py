@@ -1,5 +1,5 @@
-from typing import NewType
-from typing import Callable
+from abc import ABC, abstractmethod
+from typing import Callable, NewType
 
 class MyGeneric(str):
     def __init__(self):
@@ -12,15 +12,16 @@ class MyType:
 SomeState = NewType("SomeState", MyClass)
 OtherState = NewType("OtherState", MyClass)
 
-class SuperInterface:
+class SuperInterface(ABC):
     bar: int = None
 
-class MyInterface(SuperInterface):
+class MyInterface(SuperInterface, ABC):
     required_field: int = None
 
     def __init__(self):
         SuperInterface.__init__(self)
 
+    @abstractmethod
     def higher_order(self) -> int:
         pass
 

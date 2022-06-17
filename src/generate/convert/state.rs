@@ -1,3 +1,7 @@
+use std::collections::BTreeMap;
+
+use itertools::Itertools;
+
 use crate::generate::ast::node::Core;
 use crate::generate::GenArguments;
 
@@ -59,6 +63,7 @@ impl State {
 
 pub struct Imports {
     pub imports: Vec<Core>,
+    pub from_imports: BTreeMap<String, Core>,
 }
 
 impl Default for Imports {
@@ -69,25 +74,52 @@ impl Default for Imports {
 
 impl Imports {
     pub fn new() -> Imports {
-        Imports { imports: vec![] }
+        Imports { imports: vec![], from_imports: BTreeMap::new() }
     }
 
     pub fn add_import(&mut self, import: &str) {
-        let import = Core::Import { from: None, import: vec![Core::Id { lit: String::from(import) }], alias: vec![] };
+        let import = Core::Import {
+            from: None,
+            import: vec![Core::Id { lit: String::from(import) }],
+            alias: vec![],
+        };
         if !self.imports.contains(&import) {
             self.imports.push(import);
         }
     }
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
+        if let Some(Core::Import { import: imports, alias, .. }) =
+        self.from_imports.get(&String::from(from))
+        {
+            let new = Core::Id { lit: String::from(import) };
+            let imports: Vec<Core> = if !imports.contains(&new) {
+                imports.clone().into_iter().chain(vec![new]).collect()
+            } else {
+                imports.to_vec()
+            };
+
+            let import = Core::Import {
+                from: Some(Box::from(Core::Id { lit: String::from(from) })),
+                import: imports
+                    .iter()
+                    .sorted_by_key(|c| match c {
+                        Core::Id { lit } => lit.clone(),
+                        _ => String::from(""),
+                    })
+                    .cloned()
+                    .collect(),
+                alias: alias.clone(),
+            };
+            self.from_imports.insert(String::from(from), import);
+            return;
+        }
+
         let import = Core::Import {
             from: Some(Box::from(Core::Id { lit: String::from(from) })),
             import: vec![Core::Id { lit: String::from(import) }],
             alias: vec![],
         };
-
-        if !self.imports.contains(&import) {
-            self.imports.push(import);
-        }
+        self.from_imports.insert(String::from(from), import);
     }
 }
