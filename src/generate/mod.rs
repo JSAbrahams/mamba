@@ -78,15 +78,11 @@ pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments) -> GenResult {
 
     let import = &mut Imports::new();
     match convert_node(ast_ty, import, &state)? {
-        Core::Block { statements: mut old_stmts } => {
-            let mut statements = import.imports.clone();
-            statements.append(&mut old_stmts);
-            Ok(Core::Block { statements })
+        Core::Block { statements } => {
+            Ok(Core::Block { statements: import.imports().into_iter().chain(statements).collect() })
         }
-        other if !import.imports.is_empty() => {
-            let mut statements = import.imports.clone();
-            statements.push(other);
-            Ok(Core::Block { statements })
+        other if !import.is_empty() => {
+            Ok(Core::Block { statements: import.imports().into_iter().chain(vec![other]).collect() })
         }
         other => Ok(other)
     }
