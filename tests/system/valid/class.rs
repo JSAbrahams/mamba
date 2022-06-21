@@ -41,6 +41,11 @@ fn doc_strings() -> OutTestRet {
 }
 
 #[test]
+fn fun_with_body_in_interface() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "fun_with_body_in_interface")
+}
+
+#[test]
 fn multiple_parent() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "multiple_parent")
 }

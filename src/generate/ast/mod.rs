@@ -78,11 +78,18 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::FunDefOp { op, arg, ty, body } => {
             let id = format!("{}", op);
-            to_py(&Core::FunDef { id, arg: arg.clone(), ty: ty.clone(), body: body.clone() }, ind)
+            let dec = vec![];
+            to_py(
+                &Core::FunDef { dec, id, arg: arg.clone(), ty: ty.clone(), body: body.clone() },
+                ind,
+            )
         }
-        Core::FunDef { id, arg, ty, body } => {
+        Core::FunDef { dec, id, arg, ty, body } => {
+            let dec: Vec<Core> = dec.iter().map(|d| Core::Id { lit: format!("@{}", d) }).collect();
             format!(
-                "def {}({}){}: {}\n",
+                "{}{}def {}({}){}: {}\n",
+                if dec.is_empty() { String::from("") } else { newline_delimited(&dec, ind - 1) },
+                if dec.is_empty() { String::from("") } else { indent(ind) },
                 id,
                 comma_delimited(arg, ind),
                 if let Some(ret_ty) = ty {
@@ -321,7 +328,7 @@ fn newline_if_body(core: &Core, ind: usize) -> String {
 fn newline_delimited(items: &[Core], ind: usize) -> String {
     let mut s = String::new();
     items.iter().for_each(|item| writeln!(s, "{}{}", indent(ind), to_py(item, ind)).unwrap());
-    String::from(s.trim_end())
+    s
 }
 
 fn comma_delimited(items: &[Core], ind: usize) -> String {

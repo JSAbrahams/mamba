@@ -18,7 +18,7 @@ pub enum Core {
     Assign { left: Box<Core>, right: Box<Core>, op: CoreOp },
     VarDef { var: Box<Core>, ty: Option<Box<Core>>, expr: Option<Box<Core>> },
     FunDefOp { op: CoreFunOp, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
-    FunDef { id: String, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
+    FunDef { dec: Vec<String>, id: String, arg: Vec<Core>, ty: Option<Box<Core>>, body: Box<Core> },
     FunArg { vararg: bool, var: Box<Core>, ty: Option<Box<Core>>, default: Option<Box<Core>> },
     AnonFun { args: Vec<Core>, body: Box<Core> },
     Block { statements: Vec<Core> },
