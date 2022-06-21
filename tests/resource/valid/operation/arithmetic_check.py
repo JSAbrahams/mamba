@@ -1,5 +1,5 @@
-from typing import Union
 import math
+from typing import Union
 
 a: Union[float, int] = 10
 b: int = 20
