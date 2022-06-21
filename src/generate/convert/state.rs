@@ -62,8 +62,8 @@ impl State {
 }
 
 pub struct Imports {
-    pub imports: Vec<Core>,
-    pub from_imports: BTreeMap<String, Core>,
+    imports: Vec<Core>,
+    from_imports: BTreeMap<String, Core>,
 }
 
 impl Default for Imports {
@@ -121,5 +121,15 @@ impl Imports {
             alias: vec![],
         };
         self.from_imports.insert(String::from(from), import);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.imports.is_empty() && self.from_imports.is_empty()
+    }
+
+    pub fn imports(&self) -> Vec<Core> {
+        let mut statements = self.imports.clone();
+        statements.append(&mut self.from_imports.clone().into_values().collect());
+        statements
     }
 }

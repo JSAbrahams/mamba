@@ -199,7 +199,7 @@ mod tests {
         let import = import.iter().map(|ty| Core::Id { lit: String::from(*ty) }).collect();
         let core = Box::from(Core::Id { lit: String::from("typing") });
         let import = Core::Import { from: Some(core), import, alias: vec![] };
-        assert!(imports.from_imports.into_iter().map(|(_, v)| v).collect::<Vec<Core>>().contains(&import));
+        assert!(imports.imports().contains(&import));
 
         assert_eq!(
             core_name,

@@ -298,7 +298,7 @@ mod tests {
             Ok(Core::Import { from, import, alias }) => {
                 (from.clone(), import.clone(), alias.clone())
             }
-            other => panic!("Expected tuple but got {:?}", other),
+            other => panic!("Expected import but got {:?}", other),
         };
 
         assert_eq!(*from.unwrap(), Core::Break);

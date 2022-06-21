@@ -63,7 +63,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state)?)),
                 None => None,
             };
-            let (dec, body) = if state.interface {
+            let (dec, body) = if state.interface && expression.is_none() {
                 imp.add_from_import("abc", "abstractmethod");
                 (vec![String::from("abstractmethod")], Box::from(Core::Pass))
             } else {
