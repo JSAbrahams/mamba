@@ -72,7 +72,7 @@ pub fn gen_call(
                     acc
                 });
 
-                let name = Name::from(clss::STRING);
+                let name = Name::empty();
                 let parent = Expected::new(ast.pos, &Expect::Type { name });
                 constr.add("print", &parent, &Expected::try_from((ast, &env.var_mappings))?);
                 return Ok((constr, env));
