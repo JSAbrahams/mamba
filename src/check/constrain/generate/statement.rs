@@ -21,7 +21,12 @@ pub fn gen_stmt(
             let mut constr = constrain_raises(&raise_expected, &env.raises, constr)?;
             generate(error, env, ctx, &mut constr)
         }
-        Node::ReturnEmpty => Ok((constr.clone(), env.clone())),
+        Node::ReturnEmpty => if let Some(exp) = &env.return_type {
+            let msg = format!("Empty return in function which returns {}", exp);
+            Err(vec![TypeErr::new(ast.pos, &msg)])
+        } else {
+            Ok((constr.clone(), env.clone()))
+        },
         Node::Return { expr } =>
             if let Some(expected_ret_ty) = &env.return_type {
                 constr.add("return", expected_ret_ty, &Expected::try_from((expr, &env.var_mappings))?);
