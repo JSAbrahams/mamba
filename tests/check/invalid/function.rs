@@ -82,6 +82,24 @@ fn wrong_exception() {
 }
 
 #[test]
+fn function_with_stmt_body() {
+    let source = resource_content(false, &["type", "function"], "function_with_stmt_body.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn function_with_stmt_body_ret() {
+    let source = resource_content(false, &["type", "function"], "function_with_stmt_body_ret.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn return_exp_expr() {
+    let source = resource_content(false, &["type", "function"], "return_exp_expr.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn wrong_return_type() {
     let source = resource_content(false, &["type", "function"], "wrong_return_type.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

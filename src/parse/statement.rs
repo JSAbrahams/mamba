@@ -7,8 +7,8 @@ use crate::parse::expr_or_stmt::parse_expr_or_stmt;
 use crate::parse::iterator::LexIterator;
 use crate::parse::lex::token::{Lex, Token};
 use crate::parse::operation::parse_expression;
-use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
 use crate::parse::result::{custom, expected_one_of};
+use crate::parse::result::{eof_expected_one_of, expected, ParseResult};
 use crate::parse::ty::{parse_expression_type, parse_id};
 
 pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
@@ -27,27 +27,14 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::Def => parse_definition(it),
             Token::With => parse_with(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
+            Token::Ret => parse_return(it),
             _ => Err(expected_one_of(
-                &[
-                    Token::Pass,
-                    Token::Raise,
-                    Token::Def,
-                    Token::With,
-                    Token::For,
-                    Token::While,
-                ],
+                &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
                 lex,
                 "statement",
             )),
         },
-        &[
-            Token::Pass,
-            Token::Raise,
-            Token::Def,
-            Token::With,
-            Token::For,
-            Token::While,
-        ],
+        &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
         "statement",
     )
 }
@@ -76,7 +63,7 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
-            _ => Err(expected(&Token::Id(String::new()), lex, "as"))
+            _ => Err(expected(&Token::Id(String::new()), lex, "as")),
         })?;
         alias
     } else {
@@ -101,7 +88,7 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
         Token::DivAssign,
         Token::PowAssign,
         Token::BLShiftAssign,
-        Token::BRShiftAssign
+        Token::BRShiftAssign,
     ];
 
     let (token, op) = if let Some(token) = it.peek_next() {
@@ -114,7 +101,9 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
             Lex { token: Token::PowAssign, .. } => (Token::PowAssign, NodeOp::Pow),
             Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, NodeOp::BLShift),
             Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, NodeOp::BRShift),
-            lex => { return Err(expected_one_of(&expect, lex, "reassignment")); }
+            lex => {
+                return Err(expected_one_of(&expect, lex, "reassignment"));
+            }
         }
     } else {
         return Err(eof_expected_one_of(&expect, "reassignment"));
@@ -149,6 +138,22 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     Ok(Box::from(AST::new(start.union(expr.pos), node)))
 }
 
+pub fn parse_return(it: &mut LexIterator) -> ParseResult {
+    let start = it.start_pos("return")?;
+    it.eat(&Token::Ret, "return")?;
+
+    if let Some(end) = it.eat_if(&Token::NL) {
+        let node = Node::ReturnEmpty;
+        return Ok(Box::from(AST::new(start.union(end), node)));
+    } else if it.peek_if(&|lex| lex.token == Token::Dedent) || it.peek_next().is_none() {
+        let node = Node::ReturnEmpty;
+        return Ok(Box::from(AST::new(start, node)));
+    }
+
+    let expr = it.parse(&parse_expression, "return", start)?;
+    Ok(Box::from(AST::new(start.union(expr.pos), Node::Return { expr })))
+}
+
 pub fn is_start_statement(tp: &Token) -> bool {
     matches!(
         tp,
@@ -159,6 +164,7 @@ pub fn is_start_statement(tp: &Token) -> bool {
             | Token::Pass
             | Token::Raise
             | Token::With
+            | Token::Ret
     )
 }
 
