@@ -2,8 +2,8 @@ use std::ops::Deref;
 
 use python_parser::ast::{Argument, Expression, Subscript};
 
+use crate::check::context::clss::parent::generic::GenericParent;
 use crate::check::context::clss::python::python_to_concrete;
-use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;

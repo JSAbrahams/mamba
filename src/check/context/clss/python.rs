@@ -6,22 +6,23 @@ use python_parser::ast::{Classdef, CompoundStatement, Statement};
 
 use crate::check::context::{clss, function};
 use crate::check::context::clss::generic::GenericClass;
+use crate::check::context::clss::parameter::python::GenericParameters;
+use crate::check::context::clss::parent::generic::GenericParent;
 use crate::check::context::field::generic::GenericFields;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
-use crate::check::context::parameter::python::GenericParameters;
-use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
-pub const INT_PRIMITIVE: &str = "int";
-pub const FLOAT_PRIMITIVE: &str = "float";
-pub const STRING_PRIMITIVE: &str = "str";
-pub const BOOL_PRIMITIVE: &str = "bool";
-pub const ENUM_PRIMITIVE: &str = "enum";
-pub const COMPLEX_PRIMITIVE: &str = "complex";
+pub const INT: &str = "int";
+pub const FLOAT: &str = "float";
+pub const STRING: &str = "str";
+pub const BOOL: &str = "bool";
+pub const ENUM: &str = "enum";
+pub const COMPLEX: &str = "complex";
+pub const BYTES: &str = "bytes";
 
 pub const COLLECTION: &str = "collection";
 pub const RANGE: &str = "range";
@@ -104,12 +105,13 @@ impl TryFrom<&Classdef> for GenericClass {
 
 pub fn python_to_concrete(name: &str) -> String {
     match name {
-        INT_PRIMITIVE => String::from(clss::INT),
-        FLOAT_PRIMITIVE => String::from(clss::FLOAT),
-        STRING_PRIMITIVE => String::from(clss::STRING),
-        BOOL_PRIMITIVE => String::from(clss::BOOL),
-        ENUM_PRIMITIVE => String::from(clss::ENUM),
-        COMPLEX_PRIMITIVE => String::from(clss::COMPLEX),
+        INT => String::from(clss::INT),
+        FLOAT => String::from(clss::FLOAT),
+        STRING => String::from(clss::STRING),
+        BOOL => String::from(clss::BOOL),
+        ENUM => String::from(clss::ENUM),
+        COMPLEX => String::from(clss::COMPLEX),
+        BYTES => String::from(clss::BYTES),
 
         COLLECTION => String::from(clss::COLLECTION),
         RANGE => String::from(clss::RANGE),

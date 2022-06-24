@@ -6,10 +6,10 @@ use std::ops::Deref;
 
 use crate::check::context::arg;
 use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
+use crate::check::context::clss::parent::generic::GenericParent;
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
-use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};

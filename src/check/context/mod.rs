@@ -13,9 +13,7 @@ pub mod arg;
 pub mod clss;
 pub mod field;
 pub mod function;
-pub mod parent;
 
-mod parameter;
 mod resource;
 
 mod generic;

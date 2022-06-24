@@ -26,6 +26,7 @@ pub const STRING: &str = "String";
 pub const BOOL: &str = "Bool";
 pub const ENUM: &str = "Enum";
 pub const COMPLEX: &str = "Complex";
+pub const BYTES: &str = "Bytes";
 
 pub const COLLECTION: &str = "Collection";
 pub const RANGE: &str = "Range";
@@ -38,6 +39,9 @@ pub const CALLABLE: &str = "Callable";
 
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
+
+pub mod parameter;
+pub mod parent;
 
 pub mod generic;
 pub mod python;
@@ -270,12 +274,13 @@ impl GetFun<Function> for Class {
 
 pub fn concrete_to_python(name: &str) -> String {
     match name {
-        INT => String::from(python::INT_PRIMITIVE),
-        FLOAT => String::from(python::FLOAT_PRIMITIVE),
-        STRING => String::from(python::STRING_PRIMITIVE),
-        BOOL => String::from(python::BOOL_PRIMITIVE),
-        ENUM => String::from(python::ENUM_PRIMITIVE),
-        COMPLEX => String::from(python::COMPLEX_PRIMITIVE),
+        INT => String::from(python::INT),
+        FLOAT => String::from(python::FLOAT),
+        STRING => String::from(python::STRING),
+        BOOL => String::from(python::BOOL),
+        ENUM => String::from(python::ENUM),
+        COMPLEX => String::from(python::COMPLEX),
+        BYTES => String::from(python::BYTES),
 
         COLLECTION => String::from(python::COLLECTION),
         RANGE => String::from(python::RANGE),

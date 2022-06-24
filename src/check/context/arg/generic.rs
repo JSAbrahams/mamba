@@ -113,11 +113,11 @@ impl TryFrom<&AST> for GenericFunctionArg {
                         None if name.as_str() == SELF => None,
                         None => if let Some(default) = default {
                             Some(match &default.deref().node {
-                                Node::Str { .. } => Name::from(clss::python::STRING_PRIMITIVE),
-                                Node::Bool { .. } => Name::from(clss::python::BOOL_PRIMITIVE),
-                                Node::Int { .. } => Name::from(clss::python::INT_PRIMITIVE),
-                                Node::Real { .. } => Name::from(clss::python::FLOAT_PRIMITIVE),
-                                Node::ENum { .. } => Name::from(clss::python::INT_PRIMITIVE),
+                                Node::Str { .. } => Name::from(clss::python::STRING),
+                                Node::Bool { .. } => Name::from(clss::python::BOOL),
+                                Node::Int { .. } => Name::from(clss::python::INT),
+                                Node::Real { .. } => Name::from(clss::python::FLOAT),
+                                Node::ENum { .. } => Name::from(clss::python::INT),
                                 _ => return Err(vec![TypeErr::new(
                                     default.pos,
                                     "Can only infer type of literals",

@@ -1,0 +1,2 @@
+def x: Bytes := Bytes(20)
+def y: Bytes := Bytes("my_string", encoding="ascii")
