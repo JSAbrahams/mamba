@@ -29,7 +29,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::LRBrack,
         Token::LSBrack,
         Token::LCBrack,
-        Token::Ret,
         Token::Underscore,
         Token::_Self,
         Token::Real(String::new()),
@@ -51,7 +50,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match &lex.token {
             Token::If | Token::Match => parse_cntrl_flow_expr(it),
             Token::LRBrack | Token::LSBrack | Token::LCBrack => parse_collection(it),
-            Token::Ret => parse_return(it),
             Token::Underscore => parse_underscore(it),
 
             Token::Id(_) => parse_id(it),
@@ -139,19 +137,6 @@ fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
     let node = Node::Index { item, range };
     let end = it.eat(&Token::RSBrack, "index")?;
     Ok(Box::from(AST::new(pre.pos.union(end), node)))
-}
-
-fn parse_return(it: &mut LexIterator) -> ParseResult {
-    let start = it.start_pos("return")?;
-    it.eat(&Token::Ret, "return")?;
-
-    if let Some(end) = it.eat_if(&Token::NL) {
-        let node = Node::ReturnEmpty;
-        return Ok(Box::from(AST::new(start.union(end), node)));
-    }
-
-    let expr = it.parse(&parse_expression, "return", start)?;
-    Ok(Box::from(AST::new(start.union(expr.pos), Node::Return { expr })))
 }
 
 /// Excluding unary addition and subtraction
