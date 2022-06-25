@@ -67,10 +67,14 @@ pub fn gen_call(
                     .collect::<TypeResult<Vec<Expected>>>()?;
                 let args: Vec<Constraint> =
                     args.iter().map(|exp| Constraint::stringy("print", exp)).collect();
-                let constr = args.iter().fold(constr.clone(), |mut acc, a| {
+                let mut constr = args.iter().fold(constr.clone(), |mut acc, a| {
                     acc.add_constr(a);
                     acc
                 });
+
+                let name = Name::empty();
+                let parent = Expected::new(ast.pos, &Expect::Type { name });
+                constr.add("print", &parent, &Expected::try_from((ast, &env.var_mappings))?);
                 return Ok((constr, env));
             } else if let Some(functions) = env.get_var(&f_name.name) {
                 if !f_name.generics.is_empty() {

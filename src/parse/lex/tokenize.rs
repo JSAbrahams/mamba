@@ -309,6 +309,30 @@ mod test {
     use crate::parse::lex::tokenize;
 
     #[test]
+    fn function_with_ret() -> Result<(), LexErr> {
+        let source = "def f(x: Int) -> Int =>\n    return";
+        let tokens = tokenize(&source)
+            .map_err(|e| e.into_with_source(&Some(String::from(source)), &None))?;
+
+        assert_eq!(tokens[0].token, Token::Def);
+        assert_eq!(tokens[1].token, Token::Id(String::from("f")));
+        assert_eq!(tokens[2].token, Token::LRBrack);
+        assert_eq!(tokens[3].token, Token::Id(String::from("x")));
+        assert_eq!(tokens[4].token, Token::DoublePoint);
+        assert_eq!(tokens[5].token, Token::Id(String::from("Int")));
+        assert_eq!(tokens[6].token, Token::RRBrack);
+        assert_eq!(tokens[7].token, Token::To);
+        assert_eq!(tokens[8].token, Token::Id(String::from("Int")));
+        assert_eq!(tokens[9].token, Token::BTo);
+        assert_eq!(tokens[10].token, Token::NL);
+        assert_eq!(tokens[11].token, Token::Indent);
+        assert_eq!(tokens[12].token, Token::Ret);
+        assert_eq!(tokens[13].token, Token::Dedent);
+
+        Ok(())
+    }
+
+    #[test]
     fn class_with_body_class_right_after() -> Result<(), LexErr> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
         let tokens = tokenize(&source)
