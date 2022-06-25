@@ -1,9 +1,9 @@
+use crate::{Context, PipelineArguments};
 use crate::check::ast::ASTTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::GenResult;
-use crate::PipelineArguments;
 
 mod convert;
 
@@ -73,11 +73,11 @@ impl From<&PipelineArguments> for GenArguments {
 ///
 /// A malformed [AST](crate::parser::ast::AST) causes this stage
 /// to panic.
-pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments) -> GenResult {
+pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments, ctx: &Context) -> GenResult {
     let state = State::from(gen_args);
 
     let import = &mut Imports::new();
-    match convert_node(ast_ty, import, &state)? {
+    match convert_node(ast_ty, import, &state, ctx)? {
         Core::Block { statements } => {
             Ok(Core::Block { statements: import.imports().into_iter().chain(statements).collect() })
         }
@@ -89,5 +89,5 @@ pub fn gen_arguments(ast_ty: &ASTTy, gen_args: &GenArguments) -> GenResult {
 }
 
 pub fn gen(ast_ty: &ASTTy) -> GenResult {
-    gen_arguments(ast_ty, &GenArguments::default())
+    gen_arguments(ast_ty, &GenArguments::default(), &Context::default())
 }
