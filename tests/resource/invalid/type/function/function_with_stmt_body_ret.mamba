@@ -1,0 +1,1 @@
+def f(x: Int) -> Int => return print(x)
