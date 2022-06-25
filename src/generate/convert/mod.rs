@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use crate::ASTTy;
+use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::{Core, CoreOp};
@@ -26,32 +26,32 @@ mod ty;
 
 pub mod state;
 
-pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     let assign_to = state.assign_to.clone();
     let state = &state.assign_to(None);
 
     let core = match &ast.node {
         NodeTy::Import { from, import, alias } => Core::Import {
             from: if let Some(from) = from {
-                Some(Box::from(convert_node(from, imp, state)?))
+                Some(Box::from(convert_node(from, imp, state, ctx)?))
             } else {
                 None
             },
-            import: convert_vec(import, imp, state)?,
-            alias: convert_vec(alias, imp, state)?,
+            import: convert_vec(import, imp, state, ctx)?,
+            alias: convert_vec(alias, imp, state, ctx)?,
         },
 
         NodeTy::VariableDef { .. } | NodeTy::FunDef { .. } | NodeTy::FunArg { .. } => {
-            convert_def(ast, imp, state)?
+            convert_def(ast, imp, state, ctx)?
         }
         NodeTy::Reassign { left, right, op } => Core::Assign {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
             op: CoreOp::try_from((ast, op))?,
         },
 
         NodeTy::Block { statements } => Core::Block {
-            statements: convert_stmts(statements, imp, &state.assign_to(assign_to.as_ref()))?,
+            statements: convert_stmts(statements, imp, &state.assign_to(assign_to.as_ref()), ctx)?,
         },
 
         NodeTy::Int { lit } => Core::Int { int: lit.clone() },
@@ -66,22 +66,22 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
         }
         NodeTy::Str { lit, .. } => Core::FStr { string: lit.clone() },
 
-        NodeTy::QuestionOp { .. } => convert_ty(ast, imp, state)?,
+        NodeTy::QuestionOp { .. } => convert_ty(ast, imp, state, ctx)?,
 
         NodeTy::Undefined => Core::None,
-        NodeTy::ExpressionType { .. } => convert_ty(ast, imp, state)?,
+        NodeTy::ExpressionType { .. } => convert_ty(ast, imp, state, ctx)?,
         NodeTy::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         NodeTy::Bool { lit } => Core::Bool { boolean: *lit },
 
         NodeTy::Tuple { elements } if state.tup_lit => {
-            Core::TupleLiteral { elements: convert_vec(elements, imp, state)? }
+            Core::TupleLiteral { elements: convert_vec(elements, imp, state, ctx)? }
         }
-        NodeTy::Tuple { elements } => Core::Tuple { elements: convert_vec(elements, imp, state)? },
-        NodeTy::List { elements } => Core::List { elements: convert_vec(elements, imp, state)? },
-        NodeTy::Set { elements } => Core::Set { elements: convert_vec(elements, imp, state)? },
+        NodeTy::Tuple { elements } => Core::Tuple { elements: convert_vec(elements, imp, state, ctx)? },
+        NodeTy::List { elements } => Core::List { elements: convert_vec(elements, imp, state, ctx)? },
+        NodeTy::Set { elements } => Core::Set { elements: convert_vec(elements, imp, state, ctx)? },
         NodeTy::Index { item, range } => Core::Index {
-            item: Box::from(convert_node(item, imp, state)?),
-            range: Box::from(convert_node(range, imp, state)?),
+            item: Box::from(convert_node(item, imp, state, ctx)?),
+            range: Box::from(convert_node(range, imp, state, ctx)?),
         },
 
         NodeTy::ListBuilder { .. } => return Err(UnimplementedErr::new(ast, "list builder")),
@@ -89,156 +89,156 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         NodeTy::Return { expr } => {
-            Core::Return { expr: Box::from(convert_node(expr, imp, state)?) }
+            Core::Return { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
 
         NodeTy::IfElse { .. }
         | NodeTy::While { .. }
         | NodeTy::For { .. }
         | NodeTy::Break
-        | NodeTy::Continue => convert_cntrl_flow(ast, imp, state)?,
-        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false))?,
+        | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
+        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false), ctx)?,
 
-        NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state)?) },
+        NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
         NodeTy::And { left, right } => Core::And {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Or { left, right } => Core::Or {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Is { left, right } => Core::Is {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::IsN { left, right } => Core::IsN {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Eq { left, right } => Core::Eq {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Neq { left, right } => Core::Neq {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::IsA { left, right } => Core::IsA {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::IsNA { left, right } => Core::Not {
             expr: Box::from(Core::IsA {
-                left: Box::from(convert_node(left, imp, state)?),
-                right: Box::from(convert_node(right, imp, state)?),
+                left: Box::from(convert_node(left, imp, state, ctx)?),
+                right: Box::from(convert_node(right, imp, state, ctx)?),
             }),
         },
 
         NodeTy::Add { left, right } => Core::Add {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Sub { left, right } => Core::Sub {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Mul { left, right } => Core::Mul {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Div { left, right } => Core::Div {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::FDiv { left, right } => Core::FDiv {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Mod { left, right } => Core::Mod {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Pow { left, right } => Core::Pow {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
         NodeTy::BAnd { left, right } => Core::BAnd {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::BOr { left, right } => Core::BOr {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::BXOr { left, right } => Core::BXOr {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::BOneCmpl { expr } => {
-            Core::BOneCmpl { expr: Box::from(convert_node(expr, imp, state)?) }
+            Core::BOneCmpl { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
         NodeTy::BLShift { left, right } => Core::BLShift {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::BRShift { left, right } => Core::BRShift {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::AddU { expr } => Core::AddU { expr: Box::from(convert_node(expr, imp, state)?) },
-        NodeTy::SubU { expr } => Core::SubU { expr: Box::from(convert_node(expr, imp, state)?) },
+        NodeTy::AddU { expr } => Core::AddU { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
+        NodeTy::SubU { expr } => Core::SubU { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
         NodeTy::Sqrt { expr } => {
             imp.add_import("math");
-            Core::Sqrt { expr: Box::from(convert_node(expr, imp, state)?) }
+            Core::Sqrt { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
 
         NodeTy::Le { left, right } => Core::Le {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Leq { left, right } => Core::Leq {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Ge { left, right } => Core::Ge {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
         NodeTy::Geq { left, right } => Core::Geq {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
-        NodeTy::FunctionCall { .. } | NodeTy::PropertyCall { .. } => convert_call(ast, imp, state)?,
+        NodeTy::FunctionCall { .. } | NodeTy::PropertyCall { .. } => convert_call(ast, imp, state, ctx)?,
         NodeTy::AnonFun { args, body } => Core::AnonFun {
-            args: convert_vec(args, imp, &state.expand_ty(false))?,
-            body: Box::from(convert_node(body, imp, state)?),
+            args: convert_vec(args, imp, &state.expand_ty(false), ctx)?,
+            body: Box::from(convert_node(body, imp, state, ctx)?),
         },
 
         NodeTy::In { left, right } => Core::In {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-        NodeTy::Range { .. } | NodeTy::Slice { .. } => convert_range_slice(ast, imp, state)?,
+        NodeTy::Range { .. } | NodeTy::Slice { .. } => convert_range_slice(ast, imp, state, ctx)?,
 
         NodeTy::Underscore => Core::UnderScore,
         NodeTy::Question { left, right } => Core::Or {
-            left: Box::from(convert_node(left, imp, state)?),
-            right: Box::from(convert_node(right, imp, state)?),
+            left: Box::from(convert_node(left, imp, state, ctx)?),
+            right: Box::from(convert_node(right, imp, state, ctx)?),
         },
 
         NodeTy::TypeTup { .. }
         | NodeTy::Type { .. }
         | NodeTy::TypeFun { .. }
-        | NodeTy::TypeUnion { .. } => convert_ty(ast, imp, state)?,
+        | NodeTy::TypeUnion { .. } => convert_ty(ast, imp, state, ctx)?,
 
-        NodeTy::TypeDef { .. } | NodeTy::TypeAlias { .. } => convert_class(ast, imp, state)?,
-        NodeTy::Class { .. } => convert_class(ast, imp, state)?,
+        NodeTy::TypeDef { .. } | NodeTy::TypeAlias { .. } => convert_class(ast, imp, state, ctx)?,
+        NodeTy::Class { .. } => convert_class(ast, imp, state, ctx)?,
         NodeTy::Generic { .. } => Core::Empty,
-        NodeTy::Parent { .. } => convert_class(ast, imp, state)?,
+        NodeTy::Parent { .. } => convert_class(ast, imp, state, ctx)?,
 
         NodeTy::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
 
@@ -246,17 +246,17 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult 
         NodeTy::Pass => Core::Pass,
 
         NodeTy::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
-            resource: Box::from(convert_node(resource, imp, state)?),
-            alias: Box::from(convert_node(alias, imp, &state.expand_ty(false))?),
-            expr: Box::from(convert_node(expr, imp, state)?),
+            resource: Box::from(convert_node(resource, imp, state, ctx)?),
+            alias: Box::from(convert_node(alias, imp, &state.expand_ty(false), ctx)?),
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
         NodeTy::With { resource, expr, .. } => Core::With {
-            resource: Box::from(convert_node(resource, imp, state)?),
-            expr: Box::from(convert_node(expr, imp, state)?),
+            resource: Box::from(convert_node(resource, imp, state, ctx)?),
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
 
         NodeTy::Raises { .. } | NodeTy::Raise { .. } | NodeTy::Handle { .. } => {
-            convert_handle(ast, imp, state)?
+            convert_handle(ast, imp, state, ctx)?
         }
 
         _ => Core::Empty,

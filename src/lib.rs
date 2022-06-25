@@ -161,31 +161,25 @@ pub fn mamba_to_python(
     let asts: Vec<AST> = asts.into_iter().map(Result::unwrap).collect();
     trace!("Parsed {} files", asts.len());
 
-    let ctx = Context::try_from(asts.as_ref());
-    let typed_ast: Vec<ASTTy> = match ctx {
-        Ok(ctx) => {
-            let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
-                .iter()
-                .zip(&source)
-                .map(|(ast, (src, path))| {
-                    check(ast, &ctx).map_err(|errs| {
-                        errs.iter()
-                            .map(|err| err.clone().with_source(&Some(src.clone()), &path.clone()))
-                            .collect()
-                    })
-                })
-                .partition(Result::is_ok);
+    let ctx = Context::try_from(asts.as_ref())
+        .map_err(|errs| errs.iter().map(|e| format!("{}", e)).collect::<Vec<String>>())?;
+    let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
+        .iter()
+        .zip(&source)
+        .map(|(ast, (src, path))| {
+            check(ast, &ctx).map_err(|errs| {
+                errs.iter()
+                    .map(|err| err.clone().with_source(&Some(src.clone()), &path.clone()))
+                    .collect()
+            })
+        })
+        .partition(Result::is_ok);
 
-            let type_errs: Vec<Vec<TypeErr>> =
-                type_errs.into_iter().map(Result::unwrap_err).collect();
-            if !type_errs.is_empty() {
-                return Err(type_errs.iter().flatten().map(|err| format!("{}", err)).collect());
-            } else {
-                typed_ast.into_iter().map(Result::unwrap).collect()
-            }
-        }
-        Err(errs) => return Err(errs.iter().map(|e| format!("{}", e)).collect()),
-    };
+    let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
+    if !type_errs.is_empty() {
+        return Err(type_errs.iter().flatten().map(|err| format!("{}", err)).collect());
+    }
+    let typed_ast = typed_ast.into_iter().map(Result::unwrap).collect::<Vec<ASTTy>>();
 
     trace!("Checked {} files", typed_ast.len());
 
@@ -194,7 +188,7 @@ pub fn mamba_to_python(
         .iter()
         .zip(&source)
         .map(|(ast_ty, (src, path))| {
-            gen_arguments(ast_ty, &gen_args)
+            gen_arguments(ast_ty, &gen_args, &ctx)
                 .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
                 .map(|core| core.to_source())
         })
