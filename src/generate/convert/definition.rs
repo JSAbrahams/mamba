@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::ASTTy;
+use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::{arg, function};
 use crate::generate::ast::node::{Core, CoreFunOp};
@@ -10,10 +10,10 @@ use crate::generate::convert::state::{Imports, State};
 use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
-pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     match &ast.node {
         NodeTy::VariableDef { var, expr: expression, ty, .. } => {
-            let var = convert_node(var, imp, &state.tuple_literal())?;
+            let var = convert_node(var, imp, &state.tuple_literal(), ctx)?;
             let state = state.in_tup(match var.clone() {
                 Core::Tuple { elements } => elements.len(),
                 _ => 1,
@@ -24,12 +24,12 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                     vararg: false,
                     var: Box::from(var),
                     ty: match ty {
-                        Some(ty) => Some(Box::from(convert_node(ty, imp, &state)?)),
+                        Some(ty) => Some(Box::from(convert_node(ty, imp, &state, ctx)?)),
                         None if state.annotate => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
                         _ => None
                     },
                     default: match expression {
-                        Some(expression) => Some(Box::from(convert_node(expression, imp, &state)?)),
+                        Some(expression) => Some(Box::from(convert_node(expression, imp, &state, ctx)?)),
                         None => None,
                     },
                 }
@@ -40,7 +40,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                         None
                     } else {
                         match (ty, expression) {
-                            (Some(ty), _) => Some(Box::from(convert_node(ty, imp, &state)?)),
+                            (Some(ty), _) => Some(Box::from(convert_node(ty, imp, &state, ctx)?)),
                             (_, Some(expr)) if state.annotate => {
                                 expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from)
                             }
@@ -48,7 +48,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                         }
                     },
                     expr: match (var, expression) {
-                        (_, Some(expr)) => Some(Box::from(convert_node(expr, imp, &state)?)),
+                        (_, Some(expr)) => Some(Box::from(convert_node(expr, imp, &state, ctx)?)),
                         (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
                             elements: vec![Core::None; elements.len()],
                         })),
@@ -58,9 +58,9 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
             })
         }
         NodeTy::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => {
-            let arg = convert_vec(fun_args, imp, state)?;
+            let arg = convert_vec(fun_args, imp, state, ctx)?;
             let ty = match ret_ty {
-                Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state)?)),
+                Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state, ctx)?)),
                 None => None,
             };
             let (dec, body) = if state.interface && expression.is_none() {
@@ -68,12 +68,12 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
                 (vec![String::from("abstractmethod")], Box::from(Core::Pass))
             } else {
                 (vec![], Box::from(match expression {
-                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true))?,
+                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true), ctx)?,
                     None => Core::Pass,
                 }))
             };
 
-            let c_id = Box::from(convert_node(id, imp, state)?);
+            let c_id = Box::from(convert_node(id, imp, state, ctx)?);
             match c_id.deref() {
                 Core::Id { lit } => Ok(if let Some(op) = CoreFunOp::from(lit.as_str()) {
                     Core::FunDefOp { op, arg, ty, body }
@@ -97,16 +97,16 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
         }
         NodeTy::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {
             vararg: *vararg,
-            var: Box::from(convert_node(var, imp, state)?),
+            var: Box::from(convert_node(var, imp, state, ctx)?),
             ty: match ty {
                 Some(ty) if state.expand_ty => match &var.node {
                     NodeTy::Id { lit } if lit == &String::from(arg::SELF) => None,
-                    _ => Some(Box::from(convert_node(ty, imp, state)?)),
+                    _ => Some(Box::from(convert_node(ty, imp, state, ctx)?)),
                 },
                 _ => None,
             },
             default: match default {
-                Some(default) => Some(Box::from(convert_node(default, imp, state)?)),
+                Some(default) => Some(Box::from(convert_node(default, imp, state, ctx)?)),
                 None => None,
             },
         }),

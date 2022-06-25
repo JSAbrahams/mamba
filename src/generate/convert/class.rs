@@ -3,9 +3,13 @@ use std::ops::Deref;
 
 use itertools::Itertools;
 
-use crate::ASTTy;
+use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
-use crate::check::context::{arg, function};
+use crate::check::context::{arg, function, LookupClass};
+use crate::check::context::clss::Class;
+use crate::check::name::Empty;
+use crate::check::name::true_name::TrueName;
+use crate::common::position::Position;
 use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
@@ -19,11 +23,11 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 /// This property should be ensured by the type checker.
 ///
 /// We add arguments and calls to super for parents.
-pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     match &ast.node {
         NodeTy::TypeAlias { ty, isa, .. } => {
             imp.add_from_import("typing", "NewType");
-            let lit = if let Core::Type { lit, .. } = convert_node(ty, imp, state)? {
+            let lit = if let Core::Type { lit, .. } = convert_node(ty, imp, state, ctx)? {
                 lit
             } else {
                 let msg = format!("identifier, was {:?}", ty);
@@ -34,29 +38,29 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult
                 left: Box::new(Core::Id { lit: lit.clone() }),
                 right: Box::new(Core::FunctionCall {
                     function: Box::new(Core::Id { lit: String::from("NewType") }),
-                    args: vec![Core::Str { string: lit }, convert_node(isa, imp, state)?],
+                    args: vec![Core::Str { string: lit }, convert_node(isa, imp, state, ctx)?],
                 }),
                 op: CoreOp::Assign,
             })
         }
         NodeTy::TypeDef { ty, body, isa } => {
             let parents = if let Some(isa) = isa { vec![isa.deref().clone()] } else { vec![] };
-            extract_class(ty, body, &[], &parents, imp, &state.in_interface(true))
+            extract_class(ty, body, &[], &parents, imp, &state.in_interface(true), ctx)
         }
         NodeTy::Class { ty, body, args, parents } => {
-            extract_class(ty, body, args, parents, imp, &state.in_interface(false))
+            extract_class(ty, body, args, parents, imp, &state.in_interface(false), ctx)
         }
 
         NodeTy::Parent { ty, args } => {
             if args.is_empty() {
-                convert_node(ty, imp, state)
+                convert_node(ty, imp, state, ctx)
             } else {
                 Ok(Core::FunctionCall {
-                    function: Box::from(match convert_node(ty, imp, state)? {
+                    function: Box::from(match convert_node(ty, imp, state, ctx)? {
                         Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
                         other => other,
                     }),
-                    args: convert_vec(args, imp, state)?,
+                    args: convert_vec(args, imp, state, ctx)?,
                 })
             }
         }
@@ -83,13 +87,14 @@ fn extract_class(
     parents: &[ASTTy],
     imp: &mut Imports,
     state: &State,
+    ctx: &Context,
 ) -> GenResult {
     let id = match &ty.node {
-        NodeTy::Type { id, .. } => convert_node(id, imp, state)?,
+        NodeTy::Type { id, .. } => convert_node(id, imp, state, ctx)?,
         _ => return Err(UnimplementedErr::new(ty, "Other than type as class identifier")),
     };
 
-    let body = body.clone().map(|body| convert_node(body.deref(), imp, state));
+    let body = body.clone().map(|body| convert_node(body.deref(), imp, state, ctx));
     let body = if let Some(body) = body { Some(body?) } else { None };
     let mut body_name_stmts: HashMap<Core, (usize, Core)> = match body {
         Some(Core::Block { statements }) => statements,
@@ -110,8 +115,8 @@ fn extract_class(
         })
         .collect();
 
-    let args = convert_vec(args, imp, &state.def_as_fun_arg(true))?;
-    let parents = convert_vec(parents, imp, state)?;
+    let args = convert_vec(args, imp, &state.def_as_fun_arg(true), ctx)?;
+    let parents = convert_vec(parents, imp, state, ctx)?;
 
     let old_init = body_name_stmts
         .iter()
@@ -145,7 +150,13 @@ fn extract_class(
         })
         .collect::<GenResult<Vec<Core>>>()?;
 
-    let parent_names = if state.interface {
+    let class_name = match &id {
+        Core::Id { lit } => TrueName::from(lit.as_str()),
+        _ => TrueName::empty()
+    };
+    let class = ctx.class(&class_name, Position::default()).ok();
+
+    let parent_names = if state.interface && !has_abstract_parent(&class, ctx) {
         imp.add_from_import("abc", "ABC");
         parent_names.into_iter().chain(vec![Core::Id { lit: String::from("ABC") }]).collect()
     } else {
@@ -162,6 +173,28 @@ fn extract_class(
     let statements = if body_stmts.is_empty() { vec![Core::Pass] } else { body_stmts };
     let body = Core::Block { statements };
     Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
+}
+
+fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
+    if let Some(clss) = clss {
+        clss.parents.iter().any(|parent| {
+            let clss = ctx.class(parent, Position::default()).ok();
+            is_abstract(&clss, ctx)
+        })
+    } else {
+        false
+    }
+}
+
+fn is_abstract(clss: &Option<Class>, ctx: &Context) -> bool {
+    if let Some(clss) = clss {
+        !clss.concrete || clss.parents.iter().any(|parent| {
+            let clss = ctx.class(parent, Position::default()).ok();
+            has_abstract_parent(&clss, ctx)
+        })
+    } else {
+        false
+    }
 }
 
 fn init(
