@@ -1,33 +1,33 @@
-use crate::ASTTy;
+use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::{GenResult, UnimplementedErr};
 
-pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     Ok(match &ast.node {
         NodeTy::IfElse { cond, then, el } => match el {
             Some(el) => Core::IfElse {
-                cond: Box::from(convert_node(cond, imp, state)?),
-                then: Box::from(convert_node(then, imp, state)?),
-                el: Box::from(convert_node(el, imp, state)?),
+                cond: Box::from(convert_node(cond, imp, state, ctx)?),
+                then: Box::from(convert_node(then, imp, state, ctx)?),
+                el: Box::from(convert_node(el, imp, state, ctx)?),
             },
             None => Core::If {
-                cond: Box::from(convert_node(cond, imp, state)?),
-                then: Box::from(convert_node(then, imp, state)?),
+                cond: Box::from(convert_node(cond, imp, state, ctx)?),
+                then: Box::from(convert_node(then, imp, state, ctx)?),
             },
         },
         NodeTy::Match { cond, cases: match_cases } => {
-            let expr = Box::from(convert_node(cond, imp, state)?);
+            let expr = Box::from(convert_node(cond, imp, state, ctx)?);
 
             let mut cases = vec![];
             for case in match_cases {
                 if let NodeTy::Case { cond, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         cases.push(Core::Case {
-                            expr: Box::from(convert_node(expr.as_ref(), imp, state)?),
-                            body: Box::from(convert_node(body.as_ref(), imp, state)?),
+                            expr: Box::from(convert_node(expr.as_ref(), imp, state, ctx)?),
+                            body: Box::from(convert_node(body.as_ref(), imp, state, ctx)?),
                         })
                     }
                 }
@@ -36,13 +36,13 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenR
             Core::Match { expr, cases }
         }
         NodeTy::While { cond, body } => Core::While {
-            cond: Box::from(convert_node(cond, imp, state)?),
-            body: Box::from(convert_node(body, imp, state)?),
+            cond: Box::from(convert_node(cond, imp, state, ctx)?),
+            body: Box::from(convert_node(body, imp, state, ctx)?),
         },
         NodeTy::For { expr, col, body } => Core::For {
-            expr: Box::from(convert_node(expr, imp, state)?),
-            col: Box::from(convert_node(col, imp, state)?),
-            body: Box::from(convert_node(body, imp, state)?),
+            expr: Box::from(convert_node(expr, imp, state, ctx)?),
+            col: Box::from(convert_node(col, imp, state, ctx)?),
+            body: Box::from(convert_node(body, imp, state, ctx)?),
         },
 
         NodeTy::Break => Core::Break,

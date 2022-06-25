@@ -15,7 +15,7 @@ OtherState = NewType("OtherState", MyClass)
 class SuperInterface(ABC):
     bar: int = None
 
-class MyInterface(SuperInterface, ABC):
+class MyInterface(SuperInterface):
     required_field: int = None
 
     def __init__(self):

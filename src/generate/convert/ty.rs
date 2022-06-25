@@ -1,4 +1,4 @@
-use crate::ASTTy;
+use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::Core;
@@ -7,28 +7,28 @@ use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::result::{GenResult, UnimplementedErr};
 
-pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
+pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     Ok(match &ast.node {
         NodeTy::QuestionOp { expr } => {
             imp.add_from_import("typing", "Optional");
             Core::Type {
                 lit: String::from("Optional"),
-                generics: vec![convert_node(expr, imp, state)?],
+                generics: vec![convert_node(expr, imp, state, ctx)?],
             }
         }
         NodeTy::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
-        NodeTy::ExpressionType { expr, .. } => convert_node(expr, imp, state)?,
+        NodeTy::ExpressionType { expr, .. } => convert_node(expr, imp, state, ctx)?,
         NodeTy::TypeTup { types } => {
             imp.add_from_import("typing", "Tuple");
             Core::Type {
                 lit: String::from("Tuple"),
-                generics: convert_vec(types, imp, state)?,
+                generics: convert_vec(types, imp, state, ctx)?,
             }
         }
         NodeTy::Type { id, generics } => match &id.node {
             NodeTy::Id { lit } => Core::Type {
                 lit: concrete_to_python(lit),
-                generics: convert_vec(generics, imp, state)?,
+                generics: convert_vec(generics, imp, state, ctx)?,
             },
             other => {
                 let msg = format!("Expected identifier but was {:?}", other);
@@ -40,8 +40,8 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
             Core::Type {
                 lit: String::from("Callable"),
                 generics: vec![
-                    Core::List { elements: convert_vec(args, imp, state)? },
-                    convert_node(ret_ty, imp, state)?,
+                    Core::List { elements: convert_vec(args, imp, state, ctx)? },
+                    convert_node(ret_ty, imp, state, ctx)?,
                 ],
             }
         }
@@ -49,7 +49,7 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State) -> GenResult {
             imp.add_from_import("typing", "Union");
             Core::Type {
                 lit: String::from("Union"),
-                generics: convert_vec(types, imp, state)?,
+                generics: convert_vec(types, imp, state, ctx)?,
             }
         }
         ty => {
