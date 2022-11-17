@@ -101,9 +101,3 @@ Keyword | Use
 `handle` | Denote handle cases
 `raise`  | Denote that an expression, statement, or function may raise an error
 `retry`  | Retry an expression from within handle case
-
-## Special
-
-Keyword | Use
----|---
-`None`  | Denote an undefined value
