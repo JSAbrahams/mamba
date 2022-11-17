@@ -128,7 +128,7 @@ fn fallable(
         ----------\n\
         {}\n\
         ----------",
-            String::from_utf8(cmd1.stderr).unwrap(),
+            String::from_utf8(cmd1.stderr).unwrap().trim(),
             resource_path(valid, input, &format!("{}_check.py", file_name)),
             check_src
                 .lines()
@@ -140,12 +140,12 @@ fn fallable(
         Err(OutTestErr(vec![msg]))
     } else if cmd2.status.code().unwrap() != 0 {
         let msg = format!(
-            "Running Python command on Mamba output: {}\n\
+            "{}Running Python command on Mamba output.\n\
         Source:\n\
         ----------\n\
         {}\n\
         ----------",
-            String::from_utf8(cmd2.stderr).unwrap(),
+            String::from_utf8(cmd2.stderr).unwrap().trim(),
             out_src
                 .lines()
                 .enumerate()
