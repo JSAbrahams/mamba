@@ -12,6 +12,7 @@ pub struct State {
     pub expand_ty: bool,
     pub def_as_fun_arg: bool,
     pub tup_lit: bool,
+    pub last_return: bool,
     pub assign_to: Option<Core>,
 
     pub annotate: bool,
@@ -31,6 +32,7 @@ impl State {
             expand_ty: true,
             def_as_fun_arg: false,
             tup_lit: false,
+            last_return: false,
             assign_to: None,
             annotate: false,
         }
@@ -51,6 +53,8 @@ impl State {
     pub fn expand_ty(&self, expand_ty: bool) -> State {
         State { expand_ty, ..self.clone() }
     }
+
+    pub fn last_ret(&self, last_return: bool) -> State { State { last_return, ..self.clone() } }
 
     pub fn def_as_fun_arg(&self, def_as_fun_arg: bool) -> State {
         State { def_as_fun_arg, ..self.clone() }
@@ -90,7 +94,7 @@ impl Imports {
 
     pub fn add_from_import(&mut self, from: &str, import: &str) {
         if let Some(Core::Import { import: imports, alias, .. }) =
-        self.from_imports.get(&String::from(from))
+            self.from_imports.get(&String::from(from))
         {
             let new = Core::Id { lit: String::from(import) };
             let imports: Vec<Core> = if !imports.contains(&new) {

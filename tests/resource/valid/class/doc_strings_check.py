@@ -13,4 +13,4 @@ class MyClass:
         """
         This is my function, it can't do so much
         """
-        200
+        return 200

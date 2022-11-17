@@ -27,8 +27,11 @@ mod ty;
 pub mod state;
 
 pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
+    // Prevent these state properties from propagating further
     let assign_to = state.assign_to.clone();
-    let state = &state.assign_to(None);
+    let last_ret = state.last_return;
+
+    let state = &state.assign_to(None).last_ret(false);
 
     let core = match &ast.node {
         NodeTy::Import { from, import, alias } => Core::Import {
@@ -92,8 +95,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             Core::Return { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
 
-        NodeTy::IfElse { .. }
-        | NodeTy::While { .. }
+        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.last_ret(last_ret), ctx)?,
+        NodeTy::While { .. }
         | NodeTy::For { .. }
         | NodeTy::Break
         | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
@@ -270,6 +273,32 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                 right: Box::from(expr),
                 op: CoreOp::Assign,
             },
+        }
+    } else if last_ret {
+        match core {
+            Core::Block { ref statements } => if let Some(last) = statements.last() {
+                match last {
+                    Core::Return { .. } => core.clone(),
+                    _ => {
+                        let mut new_stmts = statements.clone();
+                        let last = if let Some(last) = new_stmts.pop() {
+                            match last {
+                                Core::IfElse { .. } | Core::Raise { .. } => last.clone(), // Ignore if-else and raise
+                                _ => Core::Return { expr: Box::from(last.clone()) }
+                            }
+                        } else {
+                            Core::Return { expr: Box::from(Core::None) }
+                        };
+
+                        new_stmts.push(last);
+                        Core::Block { statements: new_stmts }
+                    }
+                }
+            } else {
+                core.clone()
+            }
+            Core::Return { .. } | Core::IfElse { .. } | Core::Raise { .. } => core,
+            _ => Core::Return { expr: Box::from(core.clone()) }
         }
     } else {
         core
