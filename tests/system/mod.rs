@@ -123,12 +123,13 @@ fn fallable(
     let width = 3;
     if cmd1.status.code().unwrap() != 0 {
         let msg = format!(
-            "Running Python command on reference resource: {}\n\
+            "{}\nRunning Python command on reference resource: {}\n\
         Source:\n\
         ----------\n\
         {}\n\
         ----------",
             String::from_utf8(cmd1.stderr).unwrap(),
+            resource_content_path(&resource_path(valid, input, &format!("{}_check.py", file_name))),
             check_src
                 .lines()
                 .enumerate()
