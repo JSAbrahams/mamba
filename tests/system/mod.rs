@@ -129,7 +129,7 @@ fn fallable(
         {}\n\
         ----------",
             String::from_utf8(cmd1.stderr).unwrap(),
-            resource_content_path(&resource_path(valid, input, &format!("{}_check.py", file_name))),
+            resource_path(valid, input, &format!("{}_check.py", file_name)),
             check_src
                 .lines()
                 .enumerate()
