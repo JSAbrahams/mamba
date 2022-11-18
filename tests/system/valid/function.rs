@@ -16,6 +16,11 @@ fn function_with_defaults_ast_verify() -> OutTestRet {
 }
 
 #[test]
+fn match_function() -> OutTestRet {
+    test_directory(true, &["function"], &["function", "target"], "match_function")
+}
+
+#[test]
 fn return_last_expression() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "return_last_expression")
 }
