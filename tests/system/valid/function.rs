@@ -16,6 +16,11 @@ fn function_with_defaults_ast_verify() -> OutTestRet {
 }
 
 #[test]
+fn function_raise_super() -> OutTestRet {
+    test_directory(true, &["function"], &["function", "target"], "function_raise_super")
+}
+
+#[test]
 fn match_function() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "match_function")
 }

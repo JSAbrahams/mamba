@@ -32,6 +32,12 @@ fn function_ret_in_class_not_super() {
 }
 
 #[test]
+fn function_raise_not_super() {
+    let source = resource_content(false, &["type", "definition"], "function_raise_not_super.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn function_ret_not_super() {
     let source = resource_content(false, &["type", "definition"], "function_ret_not_super.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
