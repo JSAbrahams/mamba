@@ -1,0 +1,5 @@
+class MyErr: Exception
+class MyErr2: Exception
+
+def f(fun: Int -> Int) raise [MyErr] => g()
+def g() raise [MyErr2] => pass
