@@ -1,0 +1,5 @@
+def f(x: Int) -> String =>
+    match x
+        1 => "One"
+        2 => "Two"
+        _ => "Three"
