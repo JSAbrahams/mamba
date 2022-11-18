@@ -1,0 +1,5 @@
+def my_fun() -> String =>
+    print("a statement")
+    "a"
+
+print(my_fun())

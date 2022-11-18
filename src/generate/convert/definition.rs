@@ -68,7 +68,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                 (vec![String::from("abstractmethod")], Box::from(Core::Pass))
             } else {
                 (vec![], Box::from(match expression {
-                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true), ctx)?,
+                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true).last_ret(ty.is_some()), ctx)?,
                     None => Core::Pass,
                 }))
             };

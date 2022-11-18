@@ -38,7 +38,7 @@ class MyClass(def a: Int, def b: Int)
     def sqrt(self) -> MyClass => return MyClass(self.a // self.b, self.a // self.b)
     def mod(self, other: MyClass) -> MyClass => return MyClass(self.a mod self.b, self.b)
 
-def factorial(x: Int) -> Int => return x * factorial(x - 1)
+def factorial(x: Int) -> Int => x * factorial(x - 1)
 
 def some_higher_order(f: (Int) -> Int, x: Int) -> Int => return f(x)
 
