@@ -19,14 +19,14 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
             },
         },
         NodeTy::Match { cond, cases: match_cases } => {
-            let expr = Box::from(convert_node(cond, imp, state, ctx)?);
+            let expr = Box::from(convert_node(cond, imp, &state.last_ret(false), ctx)?);
 
             let mut cases = vec![];
             for case in match_cases {
                 if let NodeTy::Case { cond, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         cases.push(Core::Case {
-                            expr: Box::from(convert_node(expr.as_ref(), imp, state, ctx)?),
+                            expr: Box::from(convert_node(expr.as_ref(), imp, &state.last_ret(false), ctx)?),
                             body: Box::from(convert_node(body.as_ref(), imp, state, ctx)?),
                         })
                     }
