@@ -1,3 +1,3 @@
 class MyClass:
     def f() -> int:
-        10
+        return 10
