@@ -278,12 +278,12 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         match core {
             Core::Block { ref statements } => if let Some(last) = statements.last() {
                 match last {
-                    Core::Return { .. } => core.clone(),
+                    last if skip_return(last) => core.clone(),
                     _ => {
                         let mut new_stmts = statements.clone();
-                        let last = if let Some(last) = new_stmts.pop() {
+                        let last = if let Some(ref last) = new_stmts.pop() {
                             match last {
-                                Core::IfElse { .. } | Core::Raise { .. } => last.clone(), // Ignore if-else and raise
+                                core if skip_return(core) => last.clone(),
                                 _ => Core::Return { expr: Box::from(last.clone()) }
                             }
                         } else {
@@ -297,14 +297,23 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             } else {
                 core.clone()
             }
-            Core::Return { .. } | Core::IfElse { .. } | Core::Raise { .. } => core,
-            _ => Core::Return { expr: Box::from(core.clone()) }
+            core if skip_return(&core) => core,
+            _ => Core::Return { expr: Box::from(core) }
         }
     } else {
         core
     };
 
     Ok(core)
+}
+
+fn skip_return(core: &Core) -> bool {
+    matches!(core,
+        Core::Return { .. } |
+        Core::IfElse { .. } |
+        Core::Raise { .. } |
+        Core::TryExcept {..}
+    )
 }
 
 #[cfg(test)]

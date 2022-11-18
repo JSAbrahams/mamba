@@ -20,7 +20,6 @@ fn assign_wrong_type() {
 }
 
 #[test]
-#[ignore] // see #343
 fn body_is_stmt() {
     let source = resource_content(false, &["type", "definition"], "body_is_stmt.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
