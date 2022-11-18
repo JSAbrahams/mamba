@@ -96,11 +96,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         }
 
         NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.last_ret(last_ret), ctx)?,
-        NodeTy::While { .. }
-        | NodeTy::For { .. }
-        | NodeTy::Break
-        | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
-        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false), ctx)?,
+        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false).last_ret(last_ret), ctx)?,
+        NodeTy::While { .. } | NodeTy::For { .. } | NodeTy::Break | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
 
         NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
         NodeTy::And { left, right } => Core::And {
@@ -311,6 +308,7 @@ fn skip_return(core: &Core) -> bool {
     matches!(core,
         Core::Return { .. } |
         Core::IfElse { .. } |
+        Core::Match { .. } |
         Core::Raise { .. } |
         Core::TryExcept {..}
     )
