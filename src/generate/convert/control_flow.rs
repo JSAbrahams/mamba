@@ -9,7 +9,7 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
     Ok(match &ast.node {
         NodeTy::IfElse { cond, then, el } => match el {
             Some(el) => Core::IfElse {
-                cond: Box::from(convert_node(cond, imp, state, ctx)?),
+                cond: Box::from(convert_node(cond, imp, &state.last_ret(false), ctx)?),
                 then: Box::from(convert_node(then, imp, state, ctx)?),
                 el: Box::from(convert_node(el, imp, state, ctx)?),
             },

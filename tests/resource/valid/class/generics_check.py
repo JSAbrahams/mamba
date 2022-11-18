@@ -39,22 +39,22 @@ class MyClass2(MyType):
             print(err2)
             a = -2
 
-    def error_function(self) -> int: 200
+    def error_function(self) -> int: return 200
 
     def connect(self): self.other_field = 200
 
     def _fun_b(self): print("this function is private!")
 
-    def factorial(self, x: int = 0) -> int: x * self.factorial(x - 1)
+    def factorial(self, x: int = 0) -> int: return x * self.factorial(x - 1)
 
-    def factorial_infinite(self, x: int) -> int: x * self.factorial(x)
+    def factorial_infinite(self, x: int) -> int: return x * self.factorial(x)
 
-    def a(self) -> int: self.b(10)
+    def a(self) -> int: return self.b(10)
 
-    def b(self, c: int) -> int: self.a()
+    def b(self, c: int) -> int: return self.a()
 
-    def c(self, d: int) -> int: self.b(self.c(20))
+    def c(self, d: int) -> int: return self.b(self.c(20))
 
-    def some_higher_order(self, fun: Callable[[int], int]) -> Optional[int]: fun(10)
+    def some_higher_order(self, fun: Callable[[int], int]) -> Optional[int]: return fun(10)
 
-    def fancy(self) -> Optional[int]: self.some_higher_order(lambda x: x * 2)
+    def fancy(self) -> Optional[int]: return self.some_higher_order(lambda x: x * 2)
