@@ -4,8 +4,8 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::expected::Expect::*;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, function, LookupClass};
@@ -111,7 +111,10 @@ pub fn constrain_args(
     ctx: &Context,
     constr: &ConstrBuilder,
 ) -> Constrained {
+    let exp_expression = env.exp_expression;
     let mut res = (constr.clone(), env.clone().exp_expression(true));
+    let env = env.exp_expression(exp_expression);
+
     for arg in args {
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
@@ -148,11 +151,13 @@ pub fn identifier_from_var(
     constr: &mut ConstrBuilder,
     env: &Environment,
 ) -> Constrained {
+    let exp_expression = env.exp_expression;
     let (mut constr, mut env) = if let Some(expr) = expr {
         generate(expr, &env.exp_expression(true), ctx, constr)?
     } else {
         (constr.clone(), env.clone())
     };
+    env = env.exp_expression(exp_expression);
 
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
