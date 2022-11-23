@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
+use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
@@ -32,10 +32,10 @@ pub fn gen_flow(
             let (mut constr, _) = generate(cond, env, ctx, constr)?;
 
             constr.new_set(true);
-            let (mut constr, then_env) = generate(then, &env, ctx, &mut constr)?;
+            let (mut constr, then_env) = generate(then, env, ctx, &mut constr)?;
             constr.exit_set(then.pos)?;
             constr.new_set(true);
-            let (mut constr, else_env) = generate(el, &env, ctx, &mut constr)?;
+            let (mut constr, else_env) = generate(el, env, ctx, &mut constr)?;
             constr.exit_set(el.pos)?;
 
             if env.exp_expression {
@@ -43,8 +43,10 @@ pub fn gen_flow(
                 let left = Expected::try_from((then, &env.var_mappings))?;
                 let right = Expected::try_from((el, &env.var_mappings))?;
 
-                constr.add("if left branch", &if_expr, &left);
-                constr.add("if right branch", &if_expr, &right);
+                let then_constr = Constraint::new_variant("if left branch", &if_expr, &left, &ConstrVariant::Either);
+                constr.add_constr(&then_constr);
+                let else_constr = Constraint::new_variant("if right branch", &if_expr, &right, &ConstrVariant::Either);
+                constr.add_constr(&else_constr);
             }
 
             constr.exit_set(ast.pos)?;

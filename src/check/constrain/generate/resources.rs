@@ -32,7 +32,7 @@ pub fn gen_resources(
             constr.new_set(true);
             let resource_exp = Expected::try_from((resource, &env.var_mappings))?;
             constr.add("with as", &resource_exp, &Expected::try_from((alias, &env.var_mappings))?);
-            constr.add("with as", &resource_exp, &Expected::new(resource.pos, &Type { name: Name::any() }));
+            constr.add("with as", &Expected::new(resource.pos, &Type { name: Name::any() }), &resource_exp);
 
             if let Some(ty) = ty {
                 let ty_exp = Type { name: Name::try_from(ty)? };

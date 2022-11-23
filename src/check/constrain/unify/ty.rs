@@ -9,7 +9,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{Any, ColType, IsSuperSet, Name};
+use crate::check::name::{Any, ColType, IsSuperSet, Name, Union};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -45,6 +45,11 @@ pub fn unify_type(
             } else if left_is_super || right_is_super || either_is_super {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
+                unify_link(constraints, ctx, total)
+            } else if constraint.superset == ConstrVariant::Either {
+                let name = l_ty.union(r_ty);
+                constraints.push_ty(left.pos, &name);
+                constraints.push_ty(right.pos, &name);
                 unify_link(constraints, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Unifying two types: Expected {}, was {}", left, right);
