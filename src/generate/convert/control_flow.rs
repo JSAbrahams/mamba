@@ -9,7 +9,6 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
     Ok(match &ast.node {
         NodeTy::IfElse { cond, then, el } => match el {
             Some(el) if ast.ty.is_some() => {
-                println!("ast: {:?}, ty: {}", ast.node, ast.ty.clone().unwrap());
                 Core::Ternary {
                     cond: Box::from(convert_node(cond, imp, &state.last_ret(false), ctx)?),
                     then: Box::from(convert_node(then, imp, &state.last_ret(false), ctx)?),

@@ -171,6 +171,10 @@ pub fn unify_type(
                     Err(vec![TypeErr::new(left.pos, &msg)])
                 }
             }
+
+            // Ignore raises
+            (Type { .. }, Raises { .. }) | (Raises { .. }, Type { .. }) => unify_link(constraints, ctx, total),
+
             _ => {
                 if l_exp.is_none() && r_exp.is_none() {
                     unify_link(constraints, ctx, total)

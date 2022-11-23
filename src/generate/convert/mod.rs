@@ -271,7 +271,9 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                 op: CoreOp::Assign,
             },
         }
-    } else if last_ret {
+    } else { core };
+
+    let core = if last_ret {
         match core {
             Core::Block { ref statements } => if let Some(last) = statements.last() {
                 match last {
@@ -280,7 +282,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
                         let mut new_stmts = statements.clone();
                         let last = if let Some(ref last) = new_stmts.pop() {
                             match last {
-                                core if skip_return(core) => last.clone(),
+                                last if skip_return(last) => last.clone(),
                                 _ => Core::Return { expr: Box::from(last.clone()) }
                             }
                         } else {
@@ -308,6 +310,7 @@ fn skip_return(core: &Core) -> bool {
     matches!(core,
         Core::Return { .. } |
         Core::IfElse { .. } |
+        Core::Ternary { .. } |
         Core::Match { .. } |
         Core::Raise { .. } |
         Core::TryExcept {..}

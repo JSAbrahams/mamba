@@ -170,9 +170,26 @@ pub fn is_start_statement(tp: &Token) -> bool {
 
 #[cfg(test)]
 mod test {
+    use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::Node;
     use crate::parse::ast::node_op::NodeOp;
     use crate::parse::parse_direct;
+
+    #[test]
+    fn parse_return() {
+        let source = String::from("return 20");
+        let asts = parse_direct(&source).expect("valid AST");
+
+        assert_eq!(asts.len(), 1);
+        let reassignment = asts.first().expect("return");
+        let expr = match &reassignment.node {
+            Node::Return { expr } => (expr.clone()),
+            other => panic!("Expected reassignment, was {:?}", other),
+        };
+
+        assert_eq!(expr.pos, Position::new(CaretPos::new(1, 7), CaretPos::new(1, 9)));
+        assert_eq!(expr.node, Node::Int { lit: String::from("20") });
+    }
 
     #[test]
     fn parse_reassignment() {

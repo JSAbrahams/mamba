@@ -66,6 +66,9 @@ pub fn gen_def(
                 let inner_env = inner_env.insert_raises(&r_res, ast.pos);
                 if let Some(ret_ty) = ret_ty {
                     let name = Name::try_from(ret_ty)?;
+                    let ret_ty_raises_exp = Expected::new(body.pos, &Type { name: name.clone() });
+                    constr.add("fun body type", &ret_ty_raises_exp, &Expected::try_from((body, &env.var_mappings))?);
+
                     let ret_ty_exp = Expected::new(ret_ty.pos, &Type { name });
                     let inner_env = inner_env.return_type(&ret_ty_exp);
                     generate(body, &inner_env, ctx, &mut constr)?

@@ -11,6 +11,7 @@ fn exception() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // see #365
 fn raise() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "raise")
 }
