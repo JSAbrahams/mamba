@@ -89,4 +89,10 @@ impl Constraint {
 
         Constraint::new(msg, &bool, &Expected::new(expected.pos, &access))
     }
+
+    pub fn undefined(msg: &str, expected: &Expected) -> Constraint {
+        let none =
+            Expected::new(expected.pos, &Type { name: Name::from(clss::NONE) });
+        Constraint::new(msg, expected, &none)
+    }
 }

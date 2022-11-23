@@ -70,6 +70,13 @@ pub fn gen_op(
             ));
             Ok((constr.clone(), env.clone()))
         }
+        Node::Undefined => {
+            constr.add_constr(&Constraint::undefined(
+                "undefined",
+                &Expected::try_from((ast, &env.var_mappings))?,
+            ));
+            Ok((constr.clone(), env.clone()))
+        }
 
         Node::Add { left, right } => impl_magic(ADD, ast, left, right, env, ctx, constr),
         Node::Sub { left, right } => impl_magic(SUB, ast, left, right, env, ctx, constr),

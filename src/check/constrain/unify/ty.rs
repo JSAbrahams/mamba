@@ -47,9 +47,8 @@ pub fn unify_type(
                 ctx.class(r_ty, right.pos)?;
                 unify_link(constraints, ctx, total)
             } else if constraint.superset == ConstrVariant::Either {
-                let name = l_ty.union(r_ty);
-                constraints.push_ty(left.pos, &name);
-                constraints.push_ty(right.pos, &name);
+                constraints.push_ty(left.pos, &l_ty.union(r_ty));
+                constraints.push_ty(right.pos, &l_ty.union(r_ty));
                 unify_link(constraints, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Unifying two types: Expected {}, was {}", left, right);

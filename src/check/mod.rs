@@ -72,7 +72,7 @@ pub fn check_all(asts: &[AST]) -> TypeResult<Vec<ASTTy>> {
 mod tests {
     use crate::check::ast::NodeTy;
     use crate::check::check_all;
-    use crate::check::name::Name;
+    use crate::check::name::{Name, Union};
     use crate::parse::parse;
 
     #[test]
@@ -105,5 +105,25 @@ mod tests {
         };
 
         assert_eq!(expr.ty, Some(Name::from("Int")));
+    }
+
+    #[test]
+    fn it_stmt_as_expression_int_and_str() {
+        let src = "def a := if True then 10 else \"asdf\"";
+        let ast = parse(src).unwrap();
+        let result = check_all(&[*ast]).unwrap();
+
+        let statements = if let NodeTy::Block { statements } = &result[0].node {
+            statements.clone()
+        } else {
+            panic!()
+        };
+
+        let expr = match &statements[0].node {
+            NodeTy::VariableDef { expr, .. } => expr.clone().unwrap(),
+            other => panic!("Expected variabledef: {:?}", other)
+        };
+
+        assert_eq!(expr.ty, Some(Name::from("Int").union(&Name::from("String"))));
     }
 }

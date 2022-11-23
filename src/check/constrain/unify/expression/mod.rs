@@ -39,7 +39,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
             unify_link(&mut constraints, ctx, total)
         }
 
-        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left || constraint.superset == ConstrVariant::Either => {
+        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left => {
             let mut constraints = substitute(right, left, constraints, count, total)?;
             unify_link(&mut constraints, ctx, total)
         }

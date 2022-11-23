@@ -19,9 +19,10 @@ pub fn constraints(ast: &AST, ctx: &Context) -> Unified<Vec<Constraints>> {
 
 #[cfg(test)]
 mod tests {
+    use crate::check::constrain::constraint::iterator::Constraints;
     use crate::check::constrain::constraints;
     use crate::check::context::Context;
-    use crate::check::name::Name;
+    use crate::check::name::{Name, Nullable};
     use crate::common::position::{CaretPos, Position};
     use crate::parse::parse;
 
@@ -61,16 +62,51 @@ mod tests {
         let constraints = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap();
 
         // Ignore then and else branch
-        let inner_constr = constraints[2].clone();
-        assert_eq!(inner_constr.finished.len(), 4);
+        let inner_constr = constraints
+            .iter()
+            .fold(Constraints::new(), |acc, constr| {
+                constr.finished.iter().fold(acc, |mut acc, (pos, name)| {
+                    acc.push_ty(*pos, name);
+                    acc
+                })
+            }).finished;
+
+        assert_eq!(inner_constr.len(), 4);
         let pos_20 = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 33));
-        assert_eq!(inner_constr.finished[&pos_20], Name::from("Int"));
+        assert_eq!(inner_constr[&pos_20], Name::from("Int"));
         let pos_10 = Position::new(CaretPos::new(1, 23), CaretPos::new(1, 25));
-        assert_eq!(inner_constr.finished[&pos_10], Name::from("Int"));
+        assert_eq!(inner_constr[&pos_10], Name::from("Int"));
         let pos_bool = Position::new(CaretPos::new(1, 13), CaretPos::new(1, 17));
-        assert_eq!(inner_constr.finished[&pos_bool], Name::from("Bool"));
+        assert_eq!(inner_constr[&pos_bool], Name::from("Bool"));
 
         let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 33));
-        assert_eq!(inner_constr.finished[&pos_if], Name::from("Int"));
+        assert_eq!(inner_constr[&pos_if], Name::from("Int"));
+    }
+
+    #[test]
+    fn it_stmt_as_expression_none() {
+        let src = "def a := if True then 10 else None";
+        let ast = parse(src).unwrap();
+        let constraints = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap();
+
+        // Ignore then and else branch
+        let inner_constr = constraints
+            .iter()
+            .fold(Constraints::new(), |acc, constr| {
+                constr.finished.iter().fold(acc, |mut acc, (pos, name)| {
+                    acc.push_ty(*pos, name);
+                    acc
+                })
+            }).finished;
+
+        let pos_none = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 35));
+        assert_eq!(inner_constr[&pos_none], Name::from("None"));
+        let pos_10 = Position::new(CaretPos::new(1, 23), CaretPos::new(1, 25));
+        assert_eq!(inner_constr[&pos_10], Name::from("Int"));
+        let pos_bool = Position::new(CaretPos::new(1, 13), CaretPos::new(1, 17));
+        assert_eq!(inner_constr[&pos_bool], Name::from("Bool"));
+
+        let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 35));
+        assert_eq!(inner_constr[&pos_if], Name::from("Int").as_nullable());
     }
 }

@@ -1,3 +1,3 @@
 from typing import Union
 
-a: Union[str, int] = 10 if True else "asdf"
+a: Union[int, str] = 10 if True else "asdf"
