@@ -10,7 +10,7 @@ pub mod builder;
 pub mod expected;
 pub mod iterator;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Constraint {
     pub is_flag: bool,
     pub is_sub: bool,
@@ -20,7 +20,7 @@ pub struct Constraint {
     pub superset: ConstrVariant,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ConstrVariant {
     Left,
     Right,

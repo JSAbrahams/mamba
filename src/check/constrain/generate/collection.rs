@@ -7,7 +7,7 @@ use crate::check::constrain::generate::{Constrained, gen_vec};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
-use crate::check::name::Name;
+use crate::check::name::{Any, Name};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 
@@ -51,22 +51,20 @@ pub fn constr_col(
                 }
                 Box::from(Expected::new(first.pos, &Expect::try_from((first, &env.var_mappings))?))
             } else {
-                Box::from(Expected::new(collection.pos, &ExpressionAny))
+                Box::from(Expected::new(collection.pos, &Type { name: Name::any() }))
             };
 
-            ("collection", Expect::Collection { ty })
+            ("collection", Collection { ty })
         }
         Node::Tuple { elements } => {
             let map = |ast: &AST| Expected::try_from((ast, &env.var_mappings));
             let elements = elements.iter().map(map).collect::<Result<_, _>>()?;
-            ("tuple", Expect::Tuple { elements })
+            ("tuple", Tuple { elements })
         }
 
         _ => {
-            let expect =
-                if let Some(name) = temp_type { Expect::Type { name } } else { ExpressionAny };
-            let expected =
-                Expect::Collection { ty: Box::from(Expected::new(collection.pos, &expect)) };
+            let expect = if let Some(name) = temp_type { Type { name } } else { Type { name: Name::any() } };
+            let expected = Collection { ty: Box::from(Expected::new(collection.pos, &expect)) };
             ("collection", expected)
         }
     };
@@ -90,7 +88,7 @@ pub fn gen_collection_lookup(
     // Make col constraint before inserting environment, in case shadowed here
     let col_exp = Expected::try_from((col, &env.var_mappings))?;
     for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
-        env = env.insert_var(mutable, &var, &Expected::new(lookup.pos, &ExpressionAny));
+        env = env.insert_var(mutable, &var, &Expected::new(lookup.pos, &Type { name: Name::any() }));
     }
 
     let lookup_exp = Expected::new(

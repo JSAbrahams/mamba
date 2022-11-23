@@ -140,7 +140,7 @@ fn fallable(
         Err(OutTestErr(vec![msg]))
     } else if cmd2.status.code().unwrap() != 0 {
         let msg = format!(
-            "{}Running Python command on Mamba output.\n\
+            "{}\nRunning Python command on Mamba output.\n\
         Source:\n\
         ----------\n\
         {}\n\

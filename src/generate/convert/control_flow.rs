@@ -8,10 +8,15 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     Ok(match &ast.node {
         NodeTy::IfElse { cond, then, el } => match el {
-            Some(el) => Core::IfElse {
+            Some(el) if ast.ty.is_none() => Core::IfElse {
                 cond: Box::from(convert_node(cond, imp, &state.last_ret(false), ctx)?),
                 then: Box::from(convert_node(then, imp, state, ctx)?),
                 el: Box::from(convert_node(el, imp, state, ctx)?),
+            },
+            Some(el) => Core::Ternary {
+                cond: Box::from(convert_node(cond, imp, &state.last_ret(false), ctx)?),
+                then: Box::from(convert_node(then, imp, &state.last_ret(false), ctx)?),
+                el: Box::from(convert_node(el, imp, &state.last_ret(false), ctx)?),
             },
             None => Core::If {
                 cond: Box::from(convert_node(cond, imp, state, ctx)?),

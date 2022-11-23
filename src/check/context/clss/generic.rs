@@ -4,13 +4,13 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::context::arg;
+use crate::check::context::{arg, clss, function};
 use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::Name;
+use crate::check::name::{Any, Name};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -44,6 +44,33 @@ impl GenericClass {
     pub fn all_pure(self, pure: bool) -> TypeResult<Self> {
         let functions = self.functions.iter().map(|f| f.clone().pure(pure)).collect();
         Ok(GenericClass { functions, ..self })
+    }
+}
+
+impl Any for GenericClass {
+    fn any() -> Self {
+        let mut functions = HashSet::new();
+        functions.insert(GenericFunction {
+            is_py_type: false,
+            name: StringName::new(function::STR, &[]),
+            pure: false,
+            pos: Default::default(),
+            arguments: vec![],
+            raises: Name { names: Default::default() },
+            in_class: None,
+            ret_ty: None,
+        });
+
+        GenericClass {
+            is_py_type: false,
+            name: StringName::new(clss::ANY, &[]),
+            pos: Default::default(),
+            concrete: true,
+            args: vec![],
+            fields: Default::default(),
+            functions,
+            parents: Default::default(),
+        }
     }
 }
 

@@ -8,7 +8,6 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::clss;
 use crate::check::context::clss::{BOOL, FLOAT, INT, NONE, STRING};
 use crate::check::name::{Name, Nullable};
 use crate::check::name::string_name::StringName;
@@ -68,7 +67,6 @@ impl TryFrom<(&Box<AST>, &HashMap<String, String>)> for Expected {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
     Expression { ast: AST },
-    ExpressionAny,
     Collection { ty: Box<Expected> },
     Tuple { elements: Vec<Expected> },
     Raises { name: Name },
@@ -104,7 +102,6 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
             Node::Bool { .. } => Type { name: Name::from(BOOL) },
             Node::Str { .. } => Type { name: Name::from(STRING) },
             Node::Undefined => Expect::none(),
-            Node::Underscore => ExpressionAny,
             Node::Raise { error } => Raises { name: Name::try_from(error)? },
             _ => Expression { ast },
         })
@@ -123,7 +120,6 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
-            ExpressionAny => write!(f, "Any"),
             Expression { ast } => write!(f, "`{}`", ast.node),
             Collection { ty, .. } => write!(f, "{{{}}}", ty.and_or_a(false)),
             Tuple { elements } => {
@@ -170,23 +166,19 @@ impl Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),
 
-            (ExpressionAny, ExpressionAny) => true,
-
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::STRING) =>
-                {
-                    true
-                }
+            if ty == &Name::from(STRING) => {
+                true
+            }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
             | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::FLOAT) =>
-                {
-                    true
-                }
+            if ty == &Name::from(FLOAT) => {
+                true
+            }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::INT) =>
+            if ty == &Name::from(INT) =>
                 {
                     true
                 }
@@ -196,12 +188,12 @@ impl Expect {
     }
 
     pub fn none() -> Expect {
-        Expect::Type { name: Name::from(NONE) }
+        Type { name: Name::from(NONE) }
     }
 
     pub fn is_none(&self) -> bool {
         match &self {
-            Expect::Type { name } => name.is_null(),
+            Type { name } => name.is_null(),
             _ => false,
         }
     }

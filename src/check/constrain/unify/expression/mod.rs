@@ -1,13 +1,12 @@
 use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::constraint::expected::Expect::{Expression, ExpressionAny, Tuple};
+use crate::check::constrain::constraint::{Constraint, ConstrVariant};
+use crate::check::constrain::constraint::expected::Expect::{Expression, Tuple};
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
-use crate::check::constrain::unify::link::reinsert;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
@@ -18,20 +17,6 @@ pub mod substitute;
 pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, ctx: &Context, count: usize, total: usize) -> Unified {
     let (left, right) = (&constraint.left, &constraint.right);
     match (&left.expect, &right.expect) {
-        (Expression { ast }, ExpressionAny) | (ExpressionAny, Expression { ast }) =>
-            match &ast.node {
-                Node::FunctionCall { .. } | Node::PropertyCall { .. } => {
-                    // may be expression, defer in case substituted
-                    reinsert(constraints, constraint, total)?;
-                    unify_link(constraints, ctx, total)
-                }
-                node if node.is_expression() => {
-                    let mut constr = substitute(right, left, constraints, count, total)?;
-                    unify_link(&mut constr, ctx, total)
-                }
-                _ => Err(vec![TypeErr::new(ast.pos, &format!("Expected an expression but was {}", ast.node))])
-            },
-
         // Not sure if necessary, but exception made for tuple
         (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
         (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements }) => {
@@ -40,7 +25,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
             for pair in ast_elements.iter().cloned().zip_longest(elements.iter()) {
                 match &pair {
                     Both(ast, exp) => {
-                        let expect = Expect::Expression { ast: ast.clone() };
+                        let expect = Expression { ast: ast.clone() };
                         let l_ty = Expected::new(left.pos, &expect);
                         constraints.push("tuple", &l_ty, exp)
                     }
@@ -54,7 +39,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
             unify_link(&mut constraints, ctx, total)
         }
 
-        (Expression { .. }, _) => {
+        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left || constraint.superset == ConstrVariant::Either => {
             let mut constraints = substitute(right, left, constraints, count, total)?;
             unify_link(&mut constraints, ctx, total)
         }

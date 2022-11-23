@@ -29,11 +29,7 @@ pub fn gen_flow(
             constr.new_set(true);
             let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
-            let (mut constr, env) = generate(cond, env, ctx, constr)?;
-
-            let left = Expected::try_from((then, &env.var_mappings))?;
-            let right = Expected::try_from((el, &env.var_mappings))?;
-            constr.add("if else", &left, &right);
+            let (mut constr, _) = generate(cond, env, ctx, constr)?;
 
             constr.new_set(true);
             let (mut constr, then_env) = generate(then, &env, ctx, &mut constr)?;
@@ -41,6 +37,15 @@ pub fn gen_flow(
             constr.new_set(true);
             let (mut constr, else_env) = generate(el, &env, ctx, &mut constr)?;
             constr.exit_set(el.pos)?;
+
+            if env.exp_expression {
+                let if_expr = Expected::try_from((ast, &env.var_mappings))?;
+                let left = Expected::try_from((then, &env.var_mappings))?;
+                let right = Expected::try_from((el, &env.var_mappings))?;
+
+                constr.add("if left branch", &if_expr, &left);
+                constr.add("if right branch", &if_expr, &right);
+            }
 
             constr.exit_set(ast.pos)?;
             Ok((constr, env.union(&then_env.intersect(&else_env))))
@@ -74,6 +79,7 @@ pub fn gen_flow(
                             &Expected::try_from((body, &env.var_mappings))?,
                             &Expected::try_from((ast, &env.var_mappings))?,
                         );
+
                         res = generate(body, &res.1, ctx, &mut res.0)?;
                     }
                     _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
@@ -114,5 +120,23 @@ pub fn gen_flow(
             },
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected control flow")])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::check::constrain::constraint::builder::ConstrBuilder;
+    use crate::check::constrain::generate::env::Environment;
+    use crate::check::constrain::generate::generate;
+    use crate::check::context::Context;
+    use crate::parse::parse;
+
+    #[test]
+    fn if_else_env_empty() {
+        let src = "if True then 10 else 20";
+        let ast = parse(src).unwrap();
+        let (_, env) = generate(&ast, &Environment::default(), &Context::default(), &mut ConstrBuilder::new()).unwrap();
+
+        assert!(env.var_mappings.is_empty());
     }
 }

@@ -8,7 +8,7 @@ use std::iter::FromIterator;
 
 use itertools::Itertools;
 
-use crate::check::context::Context;
+use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
@@ -39,6 +39,10 @@ pub trait Empty {
     fn empty() -> Self;
 }
 
+pub trait Any {
+    fn any() -> Self;
+}
+
 pub trait Nullable {
     fn is_nullable(&self) -> bool;
     fn is_null(&self) -> bool;
@@ -62,6 +66,12 @@ pub struct Name {
     pub names: HashSet<TrueName>,
 }
 
+impl Any for Name {
+    fn any() -> Self {
+        Name::from(clss::ANY)
+    }
+}
+
 pub fn match_name(
     identifier: &Identifier,
     name: &Name,
@@ -74,7 +84,7 @@ pub fn match_name(
     for union in unions {
         for (id, (mutable, name)) in union {
             if let Some((current_mutable, current_name)) =
-            final_union.insert(id.clone(), (mutable, name.clone()))
+                final_union.insert(id.clone(), (mutable, name.clone()))
             {
                 final_union
                     .insert(id.clone(), (mutable && current_mutable, current_name.union(&name)));
@@ -327,8 +337,8 @@ mod tests {
 
     #[test]
     fn test_is_superset_slice_int() {
-        let name1 = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
-        let name2 = Name::from(&HashSet::from([clss::INT]));
+        let name1 = Name::from(&HashSet::from([INT, clss::SLICE]));
+        let name2 = Name::from(&HashSet::from([INT]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(name1.is_superset_of(&name2, &ctx, Position::default()).unwrap());
@@ -390,7 +400,7 @@ mod tests {
     #[test]
     fn test_temp_name() {
         let name1 = Name::from("@something");
-        let name2 = Name::from(clss::INT);
+        let name2 = Name::from(INT);
 
         assert!(name1.is_temporary());
         assert!(!name2.is_temporary())
@@ -575,7 +585,7 @@ mod tests {
     #[test]
     fn range_has_collection_int_as_parent() -> TypeResult<()> {
         let range_name = Name::from(clss::RANGE);
-        let int_name = Name::from(clss::INT);
+        let int_name = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
         let collection_ty = range_name.col_type(&ctx, Position::default())?;
@@ -585,8 +595,8 @@ mod tests {
 
     #[test]
     fn float_parent_of_int() -> TypeResult<()> {
-        let float_name = Name::from(clss::FLOAT);
-        let int_name = StringName::from(clss::INT);
+        let float_name = Name::from(FLOAT);
+        let int_name = StringName::from(INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let clss = ctx.class(&int_name, Position::default())?;
@@ -596,8 +606,8 @@ mod tests {
 
     #[test]
     fn int_not_parent_of_float() -> TypeResult<()> {
-        let float_name = StringName::from(clss::FLOAT);
-        let int_name = Name::from(clss::INT);
+        let float_name = StringName::from(FLOAT);
+        let int_name = Name::from(INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
         let clss = ctx.class(&float_name, Position::default())?;
@@ -616,8 +626,8 @@ mod tests {
 
     #[test]
     fn name_fold() {
-        let int_name = Name::from(clss::INT);
-        let float_name = Name::from(clss::FLOAT);
+        let int_name = Name::from(INT);
+        let float_name = Name::from(FLOAT);
 
         let name1 = Name::from(&HashSet::from([int_name.clone(), float_name.clone()]));
         let name2 = [int_name, float_name].iter().fold(Name::empty(), |name, n| name.union(n));

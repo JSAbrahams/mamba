@@ -13,7 +13,7 @@ use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
-use crate::check::name::{Empty, match_name, Name, Nullable, Union};
+use crate::check::name::{Any, Empty, match_name, Name, Nullable, Union};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -111,7 +111,7 @@ pub fn constrain_args(
     ctx: &Context,
     constr: &ConstrBuilder,
 ) -> Constrained {
-    let mut res = (constr.clone(), env.clone());
+    let mut res = (constr.clone(), env.clone().exp_expression(true));
     for arg in args {
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
@@ -149,7 +149,7 @@ pub fn identifier_from_var(
     env: &Environment,
 ) -> Constrained {
     let (mut constr, mut env) = if let Some(expr) = expr {
-        generate(expr, env, ctx, constr)?
+        generate(expr, &env.exp_expression(true), ctx, constr)?
     } else {
         (constr.clone(), env.clone())
     };
@@ -162,7 +162,7 @@ pub fn identifier_from_var(
             env = env.insert_var(mutable && f_mut, &f_name, &ty);
         }
     } else {
-        let any = Expected::new(var.pos, &ExpressionAny);
+        let any = Expected::new(var.pos, &Type { name: Name::any() });
         for (f_mut, f_name) in identifier.fields(var.pos)? {
             env = env.insert_var(mutable && f_mut, &f_name, &any);
         }
@@ -228,9 +228,36 @@ fn identifier_to_tuple(
                 .into_iter()
                 .map(|elements| {
                     let elements = elements.into_iter().cloned().collect();
-                    Expected::new(pos, &Expect::Tuple { elements })
+                    Expected::new(pos, &Tuple { elements })
                 })
                 .collect())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use crate::check::constrain::constraint::builder::ConstrBuilder;
+    use crate::check::constrain::generate::env::Environment;
+    use crate::check::constrain::generate::generate;
+    use crate::check::context::Context;
+    use crate::parse::parse;
+
+    #[test]
+    fn if_else_as_expr() {
+        let src = "def a := if True then 10 else 20";
+        let ast = parse(src).unwrap();
+        let (builder, _) = generate(&ast, &Environment::default(), &Context::default(), &mut ConstrBuilder::new()).unwrap();
+
+        // Ignore then and else branches
+        let mut constraints = builder.all_constr()[2].clone();
+
+        let mut popped = HashSet::new();
+        while let Some(pop) = constraints.pop_constr() {
+            popped.insert(pop);
+        }
+        assert_eq!(popped.len(), 3);
     }
 }

@@ -67,3 +67,43 @@ pub fn check_all(asts: &[AST]) -> TypeResult<Vec<ASTTy>> {
         Err(errs) => Err(errs),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::check::ast::NodeTy;
+    use crate::check::check_all;
+    use crate::check::name::Name;
+    use crate::parse::parse;
+
+    #[test]
+    fn if_stmt_no_type() {
+        let src = "if True then 10 else 20";
+        let ast = parse(src).unwrap();
+        let result = check_all(&[*ast]).unwrap();
+
+        assert_eq!(result.len(), 1);
+
+        let if_stmt = result[0].clone();
+        assert!(if_stmt.ty.is_none())
+    }
+
+    #[test]
+    fn it_stmt_as_expression() {
+        let src = "def a := if True then 10 else 20";
+        let ast = parse(src).unwrap();
+        let result = check_all(&[*ast]).unwrap();
+
+        let statements = if let NodeTy::Block { statements } = &result[0].node {
+            statements.clone()
+        } else {
+            panic!()
+        };
+
+        let expr = match &statements[0].node {
+            NodeTy::VariableDef { expr, .. } => expr.clone().unwrap(),
+            other => panic!("Expected variabledef: {:?}", other)
+        };
+
+        assert_eq!(expr.ty, Some(Name::from("Int")));
+    }
+}
