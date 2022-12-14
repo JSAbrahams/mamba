@@ -1,6 +1,16 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
+fn assign_if() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "assign_if")
+}
+
+#[test]
+fn assign_match() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "assign_match")
+}
+
+#[test]
 fn for_statements() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "for_statements")
 }

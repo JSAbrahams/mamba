@@ -28,10 +28,10 @@ pub mod state;
 
 pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     // Prevent these state properties from propagating further
-    let assign_to = state.assign_to.clone();
-    let last_ret = state.last_return;
+    let must_assign_to = state.must_assign_to.clone();
+    let is_last_must_be_ret = state.is_last_must_be_ret;
 
-    let state = &state.assign_to(None).last_ret(false);
+    let state = &state.must_assign_to(None).is_last_must_be_ret(false);
 
     let core = match &ast.node {
         NodeTy::Import { from, import, alias } => Core::Import {
@@ -54,7 +54,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         },
 
         NodeTy::Block { statements } => Core::Block {
-            statements: convert_stmts(statements, imp, &state.assign_to(assign_to.as_ref()), ctx)?,
+            statements: convert_stmts(statements, imp, &state.must_assign_to(must_assign_to.as_ref()), ctx)?,
         },
 
         NodeTy::Int { lit } => Core::Int { int: lit.clone() },
@@ -91,12 +91,13 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
+        NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
         NodeTy::Return { expr } => {
             Core::Return { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
 
-        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.last_ret(last_ret), ctx)?,
-        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false).last_ret(last_ret), ctx)?,
+        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.is_last_must_be_ret(is_last_must_be_ret).must_assign_to(must_assign_to.as_ref()), ctx)?,
+        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false).is_last_must_be_ret(is_last_must_be_ret).must_assign_to(must_assign_to.as_ref()), ctx)?,
         NodeTy::While { .. } | NodeTy::For { .. } | NodeTy::Break | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
 
         NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
@@ -262,18 +263,42 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         _ => Core::Empty,
     };
 
-    let core = if let Some(assign_to) = assign_to {
-        match core {
-            Core::Block { .. } | Core::Return { .. } => core,
+    let core = if let Some(assign_to) = must_assign_to {
+        match &core {
+            Core::Block { ref statements } => if let Some(last) = statements.last() {
+                match last {
+                    last if skip_assign(last) => core.clone(),
+                    _ => {
+                        let mut statements = statements.clone();
+                        if let Some(ref last) = statements.pop() {
+                            let last = match last {
+                                last if skip_assign(last) => last.clone(),
+                                _ => Core::Assign {
+                                    left: Box::from(assign_to),
+                                    right: Box::from(last.clone()),
+                                    op: CoreOp::Assign,
+                                }
+                            };
+                            statements.push(last);
+                            Core::Block { statements }
+                        } else {
+                            Core::Block { statements }
+                        }
+                    }
+                }
+            } else {
+                core.clone()
+            }
+            expr if skip_assign(expr) => core.clone(),
             expr => Core::Assign {
                 left: Box::from(assign_to),
-                right: Box::from(expr),
+                right: Box::from(expr.clone()),
                 op: CoreOp::Assign,
             },
         }
     } else { core };
 
-    let core = if last_ret {
+    let core = if is_last_must_be_ret {
         match core {
             Core::Block { ref statements } => if let Some(last) = statements.last() {
                 match last {
@@ -306,14 +331,21 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     Ok(core)
 }
 
+fn skip_assign(core: &Core) -> bool {
+    skip_return(core) || matches!(core,
+        Core::VarDef { .. } |
+        Core::Assign { .. }
+    )
+}
+
 fn skip_return(core: &Core) -> bool {
     matches!(core,
         Core::Return { .. } |
         Core::IfElse { .. } |
-        Core::Ternary { .. } |
         Core::Match { .. } |
         Core::Raise { .. } |
-        Core::TryExcept {..}
+        Core::TryExcept { .. } |
+        Core::Block { .. }
     )
 }
 
