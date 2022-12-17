@@ -181,10 +181,9 @@ mod test {
         let asts = parse_direct(&source).expect("valid AST");
 
         assert_eq!(asts.len(), 1);
-        let reassignment = asts.first().expect("return");
-        let expr = match &reassignment.node {
-            Node::Return { expr } => (expr.clone()),
-            other => panic!("Expected reassignment, was {:?}", other),
+        let ret = asts.first().expect("return");
+        let Node::Return { expr } = &ret.node else {
+            panic!("Expected reassignment, was: {:?}", ret.node)
         };
 
         assert_eq!(expr.pos, Position::new(CaretPos::new(1, 7), CaretPos::new(1, 9)));

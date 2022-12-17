@@ -9,6 +9,7 @@ def h := 80
 def i := 90
 def j := 100
 
+_not_ a
 a << b
 c >> d
 e _and_ f

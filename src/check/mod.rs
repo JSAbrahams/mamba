@@ -93,15 +93,12 @@ mod tests {
         let ast = parse(src).unwrap();
         let result = check_all(&[*ast]).unwrap();
 
-        let statements = if let NodeTy::Block { statements } = &result[0].node {
-            statements.clone()
-        } else {
+        let NodeTy::Block { statements } = &result[0].node else {
             panic!()
         };
 
-        let expr = match &statements[0].node {
-            NodeTy::VariableDef { expr, .. } => expr.clone().unwrap(),
-            other => panic!("Expected variabledef: {:?}", other)
+        let NodeTy::VariableDef { expr: Some(expr), .. } = &statements[0].node else {
+            panic!("Expected variabledef: {:?}", statements[0].node)
         };
 
         assert_eq!(expr.ty, Some(Name::from("Int")));
@@ -113,15 +110,12 @@ mod tests {
         let ast = parse(src).unwrap();
         let result = check_all(&[*ast]).unwrap();
 
-        let statements = if let NodeTy::Block { statements } = &result[0].node {
-            statements.clone()
-        } else {
+        let NodeTy::Block { statements } = &result[0].node else {
             panic!()
         };
 
-        let expr = match &statements[0].node {
-            NodeTy::VariableDef { expr, .. } => expr.clone().unwrap(),
-            other => panic!("Expected variabledef: {:?}", other)
+        let NodeTy::VariableDef { expr: Some(expr), .. } = &statements[0].node else {
+            panic!("Expected variabledef: {:?}", statements[0].node)
         };
 
         assert_eq!(expr.ty, Some(Name::from("Int").union(&Name::from("String"))));
