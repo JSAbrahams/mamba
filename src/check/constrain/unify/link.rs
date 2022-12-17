@@ -8,7 +8,6 @@ use crate::check::constrain::unify::expression::unify_expression;
 use crate::check::constrain::unify::function::unify_function;
 use crate::check::constrain::unify::ty::unify_type;
 use crate::check::context::Context;
-use crate::check::name::{Any, Name};
 
 /// Unifies all constraints.
 ///
@@ -28,10 +27,10 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            if name != &Name::any() { constraints.push_ty(right.pos, name); }
+            constraints.push_ty(right.pos, name);
         }
         if let Type { name } = &right.expect {
-            if name != &Name::any() { constraints.push_ty(left.pos, name); }
+            constraints.push_ty(left.pos, name);
         }
 
         match (&left.expect, &right.expect) {
