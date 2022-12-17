@@ -25,14 +25,11 @@ pub fn unify_type(
 
     match (&left.expect, &right.expect) {
         (Type { name: l_ty }, Type { name: r_ty }) => {
+            println!("{} = {}, {:?}", l_ty, r_ty, constraint.superset);
             let left_is_super = (constraint.superset == ConstrVariant::Left)
                 && l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any();
             let right_is_super = (constraint.superset == ConstrVariant::Right)
                 && r_ty.is_superset_of(l_ty, ctx, left.pos)? || r_ty == &Name::any();
-            let either_is_super = (constraint.superset == ConstrVariant::Either)
-                && (l_ty.is_superset_of(r_ty, ctx, left.pos)?
-                || r_ty.is_superset_of(l_ty, ctx, left.pos)?)
-                || l_ty == &Name::any() || r_ty == &Name::any();
 
             if l_ty.is_temporary() {
                 let mut constr =
@@ -42,11 +39,10 @@ pub fn unify_type(
                 let mut constr =
                     substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
                 unify_link(&mut constr, ctx, total)
-            } else if left_is_super || right_is_super || either_is_super {
+            } else if left_is_super || right_is_super {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
-                unify_link(constraints, ctx, total)
-            } else if constraint.superset == ConstrVariant::Either {
+
                 constraints.push_ty(left.pos, &l_ty.union(r_ty));
                 constraints.push_ty(right.pos, &l_ty.union(r_ty));
                 unify_link(constraints, ctx, total)
@@ -60,8 +56,7 @@ pub fn unify_type(
         }
 
         (Raises { name: l_ty }, Raises { name: r_ty }) => {
-            let left_confirmed_super = (constraint.superset == ConstrVariant::Left
-                || constraint.superset == ConstrVariant::Either)
+            let left_confirmed_super = (constraint.superset == ConstrVariant::Left)
                 && l_ty.is_superset_of(r_ty, ctx, left.pos)?;
             let right_confirmed_super = (constraint.superset == ConstrVariant::Right)
                 && r_ty.is_superset_of(l_ty, ctx, left.pos)?;
