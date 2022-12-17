@@ -51,7 +51,7 @@ pub fn constr_col(
                 }
                 Box::from(Expected::new(first.pos, &Expect::try_from((first, &env.var_mappings))?))
             } else {
-                Box::from(Expected::new(collection.pos, &Type { name: Name::any() }))
+                Box::from(Expected::new(collection.pos, &Expect::any()))
             };
 
             ("collection", Collection { ty })
@@ -63,7 +63,7 @@ pub fn constr_col(
         }
 
         _ => {
-            let expect = if let Some(name) = temp_type { Type { name } } else { Type { name: Name::any() } };
+            let expect = if let Some(name) = temp_type { Type { name } } else { Expect::any() };
             let expected = Collection { ty: Box::from(Expected::new(collection.pos, &expect)) };
             ("collection", expected)
         }
@@ -88,14 +88,43 @@ pub fn gen_collection_lookup(
     // Make col constraint before inserting environment, in case shadowed here
     let col_exp = Expected::try_from((col, &env.var_mappings))?;
     for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
-        env = env.insert_var(mutable, &var, &Expected::new(lookup.pos, &Type { name: Name::any() }));
+        env = env.insert_var(mutable, &var, &Expected::new(lookup.pos, &Expect::any()));
     }
 
-    let lookup_exp = Expected::new(
-        lookup.pos,
+    let col_ty_exp = Expected::new(
+        col.pos,
         &Collection { ty: Box::from(Expected::try_from((lookup, &env.var_mappings))?) },
     );
 
-    constr.add("collection lookup", &lookup_exp, &col_exp);
+    constr.add("collection lookup", &col_ty_exp, &col_exp);
     Ok((constr.clone(), env))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::check::ast::NodeTy;
+    use crate::check::check_all;
+    use crate::check::name::Name;
+    use crate::parse::parse;
+
+    #[test]
+    fn for_col_variable_ty() {
+        let src = "def a := 0 ..= 2\nfor i in a do\n    print(\"hello\")";
+        let ast = parse(src).unwrap();
+        let result = check_all(&[*ast]).unwrap();
+
+        let statements = if let NodeTy::Block { statements } = &result[0].node {
+            statements.clone()
+        } else {
+            panic!()
+        };
+
+        let (col, expr) = match &statements[1].node {
+            NodeTy::For { col, expr, .. } => (col.clone(), expr.clone()),
+            other => panic!("Expected for: {:?}", other)
+        };
+
+        assert_eq!(expr.ty, Some(Name::from("Int")));
+        assert_eq!(col.ty, Some(Name::from("Range")));
+    }
 }

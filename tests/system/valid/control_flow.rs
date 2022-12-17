@@ -36,6 +36,18 @@ fn if_ast_verify() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // See #367
+fn if_in_if_cond() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "if_in_if_cond")
+}
+
+#[test]
+#[ignore] // See #367
+fn if_in_for_loop() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "if_in_for_loop")
+}
+
+#[test]
 fn if_two_types() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "if_two_types")
 }
@@ -44,6 +56,7 @@ fn if_two_types() -> OutTestRet {
 fn while_ast_verify() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "while")
 }
+
 
 #[test]
 fn match_stmt_ast_verify() -> OutTestRet {

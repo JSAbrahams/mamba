@@ -4,8 +4,8 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, function, LookupClass};
@@ -170,7 +170,7 @@ pub fn identifier_from_var(
             env = env.insert_var(mutable && f_mut, &f_name, &ty);
         }
     } else {
-        let any = Expected::new(var.pos, &Type { name: Name::any() });
+        let any = Expected::new(var.pos, &Expect::any());
         for (f_mut, f_name) in identifier.fields(var.pos)? {
             env = env.insert_var(mutable && f_mut, &f_name, &any);
         }

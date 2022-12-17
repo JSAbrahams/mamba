@@ -302,6 +302,11 @@ impl Substitute for Name {
 }
 
 impl Name {
+    pub fn trim_any(&self) -> Name {
+        let names = self.names.iter().filter(|n| **n != TrueName::any()).cloned().collect();
+        Name { names }
+    }
+
     pub fn as_direct(&self) -> HashSet<StringName> {
         self.names.iter().map(StringName::from).collect()
     }

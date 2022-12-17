@@ -9,7 +9,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss::{BOOL, FLOAT, INT, NONE, STRING};
-use crate::check::name::{Name, Nullable};
+use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -76,6 +76,10 @@ pub enum Expect {
     Type { name: Name },
 }
 
+impl Any for Expect {
+    fn any() -> Self { Type { name: Name::any() } }
+}
+
 impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
     type Error = Vec<TypeErr>;
 
@@ -126,14 +130,14 @@ impl Display for Expect {
                 let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "({})", comma_delm(elements))
             }
-            Raises { name: ty } => write!(f, "Raises {}", ty),
+            Raises { name: ty } => write!(f, "Raises {ty}"),
             Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "{}({})", name, comma_delm(args))
             }
-            Field { name } => write!(f, "{}", name),
-            Type { name } => write!(f, "{}", name),
+            Field { name } => write!(f, "{name}"),
+            Type { name } => write!(f, "{name}"),
         }
     }
 }

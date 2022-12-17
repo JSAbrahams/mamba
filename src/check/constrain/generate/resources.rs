@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Raises, Type};
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::env::Environment;
@@ -32,7 +32,7 @@ pub fn gen_resources(
             constr.new_set(true);
             let resource_exp = Expected::try_from((resource, &env.var_mappings))?;
             constr.add("with as", &resource_exp, &Expected::try_from((alias, &env.var_mappings))?);
-            constr.add("with as", &Expected::new(resource.pos, &Type { name: Name::any() }), &resource_exp);
+            constr.add("with as", &Expected::new(resource.pos, &Expect::any()), &resource_exp);
 
             if let Some(ty) = ty {
                 let ty_exp = Type { name: Name::try_from(ty)? };
@@ -63,7 +63,7 @@ pub fn gen_resources(
             constr.add(
                 "with",
                 &Expected::try_from((resource, &env.var_mappings))?,
-                &Expected::new(resource.pos, &Type { name: Name::any() }),
+                &Expected::new(resource.pos, &Expect::any()),
             );
             let (mut constr, env) = generate(resource, env, ctx, constr)?;
             constr.exit_set(ast.pos)?;

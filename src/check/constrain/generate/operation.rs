@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::env::Environment;
@@ -123,22 +123,22 @@ pub fn gen_op(
 
         Node::BOneCmpl { expr } => {
             let left = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add("binary compliment", &left, &Expected::new(expr.pos, &Type { name: Name::any() }));
+            constr.add("binary compliment", &left, &Expected::new(expr.pos, &Expect::any()));
             generate(expr, env, ctx, constr)
         }
         Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
-            constr.add("binary logical op", &l_exp, &Expected::new(left.pos, &Type { name: Name::any() }));
+            constr.add("binary logical op", &l_exp, &Expected::new(left.pos, &Expect::any()));
 
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
-            constr.add("binary logical op", &l_exp, &Expected::new(right.pos, &Type { name: Name::any() }));
+            constr.add("binary logical op", &l_exp, &Expected::new(right.pos, &Expect::any()));
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::BLShift { left, right } | Node::BRShift { left, right } => {
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
-            constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Type { name: Name::any() }));
+            constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Expect::any()));
 
             let name = Name::from(INT);
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
