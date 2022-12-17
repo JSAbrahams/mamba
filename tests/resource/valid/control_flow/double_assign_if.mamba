@@ -1,0 +1,6 @@
+def other := 20
+def my_variable := if True then
+    other := 30
+    20
+else
+    10
