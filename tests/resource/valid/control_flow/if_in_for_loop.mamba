@@ -1,0 +1,2 @@
+for i in if True then 0..= 2 else 0 .. 2 do
+    print("hello")

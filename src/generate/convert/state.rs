@@ -7,15 +7,18 @@ use crate::generate::GenArguments;
 
 #[derive(Clone, Debug)]
 pub struct State {
-    pub tup: usize,
     pub interface: bool,
+
+    pub tup: usize,
     pub expand_ty: bool,
     pub def_as_fun_arg: bool,
-    pub tup_lit: bool,
-    pub last_return: bool,
-    pub assign_to: Option<Core>,
 
+    pub tup_lit: bool,
     pub annotate: bool,
+
+    pub is_last_must_be_ret: bool,
+    pub must_assign_to: Option<Core>,
+    pub is_remove_last_ret: bool,
 }
 
 impl From<&GenArguments> for State {
@@ -32,8 +35,9 @@ impl State {
             expand_ty: true,
             def_as_fun_arg: false,
             tup_lit: false,
-            last_return: false,
-            assign_to: None,
+            is_last_must_be_ret: false,
+            is_remove_last_ret: false,
+            must_assign_to: None,
             annotate: false,
         }
     }
@@ -54,14 +58,18 @@ impl State {
         State { expand_ty, ..self.clone() }
     }
 
-    pub fn last_ret(&self, last_return: bool) -> State { State { last_return, ..self.clone() } }
+    pub fn remove_ret(&self, remove_ret: bool) -> State {
+        State { is_remove_last_ret: remove_ret, ..self.clone() }
+    }
+
+    pub fn is_last_must_be_ret(&self, last_return: bool) -> State { State { is_last_must_be_ret: last_return, ..self.clone() } }
 
     pub fn def_as_fun_arg(&self, def_as_fun_arg: bool) -> State {
         State { def_as_fun_arg, ..self.clone() }
     }
 
-    pub fn assign_to(&self, assign_to: Option<&Core>) -> State {
-        State { assign_to: assign_to.cloned(), ..self.clone() }
+    pub fn must_assign_to(&self, assign_to: Option<&Core>) -> State {
+        State { must_assign_to: assign_to.cloned(), ..self.clone() }
     }
 }
 

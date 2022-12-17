@@ -4,9 +4,9 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
 use std::iter::FromIterator;
 
+use crate::check::context::{clss, Context};
 use crate::check::context::clss::NONE;
-use crate::check::context::Context;
-use crate::check::name::{ColType, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
+use crate::check::name::{Any, ColType, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
 use crate::check::result::TypeResult;
@@ -33,6 +33,12 @@ impl PartialOrd<Self> for TrueName {
         } else {
             self.variant.partial_cmp(&other.variant)
         }
+    }
+}
+
+impl Any for TrueName {
+    fn any() -> Self {
+        TrueName::from(clss::ANY)
     }
 }
 

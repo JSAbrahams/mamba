@@ -47,8 +47,18 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                             _ => None,
                         }
                     },
-                    expr: match (var, expression) {
-                        (_, Some(expr)) => Some(Box::from(convert_node(expr, imp, &state, ctx)?)),
+                    expr: match (&var, expression) {
+                        (_, Some(expr)) => {
+                            let expr_core = convert_node(expr, imp, &state, ctx)?;
+                            match expr_core {
+                                Core::IfElse { .. } | Core::Match { .. } => {
+                                    // redo convert but with assign to state
+                                    let state = state.must_assign_to(Option::from(&var.clone()));
+                                    return convert_node(expr, imp, &state, ctx);
+                                }
+                                _ => Some(Box::from(expr_core))
+                            }
+                        }
                         (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
                             elements: vec![Core::None; elements.len()],
                         })),
@@ -68,7 +78,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                 (vec![String::from("abstractmethod")], Box::from(Core::Pass))
             } else {
                 (vec![], Box::from(match expression {
-                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true).last_ret(ty.is_some()), ctx)?,
+                    Some(expr) => convert_node(expr, imp, &state.expand_ty(true).is_last_must_be_ret(ty.is_some()), ctx)?,
                     None => Core::Pass,
                 }))
             };

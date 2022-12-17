@@ -9,6 +9,7 @@ h: int = 80
 i: int = 90
 j: int = 100
 
+~a
 a << b
 c >> d
 e & f

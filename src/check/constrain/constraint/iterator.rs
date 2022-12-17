@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::name::{Name, Union};
+use crate::check::name::{Any, Name, Union};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -30,9 +30,14 @@ impl Constraints {
     ///
     /// If already present at position, then union is created between current [Name] and given
     /// [Name].
-    /// Returns [Name] which was already at that position, which might be [None]
+    /// Ignores [Any] type, and trims from union.
     pub fn push_ty(&mut self, pos: Position, name: &Name) {
-        let name = self.finished.get(&pos).map_or(name.clone(), |s_name| s_name.union(name));
+        if *name == Name::any() {
+            return;
+        }
+        let name = name.trim_any();
+
+        let name = self.finished.get(&pos).map_or(name.clone(), |s_name| s_name.union(&name));
         if self.finished.insert(pos, name.clone()).is_none() {
             trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
         }

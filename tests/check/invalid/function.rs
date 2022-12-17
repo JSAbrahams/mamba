@@ -107,6 +107,7 @@ fn wrong_return_type() {
 }
 
 #[test]
+#[ignore] // See #366
 fn return_undefined() {
     let source = resource_content(false, &["type", "function"], "return_undefined.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

@@ -11,6 +11,7 @@ use crate::common::position::Position;
 #[derive(Clone, Debug, Default)]
 pub struct Environment {
     pub in_loop: bool,
+    pub exp_expression: bool,
     pub last_stmt_in_function: bool,
     pub is_define_mode: bool,
     pub return_type: Option<Expected>,
@@ -37,6 +38,10 @@ impl Environment {
     /// Causes all identifiers to be treated as definitions.
     pub fn define_mode(&self, is_define_mode: bool) -> Environment {
         Environment { is_define_mode, ..self.clone() }
+    }
+
+    pub fn exp_expression(&self, exp_expression: bool) -> Environment {
+        Environment { exp_expression, ..self.clone() }
     }
 
     /// Insert a variable.

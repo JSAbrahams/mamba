@@ -1,0 +1,6 @@
+def a := True
+def b := True
+def c := False
+
+def d := if a then b else c
+def e := if d then b else c

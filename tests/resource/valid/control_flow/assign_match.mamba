@@ -1,0 +1,4 @@
+def c := True
+def my_var := match c
+    True => 10
+    False => 20

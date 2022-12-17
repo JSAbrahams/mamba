@@ -1,0 +1,6 @@
+def my_var := if True then
+    print("then")
+    10
+else
+    print("else")
+    20

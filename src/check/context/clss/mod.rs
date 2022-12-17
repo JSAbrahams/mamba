@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, enumerate, Itertools};
 
-use crate::check::context::{clss, Context, LookupClass};
+use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::arg::generic::GenericFunctionArg;
 use crate::check::context::clss::generic::GenericClass;
@@ -36,6 +36,7 @@ pub const TUPLE: &str = "Tuple";
 
 pub const CALLABLE: &str = "Callable";
 
+pub const ANY: &str = "Any";
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
 
@@ -79,7 +80,7 @@ pub trait GetFun<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(self.name.name == clss::COLLECTION && self.name.name == name.name
+        Ok(self.name.name == COLLECTION && self.name.name == name.name
             || &self.name == name
             || self
             .parents
@@ -135,7 +136,7 @@ impl LookupClass<&StringName, Class> for Context {
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
         if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name) {
             let mut generics = HashMap::new();
-            if class.name == clss::TUPLE || class.name == clss::COLLECTION {
+            if class.name == TUPLE || class.name == COLLECTION {
                 // Tuple and collection exception, variable generic count
                 let mut generic_keys: Vec<Name> = vec![];
                 for (i, gen) in enumerate(&class.generics) {
