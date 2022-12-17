@@ -82,6 +82,7 @@ pub fn generate(
         Mod { .. } => gen_op(ast, env, ctx, constr),
         AddU { .. } | SubU { .. } => gen_op(ast, env, ctx, constr),
         Sqrt { .. } => gen_op(ast, env, ctx, constr),
+        Undefined => gen_op(ast, env, ctx, constr),
 
         BOneCmpl { .. } => gen_op(ast, env, ctx, constr),
         BAnd { .. } | BOr { .. } | BXOr { .. } => gen_op(ast, env, ctx, constr),
@@ -103,7 +104,6 @@ pub fn generate(
         | ExpressionType { .. }
         | DocStr { .. }
         | Underscore
-        | Undefined
         | Comment { .. } => Ok((constr.clone(), env.clone())),
     }
 }

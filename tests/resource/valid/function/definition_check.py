@@ -7,10 +7,7 @@ def fun_a() -> Optional[int]:
     if False or True:
         print("world")
     a = None or 11
-    if True:
-        return 10
-    else:
-        return None
+    return 10 if True else None
 
 def fun_b(b: int): print(b)
 

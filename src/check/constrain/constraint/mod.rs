@@ -10,7 +10,7 @@ pub mod builder;
 pub mod expected;
 pub mod iterator;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Constraint {
     pub is_flag: bool,
     pub is_sub: bool,
@@ -20,7 +20,7 @@ pub struct Constraint {
     pub superset: ConstrVariant,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ConstrVariant {
     Left,
     Right,
@@ -88,5 +88,11 @@ impl Constraint {
         };
 
         Constraint::new(msg, &bool, &Expected::new(expected.pos, &access))
+    }
+
+    pub fn undefined(msg: &str, expected: &Expected) -> Constraint {
+        let none =
+            Expected::new(expected.pos, &Type { name: Name::from(clss::NONE) });
+        Constraint::new(msg, expected, &none)
     }
 }

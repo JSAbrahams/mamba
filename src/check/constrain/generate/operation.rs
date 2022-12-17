@@ -12,7 +12,7 @@ use crate::check::context::clss::{FLOAT, INT, STRING};
 use crate::check::context::function::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT, SUB,
 };
-use crate::check::name::Name;
+use crate::check::name::{Any, Name};
 use crate::check::name::string_name::StringName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
@@ -33,7 +33,7 @@ pub fn gen_op(
         Node::Range { .. } => {
             constr.add(
                 "range",
-                &Expected::new(ast.pos, &Expect::Type { name: Name::from(clss::RANGE) }),
+                &Expected::new(ast.pos, &Type { name: Name::from(clss::RANGE) }),
                 &Expected::try_from((ast, &env.var_mappings))?,
             );
             constr_range(ast, env, ctx, constr, "range", true)
@@ -41,7 +41,7 @@ pub fn gen_op(
         Node::Slice { .. } => {
             constr.add(
                 "slice",
-                &Expected::new(ast.pos, &Expect::Type { name: Name::from(clss::SLICE) }),
+                &Expected::new(ast.pos, &Type { name: Name::from(clss::SLICE) }),
                 &Expected::try_from((ast, &env.var_mappings))?,
             );
             constr_range(ast, env, ctx, constr, "slice", false)
@@ -70,6 +70,13 @@ pub fn gen_op(
             ));
             Ok((constr.clone(), env.clone()))
         }
+        Node::Undefined => {
+            constr.add_constr(&Constraint::undefined(
+                "undefined",
+                &Expected::try_from((ast, &env.var_mappings))?,
+            ));
+            Ok((constr.clone(), env.clone()))
+        }
 
         Node::Add { left, right } => impl_magic(ADD, ast, left, right, env, ctx, constr),
         Node::Sub { left, right } => impl_magic(SUB, ast, left, right, env, ctx, constr),
@@ -89,7 +96,7 @@ pub fn gen_op(
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
-            let ty = Type { name: Name::from(clss::FLOAT) };
+            let ty = Type { name: Name::from(FLOAT) };
             constr.add(
                 "square root",
                 &Expected::try_from((ast, &env.var_mappings))?,
@@ -116,24 +123,24 @@ pub fn gen_op(
 
         Node::BOneCmpl { expr } => {
             let left = Expected::try_from((expr, &env.var_mappings))?;
-            constr.add("binary compliment", &left, &Expected::new(expr.pos, &ExpressionAny));
+            constr.add("binary compliment", &left, &Expected::new(expr.pos, &Expect::any()));
             generate(expr, env, ctx, constr)
         }
         Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
-            constr.add("binary logical op", &l_exp, &Expected::new(left.pos, &ExpressionAny));
+            constr.add("binary logical op", &l_exp, &Expected::new(left.pos, &Expect::any()));
 
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
-            constr.add("binary logical op", &l_exp, &Expected::new(right.pos, &ExpressionAny));
+            constr.add("binary logical op", &l_exp, &Expected::new(right.pos, &Expect::any()));
 
             let (mut constr, env) = generate(right, env, ctx, constr)?;
             generate(left, &env, ctx, &mut constr)
         }
         Node::BLShift { left, right } | Node::BRShift { left, right } => {
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
-            constr.add("binary shift", &l_exp, &Expected::new(right.pos, &ExpressionAny));
+            constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Expect::any()));
 
-            let name = Name::from(clss::INT);
+            let name = Name::from(INT);
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
             constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Type { name }));
 
@@ -200,7 +207,7 @@ pub fn constr_range(
         }
     };
 
-    let name = Name::from(clss::INT);
+    let name = Name::from(INT);
     let int_exp = &Expected::new(from.pos, &Type { name });
 
     constr.add(

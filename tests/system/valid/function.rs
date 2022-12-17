@@ -29,3 +29,8 @@ fn match_function() -> OutTestRet {
 fn return_last_expression() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "return_last_expression")
 }
+
+#[test]
+fn ternary_function_call() -> OutTestRet {
+    test_directory(true, &["function"], &["function", "target"], "ternary_function_call")
+}

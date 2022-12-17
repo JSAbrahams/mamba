@@ -5,6 +5,7 @@ use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::generic::generics;
+use crate::check::name::Any;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::AST;
@@ -26,11 +27,25 @@ mod python;
 ///
 /// Functions and fields are also stored alongside identified classes such that
 /// we can also check usage of top-level fields and functions.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Context {
     pub classes: HashSet<GenericClass>,
     pub functions: HashSet<GenericFunction>,
     pub fields: HashSet<GenericField>,
+}
+
+impl Default for Context {
+    /// Create default Context with only `Any` type present.
+    fn default() -> Self {
+        let mut classes = HashSet::new();
+        classes.insert(GenericClass::any());
+
+        Context {
+            classes,
+            functions: Default::default(),
+            fields: Default::default(),
+        }
+    }
 }
 
 impl TryFrom<&[AST]> for Context {
@@ -38,7 +53,12 @@ impl TryFrom<&[AST]> for Context {
 
     fn try_from(files: &[AST]) -> Result<Self, Self::Error> {
         let (classes, fields, functions) = generics(files)?;
-        Context { classes, functions, fields }.into_with_primitives()?.into_with_std_lib()
+        let mut context = Context::default();
+        classes.iter().for_each(|clss| { context.classes.insert(clss.clone()); });
+        fields.iter().for_each(|fld| { context.fields.insert(fld.clone()); });
+        functions.iter().for_each(|func| { context.functions.insert(func.clone()); });
+
+        context.into_with_primitives()?.into_with_std_lib()
     }
 }
 
@@ -103,6 +123,14 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[test]
+    pub fn default_any_present() {
+        let files = vec![];
+        let context = Context::try_from(files.as_slice()).unwrap();
+
+        context.class(&StringName::from("Any"), Position::default()).unwrap();
     }
 
     #[test]

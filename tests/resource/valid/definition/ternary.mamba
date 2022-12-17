@@ -1,0 +1,6 @@
+if True then
+    print(10)
+else
+    print(20)
+
+def a := if False then 20 else 30
