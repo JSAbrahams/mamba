@@ -5,7 +5,7 @@ use crate::check::ast::NodeTy;
 use crate::check::name::Name;
 use crate::common::position::Position;
 
-type PosNameMap = HashMap<Position, Name>;
+pub type PosNameMap = HashMap<Position, Name>;
 
 impl From<(&AST, &PosNameMap)> for ASTTy {
     fn from((ast, names): (&AST, &PosNameMap)) -> Self {

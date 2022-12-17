@@ -1,46 +1,26 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::name::{Any, Name, Union};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
-use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
     pub in_class: Vec<StringName>,
     constraints: VecDeque<Constraint>,
-    pub finished: HashMap<Position, Name>,
 }
 
 impl From<&(Vec<StringName>, Vec<Constraint>)> for Constraints {
     fn from((in_class, constraints): &(Vec<StringName>, Vec<Constraint>)) -> Self {
         let constraints = VecDeque::from(constraints.clone());
-        Constraints { in_class: in_class.clone(), constraints, finished: HashMap::new() }
+        Constraints { in_class: in_class.clone(), constraints }
     }
 }
 
 impl Constraints {
     pub fn new() -> Constraints {
-        Constraints { in_class: Vec::new(), constraints: VecDeque::new(), finished: HashMap::new() }
-    }
-
-    /// Push name associated with specific position in [AST].
-    ///
-    /// If already present at position, then union is created between current [Name] and given
-    /// [Name].
-    /// Ignores [Any] type, and trims from union.
-    pub fn push_ty(&mut self, pos: Position, name: &Name) {
-        if *name == Name::any() {
-            return;
-        }
-        let name = name.trim_any();
-
-        let name = self.finished.get(&pos).map_or(name.clone(), |s_name| s_name.union(&name));
-        if self.finished.insert(pos, name.clone()).is_none() {
-            trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
-        }
+        Constraints { in_class: Vec::new(), constraints: VecDeque::new() }
     }
 
     pub fn len(&self) -> usize { self.constraints.len() }
@@ -60,10 +40,6 @@ impl Constraints {
     pub fn append(&mut self, constraints: &mut Constraints) {
         self.in_class.append(&mut constraints.in_class);
         self.constraints.append(&mut constraints.constraints);
-        self.finished = constraints.finished.iter().fold(self.finished.clone(), |mut acc, (pos, name)| {
-            acc.insert(*pos, name.clone());
-            acc
-        });
     }
 
     pub fn push_constr(&mut self, constr: &Constraint) {

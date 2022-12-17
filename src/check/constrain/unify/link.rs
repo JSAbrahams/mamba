@@ -5,6 +5,7 @@ use crate::check::constrain::constraint::expected::Expect::{
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::unify_expression;
+use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::function::unify_function;
 use crate::check::constrain::unify::ty::unify_type;
 use crate::check::context::Context;
@@ -14,7 +15,7 @@ use crate::check::context::Context;
 /// We use a mutable reference to constraints for performance reasons.
 /// Otherwise, we have to make a entirely new copy of the list of all
 /// constraints each time we do a recursive call to unify link.
-pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) -> Unified {
+pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &Context, total: usize) -> Unified {
     if let Some(constraint) = &constraints.pop_constr() {
         let (left, right) = (&constraint.left, &constraint.right);
 
@@ -27,43 +28,43 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            constraints.push_ty(right.pos, name);
+            finished.push_ty(right.pos, name);
         }
         if let Type { name } = &right.expect {
-            constraints.push_ty(left.pos, name);
+            finished.push_ty(left.pos, name);
         }
 
         match (&left.expect, &right.expect) {
             // trivially equal
-            (left, right) if left == right => unify_link(constraints, ctx, total),
+            (left, right) if left == right => unify_link(constraints, finished, ctx, total),
 
             (Function { .. }, Type { .. })
             | (Access { .. }, _)
             | (Type { .. }, Function { .. })
-            | (_, Access { .. }) => unify_function(constraint, constraints, ctx, total),
+            | (_, Access { .. }) => unify_function(constraint, constraints, finished, ctx, total),
 
             (Expression { .. }, _) | (_, Expression { .. }) => {
-                unify_expression(constraint, constraints, ctx, count, total)
+                unify_expression(constraint, constraints, finished, ctx, count, total)
             }
 
             (Raises { .. }, _) | (_, Raises { .. }) => {
-                unify_type(constraint, constraints, ctx, total)
+                unify_type(constraint, constraints, finished, ctx, total)
             }
             (Tuple { .. }, _) | (_, Tuple { .. }) => {
-                unify_type(constraint, constraints, ctx, total)
+                unify_type(constraint, constraints, finished, ctx, total)
             }
-            (Type { .. }, _) | (_, Type { .. }) => unify_type(constraint, constraints, ctx, total),
+            (Type { .. }, _) | (_, Type { .. }) => unify_type(constraint, constraints, finished, ctx, total),
             (Collection { .. }, Collection { .. }) => {
-                unify_type(constraint, constraints, ctx, total)
+                unify_type(constraint, constraints, finished, ctx, total)
             }
 
             _ => {
                 let mut constr = reinsert(constraints, constraint, total)?;
-                unify_link(&mut constr, ctx, total + 1)
+                unify_link(&mut constr, finished, ctx, total + 1)
             }
         }
     } else {
-        Ok(constraints.clone())
+        Ok(finished.clone())
     }
 }
 
@@ -71,7 +72,7 @@ pub fn unify_link(constraints: &mut Constraints, ctx: &Context, total: usize) ->
 ///
 /// The amount of attempts is a counter which states how often we allow
 /// reinserts.
-pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified {
+pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified<Constraints> {
     let pos = format!("({}={}) ", constraint.left.pos.start, constraint.right.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
     trace!("{:width$}{}{}", pos, count, constraint, width = 17);

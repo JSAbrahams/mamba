@@ -8,6 +8,7 @@ use crate::check::constrain::constraint::expected::Expect::{Access, Field, Funct
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
+use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
@@ -22,6 +23,7 @@ use crate::common::position::Position;
 pub fn unify_function(
     constraint: &Constraint,
     constraints: &mut Constraints,
+    finished: &mut Finished,
     ctx: &Context,
     total: usize,
 ) -> Unified {
@@ -63,17 +65,18 @@ pub fn unify_function(
                 }
             }
 
-            unify_link(constraints, ctx, total + count)
+            unify_link(constraints, finished, ctx, total + count)
         }
 
         (Access { entity, name }, _) => {
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
-                        field_access(constraints, ctx, entity_name, name, left, right, total)
+                        field_access(constraints, finished, ctx, entity_name, name, left, right, total)
                     }
                     Function { name, args } => function_access(
                         constraints,
+                        finished,
                         ctx,
                         entity_name,
                         name,
@@ -84,22 +87,23 @@ pub fn unify_function(
                     ),
                     _ => {
                         let mut constr = reinsert(constraints, constraint, total)?;
-                        unify_link(&mut constr, ctx, total)
+                        unify_link(&mut constr, finished, ctx, total)
                     }
                 }
             } else {
                 let mut constr = reinsert(constraints, constraint, total)?;
-                unify_link(&mut constr, ctx, total)
+                unify_link(&mut constr, finished, ctx, total)
             }
         }
         (_, Access { entity, name }) => {
             if let Type { name: entity_name } = &entity.expect {
                 match &name.expect {
                     Field { name } => {
-                        field_access(constraints, ctx, entity_name, name, right, left, total)
+                        field_access(constraints, finished, ctx, entity_name, name, right, left, total)
                     }
                     Function { name, args } => function_access(
                         constraints,
+                        finished,
                         ctx,
                         entity_name,
                         name,
@@ -110,12 +114,12 @@ pub fn unify_function(
                     ),
                     _ => {
                         let mut constr = reinsert(constraints, constraint, total)?;
-                        unify_link(&mut constr, ctx, total)
+                        unify_link(&mut constr, finished, ctx, total)
                     }
                 }
             } else {
                 let mut constr = reinsert(constraints, constraint, total)?;
-                unify_link(&mut constr, ctx, total)
+                unify_link(&mut constr, finished, ctx, total)
             }
         }
 
@@ -128,6 +132,7 @@ pub fn unify_function(
 
 fn field_access(
     constraints: &mut Constraints,
+    finished: &mut Finished,
     ctx: &Context,
     entity_name: &Name,
     name: &str,
@@ -143,12 +148,13 @@ fn field_access(
         pushed += 1;
     }
 
-    unify_link(constraints, ctx, total + pushed)
+    unify_link(constraints, finished, ctx, total + pushed)
 }
 
 #[allow(clippy::too_many_arguments)]
 fn function_access(
     constraints: &mut Constraints,
+    finished: &mut Finished,
     ctx: &Context,
     entity_name: &Name,
     name: &StringName,
@@ -176,7 +182,7 @@ fn function_access(
     }
 
     let (mut constr, added) = unify_fun_arg(&possible_args, args, constraints, accessed.pos)?;
-    unify_link(&mut constr, ctx, total + added + pushed)
+    unify_link(&mut constr, finished, ctx, total + added + pushed)
 }
 
 fn unify_fun_arg(

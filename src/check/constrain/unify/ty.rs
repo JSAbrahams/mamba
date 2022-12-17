@@ -7,6 +7,7 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::expression::substitute::substitute;
+use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::{Any, ColType, IsSuperSet, Name, Union};
@@ -17,6 +18,7 @@ use crate::common::position::Position;
 pub fn unify_type(
     constraint: &Constraint,
     constraints: &mut Constraints,
+    finished: &mut Finished,
     ctx: &Context,
     total: usize,
 ) -> Unified {
@@ -34,18 +36,18 @@ pub fn unify_type(
             if l_ty.is_temporary() {
                 let mut constr =
                     substitute_ty(right.pos, r_ty, left.pos, l_ty, constraints, count, total)?;
-                unify_link(&mut constr, ctx, total)
+                unify_link(&mut constr, finished, ctx, total)
             } else if r_ty.is_temporary() {
                 let mut constr =
                     substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
-                unify_link(&mut constr, ctx, total)
+                unify_link(&mut constr, finished, ctx, total)
             } else if left_is_super || right_is_super {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
 
-                constraints.push_ty(left.pos, &l_ty.union(r_ty));
-                constraints.push_ty(right.pos, &l_ty.union(r_ty));
-                unify_link(constraints, ctx, total)
+                finished.push_ty(left.pos, &l_ty.union(r_ty));
+                finished.push_ty(right.pos, &l_ty.union(r_ty));
+                unify_link(constraints, finished, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Unifying two types: Expected {}, was {}", left, right);
                 Err(vec![TypeErr::new(left.pos, &msg)])
@@ -64,15 +66,15 @@ pub fn unify_type(
             if l_ty.is_temporary() {
                 let mut constr =
                     substitute_ty(right.pos, r_ty, left.pos, l_ty, constraints, count, total)?;
-                unify_link(&mut constr, ctx, total)
+                unify_link(&mut constr, finished, ctx, total)
             } else if r_ty.is_temporary() {
                 let mut constr =
                     substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
-                unify_link(&mut constr, ctx, total)
+                unify_link(&mut constr, finished, ctx, total)
             } else if left_confirmed_super || right_confirmed_super {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
-                unify_link(constraints, ctx, total)
+                unify_link(constraints, finished, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 let msg = format!("Unexpected raises '{}', may only be `{}`", l_ty, r_ty);
                 Err(vec![TypeErr::new(left.pos, &msg)])
@@ -121,12 +123,12 @@ pub fn unify_type(
                 }
             }
 
-            unify_link(constraints, ctx, total)
+            unify_link(constraints, finished, ctx, total)
         }
 
         (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
             constraints.push("collection parameters", l_ty, r_ty);
-            unify_link(constraints, ctx, total + 1)
+            unify_link(constraints, finished, ctx, total + 1)
         }
         (Tuple { elements: l_ty }, Tuple { elements: r_ty }) => {
             for pair in l_ty.iter().zip_longest(r_ty.iter()) {
@@ -142,7 +144,7 @@ pub fn unify_type(
                     }
                 }
             }
-            unify_link(constraints, ctx, total + 1)
+            unify_link(constraints, finished, ctx, total + 1)
         }
 
         (l_exp, r_exp) => match (l_exp, r_exp) {
@@ -150,7 +152,7 @@ pub fn unify_type(
                 if let Some(col_ty) = name.col_type(ctx, right.pos)? {
                     let expect = Type { name: col_ty };
                     constraints.push("collection type", ty, &Expected::new(left.pos, &expect));
-                    unify_link(constraints, ctx, total + 1)
+                    unify_link(constraints, finished, ctx, total + 1)
                 } else {
                     let msg = format!("Unifying type: Expected {}, was {}", left, right);
                     Err(vec![TypeErr::new(left.pos, &msg)])
@@ -160,7 +162,7 @@ pub fn unify_type(
                 if let Some(col_ty) = name.col_type(ctx, left.pos)? {
                     let expect = Type { name: col_ty };
                     constraints.push("collection type", &Expected::new(left.pos, &expect), ty);
-                    unify_link(constraints, ctx, total + 1)
+                    unify_link(constraints, finished, ctx, total + 1)
                 } else {
                     let msg = format!("Unifying type: Expected {}, was {}", left, right);
                     Err(vec![TypeErr::new(left.pos, &msg)])
@@ -168,11 +170,11 @@ pub fn unify_type(
             }
 
             // Ignore raises
-            (Type { .. }, Raises { .. }) | (Raises { .. }, Type { .. }) => unify_link(constraints, ctx, total),
+            (Type { .. }, Raises { .. }) | (Raises { .. }, Type { .. }) => unify_link(constraints, finished, ctx, total),
 
             _ => {
                 if l_exp.is_none() && r_exp.is_none() {
-                    unify_link(constraints, ctx, total)
+                    unify_link(constraints, finished, ctx, total)
                 } else {
                     let msg = format!("Unifying type: Expected {}, was {}", left, right);
                     Err(vec![TypeErr::new(left.pos, &msg)])
