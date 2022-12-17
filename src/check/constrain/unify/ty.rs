@@ -27,7 +27,6 @@ pub fn unify_type(
 
     match (&left.expect, &right.expect) {
         (Type { name: l_ty }, Type { name: r_ty }) => {
-            println!("{} = {}, {:?}", l_ty, r_ty, constraint.superset);
             let left_is_super = (constraint.superset == ConstrVariant::Left)
                 && l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any();
             let right_is_super = (constraint.superset == ConstrVariant::Right)
