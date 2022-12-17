@@ -11,6 +11,11 @@ fn assign_match() -> OutTestRet {
 }
 
 #[test]
+fn double_assign_if() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "double_assign_if")
+}
+
+#[test]
 fn for_statements() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "for_statements")
 }
@@ -48,6 +53,7 @@ fn if_in_for_loop() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // not sure if the check stage should pass as of yet
 fn if_two_types() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "if_two_types")
 }

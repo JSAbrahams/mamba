@@ -24,15 +24,13 @@ pub struct Constraint {
 pub enum ConstrVariant {
     Left,
     Right,
-    Either,
 }
 
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let superset = match &self.superset {
             ConstrVariant::Left => "{left}  ",
-            ConstrVariant::Right => "{right}  ",
-            _ => ""
+            ConstrVariant::Right => "{right}  "
         };
 
         write!(f, "{}{} == {}", superset, self.left, self.right)
