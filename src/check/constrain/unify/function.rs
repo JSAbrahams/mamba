@@ -180,7 +180,7 @@ fn function_access(
 }
 
 fn unify_fun_arg(
-    f_args: &Vec<HashSet<FunctionArg>>,
+    f_args: &[HashSet<FunctionArg>],
     args: &[Expected],
     constr: &Constraints,
     pos: Position,

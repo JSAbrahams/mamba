@@ -23,7 +23,7 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
             } else {
                 (None, None)
             };
-            let assign_state = state.assign_to(var.as_deref());
+            let assign_state = state.must_assign_to(var.as_deref());
 
             Core::TryExcept {
                 setup: var.map(|var| Box::from(Core::VarDef { var, ty, expr: None })),

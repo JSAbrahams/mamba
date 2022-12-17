@@ -28,10 +28,10 @@ pub mod state;
 
 pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     // Prevent these state properties from propagating further
-    let assign_to = state.assign_to.clone();
-    let last_ret = state.last_return;
+    let must_assign_to = state.must_assign_to.clone();
+    let is_last_must_be_ret = state.is_last_must_be_ret;
 
-    let state = &state.assign_to(None).last_ret(false);
+    let state = &state.must_assign_to(None).is_last_must_be_ret(false);
 
     let core = match &ast.node {
         NodeTy::Import { from, import, alias } => Core::Import {
@@ -54,7 +54,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         },
 
         NodeTy::Block { statements } => Core::Block {
-            statements: convert_stmts(statements, imp, &state.assign_to(assign_to.as_ref()), ctx)?,
+            statements: convert_stmts(statements, imp, &state.must_assign_to(must_assign_to.as_ref()), ctx)?,
         },
 
         NodeTy::Int { lit } => Core::Int { int: lit.clone() },
@@ -91,12 +91,13 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
+        NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
         NodeTy::Return { expr } => {
             Core::Return { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
 
-        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.last_ret(last_ret), ctx)?,
-        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false).last_ret(last_ret), ctx)?,
+        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.is_last_must_be_ret(is_last_must_be_ret).must_assign_to(must_assign_to.as_ref()), ctx)?,
+        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false).is_last_must_be_ret(is_last_must_be_ret).must_assign_to(must_assign_to.as_ref()), ctx)?,
         NodeTy::While { .. } | NodeTy::For { .. } | NodeTy::Break | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
 
         NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
@@ -262,37 +263,50 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         _ => Core::Empty,
     };
 
-    let core = if let Some(assign_to) = assign_to {
-        match core {
-            Core::Block { .. } | Core::Return { .. } => core,
+    let core = if let Some(assign_to) = must_assign_to {
+        match &core {
+            Core::Block { ref statements } => match statements.last() {
+                Some(last) if skip_assign(last) => core.clone(),
+                Some(last) => {
+                    let last = match last {
+                        last if skip_assign(last) => last.clone(),
+                        _ => Core::Assign {
+                            left: Box::from(assign_to),
+                            right: Box::from(last.clone()),
+                            op: CoreOp::Assign,
+                        }
+                    };
+
+                    let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
+                    statements[idx] = last;
+                    Core::Block { statements }
+                }
+                _ => core.clone()
+            }
+            expr if skip_assign(expr) => core.clone(),
             expr => Core::Assign {
                 left: Box::from(assign_to),
-                right: Box::from(expr),
+                right: Box::from(expr.clone()),
                 op: CoreOp::Assign,
             },
         }
-    } else if last_ret {
-        match core {
-            Core::Block { ref statements } => if let Some(last) = statements.last() {
-                match last {
-                    last if skip_return(last) => core.clone(),
-                    _ => {
-                        let mut new_stmts = statements.clone();
-                        let last = if let Some(ref last) = new_stmts.pop() {
-                            match last {
-                                core if skip_return(core) => last.clone(),
-                                _ => Core::Return { expr: Box::from(last.clone()) }
-                            }
-                        } else {
-                            Core::Return { expr: Box::from(Core::None) }
-                        };
+    } else { core };
 
-                        new_stmts.push(last);
-                        Core::Block { statements: new_stmts }
-                    }
+    let core = if is_last_must_be_ret {
+        match core {
+            Core::Block { ref statements } => match statements.last() {
+                Some(last) if skip_return(last) => core.clone(),
+                Some(last) => {
+                    let last = match last {
+                        last if skip_return(last) => last.clone(),
+                        _ => Core::Return { expr: Box::from(last.clone()) }
+                    };
+
+                    let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
+                    statements[idx] = last;
+                    Core::Block { statements }
                 }
-            } else {
-                core.clone()
+                _ => Core::Block { statements: vec![Core::Return { expr: Box::from(Core::None) }] }
             }
             core if skip_return(&core) => core,
             _ => Core::Return { expr: Box::from(core) }
@@ -304,13 +318,21 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     Ok(core)
 }
 
+fn skip_assign(core: &Core) -> bool {
+    skip_return(core) || matches!(core,
+        Core::VarDef { .. } |
+        Core::Assign { .. }
+    )
+}
+
 fn skip_return(core: &Core) -> bool {
     matches!(core,
         Core::Return { .. } |
         Core::IfElse { .. } |
         Core::Match { .. } |
         Core::Raise { .. } |
-        Core::TryExcept {..}
+        Core::TryExcept { .. } |
+        Core::Block { .. }
     )
 }
 
@@ -626,9 +648,8 @@ mod tests {
         let expr = to_pos!(Node::Int { lit: String::from("9") });
         let with = to_pos!(Node::With { resource, alias, expr });
 
-        let (resource, alias, expr) = match gen(&ASTTy::from(&with)) {
-            Ok(Core::WithAs { resource, alias, expr }) => (resource, alias, expr),
-            other => panic!("Expected with as but was {:?}", other),
+        let Ok(Core::WithAs { resource, alias, expr }) = gen(&ASTTy::from(&with)) else {
+            panic!("Expected with as but was {:?}", gen(&ASTTy::from(&with)))
         };
 
         assert_eq!(*resource, Core::Id { lit: String::from("my_resource") });
@@ -683,26 +704,22 @@ mod tests {
         let case = to_pos_unboxed!(Node::Case { cond, body });
         let handle = to_pos!(Node::Handle { expr_or_stmt, cases: vec![case] });
 
-        let (setup, _try, except) = match gen(&ASTTy::from(&handle)) {
-            Ok(Core::TryExcept { setup, attempt, except }) => {
-                (setup.clone(), attempt.clone(), except.clone())
-            }
-            other => panic!("Expected try except but was {:?}", other),
+        let Ok(Core::TryExcept { setup, attempt, except }) = gen(&ASTTy::from(&handle)) else {
+            panic!("Expected try except but was {:?}", gen(&ASTTy::from(&handle)))
         };
 
         assert_eq!(setup, None);
-        assert_eq!(*_try, Core::Id { lit: String::from("my_fun") });
+        assert_eq!(*attempt, Core::Id { lit: String::from("my_fun") });
         assert_eq!(except.len(), 1);
-        match &except[0] {
-            Core::Except { id, class, body } => {
-                assert_eq!(*id, Box::from(Core::Id { lit: String::from("err") }));
-                assert_eq!(
-                    *class,
-                    Some(Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }))
-                );
-                assert_eq!(*body, Box::from(Core::Int { int: String::from("9999") }));
-            }
-            other => panic!("Expected except case but was {:?}", other),
-        }
+        let Core::Except { id, class, body } = &except[0] else {
+            panic!("Expected except case but was {:?}", except[0])
+        };
+
+        assert_eq!(*id, Box::from(Core::Id { lit: String::from("err") }));
+        assert_eq!(
+            *class,
+            Some(Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }))
+        );
+        assert_eq!(*body, Box::from(Core::Int { int: String::from("9999") }));
     }
 }

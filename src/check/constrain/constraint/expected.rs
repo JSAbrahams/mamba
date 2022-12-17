@@ -8,9 +8,8 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::clss;
 use crate::check::context::clss::{BOOL, FLOAT, INT, NONE, STRING};
-use crate::check::name::{Name, Nullable};
+use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
@@ -68,7 +67,6 @@ impl TryFrom<(&Box<AST>, &HashMap<String, String>)> for Expected {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
     Expression { ast: AST },
-    ExpressionAny,
     Collection { ty: Box<Expected> },
     Tuple { elements: Vec<Expected> },
     Raises { name: Name },
@@ -76,6 +74,10 @@ pub enum Expect {
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
     Type { name: Name },
+}
+
+impl Any for Expect {
+    fn any() -> Self { Type { name: Name::any() } }
 }
 
 impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
@@ -104,7 +106,6 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
             Node::Bool { .. } => Type { name: Name::from(BOOL) },
             Node::Str { .. } => Type { name: Name::from(STRING) },
             Node::Undefined => Expect::none(),
-            Node::Underscore => ExpressionAny,
             Node::Raise { error } => Raises { name: Name::try_from(error)? },
             _ => Expression { ast },
         })
@@ -123,21 +124,20 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
-            ExpressionAny => write!(f, "Any"),
             Expression { ast } => write!(f, "`{}`", ast.node),
             Collection { ty, .. } => write!(f, "{{{}}}", ty.and_or_a(false)),
             Tuple { elements } => {
                 let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "({})", comma_delm(elements))
             }
-            Raises { name: ty } => write!(f, "Raises {}", ty),
+            Raises { name: ty } => write!(f, "Raises {ty}"),
             Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "{}({})", name, comma_delm(args))
             }
-            Field { name } => write!(f, "{}", name),
-            Type { name } => write!(f, "{}", name),
+            Field { name } => write!(f, "{name}"),
+            Type { name } => write!(f, "{name}"),
         }
     }
 }
@@ -170,23 +170,19 @@ impl Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),
 
-            (ExpressionAny, ExpressionAny) => true,
-
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
             | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::STRING) =>
-                {
-                    true
-                }
+            if ty == &Name::from(STRING) => {
+                true
+            }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
             | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::FLOAT) =>
-                {
-                    true
-                }
+            if ty == &Name::from(FLOAT) => {
+                true
+            }
             (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
             | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(clss::INT) =>
+            if ty == &Name::from(INT) =>
                 {
                     true
                 }
@@ -196,12 +192,12 @@ impl Expect {
     }
 
     pub fn none() -> Expect {
-        Expect::Type { name: Name::from(NONE) }
+        Type { name: Name::from(NONE) }
     }
 
     pub fn is_none(&self) -> bool {
         match &self {
-            Expect::Type { name } => name.is_null(),
+            Type { name } => name.is_null(),
             _ => false,
         }
     }
