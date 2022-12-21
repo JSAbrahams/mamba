@@ -1,0 +1,1 @@
+def a:= if True then 20 else 10

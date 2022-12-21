@@ -11,6 +11,26 @@ fn assign_tuples() -> OutTestRet {
 }
 
 #[test]
+fn assign_with_if() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_if")
+}
+
+#[test]
+fn assign_with_match() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_match")
+}
+
+#[test]
+fn assign_with_nested_if() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_nested_if")
+}
+
+#[test]
+fn assign_with_try_except() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_try_except")
+}
+
+#[test]
 fn function_ret_super_in_class() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "function_ret_super_in_class")
 }
