@@ -16,6 +16,32 @@ fn function_ret_super_in_class() -> OutTestRet {
 }
 
 #[test]
+fn function_with_if() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_with_if")
+}
+
+#[test]
+fn function_with_if_and_raise() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_with_if_and_raise")
+}
+
+#[test]
+fn function_with_nested_if() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_with_nested_if")
+}
+
+#[test]
+fn function_with_match() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_with_match")
+}
+
+#[test]
+#[ignore] // Error handling must first be implemented
+fn function_with_try_except() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_with_try_except")
+}
+
+#[test]
 fn ternary() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "ternary")
 }

@@ -1,0 +1,8 @@
+def f(x: Int) -> Int =>
+    if x > 10 then
+        if x > 30 then
+            x + 1
+        else
+            x - 1
+    else
+        x
