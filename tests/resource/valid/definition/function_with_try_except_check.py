@@ -4,5 +4,5 @@ def g() -> int =>
 def f(x: int) -> int =>
     try:
         return g()
-    except:
+    except Exception as err:
         return x + 10
