@@ -21,7 +21,6 @@ fn function_with_if() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Error handling must first be implemented
 fn function_with_if_and_raise() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "function_with_if_and_raise")
 }
@@ -37,7 +36,6 @@ fn function_with_match() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Error handling must first be implemented
 fn function_with_try_except() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "function_with_try_except")
 }
