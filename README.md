@@ -4,7 +4,7 @@
     <img src="image/logo.svg" height="200" alt="Mamba logo"/>
     <br/><br/>
     <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
-    <img src="https://img.shields.io/github/workflow/status/JSAbrahams/mamba/Test?style=for-the-badge" alt="GitHub Workflow Status">
+    <img src="https://img.shields.io/github/actions/workflow/status/JSAbrahams/Mamba/test.yml?style=for-the-badge" alt="GitHub Workflow Status">
     </a>
     <a href="https://app.codecov.io/gh/JSAbrahams/mamba/">
     <img src="https://img.shields.io/codecov/c/github/JSAbrahams/mamba?style=for-the-badge" alt="Codecov coverage">  
@@ -25,7 +25,7 @@
 
 <h1 align="center">Mamba</h1>
 
-This is the Mamba programming language. 
+This is the Mamba programming language.
 Mamba is like Python, but with a few key features:
 
 - Strict static typing rules, but with type inference so it doesn't get in the way too much
@@ -36,7 +36,7 @@ Mamba is like Python, but with a few key features:
 - Pure functions, or, functions without side effects
 
 This is a transpiler, written in [Rust](https://www.rust-lang.org/), which converts Mamba source files to Python source
-files. 
+files.
 Mamba code should therefore be interoperable with Python code.
 Functions written in Python can be called in Mamba and vice versa (from the generated Python files).
 
@@ -66,6 +66,7 @@ Notice how here we specify the type of argument `x`, in this case an `Int`, by w
 This means that the compiler will check for us that factorial is only used with integers as argument.
 
 _Note_ One could use [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) in the above example so that we consume less memory:
+
 ```mamba
 def factorial(x: Int) -> Int => match x
     0 => 1
@@ -128,7 +129,7 @@ my_server.disconnect()
 
 ### 🗃 Type refinement (🇻 0.6+)
 
-As shown above Mamba has a type system. 
+As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
 Lets expand our server example from above, and rewrite it slightly:
 
@@ -211,7 +212,7 @@ Type refinement allows us to do some additional things:
 
 Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)`.
 (Except if the output of the function is say `None` or `NaN`.)
-By default, functions are not pure, and can read any variable they want, such as in Python. 
+By default, functions are not pure, and can read any variable they want, such as in Python.
 When we make a function `pure`, it cannot:
 
 - Read non-final properties of `self`.
