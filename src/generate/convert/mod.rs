@@ -6,7 +6,7 @@ use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::call::convert_call;
 use crate::generate::convert::class::convert_class;
-use crate::generate::convert::common::{convert_stmts, convert_vec};
+use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::control_flow::convert_cntrl_flow;
 use crate::generate::convert::definition::convert_def;
 use crate::generate::convert::handle::convert_handle;
@@ -54,7 +54,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         },
 
         NodeTy::Block { statements } => Core::Block {
-            statements: convert_stmts(statements, imp, &state.must_assign_to(must_assign_to.as_ref()), ctx)?,
+            statements: convert_vec(statements, imp, state, ctx)?,
         },
 
         NodeTy::Int { lit } => Core::Int { int: lit.clone() },
@@ -264,76 +264,94 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     };
 
     let core = if let Some(assign_to) = must_assign_to {
-        match &core {
-            Core::Block { ref statements } => match statements.last() {
-                Some(last) if skip_assign(last) => core.clone(),
-                Some(last) => {
-                    let last = match last {
-                        last if skip_assign(last) => last.clone(),
-                        _ => Core::Assign {
-                            left: Box::from(assign_to),
-                            right: Box::from(last.clone()),
-                            op: CoreOp::Assign,
-                        }
-                    };
-
-                    let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
-                    statements[idx] = last;
-                    Core::Block { statements }
-                }
-                _ => core.clone()
-            }
-            expr if skip_assign(expr) => core.clone(),
-            expr => Core::Assign {
-                left: Box::from(assign_to),
-                right: Box::from(expr.clone()),
-                op: CoreOp::Assign,
-            },
-        }
+        append_assign(&core, &assign_to)
     } else { core };
 
     let core = if is_last_must_be_ret {
-        match core {
-            Core::Block { ref statements } => match statements.last() {
-                Some(last) if skip_return(last) => core.clone(),
-                Some(last) => {
-                    let last = match last {
-                        last if skip_return(last) => last.clone(),
-                        _ => Core::Return { expr: Box::from(last.clone()) }
-                    };
-
-                    let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
-                    statements[idx] = last;
-                    Core::Block { statements }
-                }
-                _ => Core::Block { statements: vec![Core::Return { expr: Box::from(Core::None) }] }
-            }
-            core if skip_return(&core) => core,
-            _ => Core::Return { expr: Box::from(core) }
-        }
-    } else {
-        core
-    };
+        append_ret(&core)
+    } else { core };
 
     Ok(core)
 }
 
+fn append_assign(core: &Core, assign_to: &Core) -> Core {
+    match &core {
+        Core::Block { ref statements } => match statements.last() {
+            Some(last) => {
+                let last = append_assign(last, assign_to);
+                let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
+                statements[idx] = last;
+                Core::Block { statements }
+            }
+            None => core.clone()
+        }
+        Core::IfElse { cond, then, el } => Core::IfElse {
+            cond: cond.clone(),
+            then: Box::from(append_assign(then, assign_to)),
+            el: Box::from(append_assign(el, assign_to)),
+        },
+        Core::Match { expr, cases } => Core::Match {
+            expr: expr.clone(),
+            cases: cases.into_iter().map(|c| append_assign(c, assign_to)).collect(),
+        },
+        Core::Case { expr, body } => Core::Case {
+            expr: expr.clone(),
+            body: Box::from(append_assign(body, assign_to)),
+        },
+        Core::TryExcept { setup, attempt, except } => Core::TryExcept {
+            setup: setup.clone(),
+            attempt: Box::from(append_ret(attempt)),
+            except: except.into_iter().map(|e| append_assign(e, assign_to)).collect(),
+        },
+        expr if skip_assign(expr) => core.clone(),
+        _ => Core::Assign {
+            left: Box::from(assign_to.clone()),
+            right: Box::from(core.clone()),
+            op: CoreOp::Assign,
+        },
+    }
+}
+
+fn append_ret(core: &Core) -> Core {
+    match core {
+        Core::Block { ref statements } => match statements.last() {
+            Some(last) => {
+                let last = append_ret(last);
+                let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
+                statements[idx] = last;
+                Core::Block { statements }
+            }
+            None => Core::Block { statements: vec![Core::Return { expr: Box::from(Core::None) }] }
+        }
+        Core::IfElse { cond, then, el } => Core::IfElse {
+            cond: cond.clone(),
+            then: Box::from(append_ret(then)),
+            el: Box::from(append_ret(el)),
+        },
+        Core::Match { expr, cases } => Core::Match {
+            expr: expr.clone(),
+            cases: cases.into_iter().map(|c| append_ret(c)).collect(),
+        },
+        Core::Case { expr, body } => Core::Case {
+            expr: expr.clone(),
+            body: Box::from(append_ret(body)),
+        },
+        Core::TryExcept { setup, attempt, except } => Core::TryExcept {
+            setup: setup.clone(),
+            attempt: Box::from(append_ret(attempt)),
+            except: except.into_iter().map(|e| append_ret(e)).collect(),
+        },
+        core if skip_return(&core) => core.clone(),
+        _ => Core::Return { expr: Box::from(core.clone()) }
+    }
+}
+
 fn skip_assign(core: &Core) -> bool {
-    skip_return(core) || matches!(core,
-        Core::VarDef { .. } |
-        Core::Assign { .. }
-    )
+    skip_return(core) || matches!(core, Core::VarDef { .. } | Core::Assign { .. })
 }
 
 fn skip_return(core: &Core) -> bool {
-    matches!(core,
-        Core::Return { .. } |
-        Core::IfElse { .. } |
-        Core::Match { .. } |
-        Core::Raise { .. } |
-        Core::TryExcept { .. } |
-        Core::Block { .. }
-    )
+    matches!(core, Core::Return { .. } | Core::Raise { .. })
 }
 
 #[cfg(test)]
