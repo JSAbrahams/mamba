@@ -175,6 +175,12 @@ mod tests {
     }
 
     #[test]
+    pub fn test_import_as_too_many_parse() {
+        let file = parse("import IPv4Address as Other, Other2").unwrap();
+        Context::try_from(vec![*file.clone()].as_slice()).unwrap_err();
+    }
+
+    #[test]
     pub fn test_from_import_parse() {
         let file = parse("from ipaddress import IPv4Address").unwrap();
         let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
