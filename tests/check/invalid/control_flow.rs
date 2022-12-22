@@ -50,3 +50,9 @@ fn or_float() {
     let source = resource_content(false, &["type", "control_flow"], "or_float.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
+
+#[test]
+fn undefined_var_in_match_arm() {
+    let source = resource_content(false, &["type", "control_flow"], "undefined_var_in_match_arm.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
