@@ -1,0 +1,7 @@
+def n := 10
+
+match 10
+    n =>
+        print("10")
+
+print(n)

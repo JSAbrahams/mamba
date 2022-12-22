@@ -4,6 +4,12 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn access_match_arms_variable() {
+    let source = resource_content(false, &["type", "control_flow"], "access_match_arms_variable.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn float_and() {
     let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
@@ -42,5 +48,11 @@ fn not_integer() {
 #[test]
 fn or_float() {
     let source = resource_content(false, &["type", "control_flow"], "or_float.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn undefined_var_in_match_arm() {
+    let source = resource_content(false, &["type", "control_flow"], "undefined_var_in_match_arm.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }

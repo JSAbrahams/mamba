@@ -59,10 +59,14 @@ fn if_two_types() -> OutTestRet {
 }
 
 #[test]
+fn match_dont_remove_shadowed() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "match_dont_remove_shadowed")
+}
+
+#[test]
 fn while_ast_verify() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "while")
 }
-
 
 #[test]
 fn match_stmt_ast_verify() -> OutTestRet {
