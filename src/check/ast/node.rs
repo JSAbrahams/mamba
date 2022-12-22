@@ -320,8 +320,7 @@ impl From<&Node> for NodeTy {
             Node::ReturnEmpty => NodeTy::ReturnEmpty,
             Node::Underscore => NodeTy::Underscore,
             Node::Undefined => NodeTy::Undefined,
-            Node::Pass => NodeTy::Pass,
-            Node::Comment { comment } => NodeTy::Comment { comment: comment.clone() },
+            Node::Pass => NodeTy::Pass
         }
     }
 }

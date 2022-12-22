@@ -28,12 +28,6 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
                 statements.push(*it.parse(&parse_class, "file", start)?);
                 Ok(())
             }
-            Token::Comment(comment) => {
-                let end = it.eat(&Token::Comment(comment.clone()), "statements")?;
-                let node = Node::Comment { comment: comment.clone() };
-                statements.push(AST::new(lex.pos.union(end), node));
-                Ok(())
-            }
             Token::DocStr(doc_str) => {
                 let end = it.eat(&Token::DocStr(doc_str.clone()), "statements")?;
                 let node = Node::DocStr { lit: doc_str.clone() };

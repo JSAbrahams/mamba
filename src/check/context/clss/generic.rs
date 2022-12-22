@@ -306,7 +306,7 @@ fn get_fields_and_functions(
 
                 fields = fields.union(&stmt_fields).cloned().collect();
             }
-            Node::Comment { .. } | Node::DocStr { .. } => {}
+            Node::DocStr { .. } => {}
             _ => {
                 let msg = "Expected function or variable definition";
                 return Err(vec![TypeErr::new(statement.pos, msg)]);

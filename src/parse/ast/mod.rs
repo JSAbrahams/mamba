@@ -117,7 +117,6 @@ pub enum Node {
     Pass,
     Question { left: Box<AST>, right: Box<AST> },
     QuestionOp { expr: Box<AST> },
-    Comment { comment: String },
 }
 
 impl Node {

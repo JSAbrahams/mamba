@@ -162,6 +162,32 @@ mod test {
     }
 
     #[test]
+    fn return_stmt_with_comment_verify() {
+        let source = String::from("return some_value # comment");
+        let statements = parse_direct(&source).unwrap();
+
+        let expr = match &statements.first().expect("script empty.").node {
+            Node::Return { expr } => expr.clone(),
+            _ => panic!("first element script was not reassign.")
+        };
+
+        assert_eq!(expr.node, Node::Id { lit: String::from("some_value") });
+    }
+
+    #[test]
+    fn literal_expr_with_comment_verify() {
+        let source = String::from("10 # comment");
+        let statements = parse_direct(&source).unwrap();
+
+        let lit = match &statements.first().expect("script empty.").node {
+            Node::Int { lit } => lit.clone(),
+            _ => panic!("first element script was not reassign.")
+        };
+
+        assert_eq!(lit, String::from("10"));
+    }
+
+    #[test]
     fn underscore_verify() {
         let source = String::from("_");
         let statements = parse_direct(&source).unwrap();
