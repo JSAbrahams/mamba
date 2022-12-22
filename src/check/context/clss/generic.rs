@@ -41,6 +41,24 @@ impl Hash for GenericClass {
 }
 
 impl GenericClass {
+    pub fn try_from_id(id: &AST) -> TypeResult<GenericClass> {
+        match &id.node {
+            Node::Id { lit } => {
+                Ok(GenericClass {
+                    is_py_type: false,
+                    name: StringName::from(lit.as_str()),
+                    pos: id.pos,
+                    concrete: true, // assume concrete for now
+                    args: vec![],
+                    fields: Default::default(),
+                    functions: Default::default(),
+                    parents: Default::default(),
+                })
+            }
+            _ => Err(vec![TypeErr::new(id.pos, "Expected class name")]),
+        }
+    }
+
     pub fn all_pure(self, pure: bool) -> TypeResult<Self> {
         let functions = self.functions.iter().map(|f| f.clone().pure(pure)).collect();
         Ok(GenericClass { functions, ..self })
