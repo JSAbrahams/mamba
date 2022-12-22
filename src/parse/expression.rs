@@ -43,8 +43,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
         Token::Sub,
         Token::Undefined,
         Token::BOneCmpl,
-        Token::BSlash,
-        Token::Comment(String::new())
+        Token::BSlash
     ];
 
     let result = it.peek_or_err(
@@ -52,11 +51,6 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
             Token::If | Token::Match => parse_cntrl_flow_expr(it),
             Token::LRBrack | Token::LSBrack | Token::LCBrack => parse_collection(it),
             Token::Underscore => parse_underscore(it),
-
-            Token::Comment(str) => {
-                let end = it.eat(&Token::Comment(str.clone()), "identifier")?;
-                Ok(Box::from(AST::new(end, Node::Comment { comment: str.clone() })))
-            }
             Token::Id(_) => parse_id(it),
             Token::_Self => parse_id(it),
             Token::Real(real) => literal!(it, real.to_string(), Real),

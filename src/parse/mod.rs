@@ -1,7 +1,7 @@
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 use crate::parse::iterator::LexIterator;
-use crate::parse::lex::token::Token;
+use crate::parse::lex::token::{Lex, Token};
 use crate::parse::lex::tokenize;
 use crate::parse::result::{expected, ParseErr, ParseResult};
 
@@ -27,7 +27,13 @@ mod ty;
 
 /// Parse input, which is a string.
 pub fn parse(input: &str) -> ParseResult {
-    let tokens = tokenize(input).map_err(ParseErr::from)?;
+    let tokens: Vec<Lex> = tokenize(input)
+        .map(|tokens| tokens.into_iter().filter(|t| match t.token {
+            Token::Comment(_) => false,
+            _ => true
+        }).collect())
+        .map_err(ParseErr::from)?;
+
     let mut iterator = LexIterator::new(tokens.iter().peekable());
     let statements = block::parse_statements(&mut iterator)?;
     if iterator.peek_if(&|lex| lex.token != Token::Eof) {

@@ -119,8 +119,7 @@ impl Display for Node {
             Node::Undefined => format!("{}", Token::Undefined),
             Node::Pass => format!("{}", Token::Pass),
             Node::Question { .. } => String::from("ternary operator"),
-            Node::QuestionOp { .. } => String::from("unsafe operator"),
-            Node::Comment { .. } => String::from("comment"),
+            Node::QuestionOp { .. } => String::from("unsafe operator")
         };
 
         write!(f, "{}", name)
@@ -653,7 +652,6 @@ impl Node {
             (Node::QuestionOp { expr: left }, Node::QuestionOp { expr: right }) => {
                 left.same_value(right)
             }
-            (Node::Comment { .. }, Node::Comment { .. }) => true,
 
             (left, right) if **left == **right => true,
             _ => false,
@@ -1222,19 +1220,6 @@ mod test {
             left: Box::from(AST::new(Position::default(), Node::Continue)),
             right: Box::from(AST::new(Position::default(), Node::Break))
         });
-    }
-
-    #[test]
-    fn comment_op_equal_value() {
-        two_ast!(Node::Comment { comment: String::from("cca") });
-    }
-
-    #[test]
-    fn comment_op_equal_value_different_string() {
-        two_ast!(
-            Node::Comment { comment: String::from("cca") },
-            Node::Comment { comment: String::from("aaa") }
-        );
     }
 
     #[test]

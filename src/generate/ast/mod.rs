@@ -281,7 +281,6 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Pass => String::from("pass"),
         Core::None => String::from("None"),
         Core::Empty => String::new(),
-        Core::Comment { comment } => format!("#{}", comment),
 
         Core::With { resource, expr } => {
             format!("with {}: {}", to_py(resource, ind), newline_if_body(expr, ind))
