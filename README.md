@@ -92,17 +92,21 @@ class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool     := False
     def _last_message: String? := None
 
-    def last_sent(fin self) -> String raise ServerError => if self._last_message /= None 
-        then self._last_message
-        else raise ServerError("No last message!")
+    def last_sent(fin self) -> String raise [ServerError] =>
+        if self._last_message != None then
+            self._last_message
+        else
+            raise ServerError("No last message!")
 
     def connect(self) =>
         self.is_connected := True
         print(always_the_same_message)
 
-    def send(self, message: String) raise ServerError => if self.is_connected 
-        then self._last_message := message
-        else raise ServerError("Not connected!")
+    def send(self, message: String) raise [ServerError] =>
+        if self.is_connected then
+            self._last_message := message
+        else
+            raise ServerError("Not connected!")
 
     def disconnect(self) => self.is_connected := False
 ```
@@ -151,9 +155,11 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address): Server
     def is_connected: Bool     := False
     def _last_message: String? := None
 
-    def last_sent(self) -> String raise ServerErr => if self.last_message /= None 
-        then self._last_message
-        else raise ServerError("No last message!")
+    def last_sent(self) -> String raise ServerErr => 
+        if self.last_message != None then 
+            self._last_message
+        else
+            raise ServerError("No last message!")
 
     def connect(self: DisConnMyServer) => self.is_connected := True
 
