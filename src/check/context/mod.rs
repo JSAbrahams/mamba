@@ -84,6 +84,7 @@ mod tests {
     use crate::check::name::string_name::StringName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
+    use crate::parse::parse;
 
     #[test]
     pub fn lookup_custom_list_type() -> TypeResult<()> {
@@ -155,5 +156,37 @@ mod tests {
         context.class(&StringName::from("Range"), Position::default()).unwrap();
         context.class(&StringName::from("None"), Position::default()).unwrap();
         context.class(&StringName::from("Exception"), Position::default()).unwrap();
+    }
+
+    #[test]
+    pub fn test_import_parse() {
+        let file = parse("import IPv4Address").unwrap();
+        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+
+        context.class(&StringName::from("IPv4Address"), Position::default()).unwrap();
+    }
+
+    #[test]
+    pub fn test_import_as_parse() {
+        let file = parse("import IPv4Address as Other").unwrap();
+        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+
+        context.class(&StringName::from("Other"), Position::default()).unwrap();
+    }
+
+    #[test]
+    pub fn test_from_import_parse() {
+        let file = parse("from ipaddress import IPv4Address").unwrap();
+        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+
+        context.class(&StringName::from("IPv4Address"), Position::default()).unwrap();
+    }
+
+    #[test]
+    pub fn test_from_import_as_parse() {
+        let file = parse("from ipaddress import IPv4Address as Other").unwrap();
+        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+
+        context.class(&StringName::from("Other"), Position::default()).unwrap();
     }
 }
