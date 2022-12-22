@@ -151,6 +151,8 @@ impl Expect {
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) => {
                 le == re && ln == rn
             }
+            (Type { name: l }, Type { name: r }) => l == r,
+
             (Function { name: l, args: la }, Function { name: r, args: ra }) => {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {
