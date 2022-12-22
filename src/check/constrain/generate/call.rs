@@ -104,7 +104,7 @@ pub fn gen_call(
                     &fun_ret_exp,
                 );
 
-                check_raise(&constr, &fun.raises.names, &env, ast.pos)?;
+                check_raise(&constr, &fun.raises.names, &env, ctx, ast.pos)?;
             }
 
             Ok((constr, env))

@@ -2,7 +2,7 @@ use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::{Constraint, ConstrVariant};
-use crate::check::constrain::constraint::expected::Expect::{Collection, Raises, Tuple, Type};
+use crate::check::constrain::constraint::expected::Expect::{Collection, Tuple, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
@@ -53,33 +53,6 @@ pub fn unify_type(
             } else {
                 let msg = format!("Unifying two types: Expected {}, was {}", right, left);
                 Err(vec![TypeErr::new(right.pos, &msg)])
-            }
-        }
-
-        (Raises { name: l_ty }, Raises { name: r_ty }) => {
-            let left_confirmed_super = (constraint.superset == ConstrVariant::Left)
-                && l_ty.is_superset_of(r_ty, ctx, left.pos)?;
-            let right_confirmed_super = (constraint.superset == ConstrVariant::Right)
-                && r_ty.is_superset_of(l_ty, ctx, left.pos)?;
-
-            if l_ty.is_temporary() {
-                let mut constr =
-                    substitute_ty(right.pos, r_ty, left.pos, l_ty, constraints, count, total)?;
-                unify_link(&mut constr, finished, ctx, total)
-            } else if r_ty.is_temporary() {
-                let mut constr =
-                    substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
-                unify_link(&mut constr, finished, ctx, total)
-            } else if left_confirmed_super || right_confirmed_super {
-                ctx.class(l_ty, left.pos)?;
-                ctx.class(r_ty, right.pos)?;
-                unify_link(constraints, finished, ctx, total)
-            } else if constraint.superset == ConstrVariant::Left {
-                let msg = format!("Unexpected raises '{}', may only be `{}`", l_ty, r_ty);
-                Err(vec![TypeErr::new(left.pos, &msg)])
-            } else {
-                let msg = format!("Unexpected raises '{}', may only be `{}`", r_ty, l_ty);
-                Err(vec![TypeErr::new(left.pos, &msg)])
             }
         }
 
@@ -167,9 +140,6 @@ pub fn unify_type(
                     Err(vec![TypeErr::new(left.pos, &msg)])
                 }
             }
-
-            // Ignore raises
-            (Type { .. }, Raises { .. }) | (Raises { .. }, Type { .. }) => unify_link(constraints, finished, ctx, total),
 
             _ => {
                 if l_exp.is_none() && r_exp.is_none() {

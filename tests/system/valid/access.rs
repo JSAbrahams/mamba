@@ -1,6 +1,7 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
+#[ignore] // #383
 fn simple_index() -> OutTestRet {
     test_directory(true, &["access"], &["access", "target"], "simple_index")
 }
@@ -22,6 +23,7 @@ fn index_via_function() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // #383
 fn access_string() -> OutTestRet {
     test_directory(true, &["access"], &["access", "target"], "access_string")
 }
