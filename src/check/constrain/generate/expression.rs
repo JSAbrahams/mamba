@@ -7,7 +7,7 @@ use crate::check::constrain::generate::definition::{constrain_args, identifier_f
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{AST, Node, OptAST};
 
 pub fn gen_expr(
     ast: &AST,
@@ -21,13 +21,9 @@ pub fn gen_expr(
             let (mut constr, env) = constrain_args(args, env, ctx, constr)?;
             generate(body, &env, ctx, &mut constr)
         }
-        Node::Id { lit } => if env.is_define_mode {
-            identifier_from_var(ast, &None, &None, false, ctx, constr, env)
-        } else if env.get_var(lit).is_some() {
-            Ok((constr.clone(), env.clone()))
-        } else {
-            Err(vec![TypeErr::new(ast.pos, &format!("Undefined variable: {}", lit))])
-        },
+        Node::ExpressionType { expr, mutable, ty } =>
+            match_id(expr, ty, *mutable, env, ctx, constr),
+        Node::Id { .. } => match_id(ast, &None, false, env, ctx, constr),
         Node::Question { left, right } => {
             constr.add(
                 "question",
@@ -47,5 +43,18 @@ pub fn gen_expr(
         },
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected an expression")])
+    }
+}
+
+fn match_id(ast: &AST, ty: &OptAST, mutable: bool, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
+    match &ast.node {
+        Node::Id { lit } => if env.is_define_mode {
+            identifier_from_var(ast, ty, &None, mutable, ctx, constr, env)
+        } else if env.get_var(lit).is_some() {
+            Ok((constr.clone(), env.clone()))
+        } else {
+            Err(vec![TypeErr::new(ast.pos, &format!("Undefined variable: {}", lit))])
+        }
+        _ => Ok((constr.clone(), env.clone()))
     }
 }

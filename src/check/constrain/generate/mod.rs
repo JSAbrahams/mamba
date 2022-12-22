@@ -59,7 +59,7 @@ pub fn generate(
         TypeFun { .. } => gen_ty(ast, env, ctx, constr),
         QuestionOp { .. } => gen_ty(ast, env, ctx, constr),
 
-        Id { .. } | Question { .. } => gen_expr(ast, env, ctx, constr),
+        ExpressionType { .. } | Id { .. } | Question { .. } => gen_expr(ast, env, ctx, constr),
         AnonFun { .. } => gen_expr(ast, env, ctx, constr),
         Pass => gen_expr(ast, env, ctx, constr),
 
@@ -101,7 +101,6 @@ pub fn generate(
         Import { .. }
         | Generic { .. }
         | Parent { .. }
-        | ExpressionType { .. }
         | DocStr { .. }
         | Underscore
         | Comment { .. } => Ok((constr.clone(), env.clone())),
