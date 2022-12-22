@@ -21,12 +21,16 @@ pub fn gen_flow(
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
             let raises: HashSet<TrueName> = cases.iter().flat_map(|c| match &c.node {
-                Node::Case { cond, .. } => match &cond.node {
-                    Node::ExpressionType { expr, .. } => if let Node::Id { lit } = &expr.node {
-                        Some(TrueName::from(lit.as_str()))
-                    } else { None }
-                    _ => None
-                },
+                Node::Case { cond, .. } => {
+                    match &cond.node {
+                        Node::ExpressionType { ty: Some(ty), .. } => if let Node::Type { .. } = &ty.node {
+                            if let Ok(name) = TrueName::try_from(ty) {
+                                Some(name)
+                            } else { None }
+                        } else { None }
+                        _ => None
+                    }
+                }
                 _ => None
             }).collect();
 

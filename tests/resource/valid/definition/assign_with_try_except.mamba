@@ -2,4 +2,4 @@ def g() -> Int raise [Exception] =>
     raise Exception("A")
 
 def a := g() handle
-    err: Exception => x + 10
+    err: Exception => 10
