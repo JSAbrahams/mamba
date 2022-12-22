@@ -20,8 +20,6 @@ pub fn gen_flow(
         Node::Handle { expr_or_stmt, .. } => {
             let mut res = (constr.clone(), env.clone());
 
-            // TODO check that all raises are covered
-
             generate(expr_or_stmt, &res.1, ctx, &mut res.0)
         }
 
@@ -65,30 +63,33 @@ pub fn gen_flow(
 
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
-            let mut res = (constr.clone(), env.clone());
-            // TODO check that all variants are covered
+            let (mut constr, outer_env) = generate(cond, &env, ctx, constr)?;
 
             for case in cases {
                 match &case.node {
                     Node::Case { cond, body } => {
-                        res.0.add(
-                            "match case",
-                            &Expected::try_from((cond, &env.var_mappings))?,
-                            &Expected::try_from((cond, &env.var_mappings))?,
-                        );
-                        res.0.add(
+                        let define_mode = outer_env.is_define_mode;
+                        constr.new_set(true);
+
+                        let (mut inner_constr, cond_env) = generate(cond, &outer_env.define_mode(true), ctx, &mut constr)?;
+                        let cond_env = cond_env.define_mode(define_mode);
+
+                        inner_constr.add(
                             "match body",
-                            &Expected::try_from((body, &env.var_mappings))?,
-                            &Expected::try_from((ast, &env.var_mappings))?,
+                            &Expected::try_from((body, &cond_env.var_mappings))?,
+                            &Expected::try_from((ast, &outer_env.var_mappings))?,
                         );
 
-                        res = generate(body, &res.1, ctx, &mut res.0)?;
+                        let (inner_constr, _) = generate(body, &cond_env, ctx, &mut inner_constr)?;
+                        constr = inner_constr;
+
+                        constr.exit_set(case.pos)?;
                     }
                     _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
                 }
             }
 
-            generate(cond, &res.1, ctx, &mut res.0)
+            Ok((constr, outer_env))
         }
 
         Node::For { expr, col, body } => {
