@@ -2,13 +2,13 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::constraint::expected::Expect::{Raises, Type};
+use crate::check::constrain::constraint::expected::Expect::Type;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::name::{Any, Name};
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
 pub fn gen_resources(
@@ -18,16 +18,6 @@ pub fn gen_resources(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::Raises { expr_or_stmt, errors } => {
-            let mut constr = constr.clone();
-            for error in errors {
-                let exp = Expected::new(error.pos, &Raises { name: Name::try_from(error)? });
-                constr = constrain_raises(&exp, &env.raises, &mut constr)?;
-            }
-            // raises expression has type of contained expression
-            constr.add("raises", &Expected::try_from((ast, &env.var_mappings))?, &Expected::try_from((expr_or_stmt, &env.var_mappings))?);
-            generate(expr_or_stmt, env, ctx, &mut constr)
-        }
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             constr.new_set(true);
             let resource_exp = Expected::try_from((resource, &env.var_mappings))?;
@@ -71,27 +61,5 @@ pub fn gen_resources(
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected resources")])
-    }
-}
-
-/// Constrain expected to raises
-///
-/// This indicates that the type should be contained within the set of the
-/// raises constraint. Does not constrain if top-level in constr builder,
-/// meaning that we do not constrain raises in top-level scripts.
-pub fn constrain_raises(
-    raises: &Expected,
-    env_raises: &Option<Expected>,
-    constr: &mut ConstrBuilder,
-) -> TypeResult<ConstrBuilder> {
-    if constr.level == 0 {
-        return Ok(constr.clone());
-    }
-
-    if let Some(env_raises) = env_raises {
-        constr.add("raises", env_raises, raises);
-        Ok(constr.clone())
-    } else {
-        Err(vec![TypeErr::new(raises.pos, "Unexpected raise")])
     }
 }

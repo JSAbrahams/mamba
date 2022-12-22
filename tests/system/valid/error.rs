@@ -11,6 +11,11 @@ fn exception() -> OutTestRet {
 }
 
 #[test]
+fn exception_in_fun() -> OutTestRet {
+    test_directory(true, &["error"], &["error", "target"], "exception_in_fun")
+}
+
+#[test]
 #[ignore] // see #365
 fn raise() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "raise")

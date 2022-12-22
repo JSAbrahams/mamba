@@ -2,11 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::constraint::expected::Expect::Raises;
 use crate::check::context::arg::SELF;
 use crate::check::name;
-use crate::check::name::{Empty, Name};
-use crate::common::position::Position;
+use crate::check::name::true_name::TrueName;
 
 #[derive(Clone, Debug, Default)]
 pub struct Environment {
@@ -15,7 +13,9 @@ pub struct Environment {
     pub last_stmt_in_function: bool,
     pub is_define_mode: bool,
     pub return_type: Option<Expected>,
-    pub raises: Option<Expected>,
+
+    pub raises_caught: HashSet<TrueName>,
+
     pub class_type: Option<Expect>,
     pub var_mappings: HashMap<String, String>,
     pub unassigned: HashSet<String>,
@@ -71,14 +71,9 @@ impl Environment {
         Environment { vars, ..self.clone() }
     }
 
-    /// Insert raises.
-    pub fn insert_raises(&self, raises: &Name, pos: Position) -> Environment {
-        if raises.is_empty() {
-            self.clone()
-        } else {
-            let raises = Expected::new(pos, &Raises { name: raises.clone() });
-            Environment { raises: Some(raises), ..self.clone() }
-        }
+    /// Insert raises which are properly handled
+    pub fn accounted_for_raises(&self, raises: &HashSet<TrueName>) -> Environment {
+        Environment { raises_caught: raises.clone(), ..self.clone() }
     }
 
     /// Specify that we are in a loop.

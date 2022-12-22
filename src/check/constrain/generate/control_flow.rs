@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::{Constraint, ConstrVariant};
@@ -7,6 +8,7 @@ use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -17,10 +19,46 @@ pub fn gen_flow(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::Handle { expr_or_stmt, .. } => {
-            let mut res = (constr.clone(), env.clone());
+        Node::Handle { expr_or_stmt, cases } => {
+            let raises: HashSet<TrueName> = cases.iter().flat_map(|c| match &c.node {
+                Node::Case { cond, .. } => match &cond.node {
+                    Node::ExpressionType { expr, .. } => if let Node::Id { lit } = &expr.node {
+                        Some(TrueName::from(lit.as_str()))
+                    } else { None }
+                    _ => None
+                },
+                _ => None
+            }).collect();
 
-            generate(expr_or_stmt, &res.1, ctx, &mut res.0)
+            let raises_before = env.raises_caught.clone();
+            let (mut constr, outer_env) = generate(expr_or_stmt, &env.accounted_for_raises(&raises), ctx, constr)?;
+            let outer_env = outer_env.accounted_for_raises(&raises_before);
+
+            for case in cases {
+                match &case.node {
+                    Node::Case { cond, body } => {
+                        let define_mode = outer_env.is_define_mode;
+                        constr.new_set(true);
+
+                        let (mut inner_constr, cond_env) = generate(cond, &outer_env.define_mode(true), ctx, &mut constr)?;
+                        let cond_env = cond_env.define_mode(define_mode);
+
+                        inner_constr.add(
+                            "handle arm body",
+                            &Expected::try_from((body, &cond_env.var_mappings))?,
+                            &Expected::try_from((ast, &outer_env.var_mappings))?,
+                        );
+
+                        let (inner_constr, _) = generate(body, &cond_env, ctx, &mut inner_constr)?;
+                        constr = inner_constr;
+
+                        constr.exit_set(case.pos)?;
+                    }
+                    _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
+                }
+            }
+
+            Ok((constr, outer_env))
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
