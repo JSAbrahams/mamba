@@ -63,7 +63,7 @@ pub fn gen_def(
             for (pos, raise) in &raises {
                 let raise = raise.clone()?;
                 if !ctx.class(&raise, *pos)?.has_parent(&exception_name, ctx, *pos)? {
-                    let msg = format!("`{}` is not an `{}`", raise, exception_name);
+                    let msg = format!("`{raise}` is not an `{exception_name}`");
                     return Err(vec![TypeErr::new(*pos, &msg)]);
                 }
             }

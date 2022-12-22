@@ -13,7 +13,7 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
-use crate::check::constrain::generate::statement::check_raise;
+use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::{IdentiCall, Identifier};
@@ -104,7 +104,7 @@ pub fn gen_call(
                     &fun_ret_exp,
                 );
 
-                check_raise(&constr, &fun.raises.names, &env, ctx, ast.pos)?;
+                check_raises_caught(&constr, &fun.raises.names, &env, ctx, ast.pos)?;
             }
 
             Ok((constr, env))

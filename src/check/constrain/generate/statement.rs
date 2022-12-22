@@ -23,7 +23,7 @@ pub fn gen_stmt(
         Node::Raise { error } => match &error.node {
             Node::FunctionCall { name, .. } => if let Node::Id { lit } = &name.node {
                 let raises = HashSet::from_iter([TrueName::from(lit.as_str())]);
-                check_raise(constr, &raises, env, ctx, ast.pos)?;
+                check_raises_caught(constr, &raises, env, ctx, ast.pos)?;
                 Ok((constr.clone(), env.clone()))
             } else {
                 Err(vec![TypeErr::new(name.pos, &format!("Malformed raise: {}", name.node))])
@@ -60,9 +60,9 @@ pub fn gen_stmt(
 /// Makes use of the [Environment::raises_caught] field.
 /// For each raises, checks whether it or a parent of it is caught.
 /// If we are a top-level script, we perform no check as raises do not need to be caught here.
-pub fn check_raise(constr: &ConstrBuilder, raises: &HashSet<TrueName>, env: &Environment, ctx: &Context, pos: Position) -> Constrained<()> {
+pub fn check_raises_caught(constr: &ConstrBuilder, raises: &HashSet<TrueName>, env: &Environment, ctx: &Context, pos: Position) -> Constrained<()> {
     if !constr.is_top_level() {
-        let errs: Vec<TypeErr> = raises.into_iter()
+        let errs: Vec<TypeErr> = raises.iter()
             .filter(|raise_name| {
                 !if let Ok(raise_class) = ctx.class(*raise_name, pos) {
                     env.raises_caught.iter().any(|env_raise| {
@@ -72,7 +72,7 @@ pub fn check_raise(constr: &ConstrBuilder, raises: &HashSet<TrueName>, env: &Env
                     })
                 } else { false }
             })
-            .map(|n| TypeErr::new(pos, &format!("Exception not caught: {}", n)))
+            .map(|n| TypeErr::new(pos, &format!("Exception not caught: {n}")))
             .collect();
 
         if !errs.is_empty() { return Err(errs); }
