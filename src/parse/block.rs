@@ -28,7 +28,6 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
                 statements.push(*it.parse(&parse_class, "file", start)?);
                 Ok(())
             }
-            Token::Comment(str) => it.eat(&Token::Comment(str.clone()), "statements").map(|_| ()),
             Token::DocStr(doc_str) => {
                 let end = it.eat(&Token::DocStr(doc_str.clone()), "statements")?;
                 let node = Node::DocStr { lit: doc_str.clone() };
