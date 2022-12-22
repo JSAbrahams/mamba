@@ -1,5 +1,5 @@
 def factorial(x: int) -> int:
-    match x
+    match x:
         case 0:
             return 1
         case n:
