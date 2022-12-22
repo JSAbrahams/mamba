@@ -36,6 +36,11 @@ fn function_ret_super_in_class() -> OutTestRet {
 }
 
 #[test]
+fn function_no_return_type() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "function_no_return_type")
+}
+
+#[test]
 fn function_with_if() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "function_with_if")
 }
