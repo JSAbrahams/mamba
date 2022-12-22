@@ -1,0 +1,5 @@
+def f(x: Int) =>
+    if x > 10 then
+        20
+    else
+        x
