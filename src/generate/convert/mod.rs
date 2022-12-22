@@ -243,9 +243,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
 
         NodeTy::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
 
-        NodeTy::Comment { comment } => Core::Comment { comment: comment.clone() },
-        NodeTy::Pass => Core::Pass,
-
         NodeTy::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
             resource: Box::from(convert_node(resource, imp, state, ctx)?),
             alias: Box::from(convert_node(alias, imp, &state.expand_ty(false), ctx)?),
@@ -260,6 +257,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             convert_handle(ast, imp, state, ctx)?
         }
 
+        NodeTy::Pass => Core::Pass,
         _ => Core::Empty,
     };
 

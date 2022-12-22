@@ -103,8 +103,7 @@ pub fn generate(
         | Parent { .. }
         | ExpressionType { .. }
         | DocStr { .. }
-        | Underscore
-        | Comment { .. } => Ok((constr.clone(), env.clone())),
+        | Underscore => Ok((constr.clone(), env.clone())),
     }
 }
 

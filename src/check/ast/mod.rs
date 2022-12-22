@@ -127,7 +127,6 @@ pub enum NodeTy {
     Pass,
     Question { left: Box<ASTTy>, right: Box<ASTTy> },
     QuestionOp { expr: Box<ASTTy> },
-    Comment { comment: String },
 }
 
 #[cfg(test)]

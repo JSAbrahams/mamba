@@ -78,7 +78,6 @@ pub enum Core {
     Pass,
     None,
     Empty,
-    Comment { comment: String },
     TryExcept { setup: Option<Box<Core>>, attempt: Box<Core>, except: Vec<Core> },
     Except { id: Box<Core>, class: Option<Box<Core>>, body: Box<Core> },
     Raise { error: Box<Core> },
