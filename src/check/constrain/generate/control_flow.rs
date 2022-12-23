@@ -35,8 +35,8 @@ pub fn gen_flow(
             }).collect();
 
             let raises_before = env.raises_caught.clone();
-            let (mut constr, outer_env) = generate(expr_or_stmt, &env.accounted_for_raises(&raises), ctx, constr)?;
-            let outer_env = outer_env.accounted_for_raises(&raises_before);
+            let (mut constr, outer_env) = generate(expr_or_stmt, &env.raises_caught(&raises), ctx, constr)?;
+            let outer_env = outer_env.raises_caught(&raises_before);
 
             constrain_cases(ast, cases, &outer_env, ctx, &mut constr)?;
             Ok((constr, outer_env))

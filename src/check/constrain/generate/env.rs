@@ -71,9 +71,12 @@ impl Environment {
         Environment { vars, ..self.clone() }
     }
 
-    /// Insert raises which are properly handled
-    pub fn accounted_for_raises(&self, raises: &HashSet<TrueName>) -> Environment {
-        Environment { raises_caught: raises.clone(), ..self.clone() }
+    /// Insert raises which are properly handled.
+    ///
+    /// Appends to current set.
+    pub fn raises_caught(&self, raises: &HashSet<TrueName>) -> Environment {
+        let raises_caught = self.raises_caught.union(raises).cloned().collect();
+        Environment { raises_caught, ..self.clone() }
     }
 
     /// Specify that we are in a loop.

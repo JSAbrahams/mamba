@@ -21,6 +21,11 @@ fn exception_in_fun_super() -> OutTestRet {
 }
 
 #[test]
+fn nested_exception() -> OutTestRet {
+    test_directory(true, &["error"], &["error", "target"], "nested_exception")
+}
+
+#[test]
 #[ignore] // see #365
 fn raise() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "raise")

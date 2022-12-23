@@ -69,7 +69,7 @@ pub fn gen_def(
             }
 
             let raises = raises.into_iter().map(|(_, r)| r.unwrap()).collect();
-            let inner_env = inner_env.accounted_for_raises(&raises);
+            let inner_env = inner_env.raises_caught(&raises);
 
             let (mut constr, inner_env) = if let Some(body) = body {
                 if let Some(ret_ty) = ret_ty {
