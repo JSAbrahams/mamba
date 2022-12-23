@@ -38,30 +38,7 @@ pub fn gen_flow(
             let (mut constr, outer_env) = generate(expr_or_stmt, &env.accounted_for_raises(&raises), ctx, constr)?;
             let outer_env = outer_env.accounted_for_raises(&raises_before);
 
-            for case in cases {
-                match &case.node {
-                    Node::Case { cond, body } => {
-                        let define_mode = outer_env.is_define_mode;
-                        constr.new_set(true);
-
-                        let (mut inner_constr, cond_env) = generate(cond, &outer_env.define_mode(true), ctx, &mut constr)?;
-                        let cond_env = cond_env.define_mode(define_mode);
-
-                        inner_constr.add(
-                            "handle arm body",
-                            &Expected::try_from((body, &cond_env.var_mappings))?,
-                            &Expected::try_from((ast, &outer_env.var_mappings))?,
-                        );
-
-                        let (inner_constr, _) = generate(body, &cond_env, ctx, &mut inner_constr)?;
-                        constr = inner_constr;
-
-                        constr.exit_set(case.pos)?;
-                    }
-                    _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
-                }
-            }
-
+            constrain_cases(ast, cases, &outer_env, ctx, &mut constr)?;
             Ok((constr, outer_env))
         }
 
@@ -107,30 +84,7 @@ pub fn gen_flow(
         Node::Match { cond, cases } => {
             let (mut constr, outer_env) = generate(cond, &env, ctx, constr)?;
 
-            for case in cases {
-                match &case.node {
-                    Node::Case { cond, body } => {
-                        let define_mode = outer_env.is_define_mode;
-                        constr.new_set(true);
-
-                        let (mut inner_constr, cond_env) = generate(cond, &outer_env.define_mode(true), ctx, &mut constr)?;
-                        let cond_env = cond_env.define_mode(define_mode);
-
-                        inner_constr.add(
-                            "match body",
-                            &Expected::try_from((body, &cond_env.var_mappings))?,
-                            &Expected::try_from((ast, &outer_env.var_mappings))?,
-                        );
-
-                        let (inner_constr, _) = generate(body, &cond_env, ctx, &mut inner_constr)?;
-                        constr = inner_constr;
-
-                        constr.exit_set(case.pos)?;
-                    }
-                    _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
-                }
-            }
-
+            constrain_cases(ast, cases, &outer_env, ctx, &mut constr)?;
             Ok((constr, outer_env))
         }
 
@@ -166,6 +120,28 @@ pub fn gen_flow(
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected control flow")])
     }
+}
+
+fn constrain_cases(ast: &AST, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
+    let is_define_mode = env.is_define_mode;
+    let exp_ast = Expected::try_from((ast, &env.var_mappings))?;
+
+    for case in cases {
+        match &case.node {
+            Node::Case { cond, body } => {
+                constr.new_set(true);
+
+                let (_, cond_env) = generate(cond, &env.define_mode(true), ctx, constr)?;
+                let (_, body_env) = generate(body, &cond_env.define_mode(is_define_mode), ctx, constr)?;
+
+                let exp_body = Expected::try_from((body, &body_env.var_mappings))?;
+                constr.add("handle arm body", &exp_body, &exp_ast);
+                constr.exit_set(case.pos)?;
+            }
+            _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
