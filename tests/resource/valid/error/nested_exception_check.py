@@ -9,7 +9,7 @@ class MyException2(Exception):
 def f(x: int) -> int:
     match x:
         case 0:
-            20
+            return 20
         case 1:
             raise MyException1()
         case 2:
