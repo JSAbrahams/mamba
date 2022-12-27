@@ -30,10 +30,12 @@ mod ty;
 
 mod env;
 
-pub type Constrained<T = (ConstrBuilder, Environment)> = Result<T, Vec<TypeErr>>;
+pub type Constrained<T = Environment> = Result<T, Vec<TypeErr>>;
 
 pub fn gen_all(ast: &AST, ctx: &Context) -> Constrained<Vec<Constraints>> {
-    let builder = generate(ast, &Environment::default(), ctx, &mut ConstrBuilder::new())?.0;
+    let mut builder = ConstrBuilder::new();
+
+    generate(ast, &Environment::default(), ctx, &mut builder)?;
     Ok(builder.all_constr())
 }
 
@@ -44,7 +46,7 @@ pub fn generate(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Block { statements } => gen_vec(statements, env, ctx, constr),
+        Block { statements } => gen_vec(statements, env, true, ctx, constr),
 
         Class { .. } | TypeDef { .. } => gen_class(ast, env, ctx, constr),
         TypeAlias { .. } | Condition { .. } => gen_class(ast, env, ctx, constr),
@@ -98,33 +100,32 @@ pub fn generate(
         Return { .. } | ReturnEmpty => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
-        Import { .. }
-        | Generic { .. }
-        | Parent { .. }
-        | DocStr { .. }
-        | Underscore => Ok((constr.clone(), env.clone())),
+        Import { .. } | Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => Ok(env.clone()),
     }
 }
 
+/// Generate constraint for vector of ASTs.
+///
+/// Original environment is returned.
+/// If [carry_env] is true, then environment is used by each consecutive element.
+/// This environment is then also returned.
 pub fn gen_vec(
     asts: &[AST],
     env: &Environment,
+    carry_env: bool,
     ctx: &Context,
-    constr: &ConstrBuilder,
+    constr: &mut ConstrBuilder,
 ) -> Constrained {
-    let mut constr_env = (constr.clone(), env.clone());
-    let mut asts = Vec::from(asts);
+    let (mut asts, mut inner_env) = (Vec::from(asts), env.clone());
     let last = asts.pop();
 
     for ast in asts {
-        let mut env = constr_env.1;
-        env.last_stmt_in_function = false;
-        constr_env = generate(&ast, &env, ctx, &mut constr_env.0)?;
+        inner_env = generate(&ast, if carry_env { &inner_env } else { env }, ctx, constr)?;
     }
-
     if let Some(last) = last {
-        constr_env = generate(&last, &constr_env.1, ctx, &mut constr_env.0)?;
+        let env = if carry_env { inner_env } else { env.clone() };
+        inner_env = generate(&last, &env, ctx, constr)?;
     }
 
-    Ok(constr_env)
+    Ok(if carry_env { inner_env } else { env.clone() })
 }

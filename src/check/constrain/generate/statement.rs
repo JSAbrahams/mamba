@@ -24,29 +24,27 @@ pub fn gen_stmt(
             Node::FunctionCall { name, .. } => if let Node::Id { lit } = &name.node {
                 let raises = HashSet::from_iter([TrueName::from(lit.as_str())]);
                 check_raises_caught(constr, &raises, env, ctx, ast.pos)?;
-                Ok((constr.clone(), env.clone()))
+                Ok(env.clone())
             } else {
                 Err(vec![TypeErr::new(name.pos, &format!("Malformed raise: {}", name.node))])
             }
             _ => Err(vec![TypeErr::new(error.pos, &format!("Malformed raise: {}", error.node))])
         }
-        Node::ReturnEmpty => {
-            if let Some(exp) = &env.return_type {
-                let msg = format!("Empty return in function which returns {}", exp);
-                Err(vec![TypeErr::new(ast.pos, &msg)])
-            } else {
-                Ok((constr.clone(), env.clone()))
-            }
+        Node::ReturnEmpty => if let Some(exp) = &env.return_type {
+            let msg = format!("Empty return in function which returns '{exp}'");
+            Err(vec![TypeErr::new(ast.pos, &msg)])
+        } else {
+            Ok(env.clone())
         }
         Node::Return { expr } => {
             if let Some(expected_ret_ty) = &env.return_type {
-                let (mut constr, env) = generate(expr, env, ctx, constr)?;
+                generate(expr, env, ctx, constr)?;
                 constr.add(
                     "return",
                     expected_ret_ty,
                     &Expected::try_from((expr, &env.var_mappings))?,
                 );
-                Ok((constr, env))
+                Ok(env.clone())
             } else {
                 Err(vec![TypeErr::new(ast.pos, "Return outside function with return type")])
             }

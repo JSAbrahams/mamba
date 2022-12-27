@@ -29,24 +29,24 @@ pub fn gen_resources(
                 constr.add("with as", &resource_exp, &Expected::new(ty.pos, &ty_exp));
             }
 
-            let (mut constr, env) = generate(resource, env, ctx, constr)?;
+            let resource_env = generate(resource, env, ctx, constr)?;
 
             constr.new_set(true);
             constr.remove_expected(&resource_exp);
-            let (mut constr, env) = identifier_from_var(
+            let resource_env = identifier_from_var(
                 alias,
                 ty,
                 &Some(alias.clone()),
                 *mutable,
                 ctx,
-                &mut constr,
-                &env.define_mode(true),
+                constr,
+                &resource_env.is_def_mode(true),
             )?;
-            let (mut constr, env) = generate(expr, &env, ctx, &mut constr)?;
-            constr.exit_set(ast.pos)?;
 
+            generate(expr, &resource_env, ctx, constr)?;
             constr.exit_set(ast.pos)?;
-            Ok((constr, env))
+            constr.exit_set(ast.pos)?;
+            Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
             constr.new_set(true);
@@ -55,9 +55,12 @@ pub fn gen_resources(
                 &Expected::try_from((resource, &env.var_mappings))?,
                 &Expected::new(resource.pos, &Expect::any()),
             );
-            let (mut constr, env) = generate(resource, env, ctx, constr)?;
+
+            let resource_env = generate(resource, env, ctx, constr)?;
+
             constr.exit_set(ast.pos)?;
-            generate(expr, &env, ctx, &mut constr)
+            generate(expr, &resource_env, ctx, constr)?;
+            Ok(env.clone())
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected resources")])
