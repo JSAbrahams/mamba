@@ -17,5 +17,5 @@ j: bool = False
 
 c is d
 e is not f
-isinstance(g, h)
-not isinstance(i, j)
+isinstance(g, Exception)
+not isinstance(i, Exception)
