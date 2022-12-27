@@ -186,7 +186,7 @@ fn call_parameters(
 
                 let arg_exp = Expected::new(*pos, arg);
                 let name = Name::from(&ctx.class(ty, *pos)?);
-                constr.add("call parameters", &arg_exp, &Expected::new(*pos, &Type { name }))
+                constr.add("call parameters", &Expected::new(*pos, &Type { name }), &arg_exp)
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(self_ast.pos.end, self_ast.pos.end);
