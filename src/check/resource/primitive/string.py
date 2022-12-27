@@ -10,6 +10,8 @@ class str:
 
     def __iter__(self) -> str_iterator: pass
 
+    def is_digit(self) -> bool: pass
+
 class str_iterator:
     def __init__(self): pass
     def __next__(self) -> str: pass
