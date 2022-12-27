@@ -1,14 +1,17 @@
-class MyErr(message: String): Exception
-class MyOtherErr(message: String): Exception
+class MyErr(def message: String): Exception
+class MyOtherErr(def message: String): Exception
 
-def function_may_throw_err() raise [MyErr] => pass
+def function_may_throw_err() -> Int raise [MyErr] => 10
 
-def a := function_may_throw_err() handle
-    err: MyErr =>
-        print("We have a problem: {err.message}.")
-        return  # we return, halting execution
-    err: MyOtherErr =>
-        print("We have another problem: {err.message}.")
-        0  # ... or we assign default value 0 to a
+def g() =>
+    def a := function_may_throw_err() handle
+        err: MyErr =>
+            print("We have a problem: {err.message}.")
+            return  # we return, halting execution
+        err: MyOtherErr =>
+            print("We have another problem: {err.message}.")
+            0  # ... or we assign default value 0 to a
 
-print("a has value {a}.")
+    print("a has value {a}.")
+
+g()

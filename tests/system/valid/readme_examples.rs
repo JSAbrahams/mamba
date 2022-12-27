@@ -1,6 +1,7 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
+#[ignore] // milestone 0.5
 fn error_handling() -> OutTestRet {
     test_directory(true, &["readme_example"], &["readme_example", "target"], "error_handling")
 }
@@ -50,6 +51,7 @@ fn type_refinement_use() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // milestone 0.5
 fn use_server() -> OutTestRet {
     test_directory(true, &["readme_example"], &["readme_example", "target"], "use_server")
 }

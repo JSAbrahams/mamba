@@ -55,7 +55,7 @@ def factorial(x: Int) -> Int => match x
 
 def num := input("Compute factorial: ")
 if num.is_digit() then
-    def result := factorial(int(num))
+    def result := factorial(Int(num))
     print("Factorial {num} is: {result}.")
 else
     print("Input was not an integer.")
@@ -279,15 +279,18 @@ This also prevents us from wrapping large code blocks in a `try`, where it might
 This is shown below:
 
 ```mamba
-def a := function_may_throw_err() handle
-    err: MyErr => 
-        print("We have a problem: {err.message}.")
-        return  # we return, halting execution
-    err: MyOtherErr => 
-        print("We have another problem: {err.message}.")
-        0  # ... or we assign default value 0 to a
-        
-print("a has value {a}.")
+def g() =>
+    def a := function_may_throw_err() handle
+        err: MyErr =>
+            print("We have a problem: {err.message}.")
+            return  # we return, halting execution
+        err: MyOtherErr =>
+            print("We have another problem: {err.message}.")
+            0  # ... or we assign default value 0 to a
+
+    print("a has value {a}.")
+
+g()
 ```
 
 If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
