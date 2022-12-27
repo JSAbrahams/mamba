@@ -1,6 +1,20 @@
-def a := Complex(10.0, 20.0)
-def b := Int(10)
-def c := Float(2.3)
+def aa := Complex(10, 20)
+def ab := Complex(10, 20.0)
+def ac := Complex(10.0, 20)
+def ad := Complex(10.0, 20.0)
 
-def d := Bool(True)
-def e := String("hello world")
+def b := Int(10)
+def c := Int("10")
+def d := Int(10.2)
+
+def e := Float(10)
+def f := Float(2.3)
+def g := Float("30")
+
+def h := Bool(True)
+
+def i := String(10)
+def j := String("hello world")
+def k := String(20.0)
+def l := String(Complex(3, 1))
+def m := String(True)

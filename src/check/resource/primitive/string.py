@@ -1,7 +1,7 @@
 from typing import Union
 
 class str:
-    def __init__(self, arg: str) -> str: pass
+    def __init__(self, arg: Union[int, float, complex, bool, str]) -> str: pass
 
     def __add__(self, other: Union[int, float, complex, bool, str]) -> str: pass
     def __str__(self) -> str: pass
@@ -9,6 +9,8 @@ class str:
     def __eq__(self, other: str) -> bool: pass
 
     def __iter__(self) -> str_iterator: pass
+
+    def is_digit(self) -> bool: pass
 
 class str_iterator:
     def __init__(self): pass

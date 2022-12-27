@@ -1,0 +1,6 @@
+class MyClass
+class MyChildClass: MyClass
+
+def my_fun(arg: MyChildClass) => pass
+
+my_fun(MyClass())
