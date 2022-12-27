@@ -82,7 +82,6 @@ fn wrong_exception() {
 }
 
 #[test]
-#[ignore]  // must construct system which identifies exit points in function
 fn function_with_stmt_body() {
     let source = resource_content(false, &["type", "function"], "function_with_stmt_body.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
