@@ -66,23 +66,3 @@ pub fn gen_resources(
         _ => Err(vec![TypeErr::new(ast.pos, "Expected resources")])
     }
 }
-
-/// Constrain expected to raises.
-///
-/// This indicates that the type should be contained within the set of the raises constraint.
-/// Does not constrain if top-level in constr builder, meaning that we do not constrain raises in
-/// top-level scripts.
-pub fn constrain_raises(
-    raises: &Expected,
-    env_raises: &Option<Expected>,
-    constr: &mut ConstrBuilder,
-) -> Constrained<()> {
-    if constr.level == 0 { return Ok(()); }
-
-    if let Some(env_raises) = env_raises {
-        constr.add("raises", env_raises, raises);
-        Ok(())
-    } else {
-        Err(vec![TypeErr::new(raises.pos, "Unexpected raise")])
-    }
-}

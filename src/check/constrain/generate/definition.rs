@@ -79,8 +79,8 @@ pub fn gen_def(
                     constr.add("fun body type", &ret_ty_raises_exp, &Expected::try_from((body, &body_env.var_mappings))?);
 
                     let ret_ty_exp = Expected::new(ret_ty.pos, &Type { name });
-                    let inner_env = body_env.return_type(&ret_ty_exp);
-                    generate(body, &inner_env, ctx, constr)?
+                    let body_env = body_env.return_type(&ret_ty_exp).is_expr(true);
+                    generate(body, &body_env, ctx, constr)?
                 } else {
                     generate(body, &body_env, ctx, constr)?
                 }
