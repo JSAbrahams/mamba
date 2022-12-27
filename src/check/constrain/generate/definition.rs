@@ -195,7 +195,7 @@ pub fn identifier_from_var(
 
     let var_expect = Expected::try_from((var, &env_with_var.var_mappings))?;
     if let Some(ty) = ty {
-        let ty_exp = Expected::new(ty.pos, &Type { name: Name::try_from(ty.deref())? });
+        let ty_exp = Expected::new(var.pos, &Type { name: Name::try_from(ty.deref())? });
         constr.add("variable and type", &ty_exp, &var_expect);
     }
     if let Some(expr) = expr {

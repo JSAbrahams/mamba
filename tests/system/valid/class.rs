@@ -1,6 +1,11 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
+fn assign_to_nullable_field() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "assign_to_nullable_field")
+}
+
+#[test]
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }
@@ -19,6 +24,7 @@ fn class_super_one_line_init() -> OutTestRet {
 fn assign_types_double_nested() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "assign_types_double_nested")
 }
+
 
 #[test]
 fn print_types_double_nested() -> OutTestRet {

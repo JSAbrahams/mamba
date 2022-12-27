@@ -217,7 +217,7 @@ fn unify_fun_arg(
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             EitherOrBoth::Right(_) => {
-                let msg = format!("Function takes only {} arguments", f_args.len());
+                let msg = format!("Function takes only {} {}", f_args.len(), if f_args.len() == 1 { "argument" } else { "arguments" });
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             _ => {}
