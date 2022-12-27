@@ -9,6 +9,6 @@ def f(x: Int) -> Int raise [MyException1, MyException2] =>
 
 def g() -> Int raise [MyException2] =>
     f(2) handle
-        err: MyException1 => print("a")
+        err: MyException1 => 10
 
 g()

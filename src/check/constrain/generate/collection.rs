@@ -19,7 +19,8 @@ pub fn gen_coll(
 ) -> Constrained {
     match &ast.node {
         Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
-            gen_vec(elements, env, ctx, &constr_col(ast, env, constr, None)?)
+            constr_col(ast, env, constr, None)?;
+            gen_vec(elements, env, false, ctx, constr)
         }
 
         Node::SetBuilder { .. } => {
@@ -40,7 +41,7 @@ pub fn constr_col(
     env: &Environment,
     constr: &mut ConstrBuilder,
     temp_type: Option<Name>,
-) -> TypeResult<ConstrBuilder> {
+) -> TypeResult<()> {
     let (msg, col) = match &collection.node {
         Node::Set { elements } | Node::List { elements } => {
             let ty = if let Some(first) = elements.first() {
@@ -71,7 +72,7 @@ pub fn constr_col(
 
     let col_exp = Expected::new(collection.pos, &col);
     constr.add(msg, &col_exp, &Expected::try_from((collection, &env.var_mappings))?);
-    Ok(constr.clone())
+    Ok(())
 }
 
 /// Constrain lookup an collection.
@@ -97,7 +98,7 @@ pub fn gen_collection_lookup(
     );
 
     constr.add("collection lookup", &col_ty_exp, &col_exp);
-    Ok((constr.clone(), env))
+    Ok(env)
 }
 
 #[cfg(test)]

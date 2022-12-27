@@ -14,7 +14,7 @@ use crate::common::position::Position;
 ///
 /// The level indicates how deep we are. A level of 0 indicates that we are at
 /// the top-level of a script.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ConstrBuilder {
     pub level: usize,
     finished: Vec<(Vec<StringName>, Vec<Constraint>)>,

@@ -1,0 +1,1 @@
+def a: Int := if True then 10 else None
