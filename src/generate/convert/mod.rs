@@ -298,8 +298,13 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
         },
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
-            attempt: Box::from(append_ret(attempt)),
+            attempt: Box::from(append_assign(attempt, assign_to)),
             except: except.into_iter().map(|e| append_assign(e, assign_to)).collect(),
+        },
+        Core::Except { id, class, body } => Core::Except {
+            id: id.clone(),
+            class: class.clone(),
+            body: Box::from(append_assign(body, assign_to)),
         },
         expr if skip_assign(expr) => core.clone(),
         _ => Core::Assign {
@@ -338,6 +343,11 @@ fn append_ret(core: &Core) -> Core {
             setup: setup.clone(),
             attempt: Box::from(append_ret(attempt)),
             except: except.into_iter().map(|e| append_ret(e)).collect(),
+        },
+        Core::Except { id, class, body } => Core::Except {
+            id: id.clone(),
+            class: class.clone(),
+            body: Box::from(append_ret(body)),
         },
         core if skip_return(&core) => core.clone(),
         _ => Core::Return { expr: Box::from(core.clone()) }

@@ -1,7 +1,7 @@
-def g() -> int =>
+def g() -> int:
     raise Exception("A")
 
-def f(x: int) -> int =>
+def f(x: int) -> int:
     try:
         return g()
     except Exception as err:

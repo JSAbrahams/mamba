@@ -4,6 +4,12 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn unhandled_exception() {
+    let source = resource_content(false, &["type", "error"], "unhandled_exception.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn using_old_resource_in_with() {
     let source = resource_content(false, &["type", "error"], "using_old_resource_in_with.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
@@ -20,3 +26,4 @@ fn with_not_expression() {
     let source = resource_content(false, &["type", "error"], "with_not_expression.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
+

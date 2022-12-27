@@ -1,12 +1,16 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
+use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::constrain::generate::resources::constrain_raises;
-use crate::check::context::Context;
+use crate::check::context::{Context, LookupClass};
+use crate::check::context::clss::HasParent;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
+use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 
 pub fn gen_stmt(
@@ -16,10 +20,15 @@ pub fn gen_stmt(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::Raise { error } => {
-            let raise_expected = Expected::try_from((ast, &env.var_mappings))?;
-            let mut constr = constrain_raises(&raise_expected, &env.raises, constr)?;
-            generate(error, env, ctx, &mut constr)
+        Node::Raise { error } => match &error.node {
+            Node::FunctionCall { name, .. } => if let Node::Id { lit } = &name.node {
+                let raises = HashSet::from_iter([TrueName::from(lit.as_str())]);
+                check_raises_caught(constr, &raises, env, ctx, ast.pos)?;
+                Ok((constr.clone(), env.clone()))
+            } else {
+                Err(vec![TypeErr::new(name.pos, &format!("Malformed raise: {}", name.node))])
+            }
+            _ => Err(vec![TypeErr::new(error.pos, &format!("Malformed raise: {}", error.node))])
         }
         Node::ReturnEmpty => {
             if let Some(exp) = &env.return_type {
@@ -44,4 +53,29 @@ pub fn gen_stmt(
         }
         _ => Err(vec![TypeErr::new(ast.pos, "Expected statement")]),
     }
+}
+
+/// Check whether a set of raises is properly dealt with.
+///
+/// Makes use of the [Environment::raises_caught] field.
+/// For each raises, checks whether it or a parent of it is caught.
+/// If we are a top-level script, we perform no check as raises do not need to be caught here.
+pub fn check_raises_caught(constr: &ConstrBuilder, raises: &HashSet<TrueName>, env: &Environment, ctx: &Context, pos: Position) -> Constrained<()> {
+    if !constr.is_top_level() {
+        let errs: Vec<TypeErr> = raises.iter()
+            .filter(|raise_name| {
+                !if let Ok(raise_class) = ctx.class(*raise_name, pos) {
+                    env.raises_caught.iter().any(|env_raise| {
+                        if let Ok(result) = raise_class.has_parent(env_raise, ctx, pos) {
+                            result
+                        } else { false }
+                    })
+                } else { false }
+            })
+            .map(|n| TypeErr::new(pos, &format!("Exception not caught: {n}")))
+            .collect();
+
+        if !errs.is_empty() { return Err(errs); }
+    }
+    Ok(())
 }

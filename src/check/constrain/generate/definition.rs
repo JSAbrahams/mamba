@@ -13,7 +13,8 @@ use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
-use crate::check::name::{Any, Empty, match_name, Name, Nullable, Union};
+use crate::check::name::{Any, match_name, Name, Nullable};
+use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
@@ -49,21 +50,28 @@ pub fn gen_def(
             let (mut constr, inner_env) = constrain_args(fun_args, env, ctx, constr)?;
             let inner_env = inner_env.with_unassigned(non_nullable_class_vars);
 
-            let (mut constr, inner_env) = if let Some(body) = body {
-                let r_tys: Vec<_> = raises.iter().map(|r| (r.pos, Name::try_from(r))).collect();
-                let mut r_res = Name::empty();
+            let (raises, errs): (Vec<(Position, _)>, Vec<_>) = raises
+                .iter()
+                .map(|r| (r.pos, TrueName::try_from(r)))
+                .partition(|(_, res)| res.is_ok());
+            if !errs.is_empty() {
+                let errs = errs.into_iter().flat_map(|(_, e)| e.unwrap_err());
+                return Err(errs.collect());
+            }
 
-                let exception_name = Name::from(clss::EXCEPTION);
-                for (pos, raise) in r_tys {
-                    let raise = raise?;
-                    if !ctx.class(&raise, pos)?.has_parent(&exception_name, ctx, pos)? {
-                        let msg = format!("`{}` is not an `{}`", raise, exception_name);
-                        return Err(vec![TypeErr::new(pos, &msg)]);
-                    }
-                    r_res = r_res.union(&raise)
+            let exception_name = Name::from(clss::EXCEPTION);
+            for (pos, raise) in &raises {
+                let raise = raise.clone()?;
+                if !ctx.class(&raise, *pos)?.has_parent(&exception_name, ctx, *pos)? {
+                    let msg = format!("`{raise}` is not an `{exception_name}`");
+                    return Err(vec![TypeErr::new(*pos, &msg)]);
                 }
+            }
 
-                let inner_env = inner_env.insert_raises(&r_res, ast.pos);
+            let raises = raises.into_iter().map(|(_, r)| r.unwrap()).collect();
+            let inner_env = inner_env.raises_caught(&raises);
+
+            let (mut constr, inner_env) = if let Some(body) = body {
                 if let Some(ret_ty) = ret_ty {
                     let name = Name::try_from(ret_ty)?;
                     let ret_ty_raises_exp = Expected::new(body.pos, &Type { name: name.clone() });

@@ -18,4 +18,3 @@ def h(x: int) -> int:
         raise Err("Greater Than")
 
 f(10)
-f(10)
