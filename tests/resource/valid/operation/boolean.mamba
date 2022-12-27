@@ -17,5 +17,5 @@ def j := False
 
 c is d
 e isnt f
-g isa h
-i isnta j
+g isa Exception
+i isnta Exception

@@ -4,6 +4,12 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn isa_not_id() {
+    let source = resource_content(false, &["type", "operation"], "isa_not_id.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn reassign_to_nullable() {
     let source = resource_content(false, &["type", "operation"], "reassign_to_nullable.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
