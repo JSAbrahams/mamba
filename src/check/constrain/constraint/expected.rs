@@ -69,7 +69,6 @@ pub enum Expect {
     Expression { ast: AST },
     Collection { ty: Box<Expected> },
     Tuple { elements: Vec<Expected> },
-    Raises { name: Name },
     Function { name: StringName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
@@ -106,7 +105,6 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
             Node::Bool { .. } => Type { name: Name::from(BOOL) },
             Node::Str { .. } => Type { name: Name::from(STRING) },
             Node::Undefined => Expect::none(),
-            Node::Raise { error } => Raises { name: Name::try_from(error)? },
             _ => Expression { ast },
         })
     }
@@ -130,7 +128,6 @@ impl Display for Expect {
                 let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "({})", comma_delm(elements))
             }
-            Raises { name: ty } => write!(f, "Raises {ty}"),
             Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
@@ -151,12 +148,11 @@ impl Expect {
         match (self, other) {
             (Collection { ty: l }, Collection { ty: r }) => l.expect.same_value(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
-            (Raises { name: l }, Raises { name: r }) | (Type { name: l }, Type { name: r }) => {
-                l == r
-            }
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) => {
                 le == re && ln == rn
             }
+            (Type { name: l }, Type { name: r }) => l == r,
+
             (Function { name: l, args: la }, Function { name: r, args: ra }) => {
                 l == r
                     && la.iter().zip_longest(ra.iter()).all(|pair| {

@@ -1,6 +1,6 @@
 def g() -> Int raise [Exception] =>
     raise Exception("A")
 
-def f(x: Int) -> Int =>
+def f(x: Int) -> Int=>
     g() handle
         err: Exception => x + 10

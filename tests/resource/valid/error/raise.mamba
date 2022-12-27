@@ -7,4 +7,3 @@ def g() -> Int raise[Err] => raise Err("Error always raised")
 def h(x: Int) -> Int raise[Err] => if x < 0 then raise Err("Less than") else raise Err("Greater Than")
 
 f(10)
-f(10) raise [Err]

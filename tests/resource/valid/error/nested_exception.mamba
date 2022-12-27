@@ -1,0 +1,14 @@
+class MyException1(msg: String): Exception(msg)
+class MyException2(msg: String): Exception(msg)
+
+def f(x: Int) -> Int raise [MyException1, MyException2] =>
+    match x
+        0 => 20
+        1 => raise MyException1()
+        2 => raise MyException2()
+
+def g() -> Int raise [MyException2] =>
+    f(2) handle
+        err: MyException1 => print("a")
+
+g()

@@ -1,6 +1,6 @@
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{
-    Access, Collection, Expression, Function, Raises, Tuple, Type,
+    Access, Collection, Expression, Function, Tuple, Type,
 };
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
@@ -47,9 +47,6 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
                 unify_expression(constraint, constraints, finished, ctx, count, total)
             }
 
-            (Raises { .. }, _) | (_, Raises { .. }) => {
-                unify_type(constraint, constraints, finished, ctx, total)
-            }
             (Tuple { .. }, _) | (_, Tuple { .. }) => {
                 unify_type(constraint, constraints, finished, ctx, total)
             }

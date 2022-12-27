@@ -1,0 +1,8 @@
+class MyException(msg: String): Exception(msg)
+
+def g() -> Int raise [MyException] =>
+    raise MyException("A")
+
+def f(x: Int) -> Int=>
+    g() handle
+        err: Exception => x + 10

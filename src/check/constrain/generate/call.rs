@@ -13,6 +13,7 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::ident::{IdentiCall, Identifier};
@@ -73,7 +74,7 @@ pub fn gen_call(
                 });
 
                 let name = Name::empty();
-                let parent = Expected::new(ast.pos, &Expect::Type { name });
+                let parent = Expected::new(ast.pos, &Type { name });
                 constr.add("print", &parent, &Expected::try_from((ast, &env.var_mappings))?);
                 return Ok((constr, env));
             } else if let Some(functions) = env.get_var(&f_name.name) {
@@ -103,15 +104,7 @@ pub fn gen_call(
                     &fun_ret_exp,
                 );
 
-                if !fun.raises.is_empty() {
-                    if let Some(raises) = &env.raises {
-                        let raises_exp = Expected::new(ast.pos, &Raises { name: fun.raises });
-                        constr.add("function call", raises, &raises_exp);
-                    } else if !constr.is_top_level() {
-                        let msg = format!("Exceptions not covered: {}", &fun.raises);
-                        return Err(vec![TypeErr::new(ast.pos, &msg)]);
-                    }
-                }
+                check_raises_caught(&constr, &fun.raises.names, &env, ctx, ast.pos)?;
             }
 
             Ok((constr, env))
@@ -125,7 +118,7 @@ pub fn gen_call(
             let name = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
             constr.add(
                 "index range",
-                &Expected::new(range.pos, &Expect::Type { name }),
+                &Expected::new(range.pos, &Type { name }),
                 &Expected::try_from((range, &env.var_mappings))?,
             );
 
@@ -133,7 +126,7 @@ pub fn gen_call(
             let name = Name::from(temp_type.as_str());
             constr.add(
                 "index of collection",
-                &Expected::new(ast.pos, &Expect::Type { name: name.clone() }),
+                &Expected::new(ast.pos, &Type { name: name.clone() }),
                 &Expected::try_from((ast, &env.var_mappings))?,
             );
 
@@ -274,7 +267,7 @@ fn property_call(
 
     let access = Expected::new(
         ast_without_access.pos.union(access.pos),
-        &Expect::Access {
+        &Access {
             entity: Box::new(Expected::try_from((&ast_without_access, &env.var_mappings))?),
             name: Box::new(access),
         },
