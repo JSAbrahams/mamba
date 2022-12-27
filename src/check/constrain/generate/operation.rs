@@ -7,13 +7,14 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context};
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::clss::{FLOAT, INT, STRING};
 use crate::check::context::function::{
     ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT, SUB,
 };
 use crate::check::name::{Any, Name};
 use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -159,12 +160,16 @@ pub fn gen_op(
             generate(left, env, ctx, constr)?;
             Ok(env.clone())
         }
-        Node::IsA { left, right } | Node::IsNA { left, right } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
-            constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
-            generate(right, env, ctx, constr)?;
+        Node::IsA { left, right } | Node::IsNA { left, right } => if let Node::Id { .. } = right.node {
+            let class_name = TrueName::try_from(right)?;
+            ctx.class(&class_name, right.pos)?;
+
             generate(left, env, ctx, constr)?;
+            generate(right, &env.is_def_mode(true), ctx, constr)?;
             Ok(env.clone())
+        } else {
+            let msg = format!("Expected identifier: '{}'", right.node);
+            Err(vec![TypeErr::new(ast.pos, &msg)])
         }
 
         Node::Not { expr } => {
