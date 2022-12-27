@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "mamba"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "ansi_term",
  "assert_cmd",
