@@ -56,7 +56,7 @@ impl Environment {
             let mut new_var = format!("{}@{}", var, offset);
             while self.vars.contains_key(&new_var) {
                 offset += 1;
-                new_var = format!("{}@{}", var, offset);
+                new_var = format!("{var}@{offset}");
             }
 
             var_mappings.insert(String::from(var), new_var.clone());

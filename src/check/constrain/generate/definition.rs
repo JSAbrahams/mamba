@@ -91,7 +91,7 @@ pub fn gen_def(
             let unassigned: Vec<String> = body_env
                 .unassigned
                 .iter()
-                .map(|v| format!("Non nullable class variable '{}' not assigned to in constructor", v))
+                .map(|v| format!("Non nullable class variable '{v}' not assigned to in constructor"))
                 .collect();
             if !unassigned.is_empty() {
                 return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
@@ -126,10 +126,10 @@ pub fn constrain_args(
             Node::FunArg { mutable, var, ty, default, .. } => {
                 if var.node == Node::new_self() {
                     let self_type = &env_with_args.class_type.clone().ok_or_else(|| {
-                        TypeErr::new(var.pos, &format!("{} cannot be outside class", SELF))
+                        TypeErr::new(var.pos, &format!("{SELF} cannot be outside class"))
                     })?;
                     if default.is_some() {
-                        let msg = format!("{} cannot have default argument", SELF);
+                        let msg = format!("{SELF} cannot have default argument");
                         return Err(vec![TypeErr::new(arg.pos, &msg)]);
                     }
 
@@ -217,7 +217,7 @@ fn identifier_to_tuple(
             if let Some(expected) = env.get_var(&var.object(pos)?) {
                 Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
             } else {
-                let msg = format!("'{}' is undefined in this scope", iden);
+                let msg = format!("'{iden}' is undefined in this scope");
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }

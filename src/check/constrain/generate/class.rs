@@ -30,7 +30,7 @@ pub fn gen_class(
 
         Node::TypeAlias { conditions, isa, .. } => constrain_class_body(conditions, isa, env, ctx, constr),
         Node::Condition { cond, el: Some(el) } => {
-            let env = generate(cond, env, ctx, constr)?;
+            generate(cond, env, ctx, constr)?;
             generate(el, &env, ctx, constr)
         }
         Node::Condition { cond, .. } => generate(cond, env, ctx, constr),
@@ -90,5 +90,5 @@ pub fn property_from_field(
     });
 
     constr.add("field property", &property_call, &access);
-    Ok(env.clone())
+    Ok(env)
 }

@@ -103,7 +103,7 @@ pub fn gen_call(
                     &fun_ret_exp,
                 );
 
-                check_raises_caught(&constr, &fun.raises.names, &env, ctx, ast.pos)?;
+                check_raises_caught(&constr, &fun.raises.names, env, ctx, ast.pos)?;
                 env.clone()
             })
         }
@@ -145,10 +145,10 @@ fn check_iden_mut(id: &Identifier, env: &Environment, pos: Position) -> TypeResu
             Some(exps) if *f_mut => exps
                 .iter()
                 .filter(|(is_mut, _)| !*is_mut)
-                .map(|(_, var)| format!("Cannot change mutability of '{}' in reassign", var))
+                .map(|(_, var)| format!("Cannot change mutability of '{var}' in reassign"))
                 .collect(),
-            _ if !f_mut => vec![format!("Cannot change mutability of '{}' in reassign", var)],
-            _ => vec![format!("Cannot reassign to undefined '{}'", var)],
+            _ if !f_mut => vec![format!("Cannot change mutability of '{var}' in reassign")],
+            _ => vec![format!("Cannot reassign to undefined '{var}'")],
         })
         .collect();
 
@@ -190,7 +190,7 @@ fn call_parameters(
             }
             Left(fun_arg) if !fun_arg.has_default => {
                 let pos = Position::new(self_ast.pos.end, self_ast.pos.end);
-                let msg = format!("Expected argument: '{}' has no default", fun_arg);
+                let msg = format!("Expected argument: '{fun_arg}' has no default");
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             Right((pos, _)) => return Err(vec![TypeErr::new(*pos, "Unexpected argument")]),
@@ -221,7 +221,7 @@ fn property_call(
         Node::Id { lit } => {
             if let Node::Id { lit: instance } = &last_inst.node {
                 if instance == arg::SELF && env.unassigned.contains(lit) {
-                    let msg = format!("Cannot access unassigned field {}", lit);
+                    let msg = format!("Cannot access unassigned field {lit}");
                     return Err(vec![TypeErr::new(property.pos, &msg)]);
                 }
             }
@@ -333,7 +333,7 @@ fn reassign_op(
             NodeOp::BLShift => Node::BLShift { left: left.clone(), right },
             NodeOp::BRShift => Node::BRShift { left: left.clone(), right },
             other => {
-                let msg = format!("Cannot reassign using operator '{}'", other);
+                let msg = format!("Cannot reassign using operator '{other}'");
                 return Err(vec![TypeErr::new(ast.pos, &msg)]);
             }
         },
@@ -343,6 +343,6 @@ fn reassign_op(
 
     let node = Node::Reassign { left, right, op: NodeOp::Assign };
     let simple_assign_ast = AST::new(ast.pos, node);
-    generate(&simple_assign_ast, &env, ctx, constr)?;
+    generate(&simple_assign_ast, env, ctx, constr)?;
     Ok(env.clone())
 }

@@ -32,7 +32,7 @@ pub fn gen_expr(
             );
 
             generate(left, env, ctx, constr)?;
-            generate(right, &env, ctx, constr)?;
+            generate(right, env, ctx, constr)?;
             Ok(env.clone())
         }
         Node::Pass => if let Some(expected_ret_ty) = &env.return_type {
@@ -53,7 +53,7 @@ fn match_id(ast: &AST, ty: &OptAST, mutable: bool, env: &Environment, ctx: &Cont
         } else if env.get_var(lit).is_some() {
             Ok(env.clone())
         } else {
-            Err(vec![TypeErr::new(ast.pos, &format!("Undefined variable: {}", lit))])
+            Err(vec![TypeErr::new(ast.pos, &format!("Undefined variable: {lit}"))])
         }
         _ => Ok(env.clone())
     }

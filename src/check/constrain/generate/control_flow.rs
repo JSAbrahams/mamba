@@ -49,10 +49,10 @@ pub fn gen_flow(
             generate(cond, env, ctx, constr)?;
 
             constr.new_set(true);
-            let then_env = generate(then, &env, ctx, constr)?;
+            let then_env = generate(then, env, ctx, constr)?;
             constr.exit_set(then.pos)?;
             constr.new_set(true);
-            let else_env = generate(el, &env, ctx, constr)?;
+            let else_env = generate(el, env, ctx, constr)?;
             constr.exit_set(el.pos)?;
 
             if env.is_expr {
@@ -84,7 +84,7 @@ pub fn gen_flow(
 
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
-            let outer_env = generate(cond, &env, ctx, constr)?;
+            let outer_env = generate(cond, env, ctx, constr)?;
             constrain_cases(ast, cases, &outer_env, ctx, constr)?;
             Ok(env.clone())
         }

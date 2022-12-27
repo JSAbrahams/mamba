@@ -31,7 +31,7 @@ pub fn gen_stmt(
             _ => Err(vec![TypeErr::new(error.pos, &format!("Malformed raise: {}", error.node))])
         }
         Node::ReturnEmpty => if let Some(exp) = &env.return_type {
-            let msg = format!("Empty return in function which returns '{}'", exp);
+            let msg = format!("Empty return in function which returns '{exp}'");
             Err(vec![TypeErr::new(ast.pos, &msg)])
         } else {
             Ok(env.clone())
