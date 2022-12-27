@@ -1,0 +1,3 @@
+def send(message: String) =>
+    def _message: String? := None
+    _message := message

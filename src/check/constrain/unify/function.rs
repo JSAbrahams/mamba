@@ -144,7 +144,7 @@ fn field_access(
     let fields = ctx.class(entity_name, accessed.pos)?.field(name, ctx, accessed.pos)?;
     for field in fields.union {
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
-        constraints.push("field access", other, &field_ty_exp);
+        constraints.push("field access", &field_ty_exp, other);
         pushed += 1;
     }
 

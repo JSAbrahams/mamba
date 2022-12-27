@@ -11,6 +11,11 @@ fn assign_tuples() -> OutTestRet {
 }
 
 #[test]
+fn assign_to_nullable_in_function() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_to_nullable_in_function")
+}
+
+#[test]
 fn assign_with_if() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "assign_with_if")
 }

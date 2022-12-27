@@ -1,7 +1,7 @@
-from typing import Option
+from typing import Optional
 
 class MyServer:
-    _message: Option[str] = None
+    _message: Optional[str] = None
 
     def send(self, message: str):
-        self._message := message
+        self._message = message
