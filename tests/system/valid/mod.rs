@@ -18,3 +18,8 @@ fn empty_file() -> OutTestRet {
 fn doc() -> OutTestRet {
     test_directory(true, &[], &["target"], "doc")
 }
+
+#[test]
+fn std_functions() -> OutTestRet {
+    test_directory(true, &[], &["target"], "std_functions")
+}
