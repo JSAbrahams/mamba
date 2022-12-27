@@ -39,7 +39,7 @@ pub fn gen_flow(
                 .raises_caught(&raises_before);
 
             constrain_cases(ast, cases, &outer_env, ctx, constr)?;
-            Ok(env.clone())
+            Ok(outer_env.clone())
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {

@@ -145,7 +145,7 @@ pub fn parse_return(it: &mut LexIterator) -> ParseResult {
     if let Some(end) = it.eat_if(&Token::NL) {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start.union(end), node)));
-    } else if it.peek_if(&|lex| lex.token == Token::Dedent) || it.peek_next().is_none() {
+    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof) || it.peek_next().is_none() {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start, node)));
     }

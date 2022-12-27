@@ -16,6 +16,11 @@ fn exception_in_fun() -> OutTestRet {
 }
 
 #[test]
+fn handle_var_usable_after() -> OutTestRet {
+    test_directory(true, &["error"], &["error", "target"], "handle_var_usable_after")
+}
+
+#[test]
 fn exception_in_fun_super() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "exception_in_fun_super")
 }
