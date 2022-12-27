@@ -1,4 +1,5 @@
 pub mod access;
+pub mod call;
 pub mod class;
 pub mod control_flow;
 pub mod definition;
