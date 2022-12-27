@@ -196,11 +196,12 @@ pub fn identifier_from_var(
     let var_expect = Expected::try_from((var, &env_with_var.var_mappings))?;
     if let Some(ty) = ty {
         let ty_exp = Expected::new(ty.pos, &Type { name: Name::try_from(ty.deref())? });
-        constr.add("variable, type, and expression", &ty_exp, &var_expect);
+        constr.add("variable and type", &ty_exp, &var_expect);
     }
     if let Some(expr) = expr {
         let expr_expect = Expected::try_from((expr, &env_with_var.var_mappings))?;
-        constr.add("variable, type, and expression", &var_expect, &expr_expect);
+        let msg = format!("variable and expression: `{}`", expr.node);
+        constr.add(&msg, &var_expect, &expr_expect);
     }
 
     Ok(env_with_var)

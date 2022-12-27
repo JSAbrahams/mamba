@@ -166,23 +166,6 @@ impl Expect {
 
             (Expression { ast: l }, Expression { ast: r }) => l.same_value(r),
 
-            (Type { name: ty, .. }, Expression { ast: AST { node: Node::Str { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Str { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(STRING) => {
-                true
-            }
-            (Type { name: ty, .. }, Expression { ast: AST { node: Node::Real { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Real { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(FLOAT) => {
-                true
-            }
-            (Type { name: ty, .. }, Expression { ast: AST { node: Node::Int { .. }, .. } })
-            | (Expression { ast: AST { node: Node::Int { .. }, .. } }, Type { name: ty, .. })
-            if ty == &Name::from(INT) =>
-                {
-                    true
-                }
-
             _ => self.is_none() && other.is_none(),
         }
     }
@@ -196,5 +179,37 @@ impl Expect {
             Type { name } => name.is_null(),
             _ => false,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::convert::TryFrom;
+
+    use crate::check::constrain::constraint::expected::Expect;
+    use crate::common::position::{CaretPos, Position};
+    use crate::parse::ast::{AST, Node};
+    use crate::parse::parse_direct;
+
+    #[test]
+    fn test_expected_from_int_constructor_call() {
+        let ast = parse_direct("Int(10)").unwrap();
+        let mappings = HashMap::new();
+        let expect = Expect::try_from((&ast[0], &mappings)).unwrap();
+
+        assert_eq!(expect, Expect::Expression {
+            ast: AST::new(
+                Position::new(CaretPos::new(1, 1), CaretPos::new(1, 8)),
+                Node::FunctionCall {
+                    name: Box::new(AST::new(
+                        Position::new(CaretPos::new(1, 1), CaretPos::new(1, 4)),
+                        Node::Id { lit: String::from("Int") })),
+                    args: vec![AST::new(
+                        Position::new(CaretPos::new(1, 5), CaretPos::new(1, 7)),
+                        Node::Int { lit: String::from("10") })],
+                },
+            )
+        })
     }
 }

@@ -1,7 +1,7 @@
 from typing import Union
 
 class int(float):
-    def __init__(self, arg: int) -> int: pass
+    def __init__(self, arg: Union[str, float, int]) -> int: pass
 
     # def __add__(self, other: float) -> float: pass
     # def __add__(self, other: complex) -> complex: pass

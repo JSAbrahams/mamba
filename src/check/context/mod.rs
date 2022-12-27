@@ -78,9 +78,9 @@ pub trait LookupField<In, Out> {
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::check::context::{Context, LookupClass};
+    use crate::check::context::{Context, LookupClass, LookupFunction};
     use crate::check::context::clss::GetFun;
-    use crate::check::name::Name;
+    use crate::check::name::{Name, Union};
     use crate::check::name::string_name::StringName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
@@ -145,6 +145,38 @@ mod tests {
         context.class(&StringName::from("Float"), Position::default()).unwrap();
         context.class(&StringName::from("Int"), Position::default()).unwrap();
         context.class(&StringName::from("Complex"), Position::default()).unwrap();
+    }
+
+    #[test]
+    pub fn int_constructor() {
+        let files = vec![];
+        let context = Context::try_from(files.as_slice()).unwrap();
+        let context = context.into_with_primitives().unwrap();
+
+        let int_class = context.class(&StringName::from("Int"), Position::default()).unwrap();
+        let args = int_class.args;
+
+        assert_eq!(args.len(), 2);
+        assert_eq!(args[0].ty.clone().unwrap(), Name::from("Int"));
+        assert_eq!(args[1].ty.clone().unwrap(), Name::from("Int")
+            .union(&Name::from("String"))
+            .union(&Name::from("Float")));
+    }
+
+    #[test]
+    pub fn int_function_defined() {
+        let files = vec![];
+        let context = Context::try_from(files.as_slice()).unwrap();
+        let context = context.into_with_primitives().unwrap();
+
+        let int_fun = context.function(&StringName::from("Int"), Position::default()).unwrap();
+
+        assert_eq!(int_fun.arguments.len(), 1);
+        assert_eq!(int_fun.arguments[0].ty.clone().unwrap(), Name::from("Int")
+            .union(&Name::from("String"))
+            .union(&Name::from("Float")));
+
+        assert_eq!(int_fun.ret_ty, Name::from("Int"))
     }
 
     #[test]
