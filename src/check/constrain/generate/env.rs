@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
@@ -9,9 +8,8 @@ use crate::check::name::true_name::TrueName;
 #[derive(Clone, Debug, Default)]
 pub struct Environment {
     pub in_loop: bool,
-    pub exp_expression: bool,
-    pub last_stmt_in_function: bool,
-    pub is_define_mode: bool,
+    pub is_expr: bool,
+    pub is_def_mode: bool,
     pub return_type: Option<Expected>,
 
     pub raises_caught: HashSet<TrueName>,
@@ -28,7 +26,7 @@ impl Environment {
     ///
     /// This adds a self variable with the class expected, and class_type is set
     /// to the expected class type.
-    pub fn in_class(&mut self, class: &Expected) -> Environment {
+    pub fn in_class(&self, class: &Expected) -> Environment {
         let env = self.insert_var(false, &String::from(SELF), class);
         Environment { class_type: Some(class.expect.clone()), ..env }
     }
@@ -36,24 +34,24 @@ impl Environment {
     /// Sets environment into define mode.
     ///
     /// Causes all identifiers to be treated as definitions.
-    pub fn define_mode(&self, is_define_mode: bool) -> Environment {
-        Environment { is_define_mode, ..self.clone() }
+    pub fn is_def_mode(&self, is_def_mode: bool) -> Environment {
+        Environment { is_def_mode, ..self.clone() }
     }
 
-    pub fn exp_expression(&self, exp_expression: bool) -> Environment {
-        Environment { exp_expression, ..self.clone() }
+    pub fn is_expr(&self, is_expr: bool) -> Environment {
+        Environment { is_expr, ..self.clone() }
     }
 
     /// Insert a variable.
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
-    pub fn insert_var(&mut self, mutable: bool, var: &str, expect: &Expected) -> Environment {
+    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected) -> Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
-        let mut vars = self.vars.clone();
+        let (mut vars, mut var_mappings) = (self.vars.clone(), self.var_mappings.clone());
 
         // Never shadow self
-        let var = if self.vars.contains_key(var) && var != SELF {
+        let var = if vars.contains_key(var) && var != SELF {
             let mut offset = 0;
             let mut new_var = format!("{}@{}", var, offset);
             while self.vars.contains_key(&new_var) {
@@ -61,14 +59,14 @@ impl Environment {
                 new_var = format!("{}@{}", var, offset);
             }
 
-            self.var_mappings.insert(String::from(var), new_var.clone());
+            var_mappings.insert(String::from(var), new_var.clone());
             new_var
         } else {
             String::from(var)
         };
 
         vars.insert(var, expected_set);
-        Environment { vars, ..self.clone() }
+        Environment { vars, var_mappings, ..self.clone() }
     }
 
     /// Insert raises which are properly handled.
@@ -86,11 +84,7 @@ impl Environment {
 
     /// Specify the return type of function body.
     pub fn return_type(&self, return_type: &Expected) -> Environment {
-        Environment {
-            return_type: Some(return_type.clone()),
-            last_stmt_in_function: true,
-            ..self.clone()
-        }
+        Environment { return_type: Some(return_type.clone()), ..self.clone() }
     }
 
     /// Gets a variable.
@@ -194,9 +188,7 @@ impl Environment {
     }
 
     /// Denote a set of variables which should be assigned to at some point.
-    pub fn with_unassigned<I>(&self, var: I) -> Environment
-        where I: IntoIterator<Item=String> {
-        let unassigned = HashSet::from_iter(var.into_iter());
+    pub fn with_unassigned(&self, unassigned: HashSet<String>) -> Environment {
         Environment { unassigned, ..self.clone() }
     }
 

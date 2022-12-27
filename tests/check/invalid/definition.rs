@@ -44,6 +44,12 @@ fn function_ret_not_super() {
 }
 
 #[test]
+fn if_else_assign_non_nullable() {
+    let source = resource_content(false, &["type", "definition"], "if_else_assign_non_nullable.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn assign_to_function_call() {
     let source = resource_content(false, &["type", "definition"], "assign_to_function_call.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

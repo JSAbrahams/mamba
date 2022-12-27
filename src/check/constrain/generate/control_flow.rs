@@ -35,30 +35,30 @@ pub fn gen_flow(
             }).collect();
 
             let raises_before = env.raises_caught.clone();
-            let (mut constr, outer_env) = generate(expr_or_stmt, &env.raises_caught(&raises), ctx, constr)?;
-            let outer_env = outer_env.raises_caught(&raises_before);
+            let outer_env = generate(expr_or_stmt, &env.raises_caught(&raises), ctx, constr)?
+                .raises_caught(&raises_before);
 
-            constrain_cases(ast, cases, &outer_env, ctx, &mut constr)?;
-            Ok((constr, outer_env))
+            constrain_cases(ast, cases, &outer_env, ctx, constr)?;
+            Ok(env.clone())
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
             constr.new_set(true);
             let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
-            let (mut constr, _) = generate(cond, env, ctx, constr)?;
+            generate(cond, env, ctx, constr)?;
 
             constr.new_set(true);
-            let (mut constr, then_env) = generate(then, env, ctx, &mut constr)?;
+            let then_env = generate(then, &env, ctx, constr)?;
             constr.exit_set(then.pos)?;
             constr.new_set(true);
-            let (mut constr, else_env) = generate(el, env, ctx, &mut constr)?;
+            let else_env = generate(el, &env, ctx, constr)?;
             constr.exit_set(el.pos)?;
 
-            if env.exp_expression {
+            if env.is_expr {
                 let if_expr = Expected::try_from((ast, &env.var_mappings))?;
-                let then = Expected::try_from((then, &env.var_mappings))?;
-                let el = Expected::try_from((el, &env.var_mappings))?;
+                let then = Expected::try_from((then, &then_env.var_mappings))?;
+                let el = Expected::try_from((el, &else_env.var_mappings))?;
 
                 let then_constr = Constraint::new_variant("if then branch", &if_expr, &then, &ConstrVariant::Left);
                 constr.add_constr(&then_constr);
@@ -67,63 +67,59 @@ pub fn gen_flow(
             }
 
             constr.exit_set(ast.pos)?;
-            Ok((constr, env.union(&then_env.intersect(&else_env))))
+            Ok(env.union(&then_env.intersect(&else_env)))
         }
         Node::IfElse { cond, then, .. } => {
             constr.new_set(true);
             let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
-            let (mut constr, env) = generate(cond, env, ctx, constr)?;
 
-            let (mut constr, _) = generate(then, &env, ctx, &mut constr)?;
+            generate(cond, env, ctx, constr)?;
+            constr.new_set(true);
+            generate(then, env, ctx, constr)?;
             constr.exit_set(then.pos)?;
-            Ok((constr, env))
+            constr.exit_set(cond.pos)?;
+            Ok(env.clone())
         }
 
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
-            let (mut constr, outer_env) = generate(cond, &env, ctx, constr)?;
-
-            constrain_cases(ast, cases, &outer_env, ctx, &mut constr)?;
-            Ok((constr, outer_env))
+            let outer_env = generate(cond, &env, ctx, constr)?;
+            constrain_cases(ast, cases, &outer_env, ctx, constr)?;
+            Ok(env.clone())
         }
 
         Node::For { expr, col, body } => {
             constr.new_set(true);
-            let (mut constr, for_env) = generate(col, env, ctx, constr)?;
+            let col_env = generate(col, env, ctx, constr)?;
 
-            let is_define_mode = for_env.is_define_mode;
-            let (mut constr, for_env) =
-                gen_collection_lookup(expr, col, &for_env.define_mode(true), &mut constr)?;
-            let (mut constr, _) =
-                generate(body, &for_env.in_loop().define_mode(is_define_mode), ctx, &mut constr)?;
+            let is_define_mode = col_env.is_def_mode;
+            let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
+            generate(body, &lookup_env.in_loop().is_def_mode(is_define_mode), ctx, constr)?;
             constr.exit_set(ast.pos)?;
-            Ok((constr, env.clone()))
+            Ok(env.clone())
         }
         Node::While { cond, body } => {
             constr.new_set(true);
-            let left = Expected::try_from((cond, &env.var_mappings))?;
-            constr.add_constr(&Constraint::truthy("if else", &left));
-            let (mut constr, env) = generate(cond, env, ctx, constr)?;
-            let (mut constr, _) = generate(body, &env.in_loop(), ctx, &mut constr)?;
+            let cond_exp = Expected::try_from((cond, &env.var_mappings))?;
+            constr.add_constr(&Constraint::truthy("while condition", &cond_exp));
+
+            generate(cond, env, ctx, constr)?;
+            generate(body, &env.in_loop(), ctx, constr)?;
             constr.exit_set(ast.pos)?;
-            Ok((constr, env))
+            Ok(env.clone())
         }
 
-        Node::Break | Node::Continue =>
-            if env.in_loop {
-                Ok((constr.clone(), env.clone()))
-            } else {
-                Err(vec![TypeErr::new(ast.pos, "Cannot be outside loop")])
-            },
+        Node::Break | Node::Continue if env.in_loop => Ok(env.clone()),
+        Node::Break | Node::Continue => Err(vec![TypeErr::new(ast.pos, "Cannot be outside loop")]),
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected control flow")])
     }
 }
 
 fn constrain_cases(ast: &AST, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
-    let is_define_mode = env.is_define_mode;
+    let is_define_mode = env.is_def_mode;
     let exp_ast = Expected::try_from((ast, &env.var_mappings))?;
 
     for case in cases {
@@ -131,10 +127,10 @@ fn constrain_cases(ast: &AST, cases: &Vec<AST>, env: &Environment, ctx: &Context
             Node::Case { cond, body } => {
                 constr.new_set(true);
 
-                let (_, cond_env) = generate(cond, &env.define_mode(true), ctx, constr)?;
-                let (_, body_env) = generate(body, &cond_env.define_mode(is_define_mode), ctx, constr)?;
+                let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
+                generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
 
-                let exp_body = Expected::try_from((body, &body_env.var_mappings))?;
+                let exp_body = Expected::try_from((body, &cond_env.var_mappings))?;
                 constr.add("handle arm body", &exp_body, &exp_ast);
                 constr.exit_set(case.pos)?;
             }
@@ -156,7 +152,7 @@ mod tests {
     fn if_else_env_empty() {
         let src = "if True then 10 else 20";
         let ast = parse(src).unwrap();
-        let (_, env) = generate(&ast, &Environment::default(), &Context::default(), &mut ConstrBuilder::new()).unwrap();
+        let env = generate(&ast, &Environment::default(), &Context::default(), &mut ConstrBuilder::new()).unwrap();
 
         assert!(env.var_mappings.is_empty());
     }
