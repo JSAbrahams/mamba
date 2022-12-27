@@ -23,6 +23,12 @@ struct OutTestErr(Vec<String>);
 
 type OutTestRet<T = ()> = Result<T, OutTestErr>;
 
+impl From<Vec<String>> for OutTestErr {
+    fn from(value: Vec<String>) -> Self {
+        OutTestErr(value)
+    }
+}
+
 impl Debug for OutTestErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.0.iter().map(|err| write!(f, "{}\n", err)).collect()
@@ -117,7 +123,7 @@ fn fallable(
     // Replace CRLF with LF line endings
     let check_ast = python_src_to_stmts(&check_src.replace("\r\n", "\n"));
 
-    let out_src = resource_content_path(output_file);
+    let out_src = resource_content_path(output_file)?;
     let out_ast = python_src_to_stmts(&out_src);
 
     let width = 3;

@@ -22,6 +22,12 @@ fn no_enough_arg() {
 }
 
 #[test]
+fn empty_return_outside_function() {
+    let source = resource_content(false, &["type", "function"], "empty_return_outside_function.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn no_enough_arg_with_default() {
     let source = resource_content(false, &["type", "function"], "not_enough_arg_with_default.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
@@ -36,6 +42,12 @@ fn arg_no_type() {
 #[test]
 fn as_statement() {
     let source = resource_content(false, &["type", "function"], "as_statement.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn return_outside_function() {
+    let source = resource_content(false, &["type", "function"], "return_outside_function.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

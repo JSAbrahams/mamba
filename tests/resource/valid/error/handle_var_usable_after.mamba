@@ -1,0 +1,10 @@
+class MyErr(def message: String): Exception
+
+def function_may_throw_err() -> Int raise [MyErr] => 10
+
+def a := function_may_throw_err() handle
+    err: MyErr =>
+        print("We have a problem: {err.message}.")
+        20
+
+print("a has value {a}.")
