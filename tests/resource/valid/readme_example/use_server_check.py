@@ -2,8 +2,13 @@ from ipaddress import IPv4Address
 from server import MyServer
 
 class MyServer:
+    is_connected: bool = true
+
     def __init__(self, ip_address: IPv4Address):
         self.ip_address = ip_address
+
+    def last_sent() -> str:
+        "dummy"
 
 some_ip = ipaddress.ip_address("151.101.193.140")
 my_server = MyServer(some_ip)

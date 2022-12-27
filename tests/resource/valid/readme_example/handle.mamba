@@ -1,3 +1,8 @@
+class MyErr(message: String): Exception
+class MyOtherErr(message: String): Exception
+
+def function_may_throw_err() raise [MyErr] => pass
+
 def a := function_may_throw_err() handle
     err: MyErr =>
         print("We have a problem: {err.message}.")
