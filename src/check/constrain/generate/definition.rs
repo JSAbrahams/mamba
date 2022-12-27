@@ -49,7 +49,8 @@ pub fn gen_def(
             };
 
             let body_env = constrain_args(fun_args, env, ctx, constr)?
-                .with_unassigned(non_nullable_class_vars);
+                .with_unassigned(non_nullable_class_vars)
+                .in_fun(true);
 
             let (raises, errs): (Vec<(Position, _)>, Vec<_>) = raises
                 .iter()

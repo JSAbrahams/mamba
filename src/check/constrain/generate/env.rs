@@ -8,6 +8,7 @@ use crate::check::name::true_name::TrueName;
 #[derive(Clone, Debug, Default)]
 pub struct Environment {
     pub in_loop: bool,
+    pub in_fun: bool,
     pub is_expr: bool,
     pub is_def_mode: bool,
     pub return_type: Option<Expected>,
@@ -29,6 +30,10 @@ impl Environment {
     pub fn in_class(&self, class: &Expected) -> Environment {
         let env = self.insert_var(false, &String::from(SELF), class);
         Environment { class_type: Some(class.expect.clone()), ..env }
+    }
+
+    pub fn in_fun(&self, in_fun: bool) -> Environment {
+        Environment { in_fun, ..self.clone() }
     }
 
     /// Sets environment into define mode.

@@ -9,17 +9,16 @@ use python_parser::ast::Statement;
 use tempfile::tempdir_in;
 
 /// Get contents of file of given path as string.
-pub fn resource_content_path(path: &str) -> String {
+pub fn resource_content_path(path: &str) -> Result<String, Vec<String>> {
     match File::open(path) {
         Ok(mut path) => {
             let mut content = String::new();
             match path.read_to_string(&mut content) {
-                Ok(_) => content,
-                Err(err) => panic!("Error while reading file contents: {}.", err)
+                Ok(_) => Ok(content),
+                Err(err) => Err(vec![format!("Error while reading file contents: {err}.")])
             }
         }
-        Err(err) =>
-            panic!("Error while opening file {} while reading resource contents: {}.", path, err),
+        Err(err) => Err(vec![format!("Error while opening file {path} while reading resource contents: {err}.")]),
     }
 }
 
@@ -61,7 +60,7 @@ pub fn resource_content_randomize(valid: bool, subdirs: &[&str], file: &str) -> 
 
 #[cfg(test)]
 pub fn resource_content(valid: bool, subdirs: &[&str], file: &str) -> String {
-    resource_content_path(&resource_path(valid, subdirs, file))
+    resource_content_path(&resource_path(valid, subdirs, file)).unwrap()
 }
 
 #[cfg(test)]

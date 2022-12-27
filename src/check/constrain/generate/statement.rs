@@ -33,6 +33,8 @@ pub fn gen_stmt(
         Node::ReturnEmpty => if let Some(exp) = &env.return_type {
             let msg = format!("Empty return in function which returns '{exp}'");
             Err(vec![TypeErr::new(ast.pos, &msg)])
+        } else if !env.in_fun {
+            Err(vec![TypeErr::new(ast.pos, "Return outside function")])
         } else {
             Ok(env.clone())
         }
@@ -45,6 +47,8 @@ pub fn gen_stmt(
                     &Expected::try_from((expr, &env.var_mappings))?,
                 );
                 Ok(env.clone())
+            } else if !env.in_fun {
+                Err(vec![TypeErr::new(ast.pos, "Return outside function")])
             } else {
                 Err(vec![TypeErr::new(ast.pos, "Return outside function with return type")])
             }
