@@ -38,7 +38,7 @@ pub fn gen_flow(
             let outer_env = generate(expr_or_stmt, &env.raises_caught(&raises), ctx, constr)?
                 .raises_caught(&raises_before);
 
-            constrain_cases(ast, expr_or_stmt, cases, &outer_env, ctx, constr)?;
+            constrain_cases(ast, &None, cases, &outer_env, ctx, constr)?;
             Ok(outer_env.clone())
         }
 
@@ -83,7 +83,7 @@ pub fn gen_flow(
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
             let outer_env = generate(cond, env, ctx, constr)?;
-            constrain_cases(ast, cond, cases, &outer_env, ctx, constr)?;
+            constrain_cases(ast, &Some(*cond.clone()), cases, &outer_env, ctx, constr)?;
             Ok(env.clone())
         }
 
@@ -116,7 +116,7 @@ pub fn gen_flow(
     }
 }
 
-fn constrain_cases(ast: &AST, expr: &AST, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
+fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
     let is_define_mode = env.is_def_mode;
     let exp_ast = Expected::try_from((ast, &env.var_mappings))?;
 
@@ -129,10 +129,12 @@ fn constrain_cases(ast: &AST, expr: &AST, cases: &Vec<AST>, env: &Environment, c
                 generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
 
                 if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
-                    constr.add("match expression and arm condition",
-                               &Expected::try_from((expr, &env.var_mappings))?,
-                               &Expected::try_from((cond, &env.var_mappings))?,
-                    );
+                    if let Some(expr) = expr {
+                        constr.add("match expression and arm condition",
+                                   &Expected::try_from((expr, &env.var_mappings))?,
+                                   &Expected::try_from((cond, &env.var_mappings))?,
+                        );
+                    }
                 }
 
                 let exp_body = Expected::try_from((body, &cond_env.var_mappings))?;
