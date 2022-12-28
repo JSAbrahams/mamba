@@ -9,9 +9,7 @@ use crate::check::constrain::generate::collection::{constr_col, gen_collection_l
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::clss::{FLOAT, INT, STRING};
-use crate::check::context::function::{
-    ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, POW, SQRT, SUB,
-};
+use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SQRT, SUB};
 use crate::check::name::{Any, Name};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
@@ -92,9 +90,8 @@ pub fn gen_op(
         Node::Ge { left, right } => impl_bool_op(GE, ast, left, right, env, ctx, constr),
         Node::Leq { left, right } => impl_bool_op(LEQ, ast, left, right, env, ctx, constr),
         Node::Geq { left, right } => impl_bool_op(GEQ, ast, left, right, env, ctx, constr),
-        Node::Neq { left, right } | Node::Eq { left, right } => {
-            impl_bool_op(EQ, ast, left, right, env, ctx, constr)
-        }
+        Node::Neq { left, right } => impl_bool_op(EQ, ast, left, right, env, ctx, constr),
+        Node::Eq { left, right } => impl_bool_op(EQ, ast, left, right, env, ctx, constr),
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
@@ -307,26 +304,29 @@ fn impl_bool_op(
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    constr.add(
-        "bool operation",
-        &Expected::try_from((ast, &env.var_mappings))?,
-        &Expected::new(
-            left.pos,
-            &Access {
-                entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
-                name: Box::new(Expected::new(
-                    left.pos,
-                    &Function {
-                        name: StringName::from(fun),
-                        args: vec![
-                            Expected::try_from((left, &env.var_mappings))?,
-                            Expected::try_from((right, &env.var_mappings))?,
-                        ],
-                    },
-                )),
-            },
-        ),
-    );
+    if fun != EQ && fun != NEQ {
+        constr.add(
+            "bool operation",
+            &Expected::try_from((ast, &env.var_mappings))?,
+            &Expected::new(
+                left.pos,
+                &Access {
+                    entity: Box::new(Expected::try_from((left, &env.var_mappings))?),
+                    name: Box::new(Expected::new(
+                        left.pos,
+                        &Function {
+                            name: StringName::from(fun),
+                            args: vec![
+                                Expected::try_from((left, &env.var_mappings))?,
+                                Expected::try_from((right, &env.var_mappings))?,
+                            ],
+                        },
+                    )),
+                },
+            ),
+        );
+    }
+
     let ty = Type { name: Name::from(clss::BOOL) };
     constr.add(
         "bool operation",

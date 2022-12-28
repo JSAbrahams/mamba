@@ -26,6 +26,11 @@ fn match_function() -> OutTestRet {
 }
 
 #[test]
+fn print_string() -> OutTestRet {
+    test_directory(true, &["function"], &["function", "target"], "print_string")
+}
+
+#[test]
 fn return_last_expression() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "return_last_expression")
 }

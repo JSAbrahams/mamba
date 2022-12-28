@@ -84,3 +84,8 @@ fn tuple_as_class() -> OutTestRet {
 fn unassigned_tuple_second_nullable() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "unassigned_tuple_second_nullable")
 }
+
+#[test]
+fn var_from_outside_class() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "var_from_outside_class")
+}

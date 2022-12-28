@@ -1,0 +1,3 @@
+def my_string := "asdf"
+
+print(my_string)
