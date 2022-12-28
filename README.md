@@ -130,7 +130,7 @@ print("last message sent before disconnect: \"{my_server.last_sent()}\".")
 my_server.disconnect()
 ```
 
-### 🗃 Type refinement (🇻 0.6+)
+### 🗃 Type refinement (🇻 0.4.1+)
 
 As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
@@ -213,7 +213,7 @@ Type refinement allows us to do some additional things:
   that certain conditions hold. We can simply ask whether a given object is a certain state by checking whether it is a
   certain type.
 
-### 🔒 Pure functions (🇻 0.4.1)
+### 🔒 Pure functions (🇻 0.4.1+)
 
 Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)`.
 (Except if the output of the function is say `None` or `NaN`.)
@@ -247,7 +247,7 @@ def pure sin(x: Int) =>
     ans
 ```
 
-### ⚠ Error handling (🇻 0.5+)
+### ⚠ Error handling
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
 Instead, we aim to directly handle errors on-site so the origin of errors is more tracable.
@@ -289,8 +289,6 @@ def g() =>
             0  # ... or we assign default value 0 to a
 
     print("a has value {a}.")
-
-g()
 ```
 
 If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.
