@@ -9,6 +9,7 @@ pub mod definition;
 pub mod error;
 pub mod function;
 pub mod operation;
+pub mod readme_examples;
 
 #[test]
 fn empty_file() -> OutTestRet {
