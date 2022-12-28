@@ -1,0 +1,5 @@
+class MyServer()
+    def _message: String? := None
+
+    def send(self, x: String) =>
+        self._message := x

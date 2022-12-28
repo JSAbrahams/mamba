@@ -1,6 +1,11 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
+fn assign_to_nullable_field() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "assign_to_nullable_field")
+}
+
+#[test]
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }

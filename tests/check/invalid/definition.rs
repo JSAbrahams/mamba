@@ -89,7 +89,6 @@ fn nested_non_mut_field() {
 }
 
 #[test]
-#[ignore] // Ignore mutability for now
 fn reassign_non_mut() {
     let source = resource_content(false, &["type", "definition"], "reassign_non_mut.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

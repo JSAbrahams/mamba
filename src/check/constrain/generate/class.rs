@@ -31,7 +31,7 @@ pub fn gen_class(
         Node::TypeAlias { conditions, isa, .. } => constrain_class_body(conditions, isa, env, ctx, constr),
         Node::Condition { cond, el: Some(el) } => {
             generate(cond, env, ctx, constr)?;
-            generate(el, &env, ctx, constr)
+            generate(el, env, ctx, constr)
         }
         Node::Condition { cond, .. } => generate(cond, env, ctx, constr),
 
@@ -82,13 +82,13 @@ pub fn property_from_field(
     let field_ty = Expected::new(pos, &Type { name: field.ty.clone() });
 
     let env = env.insert_var(field.mutable, &field.name, &field_ty);
-    constr.add("field property", &field_ty, &property_call);
+    constr.add("class field type", &field_ty, &property_call);
 
     let access = Expected::new(pos, &Access {
         entity: Box::new(Expected::new(pos, &Type { name: Name::from(class) })),
         name: Box::new(Expected::new(pos, &Field { name: field.name.clone() })),
     });
 
-    constr.add("field property", &property_call, &access);
+    constr.add("class field access", &property_call, &access);
     Ok(env)
 }

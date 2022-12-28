@@ -37,7 +37,7 @@ pub fn unify_function(
                 .map(|n| match n.variant {
                     NameVariant::Fun(arguments, _) => Ok(arguments),
                     other => {
-                        let msg = format!("A '{}' does not take arguments", other);
+                        let msg = format!("A '{other}' does not take arguments");
                         Err(vec![TypeErr::new(right.pos, &msg)])
                     }
                 })
@@ -68,68 +68,52 @@ pub fn unify_function(
             unify_link(constraints, finished, ctx, total + count)
         }
 
-        (Access { entity, name }, _) => {
-            if let Type { name: entity_name } = &entity.expect {
-                match &name.expect {
-                    Field { name } => {
-                        field_access(constraints, finished, ctx, entity_name, name, left, right, total)
-                    }
-                    Function { name, args } => function_access(
-                        constraints,
-                        finished,
-                        ctx,
-                        entity_name,
-                        name,
-                        args,
-                        left,
-                        right,
-                        total,
-                    ),
-                    _ => {
-                        let mut constr = reinsert(constraints, constraint, total)?;
-                        unify_link(&mut constr, finished, ctx, total)
-                    }
-                }
-            } else {
-                let mut constr = reinsert(constraints, constraint, total)?;
-                unify_link(&mut constr, finished, ctx, total)
-            }
-        }
-        (_, Access { entity, name }) => {
-            if let Type { name: entity_name } = &entity.expect {
-                match &name.expect {
-                    Field { name } => {
-                        field_access(constraints, finished, ctx, entity_name, name, right, left, total)
-                    }
-                    Function { name, args } => function_access(
-                        constraints,
-                        finished,
-                        ctx,
-                        entity_name,
-                        name,
-                        args,
-                        right,
-                        left,
-                        total,
-                    ),
-                    _ => {
-                        let mut constr = reinsert(constraints, constraint, total)?;
-                        unify_link(&mut constr, finished, ctx, total)
-                    }
-                }
-            } else {
-                let mut constr = reinsert(constraints, constraint, total)?;
-                unify_link(&mut constr, finished, ctx, total)
-            }
-        }
+        (Access { entity, name }, _) =>
+            access(constraints, finished, ctx, constraint, entity, name, true, total),
+        (_, Access { entity, name }) =>
+            access(constraints, finished, ctx, constraint, entity, name, false, total),
 
         (l_exp, r_exp) => {
-            let msg = format!("Unifying function: Expected a '{}', was a '{}'", l_exp, r_exp);
+            let msg = format!("Unifying function: Expected a '{l_exp}', was a '{r_exp}'");
             Err(vec![TypeErr::new(left.pos, &msg)])
         }
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn access(
+    constraints: &mut Constraints,
+    finished: &mut Finished,
+    ctx: &Context,
+    constraint: &Constraint,
+    entity: &Expected,
+    name: &Box<Expected>,
+    access_left: bool,
+    total: usize,
+) -> Unified {
+    let (left, right) = (&constraint.left, &constraint.right);
+    let (left, right) = if access_left { (left, right) } else { (right, left) };
+
+    if let Type { name: entity_name } = &entity.expect {
+        match &name.expect {
+            Field { name } => {
+                field_access(constraints, finished, ctx, entity_name, name, left, right, total)
+            }
+            Function { name, args } => {
+                function_access(constraints, finished, ctx, entity_name, name, args, left, right, total)
+            }
+            _ => {
+                reinsert(constraints, constraint, total)?;
+                unify_link(constraints, finished, ctx, total)
+            }
+        }
+    } else {
+        reinsert(constraints, constraint, total)?;
+        unify_link(constraints, finished, ctx, total)
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn field_access(
     constraints: &mut Constraints,
     finished: &mut Finished,
@@ -144,7 +128,7 @@ fn field_access(
     let fields = ctx.class(entity_name, accessed.pos)?.field(name, ctx, accessed.pos)?;
     for field in fields.union {
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
-        constraints.push("field access", other, &field_ty_exp);
+        constraints.push("field access", &field_ty_exp, other);
         pushed += 1;
     }
 
@@ -181,35 +165,37 @@ fn function_access(
         }
     }
 
-    let (mut constr, added) = unify_fun_arg(&possible_args, args, constraints, accessed.pos)?;
-    unify_link(&mut constr, finished, ctx, total + added + pushed)
+    let added = unify_fun_arg(&possible_args, args, constraints, accessed.pos)?;
+    unify_link(constraints, finished, ctx, total + added + pushed)
 }
 
 fn unify_fun_arg(
-    f_args: &[HashSet<FunctionArg>],
+    ctx_f_args: &[HashSet<FunctionArg>],
     args: &[Expected],
-    constr: &Constraints,
+    constr: &mut Constraints,
     pos: Position,
-) -> Unified<(Constraints, usize)> {
-    let mut constr = constr.clone();
+) -> Unified<usize> {
     let mut added = 0;
 
-    for either_or_both in f_args.iter().zip_longest(args.iter()) {
+    for either_or_both in ctx_f_args.iter().zip_longest(args.iter()) {
         match either_or_both {
-            EitherOrBoth::Both(fun_arg, expected) => {
-                let names = fun_arg
+            EitherOrBoth::Both(ctx_f_arg, expected) => {
+                let names = ctx_f_arg
                     .iter()
                     .map(|f_arg| {
                         f_arg.ty.clone().ok_or({
-                            let msg = format!("Argument '{}' has no type", f_arg);
-                            vec![TypeErr::new(pos, &msg)]
+                            vec![TypeErr::new(pos, &format!("Argument '{f_arg}' has no type"))]
                         })
                     })
                     .collect::<Result<Vec<Name>, _>>()?;
 
-                let name = names.iter().fold(Name::empty(), |name, f_name| name.union(f_name));
-                let ty = Expected::new(expected.pos, &Type { name });
-                constr.push("function argument", &ty, expected);
+                // Constraint should pass if just one is superset of function arg
+                let name = names
+                    .iter()
+                    .fold(Name::empty(), |name, f_name| name.union(f_name))
+                    .as_any();
+                let ctx_arg_ty = Expected::new(expected.pos, &Type { name });
+                constr.push("function argument", &ctx_arg_ty, expected);
                 added += 1;
             }
             EitherOrBoth::Left(fun_arg) if !fun_arg.iter().any(|a| !a.has_default) => {
@@ -217,12 +203,12 @@ fn unify_fun_arg(
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             EitherOrBoth::Right(_) => {
-                let msg = format!("Function takes only {} arguments", f_args.len());
+                let msg = format!("Function takes only {} {}", ctx_f_args.len(), if ctx_f_args.len() == 1 { "argument" } else { "arguments" });
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             _ => {}
         }
     }
 
-    Ok((constr, added))
+    Ok(added)
 }

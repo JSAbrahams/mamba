@@ -121,7 +121,7 @@ impl Union<TrueName> for Name {
     fn union(&self, name: &TrueName) -> Self {
         let mut names = self.names.clone();
         names.insert(name.clone());
-        Name { names }
+        Name { names, ..self.clone() }
     }
 }
 
@@ -167,7 +167,7 @@ impl From<&TrueName> for StringName {
 impl From<&Vec<TrueName>> for Name {
     fn from(names: &Vec<TrueName>) -> Self {
         let names: HashSet<TrueName> = HashSet::from_iter(names.iter().cloned());
-        Name { names }
+        Name { names, any: false }
     }
 }
 

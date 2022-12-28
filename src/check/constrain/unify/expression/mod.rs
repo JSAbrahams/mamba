@@ -21,14 +21,13 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
         // Not sure if necessary, but exception made for tuple
         (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
         (Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }, Tuple { elements }) => {
-            let mut constraints = substitute(left, right, constraints, count, total)?;
+            substitute(constraints, left, right, count, total)?;
 
             for pair in ast_elements.iter().cloned().zip_longest(elements.iter()) {
                 match &pair {
                     Both(ast, exp) => {
                         let expect = Expression { ast: ast.clone() };
-                        let l_ty = Expected::new(left.pos, &expect);
-                        constraints.push("tuple", &l_ty, exp)
+                        constraints.push("tuple", &Expected::new(left.pos, &expect), exp)
                     }
                     _ => {
                         let msg = format!("Expected tuple with {} elements, was {}", elements.len(), ast_elements.len());
@@ -36,17 +35,12 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                     }
                 }
             }
-
-            unify_link(&mut constraints, finished, ctx, total)
         }
 
-        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left => {
-            let mut constraints = substitute(right, left, constraints, count, total)?;
-            unify_link(&mut constraints, finished, ctx, total)
-        }
-        _ => {
-            let mut constraints = substitute(left, right, constraints, count, total)?;
-            unify_link(&mut constraints, finished, ctx, total)
-        }
+        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left =>
+            substitute(constraints, right, left, count, total)?,
+        _ => substitute(constraints, left, right, count, total)?
     }
+
+    unify_link(constraints, finished, ctx, total)
 }
