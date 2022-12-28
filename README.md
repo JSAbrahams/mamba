@@ -16,11 +16,10 @@
     <a href="https://github.com/JSAbrahams/mamba/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/JSAbrahams/mamba.svg?style=for-the-badge" alt="License"/>
     </a>
-    <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
-    <br/>
     <a href="https://github.com/JSAbrahams/mamba/milestones">
     <img src="https://img.shields.io/github/milestones/open/JSAbrahams/mamba?style=for-the-badge" alt="Active milestones"/>
     </a>
+    <img src="https://img.shields.io/badge/Built%20with-%E2%99%A5-red.svg?style=for-the-badge" alt="Built with Love"/>
 </p>
 
 <h1 align="center">Mamba</h1>
@@ -56,7 +55,7 @@ def factorial(x: Int) -> Int => match x
 
 def num := input("Compute factorial: ")
 if num.is_digit() then
-    def result := factorial(int(num))
+    def result := factorial(Int(num))
     print("Factorial {num} is: {result}.")
 else
     print("Input was not an integer.")
@@ -93,17 +92,21 @@ class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool     := False
     def _last_message: String? := None
 
-    def last_sent(fin self) -> String raise ServerError => if self._last_message /= None 
-        then self._last_message
-        else raise ServerError("No last message!")
+    def last_sent(fin self) -> String raise [ServerError] =>
+        if self._last_message != None then
+            self._last_message
+        else
+            raise ServerError("No last message!")
 
     def connect(self) =>
         self.is_connected := True
         print(always_the_same_message)
 
-    def send(self, message: String) raise ServerError => if self.is_connected 
-        then self._last_message := message
-        else raise ServerError("Not connected!")
+    def send(self, message: String) raise [ServerError] =>
+        if self.is_connected then
+            self._last_message := message
+        else
+            raise ServerError("Not connected!")
 
     def disconnect(self) => self.is_connected := False
 ```
@@ -127,7 +130,7 @@ print("last message sent before disconnect: \"{my_server.last_sent()}\".")
 my_server.disconnect()
 ```
 
-### 🗃 Type refinement (🇻 0.6+)
+### 🗃 Type refinement (🇻 0.4.1+)
 
 As shown above Mamba has a type system.
 Mamba however also has type refinement features to assign additional properties to types.
@@ -152,9 +155,11 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address): Server
     def is_connected: Bool     := False
     def _last_message: String? := None
 
-    def last_sent(self) -> String raise ServerErr => if self.last_message /= None 
-        then self._last_message
-        else raise ServerError("No last message!")
+    def last_sent(self) -> String raise ServerErr => 
+        if self.last_message != None then 
+            self._last_message
+        else
+            raise ServerError("No last message!")
 
     def connect(self: DisConnMyServer) => self.is_connected := True
 
@@ -208,7 +213,7 @@ Type refinement allows us to do some additional things:
   that certain conditions hold. We can simply ask whether a given object is a certain state by checking whether it is a
   certain type.
 
-### 🔒 Pure functions (🇻 0.4.1)
+### 🔒 Pure functions (🇻 0.4.1+)
 
 Mamba has features to ensure that functions are pure, meaning that if `x = y`, for any `f`, `f(x) = f(y)`.
 (Except if the output of the function is say `None` or `NaN`.)
@@ -242,7 +247,7 @@ def pure sin(x: Int) =>
     ans
 ```
 
-### ⚠ Error handling (🇻 0.5+)
+### ⚠ Error handling
 
 Unlike Python, Mamba does not have `try` `except` and `finally` (or `try` `catch` as it is sometimes known).
 Instead, we aim to directly handle errors on-site so the origin of errors is more tracable.
@@ -274,15 +279,16 @@ This also prevents us from wrapping large code blocks in a `try`, where it might
 This is shown below:
 
 ```mamba
-def a := function_may_throw_err() handle
-    err: MyErr => 
-        print("We have a problem: {err.message}.")
-        return  # we return, halting execution
-    err: MyOtherErr => 
-        print("We have another problem: {err.message}.")
-        0  # ... or we assign default value 0 to a
-        
-print("a has value {a}.")
+def g() =>
+    def a := function_may_throw_err() handle
+        err: MyErr =>
+            print("We have a problem: {err.message}.")
+            return  # we return, halting execution
+        err: MyOtherErr =>
+            print("We have another problem: {err.message}.")
+            0  # ... or we assign default value 0 to a
+
+    print("a has value {a}.")
 ```
 
 If we don't want to use a `handle`, we can simply use `raise` after a statement or exception to show that its execution might result in an exception, but we don't want to handle that here.

@@ -1,0 +1,6 @@
+type PosInt: Int when
+    self >= 0 else "Must be greater than 0"
+
+def factorial(x: PosInt) -> PosInt => match x
+    0 => 1
+    n => n * factorial(n - 1)

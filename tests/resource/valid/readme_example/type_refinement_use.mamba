@@ -1,0 +1,16 @@
+import ipaddress
+from server import MyServer
+
+def fin some_ip := ipaddress.ip_address("151.101.193.140")
+def my_server   := MyServer(some_ip)
+
+# The default state of http_server is DisconnectedHTTPServer, so we don't need to check that here
+http_server.connect()
+
+# We check the state
+if my_server isa ConnMyServer then
+    # http_server is a Connected Server if the above is true
+    my_server.send("Hello World!")
+
+print("last message sent before disconnect: \"{my_server.last_sent}\".")
+if my_server isa ConnectedMyServer then my_server.disconnect()

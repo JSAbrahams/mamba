@@ -1,0 +1,6 @@
+def factorial(x: Int) -> Int => match x
+    0 => 1
+    n =>
+        def ans := 1
+        for i in 1 ..= n do ans := ans * i
+        ans
