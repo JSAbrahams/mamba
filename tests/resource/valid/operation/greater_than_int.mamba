@@ -1,0 +1,6 @@
+class MyClass(def a: Int)
+    def f(self) -> Bool => self.a > 10
+
+def a := MyClass(10)
+
+a.f()

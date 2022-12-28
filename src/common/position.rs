@@ -12,6 +12,8 @@ impl Display for Position {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         if self.start == self.end {
             write!(f, "({})", self.start)
+        } else if self.start.line == self.end.line {
+            write!(f, "({}-{})", self.start, self.end.pos)
         } else {
             write!(f, "({}-{})", self.start, self.end)
         }

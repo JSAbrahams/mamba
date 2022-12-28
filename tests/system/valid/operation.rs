@@ -22,6 +22,21 @@ fn assign_types_nested() -> OutTestRet {
 }
 
 #[test]
+fn greater_than_int() -> OutTestRet {
+    test_directory(true, &["operation"], &["operation", "target"], "greater_than_int")
+}
+
+#[test]
+fn greater_than_other_int() -> OutTestRet {
+    test_directory(true, &["operation"], &["operation", "target"], "greater_than_other_int")
+}
+
+#[test]
+fn multiply_other_int() -> OutTestRet {
+    test_directory(true, &["operation"], &["operation", "target"], "multiply_other_int")
+}
+
+#[test]
 fn primitives_ast_verify() -> OutTestRet {
     test_directory(true, &["operation"], &["operation", "target"], "primitives")
 }

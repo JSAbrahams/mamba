@@ -15,7 +15,7 @@ mod expression;
 mod function;
 mod ty;
 
-pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Finished> {
+pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
     let mut count = 1;
     let mut finished = Finished::new();
     let (_, errs): (Vec<_>, Vec<_>) = all_constraints
@@ -40,7 +40,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified<Finished
                     newline_delimited(e.clone().into_iter().map(|e| format!(
                         "{}{}",
                         if let Some(pos) = e.position {
-                            format!(" at {}: ", pos)
+                            format!(" at {pos}: ")
                         } else {
                             String::new()
                         },

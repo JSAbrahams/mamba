@@ -9,7 +9,6 @@ fn all_mutable_in_call_chain() -> CheckTestRet {
 }
 
 #[test]
-#[ignore]
 fn nested_mut_field() -> CheckTestRet {
     let source = resource_content(true, &["definition"], "nested_mut_field.mamba");
     check_test(&source)
@@ -30,14 +29,12 @@ fn nested_function() -> CheckTestRet {
 }
 
 #[test]
-#[ignore] // Ignore tuples for now
 fn tuple_modify_mut() -> CheckTestRet {
     let source = resource_content(true, &["definition"], "tuple_modify_mut.mamba");
     check_test(&source)
 }
 
 #[test]
-#[ignore] // Ignore tuples for now
 fn tuple_modify_outer_mut() -> CheckTestRet {
     let source = resource_content(true, &["definition"], "tuple_modify_outer_mut.mamba");
     check_test(&source)

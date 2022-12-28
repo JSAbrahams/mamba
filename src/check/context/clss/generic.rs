@@ -10,7 +10,7 @@ use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::function::INIT;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::{Any, Name};
+use crate::check::name::{Any, Empty, Name};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -74,7 +74,7 @@ impl Any for GenericClass {
             pure: false,
             pos: Default::default(),
             arguments: vec![],
-            raises: Name { names: Default::default() },
+            raises: Name::empty(),
             in_class: None,
             ret_ty: None,
         });

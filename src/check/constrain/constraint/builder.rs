@@ -1,4 +1,4 @@
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::name::string_name::StringName;
@@ -73,8 +73,12 @@ impl ConstrBuilder {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
 
+    pub fn add_var(&mut self, msg: &str, parent: &Expected, child: &Expected, var: ConstrVariant) {
+        self.add_constr(&Constraint::new_variant(msg, parent, child, var));
+    }
+
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        trace!("Constr: {} == {}, {}: {}", constraint.left.pos, constraint.right.pos, self.level, constraint);
+        trace!("Constr[{}]: {} == {}, {}: {}", self.level, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
         self.constraints[self.level].1.push(constraint.clone())
     }
 

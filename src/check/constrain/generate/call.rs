@@ -48,8 +48,8 @@ pub fn gen_call(
 
                 constr.add(
                     "reassign",
-                    &Expected::try_from((left, &env_assigned_to.var_mappings))?,
-                    &Expected::try_from((right, &env_assigned_to.var_mappings))?,
+                    &Expected::try_from((left, &env.var_mappings))?,
+                    &Expected::try_from((right, &env.var_mappings))?,
                 );
                 generate(right, &env_assigned_to, ctx, constr)?;
                 generate(left, &env_assigned_to, ctx, constr)?;
@@ -103,7 +103,7 @@ pub fn gen_call(
                     &fun_ret_exp,
                 );
 
-                check_raises_caught(&constr, &fun.raises.names, env, ctx, ast.pos)?;
+                check_raises_caught(constr, &fun.raises.names, env, ctx, ast.pos)?;
                 env.clone()
             })
         }

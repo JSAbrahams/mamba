@@ -64,6 +64,7 @@ pub trait ColType {
 #[derive(Debug, Clone, Eq)]
 pub struct Name {
     pub names: HashSet<TrueName>,
+    pub any: bool,
 }
 
 impl Any for Name {
@@ -107,7 +108,7 @@ pub fn match_type_direct(
                 mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
                 Ok(mapping)
             } else {
-                let msg = format!("Cannot match {} with a '{}'", identifier, name);
+                let msg = format!("Cannot match {identifier} with a '{name}'");
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
@@ -149,7 +150,7 @@ impl Ord for Name {
 
 impl Mutable for Name {
     fn as_mutable(&self) -> Self {
-        Name { names: self.names.iter().map(|n| n.as_mutable()).collect() }
+        Name { names: self.names.iter().map(|n| n.as_mutable()).collect(), ..self.clone() }
     }
 }
 
@@ -172,7 +173,7 @@ impl Union<Name> for Name {
             names
         };
 
-        Name { names }
+        Name { names, any: self.any || name.any }
     }
 }
 
@@ -229,7 +230,7 @@ impl Display for Name {
             if self.names.len() > 1 {
                 write!(f, "{{{}}}", comma_delm(&self.names))
             } else {
-                write!(f, "{}", first)
+                write!(f, "{first}")
             }
         } else {
             write!(f, "()")
@@ -240,7 +241,7 @@ impl Display for Name {
 impl From<&TrueName> for Name {
     fn from(name: &TrueName) -> Self {
         let names: HashSet<TrueName> = HashSet::from_iter(vec![name.clone()]);
-        Name { names }
+        Name { names, any: false }
     }
 }
 
@@ -260,8 +261,11 @@ impl IsSuperSet<Name> for Name {
             let is_superset = |s_name: &TrueName| s_name.is_superset_of(name, ctx, pos);
             let any_superset: Vec<bool> =
                 self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
-            if !any_superset.iter().any(|b| *b) {
+
+            if !any_superset.clone().iter().any(|b| *b) && !other.any {
                 return Ok(false);
+            } else if any_superset.clone().iter().any(|b| *b) && other.any {
+                return Ok(true);
             }
         }
 
@@ -279,7 +283,7 @@ impl Nullable for Name {
     }
 
     fn as_nullable(&self) -> Self {
-        Name { names: self.names.iter().map(|n| n.as_nullable()).collect() }
+        Name { names: self.names.iter().map(|n| n.as_nullable()).collect(), ..self.clone() }
     }
 }
 
@@ -289,7 +293,7 @@ impl Empty for Name {
     }
 
     fn empty() -> Name {
-        Name { names: HashSet::new() }
+        Name { names: HashSet::new(), any: false }
     }
 }
 
@@ -297,18 +301,24 @@ impl Substitute for Name {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
-        Ok(Name { names })
+        Ok(Name { names, any: self.any })
     }
 }
 
 impl Name {
-    pub fn trim_any(&self) -> Name {
+    pub fn trim_any(&self) -> Self {
         let names = self.names.iter().filter(|n| **n != TrueName::any()).cloned().collect();
-        Name { names }
+        Name { names, ..self.clone() }
     }
 
     pub fn as_direct(&self) -> HashSet<StringName> {
         self.names.iter().map(StringName::from).collect()
+    }
+
+    /// Any means that if one check if another [is_superset_of] self, then it will be true if it is
+    /// just a superset of one.
+    pub fn as_any(&self) -> Self {
+        Name { any: true, ..self.clone() }
     }
 
     pub fn contains(&self, item: &TrueName) -> bool {
@@ -383,6 +393,24 @@ mod tests {
 
         let ctx = Context::default().into_with_primitives().unwrap();
         assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn is_superset_any_only_one() {
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).as_any();
+        let union_2 = Name::from(BOOL);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn is_superset_any_no_one() {
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).as_any();
+        let union_2 = Name::from(FLOAT);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
     }
 
     #[test]
