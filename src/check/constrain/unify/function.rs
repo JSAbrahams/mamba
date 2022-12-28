@@ -127,7 +127,7 @@ fn field_access(
     let fields = ctx.class(entity_name, accessed.pos)?.field(name, ctx, accessed.pos)?;
     for field in fields.union {
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
-        constraints.push("field access", other, &field_ty_exp);
+        constraints.push("field access", &field_ty_exp, other);
         pushed += 1;
     }
 
@@ -164,17 +164,16 @@ fn function_access(
         }
     }
 
-    let (mut constr, added) = unify_fun_arg(&possible_args, args, constraints, accessed.pos)?;
-    unify_link(&mut constr, finished, ctx, total + added + pushed)
+    let added = unify_fun_arg(&possible_args, args, constraints, accessed.pos)?;
+    unify_link(constraints, finished, ctx, total + added + pushed)
 }
 
 fn unify_fun_arg(
     ctx_f_args: &[HashSet<FunctionArg>],
     args: &[Expected],
-    constr: &Constraints,
+    constr: &mut Constraints,
     pos: Position,
-) -> Unified<(Constraints, usize)> {
-    let mut constr = constr.clone();
+) -> Unified<usize> {
     let mut added = 0;
 
     for either_or_both in ctx_f_args.iter().zip_longest(args.iter()) {
@@ -206,5 +205,5 @@ fn unify_fun_arg(
         }
     }
 
-    Ok((constr, added))
+    Ok(added)
 }

@@ -35,17 +35,12 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
                     }
                 }
             }
-
-            unify_link(constraints, finished, ctx, total)
         }
 
-        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left => {
-            substitute(constraints, right, left, count, total)?;
-            unify_link(constraints, finished, ctx, total)
-        }
-        _ => {
-            substitute(constraints, left, right, count, total)?;
-            unify_link(constraints, finished, ctx, total)
-        }
+        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left =>
+            substitute(constraints, right, left, count, total)?,
+        _ => substitute(constraints, left, right, count, total)?
     }
+
+    unify_link(constraints, finished, ctx, total)
 }

@@ -6,4 +6,5 @@ class MyClass:
         return self.a > 10
 
 a: MyClass = MyClass(10)
+
 a.f()
