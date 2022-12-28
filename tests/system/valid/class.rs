@@ -25,7 +25,6 @@ fn assign_types_double_nested() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "assign_types_double_nested")
 }
 
-
 #[test]
 fn print_types_double_nested() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "print_types_double_nested")

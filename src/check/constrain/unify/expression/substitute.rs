@@ -1,6 +1,6 @@
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::result::TypeResult;
+use crate::check::constrain::Unified;
 
 /// Substitute old expression with new.
 ///
@@ -18,7 +18,7 @@ pub fn substitute(
     old: &Expected,
     offset: usize,
     total: usize,
-) -> TypeResult<()> {
+) -> Unified<()> {
     let mut constraint_pos = offset;
     trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
 

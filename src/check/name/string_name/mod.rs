@@ -39,7 +39,7 @@ impl PartialEq for StringName {
 
 impl Name {
     fn full_name(&self) -> Self {
-        Name { names: self.names.iter().map(TrueName::full_name).collect() }
+        Name { names: self.names.iter().map(TrueName::full_name).collect(), ..self.clone() }
     }
 }
 
@@ -144,7 +144,7 @@ impl IsSuperSet<StringName> for StringName {
 
 impl From<&StringName> for Name {
     fn from(name: &StringName) -> Self {
-        Name { names: HashSet::from_iter(vec![TrueName::from(name)]) }
+        Name { names: HashSet::from_iter(vec![TrueName::from(name)]), any: false }
     }
 }
 
@@ -152,7 +152,7 @@ impl Union<StringName> for Name {
     fn union(&self, name: &StringName) -> Self {
         let mut names = self.names.clone();
         names.insert(TrueName::from(name));
-        Name { names }
+        Name { names, ..self.clone() }
     }
 }
 
