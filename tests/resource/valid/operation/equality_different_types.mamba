@@ -1,0 +1,8 @@
+class MyClass
+class MyOtherClass
+
+def a := MyClass()
+def b := MyOtherClass()
+
+a = b
+a != b
