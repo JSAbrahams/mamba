@@ -186,7 +186,7 @@ mod test {
             panic!("Expected reassignment, was: {:?}", ret.node)
         };
 
-        assert_eq!(expr.pos, Position::new(CaretPos::new(1, 7), CaretPos::new(1, 9)));
+        assert_eq!(expr.pos, Position::new(CaretPos::new(1, 8), CaretPos::new(1, 10)));
         assert_eq!(expr.node, Node::Int { lit: String::from("20") });
     }
 

@@ -214,7 +214,7 @@ impl Token {
             Token::Do => 2,
             Token::Continue => 8,
             Token::Break => 5,
-            Token::Ret => 5,
+            Token::Ret => 6,
             Token::With => 4,
             Token::Question => 1,
             Token::Handle => 5,
