@@ -31,7 +31,7 @@ pub fn gen_class(
         Node::TypeAlias { conditions, isa, .. } => constrain_class_body(conditions, isa, env, ctx, constr),
         Node::Condition { cond, el: Some(el) } => {
             generate(cond, env, ctx, constr)?;
-            generate(el, &env, ctx, constr)
+            generate(el, env, ctx, constr)
         }
         Node::Condition { cond, .. } => generate(cond, env, ctx, constr),
 

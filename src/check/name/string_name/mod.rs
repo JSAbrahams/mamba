@@ -105,20 +105,15 @@ impl ColType for StringName {
                         fun.union.iter().fold(Name::empty(), |name, i| name.union(&i.ret_ty));
                     Ok(Some(ret_name))
                 } else {
-                    let msg = format!(
-                        "Cannot find iterator '{}' for iterable type '{}'",
-                        iter_name, self
-                    );
+                    let msg = format!("Cannot find iterator '{iter_name}' for iterable type '{self}'");
                     Err(vec![TypeErr::new(pos, &msg)])
                 }
             } else {
-                let msg =
-                    format!("Type '{}' is not iterable, it does not define an iterator.", self);
+                let msg = format!("Type '{self}' is not iterable, it does not define an iterator.");
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         } else {
-            let msg = format!("'{}' is undefined", self);
-            Err(vec![TypeErr::new(pos, &msg)])
+            Err(vec![TypeErr::new(pos, &format!("'{self}' is undefined"))])
         }
     }
 }
@@ -171,7 +166,7 @@ impl Substitute for StringName {
         if let Some(name) = generics.get(&Name::from(self)) {
             let string_names = name.as_direct();
             if string_names.len() > 1 {
-                let msg = format!("Cannot substitute type union {}", name);
+                let msg = format!("Cannot substitute type union {name}");
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
 
@@ -179,8 +174,7 @@ impl Substitute for StringName {
                 return Ok(string_name.clone());
             }
 
-            let msg = format!("{} incorrect name", name);
-            Err(vec![TypeErr::new(pos, &msg)])
+            Err(vec![TypeErr::new(pos, &format!("{name} incorrect name"))])
         } else {
             Ok(StringName {
                 name: self.name.clone(),

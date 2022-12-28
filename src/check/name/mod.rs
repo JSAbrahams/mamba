@@ -108,7 +108,7 @@ pub fn match_type_direct(
                 mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
                 Ok(mapping)
             } else {
-                let msg = format!("Cannot match {} with a '{}'", identifier, name);
+                let msg = format!("Cannot match {identifier} with a '{name}'");
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
@@ -230,7 +230,7 @@ impl Display for Name {
             if self.names.len() > 1 {
                 write!(f, "{{{}}}", comma_delm(&self.names))
             } else {
-                write!(f, "{}", first)
+                write!(f, "{first}")
             }
         } else {
             write!(f, "()")

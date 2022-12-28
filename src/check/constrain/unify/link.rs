@@ -21,7 +21,7 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
 
         let pos = format!("{}={} ", left.pos, right.pos);
         let count = if constraints.len() <= total { total - constraints.len() } else { 0 };
-        let unify = format!("{}\\{}", count, total);
+        let unify = format!("{count}\\{total}");
         let msg =
             if constraint.msg.is_empty() { String::new() } else { format!(" {}", constraint.msg) };
 

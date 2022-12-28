@@ -80,6 +80,7 @@ pub fn unify_function(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn access(
     constraints: &mut Constraints,
     finished: &mut Finished,

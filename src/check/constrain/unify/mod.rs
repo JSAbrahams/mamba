@@ -40,7 +40,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
                     newline_delimited(e.clone().into_iter().map(|e| format!(
                         "{}{}",
                         if let Some(pos) = e.position {
-                            format!(" at {}: ", pos)
+                            format!(" at {pos}: ")
                         } else {
                             String::new()
                         },
