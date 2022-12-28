@@ -56,8 +56,8 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
             }
 
             _ => {
-                let mut constr = reinsert(constraints, constraint, total)?;
-                unify_link(&mut constr, finished, ctx, total + 1)
+                reinsert(constraints, constraint, total)?;
+                unify_link(constraints, finished, ctx, total + 1)
             }
         }
     } else {
@@ -69,11 +69,11 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
 ///
 /// The amount of attempts is a counter which states how often we allow
 /// reinserts.
-pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified<Constraints> {
+pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified<()> {
     let pos = format!("({}={}) ", constraint.left.pos.start, constraint.right.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
     trace!("{:width$}{}{}", pos, count, constraint, width = 17);
 
     constr.reinsert(constraint)?;
-    Ok(constr.clone())
+    Ok(())
 }

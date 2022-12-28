@@ -60,10 +60,8 @@ pub fn gen_flow(
                 let then = Expected::try_from((then, &then_env.var_mappings))?;
                 let el = Expected::try_from((el, &else_env.var_mappings))?;
 
-                let then_constr = Constraint::new_variant("if then branch", &if_expr, &then, &ConstrVariant::Left);
-                constr.add_constr(&then_constr);
-                let else_constr = Constraint::new_variant("if else branch", &if_expr, &el, &ConstrVariant::Left);
-                constr.add_constr(&else_constr);
+                constr.add_var("if then branch", &if_expr, &then, ConstrVariant::default());
+                constr.add_var("if else branch", &if_expr, &el, ConstrVariant::default());
             }
 
             constr.exit_set(ast.pos)?;

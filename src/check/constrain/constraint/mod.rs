@@ -1,5 +1,4 @@
 use std::fmt::{Display, Error, Formatter};
-use std::ops::Not;
 
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
@@ -21,7 +20,7 @@ pub struct Constraint {
     pub superset: ConstrVariant,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ConstrVariant {
     Left,
     Right,
@@ -33,25 +32,14 @@ impl Default for ConstrVariant {
     }
 }
 
-impl Not for ConstrVariant {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        match self {
-            ConstrVariant::Left => ConstrVariant::Right,
-            ConstrVariant::Right => ConstrVariant::Left
-        }
-    }
-}
-
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let superset = match &self.superset {
-            ConstrVariant::Left => "{left}  ",
-            ConstrVariant::Right => "{right}  "
+            ConstrVariant::Left => ">=",
+            ConstrVariant::Right => "<="
         };
 
-        write!(f, "{}{} == {}", superset, self.left, self.right)
+        write!(f, "{} {superset} {}", self.left, self.right)
     }
 }
 
@@ -60,10 +48,10 @@ impl Constraint {
     ///
     /// By default, the left side is assumed to be the superset of the right side.
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
-        Constraint::new_variant(msg, parent, child, &ConstrVariant::default())
+        Constraint::new_variant(msg, parent, child, ConstrVariant::default())
     }
 
-    pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: &ConstrVariant)
+    pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: ConstrVariant)
                        -> Constraint {
         Constraint {
             left: parent.clone(),
