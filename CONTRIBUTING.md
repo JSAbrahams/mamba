@@ -19,7 +19,6 @@ requests are likely to be ignored.
 
 - Do use one of the provided templates if possible.
 - Do check if there are already similar issues or pull requests before submitting a new issue.
-- Do add an issue to the relevant project if applicable.
 - Do assign the relevant milestone to an issue if applicable.
 - Do reference other issues if applicable.
 
@@ -27,16 +26,18 @@ requests are likely to be ignored.
 
 - Do use the provided template.
 - Do check that there are no other pull requests that are doing the same thing.
-    - If you think your solution is better than an existing pull request, it is better to comment there first and engage
-      in discussion before opening your own pull request.
-- Do reference other issues and pull requests that are relevant
+  If you think your solution is better than an existing pull request, it is better to comment there first and engage
+  in discussion before opening your own pull request.
+- Do reference other issues and pull requests that are relevant.
 - Do actively engage with the comments on the pull request.
-    - An active discussion might lead to an even better solution or new ideas!
-- Do make sure the build passes, ideally by running `rustfmt` and `clippy` locally before pushing.
+  An active discussion might lead to an even better solution or new ideas.
 - Do add tests when fixing a bug or adding new functionality.
 - Do make sure that this PR is targets one single issue, as large pull requests are difficult to review and unlikely to
-  get merged
-- Do make sure that the base branch is the correct branch by observing the Git branching model.
+  be merged.
+- Do make sure that the base branch is the correct branch:
+  - The base branch will never be `main` (unless you are a core contributor).
+  - The base branch generally will be `develop`.
+  - If there is a specific feature branch (though unlikely in practice), do use this as a base branch instead if relevant.
 
 ### Git Branching Model
 
