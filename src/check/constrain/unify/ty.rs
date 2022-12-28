@@ -48,10 +48,10 @@ pub fn unify_type(
                 finished.push_ty(right.pos, &l_ty.union(r_ty));
                 unify_link(constraints, finished, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
-                let msg = format!("Unifying two types: Expected {}, was {}", left, right);
+                let msg = format!("Unifying two types within {}: Expected {left}, was {right}", constraint.msg);
                 Err(vec![TypeErr::new(left.pos, &msg)])
             } else {
-                let msg = format!("Unifying two types: Expected {}, was {}", right, left);
+                let msg = format!("Unifying two types within {}: Expected {right}, was {left}", constraint.msg);
                 Err(vec![TypeErr::new(right.pos, &msg)])
             }
         }

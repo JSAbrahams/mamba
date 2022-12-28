@@ -186,7 +186,7 @@ fn function_access(
 }
 
 fn unify_fun_arg(
-    f_args: &[HashSet<FunctionArg>],
+    ctx_f_args: &[HashSet<FunctionArg>],
     args: &[Expected],
     constr: &Constraints,
     pos: Position,
@@ -194,10 +194,10 @@ fn unify_fun_arg(
     let mut constr = constr.clone();
     let mut added = 0;
 
-    for either_or_both in f_args.iter().zip_longest(args.iter()) {
+    for either_or_both in ctx_f_args.iter().zip_longest(args.iter()) {
         match either_or_both {
-            EitherOrBoth::Both(fun_arg, expected) => {
-                let names = fun_arg
+            EitherOrBoth::Both(ctx_f_arg, expected) => {
+                let names = ctx_f_arg
                     .iter()
                     .map(|f_arg| {
                         f_arg.ty.clone().ok_or({
@@ -208,8 +208,8 @@ fn unify_fun_arg(
                     .collect::<Result<Vec<Name>, _>>()?;
 
                 let name = names.iter().fold(Name::empty(), |name, f_name| name.union(f_name));
-                let ty = Expected::new(expected.pos, &Type { name });
-                constr.push("function argument", &ty, expected);
+                let ctx_arg_ty = Expected::new(expected.pos, &Type { name });
+                constr.push("function argument", &ctx_arg_ty, expected);
                 added += 1;
             }
             EitherOrBoth::Left(fun_arg) if !fun_arg.iter().any(|a| !a.has_default) => {
@@ -217,7 +217,7 @@ fn unify_fun_arg(
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             EitherOrBoth::Right(_) => {
-                let msg = format!("Function takes only {} {}", f_args.len(), if f_args.len() == 1 { "argument" } else { "arguments" });
+                let msg = format!("Function takes only {} {}", ctx_f_args.len(), if ctx_f_args.len() == 1 { "argument" } else { "arguments" });
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             _ => {}

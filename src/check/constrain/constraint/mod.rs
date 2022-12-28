@@ -1,4 +1,5 @@
 use std::fmt::{Display, Error, Formatter};
+use std::ops::Not;
 
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
@@ -26,6 +27,23 @@ pub enum ConstrVariant {
     Right,
 }
 
+impl Default for ConstrVariant {
+    fn default() -> Self {
+        ConstrVariant::Left
+    }
+}
+
+impl Not for ConstrVariant {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        match self {
+            ConstrVariant::Left => ConstrVariant::Right,
+            ConstrVariant::Right => ConstrVariant::Left
+        }
+    }
+}
+
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let superset = match &self.superset {
@@ -42,7 +60,7 @@ impl Constraint {
     ///
     /// By default, the left side is assumed to be the superset of the right side.
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
-        Constraint::new_variant(msg, parent, child, &ConstrVariant::Left)
+        Constraint::new_variant(msg, parent, child, &ConstrVariant::default())
     }
 
     pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: &ConstrVariant)
@@ -61,36 +79,26 @@ impl Constraint {
     fn flag(&self) -> Constraint { Constraint { is_flag: true, ..self.clone() } }
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
-        let string =
-            Expected::new(expected.pos, &Type { name: Name::from(clss::STRING) });
-        let access = Access {
-            entity: Box::from(expected.clone()),
-            name: Box::new(Expected::new(expected.pos, &Function {
-                name: StringName::from(function::STR),
-                args: vec![expected.clone()],
-            })),
-        };
-
-        Constraint::new(msg, &string, &Expected::new(expected.pos, &access))
+        Self::access(msg, expected, &Name::from(clss::STRING), &StringName::from(function::STR))
     }
 
     pub fn truthy(msg: &str, expected: &Expected) -> Constraint {
-        let bool =
-            Expected::new(expected.pos, &Type { name: Name::from(clss::BOOL) });
+        Self::access(msg, expected, &Name::from(clss::BOOL), &StringName::from(function::TRUTHY))
+    }
+
+    fn access(msg: &str, expected: &Expected, ty_name: &Name, fun_name: &StringName) -> Constraint {
+        let obj = Expected::new(expected.pos, &Type { name: ty_name.clone() });
+        let fun = Function { name: fun_name.clone(), args: vec![expected.clone()] };
         let access = Access {
             entity: Box::from(expected.clone()),
-            name: Box::new(Expected::new(expected.pos, &Function {
-                name: StringName::from(function::TRUTHY),
-                args: vec![expected.clone()],
-            })),
+            name: Box::new(Expected::new(expected.pos, &fun)),
         };
 
-        Constraint::new(msg, &bool, &Expected::new(expected.pos, &access))
+        Constraint::new(msg, &obj, &Expected::new(expected.pos, &access))
     }
 
     pub fn undefined(msg: &str, expected: &Expected) -> Constraint {
-        let none =
-            Expected::new(expected.pos, &Type { name: Name::from(clss::NONE) });
+        let none = Expected::new(expected.pos, &Type { name: Name::from(clss::NONE) });
         Constraint::new(msg, expected, &none)
     }
 }
