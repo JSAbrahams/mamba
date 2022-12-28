@@ -52,6 +52,11 @@ fn boolean_ast_verify() -> OutTestRet {
 }
 
 #[test]
+fn equality_different_types() -> OutTestRet {
+    test_directory(true, &["operation"], &["operation", "target"], "equality_different_types")
+}
+
+#[test]
 #[ignore] // investigate whether this should in fact, pass
 fn type_alias_primitive() -> OutTestRet {
     test_directory(true, &["operation"], &["operation", "target"], "type_alias_primitive")

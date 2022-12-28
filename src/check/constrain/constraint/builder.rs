@@ -29,7 +29,7 @@ impl ConstrBuilder {
     pub fn is_top_level(&self) -> bool { self.level == 0 }
 
     pub fn new_set_in_class(&mut self, inherit_class: bool, class: &StringName) {
-        self.new_set(false);
+        self.new_set(true);
         if self.level > 0 && inherit_class {
             let mut previous = self.constraints[self.level - 1].0.clone();
             self.constraints[self.level].0.append(&mut previous);
