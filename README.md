@@ -90,13 +90,10 @@ def fin always_the_same_message := "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
     def is_connected: Bool     := False
-    def _last_message: String? := None
+    def _last_message: String  := "temp"
 
     def last_sent(fin self) -> String raise [ServerError] =>
-        if self._last_message != None then
-            self._last_message
-        else
-            raise ServerError("No last message!")
+        self._last_message
 
     def connect(self) =>
         self.is_connected := True
@@ -139,23 +136,16 @@ Lets expand our server example from above, and rewrite it slightly:
 ```mamba
 from ipaddress import IPv4Address
 
-type Server
-    def ip_address: IPv4Address
-
-    def connect()    -> () raise ServerErr
-    def send(String) -> () raise ServerErr
-    def disconnect() -> ()
-
 type ConnMyServer: MyServer when self.is_connected
 type DisConnMyServer: MyServer when not self.is_connected
 
 class ServerErr(def message: String): Exception(message)
 
-class MyServer(self: DisConnMyServer, def ip_address: IPv4Address): Server
+class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
     def is_connected: Bool     := False
     def _last_message: String? := None
 
-    def last_sent(self) -> String raise ServerErr => 
+    def last_sent(self) -> String raise [ServerErr] => 
         if self.last_message != None then 
             self._last_message
         else
@@ -168,7 +158,10 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address): Server
     def disconnect(self: ConnMyServer) => self.is_connected := False
 ```
 
-Notice how above, we define the type of `self`.
+Within the then branch of the if statement, we know that `self._last_message` is a `String`.
+This is because we performed a check in the if condition.
+
+Also Notice how above, we define the type of `self`.
 Each type effectively denotes another state that `self` can be in.
 For each type, we use `when` to show that it is a type refinement, which certain conditions.
 
