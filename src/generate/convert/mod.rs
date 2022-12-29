@@ -87,8 +87,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             range: Box::from(convert_node(range, imp, state, ctx)?),
         },
 
-        NodeTy::ListBuilder { .. } => return Err(UnimplementedErr::new(ast, "list builder")),
-        NodeTy::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
+        NodeTy::ListBuilder { .. } => return Err(Box::from(UnimplementedErr::new(ast, "list builder"))),
+        NodeTy::SetBuilder { .. } => return Err(Box::from(UnimplementedErr::new(ast, "set builder"))),
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
@@ -241,7 +241,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::Generic { .. } => Core::Empty,
         NodeTy::Parent { .. } => convert_class(ast, imp, state, ctx)?,
 
-        NodeTy::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
+        NodeTy::Condition { .. } => return Err(Box::from(UnimplementedErr::new(ast, "condition"))),
 
         NodeTy::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
             resource: Box::from(convert_node(resource, imp, state, ctx)?),
@@ -290,7 +290,7 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.into_iter().map(|c| append_assign(c, assign_to)).collect(),
+            cases: cases.iter().map(|c| append_assign(c, assign_to)).collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
@@ -299,7 +299,7 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_assign(attempt, assign_to)),
-            except: except.into_iter().map(|e| append_assign(e, assign_to)).collect(),
+            except: except.iter().map(|e| append_assign(e, assign_to)).collect(),
         },
         Core::Except { id, class, body } => Core::Except {
             id: id.clone(),
@@ -333,7 +333,7 @@ fn append_ret(core: &Core) -> Core {
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.into_iter().map(|c| append_ret(c)).collect(),
+            cases: cases.iter().map(append_ret).collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
@@ -342,14 +342,14 @@ fn append_ret(core: &Core) -> Core {
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_ret(attempt)),
-            except: except.into_iter().map(|e| append_ret(e)).collect(),
+            except: except.iter().map(append_ret).collect(),
         },
         Core::Except { id, class, body } => Core::Except {
             id: id.clone(),
             class: class.clone(),
             body: Box::from(append_ret(body)),
         },
-        core if skip_return(&core) => core.clone(),
+        core if skip_return(core) => core.clone(),
         _ => Core::Return { expr: Box::from(core.clone()) }
     }
 }

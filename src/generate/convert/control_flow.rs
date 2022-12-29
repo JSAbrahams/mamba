@@ -71,8 +71,8 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
         NodeTy::Break => Core::Break,
         NodeTy::Continue => Core::Continue,
         other => {
-            let msg = format!("Expected control flow but was: {:?}.", other);
-            return Err(UnimplementedErr::new(ast, &msg));
+            let msg = format!("Expected control flow but was: {other:?}.");
+            return Err(Box::from(UnimplementedErr::new(ast, &msg)));
         }
     })
 }
