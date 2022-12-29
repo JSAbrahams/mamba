@@ -23,10 +23,7 @@ impl UnimplementedErr {
     pub fn new(ast: &ASTTy, msg: &str) -> UnimplementedErr {
         UnimplementedErr {
             position: ast.pos,
-            msg: format!(
-                "The {} construct has not yet been implemented as of v{}.",
-                msg, VERSION
-            ),
+            msg: format!("The {msg} construct has not yet been implemented as of v{VERSION}."),
             source_line: None,
             path: None,
         }
@@ -45,7 +42,7 @@ impl WithSource for UnimplementedErr {
             source_line: source.clone().map(|source| {
                 source
                     .lines()
-                    .nth(self.position.start.line as usize - 1)
+                    .nth(self.position.start.line - 1)
                     .map_or(String::from("unknown"), String::from)
             }),
             path: path.clone(),
@@ -65,7 +62,7 @@ impl Display for UnimplementedErr {
             self.msg,
             self.position.start.line,
             self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
-            String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
+            String::from_utf8(vec![b' '; self.position.start.pos]).unwrap(),
             String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap()
         )
     }

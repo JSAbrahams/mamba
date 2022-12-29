@@ -30,7 +30,7 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
             let lit = if let Core::Type { lit, .. } = convert_node(ty, imp, state, ctx)? {
                 lit
             } else {
-                let msg = format!("identifier, was {:?}", ty);
+                let msg = format!("Expected identifier, was {ty:?}");
                 return Err(Box::from(UnimplementedErr::new(ty, &msg)));
             };
 
@@ -66,7 +66,7 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
         }
 
         other => {
-            let msg = format!("Expected class or type definition but was {:?}", other);
+            let msg = format!("Expected class or type definition, was {other:?}");
             Err(Box::from(UnimplementedErr::new(ast, &msg)))
         }
     }
@@ -107,7 +107,7 @@ fn extract_class(
             // function two further to leave place for init
             let (pos, key) = match stmt {
                 Core::FunDef { id, .. } => (i + 2, Core::Id { lit: id.clone() }),
-                Core::FunDefOp { op, .. } => (i + 2, Core::Id { lit: format!("{}", op) }),
+                Core::FunDefOp { op, .. } => (i + 2, Core::Id { lit: format!("{op}") }),
                 Core::VarDef { var, .. } => (i, var.deref().clone()),
                 _ => (i, Core::Id { lit: String::from("@") }),
             };

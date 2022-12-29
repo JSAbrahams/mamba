@@ -17,7 +17,7 @@ pub fn convert_call(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             args: convert_vec(args, imp, state, ctx)?,
         },
         other => {
-            let msg = format!("Expected call flow but was: {:?}.", other);
+            let msg = format!("Expected call flow but was: {other:?}.");
             return Err(Box::from(UnimplementedErr::new(ast, &msg)));
         }
     })

@@ -290,7 +290,7 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.into_iter().map(|c| append_assign(c, assign_to)).collect(),
+            cases: cases.iter().map(|c| append_assign(c, assign_to)).collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
@@ -299,7 +299,7 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_assign(attempt, assign_to)),
-            except: except.into_iter().map(|e| append_assign(e, assign_to)).collect(),
+            except: except.iter().map(|e| append_assign(e, assign_to)).collect(),
         },
         Core::Except { id, class, body } => Core::Except {
             id: id.clone(),
@@ -333,7 +333,7 @@ fn append_ret(core: &Core) -> Core {
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.into_iter().map(|c| append_ret(c)).collect(),
+            cases: cases.iter().map(|c| append_ret(c)).collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
@@ -342,14 +342,14 @@ fn append_ret(core: &Core) -> Core {
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_ret(attempt)),
-            except: except.into_iter().map(|e| append_ret(e)).collect(),
+            except: except.iter().map(|e| append_ret(e)).collect(),
         },
         Core::Except { id, class, body } => Core::Except {
             id: id.clone(),
             class: class.clone(),
             body: Box::from(append_ret(body)),
         },
-        core if skip_return(&core) => core.clone(),
+        core if skip_return(core) => core.clone(),
         _ => Core::Return { expr: Box::from(core.clone()) }
     }
 }

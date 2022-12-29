@@ -53,7 +53,7 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) 
             }
         }
         ty => {
-            let msg = format!("Expected type: {:?}.", ty);
+            let msg = format!("Expected type: {ty:?}.");
             return Err(Box::from(UnimplementedErr::new(ast, &msg)));
         }
     })

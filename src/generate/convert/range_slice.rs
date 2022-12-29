@@ -47,7 +47,7 @@ pub fn convert_range_slice(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &
             ],
         }),
         other => {
-            let msg = format!("Expected range or slice: {:?}", other);
+            let msg = format!("Expected range or slice, was {other:?}");
             Err(Box::from(UnimplementedErr::new(ast, &msg)))
         }
     }

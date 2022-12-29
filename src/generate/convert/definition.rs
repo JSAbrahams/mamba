@@ -95,7 +95,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                             other => String::from(other),
                         },
                         other => {
-                            let msg = format!("Expected function identifier, was {:?}", other);
+                            let msg = format!("Expected function identifier, was {other:?}");
                             return Err(Box::from(UnimplementedErr::new(id, &msg)));
                         }
                     };
@@ -121,7 +121,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             },
         }),
         definition => {
-            let msg = format!("Expected definition: {:?}", definition);
+            let msg = format!("Expected definition, was {definition:?}");
             Err(Box::from(UnimplementedErr::new(ast, &msg)))
         }
     }
