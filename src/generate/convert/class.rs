@@ -30,8 +30,8 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
             let lit = if let Core::Type { lit, .. } = convert_node(ty, imp, state, ctx)? {
                 lit
             } else {
-                let msg = format!("identifier, was {:?}", ty);
-                return Err(UnimplementedErr::new(ty, &msg));
+                let msg = format!("Expected identifier, was {ty:?}");
+                return Err(Box::from(UnimplementedErr::new(ty, &msg)));
             };
 
             Ok(Core::Assign {
@@ -66,8 +66,8 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
         }
 
         other => {
-            let msg = format!("Expected class or type definition but was {:?}", other);
-            Err(UnimplementedErr::new(ast, &msg))
+            let msg = format!("Expected class or type definition, was {other:?}");
+            Err(Box::from(UnimplementedErr::new(ast, &msg)))
         }
     }
 }
@@ -91,7 +91,7 @@ fn extract_class(
 ) -> GenResult {
     let id = match &ty.node {
         NodeTy::Type { id, .. } => convert_node(id, imp, state, ctx)?,
-        _ => return Err(UnimplementedErr::new(ty, "Other than type as class identifier")),
+        _ => return Err(Box::from(UnimplementedErr::new(ty, "Other than type as class identifier"))),
     };
 
     let body = body.clone().map(|body| convert_node(body.deref(), imp, state, ctx));
@@ -107,7 +107,7 @@ fn extract_class(
             // function two further to leave place for init
             let (pos, key) = match stmt {
                 Core::FunDef { id, .. } => (i + 2, Core::Id { lit: id.clone() }),
-                Core::FunDefOp { op, .. } => (i + 2, Core::Id { lit: format!("{}", op) }),
+                Core::FunDefOp { op, .. } => (i + 2, Core::Id { lit: format!("{op}") }),
                 Core::VarDef { var, .. } => (i, var.deref().clone()),
                 _ => (i, Core::Id { lit: String::from("@") }),
             };
@@ -143,10 +143,10 @@ fn extract_class(
         .map(|parent| match parent.clone() {
             Core::FunctionCall { function, .. } => match *function {
                 Core::Id { .. } => Ok(*function),
-                _ => Err(UnimplementedErr::new(ty, "Parent")),
+                _ => Err(Box::from(UnimplementedErr::new(ty, "Parent"))),
             },
             Core::Type { .. } => Ok(parent.clone()),
-            _ => Err(UnimplementedErr::new(ty, "Parent")),
+            _ => Err(Box::from(UnimplementedErr::new(ty, "Parent"))),
         })
         .collect::<GenResult<Vec<Core>>>()?;
 
