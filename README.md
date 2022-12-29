@@ -3,7 +3,7 @@
 <p align="center">
     <img src="image/logo.svg" height="200" alt="Mamba logo"/>
     <br/><br/>
-    <a href="https://github.com/JSAbrahams/mamba/actions/workflows/rust.yml">
+    <a href="https://github.com/JSAbrahams/mamba/actions/workflows/test.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/JSAbrahams/Mamba/test.yml?style=for-the-badge" alt="GitHub Workflow Status">
     </a>
     <a href="https://app.codecov.io/gh/JSAbrahams/mamba/">
