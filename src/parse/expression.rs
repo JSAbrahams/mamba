@@ -85,7 +85,7 @@ pub fn parse_inner_expression(it: &mut LexIterator) -> ParseResult {
 
             Token::BSlash => parse_anon_fun(it),
 
-            _ => Err(expected_one_of(&expected, lex, "expression")),
+            _ => Err(Box::from(expected_one_of(&expected, lex, "expression"))),
         },
         &expected,
         "expression",

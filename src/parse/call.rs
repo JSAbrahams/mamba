@@ -44,7 +44,7 @@ pub fn parse_call(pre: &AST, it: &mut LexIterator) -> ParseResult {
                 let node = Node::FunctionCall { name: Box::from(pre.clone()), args };
                 Ok(Box::from(AST::new(pre.pos.union(end), node)))
             }
-            _ => Err(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call")),
+            _ => Err(Box::from(expected_one_of(&[Token::Point, Token::LRBrack], ast, "function call"))),
         },
         &[Token::Point, Token::LRBrack],
         "function call",

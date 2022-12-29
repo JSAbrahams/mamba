@@ -73,13 +73,13 @@ impl Position {
     /// the source code.
     ///
     /// Width is always 1 or greater.
-    pub fn get_width(&self) -> i32 {
+    pub fn get_width(&self) -> usize {
         max(
             1,
             max(
                 self.end.pos as i32 - self.start.pos as i32,
                 self.start.pos as i32 - self.end.pos as i32,
-            ),
+            ) as usize,
         )
     }
 

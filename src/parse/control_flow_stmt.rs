@@ -21,11 +21,11 @@ pub fn parse_cntrl_flow_stmt(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::Continue, "control flow statement")?;
                 Ok(Box::from(AST::new(lex.pos.union(end), Node::Continue)))
             }
-            _ => Err(expected_one_of(
+            _ => Err(Box::from(expected_one_of(
                 &[Token::While, Token::For, Token::Break, Token::Continue],
                 lex,
                 "control flow statement",
-            ))
+            )))
         },
         &[Token::While, Token::For, Token::Break, Token::Continue],
         "control flow statement",

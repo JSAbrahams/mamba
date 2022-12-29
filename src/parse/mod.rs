@@ -28,17 +28,14 @@ mod ty;
 /// Parse input, which is a string.
 pub fn parse(input: &str) -> ParseResult {
     let tokens: Vec<Lex> = tokenize(input)
-        .map(|tokens| tokens.into_iter().filter(|t| match t.token {
-            Token::Comment(_) => false,
-            _ => true
-        }).collect())
+        .map(|tokens| tokens.into_iter().filter(|t| !matches!(t.token, Token::Comment(_))).collect())
         .map_err(ParseErr::from)?;
 
     let mut iterator = LexIterator::new(tokens.iter().peekable());
     let statements = block::parse_statements(&mut iterator)?;
     if iterator.peek_if(&|lex| lex.token != Token::Eof) {
         if let Some(lex) = iterator.peek_next() {
-            return Err(expected(&Token::Eof, &lex, "end of file"));
+            return Err(Box::from(expected(&Token::Eof, &lex, "end of file")));
         }
     }
 

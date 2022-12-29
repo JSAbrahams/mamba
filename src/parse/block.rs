@@ -37,7 +37,7 @@ pub fn parse_statements(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
             _ => {
                 statements.push(*it.parse(&parse_expr_or_stmt, "statements", start)?);
                 if it.peek_if(&|lex| lex.token != Token::NL && lex.token != Token::Dedent && lex.token != Token::Eof) {
-                    Err(expected_one_of(&[Token::NL, Token::Dedent, Token::Eof], lex, "end of statement"))
+                    Err(Box::from(expected_one_of(&[Token::NL, Token::Dedent, Token::Eof], lex, "end of statement")))
                 } else {
                     Ok(())
                 }

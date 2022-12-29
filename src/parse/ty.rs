@@ -35,11 +35,11 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::RRBrack, "identifier tuple")?;
                 Ok(Box::from(AST::new(end, Node::Tuple { elements })))
             }
-            _ => Err(expected_one_of(
+            _ => Err(Box::from(expected_one_of(
                 &[Token::_Self, Token::Init, Token::Id(String::new()), Token::LRBrack],
                 lex,
                 "identifier",
-            ))
+            )))
         },
         &[Token::_Self, Token::Init, Token::Id(String::new())],
         "identifier",
@@ -87,11 +87,11 @@ pub fn parse_type(it: &mut LexIterator) -> ParseResult {
             }
             Token::LRBrack => it.parse(&parse_type_tuple, "type", start),
             Token::LCBrack => it.parse(&parse_type_set, "type", start),
-            _ => Err(expected_one_of(
+            _ => Err(Box::from(expected_one_of(
                 &[Token::Id(String::new()), Token::LRBrack, Token::LCBrack],
                 &lex.clone(),
                 "type",
-            ))
+            )))
         },
         &[Token::Id(String::new()), Token::LRBrack],
         "type",
@@ -192,7 +192,7 @@ pub fn parse_expr_no_type(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("expression no type")?;
     let expr = it.parse(&parse_id, "expression no type", start)?;
     if let Some(annotation_pos) = it.eat_if(&Token::DoublePoint) {
-        Err(custom("Type annotation not allowed here", annotation_pos))
+        Err(Box::from(custom("Type annotation not allowed here", annotation_pos)))
     } else {
         Ok(expr)
     }
