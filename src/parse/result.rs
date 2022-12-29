@@ -166,7 +166,7 @@ impl Display for ParseErr {
                     "{:3}  |- {}\n     | {}^ in {} ({}:{})\n",
                     cause.position.start.line,
                     source_line,
-                    String::from_utf8(vec![b' '; cause.position.start.pos as usize]).unwrap(),
+                    String::from_utf8(vec![b' '; cause.position.start.pos]).unwrap(),
                     cause.cause,
                     cause.position.start.line,
                     cause.position.start.pos,
