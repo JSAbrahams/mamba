@@ -28,10 +28,7 @@ mod ty;
 /// Parse input, which is a string.
 pub fn parse(input: &str) -> ParseResult {
     let tokens: Vec<Lex> = tokenize(input)
-        .map(|tokens| tokens.into_iter().filter(|t| match t.token {
-            Token::Comment(_) => false,
-            _ => true
-        }).collect())
+        .map(|tokens| tokens.into_iter().filter(|t| !matches!(t.token, Token::Comment(_))).collect())
         .map_err(ParseErr::from)?;
 
     let mut iterator = LexIterator::new(tokens.iter().peekable());

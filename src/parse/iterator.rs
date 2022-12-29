@@ -195,7 +195,7 @@ impl<'a> LexIterator<'a> {
     pub fn start_pos(&mut self, msg: &str) -> ParseResult<Position> {
         match self.it.peek() {
             Some(Lex { pos, .. }) => Ok(*pos),
-            None => Err(Box::from(eof_expected_one_of(&[], &format!("start of a {}", msg))))
+            None => Err(Box::from(eof_expected_one_of(&[], &format!("start of a {msg}"))))
         }
     }
 }

@@ -73,7 +73,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
         Node::ExpressionType { ty: Some(_), .. } | Node::TypeTup { .. } if !pure => {
             parse_variable_def_id(&id, it)
         }
-        Node::ExpressionType { expr, ty, mutable } if *ty == None => it.peek(
+        Node::ExpressionType { expr, ty, mutable } if ty.is_none() => it.peek(
             &|it, lex| match lex.token {
                 Token::LRBrack => parse_fun_def(&id, pure, it),
                 _ if !pure => parse_variable_def_id(&id, it),
