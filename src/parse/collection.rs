@@ -13,11 +13,11 @@ pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
             Token::LRBrack => parse_tuple(it),
             Token::LSBrack => parse_list(it),
             Token::LCBrack => parse_set(it),
-            _ => Err(expected_one_of(
+            _ => Err(Box::from(expected_one_of(
                 &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
                 lex,
                 "collection",
-            ))
+            )))
         },
         &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
         "collection",

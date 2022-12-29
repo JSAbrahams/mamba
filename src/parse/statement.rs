@@ -28,11 +28,11 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::With => parse_with(it),
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
-            _ => Err(expected_one_of(
+            _ => Err(Box::from(expected_one_of(
                 &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
                 lex,
                 "statement",
-            )),
+            ))),
         },
         &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
         "statement",
@@ -63,7 +63,7 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
-            _ => Err(expected(&Token::Id(String::new()), lex, "as")),
+            _ => Err(Box::from(expected(&Token::Id(String::new()), lex, "as"))),
         })?;
         alias
     } else {
@@ -102,11 +102,11 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
             Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, NodeOp::BLShift),
             Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, NodeOp::BRShift),
             lex => {
-                return Err(expected_one_of(&expect, lex, "reassignment"));
+                return Err(Box::from(expected_one_of(&expect, lex, "reassignment")));
             }
         }
     } else {
-        return Err(eof_expected_one_of(&expect, "reassignment"));
+        return Err(Box::from(eof_expected_one_of(&expect, "reassignment")));
     };
     it.eat(&token, "reassignment")?;
 
@@ -125,7 +125,7 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     let alias = if let Some(alias) = &alias {
         match alias.node.clone() {
             Node::ExpressionType { expr, mutable, ty } => Some((expr, mutable, ty)),
-            _ => return Err(custom("Expected expression type", alias.pos)),
+            _ => return Err(Box::from(custom("Expected expression type", alias.pos))),
         }
     } else {
         None

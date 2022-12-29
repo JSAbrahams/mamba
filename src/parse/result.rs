@@ -13,7 +13,7 @@ use crate::parse::lex::token::Token;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
-pub type ParseResult<T = Box<AST>> = Result<T, ParseErr>;
+pub type ParseResult<T = Box<AST>> = Result<T, Box<ParseErr>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {
@@ -157,7 +157,7 @@ impl Display for ParseErr {
                 let source_line = match &self.source {
                     Some(source) => source
                         .lines()
-                        .nth(cause.position.start.line as usize - 1)
+                        .nth(cause.position.start.line - 1)
                         .unwrap_or("<unknown>"),
                     None => "<unknown>",
                 };
@@ -166,7 +166,7 @@ impl Display for ParseErr {
                     "{:3}  |- {}\n     | {}^ in {} ({}:{})\n",
                     cause.position.start.line,
                     source_line,
-                    String::from_utf8(vec![b' '; cause.position.start.pos as usize]).unwrap(),
+                    String::from_utf8(vec![b' '; cause.position.start.pos]).unwrap(),
                     cause.cause,
                     cause.position.start.line,
                     cause.position.start.pos,
@@ -176,7 +176,7 @@ impl Display for ParseErr {
         let path = self.path.as_ref().map_or("<unknown>", |path| path.to_str().unwrap_or_default());
         let source_line = match &self.source {
             Some(source) => {
-                source.lines().nth(self.position.start.line as usize - 1).unwrap_or("<unknown>")
+                source.lines().nth(self.position.start.line - 1).unwrap_or("<unknown>")
             }
             None => "<unknown>",
         };
@@ -190,8 +190,8 @@ impl Display for ParseErr {
             self.position.start.pos,
             self.position.start.line,
             source_line,
-            String::from_utf8(vec![b' '; self.position.start.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.position.get_width() as usize]).unwrap(),
+            String::from_utf8(vec![b' '; self.position.start.pos]).unwrap(),
+            String::from_utf8(vec![b'^'; self.position.get_width()]).unwrap(),
             cause_formatter,
         )
     }
