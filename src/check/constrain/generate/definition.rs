@@ -244,31 +244,3 @@ fn identifier_to_tuple(
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use std::collections::HashSet;
-
-    use crate::check::constrain::constraint::builder::ConstrBuilder;
-    use crate::check::constrain::generate::env::Environment;
-    use crate::check::constrain::generate::generate;
-    use crate::check::context::Context;
-    use crate::parse::parse;
-
-    #[test]
-    fn if_else_as_expr() {
-        let src = "def a := if True then 10 else 20";
-        let ast = parse(src).unwrap();
-        let mut builder = ConstrBuilder::new();
-        generate(&ast, &Environment::default(), &Context::default(), &mut builder).unwrap();
-
-        // Ignore then and else branches
-        let mut constraints = builder.all_constr()[2].clone();
-
-        let mut popped = HashSet::new();
-        while let Some(pop) = constraints.pop_constr() {
-            popped.insert(pop);
-        }
-        assert_eq!(popped.len(), 3);
-    }
-}

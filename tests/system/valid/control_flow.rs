@@ -41,7 +41,6 @@ fn if_ast_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // See #367
 fn if_in_if_cond() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "if_in_if_cond")
 }
