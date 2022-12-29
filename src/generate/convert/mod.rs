@@ -333,7 +333,7 @@ fn append_ret(core: &Core) -> Core {
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.iter().map(|c| append_ret(c)).collect(),
+            cases: cases.iter().map(append_ret).collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
@@ -342,7 +342,7 @@ fn append_ret(core: &Core) -> Core {
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
             attempt: Box::from(append_ret(attempt)),
-            except: except.iter().map(|e| append_ret(e)).collect(),
+            except: except.iter().map(append_ret).collect(),
         },
         Core::Except { id, class, body } => Core::Except {
             id: id.clone(),

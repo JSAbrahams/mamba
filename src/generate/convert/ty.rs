@@ -31,7 +31,7 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) 
                 generics: convert_vec(generics, imp, state, ctx)?,
             },
             other => {
-                let msg = format!("Expected identifier but was {:?}", other);
+                let msg = format!("Expected identifier but was {other:?}");
                 return Err(Box::from(UnimplementedErr::new(ast, &msg)));
             }
         },
