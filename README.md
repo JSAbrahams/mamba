@@ -143,7 +143,7 @@ class ServerErr(def message: String): Exception(message)
 
 class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
     def is_connected: Bool     := False
-    def _last_message: String  := "temp"
+    def _last_message: String? := None
 
     def last_sent(self) -> String raise [ServerErr] => 
         if self.last_message != None then 
