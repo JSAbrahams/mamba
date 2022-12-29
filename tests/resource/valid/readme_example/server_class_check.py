@@ -1,24 +1,20 @@
 from ipaddress import IPv4Address
-from typing import Option
 
-class ServerError(Exception)
+class ServerError(Exception):
     def __init__(self, message:str):
-        Exception.__init__(message)
+        Exception.__init__(self, message)
 
-always_the_same_message = "Connected!"
+always_the_same_message: str = "Connected!"
 
-class MyServer(def ip_address: IPv4Address)
-    def is_connected: bool = False
-    def _last_message: Option[str] = None
+class MyServer:
+    is_connected: bool = False
+    _last_message: str = "temp"
 
-    def __init__(ip_address: IPv4Address):
+    def __init__(self, ip_address: IPv4Address):
         self.ip_address = ip_address
 
     def last_sent(self) -> str:
-        if self._last_message != None:
-            return self._last_message
-        else:
-            raise ServerError("No last message!")
+        return self._last_message
 
     def connect(self):
         self.is_connected = True
