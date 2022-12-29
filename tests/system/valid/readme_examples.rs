@@ -34,7 +34,6 @@ fn pure_functions() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // milestone 0.4.2 (Type refinement)
 fn server_class() -> OutTestRet {
     test_directory(true, &["readme_example"], &["readme_example", "target"], "server_class")
 }
