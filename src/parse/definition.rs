@@ -79,7 +79,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
                 _ if !pure => parse_variable_def_id(&id, it),
                 _ => {
                     let msg = format!("Definition cannot have {} identifier", Token::Pure);
-                    Err(custom(&msg, id.pos))
+                    Err(Box::from(custom(&msg, id.pos)))
                 }
             },
             {
@@ -93,7 +93,7 @@ fn parse_var_or_fun_def(it: &mut LexIterator, pure: bool) -> ParseResult {
                 Ok(Box::from(AST::new(id.pos.union(id.pos), node)))
             },
         ),
-        _ => Err(custom("definition must start with id type", id.pos)),
+        _ => Err(Box::from(custom("definition must start with id type", id.pos))),
     }
 }
 
@@ -104,11 +104,11 @@ fn parse_fun_def(id: &AST, pure: bool, it: &mut LexIterator) -> ParseResult {
     let id = match &id.node {
         Node::ExpressionType { expr, mutable, ty } => match (mutable, ty) {
             (_, None) => expr.clone(),
-            (_, Some(_)) => return Err(custom("Function identifier cannot have type", expr.pos)),
+            (_, Some(_)) => return Err(Box::from(custom("Function identifier cannot have type", expr.pos))),
         },
         Node::Id { .. } => Box::from(id.clone()),
 
-        _ => return Err(custom("Function definition not given id or operator", id.pos)),
+        _ => return Err(Box::from(custom("Function definition not given id or operator", id.pos))),
     };
 
     let ret_ty = it.parse_if(&Token::To, &parse_type, "function return type", start)?;
@@ -159,7 +159,7 @@ pub fn parse_fun_arg(it: &mut LexIterator) -> ParseResult {
     let (mutable, var, ty) = match &expression_type.node {
         Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
         _ => {
-            return Err(custom("Expected expression type in function argument", expression_type.pos));
+            return Err(Box::from(custom("Expected expression type in function argument", expression_type.pos)));
         }
     };
     let default =
@@ -187,7 +187,7 @@ fn parse_variable_def_id(id: &AST, it: &mut LexIterator) -> ParseResult {
     let forward = it.parse_vec_if(&Token::Forward, &parse_forward, "definition raises", id.pos)?;
     let (mutable, var, ty) = match &id.node {
         Node::ExpressionType { expr, mutable, ty } => (*mutable, expr.clone(), ty.clone()),
-        _ => return Err(custom("Expected expression type in variable definition", id.pos)),
+        _ => return Err(Box::from(custom("Expected expression type in variable definition", id.pos))),
     };
 
     let end = match (&expression, &forward.last()) {

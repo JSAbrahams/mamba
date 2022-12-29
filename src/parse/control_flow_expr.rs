@@ -13,7 +13,7 @@ pub fn parse_cntrl_flow_expr(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::If => parse_if(it),
             Token::Match => parse_match(it),
-            _ => Err(expected_one_of(&[Token::If, Token::Match], lex, "control flow expression"))
+            _ => Err(Box::from(expected_one_of(&[Token::If, Token::Match], lex, "control flow expression")))
         },
         &[Token::If, Token::Match],
         "control flow expression",
@@ -93,7 +93,7 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 mod test {
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
-    use crate::parse::result::ParseErr;
+    use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
     #[test]
@@ -145,7 +145,7 @@ mod test {
     }
 
     #[test]
-    fn if_expression() -> Result<(), ParseErr> {
+    fn if_expression() -> ParseResult<()> {
         let source = String::from("if a then\n    b\n");
         let ast = parse_direct(&source)?;
 
@@ -166,7 +166,7 @@ mod test {
     }
 
     #[test]
-    fn if_else_expression() -> Result<(), ParseErr> {
+    fn if_else_expression() -> ParseResult<()> {
         let source = String::from("if a then\n    b\nelse\n    c");
         let ast = parse_direct(&source)?;
 

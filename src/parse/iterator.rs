@@ -51,8 +51,8 @@ impl<'a> LexIterator<'a> {
     pub fn eat(&mut self, token: &Token, err_msg: &str) -> ParseResult<Position> {
         match self.it.next() {
             Some(Lex { token: actual, pos }) if Token::same_type(actual, token) => Ok(*pos),
-            Some(lex) => Err(expected(token, lex, err_msg)),
-            None => Err(eof_expected_one_of(&[token.clone()], err_msg))
+            Some(lex) => Err(Box::from(expected(token, lex, err_msg))),
+            None => Err(Box::from(eof_expected_one_of(&[token.clone()], err_msg)))
         }
     }
 
@@ -85,7 +85,7 @@ impl<'a> LexIterator<'a> {
         cause: &str,
         start: Position,
     ) -> ParseResult<Box<AST>> {
-        parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
+        parse_fun(self).map_err(|err| Box::from(err.clone_with_cause(cause, start)))
     }
 
     pub fn parse_vec(
@@ -94,7 +94,7 @@ impl<'a> LexIterator<'a> {
         cause: &str,
         start: Position,
     ) -> ParseResult<Vec<AST>> {
-        parse_fun(self).map_err(|err| err.clone_with_cause(cause, start))
+        parse_fun(self).map_err(|err| Box::from(err.clone_with_cause(cause, start)))
     }
 
     pub fn parse_if(
@@ -136,7 +136,7 @@ impl<'a> LexIterator<'a> {
         eof_err_msg: &str,
     ) -> ParseResult {
         match self.it.peek().cloned() {
-            None => Err(eof_expected_one_of(eof_expected, eof_err_msg)),
+            None => Err(Box::from(eof_expected_one_of(eof_expected, eof_err_msg))),
             Some(lex) => match_fun(self, lex)
         }
     }
@@ -195,7 +195,7 @@ impl<'a> LexIterator<'a> {
     pub fn start_pos(&mut self, msg: &str) -> ParseResult<Position> {
         match self.it.peek() {
             Some(Lex { pos, .. }) => Ok(*pos),
-            None => Err(eof_expected_one_of(&[], &format!("start of a {}", msg)))
+            None => Err(Box::from(eof_expected_one_of(&[], &format!("start of a {}", msg))))
         }
     }
 }

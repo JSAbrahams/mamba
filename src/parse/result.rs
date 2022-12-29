@@ -13,7 +13,7 @@ use crate::parse::lex::token::Token;
 
 const SYNTAX_ERR_MAX_DEPTH: usize = 1;
 
-pub type ParseResult<T = Box<AST>> = Result<T, ParseErr>;
+pub type ParseResult<T = Box<AST>> = Result<T, Box<ParseErr>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseErr {

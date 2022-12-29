@@ -38,7 +38,7 @@ pub fn parse(input: &str) -> ParseResult {
     let statements = block::parse_statements(&mut iterator)?;
     if iterator.peek_if(&|lex| lex.token != Token::Eof) {
         if let Some(lex) = iterator.peek_next() {
-            return Err(expected(&Token::Eof, &lex, "end of file"));
+            return Err(Box::from(expected(&Token::Eof, &lex, "end of file")));
         }
     }
 

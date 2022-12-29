@@ -40,7 +40,7 @@ pub fn parse_class(it: &mut LexIterator) -> ParseResult {
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
-            _ => Err(expected(&Token::Id(String::new()), &lex.clone(), "parents"))
+            _ => Err(Box::from(expected(&Token::Id(String::new()), &lex.clone(), "parents")))
         })?;
     }
 
@@ -72,7 +72,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                 it.eat_if(&Token::Comma);
                 Ok(())
             }
-            _ => Err(expected_one_of(
+            _ => Err(Box::from(expected_one_of(
                 &[
                     Token::Id(String::new()),
                     Token::Str(String::new(), vec![]),
@@ -84,7 +84,7 @@ pub fn parse_parent(it: &mut LexIterator) -> ParseResult {
                 ],
                 lex,
                 "parent arguments",
-            ))
+            )))
         })?;
         it.eat(&Token::RRBrack, "parent arguments")?
     } else {
