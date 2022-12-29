@@ -32,7 +32,7 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) 
             },
             other => {
                 let msg = format!("Expected identifier but was {:?}", other);
-                return Err(UnimplementedErr::new(ast, &msg));
+                return Err(Box::from(UnimplementedErr::new(ast, &msg)));
             }
         },
         NodeTy::TypeFun { args, ret_ty } => {
@@ -54,7 +54,7 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) 
         }
         ty => {
             let msg = format!("Expected type: {:?}.", ty);
-            return Err(UnimplementedErr::new(ast, &msg));
+            return Err(Box::from(UnimplementedErr::new(ast, &msg)));
         }
     })
 }

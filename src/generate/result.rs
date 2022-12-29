@@ -7,7 +7,7 @@ use crate::common::position::Position;
 use crate::common::result::WithSource;
 use crate::generate::ast::node::Core;
 
-pub type GenResult<T = Core> = Result<T, UnimplementedErr>;
+pub type GenResult<T = Core> = Result<T, Box<UnimplementedErr>>;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 

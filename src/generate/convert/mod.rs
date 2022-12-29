@@ -87,8 +87,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             range: Box::from(convert_node(range, imp, state, ctx)?),
         },
 
-        NodeTy::ListBuilder { .. } => return Err(UnimplementedErr::new(ast, "list builder")),
-        NodeTy::SetBuilder { .. } => return Err(UnimplementedErr::new(ast, "set builder")),
+        NodeTy::ListBuilder { .. } => return Err(Box::from(UnimplementedErr::new(ast, "list builder"))),
+        NodeTy::SetBuilder { .. } => return Err(Box::from(UnimplementedErr::new(ast, "set builder"))),
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
@@ -241,7 +241,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         NodeTy::Generic { .. } => Core::Empty,
         NodeTy::Parent { .. } => convert_class(ast, imp, state, ctx)?,
 
-        NodeTy::Condition { .. } => return Err(UnimplementedErr::new(ast, "condition")),
+        NodeTy::Condition { .. } => return Err(Box::from(UnimplementedErr::new(ast, "condition"))),
 
         NodeTy::With { resource, alias: Some((alias, ..)), expr } => Core::WithAs {
             resource: Box::from(convert_node(resource, imp, state, ctx)?),

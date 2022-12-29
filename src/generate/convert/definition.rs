@@ -96,13 +96,13 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                         },
                         other => {
                             let msg = format!("Expected function identifier, was {:?}", other);
-                            return Err(UnimplementedErr::new(id, &msg));
+                            return Err(Box::from(UnimplementedErr::new(id, &msg)));
                         }
                     };
 
                     Core::FunDef { dec, id, arg, ty, body }
                 }),
-                _ => Err(UnimplementedErr::new(id, "Non-id function")),
+                _ => Err(Box::from(UnimplementedErr::new(id, "Non-id function"))),
             }
         }
         NodeTy::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {
@@ -122,7 +122,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
         }),
         definition => {
             let msg = format!("Expected definition: {:?}", definition);
-            Err(UnimplementedErr::new(ast, &msg))
+            Err(Box::from(UnimplementedErr::new(ast, &msg)))
         }
     }
 }

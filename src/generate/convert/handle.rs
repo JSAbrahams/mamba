@@ -35,7 +35,7 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                             NodeTy::Case { cond, body } => (cond, body),
                             other => {
                                 let msg = format!("Expected case but was {:?}", other);
-                                return Err(UnimplementedErr::new(case, &msg));
+                                return Err(Box::from(UnimplementedErr::new(case, &msg)));
                             }
                         };
 
@@ -51,7 +51,7 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                             }),
                             other => {
                                 let msg = format!("Expected id type but was {:?}", other);
-                                return Err(UnimplementedErr::new(case, &msg));
+                                return Err(Box::from(UnimplementedErr::new(case, &msg)));
                             }
                         };
                     }
@@ -61,7 +61,7 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
         }
         other => {
             let msg = format!("Expected handle {:?}", other);
-            return Err(UnimplementedErr::new(ast, &msg));
+            return Err(Box::from(UnimplementedErr::new(ast, &msg)));
         }
     })
 }
