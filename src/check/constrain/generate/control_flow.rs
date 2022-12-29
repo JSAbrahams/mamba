@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
@@ -43,7 +43,6 @@ pub fn gen_flow(
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
-            constr.new_set(true);
             let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             generate(cond, env, ctx, constr)?;
@@ -60,15 +59,13 @@ pub fn gen_flow(
                 let then = Expected::try_from((then, &then_env.var_mappings))?;
                 let el = Expected::try_from((el, &else_env.var_mappings))?;
 
-                constr.add_var("if then branch", &if_expr, &then, ConstrVariant::default());
-                constr.add_var("if else branch", &if_expr, &el, ConstrVariant::default());
+                constr.add("if then branch", &if_expr, &then);
+                constr.add("if else branch", &if_expr, &el);
             }
 
-            constr.exit_set(ast.pos)?;
             Ok(env.union(&then_env.intersect(&else_env)))
         }
         Node::IfElse { cond, then, .. } => {
-            constr.new_set(true);
             let left = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
 
@@ -76,7 +73,6 @@ pub fn gen_flow(
             constr.new_set(true);
             generate(then, env, ctx, constr)?;
             constr.exit_set(then.pos)?;
-            constr.exit_set(cond.pos)?;
             Ok(env.clone())
         }
 

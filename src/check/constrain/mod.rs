@@ -47,7 +47,7 @@ mod tests {
         let ast = parse(src).unwrap();
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
 
-        assert_eq!(finished.len(), 4);
+        assert_eq!(finished.len(), 5);
         let pos_20 = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 33));
         assert_eq!(finished[&pos_20], Name::from("Int"));
         let pos_10 = Position::new(CaretPos::new(1, 23), CaretPos::new(1, 25));
@@ -57,6 +57,9 @@ mod tests {
 
         let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 33));
         assert_eq!(finished[&pos_if], Name::from("Int"));
+
+        let pos_var = Position::new(CaretPos::new(1, 5), CaretPos::new(1, 6));
+        assert_eq!(finished[&pos_var], Name::from("Int"));
     }
 
     #[test]
