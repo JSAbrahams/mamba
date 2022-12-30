@@ -1,0 +1,7 @@
+def x := [0, "asdf", 51]
+
+def y := x[0]
+
+def f(x: Int) -> Int => x + 5
+
+f(y)

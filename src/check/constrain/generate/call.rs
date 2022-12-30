@@ -11,7 +11,6 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
-use crate::check::constrain::generate::collection::constr_col;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
@@ -121,14 +120,22 @@ pub fn gen_call(
             );
 
             let (temp_type, env) = env.temp_var();
-            let name = Name::from(temp_type.as_str());
+            let temp_collection_type = Type { name: Name::from(temp_type.as_str()) };
+
+            let exp_col = Collection { ty: Box::from(Expected::new(ast.pos, &temp_collection_type)) };
+            let exp_col = Expected::new(ast.pos, &exp_col);
+            constr.add("type of indexed collection",
+                       &exp_col,
+                       &Expected::try_from((item, &env.var_mappings))?,
+            );
+
+            // Must be after above constraint
             constr.add(
                 "index of collection",
-                &Expected::new(ast.pos, &Type { name: name.clone() }),
+                &Expected::new(ast.pos, &temp_collection_type),
                 &Expected::try_from((ast, &env.var_mappings))?,
             );
 
-            constr_col(item, &env, constr, Some(name))?;
             generate(item, &env, ctx, constr)?;
             Ok(env.clone())
         }
