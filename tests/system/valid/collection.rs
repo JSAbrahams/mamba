@@ -3,6 +3,16 @@ use mamba::Arguments;
 use crate::system::{OutTestRet, test_directory, test_directory_args};
 
 #[test]
+fn infer_collection_type() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "infer_collection_type")
+}
+
+#[test]
+fn infer_collection_type_for_fun() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "infer_collection_type_for_fun")
+}
+
+#[test]
 #[ignore] // No list builder construct yet
 fn list_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "list")
