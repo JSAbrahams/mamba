@@ -64,7 +64,7 @@ pub trait ColType {
 #[derive(Debug, Clone, Eq)]
 pub struct Name {
     pub names: HashSet<TrueName>,
-    pub any: bool,
+    pub is_interchangeable: bool,
 }
 
 impl Any for Name {
@@ -173,7 +173,7 @@ impl Union<Name> for Name {
             names
         };
 
-        Name { names, any: self.any || name.any }
+        Name { names, is_interchangeable: self.is_interchangeable || name.is_interchangeable }
     }
 }
 
@@ -241,7 +241,7 @@ impl Display for Name {
 impl From<&TrueName> for Name {
     fn from(name: &TrueName) -> Self {
         let names: HashSet<TrueName> = HashSet::from_iter(vec![name.clone()]);
-        Name { names, any: false }
+        Name { names, is_interchangeable: false }
     }
 }
 
@@ -262,9 +262,9 @@ impl IsSuperSet<Name> for Name {
             let any_superset: Vec<bool> =
                 self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
 
-            if !any_superset.clone().iter().any(|b| *b) && !other.any {
+            if !any_superset.clone().iter().any(|b| *b) && !other.is_interchangeable {
                 return Ok(false);
-            } else if any_superset.clone().iter().any(|b| *b) && other.any {
+            } else if any_superset.clone().iter().any(|b| *b) && other.is_interchangeable {
                 return Ok(true);
             }
         }
@@ -293,7 +293,7 @@ impl Empty for Name {
     }
 
     fn empty() -> Name {
-        Name { names: HashSet::new(), any: false }
+        Name { names: HashSet::new(), is_interchangeable: false }
     }
 }
 
@@ -301,7 +301,7 @@ impl Substitute for Name {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
-        Ok(Name { names, any: self.any })
+        Ok(Name { names, is_interchangeable: self.is_interchangeable })
     }
 }
 
@@ -322,8 +322,8 @@ impl Name {
 
     /// Any means that if one check if another [is_superset_of] self, then it will be true if it is
     /// just a superset of one.
-    pub fn as_any(&self) -> Self {
-        Name { any: true, ..self.clone() }
+    pub fn is_interchangeable(&self) -> Self {
+        Name { is_interchangeable: true, ..self.clone() }
     }
 
     pub fn contains(&self, item: &TrueName) -> bool {
@@ -402,7 +402,7 @@ mod tests {
 
     #[test]
     fn is_superset_any_only_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).as_any();
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable();
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn is_superset_any_no_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).as_any();
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable();
         let union_2 = Name::from(FLOAT);
 
         let ctx = Context::default().into_with_primitives().unwrap();

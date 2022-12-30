@@ -171,7 +171,7 @@ impl From<&TrueName> for StringName {
 impl From<&Vec<TrueName>> for Name {
     fn from(names: &Vec<TrueName>) -> Self {
         let names: HashSet<TrueName> = HashSet::from_iter(names.iter().cloned());
-        Name { names, any: false }
+        Name { names, is_interchangeable: false }
     }
 }
 

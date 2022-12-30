@@ -22,7 +22,7 @@ impl TryFrom<&AST> for Name {
         } else {
             vec![TrueName::try_from(ast)?].into_iter().collect::<HashSet<_>>()
         };
-        Ok(Name { names, any: false })
+        Ok(Name { names, is_interchangeable: false })
     }
 }
 
