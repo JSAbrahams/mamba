@@ -1,6 +1,7 @@
 pub mod access;
 pub mod call;
 pub mod class;
+pub mod collection;
 pub mod control_flow;
 pub mod definition;
 pub mod error;
