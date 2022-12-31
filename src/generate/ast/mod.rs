@@ -73,7 +73,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         Core::Str { string } => format!("\"{string}\""),
         Core::FStr { string } => format!("f\"{string}\""),
         Core::Int { int } => int.clone(),
-        Core::ENum { num, exp } => format!("({} * 10 ** {})", num, exp),
+        Core::ENum { num, exp } => format!("({num} * 10 ** {exp})"),
         Core::Float { float } => float.clone(),
         Core::Bool { boolean } => String::from(if *boolean { "True" } else { "False" }),
 
@@ -86,7 +86,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
         Core::FunDef { dec, id, arg, ty, body } => {
-            let dec: Vec<Core> = dec.iter().map(|d| Core::Id { lit: format!("@{}", d) }).collect();
+            let dec: Vec<Core> = dec.iter().map(|d| Core::Id { lit: format!("@{d}") }).collect();
             format!(
                 "{}{}def {id}({}){}: {}\n",
                 if dec.is_empty() { String::from("") } else { newline_delimited(&dec, ind - 1) },
