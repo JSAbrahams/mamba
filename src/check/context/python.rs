@@ -16,9 +16,8 @@ use crate::check::result::{TypeErr, TypeResult};
 pub fn python_files(
     python_dir: &Path
 ) -> TypeResult<(HashSet<GenericClass>, HashSet<GenericField>, HashSet<GenericFunction>)> {
-    let mut types = vec![];
-    let mut fields = vec![];
-    let mut functions = vec![];
+    let mut types = HashSet::new();
+    let (mut fields, mut functions) = (HashSet::new(), HashSet::new());
 
     let entries = fs::read_dir(python_dir)
         .map_err(|io_err| TypeErr::new_no_pos(io_err.to_string().as_str()))?;
@@ -44,25 +43,27 @@ pub fn python_files(
 
         for statement in statements {
             match &statement {
-                Statement::Assignment(left, _) => fields
-                    .append(&mut GenericFields::from((left, &None)).fields.into_iter().collect()),
-                Statement::TypedAssignment(left, ty, _) => fields
-                    .append(&mut GenericFields::from((left, &Some(ty.clone()))).fields.into_iter().collect()),
-                Statement::Compound(compound_stmt) => match compound_stmt.deref() {
-                    CompoundStatement::Funcdef(func_def) =>
-                        functions.push(GenericFunction::from(func_def)),
-                    CompoundStatement::Classdef(class_def) =>
-                        types.push(GenericClass::try_from(class_def)?),
-                    _ => {}
-                },
+                Statement::Assignment(left, _) =>
+                    GenericFields::from((left, &None)).fields.into_iter().for_each(|field| {
+                        fields.insert(field);
+                    }),
+                Statement::TypedAssignment(left, ty, _) =>
+                    GenericFields::from((left, &Some(ty.clone()))).fields.into_iter().for_each(|field| {
+                        fields.insert(field);
+                    }),
+                Statement::Compound(compound_stmt) => {
+                    match compound_stmt.deref() {
+                        CompoundStatement::Funcdef(func_def) =>
+                            functions.insert(GenericFunction::from(func_def)),
+                        CompoundStatement::Classdef(class_def) =>
+                            types.insert(GenericClass::try_from(class_def)?),
+                        _ => { false }
+                    };
+                }
                 _ => {}
             }
         }
     }
 
-    Ok((
-        types.into_iter().collect::<HashSet<_>>(),
-        fields.into_iter().collect::<HashSet<_>>(),
-        functions.into_iter().collect::<HashSet<_>>()
-    ))
+    Ok((types, fields, functions))
 }

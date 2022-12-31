@@ -42,28 +42,25 @@ impl TryFrom<&Classdef> for GenericClass {
     type Error = Vec<TypeErr>;
 
     fn try_from(class_def: &Classdef) -> TypeResult<GenericClass> {
-        let mut functions = HashSet::new();
-        let mut fields = HashSet::new();
+        let (mut functions, mut fields) = (HashSet::new(), HashSet::new());
         let generics = GenericParameters::from(&class_def.arguments).parameters;
 
-        for statement in &class_def.code {
-            match statement {
-                Statement::Assignment(variables, _) => {
-                    let gen_fields = GenericFields::from((variables, &None)).fields;
-                    fields = fields.union(&gen_fields).cloned().collect();
-                }
-                Statement::TypedAssignment(variables, ty, _) => {
-                    let gen_fields = GenericFields::from((variables, &Some(ty.clone()))).fields;
-                    fields = fields.union(&gen_fields).cloned().collect();
-                }
-                Statement::Compound(compound) => {
-                    if let CompoundStatement::Funcdef(func_def) = compound.deref() {
-                        functions.insert(GenericFunction::from(func_def));
-                    }
-                }
-                _ => {}
+        class_def.code.iter().for_each(|statement| match statement {
+            Statement::Assignment(variables, _) => {
+                let gen_fields = GenericFields::from((variables, &None)).fields;
+                fields = fields.union(&gen_fields).cloned().collect();
             }
-        }
+            Statement::TypedAssignment(variables, ty, _) => {
+                let gen_fields = GenericFields::from((variables, &Some(ty.clone()))).fields;
+                fields = fields.union(&gen_fields).cloned().collect();
+            }
+            Statement::Compound(compound) => {
+                if let CompoundStatement::Funcdef(func_def) = compound.deref() {
+                    functions.insert(GenericFunction::from(func_def));
+                }
+            }
+            _ => {}
+        });
 
         let generic_names: Vec<Name> = generics.iter().map(|g| Name::from(&g.name)).collect();
         let class = StringName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
@@ -73,7 +70,7 @@ impl TryFrom<&Classdef> for GenericClass {
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
-            .find(|f| f.name == StringName::from(function::INIT))
+            .find(|f| f.name == StringName::from(INIT))
             .map_or(vec![], |f| f.arguments.clone());
 
         Ok(GenericClass {
