@@ -328,5 +328,5 @@ fn impl_bool_op(
 }
 
 fn bin_op(left: &AST, right: &AST, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
-    gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)
+    gen_vec(&[right.clone(), left.clone()], env, false, ctx, constr)
 }

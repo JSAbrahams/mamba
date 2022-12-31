@@ -89,8 +89,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             range: Box::from(convert_node(range, imp, state, ctx)?),
         },
 
-        NodeTy::ListBuilder { .. } => convert_builder(ast, imp, &state, ctx)?,
-        NodeTy::SetBuilder { .. } => convert_builder(ast, imp, &state, ctx)?,
+        NodeTy::ListBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
+        NodeTy::SetBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
