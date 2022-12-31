@@ -1,5 +1,6 @@
 use std::fmt::Write;
 
+use crate::common::delimit::custom_delimited;
 use crate::generate::ast::node::Core;
 
 pub mod node;
@@ -145,7 +146,8 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{} for {}", to_py(expr, ind), to_py(col, ind))
         }
         Core::Comprehension { expr, col, conds } => {
-            format!("{} for {} if {}", to_py(expr, ind), to_py(col, ind), comma_delimited(conds, ind))
+            let conds: Vec<String> = conds.iter().map(|cond| to_py(cond, ind)).collect();
+            format!("{} for {} if {}", to_py(expr, ind), to_py(col, ind), custom_delimited(conds, " and ", ""))
         }
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
