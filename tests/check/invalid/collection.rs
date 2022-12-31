@@ -4,6 +4,18 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn builder_illegal_op_cond() {
+    let source = resource_content(false, &["type", "collection"], "builder_illegal_op_cond.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn builder_illegal_op_not_bool() {
+    let source = resource_content(false, &["type", "collection"], "builder_illegal_op_not_bool.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn builder_with_cond_not_boolean() {
     let source = resource_content(false, &["type", "collection"], "builder_with_cond_not_boolean.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

@@ -33,8 +33,6 @@ pub fn gen_coll(
         Node::SetBuilder { item, conditions } | Node::ListBuilder { item, conditions } => {
             let conds_env = generate(item, &env.is_def_mode(true), ctx, constr)?;
             if let Some(cond) = conditions.first() {
-                generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
-
                 if let Node::In { left, right } = &cond.node {
                     let item = Expected::try_from((left, &env.var_mappings))?;
                     let col_exp = Expected::new(right.pos, &Collection {
@@ -47,6 +45,7 @@ pub fn gen_coll(
                     return Err(vec![TypeErr::new(cond.pos, &msg)]);
                 }
 
+                generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
                 if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
                     for cond in conditions {
                         generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
