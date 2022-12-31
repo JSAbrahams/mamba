@@ -13,7 +13,6 @@ fn infer_collection_type_for_fun() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // No list builder construct yet
 fn list_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "list")
 }
@@ -25,7 +24,6 @@ fn map_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // No set builder construct yet
 fn set_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "set")
 }

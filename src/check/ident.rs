@@ -136,7 +136,10 @@ impl TryFrom<&AST> for Identifier {
                     elements.iter().map(Identifier::try_from).collect::<Result<_, _>>()?;
                 Ok(Identifier::from(&elements))
             }
-            _ => Err(vec![TypeErr::new(ast.pos, "Expected id or tuple of id's")]),
+            _ => {
+                let msg = format!("Expected id or tuple of id's, was {}", ast.node);
+                Err(vec![TypeErr::new(ast.pos, &msg)])
+            }
         }
     }
 }

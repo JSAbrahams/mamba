@@ -1,0 +1,5 @@
+g = [ 1, 2 ]
+h = [ 4, 9 * 9 % 3 ]
+i = [ x for x in h if x > 0 ]
+j = [ (x, 0) for x in h if x > 0 ]
+k = [ x ** 2 for x in range(0, 10 + 1, 1) ]

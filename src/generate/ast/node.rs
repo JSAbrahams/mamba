@@ -31,6 +31,7 @@ pub enum Core {
     Bool { boolean: bool },
     Tuple { elements: Vec<Core> },
     TupleLiteral { elements: Vec<Core> },
+    Comprehension { expr: Box<Core>, col: Box<Core>, conds: Vec<Core> },
     Set { elements: Vec<Core> },
     List { elements: Vec<Core> },
     Index { item: Box<Core>, range: Box<Core> },

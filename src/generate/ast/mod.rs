@@ -142,6 +142,13 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{}({})", to_py(function, ind), comma_delimited(args, ind))
         }
 
+        Core::Comprehension { expr, col, conds } if conds.is_empty() => {
+            format!("{} for {}", to_py(expr, ind), to_py(col, ind))
+        }
+        Core::Comprehension { expr, col, conds } => {
+            format!("{} for {} if {}", to_py(expr, ind), to_py(col, ind), comma_delimited(conds, ind))
+        }
+
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
         Core::TupleLiteral { elements } => comma_delimited(elements, ind),
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),

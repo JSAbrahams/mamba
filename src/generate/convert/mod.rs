@@ -4,6 +4,7 @@ use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
 use crate::generate::ast::node::{Core, CoreOp};
+use crate::generate::convert::builder::convert_builder;
 use crate::generate::convert::call::convert_call;
 use crate::generate::convert::class::convert_class;
 use crate::generate::convert::common::convert_vec;
@@ -15,6 +16,7 @@ use crate::generate::convert::state::{Imports, State};
 use crate::generate::convert::ty::convert_ty;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
+mod builder;
 mod call;
 mod class;
 mod common;
@@ -87,8 +89,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             range: Box::from(convert_node(range, imp, state, ctx)?),
         },
 
-        NodeTy::ListBuilder { .. } => return Err(Box::from(UnimplementedErr::new(ast, "list builder"))),
-        NodeTy::SetBuilder { .. } => return Err(Box::from(UnimplementedErr::new(ast, "set builder"))),
+        NodeTy::ListBuilder { .. } => convert_builder(ast, imp, &state, ctx)?,
+        NodeTy::SetBuilder { .. } => convert_builder(ast, imp, &state, ctx)?,
 
         NodeTy::ReturnEmpty => Core::Return { expr: Box::from(Core::None) },
         NodeTy::Return { expr } if state.is_remove_last_ret => convert_node(expr, imp, &state.remove_ret(false), ctx)?,
