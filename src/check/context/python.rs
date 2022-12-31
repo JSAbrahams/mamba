@@ -32,7 +32,7 @@ pub fn python_files(
         let mut python_src = String::new();
         match File::open(python_src_path) {
             Ok(mut path) => path.read_to_string(&mut python_src).map_err(|err| {
-                TypeErr::new_no_pos(format!("Unable to read python file: {:?}", err).as_str())
+                TypeErr::new_no_pos(&format!("Unable to read python file: {err:?}"))
             })?,
             Err(_) => return Err(vec![TypeErr::new_no_pos("primitive does not exist")])
         };
