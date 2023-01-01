@@ -732,7 +732,7 @@ mod tests {
             panic!("Expected except case but was {:?}", except[0])
         };
 
-        assert_eq!(*id, Box::from(Core::Id { lit: String::from("err") }));
+        assert_eq!(*id, Some(Box::from(Core::Id { lit: String::from("err") })));
         assert_eq!(
             *class,
             Some(Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }))

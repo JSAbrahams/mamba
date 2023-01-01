@@ -310,12 +310,17 @@ fn to_py(core: &Core, ind: usize) -> String {
             newline_if_body(attempt, ind),
             newline_delimited(except, ind)
         ),
-        Core::Except { id, class, body } => format!(
-            "except {} as {}: {}",
-            if let Some(class) = class { to_py(class, ind) } else { String::from("Exception") },
-            to_py(id, ind),
-            newline_if_body(body, ind)
-        ),
+        Core::Except { id, class, body } => {
+            let id = id.as_ref().map(|id| to_py(&id, ind));
+            let class = class.as_ref().map(|class| to_py(&class, ind));
+            let body = newline_if_body(body, ind);
+
+            match (id, class) {
+                (Some(id), Some(class)) => format!("except {class} as {id}: {body}"),
+                (None, Some(class)) => format!("except {class}: {body}"),
+                _ => format!("except: {body}")
+            }
+        }
 
         Core::Raise { error } => format!("raise {}", to_py(error, ind)),
     }

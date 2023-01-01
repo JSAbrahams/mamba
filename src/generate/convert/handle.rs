@@ -39,14 +39,18 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                         };
 
                         match &cond.node {
-                            NodeTy::ExpressionType { expr, ty, .. } => except.push(Core::Except {
-                                id: Box::from(convert_node(expr, imp, state, ctx)?),
-                                class: if let Some(ty) = ty {
-                                    Some(Box::from(convert_node(ty, imp, state, ctx)?))
-                                } else {
-                                    None
-                                },
-                                body: Box::from(convert_node(body, imp, &assign_state, ctx)?),
+                            NodeTy::ExpressionType { expr, ty, .. } => except.push(if let Some(ty) = ty {
+                                Core::Except {
+                                    id: Some(Box::from(convert_node(expr, imp, state, ctx)?)),
+                                    class: Some(Box::from(convert_node(ty, imp, state, ctx)?)),
+                                    body: Box::from(convert_node(body, imp, &assign_state, ctx)?),
+                                }
+                            } else {
+                                Core::Except {
+                                    id: None,
+                                    class: Some(Box::from(convert_node(expr, imp, state, ctx)?)),
+                                    body: Box::from(convert_node(body, imp, &assign_state, ctx)?),
+                                }
                             }),
                             other => {
                                 let msg = format!("Expected id type, was {other:?}");

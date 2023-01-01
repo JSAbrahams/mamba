@@ -80,7 +80,7 @@ pub enum Core {
     None,
     Empty,
     TryExcept { setup: Option<Box<Core>>, attempt: Box<Core>, except: Vec<Core> },
-    Except { id: Box<Core>, class: Option<Box<Core>>, body: Box<Core> },
+    Except { id: Option<Box<Core>>, class: Option<Box<Core>>, body: Box<Core> },
     Raise { error: Box<Core> },
     With { resource: Box<Core>, expr: Box<Core> },
     WithAs { resource: Box<Core>, alias: Box<Core>, expr: Box<Core> },

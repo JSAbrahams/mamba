@@ -24,10 +24,9 @@ pub fn gen_flow(
                 Node::Case { cond, .. } => {
                     match &cond.node {
                         Node::ExpressionType { ty: Some(ty), .. } => if let Node::Type { .. } = &ty.node {
-                            if let Ok(name) = TrueName::try_from(ty) {
-                                Some(name)
-                            } else { None }
+                            TrueName::try_from(ty).ok()
                         } else { None }
+                        Node::Id { lit } => Some(TrueName::from(lit.as_str())),
                         _ => None
                     }
                 }
