@@ -11,25 +11,19 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
             let cond = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None), ctx)?);
 
             match el {
-                Some(el) => match (&then.node, &el.node) {
-                    (NodeTy::Block { .. }, _) | (_, NodeTy::Block { .. }) => Core::IfElse {
-                        cond,
-                        then: Box::from(convert_node(then, imp, state, ctx)?),
-                        el: Box::from(convert_node(el, imp, state, ctx)?),
-                    },
-                    (..) if ast.ty.is_some() => {
-                        let state = state
-                            .is_last_must_be_ret(false)
-                            .remove_ret(true)
-                            .must_assign_to(None);
+                Some(el) => if ast.ty.is_some() && is_valid_in_ternary(then, el) {
+                    let state = state
+                        .is_last_must_be_ret(false)
+                        .remove_ret(true)
+                        .must_assign_to(None);
 
-                        Core::Ternary {
-                            cond,
-                            then: Box::from(convert_node(then, imp, &state, ctx)?),
-                            el: Box::from(convert_node(el, imp, &state, ctx)?),
-                        }
+                    Core::Ternary {
+                        cond,
+                        then: Box::from(convert_node(then, imp, &state, ctx)?),
+                        el: Box::from(convert_node(el, imp, &state, ctx)?),
                     }
-                    _ => Core::IfElse {
+                } else {
+                    Core::IfElse {
                         cond,
                         then: Box::from(convert_node(then, imp, state, ctx)?),
                         el: Box::from(convert_node(el, imp, state, ctx)?),
@@ -67,7 +61,6 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
             col: Box::from(convert_node(col, imp, state, ctx)?),
             body: Box::from(convert_node(body, imp, state, ctx)?),
         },
-
         NodeTy::Break => Core::Break,
         NodeTy::Continue => Core::Continue,
         other => {
@@ -75,6 +68,11 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
             return Err(Box::from(UnimplementedErr::new(ast, &msg)));
         }
     })
+}
+
+fn is_valid_in_ternary(then: &ASTTy, el: &ASTTy) -> bool {
+    !matches!(then.node, NodeTy::Block { .. } | NodeTy::Raise { ..  })
+        && !matches!(el.node, NodeTy::Block { .. } | NodeTy::Raise { ..  })
 }
 
 #[cfg(test)]

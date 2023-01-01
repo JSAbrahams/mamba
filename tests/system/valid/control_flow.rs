@@ -21,6 +21,11 @@ fn for_statements() -> OutTestRet {
 }
 
 #[test]
+fn handle_in_if() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "handle_in_if")
+}
+
+#[test]
 fn for_over_collection_of_tuple() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "for_over_collection_of_tuple")
 }
@@ -60,6 +65,11 @@ fn if_two_types() -> OutTestRet {
 #[test]
 fn match_dont_remove_shadowed() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "match_dont_remove_shadowed")
+}
+
+#[test]
+fn matches_in_if() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "matches_in_if")
 }
 
 #[test]
