@@ -42,7 +42,6 @@ pub enum Node {
     VariableDef { mutable: bool, var: Box<AST>, ty: OptAST, expr: OptAST, forward: Vec<AST> },
     FunDef { pure: bool, id: Box<AST>, args: Vec<AST>, ret: OptAST, raises: Vec<AST>, body: OptAST },
     AnonFun { args: Vec<AST>, body: Box<AST> },
-    Raises { expr_or_stmt: Box<AST>, errors: Vec<AST> },
     Raise { error: Box<AST> },
     Handle { expr_or_stmt: Box<AST>, cases: Vec<AST> },
     With { resource: Box<AST>, alias: Option<(Box<AST>, bool, Option<Box<AST>>)>, expr: Box<AST> },

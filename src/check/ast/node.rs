@@ -72,10 +72,6 @@ impl From<&Node> for NodeTy {
                 args: args.iter().map(ASTTy::from).collect(),
                 body: Box::from(ASTTy::from(body)),
             },
-            Node::Raises { expr_or_stmt, errors } => NodeTy::Raises {
-                expr_or_stmt: Box::from(ASTTy::from(expr_or_stmt)),
-                errors: errors.iter().map(ASTTy::from).collect(),
-            },
             Node::Raise { error } => NodeTy::Raise { error: Box::from(ASTTy::from(error)) },
             Node::Handle { expr_or_stmt, cases } => NodeTy::Handle {
                 expr_or_stmt: Box::from(ASTTy::from(expr_or_stmt)),

@@ -255,9 +255,7 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             expr: Box::from(convert_node(expr, imp, state, ctx)?),
         },
 
-        NodeTy::Raises { .. } | NodeTy::Raise { .. } | NodeTy::Handle { .. } => {
-            convert_handle(ast, imp, state, ctx)?
-        }
+        NodeTy::Raise { .. } | NodeTy::Handle { .. } => convert_handle(ast, imp, state, ctx)?,
 
         NodeTy::Pass => Core::Pass,
         _ => Core::Empty,
@@ -439,15 +437,6 @@ mod tests {
                 alias: vec![Core::Id { lit: String::from("b") }],
             }
         );
-    }
-
-    #[test]
-    fn raises_empty_verify() {
-        let type_def = to_pos!(Node::Raises {
-            expr_or_stmt: Box::from(to_pos!(Node::Id { lit: String::from("a") })),
-            errors: vec![]
-        });
-        assert_eq!(gen(&ASTTy::from(&type_def)).unwrap(), Core::Id { lit: String::from("a") });
     }
 
     macro_rules! verify {
