@@ -197,14 +197,13 @@ mod test {
 
         assert_eq!(asts.len(), 1);
         let reassignment = asts.first().expect("reassignment");
-        let (left, right, op) = match &reassignment.node {
-            Node::Reassign { left, right, op } => (left.clone(), right.clone(), op.clone()),
-            other => panic!("Expected reassignment, was {:?}", other),
+        let Node::Reassign { left, right, op } = &reassignment.node else {
+            panic!("Expected reassignment, was {:?}", reassignment)
         };
 
         assert_eq!(left.node, Node::Id { lit: String::from("a") });
         assert_eq!(right.node, Node::Int { lit: String::from("1") });
-        assert_eq!(op, NodeOp::Assign);
+        assert_eq!(*op, NodeOp::Assign);
     }
 
     #[test]
@@ -214,19 +213,18 @@ mod test {
 
         assert_eq!(asts.len(), 1);
         let reassignment = asts.first().expect("reassignment");
-        let (left, right, op) = match &reassignment.node {
-            Node::Reassign { left, right, op } => (left.clone(), right.clone(), op.clone()),
-            other => panic!("Expected reassignment, was {:?}", other),
+        let Node::Reassign { left, right, op } = &reassignment.node else {
+            panic!("Expected reassignment, was {:?}", reassignment)
         };
 
-        let (object, property) = match &left.node {
-            Node::PropertyCall { instance, property } => (instance.clone(), property.clone()),
-            other => panic!("Expected propertycall, was {:?}", other),
+        let Node::PropertyCall { instance, property } = &left.node else {
+            panic!("Expected propertycall, was {:?}", left)
         };
-        assert_eq!(object.node, Node::Id { lit: String::from("a") });
+
+        assert_eq!(instance.node, Node::Id { lit: String::from("a") });
         assert_eq!(property.node, Node::Id { lit: String::from("b") });
 
         assert_eq!(right.node, Node::Int { lit: String::from("1") });
-        assert_eq!(op, NodeOp::Assign);
+        assert_eq!(*op, NodeOp::Assign);
     }
 }
