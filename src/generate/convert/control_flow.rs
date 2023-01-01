@@ -70,7 +70,7 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
     })
 }
 
-fn is_valid_in_ternary(then: &Box<ASTTy>, el: &Box<ASTTy>) -> bool {
+fn is_valid_in_ternary(then: &ASTTy, el: &ASTTy) -> bool {
     !matches!(then.node, NodeTy::Block { .. } | NodeTy::Raise { ..  })
         && !matches!(el.node, NodeTy::Block { .. } | NodeTy::Raise { ..  })
 }
