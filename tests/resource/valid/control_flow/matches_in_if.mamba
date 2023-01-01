@@ -1,0 +1,7 @@
+def x:= if True then
+    match 10
+        2 => 3
+        _ => 4
+else
+    match 20
+        _ => 2
