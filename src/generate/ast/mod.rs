@@ -1,5 +1,6 @@
 use std::fmt::Write;
 
+use crate::common::delimit::custom_delimited;
 use crate::generate::ast::node::Core;
 
 pub mod node;
@@ -68,16 +69,16 @@ fn to_py(core: &Core, ind: usize) -> String {
             }
         }
         Core::ExpressionType { expr, ty } => format!("{}: {}", to_py(expr, ind), to_py(ty, ind)),
-        Core::DocStr { string } => format!("\"\"\"{}\"\"\"", string),
-        Core::Str { string } => format!("\"{}\"", string),
-        Core::FStr { string } => format!("f\"{}\"", string),
+        Core::DocStr { string } => format!("\"\"\"{string}\"\"\""),
+        Core::Str { string } => format!("\"{string}\""),
+        Core::FStr { string } => format!("f\"{string}\""),
         Core::Int { int } => int.clone(),
-        Core::ENum { num, exp } => format!("({} * 10 ** {})", num, exp),
+        Core::ENum { num, exp } => format!("({num} * 10 ** {exp})"),
         Core::Float { float } => float.clone(),
         Core::Bool { boolean } => String::from(if *boolean { "True" } else { "False" }),
 
         Core::FunDefOp { op, arg, ty, body } => {
-            let id = format!("{}", op);
+            let id = format!("{op}");
             let dec = vec![];
             to_py(
                 &Core::FunDef { dec, id, arg: arg.clone(), ty: ty.clone(), body: body.clone() },
@@ -85,12 +86,11 @@ fn to_py(core: &Core, ind: usize) -> String {
             )
         }
         Core::FunDef { dec, id, arg, ty, body } => {
-            let dec: Vec<Core> = dec.iter().map(|d| Core::Id { lit: format!("@{}", d) }).collect();
+            let dec: Vec<Core> = dec.iter().map(|d| Core::Id { lit: format!("@{d}") }).collect();
             format!(
-                "{}{}def {}({}){}: {}\n",
+                "{}{}def {id}({}){}: {}\n",
                 if dec.is_empty() { String::from("") } else { newline_delimited(&dec, ind - 1) },
                 if dec.is_empty() { String::from("") } else { indent(ind) },
-                id,
                 comma_delimited(arg, ind),
                 if let Some(ret_ty) = ty {
                     format!(" -> {}", to_py(ret_ty.as_ref(), ind))
@@ -102,7 +102,7 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
 
         Core::Assign { left, right, op } => {
-            format!("{} {} {}", to_py(left, ind), op, to_py(right, ind))
+            format!("{} {op} {}", to_py(left, ind), to_py(right, ind))
         }
         Core::VarDef { var, expr, ty } => format!(
             "{}{} = {}",
@@ -140,6 +140,14 @@ fn to_py(core: &Core, ind: usize) -> String {
         }
         Core::FunctionCall { function, args } => {
             format!("{}({})", to_py(function, ind), comma_delimited(args, ind))
+        }
+
+        Core::Comprehension { expr, col, conds } if conds.is_empty() => {
+            format!("{} for {}", to_py(expr, ind), to_py(col, ind))
+        }
+        Core::Comprehension { expr, col, conds } => {
+            let conds: Vec<String> = conds.iter().map(|cond| to_py(cond, ind)).collect();
+            format!("{} for {} if {}", to_py(expr, ind), to_py(col, ind), custom_delimited(conds, " and ", ""))
         }
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),

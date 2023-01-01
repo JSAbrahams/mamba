@@ -31,6 +31,7 @@ pub enum Core {
     Bool { boolean: bool },
     Tuple { elements: Vec<Core> },
     TupleLiteral { elements: Vec<Core> },
+    Comprehension { expr: Box<Core>, col: Box<Core>, conds: Vec<Core> },
     Set { elements: Vec<Core> },
     List { elements: Vec<Core> },
     Index { item: Box<Core>, range: Box<Core> },
@@ -110,7 +111,7 @@ impl TryFrom<(&ASTTy, &NodeOp)> for CoreOp {
             NodeOp::BLShift => Ok(CoreOp::BLShiftAssign),
             NodeOp::BRShift => Ok(CoreOp::BRShiftAssign),
             NodeOp::Assign => Ok(CoreOp::Assign),
-            op => Err(UnimplementedErr::new(ast, &format!("Reassign with {}", op)))
+            op => Err(UnimplementedErr::new(ast, &format!("Reassign with {op}")))
         }
     }
 }

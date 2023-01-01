@@ -133,9 +133,7 @@ pub fn gen_op(
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
             constr.add("binary logical op", &l_exp, &Expected::new(right.pos, &Expect::any()));
 
-            generate(right, env, ctx, constr)?;
-            generate(left, env, ctx, constr)?;
-            Ok(env.clone())
+            bin_op(left, right, env, ctx, constr)
         }
         Node::BLShift { left, right } | Node::BRShift { left, right } => {
             let l_exp = Expected::try_from((left, &env.var_mappings))?;
@@ -145,17 +143,13 @@ pub fn gen_op(
             let l_exp = Expected::try_from((right, &env.var_mappings))?;
             constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Type { name }));
 
-            generate(right, env, ctx, constr)?;
-            generate(left, &env, ctx, constr)?;
-            Ok(env.clone())
+            bin_op(left, right, env, ctx, constr)
         }
 
         Node::Is { left, right } | Node::IsN { left, right } => {
             let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
-            generate(right, env, ctx, constr)?;
-            generate(left, env, ctx, constr)?;
-            Ok(env.clone())
+            bin_op(left, right, env, ctx, constr)
         }
         Node::IsA { left, right } | Node::IsNA { left, right } => if let Node::Id { .. } = right.node {
             let class_name = TrueName::try_from(right)?;
@@ -192,9 +186,7 @@ pub fn gen_op(
                 &Expected::try_from((right, &env.var_mappings))?,
             ));
 
-            generate(left, env, ctx, constr)?;
-            generate(right, env, ctx, constr)?;
-            Ok(env.clone())
+            bin_op(left, right, env, ctx, constr)
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting operation or primitive")]),
@@ -290,9 +282,7 @@ fn impl_magic(
         ),
     );
 
-    generate(left, env, ctx, constr)?;
-    generate(right, env, ctx, constr)?;
-    Ok(env.clone())
+    gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)
 }
 
 fn impl_bool_op(
@@ -334,7 +324,9 @@ fn impl_bool_op(
         &Expected::new(ast.pos, &ty),
     );
 
-    generate(left, env, ctx, constr)?;
-    generate(right, env, ctx, constr)?;
-    Ok(env.clone())
+    bin_op(left, right, env, ctx, constr)
+}
+
+fn bin_op(left: &AST, right: &AST, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
+    gen_vec(&[right.clone(), left.clone()], env, false, ctx, constr)
 }

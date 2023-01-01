@@ -1,0 +1,4 @@
+def x := [1, 2, 3]
+def y := ["a", "b", "c"]
+
+def xy := [[(l, m) | l in x, l > 0] | a in y, m != "c" ]
