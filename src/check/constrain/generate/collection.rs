@@ -39,9 +39,7 @@ pub fn gen_coll(
                 };
 
                 let item = Expected::try_from((left, &env.var_mappings))?;
-                let col_exp = Expected::new(right.pos, &Collection {
-                    ty: Box::new(item),
-                });
+                let col_exp = Expected::new(right.pos, &Collection { ty: Box::new(item) });
                 let cond_exp = Expected::try_from((right, &env.var_mappings))?;
                 constr.add("comprehension collection type", &col_exp, &cond_exp);
 
