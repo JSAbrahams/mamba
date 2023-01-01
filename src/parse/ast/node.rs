@@ -72,8 +72,8 @@ impl Display for Node {
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
             Node::Int { lit } => lit.clone(),
-            Node::ENum { num, exp } => format!("{}E{}", num, exp),
-            Node::Str { lit, .. } => format!("\"{}\"", lit),
+            Node::ENum { num, exp } => format!("{num}E{exp}"),
+            Node::Str { lit, .. } => format!("\"{lit}\""),
             Node::DocStr { .. } => String::from("doc string"),
             Node::Bool { .. } => String::from("boolean"),
             Node::Add { left, right } => format!("{} + {}", left.node, right.node),
@@ -121,7 +121,7 @@ impl Display for Node {
             Node::QuestionOp { .. } => String::from("unsafe operator")
         };
 
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
