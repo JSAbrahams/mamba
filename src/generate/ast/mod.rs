@@ -316,7 +316,7 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("except {class} as {id}: {body}")
         }
         Core::Except { class, body } => {
-            let class = to_py(&class, ind);
+            let class = to_py(class, ind);
             let body = newline_if_body(body, ind);
             format!("except {class}: {body}")
         }
