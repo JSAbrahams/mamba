@@ -6,6 +6,11 @@ fn handle() -> OutTestRet {
 }
 
 #[test]
+fn handle_only_id() -> OutTestRet {
+    test_directory(true, &["error"], &["error", "target"], "handle_only_id")
+}
+
+#[test]
 fn exception() -> OutTestRet {
     test_directory(true, &["error"], &["error", "target"], "exception")
 }

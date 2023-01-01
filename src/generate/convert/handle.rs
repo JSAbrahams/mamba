@@ -39,15 +39,21 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                         };
 
                         match &cond.node {
-                            NodeTy::ExpressionType { expr, ty, .. } => except.push(Core::Except {
-                                id: Box::from(convert_node(expr, imp, state, ctx)?),
-                                class: if let Some(ty) = ty {
-                                    Some(Box::from(convert_node(ty, imp, state, ctx)?))
+                            NodeTy::ExpressionType { expr, ty, .. } => {
+                                let expr = Box::from(convert_node(expr, imp, state, ctx)?);
+                                let Some(ty) = ty else {
+                                    let msg = format!("Must have condition, was {cond:?}");
+                                    return Err(Box::from(UnimplementedErr::new(cond, &msg)));
+                                };
+                                let class = Box::from(convert_node(ty, imp, state, ctx)?);
+                                let body = Box::from(convert_node(body, imp, &assign_state, ctx)?);
+
+                                except.push(if *expr == Core::UnderScore {
+                                    Core::Except { class, body }
                                 } else {
-                                    None
-                                },
-                                body: Box::from(convert_node(body, imp, &assign_state, ctx)?),
-                            }),
+                                    Core::ExceptId { id: expr, class, body }
+                                });
+                            }
                             other => {
                                 let msg = format!("Expected id type, was {other:?}");
                                 return Err(Box::from(UnimplementedErr::new(case, &msg)));
