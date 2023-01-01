@@ -36,7 +36,6 @@ impl Display for Node {
             Node::VariableDef { .. } => String::from("variable definition"),
             Node::FunDef { .. } => String::from("function definition"),
             Node::AnonFun { .. } => String::from("anonymous function"),
-            Node::Raises { .. } => String::from("raises"),
             Node::Raise { .. } => String::from("raise"),
             Node::Handle { .. } => String::from("handle"),
             Node::With { .. } => String::from("with"),
@@ -73,8 +72,8 @@ impl Display for Node {
             Node::Block { .. } => String::from("Code block"),
             Node::Real { lit } => lit.clone(),
             Node::Int { lit } => lit.clone(),
-            Node::ENum { num, exp } => format!("{}E{}", num, exp),
-            Node::Str { lit, .. } => format!("\"{}\"", lit),
+            Node::ENum { num, exp } => format!("{num}E{exp}"),
+            Node::Str { lit, .. } => format!("\"{lit}\""),
             Node::DocStr { .. } => String::from("doc string"),
             Node::Bool { .. } => String::from("boolean"),
             Node::Add { left, right } => format!("{} + {}", left.node, right.node),
@@ -122,7 +121,7 @@ impl Display for Node {
             Node::QuestionOp { .. } => String::from("unsafe operator")
         };
 
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
@@ -175,10 +174,6 @@ impl Node {
             Node::AnonFun { args, body } => Node::AnonFun {
                 args: args.iter().map(|a| a.map(mapping)).collect(),
                 body: Box::from(body.map(mapping)),
-            },
-            Node::Raises { expr_or_stmt, errors } => Node::Raises {
-                expr_or_stmt: Box::from(expr_or_stmt.map(mapping)),
-                errors: errors.iter().map(|e| e.map(mapping)).collect(),
             },
             Node::Raise { error } => Node::Raise { error: Box::from(error.map(mapping)) },
             Node::Handle { expr_or_stmt, cases } => Node::Handle {
@@ -457,10 +452,6 @@ impl Node {
             (Node::AnonFun { args: la, body: lb }, Node::AnonFun { args: ra, body: rb }) => {
                 equal_vec(la, ra) && lb.same_value(rb)
             }
-            (
-                Node::Raises { expr_or_stmt: les, errors: le },
-                Node::Raises { expr_or_stmt: res, errors: re },
-            ) => les.same_value(res) && equal_vec(le, re),
             (Node::Raise { error: le }, Node::Raise { error: re }) => le.same_value(re),
             (
                 Node::Handle { expr_or_stmt: les, cases: lc },
@@ -990,10 +981,7 @@ mod test {
 
     #[test]
     fn anon_raise_same_value() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
         let second = Box::from(AST::new(Position::default(), Node::Break));
-
-        two_ast!(Node::Raises { errors: vec![*first.clone()], expr_or_stmt: second.clone() });
         two_ast!(Node::Raise { error: second.clone() });
     }
 
