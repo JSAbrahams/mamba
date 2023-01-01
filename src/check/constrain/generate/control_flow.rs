@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
@@ -20,18 +19,28 @@ pub fn gen_flow(
 ) -> Constrained {
     match &ast.node {
         Node::Handle { expr_or_stmt, cases } => {
-            let raises: HashSet<TrueName> = cases.iter().flat_map(|c| match &c.node {
-                Node::Case { cond, .. } => {
-                    match &cond.node {
-                        Node::ExpressionType { ty: Some(ty), .. } => if let Node::Type { .. } = &ty.node {
-                            TrueName::try_from(ty).ok()
-                        } else { None }
-                        Node::Id { lit } => Some(TrueName::from(lit.as_str())),
-                        _ => None
+            let (raises, errs): (Vec<Result<_, _>>, Vec<Result<_, _>>) = cases
+                .iter()
+                .map(|c| match &c.node {
+                    Node::Case { cond, .. } => {
+                        match &cond.node {
+                            Node::ExpressionType { ty: Some(ty), .. } => TrueName::try_from(ty)
+                                .map_err(|errs| errs.first().expect("At least one").clone()),
+                            other => {
+                                let msg = format!("Expected type identifier, was {other}.");
+                                Err(TypeErr::new(cond.pos, &msg))
+                            }
+                        }
                     }
-                }
-                _ => None
-            }).collect();
+                    other => Err(TypeErr::new(c.pos, &format!("Expected case, was {other}")))
+                })
+                .partition(Result::is_ok);
+
+            let raises = if errs.is_empty() {
+                raises.into_iter().map(Result::unwrap).collect()
+            } else {
+                return Err(errs.into_iter().map(Result::unwrap_err).collect());
+            };
 
             let raises_before = env.raises_caught.clone();
             let outer_env = generate(expr_or_stmt, &env.raises_caught(&raises), ctx, constr)?

@@ -4,6 +4,12 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn handle_only_id() {
+    let source = resource_content(false, &["type", "error"], "handle_only_id.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn unhandled_exception() {
     let source = resource_content(false, &["type", "error"], "unhandled_exception.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
