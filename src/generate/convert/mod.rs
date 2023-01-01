@@ -301,8 +301,12 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
             attempt: Box::from(append_assign(attempt, assign_to)),
             except: except.iter().map(|e| append_assign(e, assign_to)).collect(),
         },
-        Core::Except { id, class, body } => Core::Except {
+        Core::ExceptId { id, class, body } => Core::ExceptId {
             id: id.clone(),
+            class: class.clone(),
+            body: Box::from(append_assign(body, assign_to)),
+        },
+        Core::Except { class, body } => Core::Except {
             class: class.clone(),
             body: Box::from(append_assign(body, assign_to)),
         },
@@ -344,8 +348,12 @@ fn append_ret(core: &Core) -> Core {
             attempt: Box::from(append_ret(attempt)),
             except: except.iter().map(append_ret).collect(),
         },
-        Core::Except { id, class, body } => Core::Except {
+        Core::ExceptId { id, class, body } => Core::ExceptId {
             id: id.clone(),
+            class: class.clone(),
+            body: Box::from(append_ret(body)),
+        },
+        Core::Except { class, body } => Core::Except {
             class: class.clone(),
             body: Box::from(append_ret(body)),
         },
@@ -728,15 +736,12 @@ mod tests {
         assert_eq!(setup, None);
         assert_eq!(*attempt, Core::Id { lit: String::from("my_fun") });
         assert_eq!(except.len(), 1);
-        let Core::Except { id, class, body } = &except[0] else {
+        let Core::ExceptId { id, class, body } = &except[0] else {
             panic!("Expected except case but was {:?}", except[0])
         };
 
         assert_eq!(*id, Box::from(Core::Id { lit: String::from("err") }));
-        assert_eq!(
-            *class,
-            Some(Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }))
-        );
+        assert_eq!(*class, Box::from(Core::Type { lit: String::from("my_type"), generics: vec![] }));
         assert_eq!(*body, Box::from(Core::Int { int: String::from("9999") }));
     }
 }

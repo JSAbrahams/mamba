@@ -33,17 +33,15 @@ pub fn gen_coll(
         Node::SetBuilder { item, conditions } | Node::ListBuilder { item, conditions } => {
             let conds_env = generate(item, &env.is_def_mode(true), ctx, constr)?;
             if let Some(cond) = conditions.first() {
-                if let Node::In { left, right } = &cond.node {
-                    let item = Expected::try_from((left, &env.var_mappings))?;
-                    let col_exp = Expected::new(right.pos, &Collection {
-                        ty: Box::new(item),
-                    });
-                    let cond_exp = Expected::try_from((right, &env.var_mappings))?;
-                    constr.add("comprehension collection type", &col_exp, &cond_exp);
-                } else {
+                let Node::In { left, right } = &cond.node else {
                     let msg = format!("Expected in, was {}", cond.node);
                     return Err(vec![TypeErr::new(cond.pos, &msg)]);
-                }
+                };
+
+                let item = Expected::try_from((left, &env.var_mappings))?;
+                let col_exp = Expected::new(right.pos, &Collection { ty: Box::new(item) });
+                let cond_exp = Expected::try_from((right, &env.var_mappings))?;
+                constr.add("comprehension collection type", &col_exp, &cond_exp);
 
                 generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
                 if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
