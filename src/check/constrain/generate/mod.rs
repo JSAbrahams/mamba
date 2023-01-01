@@ -65,7 +65,7 @@ pub fn generate(
         AnonFun { .. } => gen_expr(ast, env, ctx, constr),
         Pass => gen_expr(ast, env, ctx, constr),
 
-        Raises { .. } | With { .. } => gen_resources(ast, env, ctx, constr),
+        With { .. } => gen_resources(ast, env, ctx, constr),
 
         SetBuilder { .. } | ListBuilder { .. } => gen_coll(ast, env, ctx, constr),
         Set { .. } | List { .. } | Tuple { .. } => gen_coll(ast, env, ctx, constr),

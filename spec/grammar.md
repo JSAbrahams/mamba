@@ -31,7 +31,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     block            ::= indent { expr-or-stmt } dedent
     
     expr-or-stmt     ::= ( statement | expression ) [ handle ] [ comment ]
-    statement        ::=  control-flow-stmt
+    statement        ::= control-flow-stmt
                       | definition
                       | reassignment
                       | type-def
@@ -59,7 +59,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     anon-fun         ::= "\" [ id-maybe-type { "," id-maybe-type } ] "=>" expression
     call             ::= expression [ ( "." | "?." ) ] id tuple
     
-    raises           ::= "raise" id { "," id }
+    raise            ::= "raise" id { "," id }
     handle           ::= "handle" newline match-cases
     
     collection       ::= tuple | set | list | map
@@ -78,7 +78,7 @@ The grammar of the language in Extended Backus-Naur Form (EBNF).
     variable-def     ::= [ "fin" ] ( id-maybe-type | collection ) [ ":=" expression ] [ forward ]
     operator-def     ::= [ "pure" ] overridable-op [ "(" [ id-maybe-type ] ")" ] "->" type 
                          [ "=>" ( expr-or-stmt | newline block ) ]
-    fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raises ] 
+    fun-def          ::= [ "pure" ] id fun-args [ "->" type ] [ raise ] 
                          [ "=>" ( expr-or-stmt | newline block ) ]
     fun-args         ::= "(" [ fun-arg ] { "," fun-arg } ")"
     fun-arg          ::= [ "vararg" ] ( id-maybe-type | literal ) [ ":=" expression ]

@@ -7,7 +7,6 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     Ok(match &ast.node {
-        NodeTy::Raises { expr_or_stmt, .. } => convert_node(expr_or_stmt, imp, state, ctx)?,
         NodeTy::Raise { error } => Core::Raise { error: Box::from(convert_node(error, imp, state, ctx)?) },
 
         NodeTy::Handle { expr_or_stmt, cases } => {
