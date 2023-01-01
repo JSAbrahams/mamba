@@ -1,0 +1,8 @@
+def f() -> Int raise [Exception] => 10
+
+def x:= if True then
+    f() handle
+        err: Exception => 3
+else
+    f() handle
+        err: Exception => 3
