@@ -24,6 +24,16 @@ fn map_verify() -> OutTestRet {
 }
 
 #[test]
+fn nested_list_builder() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "nested_list_builder")
+}
+
+#[test]
+fn nested_set_builder() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "nested_set_builder")
+}
+
+#[test]
 fn set_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "set")
 }

@@ -53,7 +53,9 @@ pub fn gen_coll(
                         constr.add_constr(&Constraint::truthy("comprehension condition", &cond));
                     }
                 }
-                Ok(env.clone())
+
+                // if define mode, propagate out conditions environment
+                Ok(if env.is_def_mode { conds_env } else { env.clone() })
             } else {
                 Err(vec![TypeErr::new(ast.pos, "Builder must have a least one element")])
             }
