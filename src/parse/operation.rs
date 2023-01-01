@@ -212,6 +212,8 @@ fn parse_level_1(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
+    use std::convert::From;
+
     use crate::parse::{parse, parse_direct};
     use crate::parse::ast::Node;
     use crate::parse::lex::token::Token::*;

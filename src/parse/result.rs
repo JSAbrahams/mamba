@@ -81,10 +81,9 @@ pub fn expected_one_of(tokens: &[Token], actual: &Lex, parsing: &str) -> ParseEr
     ParseErr {
         position: actual.pos,
         msg: format!(
-            "Expected one of [{}] while parsing {}{}, but found token '{}'",
+            "Expected one of [{}] while parsing {}{parsing}, but found token '{}'",
             comma_delm(tokens),
             an_or_a(parsing),
-            parsing,
             actual.token
         ),
         source: None,
@@ -97,11 +96,9 @@ pub fn expected(expected: &Token, actual: &Lex, parsing: &str) -> ParseErr {
     ParseErr {
         position: actual.pos,
         msg: format!(
-            "Expected {}{} token while parsing {}{}, but found {}",
+            "Expected {}{expected} token while parsing {}{parsing}, but found {}",
             an_or_a(expected),
-            expected,
             an_or_a(parsing),
-            parsing,
             actual.token
         ),
         source: None,
@@ -119,18 +116,16 @@ pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
         position: Position::default(),
         msg: match tokens {
             tokens if tokens.len() > 1 => format!(
-                "Expected one of [{}] tokens while parsing {}{}",
+                "Expected one of [{}] tokens while parsing {}{parsing}",
                 comma_delm(tokens),
                 an_or_a(parsing),
-                parsing
             ),
             tokens if tokens.len() == 1 => format!(
-                "Expected a {} token while parsing {}{}",
+                "Expected a {} token while parsing {}{parsing}",
                 comma_delm(tokens),
                 an_or_a(parsing),
-                parsing
             ),
-            _ => format!("Expected a token while parsing {}{}", an_or_a(parsing), parsing),
+            _ => format!("Expected a token while parsing {}{parsing}", an_or_a(parsing)),
         },
         source: None,
         path: None,
@@ -163,9 +158,8 @@ impl Display for ParseErr {
                 };
 
                 acc + &format!(
-                    "{:3}  |- {}\n     | {}^ in {} ({}:{})\n",
+                    "{:3}  |- {source_line}\n     | {}^ in {} ({}:{})\n",
                     cause.position.start.line,
-                    source_line,
                     String::from_utf8(vec![b' '; cause.position.start.pos]).unwrap(),
                     cause.cause,
                     cause.position.start.line,

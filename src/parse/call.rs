@@ -96,9 +96,8 @@ mod test {
         let source = String::from("\\ => c");
         let statements = parse_direct(&source).unwrap();
 
-        let (args, body) = match &statements.first().expect("script empty.").node {
-            Node::AnonFun { args, body } => (args.clone(), body.clone()),
-            _ => panic!("first element script was anon fun."),
+        let Node::AnonFun { args, body } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was anon fun.")
         };
 
         assert_eq!(args.len(), 0);
@@ -110,9 +109,8 @@ mod test {
         let source = String::from("\\a,b => c");
         let statements = parse_direct(&source).unwrap();
 
-        let (args, body) = match &statements.first().expect("script empty.").node {
-            Node::AnonFun { args, body } => (args.clone(), body.clone()),
-            _ => panic!("first element script was anon fun."),
+        let Node::AnonFun { args, body } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was anon fun.")
         };
 
         assert_eq!(args.len(), 2);
@@ -135,9 +133,8 @@ mod test {
         let source = String::from("a(b, c)");
         let statements = parse_direct(&source).unwrap();
 
-        let (name, args) = match &statements.first().expect("script empty.").node {
-            Node::FunctionCall { name, args } => (name.clone(), args.clone()),
-            _ => panic!("first element script was anon fun."),
+        let Node::FunctionCall { name, args } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was anon fun.")
         };
 
         assert_eq!(name.node, Node::Id { lit: String::from("a") });

@@ -101,9 +101,8 @@ mod test {
         let source = String::from("if a then c else d");
         let statements = parse_direct(&source).unwrap();
 
-        let (cond, then, el) = match &statements.first().expect("script empty.").node {
-            Node::IfElse { cond, then, el } => (cond, then, el),
-            _ => panic!("first element script was not if.")
+        let Node::IfElse { cond, then, el } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not if.")
         };
 
         assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -116,9 +115,8 @@ mod test {
         let source = String::from("match a\n    a => b\n    c => d");
         let statements = parse_direct(&source).unwrap();
 
-        let (cond, cases) = match &statements.first().expect("script empty.").node {
-            Node::Match { cond, cases } => (cond.clone(), cases.clone()),
-            _ => panic!("first element script was not match.")
+        let Node::Match { cond, cases } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not match.")
         };
 
         assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -149,9 +147,8 @@ mod test {
         let source = String::from("if a then\n    b\n");
         let ast = parse_direct(&source)?;
 
-        let (cond, then, el) = match ast.first().map(|a| &a.node) {
-            Some(Node::IfElse { cond, then, el }) => (cond, then, el.clone()),
-            _ => panic!("Expected if, got {:?}", ast)
+        let Some(Node::IfElse { cond, then, el }) = ast.first().map(|a| &a.node) else {
+            panic!("Expected if, got {:?}", ast)
         };
 
         assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -170,9 +167,8 @@ mod test {
         let source = String::from("if a then\n    b\nelse\n    c");
         let ast = parse_direct(&source)?;
 
-        let (cond, then, el) = match ast.first().map(|a| &a.node) {
-            Some(Node::IfElse { cond, then, el }) => (cond, then, el.clone()),
-            _ => panic!("Expected if, got {:?}", ast)
+        let Some(Node::IfElse { cond, then, el }) = ast.first().map(|a| &a.node) else {
+            panic!("Expected if, got {:?}", ast)
         };
 
         assert_eq!(cond.node, Node::Id { lit: String::from("a") });
@@ -182,7 +178,7 @@ mod test {
         };
         assert_eq!(then.node, Node::Id { lit: String::from("b") });
 
-        let el = match &el.unwrap().node {
+        let el = match el.clone().unwrap().node {
             Node::Block { statements } => statements[0].clone(),
             _ => panic!("Expected then block, got {:?}", then)
         };

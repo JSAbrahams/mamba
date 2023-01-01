@@ -109,10 +109,8 @@ mod test {
     fn tuple_empty_verify() {
         let source = String::from("()");
         let statements = parse_direct(&source).unwrap();
-
-        let elements = match &statements.first().expect("script empty.").node {
-            Node::Tuple { elements } => elements,
-            _ => panic!("first element script was not tuple.")
+        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not tuple.")
         };
 
         assert_eq!(elements.len(), 0);
@@ -122,10 +120,8 @@ mod test {
     fn tuple_single_is_expr_verify() {
         let source = String::from("(a)");
         let statements = parse_direct(&source).unwrap();
-
-        let lit = match &statements.first().expect("script empty.").node {
-            Node::Id { lit } => lit,
-            _ => panic!("first element script was not tuple.")
+        let Node::Id { lit } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not tuple.")
         };
 
         assert_eq!(lit.as_str(), "a");
@@ -135,10 +131,8 @@ mod test {
     fn tuple_multiple_verify() {
         let source = String::from("(d, c)");
         let statements = parse_direct(&source).unwrap();
-
-        let elements = match &statements.first().expect("script empty.").node {
-            Node::Tuple { elements } => elements,
-            _ => panic!("first element script was not tuple.")
+        let Node::Tuple { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not tuple.")
         };
 
         assert_eq!(elements.len(), 2);
@@ -151,9 +145,8 @@ mod test {
         let source = String::from("{a, b}");
         let statements = parse_direct(&source).unwrap();
 
-        let elements = match &statements.first().expect("script empty.").node {
-            Node::Set { elements } => elements,
-            _ => panic!("first element script was not set.")
+        let Node::Set { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not set.")
         };
 
         assert_eq!(elements[0].node, Node::Id { lit: String::from("a") });
@@ -165,12 +158,11 @@ mod test {
         let source = String::from("{a | c, d}");
         let statements = parse_direct(&source).unwrap();
 
-        let (items, conditions) = match &statements.first().expect("script empty.").node {
-            Node::SetBuilder { item, conditions } => (item.clone(), conditions.clone()),
-            _ => panic!("first element script was not set builder.")
+        let Node::SetBuilder { item, conditions } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not set builder.")
         };
 
-        assert_eq!(items.node, Node::Id { lit: String::from("a") });
+        assert_eq!(item.node, Node::Id { lit: String::from("a") });
 
         assert_eq!(conditions.len(), 2);
         assert_eq!(conditions[0].node, Node::Id { lit: String::from("c") });
@@ -182,9 +174,8 @@ mod test {
         let source = String::from("[a, b]");
         let statements = parse_direct(&source).unwrap();
 
-        let elements = match &statements.first().expect("script empty.").node {
-            Node::List { elements } => elements,
-            _ => panic!("first element script was not list.")
+        let Node::List { elements } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not list.")
         };
 
         assert_eq!(elements[0].node, Node::Id { lit: String::from("a") });
@@ -195,13 +186,11 @@ mod test {
     fn list_builder_verify() {
         let source = String::from("[a | c, d]");
         let statements = parse_direct(&source).unwrap();
-
-        let (items, conditions) = match &statements.first().expect("script empty.").node {
-            Node::ListBuilder { item, conditions } => (item.clone(), conditions.clone()),
-            _ => panic!("first element script was not list builder.")
+        let Node::ListBuilder { item, conditions } = &statements.first().expect("script empty.").node else {
+            panic!("first element script was not list builder.")
         };
 
-        assert_eq!(items.node, Node::Id { lit: String::from("a") });
+        assert_eq!(item.node, Node::Id { lit: String::from("a") });
 
         assert_eq!(conditions.len(), 2);
         assert_eq!(conditions[0].node, Node::Id { lit: String::from("c") });
