@@ -1,9 +1,10 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::constrain::generate::{Constrained, gen_vec};
+use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
@@ -18,16 +19,46 @@ pub fn gen_coll(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::Set { elements } | Node::List { elements } | Node::Tuple { elements } => {
+        Node::Set { elements } | Node::List { elements } => {
+            let res = gen_vec(elements, env, false, ctx, constr)?;
             constr_col(ast, env, constr, None)?;
-            gen_vec(elements, env, false, ctx, constr)
+            Ok(res)
+        }
+        Node::Tuple { elements } => {
+            let res = gen_vec(elements, env, env.is_def_mode, ctx, constr)?;
+            constr_col(ast, env, constr, None)?;
+            Ok(res)
         }
 
-        Node::SetBuilder { .. } => {
-            Err(vec![TypeErr::new(ast.pos, "Set builders currently not supported")])
-        }
-        Node::ListBuilder { .. } => {
-            Err(vec![TypeErr::new(ast.pos, "List builders currently not supported")])
+        Node::SetBuilder { item, conditions } | Node::ListBuilder { item, conditions } => {
+            let conds_env = generate(item, &env.is_def_mode(true), ctx, constr)?;
+            if let Some(cond) = conditions.first() {
+                if let Node::In { left, right } = &cond.node {
+                    let item = Expected::try_from((left, &env.var_mappings))?;
+                    let col_exp = Expected::new(right.pos, &Collection {
+                        ty: Box::new(item),
+                    });
+                    let cond_exp = Expected::try_from((right, &env.var_mappings))?;
+                    constr.add("comprehension collection type", &col_exp, &cond_exp);
+                } else {
+                    let msg = format!("Expected in, was {}", cond.node);
+                    return Err(vec![TypeErr::new(cond.pos, &msg)]);
+                }
+
+                generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
+                if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
+                    for cond in conditions {
+                        generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
+                        let cond = Expected::try_from((cond, &conds_env.var_mappings))?;
+                        constr.add_constr(&Constraint::truthy("comprehension condition", &cond));
+                    }
+                }
+
+                // if define mode, propagate out conditions environment
+                Ok(if env.is_def_mode { conds_env } else { env.clone() })
+            } else {
+                Err(vec![TypeErr::new(ast.pos, "Builder must have a least one element")])
+            }
         }
         _ => Err(vec![TypeErr::new(ast.pos, "Expected collection")]),
     }

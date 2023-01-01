@@ -1,8 +1,6 @@
 def g := [ 1, 2 ]
 def h := [ 4, 9 * 9 mod 3 ]
-def i := [ x | Person contains x ]
 
-def g := [ 1, 2 ]
-def h := [ 4, 9 * 9 mod 3 ]
-def i := [ x | Person contains x ]
-
+def i := [ x | x in h, x > 0, x > 3 ]
+def j := [ (x, 0) | x in h, x > 0 ]
+def k := [ x ^ 2 | x in 0..= 10 ]

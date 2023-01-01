@@ -53,7 +53,7 @@ impl IdentiCall {
             IdentiCall::Call(obj, call) => match obj.deref() {
                 IdentiCall::Iden(str) if str == object => Ok(*call.clone()),
                 IdentiCall::Iden(str) => {
-                    let msg = format!("Call does not have identifier '{}'", str);
+                    let msg = format!("Call does not have identifier '{str}'");
                     Err(vec![TypeErr::new(pos, &msg)])
                 }
                 obj => Ok(IdentiCall::Call(Box::from(obj.without_obj(object, pos)?), call.clone())),
@@ -115,8 +115,8 @@ impl Display for Identifier {
 impl Display for IdentiCall {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match &self {
-            IdentiCall::Iden(name) => write!(f, "{}", name),
-            IdentiCall::Call(object, call) => write!(f, "{}.{}", object, call),
+            IdentiCall::Iden(name) => write!(f, "{name}"),
+            IdentiCall::Call(object, call) => write!(f, "{object}.{call}"),
         }
     }
 }
@@ -136,7 +136,10 @@ impl TryFrom<&AST> for Identifier {
                     elements.iter().map(Identifier::try_from).collect::<Result<_, _>>()?;
                 Ok(Identifier::from(&elements))
             }
-            _ => Err(vec![TypeErr::new(ast.pos, "Expected id or tuple of id's")]),
+            _ => {
+                let msg = format!("Expected id or tuple of id's, was {}", ast.node);
+                Err(vec![TypeErr::new(ast.pos, &msg)])
+            }
         }
     }
 }
