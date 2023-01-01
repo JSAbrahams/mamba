@@ -16,12 +16,8 @@ pub fn parse_expr_or_stmt(it: &mut LexIterator) -> ParseResult {
                 it.eat(&Token::NL, "expression or statement")?;
                 it.parse(&parse_block, "expression or statement", lex.pos)
             }
-            token =>
-                if is_start_statement(token) {
-                    parse_statement(it)
-                } else {
-                    parse_expression(it)
-                },
+            token if is_start_statement(token) => parse_statement(it),
+            _ => parse_expression(it)
         },
         &[],
         "expression or statement",
