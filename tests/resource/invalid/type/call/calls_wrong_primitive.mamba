@@ -1,0 +1,3 @@
+def fun_b(x: Int) => print("a")
+
+fun_b("asdf")

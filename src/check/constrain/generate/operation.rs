@@ -7,8 +7,8 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, LookupClass};
-use crate::check::context::clss::{FLOAT, INT, STRING};
+use crate::check::context::{Context, LookupClass};
+use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, SLICE, STRING};
 use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SQRT, SUB};
 use crate::check::name::{Any, Name};
 use crate::check::name::string_name::StringName;
@@ -32,19 +32,11 @@ pub fn gen_op(
             Ok(env.clone())
         }
         Node::Range { .. } => {
-            constr.add(
-                "range",
-                &Expected::new(ast.pos, &Type { name: Name::from(clss::RANGE) }),
-                &Expected::try_from((ast, &env.var_mappings))?,
-            );
+            primitive(ast, RANGE, env, constr)?;
             constr_range(ast, env, ctx, constr, "range", true)
         }
         Node::Slice { .. } => {
-            constr.add(
-                "slice",
-                &Expected::new(ast.pos, &Type { name: Name::from(clss::SLICE) }),
-                &Expected::try_from((ast, &env.var_mappings))?,
-            );
+            primitive(ast, SLICE, env, constr)?;
             constr_range(ast, env, ctx, constr, "slice", false)
         }
 
@@ -57,24 +49,16 @@ pub fn gen_op(
                 let c = Constraint::stringy("string", &Expected::try_from((expr, &env.var_mappings))?);
                 constr.add_constr(&c);
             }
-
-            let name = Name::from(STRING);
-            let left = Expected::try_from((ast, &env.var_mappings))?;
-            constr.add("string", &left, &Expected::new(ast.pos, &Type { name }));
-            Ok(env.clone())
+            primitive(ast, STRING, env, constr)
         }
         Node::Bool { .. } => {
-            constr.add_constr(&Constraint::truthy(
-                "if else",
-                &Expected::try_from((ast, &env.var_mappings))?,
-            ));
-            Ok(env.clone())
+            let truthy = Constraint::truthy("bool", &Expected::try_from((ast, &env.var_mappings))?);
+            constr.add_constr(&truthy);
+            primitive(ast, BOOL, env, constr)
         }
         Node::Undefined => {
-            constr.add_constr(&Constraint::undefined(
-                "undefined",
-                &Expected::try_from((ast, &env.var_mappings))?,
-            ));
+            let undef = Constraint::undefined("undefined", &Expected::try_from((ast, &env.var_mappings))?);
+            constr.add_constr(&undef);
             Ok(env.clone())
         }
 
@@ -147,7 +131,7 @@ pub fn gen_op(
         }
 
         Node::Is { left, right } | Node::IsN { left, right } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             bin_op(left, right, env, ctx, constr)
         }
@@ -164,7 +148,7 @@ pub fn gen_op(
         }
 
         Node::Not { expr } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
             constr.add_constr(&Constraint::truthy(
                 "not",
@@ -174,7 +158,7 @@ pub fn gen_op(
             Ok(env.clone())
         }
         Node::And { left, right } | Node::Or { left, right } => {
-            let bool = Expected::new(ast.pos, &Type { name: Name::from(clss::BOOL) });
+            let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
             constr.add("and", &Expected::try_from((ast, &env.var_mappings))?, &bool);
 
             constr.add_constr(&Constraint::truthy(
@@ -317,7 +301,7 @@ fn impl_bool_op(
         );
     }
 
-    let ty = Type { name: Name::from(clss::BOOL) };
+    let ty = Type { name: Name::from(BOOL) };
     constr.add(
         "bool operation",
         &Expected::try_from((ast, &env.var_mappings))?,

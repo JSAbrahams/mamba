@@ -8,7 +8,7 @@ use std::ops::Deref;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::clss::{BOOL, FLOAT, INT, NONE, STRING};
+use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -99,14 +99,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
             }
         });
 
-        Ok(match &ast.node {
-            Node::Int { .. } | Node::ENum { .. } => Type { name: Name::from(INT) },
-            Node::Real { .. } => Type { name: Name::from(FLOAT) },
-            Node::Bool { .. } => Type { name: Name::from(BOOL) },
-            Node::Str { .. } => Type { name: Name::from(STRING) },
-            Node::Undefined => Expect::none(),
-            _ => Expression { ast },
-        })
+        Ok(Expression { ast })
     }
 }
 

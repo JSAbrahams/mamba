@@ -1,0 +1,7 @@
+class MyClass
+class OtherClass
+
+def fun_b(x: MyClass) => print("a")
+
+def other_class := OtherClass()
+fun_b(other_class)
