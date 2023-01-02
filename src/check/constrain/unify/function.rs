@@ -3,13 +3,14 @@ use std::collections::HashSet;
 
 use itertools::{EitherOrBoth, enumerate, Itertools};
 
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
+use crate::check::constrain::unify::ty::unify_type_message;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{GetField, GetFun};
@@ -19,6 +20,7 @@ use crate::check::name::string_name::StringName;
 use crate::check::result::TypeErr;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
+use crate::common::result::WithCause;
 
 pub fn unify_function(
     constraint: &Constraint,
@@ -73,10 +75,8 @@ pub fn unify_function(
         (_, Access { entity, name }) =>
             access(constraints, finished, ctx, constraint, entity, name, false, total),
 
-        (l_exp, r_exp) => {
-            let msg = format!("Unifying function: Expected a '{l_exp}', was a '{r_exp}'");
-            Err(vec![TypeErr::new(left.pos, &msg)])
-        }
+        _ if constraint.superset == ConstrVariant::Left => Err(unify_type_message(&constraint.msg, left, right)),
+        _ => Err(unify_type_message(&constraint.msg, right, left))
     }
 }
 
@@ -97,10 +97,10 @@ fn access(
     if let Type { name: entity_name } = &entity.expect {
         match &name.expect {
             Field { name } => {
-                field_access(constraints, finished, ctx, entity_name, name, left, right, total)
+                field_access(constraints, finished, ctx, entity_name, name, left, right, &constraint.msg, total)
             }
             Function { name, args } => {
-                function_access(constraints, finished, ctx, entity_name, name, args, left, right, total)
+                function_access(constraints, finished, ctx, entity_name, name, args, left, right, &constraint.msg, total)
             }
             _ => {
                 reinsert(constraints, constraint, total)?;
@@ -122,10 +122,14 @@ fn field_access(
     name: &str,
     accessed: &Expected,
     other: &Expected,
+    msg: &str,
     total: usize,
 ) -> Unified {
     let mut pushed = 0;
-    let fields = ctx.class(entity_name, accessed.pos)?.field(name, ctx, accessed.pos)?;
+    let fields = ctx.class(entity_name, accessed.pos)
+        .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?
+        .field(name, ctx, accessed.pos)
+        .map_err(|errs| access_field_cause(&errs, other, entity_name, name, msg))?;
     for field in fields.union {
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
         constraints.push("field access", &field_ty_exp, other);
@@ -145,10 +149,13 @@ fn function_access(
     args: &[Expected],
     accessed: &Expected,
     other: &Expected,
+    msg: &str,
     total: usize,
 ) -> Unified {
-    let class = ctx.class(entity_name, accessed.pos)?;
-    let function_union = class.fun(name, ctx, accessed.pos)?;
+    let class = ctx.class(entity_name, accessed.pos)
+        .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?;
+    let function_union = class.fun(name, ctx, accessed.pos)
+        .map_err(|errs| access_fun_cause(&errs, other, entity_name, name, args, msg))?;
 
     let mut pushed = 0;
     for function in &function_union.union {
@@ -211,4 +218,33 @@ fn unify_fun_arg(
     }
 
     Ok(added)
+}
+
+fn access_class_cause(errs: &[TypeErr], other: &Expected, actual: &Expected, entity_name: &Name, cause: &str) -> Vec<TypeErr> {
+    let msg = format!("In {cause}, we expect {entity_name}, was {actual}");
+    access_cause(errs, other, &msg, cause)
+}
+
+fn access_field_cause(errs: &[TypeErr], other: &Expected, entity_name: &Name, field_name: &str, cause: &str) -> Vec<TypeErr> {
+    let msg = format!("We expect {other}, but {entity_name} does not define {field_name}");
+    access_cause(errs, other, &msg, cause)
+}
+
+fn access_fun_cause(errs: &[TypeErr], other: &Expected, entity_name: &Name, fun_name: &StringName, args: &[Expected], cause: &str) -> Vec<TypeErr> {
+    let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
+    let msg = format!("We expect {other}, but {entity_name} does not define {fun_name}({})", comma_delm(args));
+    access_cause(errs, other, &msg, cause)
+}
+
+fn access_cause(errs: &[TypeErr], other: &Expected, msg: &str, cause: &str) -> Vec<TypeErr> {
+    errs.iter().map(|err| {
+        // flip messages
+        let err = if let Some(pos) = err.position {
+            TypeErr::new(pos, &msg)
+        } else {
+            TypeErr::new_no_pos(&msg)
+        };
+
+        err.with_cause(&format!("In {cause}"), other.pos)
+    }).collect()
 }

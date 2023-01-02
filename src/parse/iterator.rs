@@ -4,6 +4,7 @@ use std::slice::Iter;
 use itertools::multipeek;
 
 use crate::common::position::Position;
+use crate::common::result::WithCause;
 use crate::parse::ast::AST;
 use crate::parse::lex::token::Lex;
 use crate::parse::lex::token::Token;
@@ -85,7 +86,7 @@ impl<'a> LexIterator<'a> {
         cause: &str,
         start: Position,
     ) -> ParseResult<Box<AST>> {
-        parse_fun(self).map_err(|err| Box::from(err.clone_with_cause(cause, start)))
+        parse_fun(self).map_err(|err| Box::from(err.with_cause(cause, start)))
     }
 
     pub fn parse_vec(
@@ -94,7 +95,7 @@ impl<'a> LexIterator<'a> {
         cause: &str,
         start: Position,
     ) -> ParseResult<Vec<AST>> {
-        parse_fun(self).map_err(|err| Box::from(err.clone_with_cause(cause, start)))
+        parse_fun(self).map_err(|err| Box::from(err.with_cause(cause, start)))
     }
 
     pub fn parse_if(

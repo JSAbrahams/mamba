@@ -126,7 +126,7 @@ fn err_output_relative_path_from_src() -> Result<(), Box<dyn std::error::Error>>
     cmd.arg("-v");
     let res = String::from_utf8(cmd.output()?.stderr)?;
 
-    let path_res_str = format!("--> {}", Path::new("src").join(Path::new("hello_world.mamba")).to_str().unwrap());
+    let path_res_str = format!("─→ {}", Path::new("src").join(Path::new("hello_world.mamba")).to_str().unwrap());
     assert!(res.contains(&path_res_str), "err msg did not contain: \"{}\"\nerr:\n{}\n\n", path_res_str, res);
     Ok(())
 }
@@ -139,7 +139,7 @@ fn err_output_relative_path_from_custom_src() -> Result<(), Box<dyn std::error::
     cmd.arg("-v").arg("--input").arg("custom_src");
     let res = String::from_utf8(cmd.output()?.stderr)?;
 
-    let path_res_str = format!("--> {}", Path::new("custom_src").join(Path::new("hello_world.mamba")).to_str().unwrap());
+    let path_res_str = format!("─→ {}", Path::new("custom_src").join(Path::new("hello_world.mamba")).to_str().unwrap());
     assert!(res.contains(&path_res_str), "err msg did not contain: \"{}\"\nerr:\n{}\n\n", path_res_str, res);
     Ok(())
 }
