@@ -28,12 +28,12 @@ impl UnimplementedErr {
 
 impl WithSource for UnimplementedErr {
     fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> UnimplementedErr {
-        UnimplementedErr { source: source.clone(), path: path.clone(), ..self.clone() }
+        UnimplementedErr { source: source.clone(), path: path.clone(), ..self }
     }
 }
 
 impl Display for UnimplementedErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        format_err(f, &self.msg, &self.path, Some(self.position), &self.source, &vec![])
+        format_err(f, &self.msg, &self.path, Some(self.position), &self.source, &[])
     }
 }

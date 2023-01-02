@@ -31,7 +31,7 @@ pub trait WithCause {
 }
 
 pub fn an_or_a<D>(parsing: D) -> &'static str where D: Display {
-    let parsing = format!("{}", parsing).to_ascii_lowercase();
+    let parsing = format!("{parsing}").to_ascii_lowercase();
 
     if let Some('s') = parsing.chars().last() {
         return "";
@@ -55,26 +55,26 @@ pub fn format_err(f: &mut Formatter,
     let path = path.as_ref().map_or("<unknown>", |p| p.to_str().unwrap_or_default());
 
     if let Some(pos) = pos {
-        write!(f,
-               "{msg}\n {RIGHT_ARROW} {}:{}:{}\n",
-               path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
-               pos.start.line,
-               pos.start.pos,
+        writeln!(f,
+                 "{msg}\n {RIGHT_ARROW} {}:{}:{}",
+                 path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
+                 pos.start.line,
+                 pos.start.pos,
         )?;
 
         format_location(f, 0, None, pos, source)
     } else {
-        write!(f, "{msg}\n {RIGHT_ARROW} {}\n", path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path))
+        writeln!(f, "{msg}\n {RIGHT_ARROW} {}", path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path))
     }?;
 
     let mut first = true;
     for cause in causes {
-        let msg = cause.msg.as_str().clone();
-        if pos.map_or(false, |pos| pos != cause.pos) && first {
+        let msg = cause.msg.as_str();
+        if first && pos.map_or(false, |pos| pos != cause.pos) {
             format_location(f, 1, Some(msg), cause.pos, source)?;
         } else {
             let offset_str = String::from_utf8(vec![b' '; OFFSET_WIDTH]).unwrap();
-            write!(f, "{offset_str} {HOOK_ARROW} {msg}\n")?;
+            writeln!(f, "{offset_str} {HOOK_ARROW} {msg}")?;
         }
         first = false;
     }
@@ -125,7 +125,7 @@ pub fn format_location(f: &mut Formatter,
 
     write!(f,
            "{msg}{source_before}{source_line}       {}{}{source_after}",
-           String::from_utf8(vec![b' '; offset * OFFSET_WIDTH + pos.start.pos as usize - 1]).unwrap(),
-           String::from_utf8(vec![b'^'; pos.get_width() as usize]).unwrap(),
+           String::from_utf8(vec![b' '; offset * OFFSET_WIDTH + pos.start.pos - 1]).unwrap(),
+           String::from_utf8(vec![b'^'; pos.get_width()]).unwrap(),
     )
 }

@@ -30,7 +30,7 @@ impl WithCause for TypeErr {
                 new_causes.push(Cause::new(msg, pos));
                 new_causes
             },
-            ..self.clone()
+            ..self
         }
     }
 }
@@ -81,7 +81,7 @@ impl TypeErr {
 
 impl WithSource for TypeErr {
     fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> TypeErr {
-        TypeErr { source: source.clone(), path: path.clone(), ..self.clone() }
+        TypeErr { source: source.clone(), path: path.clone(), ..self }
     }
 }
 

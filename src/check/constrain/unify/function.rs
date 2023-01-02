@@ -87,7 +87,7 @@ fn access(
     ctx: &Context,
     constraint: &Constraint,
     entity: &Expected,
-    name: &Box<Expected>,
+    name: &Expected,
     access_left: bool,
     total: usize,
 ) -> Unified {
@@ -240,9 +240,9 @@ fn access_cause(errs: &[TypeErr], other: &Expected, msg: &str, cause: &str) -> V
     errs.iter().map(|err| {
         // flip messages
         let err = if let Some(pos) = err.position {
-            TypeErr::new(pos, &msg)
+            TypeErr::new(pos, msg)
         } else {
-            TypeErr::new_no_pos(&msg)
+            TypeErr::new_no_pos(msg)
         };
 
         err.with_cause(&format!("In {cause}"), other.pos)

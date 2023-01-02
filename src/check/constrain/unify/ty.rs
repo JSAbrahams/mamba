@@ -146,7 +146,7 @@ pub fn unify_type(
 
 pub fn unify_type_message(cause_msg: &str, sup: &Expected, child: &Expected) -> Vec<TypeErr> {
     let msg = format!("Expected {sup}, was {child}");
-    vec![TypeErr::new(child.pos, &msg).with_cause(&cause_msg, sup.pos)]
+    vec![TypeErr::new(child.pos, &msg).with_cause(cause_msg, sup.pos)]
 }
 
 fn substitute_ty(
