@@ -200,7 +200,7 @@ fn unify_fun_arg(
                 let name = names
                     .iter()
                     .fold(Name::empty(), |name, f_name| name.union(f_name))
-                    .is_interchangeable();
+                    .is_interchangeable(true);
                 let ctx_arg_ty = Expected::new(expected.pos, &Type { name });
                 constr.push("function argument", &ctx_arg_ty, expected);
                 added += 1;

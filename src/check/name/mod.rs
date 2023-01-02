@@ -257,19 +257,19 @@ impl IsSuperSet<Name> for Name {
             return Ok(false);
         }
 
+        let mut self_is_super_of = vec![];
         for name in &other.names {
             let is_superset = |s_name: &TrueName| s_name.is_superset_of(name, ctx, pos);
-            let any_superset: Vec<bool> =
-                self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
+            let any_superset: Vec<_> = self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
 
-            if !any_superset.clone().iter().any(|b| *b) && !other.is_interchangeable {
-                return Ok(false);
-            } else if any_superset.clone().iter().any(|b| *b) && other.is_interchangeable {
-                return Ok(true);
+            if !other.is_interchangeable && any_superset.clone().iter().all(|b| !*b) {
+                return Ok(false); // not a single of self was super
             }
+
+            self_is_super_of.push(any_superset.iter().any(|b| *b))
         }
 
-        Ok(true)
+        Ok(if other.is_interchangeable { self_is_super_of.iter().any(|b| *b)} else { true })
     }
 }
 
@@ -322,8 +322,8 @@ impl Name {
 
     /// Any means that if one check if another [is_superset_of] self, then it will be true if it is
     /// just a superset of one.
-    pub fn is_interchangeable(&self) -> Self {
-        Name { is_interchangeable: true, ..self.clone() }
+    pub fn is_interchangeable(&self, is_interchangeable: bool) -> Self {
+        Name { is_interchangeable, ..self.clone() }
     }
 
     pub fn contains(&self, item: &TrueName) -> bool {
@@ -348,7 +348,7 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::check::context::{clss, Context, LookupClass};
-    use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, STRING, TUPLE};
+    use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, RANGE, STRING, TUPLE};
     use crate::check::ident::Identifier;
     use crate::check::name::{ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
     use crate::check::name::name_variant::NameVariant;
@@ -402,7 +402,7 @@ mod tests {
 
     #[test]
     fn is_superset_any_only_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable();
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -411,11 +411,29 @@ mod tests {
 
     #[test]
     fn is_superset_any_no_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable();
-        let union_2 = Name::from(FLOAT);
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
+        let union_2 = Name::from(RANGE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn is_superset_any_no_one_2() {
+        let union_1 = Name::from(&vec![TrueName::from(INT)]).is_interchangeable(true);
+        let union_2 = Name::from(STRING);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn is_superset_any_nullable() {
+        let union_1 = Name::from(&vec![TrueName::from(BOOL).as_nullable(), TrueName::from(INT)]).is_interchangeable(true);
+        let union_2 = Name::from(BOOL);
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
     }
 
     #[test]
@@ -639,7 +657,7 @@ mod tests {
 
     #[test]
     fn range_has_collection_int_as_parent() -> TypeResult<()> {
-        let range_name = Name::from(clss::RANGE);
+        let range_name = Name::from(RANGE);
         let int_name = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
