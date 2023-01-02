@@ -1,10 +1,10 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::path::{MAIN_SEPARATOR, PathBuf};
+use std::path::PathBuf;
 
 use crate::ASTTy;
 use crate::common::position::Position;
-use crate::common::result::WithSource;
+use crate::common::result::{format_err, WithSource};
 use crate::generate::ast::node::Core;
 
 pub type GenResult<T = Core> = Result<T, Box<UnimplementedErr>>;
@@ -15,55 +15,25 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct UnimplementedErr {
     pub position: Position,
     pub msg: String,
-    pub source_line: Option<String>,
+    pub source: Option<String>,
     pub path: Option<PathBuf>,
 }
 
 impl UnimplementedErr {
     pub fn new(ast: &ASTTy, msg: &str) -> UnimplementedErr {
-        UnimplementedErr {
-            position: ast.pos,
-            msg: format!("The {msg} construct has not yet been implemented as of v{VERSION}."),
-            source_line: None,
-            path: None,
-        }
+        let msg = format!("The {msg} construct has not yet been implemented as of v{VERSION}.");
+        UnimplementedErr { position: ast.pos, msg, source: None, path: None }
     }
 }
 
 impl WithSource for UnimplementedErr {
-    fn with_source(
-        self,
-        source: &Option<String>,
-        path: &Option<PathBuf>,
-    ) -> UnimplementedErr {
-        UnimplementedErr {
-            position: self.position,
-            msg: self.msg.clone(),
-            source_line: source.clone().map(|source| {
-                source
-                    .lines()
-                    .nth(self.position.start.line - 1)
-                    .map_or(String::from("unknown"), String::from)
-            }),
-            path: path.clone(),
-        }
+    fn with_source(self, source: &Option<String>, path: &Option<PathBuf>) -> UnimplementedErr {
+        UnimplementedErr { source: source.clone(), path: path.clone(), ..self }
     }
 }
 
 impl Display for UnimplementedErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let path = self.path.as_ref().map_or("<unknown>", |p| p.to_str().unwrap_or_default());
-        write!(
-            f,
-            "--> {}:{}:{}\n     | {}\n{:3}  |- {}\n     | {}{}",
-            path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path),
-            self.position.start.line,
-            self.position.start.pos,
-            self.msg,
-            self.position.start.line,
-            self.source_line.clone().unwrap_or_else(|| String::from("<unknown>")),
-            String::from_utf8(vec![b' '; self.position.start.pos]).unwrap(),
-            String::from_utf8(vec![b'^'; self.position.get_width()]).unwrap()
-        )
+        format_err(f, &self.msg, &self.path, Some(self.position), &self.source, &[])
     }
 }

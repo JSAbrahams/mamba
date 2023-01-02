@@ -14,6 +14,7 @@ use crate::check::name::{Any, ColType, IsSuperSet, Name, Union};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
+use crate::common::result::WithCause;
 
 pub fn unify_type(
     constraint: &Constraint,
@@ -46,11 +47,9 @@ pub fn unify_type(
                 finished.push_ty(right.pos, &l_ty.union(r_ty));
                 unify_link(constraints, finished, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
-                let msg = format!("Unifying two types within {}: Expected {left}, was {right}", constraint.msg);
-                Err(vec![TypeErr::new(right.pos, &msg)])
+                Err(unify_type_message(&constraint.msg, left, right))
             } else {
-                let msg = format!("Unifying two types within {}: Expected {right}, was {left}", constraint.msg);
-                Err(vec![TypeErr::new(left.pos, &msg)])
+                Err(unify_type_message(&constraint.msg, right, left))
             }
         }
 
@@ -60,11 +59,12 @@ pub fn unify_type(
                     NameVariant::Tuple(names) => {
                         if names.len() != elements.len() {
                             let msg = format!(
-                                "Expected tuple with {} elements, was {}",
+                                "In {}, expected tuple with {} elements, was {}",
+                                constraint.msg,
                                 names.len(),
                                 elements.len()
                             );
-                            return Err(vec![TypeErr::new(left.pos, &msg)]);
+                            return Err(unify_type_message(&msg, left, right));
                         }
 
                         for pair in names.iter().cloned().zip_longest(elements.iter()) {
@@ -76,18 +76,19 @@ pub fn unify_type(
                                 }
                                 _ => {
                                     let msg = format!(
-                                        "Cannot assign {} elements to a tuple of size {}",
+                                        "In {}, Cannot assign {} elements to a tuple of size {}",
+                                        constraint.msg,
                                         elements.len(),
                                         names.len()
                                     );
-                                    return Err(vec![TypeErr::new(left.pos, &msg)]);
+                                    return Err(unify_type_message(&msg, left, right));
                                 }
                             }
                         }
                     }
                     _ => {
                         let msg = format!("Unifying type and tuple: Expected {name}, was {right}");
-                        return Err(vec![TypeErr::new(left.pos, &msg)]);
+                        return Err(unify_type_message(&msg, left, right));
                     }
                 }
             }
@@ -105,11 +106,12 @@ pub fn unify_type(
                     Both(name, exp) => constraints.push("tuple", name, exp),
                     _ => {
                         let msg = format!(
-                            "Tuple sizes differ. Expected {} elements, was {}",
+                            "In {}, Tuple sizes differ. Expected {} elements, was {}",
+                            constraint.msg,
                             l_ty.len(),
                             r_ty.len()
                         );
-                        return Err(vec![TypeErr::new(left.pos, &msg)]);
+                        return Err(unify_type_message(&msg, left, right));
                     }
                 }
             }
@@ -123,8 +125,7 @@ pub fn unify_type(
                     constraints.push("collection type", ty, &Expected::new(left.pos, &expect));
                     unify_link(constraints, finished, ctx, total + 1)
                 } else {
-                    let msg = format!("Unifying type: Expected {left}, was {right}");
-                    Err(vec![TypeErr::new(left.pos, &msg)])
+                    Err(unify_type_message(&constraint.msg, left, right))
                 }
             }
             (Type { name }, Collection { ty }) => {
@@ -133,21 +134,19 @@ pub fn unify_type(
                     constraints.push("collection type", &Expected::new(left.pos, &expect), ty);
                     unify_link(constraints, finished, ctx, total + 1)
                 } else {
-                    let msg = format!("Unifying type: Expected {left}, was {right}");
-                    Err(vec![TypeErr::new(left.pos, &msg)])
+                    Err(unify_type_message(&constraint.msg, left, right))
                 }
             }
 
-            _ => {
-                if l_exp.is_none() && r_exp.is_none() {
-                    unify_link(constraints, finished, ctx, total)
-                } else {
-                    let msg = format!("Unifying type: Expected {left}, was {right}");
-                    Err(vec![TypeErr::new(left.pos, &msg)])
-                }
-            }
+            _ if l_exp.is_none() && r_exp.is_none() => unify_link(constraints, finished, ctx, total),
+            _ => Err(unify_type_message(&constraint.msg, left, right))
         },
     }
+}
+
+pub fn unify_type_message(cause_msg: &str, sup: &Expected, child: &Expected) -> Vec<TypeErr> {
+    let msg = format!("Expected {sup}, was {child}");
+    vec![TypeErr::new(child.pos, &msg).with_cause(cause_msg, sup.pos)]
 }
 
 fn substitute_ty(
