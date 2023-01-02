@@ -49,20 +49,23 @@ pub fn gen_flow(
             constr.add_constr(&Constraint::truthy("if else", &left));
             generate(cond, env, ctx, constr)?;
 
+            let if_expr_exp = Expected::try_from((ast, &env.var_mappings))?;
+
             constr.new_set(true);
             let then_env = generate(then, env, ctx, constr)?;
+            let then_exp = Expected::try_from((then, &then_env.var_mappings))?;
             constr.exit_set(then.pos)?;
+
             constr.new_set(true);
             let else_env = generate(el, env, ctx, constr)?;
+            if env.is_expr {
+                let el = Expected::try_from((el, &else_env.var_mappings))?;
+                constr.add("else branch equal to if", &el, &if_expr_exp);
+            }
             constr.exit_set(el.pos)?;
 
             if env.is_expr {
-                let if_expr = Expected::try_from((ast, &env.var_mappings))?;
-                let then = Expected::try_from((then, &then_env.var_mappings))?;
-                let el = Expected::try_from((el, &else_env.var_mappings))?;
-
-                constr.add("if then branch", &if_expr, &then);
-                constr.add("if else branch", &if_expr, &el);
+                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
             }
 
             Ok(env.union(&then_env.intersect(&else_env)))

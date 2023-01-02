@@ -5,6 +5,8 @@ use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
+const PADDING: usize = 2;
+
 /// Constraint Builder.
 ///
 /// Allows us to build sets of constraints.
@@ -74,7 +76,8 @@ impl ConstrBuilder {
     }
 
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        trace!("Constr[{}]: {} == {}, {}: {}", self.level, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
+        let gap = String::from_utf8(vec![b' '; self.level * PADDING]).unwrap();
+        trace!("{gap}Constr[{}]: {} == {}, {}: {}", self.finished.len(), constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
         self.constraints[self.level].1.push(constraint.clone())
     }
 
