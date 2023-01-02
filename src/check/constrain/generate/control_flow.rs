@@ -65,6 +65,7 @@ pub fn gen_flow(
             constr.exit_set(el.pos)?;
 
             if env.is_expr {
+                generate(then, &then_env, ctx, constr)?; // Also gen in outer constr set
                 constr.add("then branch equal to if", &then_exp, &if_expr_exp);
             }
 
