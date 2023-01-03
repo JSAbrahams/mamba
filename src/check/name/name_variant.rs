@@ -6,7 +6,7 @@ use crate::check::context::{clss, Context};
 use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::TrueName;
+use crate::check::name::true_name::{IsTemp, TrueName};
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -64,7 +64,7 @@ impl Ord for NameVariant {
 impl Display for NameVariant {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
-            NameVariant::Single(direct_name) => write!(f, "{}", direct_name),
+            NameVariant::Single(direct_name) => write!(f, "{direct_name}"),
             NameVariant::Tuple(names) => write!(f, "({})", comma_delm(names)),
             NameVariant::Fun(args, ret) => write!(f, "({}) -> {}", comma_delm(args), ret),
         }
@@ -132,6 +132,16 @@ impl From<&NameVariant> for StringName {
 impl From<&NameVariant> for Name {
     fn from(name: &NameVariant) -> Self {
         Name::from(&vec![TrueName::from(name)])
+    }
+}
+
+impl IsTemp for NameVariant {
+    fn is_temp(&self) -> bool {
+        if let NameVariant::Single(string_name) = self {
+            string_name.is_temp()
+        } else {
+            false
+        }
     }
 }
 
