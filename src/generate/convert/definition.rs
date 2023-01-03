@@ -42,12 +42,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                         match (ty, expression) {
                             (Some(ty), _) => Some(Box::from(convert_node(ty, imp, &state, ctx)?)),
                             (_, Some(expr)) if state.annotate => {
-                                let ty = expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from);
-                                if let Some(core) = ty {
-                                    if *core == Core::Empty { None } else { Some(core) }
-                                } else {
-                                    None
-                                }
+                                expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from)
                             }
                             _ => None,
                         }

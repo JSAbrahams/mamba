@@ -49,7 +49,7 @@ fn transpile_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v");
-    assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?.ok().is_ok());
+    assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output().is_ok());
     let output_path = resource_path(true, &["dummy", "proj1", "target"], "");
 
     delete_dir(&output_path)
@@ -61,7 +61,7 @@ fn transpile_custom_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--input").arg("custom_src");
-    let res = cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?.ok();
+    let res = cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output();
     assert!(res.is_ok());
     let output_path = resource_path(true, &["dummy", "proj1", "target"], "");
 
@@ -75,7 +75,7 @@ fn transpile_src_in_dir_custom_target() -> Result<(), Box<dyn std::error::Error>
     cmd.current_dir(resource_path(true, &["dummy", "proj1"], ""));
 
     cmd.arg("-v").arg("--output").arg("custom_target");
-    assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?.ok().is_ok());
+    assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output().is_ok());
     let output_path = resource_path(true, &["dummy", "proj1", "custom_target"], "");
 
     let del_res = delete_dir(&output_path);
@@ -89,7 +89,7 @@ fn transpile_file_not_src() -> Result<(), Box<dyn std::error::Error>> {
 
     let input_path = PathBuf::from("src").join(PathBuf::from("hello_world.mamba"));
     cmd.arg("-v").arg("--input").arg(input_path.as_os_str().to_str().unwrap());
-    assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?.ok().is_ok());
+    assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output().is_ok());
     let output_path = resource_path(true, &["dummy", "proj1", "custom_target"], "");
 
     let del_res = delete_dir(&output_path);

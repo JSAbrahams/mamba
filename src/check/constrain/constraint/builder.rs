@@ -15,7 +15,7 @@ const PADDING: usize = 2;
 pub type VarMapping = HashMap<String, usize>;
 
 pub fn format_var_map(var: &str, offset: &usize) -> String {
-    if *offset == 0 as usize {
+    if *offset == 0usize {
         String::from(var)
     } else {
         format!("{var}@{offset}")
@@ -76,7 +76,7 @@ impl ConstrBuilder {
     pub fn new_set(&mut self) -> usize {
         let inherited_constraints = self.constraints.last().expect("Can never be empty");
         self.constraints.push(inherited_constraints.clone());
-        return self.constraints.len();
+        self.constraints.len()
     }
 
     /// Return to specified level given.
@@ -115,10 +115,9 @@ impl ConstrBuilder {
         }
     }
 
+    #[allow(clippy::map_flatten)] // flat_map does something else for Option here
     pub fn current_class(&self) -> Option<StringName> {
-        self.constraints.last().map(|constraints| {
-            constraints.0.last()
-        }).flatten().cloned()
+        self.constraints.iter().last().map(|(names, _)| names.iter().last()).flatten().cloned()
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
