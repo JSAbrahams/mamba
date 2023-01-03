@@ -91,7 +91,7 @@ impl ConstrBuilder {
             return Err(vec![TypeErr::new(pos, "Exiting constraint set which doesn't exist")]);
         }
 
-        for i in (level..self.constraints.len()).rev() {
+        for i in (level - 1..self.constraints.len()).rev() {
             // Equivalent to pop, but remove has better panic message for debugging
             self.finished.push(self.constraints.remove(i))
         }
