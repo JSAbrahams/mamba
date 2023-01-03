@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::check::constrain::constraint::builder::VarMapping;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
 use crate::check::name;
@@ -16,7 +17,6 @@ pub struct Environment {
     pub raises_caught: HashSet<TrueName>,
 
     pub class_type: Option<Expect>,
-    pub var_mappings: HashMap<String, String>,
     pub unassigned: HashSet<String>,
     temp_type: usize,
     vars: HashMap<String, HashSet<(bool, Expected)>>,
@@ -28,7 +28,7 @@ impl Environment {
     /// This adds a self variable with the class expected, and class_type is set
     /// to the expected class type.
     pub fn in_class(&self, class: &Expected) -> Environment {
-        let env = self.insert_var(false, &String::from(SELF), class);
+        let env = self.insert_var(false, &String::from(SELF), class, &HashMap::new());
         Environment { class_type: Some(class.expect.clone()), ..env }
     }
 
@@ -51,27 +51,18 @@ impl Environment {
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
-    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected) -> Environment {
+    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected, var_mappings: &VarMapping) -> Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
-        let (mut vars, mut var_mappings) = (self.vars.clone(), self.var_mappings.clone());
+        let mut vars = self.vars.clone();
 
-        // Never shadow self
-        let var = if vars.contains_key(var) && var != SELF {
-            let mut offset = 0;
-            let mut new_var = format!("{}@{}", var, offset);
-            while self.vars.contains_key(&new_var) {
-                offset += 1;
-                new_var = format!("{var}@{offset}");
-            }
-
-            var_mappings.insert(String::from(var), new_var.clone());
-            new_var
+        let var = if let Some((var, offset)) = var_mappings.get(var) {
+            format!("{var}@{offset}")
         } else {
             String::from(var)
         };
 
-        vars.insert(var, expected_set);
-        Environment { vars, var_mappings, ..self.clone() }
+        vars.insert(var.clone(), expected_set);
+        Environment { vars, ..self.clone() }
     }
 
     /// Insert raises which are properly handled.
@@ -104,14 +95,13 @@ impl Environment {
     /// This is useful for detecting shadowing.
     ///
     /// Return true variable [TrueName], whether it's mutable and it's expected value
-    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
-        for (old, new) in &self.var_mappings {
-            if old == var {
-                return self.get_var(new);
-            }
-        }
-
-        self.vars.get(var).cloned()
+    pub fn get_var(&self, var: &str, var_mappings: &VarMapping) -> Option<HashSet<(bool, Expected)>> {
+        let var_name = if let Some((var, offset)) = var_mappings.get(var) {
+            format!("{var}@{offset}")
+        } else {
+            String::from(var)
+        };
+        self.vars.get(&var_name).cloned()
     }
 
     /// Union between two environments
@@ -131,12 +121,7 @@ impl Environment {
             }
         }
 
-        let mut var_mappings = self.var_mappings.clone();
-        for (key, value) in &other.var_mappings {
-            var_mappings.insert(key.clone(), value.clone());
-        }
-
-        Environment { vars, var_mappings, ..self.clone() }
+        Environment { vars, ..self.clone() }
     }
 
     /// Intersection between two environments.
@@ -166,19 +151,7 @@ impl Environment {
             }
         }
 
-        let to_remove: Vec<String> = self
-            .var_mappings
-            .iter()
-            .filter(|(key, _)| other.var_mappings.contains_key(*key))
-            .map(|(key, _)| key.clone())
-            .collect();
-
-        let mut var_mappings = self.var_mappings.clone();
-        for key in &to_remove {
-            var_mappings.remove(key);
-        }
-
-        Environment { vars, var_mappings, ..self.clone() }
+        Environment { vars, ..self.clone() }
     }
 
     /// Get a name for a temporary type.

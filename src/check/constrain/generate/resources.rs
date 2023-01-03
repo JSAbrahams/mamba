@@ -20,8 +20,8 @@ pub fn gen_resources(
     match &ast.node {
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
             let with_lvl = constr.new_set();
-            let resource_exp = Expected::try_from((resource, &env.var_mappings))?;
-            constr.add("with as", &resource_exp, &Expected::try_from((alias, &env.var_mappings))?);
+            let resource_exp = Expected::try_from((resource, &constr.var_mappings()))?;
+            constr.add("with as", &resource_exp, &Expected::try_from((alias, &constr.var_mappings()))?);
             constr.add("with as", &resource_exp, &Expected::new(resource.pos, &Expect::any()));
 
             if let Some(ty) = ty {
@@ -50,7 +50,7 @@ pub fn gen_resources(
             let with_lvl = constr.new_set();
             constr.add(
                 "with",
-                &Expected::try_from((resource, &env.var_mappings))?,
+                &Expected::try_from((resource, &constr.var_mappings()))?,
                 &Expected::new(resource.pos, &Expect::any()),
             );
 

@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::collections::HashMap;
 
 use itertools::enumerate;
 
@@ -10,6 +11,8 @@ use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
 const PADDING: usize = 2;
+
+pub type VarMapping = HashMap<String, (String, usize)>;
 
 /// Constraint Builder.
 ///
@@ -27,15 +30,35 @@ const PADDING: usize = 2;
 #[derive(Debug)]
 pub struct ConstrBuilder {
     finished: Vec<(Vec<StringName>, Vec<Constraint>)>,
-    constraints: Vec<(Vec<StringName>, Vec<Constraint>)>,
+    constraints: Vec<(Vec<StringName>, Vec<Constraint>, VarMapping)>,
 }
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { finished: vec![], constraints: vec![(vec![], vec![])] }
+        ConstrBuilder { finished: vec![], constraints: vec![(vec![], vec![], HashMap::new())] }
     }
 
     pub fn is_top_level(&self) -> bool { self.constraints.len() == 1 }
+
+    pub fn var_mappings(&self) -> VarMapping {
+        let last = self.constraints.last().expect("Can never be empty");
+        last.2.clone()
+    }
+
+    /// Insert variable for mapping in current constraint set.
+    ///
+    /// This prevents shadowed variables from contaminating previous constraints.
+    ///
+    /// Differs from environment since environment is used to check that variables are defined at a
+    /// certain location.
+    pub fn insert_var(&mut self, var: &str) {
+        for constraint in &mut self.constraints {
+            let mapping = constraint.2.clone();
+            if let Some((var, offset)) = mapping.get(var) {
+                constraint.2.insert(String::from(var), (var.clone(), offset + 1));
+            }
+        }
+    }
 
     pub fn new_set_in_class(&mut self, class: &StringName) -> usize {
         let lvl = self.new_set();
@@ -69,7 +92,8 @@ impl ConstrBuilder {
 
         for i in (level..self.constraints.len()).rev() {
             // Equivalent to pop, but remove has better panic message for debugging
-            self.finished.push(self.constraints.remove(i))
+            let (class_names, constraints, _) = self.constraints.remove(i);
+            self.finished.push((class_names, constraints))
         }
 
         Ok(())
@@ -98,7 +122,9 @@ impl ConstrBuilder {
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
-        let (mut finished, mut constraints) = (self.finished, self.constraints);
+        let (mut finished, constraints) = (self.finished, self.constraints);
+        let mut constraints = constraints.into_iter().map(|(n, n1, _)| (n, n1)).collect();
+
         finished.append(&mut constraints);
         finished.iter().map(Constraints::from).collect()
     }

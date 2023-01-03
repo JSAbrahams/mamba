@@ -44,7 +44,7 @@ pub fn gen_stmt(
                 constr.add(
                     "return",
                     expected_ret_ty,
-                    &Expected::try_from((expr, &env.var_mappings))?,
+                    &Expected::try_from((expr, &constr.var_mappings()))?,
                 );
                 Ok(env.clone())
             } else if !env.in_fun {

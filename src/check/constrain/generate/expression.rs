@@ -27,7 +27,7 @@ pub fn gen_expr(
         Node::Question { left, right } => {
             constr.add(
                 "question",
-                &Expected::try_from((left, &env.var_mappings))?,
+                &Expected::try_from((left, &constr.var_mappings()))?,
                 &Expected::new(left.pos, &Expect::none()),
             );
 
@@ -50,7 +50,7 @@ fn match_id(ast: &AST, ty: &OptAST, mutable: bool, env: &Environment, ctx: &Cont
     match &ast.node {
         Node::Id { lit } => if env.is_def_mode {
             identifier_from_var(ast, ty, &None, mutable, ctx, constr, env)
-        } else if env.get_var(lit).is_some() {
+        } else if env.get_var(lit, &constr.var_mappings()).is_some() {
             Ok(env.clone())
         } else {
             Err(vec![TypeErr::new(ast.pos, &format!("Undefined variable: {lit}"))])
