@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::check::constrain::constraint::builder::VarMapping;
+use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
 use crate::check::name;
@@ -56,7 +56,7 @@ impl Environment {
         let mut vars = self.vars.clone();
 
         let var = if let Some((var, offset)) = var_mappings.get(var) {
-            format!("{var}@{offset}")
+            format_var_map(var, offset)
         } else {
             String::from(var)
         };
@@ -97,7 +97,7 @@ impl Environment {
     /// Return true variable [TrueName], whether it's mutable and it's expected value
     pub fn get_var(&self, var: &str, var_mappings: &VarMapping) -> Option<HashSet<(bool, Expected)>> {
         let var_name = if let Some((var, offset)) = var_mappings.get(var) {
-            format!("{var}@{offset}")
+            format_var_map(var, offset)
         } else {
             String::from(var)
         };

@@ -6,7 +6,7 @@ use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::builder::VarMapping;
+use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
@@ -90,7 +90,7 @@ impl TryFrom<(&AST, &VarMapping)> for Expect {
             if let Node::Id { lit } = node {
                 if let Some((var, offset)) = mappings.get(lit) {
                     // Always use name currently defined in environment
-                    Node::Id { lit: format!("{var}&{offset}") }
+                    Node::Id { lit: format_var_map(var, offset) }
                 } else {
                     node.clone()
                 }
