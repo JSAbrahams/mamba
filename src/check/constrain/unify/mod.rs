@@ -5,7 +5,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::Context;
-use crate::common::delimit::{custom_delimited, newline_delimited};
+use crate::common::delimit::newline_delimited;
 
 pub mod finished;
 
@@ -21,16 +21,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
     let (_, errs): (Vec<_>, Vec<_>) = all_constraints
         .iter()
         .map(|constraints| {
-            trace!(
-                "[unifying set {}\\{}{}]",
-                count,
-                all_constraints.len(),
-                if constraints.in_class.is_empty() {
-                    String::new()
-                } else {
-                    custom_delimited(&constraints.in_class, " in ", " in ")
-                }
-            );
+            trace!("[unifying set {}\\{}]",count,all_constraints.len());
             count += 1;
             unify_link(&mut constraints.clone(), &mut finished, ctx, constraints.len()).map_err(|e| {
                 trace!(

@@ -6,7 +6,6 @@ use itertools::enumerate;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -37,15 +36,15 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
 /// When a constraint is added, we add it to each open path.
 #[derive(Debug)]
 pub struct ConstrBuilder {
-    finished: Vec<(Vec<StringName>, Vec<Constraint>)>,
-    constraints: Vec<(Vec<StringName>, Vec<Constraint>)>,
+    finished: Vec<Vec<Constraint>>,
+    constraints: Vec<Vec<Constraint>>,
 
     pub var_mapping: VarMapping,
 }
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { finished: vec![], constraints: vec![(vec![], vec![])], var_mapping: HashMap::new() }
+        ConstrBuilder { finished: vec![], constraints: vec![vec![]], var_mapping: HashMap::new() }
     }
 
     pub fn is_top_level(&self) -> bool { self.constraints.len() == 1 }
@@ -59,14 +58,6 @@ impl ConstrBuilder {
     pub fn insert_var(&mut self, var: &str) {
         let offset = self.var_mapping.get(var).map_or(0, |o| o + 1);
         self.var_mapping.insert(String::from(var), offset);
-    }
-
-    pub fn new_set_in_class(&mut self, class: &StringName) -> usize {
-        let lvl = self.new_set();
-        for constraints in &mut self.constraints {
-            constraints.0.push(class.clone());
-        }
-        lvl
     }
 
     /// Create new set, and create marker so that we know what set to exit to upon exit.
@@ -111,13 +102,8 @@ impl ConstrBuilder {
 
         for (i, constraints) in enumerate(&mut self.constraints) {
             trace!("{gap}Constr[{}]: {} == {}, {}: {}", i, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
-            constraints.1.push(constraint.clone())
+            constraints.push(constraint.clone())
         }
-    }
-
-    #[allow(clippy::map_flatten)] // flat_map does something else for Option here
-    pub fn current_class(&self) -> Option<StringName> {
-        self.constraints.iter().last().map(|(names, _)| names.iter().last()).flatten().cloned()
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {

@@ -4,7 +4,10 @@ use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
 use crate::check::name;
+use crate::check::name::Name;
+use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
+use crate::common::position::Position;
 
 #[derive(Clone, Debug, Default)]
 pub struct Environment {
@@ -16,22 +19,23 @@ pub struct Environment {
 
     pub raises_caught: HashSet<TrueName>,
 
-    pub class_type: Option<Expect>,
+    pub class: Option<StringName>,
+
     pub unassigned: HashSet<String>,
     temp_type: usize,
 
-    vars: HashMap<String, HashSet<(bool, Expected)>>,
+    pub vars: HashMap<String, HashSet<(bool, Expected)>>,
     pub var_mapping: VarMapping,
 }
 
 impl Environment {
     /// Specify that we are in a class
-    ///
-    /// This adds a self variable with the class expected, and class_type is set
-    /// to the expected class type.
-    pub fn in_class(&self, class: &Expected) -> Environment {
-        let env = self.insert_var(false, &String::from(SELF), class, &HashMap::new());
-        Environment { class_type: Some(class.expect.clone()), ..env }
+    pub fn in_class(&self, mutable: bool, class_name: &StringName, pos: Position) -> Environment {
+        let mut vars = self.vars.clone();
+        let exp_class = Expected::new(pos, &Expect::Type { name: Name::from(class_name) });
+
+        vars.insert(String::from(SELF), HashSet::from([(mutable, exp_class)]));
+        Environment { class: Some(class_name.clone()), vars, ..self.clone() }
     }
 
     pub fn in_fun(&self, in_fun: bool) -> Environment {

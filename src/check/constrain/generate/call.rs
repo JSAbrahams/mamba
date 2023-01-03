@@ -278,6 +278,7 @@ fn property_call(
         },
     );
 
+    generate(&ast_without_access, env, ctx, constr)?;
     constr.add("call property", &access, &entire_call_as_ast);
     Ok(env.clone())
 }

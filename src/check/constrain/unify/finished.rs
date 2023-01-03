@@ -1,6 +1,6 @@
 use crate::check::ast::pos_name::PosNameMap;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{Any, Name, Union};
+use crate::check::name::{Empty, Name, Union};
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
@@ -22,6 +22,9 @@ impl Finished {
     pub fn push_ty(&mut self, ctx: &Context, pos: Position, name: &Name) -> TypeResult<()> {
         // trim temp should not be needed, underlying issue with current logic
         let name = name.trim_any().trim_temp();
+        if name == Name::empty() {
+            return Ok(());
+        }
         for class in &name.names {
             ctx.class(class, pos)?;
         }

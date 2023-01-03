@@ -5,6 +5,7 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::{constrain_args, identifier_from_var};
 use crate::check::constrain::generate::env::Environment;
+use crate::check::context::arg::python::SELF;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node, OptAST};
@@ -48,7 +49,14 @@ pub fn gen_expr(
 
 fn match_id(ast: &AST, ty: &OptAST, mutable: bool, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
     match &ast.node {
-        Node::Id { lit } => if env.is_def_mode {
+        Node::Id { lit } => if lit == SELF {
+            if let Some(class_name) = &env.class {
+                let ty = Box::from(AST::new(ast.pos, Node::Id { lit: class_name.name.clone() }));
+                identifier_from_var(ast, &Some(ty), &None, mutable, ctx, constr, env)
+            } else {
+                Err(vec![TypeErr::new(ast.pos, &format!("{SELF} cannot be outside class"))])
+            }
+        } else if env.is_def_mode {
             identifier_from_var(ast, ty, &None, mutable, ctx, constr, env)
         } else if env.get_var(lit, &constr.var_mapping).is_some() {
             Ok(env.clone())

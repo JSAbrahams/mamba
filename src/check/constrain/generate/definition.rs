@@ -32,8 +32,8 @@ pub fn gen_def(
 
             let non_nullable_class_vars: HashSet<String> = match &id.node {
                 Node::Id { lit } if *lit == function::INIT => {
-                    if let Some(class) = constr.current_class() {
-                        let class = ctx.class(&class, id.pos)?;
+                    if let Some(class) = &env.class {
+                        let class = ctx.class(class, id.pos)?;
                         let fields: Vec<&Field> = class
                             .fields
                             .iter()
@@ -126,7 +126,7 @@ pub fn constrain_args(
         match &arg.node {
             Node::FunArg { mutable, var, ty, default, .. } => {
                 if var.node == Node::new_self() {
-                    let self_type = &env_with_args.class_type.clone().ok_or_else(|| {
+                    let class_name = &env.class.clone().ok_or_else(|| {
                         TypeErr::new(var.pos, &format!("{SELF} cannot be outside class"))
                     })?;
                     if default.is_some() {
@@ -134,10 +134,7 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(arg.pos, &msg)]);
                     }
 
-                    let self_exp = Expected::new(var.pos, self_type);
-                    env_with_args = env_with_args.insert_var(*mutable, SELF, &self_exp, &constr.var_mapping);
-                    let left = Expected::try_from((var, &constr.var_mapping))?;
-                    constr.add("arguments", &left, &Expected::new(var.pos, self_type));
+                    env_with_args = env_with_args.in_class(*mutable, class_name, var.pos);
                 } else {
                     env_with_args = identifier_from_var(var, ty, default, *mutable, ctx, constr, &env_with_args)?;
                 }
