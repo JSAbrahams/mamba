@@ -12,7 +12,7 @@ use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsUndefined, TrueName};
+use crate::check::name::true_name::{IsTemp, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -311,8 +311,8 @@ impl Name {
         Name { names, ..self.clone() }
     }
 
-    pub fn trim_undefined(&self) -> Self {
-        let names = self.names.iter().filter(|n| !n.is_undefined()).cloned().collect();
+    pub fn trim_temp(&self) -> Self {
+        let names = self.names.iter().filter(|n| !n.is_temp()).cloned().collect();
         Name { names, ..self.clone() }
     }
 

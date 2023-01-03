@@ -6,7 +6,7 @@ use crate::check::context::{clss, Context};
 use crate::check::name::{ColType, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsUndefined, TrueName};
+use crate::check::name::true_name::{IsTemp, TrueName};
 use crate::check::result::TypeResult;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -135,10 +135,10 @@ impl From<&NameVariant> for Name {
     }
 }
 
-impl IsUndefined for NameVariant {
-    fn is_undefined(&self) -> bool {
+impl IsTemp for NameVariant {
+    fn is_temp(&self) -> bool {
         if let NameVariant::Single(string_name) = self {
-            string_name.is_undefined()
+            string_name.is_temp()
         } else {
             false
         }

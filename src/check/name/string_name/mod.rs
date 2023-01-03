@@ -10,7 +10,7 @@ use crate::check::context::function::union::FunUnion;
 use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, TEMP, Union};
 use crate::check::name::Name;
 use crate::check::name::name_variant::NameVariant;
-use crate::check::name::true_name::{IsUndefined, TrueName};
+use crate::check::name::true_name::{IsTemp, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -188,8 +188,8 @@ impl Substitute for StringName {
     }
 }
 
-impl IsUndefined for StringName {
-    fn is_undefined(&self) -> bool {
+impl IsTemp for StringName {
+    fn is_temp(&self) -> bool {
         self.name.starts_with(TEMP)
     }
 }

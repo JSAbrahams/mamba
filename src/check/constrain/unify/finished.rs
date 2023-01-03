@@ -25,7 +25,7 @@ impl Finished {
         }
 
         // trim undefined should not be needed, underlying issue with current logic
-        let name = name.trim_any().trim_undefined();
+        let name = name.trim_any().trim_temp();
         for class in &name.names {
             ctx.class(class, pos)?;
         }

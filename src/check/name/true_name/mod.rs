@@ -22,8 +22,8 @@ pub struct TrueName {
     pub variant: NameVariant,
 }
 
-pub trait IsUndefined {
-    fn is_undefined(&self) -> bool;
+pub trait IsTemp {
+    fn is_temp(&self) -> bool;
 }
 
 impl PartialOrd<Self> for TrueName {
@@ -175,9 +175,9 @@ impl From<&Vec<TrueName>> for Name {
     }
 }
 
-impl IsUndefined for TrueName {
-    fn is_undefined(&self) -> bool {
-        self.variant.is_undefined()
+impl IsTemp for TrueName {
+    fn is_temp(&self) -> bool {
+        self.variant.is_temp()
     }
 }
 
