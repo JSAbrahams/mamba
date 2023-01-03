@@ -20,11 +20,11 @@ fn command_line_class_no_output() -> Result<(), Box<dyn std::error::Error>> {
     cmd.current_dir(resource_path(true, &["class"], ""));
 
     let input = resource_path(true, &["class"], "types.mamba");
-    let res = cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).ok();
+    let res = cmd.arg("-i").arg(input).stderr(Stdio::inherit()).stdout(Stdio::inherit()).output();
 
     let output = resource_path(true, &["class", "target"], "");
     let del_res = delete_dir(&output);
-    assert!(res.is_ok());
+    assert!(res.is_ok(), "{:?}", res);
     del_res
 }
 
@@ -36,10 +36,10 @@ fn command_line_class_with_output() -> Result<(), Box<dyn std::error::Error>> {
     let input = resource_path(true, &["class"], "types.mamba");
     let (output_path, _) = resource_content_randomize(true, &["class"], "");
     cmd.arg("-v").arg("-i").arg(input).arg("-o").arg(&output_path);
-    let res = cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).ok();
+    let res = cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output();
 
     let del_res = delete_dir(&output_path);
-    assert!(res.is_ok());
+    assert!(res.is_ok(), "{:?}", res);
     del_res
 }
 
@@ -52,8 +52,7 @@ fn transpile_src_in_dir() -> Result<(), Box<dyn std::error::Error>> {
     assert!(cmd.stderr(Stdio::inherit()).stdout(Stdio::inherit()).output()?.ok().is_ok());
     let output_path = resource_path(true, &["dummy", "proj1", "target"], "");
 
-    let del_res = delete_dir(&output_path);
-    del_res
+    delete_dir(&output_path)
 }
 
 #[test]

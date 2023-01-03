@@ -135,7 +135,6 @@ pub fn constrain_args(
                     }
 
                     let self_exp = Expected::new(var.pos, self_type);
-                    constr.insert_var(SELF);
                     env_with_args = env_with_args.insert_var(*mutable, SELF, &self_exp, &constr.var_mapping);
                     let left = Expected::try_from((var, &constr.var_mapping))?;
                     constr.add("arguments", &left, &Expected::new(var.pos, self_type));

@@ -7,6 +7,7 @@ use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{field, LookupClass};
+use crate::check::context::arg::SELF;
 use crate::check::context::Context;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
@@ -55,11 +56,9 @@ pub fn constrain_class_body(
         env_with_class_fields = property_from_field(ty.pos, &field, &class_name, &env_with_class_fields, constr)?;
     }
 
-    constr.add(
-        "class body",
-        &Expected::try_from((&AST { pos: ty.pos, node: Node::new_self() }, &constr.var_mapping))?,
-        &Expected::new(ty.pos, &class_ty_exp),
-    );
+    let name = Name::try_from(ty)?;
+    let ty_exp = Expected::new(ty.pos, &Type { name });
+    let env_with_class_fields = env_with_class_fields.insert_var(false, SELF, &ty_exp, &constr.var_mapping);
 
     gen_vec(statements, &env_with_class_fields, true, ctx, constr)?;
     constr.exit_set_to(class_lvl, ty.pos)?;
