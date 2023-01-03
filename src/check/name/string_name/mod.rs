@@ -7,10 +7,10 @@ use std::iter::FromIterator;
 use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{GetFun, HasParent};
 use crate::check::context::function::union::FunUnion;
-use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, Union};
+use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, TEMP, Union};
 use crate::check::name::Name;
 use crate::check::name::name_variant::NameVariant;
-use crate::check::name::true_name::TrueName;
+use crate::check::name::true_name::{IsTemp, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -185,6 +185,12 @@ impl Substitute for StringName {
                     .collect::<Result<_, _>>()?,
             })
         }
+    }
+}
+
+impl IsTemp for StringName {
+    fn is_temp(&self) -> bool {
+        self.name.starts_with(TEMP)
     }
 }
 
