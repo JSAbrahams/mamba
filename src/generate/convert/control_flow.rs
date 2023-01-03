@@ -8,14 +8,14 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     Ok(match &ast.node {
         NodeTy::IfElse { cond, then, el } => {
-            let cond = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None), ctx)?);
+            let cond = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None, None), ctx)?);
 
             match el {
                 Some(el) => if ast.ty.is_some() && is_valid_in_ternary(then, el) {
                     let state = state
                         .is_last_must_be_ret(false)
                         .remove_ret(true)
-                        .must_assign_to(None);
+                        .must_assign_to(None, None);
 
                     Core::Ternary {
                         cond,
@@ -36,14 +36,14 @@ pub fn convert_cntrl_flow(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &C
             }
         }
         NodeTy::Match { cond, cases: match_cases } => {
-            let expr = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None), ctx)?);
+            let expr = Box::from(convert_node(cond, imp, &state.is_last_must_be_ret(false).must_assign_to(None, None), ctx)?);
 
             let mut cases = vec![];
             for case in match_cases {
                 if let NodeTy::Case { cond, body } = &case.node {
                     if let NodeTy::ExpressionType { expr, .. } = &cond.node {
                         cases.push(Core::Case {
-                            expr: Box::from(convert_node(expr.as_ref(), imp, &state.is_last_must_be_ret(false).must_assign_to(None), ctx)?),
+                            expr: Box::from(convert_node(expr.as_ref(), imp, &state.is_last_must_be_ret(false).must_assign_to(None, None), ctx)?),
                             body: Box::from(convert_node(body.as_ref(), imp, state, ctx)?),
                         })
                     }

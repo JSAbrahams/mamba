@@ -53,7 +53,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                             match expr_core {
                                 Core::IfElse { .. } | Core::Match { .. } => {
                                     // redo convert but with assign to state
-                                    let state = state.must_assign_to(Option::from(&var.clone()));
+                                    let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
                                     return convert_node(expr, imp, &state, ctx);
                                 }
                                 _ => Some(Box::from(expr_core))
