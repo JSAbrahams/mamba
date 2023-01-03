@@ -64,7 +64,7 @@ impl Ord for NameVariant {
 impl Display for NameVariant {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
-            NameVariant::Single(direct_name) => write!(f, "{}", direct_name),
+            NameVariant::Single(direct_name) => write!(f, "{direct_name}"),
             NameVariant::Tuple(names) => write!(f, "({})", comma_delm(names)),
             NameVariant::Fun(args, ret) => write!(f, "({}) -> {}", comma_delm(args), ret),
         }
