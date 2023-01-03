@@ -56,6 +56,11 @@ fn multiple_parent() -> OutTestRet {
 }
 
 #[test]
+fn shadow() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "shadow")
+}
+
+#[test]
 fn parent() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "parent")
 }
