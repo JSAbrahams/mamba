@@ -19,7 +19,9 @@ pub struct Environment {
     pub class_type: Option<Expect>,
     pub unassigned: HashSet<String>,
     temp_type: usize,
+
     vars: HashMap<String, HashSet<(bool, Expected)>>,
+    pub var_mapping: VarMapping,
 }
 
 impl Environment {
@@ -55,14 +57,19 @@ impl Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
-        let var = if let Some((var, offset)) = var_mappings.get(var) {
-            format_var_map(var, offset)
+        let offset = if let Some(offset) = self.var_mapping.get(var) {
+            *offset
+        } else if let Some(offset) = var_mappings.get(var) {
+            *offset
         } else {
-            String::from(var)
+            0usize
         };
 
-        vars.insert(var.clone(), expected_set);
-        Environment { vars, ..self.clone() }
+        let mut var_mappings = self.var_mapping.clone();
+        var_mappings.insert(String::from(var), offset);
+
+        vars.insert(format_var_map(var, &offset), expected_set);
+        Environment { vars, var_mapping: var_mappings, ..self.clone() }
     }
 
     /// Insert raises which are properly handled.
@@ -86,21 +93,23 @@ impl Environment {
     /// Gets a variable.
     ///
     /// Is Some, Vector wil usually contain only one expected.
-    /// It can contain multiple if the environment was unioned or intersected at
-    /// one point.
+    /// It can contain multiple if the environment was unioned or intersected at one point.
     ///
-    /// If the variable was mapped to another variable at one point due to a naming conflict,
-    /// the mapped to variable is returned to instead.
-    /// In other words, what the variable was mapped to.
-    /// This is useful for detecting shadowing.
+    /// If local variable mapping, meaning shadowed locally, then local mapping used to lookup
+    /// value.
+    /// Else, lookup mapping in global scope.
+    /// If not found, use variable directly in lookup.
     ///
-    /// Return true variable [TrueName], whether it's mutable and it's expected value
+    /// Return true variable [TrueName], whether it's mutable and it's expected value.
     pub fn get_var(&self, var: &str, var_mappings: &VarMapping) -> Option<HashSet<(bool, Expected)>> {
-        let var_name = if let Some((var, offset)) = var_mappings.get(var) {
+        let var_name = if let Some(offset) = self.var_mapping.get(var) {
+            format_var_map(var, offset)
+        } else if let Some(offset) = var_mappings.get(var) {
             format_var_map(var, offset)
         } else {
             String::from(var)
         };
+
         self.vars.get(&var_name).cloned()
     }
 

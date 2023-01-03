@@ -88,9 +88,9 @@ impl TryFrom<(&AST, &VarMapping)> for Expect {
     fn try_from((ast, mappings): (&AST, &VarMapping)) -> TypeResult<Expect> {
         let ast = ast.map(&|node: &Node| {
             if let Node::Id { lit } = node {
-                if let Some((var, offset)) = mappings.get(lit) {
+                if let Some(offset) = mappings.get(lit) {
                     // Always use name currently defined in environment
-                    Node::Id { lit: format_var_map(var, offset) }
+                    Node::Id { lit: format_var_map(lit, offset) }
                 } else {
                     node.clone()
                 }

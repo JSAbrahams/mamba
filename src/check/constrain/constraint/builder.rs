@@ -12,7 +12,7 @@ use crate::common::position::Position;
 
 const PADDING: usize = 2;
 
-pub type VarMapping = HashMap<String, (String, usize)>;
+pub type VarMapping = HashMap<String, usize>;
 
 pub fn format_var_map(var: &str, offset: &usize) -> String {
     if *offset == 0 as usize {
@@ -39,19 +39,16 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
 pub struct ConstrBuilder {
     finished: Vec<(Vec<StringName>, Vec<Constraint>)>,
     constraints: Vec<(Vec<StringName>, Vec<Constraint>)>,
-    mapping: VarMapping,
+
+    pub var_mapping: VarMapping,
 }
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { finished: vec![], constraints: vec![(vec![], vec![])], mapping: HashMap::new() }
+        ConstrBuilder { finished: vec![], constraints: vec![(vec![], vec![])], var_mapping: HashMap::new() }
     }
 
     pub fn is_top_level(&self) -> bool { self.constraints.len() == 1 }
-
-    pub fn var_mappings(&self) -> VarMapping {
-        self.mapping.clone()
-    }
 
     /// Insert variable for mapping in current constraint set.
     ///
@@ -60,13 +57,8 @@ impl ConstrBuilder {
     /// Differs from environment since environment is used to check that variables are defined at a
     /// certain location.
     pub fn insert_var(&mut self, var: &str) {
-        let offset = if let Some((_, offset)) = self.mapping.get(var) {
-            offset + 1
-        } else {
-            0
-        };
-
-        self.mapping.insert(String::from(var), (String::from(var), offset));
+        let offset = self.var_mapping.get(var).map_or(0, |o| o + 1);
+        self.var_mapping.insert(String::from(var), offset);
     }
 
     pub fn new_set_in_class(&mut self, class: &StringName) -> usize {
