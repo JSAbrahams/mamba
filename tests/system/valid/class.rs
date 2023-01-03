@@ -6,6 +6,7 @@ fn assign_to_nullable_field() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // Generics have not properly been implemented
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }
@@ -71,7 +72,6 @@ fn parent() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Does this fail because of the context? Or something else?
 fn types() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "types")
 }

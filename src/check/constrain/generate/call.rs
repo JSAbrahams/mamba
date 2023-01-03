@@ -15,6 +15,7 @@ use crate::check::constrain::generate::env::Environment;
 use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
+use crate::check::context::arg::python::SELF;
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
@@ -155,7 +156,8 @@ fn check_iden_mut(id: &Identifier, env: &Environment, constr: &mut ConstrBuilder
                 .map(|(_, var)| format!("Cannot change mutability of '{var}' in reassign"))
                 .collect(),
             _ if !f_mut => vec![format!("Cannot change mutability of '{var}' in reassign")],
-            _ => vec![format!("Cannot reassign to undefined '{var}'")],
+            _ if var == SELF && env.class.is_some() => vec![],
+            _ => vec![format!("Cannot reassign to undefined '{var}'")]
         })
         .collect();
 

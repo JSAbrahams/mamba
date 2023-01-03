@@ -6,6 +6,7 @@ use itertools::enumerate;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::context::arg::SELF;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -56,6 +57,9 @@ impl ConstrBuilder {
     /// Differs from environment since environment is used to check that variables are defined at a
     /// certain location.
     pub fn insert_var(&mut self, var: &str) {
+        if var == SELF {
+            return; // Never shadow self
+        }
         let offset = self.var_mapping.get(var).map_or(0, |o| o + 1);
         self.var_mapping.insert(String::from(var), offset);
     }

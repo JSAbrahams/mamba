@@ -61,7 +61,9 @@ impl Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
-        let offset = if let Some(offset) = self.var_mapping.get(var) {
+        let offset = if var == SELF {
+            0usize // Never shadow self
+        } else if let Some(offset) = self.var_mapping.get(var) {
             *offset
         } else if let Some(offset) = var_mappings.get(var) {
             *offset
