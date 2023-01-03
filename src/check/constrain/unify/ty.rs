@@ -10,7 +10,7 @@ use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{Any, ColType, IsSuperSet, Name, Union};
+use crate::check::name::{Any, ColType, IsSuperSet, Name};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -43,8 +43,8 @@ pub fn unify_type(
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
 
-                finished.push_ty(left.pos, &l_ty.union(r_ty));
-                finished.push_ty(right.pos, &l_ty.union(r_ty));
+                finished.push_ty(&ctx, left.pos, &l_ty)?;
+                finished.push_ty(&ctx, right.pos, &r_ty)?;
                 unify_link(constraints, finished, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 Err(unify_type_message(&constraint.msg, left, right))

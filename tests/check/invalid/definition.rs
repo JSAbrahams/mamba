@@ -102,6 +102,12 @@ fn non_mutable_in_call_chain() {
 }
 
 #[test]
+fn non_existent_type_annotation() {
+    let source = resource_content(false, &["type", "definition"], "non_existent_type_annotation.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn raises_unmentioned_exception() {
     let source =
         resource_content(false, &["type", "definition"], "raises_unmentioned_exception.mamba");

@@ -28,10 +28,10 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            finished.push_ty(right.pos, name);
+            finished.push_ty(&ctx, right.pos, name)?;
         }
         if let Type { name } = &right.expect {
-            finished.push_ty(left.pos, name);
+            finished.push_ty(&ctx, left.pos, name)?;
         }
 
         match (&left.expect, &right.expect) {

@@ -22,6 +22,10 @@ pub struct TrueName {
     pub variant: NameVariant,
 }
 
+pub trait IsUndefined {
+    fn is_undefined(&self) -> bool;
+}
+
 impl PartialOrd<Self> for TrueName {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.variant == other.variant {
@@ -168,6 +172,12 @@ impl From<&Vec<TrueName>> for Name {
     fn from(names: &Vec<TrueName>) -> Self {
         let names: HashSet<TrueName> = HashSet::from_iter(names.iter().cloned());
         Name { names, any: false }
+    }
+}
+
+impl IsUndefined for TrueName {
+    fn is_undefined(&self) -> bool {
+        self.variant.is_undefined()
     }
 }
 
