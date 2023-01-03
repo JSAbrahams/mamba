@@ -43,8 +43,8 @@ pub fn unify_type(
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
 
-                finished.push_ty(ctx, left.pos, &l_ty)?;
-                finished.push_ty(ctx, right.pos, &r_ty)?;
+                finished.push_ty(ctx, left.pos, l_ty)?;
+                finished.push_ty(ctx, right.pos, r_ty)?;
                 unify_link(constraints, finished, ctx, total)
             } else if constraint.superset == ConstrVariant::Left {
                 Err(unify_type_message(&constraint.msg, left, right))
