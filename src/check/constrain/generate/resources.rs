@@ -32,7 +32,6 @@ pub fn gen_resources(
             let resource_env = generate(resource, env, ctx, constr)?;
 
             constr.new_set();
-            constr.remove_expected(&resource_exp);
             let resource_env = identifier_from_var(
                 alias,
                 ty,

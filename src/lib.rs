@@ -1,5 +1,3 @@
-#![feature(drain_filter)]
-
 extern crate ansi_term;
 extern crate core;
 #[macro_use]
