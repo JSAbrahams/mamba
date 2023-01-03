@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -16,57 +18,72 @@ const PADDING: usize = 2;
 ///
 /// The level indicates how deep we are. A level of 0 indicates that we are at
 /// the top-level of a script.
+///
+/// We use sets to type check all possible execution paths.
+/// We can have multiple sets open at a time.
+/// When a constraint is added, we add it to each open path.
 #[derive(Debug)]
 pub struct ConstrBuilder {
     pub level: usize,
-    finished: Vec<(Vec<StringName>, Vec<Constraint>)>,
+    pub active_ceil: usize,
+
     constraints: Vec<(Vec<StringName>, Vec<Constraint>)>,
 }
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { level: 0, finished: vec![], constraints: vec![(vec![], vec![])] }
+        ConstrBuilder { level: 0, active_ceil: 1, constraints: vec![(vec![], vec![])] }
     }
 
     pub fn is_top_level(&self) -> bool { self.level == 0 }
 
-    pub fn new_set_in_class(&mut self, inherit_class: bool, class: &StringName) {
-        self.new_set(true);
-        if self.level > 0 && inherit_class {
-            let mut previous = self.constraints[self.level - 1].0.clone();
-            self.constraints[self.level].0.append(&mut previous);
+    pub fn new_set_in_class(&mut self, class: &StringName) -> usize {
+        let lvl = self.new_set();
+        for i in self.level..self.active_ceil {
+            self.constraints[i].0.push(class.clone());
         }
-        self.constraints[self.level].0.push(class.clone());
+        lvl
     }
 
     /// Remove all constraints with where either parent or child is expected
     pub fn remove_expected(&mut self, expected: &Expected) {
-        self.constraints[self.level].1 = self.constraints[self.level]
-            .1
-            .clone()
-            .drain_filter(|con| {
-                !con.left.expect.same_value(&expected.expect)
-                    && !con.right.expect.same_value(&expected.expect)
-            })
-            .collect()
+        for i in self.level..self.active_ceil {
+            self.constraints[i].1 = self.constraints[i]
+                .1
+                .clone()
+                .drain_filter(|con| {
+                    !con.left.expect.same_value(&expected.expect)
+                        && !con.right.expect.same_value(&expected.expect)
+                })
+                .collect()
+        }
     }
 
-    pub fn new_set(&mut self, inherit: bool) {
-        self.constraints.push(if inherit {
+    /// Create new set, and create marker so that we know what set to exit to upon exit.
+    pub fn new_set(&mut self) -> usize {
+        self.constraints.push(
             (self.constraints[self.level].0.clone(), self.constraints[self.level].1.clone())
-        } else {
-            (vec![], vec![])
-        });
-        self.level += 1;
+        );
+
+        self.active_ceil += 1;
+        return self.active_ceil;
     }
 
-    pub fn exit_set(&mut self, pos: Position) -> TypeResult<()> {
-        if self.level == 0 {
+    pub fn exit_set_to(&mut self, level: usize, pos: Position) -> TypeResult<()> {
+        let level = max(1, level);
+        if self.active_ceil == 1 {
             return Err(vec![TypeErr::new(pos, "Cannot exit top-level set")]);
+        } else if level > self.active_ceil {
+            return Err(vec![TypeErr::new(pos, "Exiting constraint set which doesn't exist")]);
         }
 
-        self.finished.push(self.constraints.remove(self.level));
-        self.level -= 1;
+        if level > self.level {
+            self.active_ceil = level; // self.level untouched
+        } else {
+            self.level = level;
+            self.active_ceil = self.level + 1;
+        }
+
         Ok(())
     }
 
@@ -75,10 +92,14 @@ impl ConstrBuilder {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
 
+    /// Add constraint to currently all op sets.
+    /// The open sets are the sets at levels between the self.level and active ceiling.
     pub fn add_constr(&mut self, constraint: &Constraint) {
         let gap = String::from_utf8(vec![b' '; self.level * PADDING]).unwrap();
-        trace!("{gap}Constr[{}]: {} == {}, {}: {}", self.finished.len(), constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
-        self.constraints[self.level].1.push(constraint.clone())
+        for i in self.level..self.active_ceil {
+            trace!("{gap}Constr[{}]: {} == {}, {}: {}", i, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
+            self.constraints[i].1.push(constraint.clone())
+        }
     }
 
     pub fn current_class(&self) -> Option<StringName> {
@@ -86,11 +107,7 @@ impl ConstrBuilder {
         constraints.last().cloned()
     }
 
-    // It is not redundant
-    #[allow(clippy::redundant_clone)]
     pub fn all_constr(self) -> Vec<Constraints> {
-        let mut finished = self.finished.clone();
-        finished.append(&mut self.constraints.clone());
-        finished.iter().map(Constraints::from).collect()
+        self.constraints.iter().map(Constraints::from).collect()
     }
 }

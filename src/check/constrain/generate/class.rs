@@ -47,7 +47,7 @@ pub fn constrain_class_body(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     let class_name = StringName::try_from(ty.deref())?;
-    constr.new_set_in_class(true, &class_name);
+    let class_lvl = constr.new_set_in_class(&class_name);
     let class_ty_exp = Type { name: Name::from(&class_name) };
 
     let mut env_with_class_fields = env.in_class(&Expected::new(ty.pos, &class_ty_exp));
@@ -62,7 +62,7 @@ pub fn constrain_class_body(
     );
 
     gen_vec(statements, &env_with_class_fields, true, ctx, constr)?;
-    constr.exit_set(ty.pos)?;
+    constr.exit_set_to(class_lvl, ty.pos)?;
     Ok(env_with_class_fields.clone())
 }
 

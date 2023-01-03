@@ -51,22 +51,18 @@ pub fn gen_flow(
 
             let if_expr_exp = Expected::try_from((ast, &env.var_mappings))?;
 
-            constr.new_set(true);
+            constr.new_set();
             let then_env = generate(then, env, ctx, constr)?;
             let then_exp = Expected::try_from((then, &then_env.var_mappings))?;
-            constr.exit_set(then.pos)?;
+            if env.is_expr {
+                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
+            }
 
-            constr.new_set(true);
+            constr.new_set();
             let else_env = generate(el, env, ctx, constr)?;
             if env.is_expr {
                 let el = Expected::try_from((el, &else_env.var_mappings))?;
-                constr.add("else branch equal to if", &el, &if_expr_exp);
-            }
-            constr.exit_set(el.pos)?;
-
-            if env.is_expr {
-                generate(then, &then_env, ctx, constr)?; // Also gen in outer constr set
-                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
+                constr.add("else branch equal to if", &el, &then_exp);
             }
 
             Ok(env.union(&then_env.intersect(&else_env)))
@@ -76,9 +72,8 @@ pub fn gen_flow(
             constr.add_constr(&Constraint::truthy("if else", &left));
 
             generate(cond, env, ctx, constr)?;
-            constr.new_set(true);
+            constr.new_set();
             generate(then, env, ctx, constr)?;
-            constr.exit_set(then.pos)?;
             Ok(env.clone())
         }
 
@@ -90,24 +85,24 @@ pub fn gen_flow(
         }
 
         Node::For { expr, col, body } => {
-            constr.new_set(true);
+            let loop_lvl = constr.new_set();
             let col_env = generate(col, env, ctx, constr)?;
 
             let is_define_mode = col_env.is_def_mode;
             let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
             generate(body, &lookup_env.in_loop().is_def_mode(is_define_mode), ctx, constr)?;
-            constr.exit_set(ast.pos)?;
+            constr.exit_set_to(loop_lvl, ast.pos)?;
             Ok(env.clone())
         }
         Node::While { cond, body } => {
-            constr.new_set(true);
+            let while_lvl = constr.new_set();
             let cond_exp = Expected::try_from((cond, &env.var_mappings))?;
             constr.add_constr(&Constraint::truthy("while condition", &cond_exp));
 
             generate(cond, env, ctx, constr)?;
             generate(body, &env.in_loop(), ctx, constr)?;
-            constr.exit_set(ast.pos)?;
+            constr.exit_set_to(while_lvl, ast.pos)?;
             Ok(env.clone())
         }
 
@@ -125,7 +120,7 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
     for case in cases {
         match &case.node {
             Node::Case { cond, body } => {
-                constr.new_set(true);
+                constr.new_set();
 
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
                 generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
@@ -141,7 +136,6 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
 
                 let exp_body = Expected::try_from((body, &cond_env.var_mappings))?;
                 constr.add("match arm body", &exp_body, &exp_ast);
-                constr.exit_set(case.pos)?;
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
         }

@@ -118,8 +118,14 @@ fn wrong_return_type() {
 }
 
 #[test]
-fn return_if_else_undefined() {
-    let source = resource_content(false, &["type", "function"], "return_if_else_undefined.mamba");
+fn return_if_else_none_el() {
+    let source = resource_content(false, &["type", "function"], "return_if_else_none_el.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn return_if_else_none_then() {
+    let source = resource_content(false, &["type", "function"], "return_if_else_none_then.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
