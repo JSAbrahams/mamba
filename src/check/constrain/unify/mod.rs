@@ -21,22 +21,17 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
     let (_, errs): (Vec<_>, Vec<_>) = all_constraints
         .iter()
         .map(|constraints| {
-            trace!("[unifying set {}\\{}]",count,all_constraints.len());
+            trace!("[unifying set {}\\{}]", count, all_constraints.len());
             count += 1;
             unify_link(&mut constraints.clone(), &mut finished, ctx, constraints.len()).map_err(|e| {
                 trace!(
                     "[error unifying set {}\\{}:{}]",
                     count - 1,
                     all_constraints.len(),
-                    newline_delimited(e.clone().into_iter().map(|e| format!(
-                        "{}{}",
-                        if let Some(pos) = e.position {
-                            format!(" at {pos}: ")
-                        } else {
-                            String::new()
-                        },
-                        e.msg
-                    )))
+                    newline_delimited(e.clone().into_iter().map(|e| {
+                        let pos = e.pos.map_or_else(|| String::new(), |pos| format!(" at {pos}: "));
+                        format!("{pos}{}", e.msg)
+                    }))
                 );
                 e
             })

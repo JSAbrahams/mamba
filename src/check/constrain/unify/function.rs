@@ -239,7 +239,7 @@ fn access_fun_cause(errs: &[TypeErr], other: &Expected, entity_name: &Name, fun_
 fn access_cause(errs: &[TypeErr], other: &Expected, msg: &str, cause: &str) -> Vec<TypeErr> {
     errs.iter().map(|err| {
         // flip messages
-        let err = if let Some(pos) = err.position {
+        let err = if let Some(pos) = err.pos {
             TypeErr::new(pos, msg)
         } else {
             TypeErr::new_no_pos(msg)

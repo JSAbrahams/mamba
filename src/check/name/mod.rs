@@ -257,7 +257,7 @@ impl IsSuperSet<Name> for Name {
             return Ok(false);
         }
 
-        let mut self_is_super_of = vec![];
+        let mut self_is_super_of = false;
         for name in &other.names {
             let is_superset = |s_name: &TrueName| s_name.is_superset_of(name, ctx, pos);
             let any_superset: Vec<_> = self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
@@ -266,10 +266,10 @@ impl IsSuperSet<Name> for Name {
                 return Ok(false); // not a single of self was super
             }
 
-            self_is_super_of.push(any_superset.iter().any(|b| *b))
+            self_is_super_of |= any_superset.iter().any(|b| *b);
         }
 
-        Ok(if other.is_interchangeable { self_is_super_of.iter().any(|b| *b)} else { true })
+        Ok(if other.is_interchangeable { self_is_super_of } else { true })
     }
 }
 
