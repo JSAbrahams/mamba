@@ -105,8 +105,11 @@ pub fn gen_def(
             Err(vec![TypeErr::new(ast.pos, "Function argument cannot be top level")])
         }
 
-        Node::VariableDef { mutable, var, ty, expr: expression, .. } => {
-            identifier_from_var(var, ty, expression, *mutable, ctx, constr, env)
+        Node::VariableDef { mutable, var, ty, expr: expression, .. } => if let Some(ty) = ty {
+            let name = Name::try_from(ty)?;
+            identifier_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
+        } else {
+            identifier_from_var(var, &None, expression, *mutable, ctx, constr, env)
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected definition")]),
@@ -134,9 +137,11 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(arg.pos, &msg)]);
                     }
 
-                    env_with_args = env_with_args.in_class(*mutable, class_name, var.pos);
+                    let name = Some(Name::from(class_name)); // ignore type alias for now for self
+                    env_with_args = identifier_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
                 } else {
-                    env_with_args = identifier_from_var(var, ty, default, *mutable, ctx, constr, &env_with_args)?;
+                    let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
+                    env_with_args = identifier_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
                 }
             }
             _ => return Err(vec![TypeErr::new(arg.pos, "Expected function argument")]),
@@ -148,7 +153,7 @@ pub fn constrain_args(
 
 pub fn identifier_from_var(
     var: &AST,
-    ty: &Option<Box<AST>>,
+    ty: &Option<Name>,
     expr: &Option<Box<AST>>,
     mutable: bool,
     ctx: &Context,
@@ -162,8 +167,7 @@ pub fn identifier_from_var(
 
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
-        let name = Name::try_from(ty.deref())?;
-        for (f_name, (f_mut, name)) in match_name(&identifier, &name, var.pos)? {
+        for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
             let ty = Expected::new(var.pos, &Type { name: name.clone() });
             constr.insert_var(&f_name);
             env_with_var = env_with_var.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
@@ -179,7 +183,7 @@ pub fn identifier_from_var(
     if identifier.is_tuple() {
         let tup_exps = identifier_to_tuple(var.pos, &identifier, &env_with_var, constr)?;
         if let Some(ty) = ty {
-            let ty_exp = Expected::try_from((ty, &constr.var_mapping))?;
+            let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
             for tup_exp in &tup_exps {
                 constr.add("type and tuple", &ty_exp, tup_exp);
             }
@@ -194,7 +198,7 @@ pub fn identifier_from_var(
 
     let var_expect = Expected::try_from((var, &constr.var_mapping))?;
     if let Some(ty) = ty {
-        let ty_exp = Expected::new(var.pos, &Type { name: Name::try_from(ty.deref())? });
+        let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
         constr.add("variable and type", &ty_exp, &var_expect);
     }
     if let Some(expr) = expr {

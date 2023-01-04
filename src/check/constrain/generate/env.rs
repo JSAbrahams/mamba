@@ -1,12 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
-use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::context::arg::SELF;
-use crate::check::name::Name;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
-use crate::common::position::Position;
 
 #[derive(Clone, Debug, Default)]
 pub struct Environment {
@@ -29,12 +26,8 @@ pub struct Environment {
 
 impl Environment {
     /// Specify that we are in a class
-    pub fn in_class(&self, mutable: bool, class_name: &StringName, pos: Position) -> Environment {
-        let mut vars = self.vars.clone();
-        let exp_class = Expected::new(pos, &Expect::Type { name: Name::from(class_name) });
-
-        vars.insert(String::from(SELF), HashSet::from([(mutable, exp_class)]));
-        Environment { class: Some(class_name.clone()), vars, ..self.clone() }
+    pub fn in_class(&self, class_name: &StringName) -> Environment {
+        Environment { class: Some(class_name.clone()), ..self.clone() }
     }
 
     pub fn in_fun(&self, in_fun: bool) -> Environment {
@@ -60,9 +53,7 @@ impl Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
         let mut vars = self.vars.clone();
 
-        let offset = if var == SELF {
-            0usize // Never shadow self
-        } else if let Some(offset) = self.var_mapping.get(var) {
+        let offset = if let Some(offset) = self.var_mapping.get(var) {
             *offset
         } else if let Some(offset) = var_mappings.get(var) {
             *offset

@@ -37,11 +37,6 @@ fn import_ast_verify() -> OutTestRet {
 }
 
 #[test]
-fn compound_field() -> OutTestRet {
-    test_directory(true, &["class"], &["class", "target"], "compound_field")
-}
-
-#[test]
 fn generic_unknown_type_unused() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generic_unknown_type_unused")
 }

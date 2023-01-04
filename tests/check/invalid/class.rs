@@ -22,6 +22,12 @@ fn access_unassigned_field() {
 }
 
 #[test]
+fn compound_field() {
+    let source = resource_content(false, &["type", "class"], "compound_field.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn reassign_wrong_type() {
     let source = resource_content(false, &["type", "class"], "reassign_wrong_type.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

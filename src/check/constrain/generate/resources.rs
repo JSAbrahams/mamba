@@ -32,9 +32,10 @@ pub fn gen_resources(
             let resource_env = generate(resource, env, ctx, constr)?;
 
             constr.new_set();
+            let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
             let resource_env = identifier_from_var(
                 alias,
-                ty,
+                &ty,
                 &Some(alias.clone()),
                 *mutable,
                 ctx,

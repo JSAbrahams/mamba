@@ -1,16 +1,12 @@
 use std::cmp::max;
 use std::collections::HashMap;
 
-use itertools::enumerate;
-
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::context::arg::SELF;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
-
-const PADDING: usize = 2;
 
 pub type VarMapping = HashMap<String, usize>;
 
@@ -45,6 +41,7 @@ pub struct ConstrBuilder {
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
+        trace!("Created set at level {}", 0);
         ConstrBuilder { finished: vec![], constraints: vec![vec![]], var_mapping: HashMap::new() }
     }
 
@@ -57,9 +54,6 @@ impl ConstrBuilder {
     /// Differs from environment since environment is used to check that variables are defined at a
     /// certain location.
     pub fn insert_var(&mut self, var: &str) {
-        if var == SELF {
-            return; // Never shadow self
-        }
         let offset = self.var_mapping.get(var).map_or(0, |o| o + 1);
         self.var_mapping.insert(String::from(var), offset);
     }
@@ -71,6 +65,8 @@ impl ConstrBuilder {
     pub fn new_set(&mut self) -> usize {
         let inherited_constraints = self.constraints.last().expect("Can never be empty");
         self.constraints.push(inherited_constraints.clone());
+
+        trace!("Created set at level {}", self.constraints.len() - 1);
         self.constraints.len()
     }
 
@@ -79,6 +75,8 @@ impl ConstrBuilder {
     /// - Error if already top-level.
     /// - Error if level greater than ceiling, as we cannot exit non-existent sets.
     pub fn exit_set_to(&mut self, level: usize, pos: Position) -> TypeResult<()> {
+        let msg_exit = format!("Exit set to level {}", level - 1);
+
         let level = max(1, level);
         if level == 0 {
             return Err(vec![TypeErr::new(pos, "Cannot exit top-level set")]);
@@ -91,6 +89,7 @@ impl ConstrBuilder {
             self.finished.push(self.constraints.remove(i))
         }
 
+        trace!("{msg_exit}: {} active sets, {} complete sets", self.constraints.len(), self.finished.len());
         Ok(())
     }
 
@@ -102,12 +101,12 @@ impl ConstrBuilder {
     /// Add constraint to currently all op sets.
     /// The open sets are the sets at levels between the self.level and active ceiling.
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        let gap = String::from_utf8(vec![b' '; self.constraints.len() * PADDING]).unwrap();
-
-        for (i, constraints) in enumerate(&mut self.constraints) {
-            trace!("{gap}Constr[{}]: {} == {}, {}: {}", i, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
-            constraints.push(constraint.clone())
+        for constraints in &mut self.constraints {
+            constraints.push(constraint.clone());
         }
+
+        let lvls = comma_delm(0..self.constraints.len());
+        trace!("Constr[{}]: {} == {}, {}: {}", lvls, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
