@@ -2,7 +2,7 @@ from ipaddress import IPv4Address
 
 class ServerErr: Exception
 class MyServer(def ip_address: IPv4Address):
-    def send(self, message: String) =>
+    def send(self, message: Str) =>
         pass
     def disconnect() => pass
 
