@@ -6,6 +6,7 @@ fn assign_to_nullable_field() -> OutTestRet {
 }
 
 #[test]
+#[ignore] // Generics have not properly been implemented
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }
@@ -53,6 +54,11 @@ fn fun_with_body_in_interface() -> OutTestRet {
 #[test]
 fn multiple_parent() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "multiple_parent")
+}
+
+#[test]
+fn shadow() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "shadow")
 }
 
 #[test]

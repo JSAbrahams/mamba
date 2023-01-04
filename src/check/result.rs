@@ -15,7 +15,7 @@ pub trait TryFromPos<T>: Sized {
 
 #[derive(Debug, Clone, Eq)]
 pub struct TypeErr {
-    pub position: Option<Position>,
+    pub pos: Option<Position>,
     pub msg: String,
     pub path: Option<PathBuf>,
     pub source: Option<String>,
@@ -37,7 +37,7 @@ impl WithCause for TypeErr {
 
 impl Hash for TypeErr {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.position.hash(state);
+        self.pos.hash(state);
         self.msg.hash(state);
         self.path.hash(state);
     }
@@ -45,7 +45,7 @@ impl Hash for TypeErr {
 
 impl PartialEq for TypeErr {
     fn eq(&self, other: &Self) -> bool {
-        self.position == other.position && self.msg == other.msg && self.path == other.path
+        self.pos == other.pos && self.msg == other.msg && self.path == other.path
     }
 }
 
@@ -59,7 +59,7 @@ impl TypeErr {
     /// New TypeErr with message at given position
     pub fn new(position: Position, msg: &str) -> TypeErr {
         TypeErr {
-            position: Some(position),
+            pos: Some(position),
             msg: String::from(msg),
             path: None,
             source: None,
@@ -70,7 +70,7 @@ impl TypeErr {
     /// New TypeErr with message at random position
     pub fn new_no_pos(msg: &str) -> TypeErr {
         TypeErr {
-            position: None,
+            pos: None,
             msg: String::from(msg),
             path: None,
             source: None,
@@ -87,6 +87,6 @@ impl WithSource for TypeErr {
 
 impl Display for TypeErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        format_err(f, &self.msg, &self.path, self.position, &self.source, &self.causes)
+        format_err(f, &self.msg, &self.path, self.pos, &self.source, &self.causes)
     }
 }

@@ -6,6 +6,7 @@ use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::{constrain_args, identifier_from_var};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node, OptAST};
 
@@ -27,7 +28,7 @@ pub fn gen_expr(
         Node::Question { left, right } => {
             constr.add(
                 "question",
-                &Expected::try_from((left, &env.var_mappings))?,
+                &Expected::try_from((left, &constr.var_mapping))?,
                 &Expected::new(left.pos, &Expect::none()),
             );
 
@@ -49,8 +50,9 @@ pub fn gen_expr(
 fn match_id(ast: &AST, ty: &OptAST, mutable: bool, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
     match &ast.node {
         Node::Id { lit } => if env.is_def_mode {
-            identifier_from_var(ast, ty, &None, mutable, ctx, constr, env)
-        } else if env.get_var(lit).is_some() {
+            let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
+            identifier_from_var(ast, &ty, &None, mutable, ctx, constr, env)
+        } else if env.get_var(lit, &constr.var_mapping).is_some() {
             Ok(env.clone())
         } else {
             Err(vec![TypeErr::new(ast.pos, &format!("Undefined variable: {lit}"))])

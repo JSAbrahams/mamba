@@ -1,0 +1,5 @@
+class MyClass
+    def a: Int := 10
+    def b: Int := self.a + 1
+
+def my_class := MyClass()

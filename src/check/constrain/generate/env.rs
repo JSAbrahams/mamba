@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::context::arg::SELF;
-use crate::check::name;
+use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
+use crate::check::constrain::constraint::expected::Expected;
+use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 
 #[derive(Clone, Debug, Default)]
@@ -15,21 +15,19 @@ pub struct Environment {
 
     pub raises_caught: HashSet<TrueName>,
 
-    pub class_type: Option<Expect>,
-    pub var_mappings: HashMap<String, String>,
+    pub class: Option<StringName>,
+
     pub unassigned: HashSet<String>,
     temp_type: usize,
-    vars: HashMap<String, HashSet<(bool, Expected)>>,
+
+    pub vars: HashMap<String, HashSet<(bool, Expected)>>,
+    pub var_mapping: VarMapping,
 }
 
 impl Environment {
     /// Specify that we are in a class
-    ///
-    /// This adds a self variable with the class expected, and class_type is set
-    /// to the expected class type.
-    pub fn in_class(&self, class: &Expected) -> Environment {
-        let env = self.insert_var(false, &String::from(SELF), class);
-        Environment { class_type: Some(class.expect.clone()), ..env }
+    pub fn in_class(&self, class_name: &StringName) -> Environment {
+        Environment { class: Some(class_name.clone()), ..self.clone() }
     }
 
     pub fn in_fun(&self, in_fun: bool) -> Environment {
@@ -51,27 +49,23 @@ impl Environment {
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.
     /// In future, if we get a variable, if it was renamed, the mapping is returned instead.
-    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected) -> Environment {
+    pub fn insert_var(&self, mutable: bool, var: &str, expect: &Expected, var_mappings: &VarMapping) -> Environment {
         let expected_set = vec![(mutable, expect.clone())].into_iter().collect::<HashSet<_>>();
-        let (mut vars, mut var_mappings) = (self.vars.clone(), self.var_mappings.clone());
+        let mut vars = self.vars.clone();
 
-        // Never shadow self
-        let var = if vars.contains_key(var) && var != SELF {
-            let mut offset = 0;
-            let mut new_var = format!("{}@{}", var, offset);
-            while self.vars.contains_key(&new_var) {
-                offset += 1;
-                new_var = format!("{var}@{offset}");
-            }
-
-            var_mappings.insert(String::from(var), new_var.clone());
-            new_var
+        let offset = if let Some(offset) = self.var_mapping.get(var) {
+            *offset
+        } else if let Some(offset) = var_mappings.get(var) {
+            *offset
         } else {
-            String::from(var)
+            0usize
         };
 
-        vars.insert(var, expected_set);
-        Environment { vars, var_mappings, ..self.clone() }
+        let mut var_mappings = self.var_mapping.clone();
+        var_mappings.insert(String::from(var), offset);
+
+        vars.insert(format_var_map(var, &offset), expected_set);
+        Environment { vars, var_mapping: var_mappings, ..self.clone() }
     }
 
     /// Insert raises which are properly handled.
@@ -95,31 +89,30 @@ impl Environment {
     /// Gets a variable.
     ///
     /// Is Some, Vector wil usually contain only one expected.
-    /// It can contain multiple if the environment was unioned or intersected at
-    /// one point.
+    /// It can contain multiple if the environment was unioned or intersected at one point.
     ///
-    /// If the variable was mapped to another variable at one point due to a naming conflict,
-    /// the mapped to variable is returned to instead.
-    /// In other words, what the variable was mapped to.
-    /// This is useful for detecting shadowing.
+    /// If local variable mapping, meaning shadowed locally, then local mapping used to lookup
+    /// value.
+    /// Else, lookup mapping in global scope.
+    /// If not found, use variable directly in lookup.
     ///
-    /// Return true variable [TrueName], whether it's mutable and it's expected value
-    pub fn get_var(&self, var: &str) -> Option<HashSet<(bool, Expected)>> {
-        for (old, new) in &self.var_mappings {
-            if old == var {
-                return self.get_var(new);
-            }
-        }
+    /// Return true variable [TrueName], whether it's mutable and it's expected value.
+    pub fn get_var(&self, var: &str, var_mappings: &VarMapping) -> Option<HashSet<(bool, Expected)>> {
+        let var_name = if let Some(offset) = self.var_mapping.get(var) {
+            format_var_map(var, offset)
+        } else if let Some(offset) = var_mappings.get(var) {
+            format_var_map(var, offset)
+        } else {
+            String::from(var)
+        };
 
-        self.vars.get(var).cloned()
+        self.vars.get(&var_name).cloned()
     }
 
     /// Union between two environments
     ///
     /// Combines all variables.
-    ///
-    /// Variable mappings combined.
-    /// If mapping occurs in both environments, then those of this environment taken.
+    /// Variable mappings are discarded.
     pub fn union(&self, other: &Environment) -> Environment {
         let mut vars = self.vars.clone();
         for (key, other_set) in &other.vars {
@@ -131,12 +124,7 @@ impl Environment {
             }
         }
 
-        let mut var_mappings = self.var_mappings.clone();
-        for (key, value) in &other.var_mappings {
-            var_mappings.insert(key.clone(), value.clone());
-        }
-
-        Environment { vars, var_mappings, ..self.clone() }
+        Environment { vars, var_mapping: VarMapping::new(), ..self.clone() }
     }
 
     /// Intersection between two environments.
@@ -148,8 +136,7 @@ impl Environment {
     /// Only intersect vars, all other fields of other environment are
     /// discarded.
     ///
-    /// Var mappings from this environment preserved which also occur in the other environment.
-    /// However, mappings of other environment preserved.
+    /// Variable mappings are discarded.
     pub fn intersect(&self, other: &Environment) -> Environment {
         let keys = self.vars.keys().filter(|key| other.vars.contains_key(*key));
         let mut vars = HashMap::new();
@@ -166,19 +153,7 @@ impl Environment {
             }
         }
 
-        let to_remove: Vec<String> = self
-            .var_mappings
-            .iter()
-            .filter(|(key, _)| other.var_mappings.contains_key(*key))
-            .map(|(key, _)| key.clone())
-            .collect();
-
-        let mut var_mappings = self.var_mappings.clone();
-        for key in &to_remove {
-            var_mappings.remove(key);
-        }
-
-        Environment { vars, var_mappings, ..self.clone() }
+        Environment { vars, var_mapping: VarMapping::new(), ..self.clone() }
     }
 
     /// Get a name for a temporary type.
@@ -187,7 +162,7 @@ impl Environment {
     /// The unification stage should then identify these.
     pub fn temp_var(&self) -> (String, Environment) {
         (
-            format!("{}{}", name::TEMP, self.temp_type),
+            format_var_map("", &(self.temp_type + 1)),
             Environment { temp_type: self.temp_type + 1, ..self.clone() },
         )
     }

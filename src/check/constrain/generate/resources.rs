@@ -19,9 +19,9 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
-            constr.new_set(true);
-            let resource_exp = Expected::try_from((resource, &env.var_mappings))?;
-            constr.add("with as", &resource_exp, &Expected::try_from((alias, &env.var_mappings))?);
+            let with_lvl = constr.new_set();
+            let resource_exp = Expected::try_from((resource, &constr.var_mapping))?;
+            constr.add("with as", &resource_exp, &Expected::try_from((alias, &constr.var_mapping))?);
             constr.add("with as", &resource_exp, &Expected::new(resource.pos, &Expect::any()));
 
             if let Some(ty) = ty {
@@ -31,11 +31,11 @@ pub fn gen_resources(
 
             let resource_env = generate(resource, env, ctx, constr)?;
 
-            constr.new_set(true);
-            constr.remove_expected(&resource_exp);
+            constr.new_set();
+            let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
             let resource_env = identifier_from_var(
                 alias,
-                ty,
+                &ty,
                 &Some(alias.clone()),
                 *mutable,
                 ctx,
@@ -44,21 +44,20 @@ pub fn gen_resources(
             )?;
 
             generate(expr, &resource_env, ctx, constr)?;
-            constr.exit_set(ast.pos)?;
-            constr.exit_set(ast.pos)?;
+            constr.exit_set_to(with_lvl);
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
-            constr.new_set(true);
+            let with_lvl = constr.new_set();
             constr.add(
                 "with",
-                &Expected::try_from((resource, &env.var_mappings))?,
+                &Expected::try_from((resource, &constr.var_mapping))?,
                 &Expected::new(resource.pos, &Expect::any()),
             );
 
             let resource_env = generate(resource, env, ctx, constr)?;
 
-            constr.exit_set(ast.pos)?;
+            constr.exit_set_to(with_lvl);
             generate(expr, &resource_env, ctx, constr)?;
             Ok(env.clone())
         }

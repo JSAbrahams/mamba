@@ -1,0 +1,1 @@
+def f() -> Int => if True then None else 10
