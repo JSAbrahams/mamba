@@ -153,14 +153,14 @@ pub fn mamba_to_python(
 
     let parse_errs: Vec<_> = parse_errs.into_iter().map(Result::unwrap_err).collect();
     if !parse_errs.is_empty() {
-        return Err(parse_errs.iter().map(|err| format!("{}", err)).collect());
+        return Err(parse_errs.iter().map(|err| format!("{err}")).collect());
     }
 
     let asts: Vec<AST> = asts.into_iter().map(Result::unwrap).collect();
     trace!("Parsed {} files", asts.len());
 
     let ctx = Context::try_from(asts.as_ref())
-        .map_err(|errs| errs.iter().map(|e| format!("{}", e)).collect::<Vec<String>>())?;
+        .map_err(|errs| errs.iter().map(|e| format!("{e}")).collect::<Vec<String>>())?;
     let (typed_ast, type_errs): (Vec<_>, Vec<_>) = asts
         .iter()
         .zip(&source)
@@ -175,7 +175,7 @@ pub fn mamba_to_python(
 
     let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
     if !type_errs.is_empty() {
-        return Err(type_errs.iter().flatten().map(|err| format!("{}", err)).collect());
+        return Err(type_errs.iter().flatten().map(|err| format!("{err}")).collect());
     }
     let typed_ast = typed_ast.into_iter().map(Result::unwrap).collect::<Vec<ASTTy>>();
 
@@ -194,7 +194,7 @@ pub fn mamba_to_python(
 
     let gen_errs: Vec<_> = gen_errs.into_iter().map(Result::unwrap_err).collect();
     if !gen_errs.is_empty() {
-        return Err(gen_errs.iter().map(|err| format!("{}", err)).collect());
+        return Err(gen_errs.iter().map(|err| format!("{err}")).collect());
     }
 
     let py_sources: Vec<String> = py_sources.into_iter().map(Result::unwrap).collect();

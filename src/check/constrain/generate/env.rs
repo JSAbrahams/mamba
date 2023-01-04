@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::context::arg::SELF;
-use crate::check::name;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
@@ -122,9 +121,7 @@ impl Environment {
     /// Union between two environments
     ///
     /// Combines all variables.
-    ///
-    /// Variable mappings combined.
-    /// If mapping occurs in both environments, then those of this environment taken.
+    /// Variable mappings are discarded.
     pub fn union(&self, other: &Environment) -> Environment {
         let mut vars = self.vars.clone();
         for (key, other_set) in &other.vars {
@@ -136,7 +133,7 @@ impl Environment {
             }
         }
 
-        Environment { vars, ..self.clone() }
+        Environment { vars, var_mapping: VarMapping::new(), ..self.clone() }
     }
 
     /// Intersection between two environments.
@@ -148,8 +145,7 @@ impl Environment {
     /// Only intersect vars, all other fields of other environment are
     /// discarded.
     ///
-    /// Var mappings from this environment preserved which also occur in the other environment.
-    /// However, mappings of other environment preserved.
+    /// Variable mappings are discarded.
     pub fn intersect(&self, other: &Environment) -> Environment {
         let keys = self.vars.keys().filter(|key| other.vars.contains_key(*key));
         let mut vars = HashMap::new();
@@ -166,7 +162,7 @@ impl Environment {
             }
         }
 
-        Environment { vars, ..self.clone() }
+        Environment { vars, var_mapping: VarMapping::new(), ..self.clone() }
     }
 
     /// Get a name for a temporary type.
@@ -175,7 +171,7 @@ impl Environment {
     /// The unification stage should then identify these.
     pub fn temp_var(&self) -> (String, Environment) {
         (
-            format!("{}{}", name::TEMP, self.temp_type),
+            format_var_map("", &(self.temp_type + 1)),
             Environment { temp_type: self.temp_type + 1, ..self.clone() },
         )
     }
