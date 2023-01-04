@@ -98,7 +98,7 @@ pub fn gen_def(
                 return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
             }
 
-            constr.exit_set_to(fun_lvl, ast.pos)?;
+            constr.exit_set_to(fun_lvl);
             Ok(env.clone())
         }
         Node::FunArg { .. } => {

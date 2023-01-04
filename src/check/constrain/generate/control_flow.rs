@@ -92,7 +92,7 @@ pub fn gen_flow(
             let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
             generate(body, &lookup_env.in_loop().is_def_mode(is_define_mode), ctx, constr)?;
-            constr.exit_set_to(loop_lvl, ast.pos)?;
+            constr.exit_set_to(loop_lvl);
             Ok(env.clone())
         }
         Node::While { cond, body } => {
@@ -102,7 +102,7 @@ pub fn gen_flow(
 
             generate(cond, env, ctx, constr)?;
             generate(body, &env.in_loop(), ctx, constr)?;
-            constr.exit_set_to(while_lvl, ast.pos)?;
+            constr.exit_set_to(while_lvl);
             Ok(env.clone())
         }
 

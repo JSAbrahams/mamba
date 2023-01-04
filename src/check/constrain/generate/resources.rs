@@ -44,7 +44,7 @@ pub fn gen_resources(
             )?;
 
             generate(expr, &resource_env, ctx, constr)?;
-            constr.exit_set_to(with_lvl, ast.pos)?;
+            constr.exit_set_to(with_lvl);
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
@@ -57,7 +57,7 @@ pub fn gen_resources(
 
             let resource_env = generate(resource, env, ctx, constr)?;
 
-            constr.exit_set_to(with_lvl, ast.pos)?;
+            constr.exit_set_to(with_lvl);
             generate(expr, &resource_env, ctx, constr)?;
             Ok(env.clone())
         }

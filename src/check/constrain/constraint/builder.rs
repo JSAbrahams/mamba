@@ -4,9 +4,7 @@ use std::collections::HashMap;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
-use crate::common::position::Position;
 
 pub type VarMapping = HashMap<String, usize>;
 
@@ -74,14 +72,15 @@ impl ConstrBuilder {
     ///
     /// - Error if already top-level.
     /// - Error if level greater than ceiling, as we cannot exit non-existent sets.
-    pub fn exit_set_to(&mut self, level: usize, pos: Position) -> TypeResult<()> {
+    pub fn exit_set_to(&mut self, level: usize) {
         let msg_exit = format!("Exit set to level {}", level - 1);
 
         let level = max(1, level);
         if level == 0 {
-            return Err(vec![TypeErr::new(pos, "Cannot exit top-level set")]);
+            panic!("Cannot exit top-level set");
         } else if level > self.constraints.len() {
-            return Err(vec![TypeErr::new(pos, "Exiting constraint set which doesn't exist")]);
+            panic!("Exiting constraint set which doesn't exist\nlevel: {}, constraints: {}, finished: {}",
+                   level, self.constraints.len(), self.finished.len());
         }
 
         for i in (level - 1..self.constraints.len()).rev() {
@@ -90,7 +89,6 @@ impl ConstrBuilder {
         }
 
         trace!("{msg_exit}: {} active sets, {} complete sets", self.constraints.len(), self.finished.len());
-        Ok(())
     }
 
     /// Add new constraint to constraint builder with a message.
