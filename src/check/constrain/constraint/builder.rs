@@ -1,9 +1,20 @@
+use std::cmp::max;
+use std::collections::HashMap;
+
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
-use crate::check::name::string_name::StringName;
-use crate::check::result::{TypeErr, TypeResult};
-use crate::common::position::Position;
+use crate::common::delimit::comma_delm;
+
+pub type VarMapping = HashMap<String, usize>;
+
+pub fn format_var_map(var: &str, offset: &usize) -> String {
+    if *offset == 0usize {
+        String::from(var)
+    } else {
+        format!("{var}@{offset}")
+    }
+}
 
 /// Constraint Builder.
 ///
@@ -14,58 +25,70 @@ use crate::common::position::Position;
 ///
 /// The level indicates how deep we are. A level of 0 indicates that we are at
 /// the top-level of a script.
+///
+/// We use sets to type check all possible execution paths.
+/// We can have multiple sets open at a time.
+/// When a constraint is added, we add it to each open path.
 #[derive(Debug)]
 pub struct ConstrBuilder {
-    pub level: usize,
-    finished: Vec<(Vec<StringName>, Vec<Constraint>)>,
-    constraints: Vec<(Vec<StringName>, Vec<Constraint>)>,
+    finished: Vec<Vec<Constraint>>,
+    constraints: Vec<Vec<Constraint>>,
+
+    pub var_mapping: VarMapping,
 }
 
 impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { level: 0, finished: vec![], constraints: vec![(vec![], vec![])] }
+        trace!("Created set at level {}", 0);
+        ConstrBuilder { finished: vec![], constraints: vec![vec![]], var_mapping: HashMap::new() }
     }
 
-    pub fn is_top_level(&self) -> bool { self.level == 0 }
+    pub fn is_top_level(&self) -> bool { self.constraints.len() == 1 }
 
-    pub fn new_set_in_class(&mut self, inherit_class: bool, class: &StringName) {
-        self.new_set(true);
-        if self.level > 0 && inherit_class {
-            let mut previous = self.constraints[self.level - 1].0.clone();
-            self.constraints[self.level].0.append(&mut previous);
+    /// Insert variable for mapping in current constraint set.
+    ///
+    /// This prevents shadowed variables from contaminating previous constraints.
+    ///
+    /// Differs from environment since environment is used to check that variables are defined at a
+    /// certain location.
+    pub fn insert_var(&mut self, var: &str) {
+        let offset = self.var_mapping.get(var).map_or(0, |o| o + 1);
+        self.var_mapping.insert(String::from(var), offset);
+    }
+
+    /// Create new set, and create marker so that we know what set to exit to upon exit.
+    ///
+    /// Output may also be ignored.
+    /// Useful if we don't want to close the set locally but leave open.
+    pub fn new_set(&mut self) -> usize {
+        let inherited_constraints = self.constraints.last().expect("Can never be empty");
+        self.constraints.push(inherited_constraints.clone());
+
+        trace!("Created set at level {}", self.constraints.len() - 1);
+        self.constraints.len()
+    }
+
+    /// Return to specified level given.
+    ///
+    /// - Error if already top-level.
+    /// - Error if level greater than ceiling, as we cannot exit non-existent sets.
+    pub fn exit_set_to(&mut self, level: usize) {
+        let msg_exit = format!("Exit set to level {}", level - 1);
+
+        let level = max(1, level);
+        if level == 0 {
+            panic!("Cannot exit top-level set");
+        } else if level > self.constraints.len() {
+            panic!("Exiting constraint set which doesn't exist\nlevel: {}, constraints: {}, finished: {}",
+                   level, self.constraints.len(), self.finished.len());
         }
-        self.constraints[self.level].0.push(class.clone());
-    }
 
-    /// Remove all constraints with where either parent or child is expected
-    pub fn remove_expected(&mut self, expected: &Expected) {
-        self.constraints[self.level].1 = self.constraints[self.level]
-            .1
-            .clone()
-            .drain_filter(|con| {
-                !con.left.expect.same_value(&expected.expect)
-                    && !con.right.expect.same_value(&expected.expect)
-            })
-            .collect()
-    }
-
-    pub fn new_set(&mut self, inherit: bool) {
-        self.constraints.push(if inherit {
-            (self.constraints[self.level].0.clone(), self.constraints[self.level].1.clone())
-        } else {
-            (vec![], vec![])
-        });
-        self.level += 1;
-    }
-
-    pub fn exit_set(&mut self, pos: Position) -> TypeResult<()> {
-        if self.level == 0 {
-            return Err(vec![TypeErr::new(pos, "Cannot exit top-level set")]);
+        for i in (level - 1..self.constraints.len()).rev() {
+            // Equivalent to pop, but remove has better panic message for debugging
+            self.finished.push(self.constraints.remove(i))
         }
 
-        self.finished.push(self.constraints.remove(self.level));
-        self.level -= 1;
-        Ok(())
+        trace!("{msg_exit}: {} active sets, {} complete sets", self.constraints.len(), self.finished.len());
     }
 
     /// Add new constraint to constraint builder with a message.
@@ -73,21 +96,20 @@ impl ConstrBuilder {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
 
+    /// Add constraint to currently all op sets.
+    /// The open sets are the sets at levels between the self.level and active ceiling.
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        trace!("Constr[{}]: {} == {}, {}: {}", self.level, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
-        self.constraints[self.level].1.push(constraint.clone())
+        for constraints in &mut self.constraints {
+            constraints.push(constraint.clone());
+        }
+
+        let lvls = comma_delm(0..self.constraints.len());
+        trace!("Constr[{}]: {} == {}, {}: {}", lvls, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
     }
 
-    pub fn current_class(&self) -> Option<StringName> {
-        let constraints = self.constraints[self.level].clone().0;
-        constraints.last().cloned()
-    }
-
-    // It is not redundant
-    #[allow(clippy::redundant_clone)]
     pub fn all_constr(self) -> Vec<Constraints> {
-        let mut finished = self.finished.clone();
-        finished.append(&mut self.constraints.clone());
+        let (mut finished, mut constraints) = (self.finished, self.constraints);
+        finished.append(&mut constraints);
         finished.iter().map(Constraints::from).collect()
     }
 }

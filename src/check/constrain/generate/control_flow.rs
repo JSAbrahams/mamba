@@ -45,36 +45,35 @@ pub fn gen_flow(
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
-            let left = Expected::try_from((cond, &env.var_mappings))?;
+            let left = Expected::try_from((cond, &constr.var_mapping))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
             generate(cond, env, ctx, constr)?;
 
-            constr.new_set(true);
+            let if_expr_exp = Expected::try_from((ast, &constr.var_mapping))?;
+
+            constr.new_set();
             let then_env = generate(then, env, ctx, constr)?;
-            constr.exit_set(then.pos)?;
-            constr.new_set(true);
-            let else_env = generate(el, env, ctx, constr)?;
-            constr.exit_set(el.pos)?;
-
+            let then_exp = Expected::try_from((then, &constr.var_mapping))?;
             if env.is_expr {
-                let if_expr = Expected::try_from((ast, &env.var_mappings))?;
-                let then = Expected::try_from((then, &then_env.var_mappings))?;
-                let el = Expected::try_from((el, &else_env.var_mappings))?;
+                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
+            }
 
-                constr.add("if then branch", &if_expr, &then);
-                constr.add("if else branch", &if_expr, &el);
+            constr.new_set();
+            let else_env = generate(el, env, ctx, constr)?;
+            if env.is_expr {
+                let el = Expected::try_from((el, &constr.var_mapping))?;
+                constr.add("else branch equal to if", &el, &then_exp);
             }
 
             Ok(env.union(&then_env.intersect(&else_env)))
         }
         Node::IfElse { cond, then, .. } => {
-            let left = Expected::try_from((cond, &env.var_mappings))?;
+            let left = Expected::try_from((cond, &constr.var_mapping))?;
             constr.add_constr(&Constraint::truthy("if else", &left));
 
             generate(cond, env, ctx, constr)?;
-            constr.new_set(true);
+            constr.new_set();
             generate(then, env, ctx, constr)?;
-            constr.exit_set(then.pos)?;
             Ok(env.clone())
         }
 
@@ -86,24 +85,24 @@ pub fn gen_flow(
         }
 
         Node::For { expr, col, body } => {
-            constr.new_set(true);
+            let loop_lvl = constr.new_set();
             let col_env = generate(col, env, ctx, constr)?;
 
             let is_define_mode = col_env.is_def_mode;
             let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
             generate(body, &lookup_env.in_loop().is_def_mode(is_define_mode), ctx, constr)?;
-            constr.exit_set(ast.pos)?;
+            constr.exit_set_to(loop_lvl);
             Ok(env.clone())
         }
         Node::While { cond, body } => {
-            constr.new_set(true);
-            let cond_exp = Expected::try_from((cond, &env.var_mappings))?;
+            let while_lvl = constr.new_set();
+            let cond_exp = Expected::try_from((cond, &constr.var_mapping))?;
             constr.add_constr(&Constraint::truthy("while condition", &cond_exp));
 
             generate(cond, env, ctx, constr)?;
             generate(body, &env.in_loop(), ctx, constr)?;
-            constr.exit_set(ast.pos)?;
+            constr.exit_set_to(while_lvl);
             Ok(env.clone())
         }
 
@@ -116,12 +115,12 @@ pub fn gen_flow(
 
 fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
     let is_define_mode = env.is_def_mode;
-    let exp_ast = Expected::try_from((ast, &env.var_mappings))?;
+    let exp_ast = Expected::try_from((ast, &constr.var_mapping))?;
 
     for case in cases {
         match &case.node {
             Node::Case { cond, body } => {
-                constr.new_set(true);
+                constr.new_set();
 
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
                 generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
@@ -129,36 +128,17 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
                 if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
                     if let Some(expr) = expr {
                         constr.add("match expression and arm condition",
-                                   &Expected::try_from((expr, &env.var_mappings))?,
-                                   &Expected::try_from((cond, &env.var_mappings))?,
+                                   &Expected::try_from((expr, &constr.var_mapping))?,
+                                   &Expected::try_from((cond, &constr.var_mapping))?,
                         );
                     }
                 }
 
-                let exp_body = Expected::try_from((body, &cond_env.var_mappings))?;
+                let exp_body = Expected::try_from((body, &constr.var_mapping))?;
                 constr.add("match arm body", &exp_body, &exp_ast);
-                constr.exit_set(case.pos)?;
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
         }
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::check::constrain::constraint::builder::ConstrBuilder;
-    use crate::check::constrain::generate::env::Environment;
-    use crate::check::constrain::generate::generate;
-    use crate::check::context::Context;
-    use crate::parse::parse;
-
-    #[test]
-    fn if_else_env_empty() {
-        let src = "if True then 10 else 20";
-        let ast = parse(src).unwrap();
-        let env = generate(&ast, &Environment::default(), &Context::default(), &mut ConstrBuilder::new()).unwrap();
-
-        assert!(env.var_mappings.is_empty());
-    }
 }

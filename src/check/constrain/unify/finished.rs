@@ -1,6 +1,6 @@
 use crate::check::ast::pos_name::PosNameMap;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{Any, Name, Union};
+use crate::check::name::{Empty, Name, Union};
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
@@ -20,17 +20,22 @@ impl Finished {
     /// [Name].
     /// Ignores [Any] type, and trims from union.
     pub fn push_ty(&mut self, ctx: &Context, pos: Position, name: &Name) -> TypeResult<()> {
-        if *name == Name::any() {
+        // trim temp should not be needed, underlying issue with current logic
+        let name = name.trim_any().trim_temp();
+        if name == Name::empty() {
             return Ok(());
         }
-
-        // trim undefined should not be needed, underlying issue with current logic
-        let name = name.trim_any().trim_temp();
         for class in &name.names {
             ctx.class(class, pos)?;
         }
 
-        let name = self.pos_to_name.get(&pos).map_or(name.clone(), |s_name| s_name.union(&name));
+        let name = self.pos_to_name.get(&pos)
+            .map_or(name.clone(), |old_name| if old_name.is_interchangeable {
+                old_name.clone()
+            } else {
+                old_name.union(&name)
+            });
+
         if self.pos_to_name.insert(pos, name.clone()).is_none() {
             trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
         }

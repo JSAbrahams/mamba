@@ -1,7 +1,6 @@
 import math
-from typing import Union
 
-a: Union[float, int] = 10
+a: int = 10
 b: int = 20
 
 c: int = a + b

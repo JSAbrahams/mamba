@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Error, Formatter};
@@ -7,8 +6,9 @@ use std::ops::Deref;
 
 use itertools::{EitherOrBoth, Itertools};
 
+use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expect::*;
-use crate::check::context::clss::{BOOL, FLOAT, INT, NONE, STRING};
+use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -40,13 +40,13 @@ impl AsRef<Expected> for Expected {
     }
 }
 
-impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
+impl TryFrom<(&AST, &VarMapping)> for Expected {
     type Error = Vec<TypeErr>;
 
     /// Creates Expected from AST.
     ///
     /// If primitive or Constructor, constructs Type.
-    fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expected> {
+    fn try_from((ast, mappings): (&AST, &VarMapping)) -> TypeResult<Expected> {
         let ast = match &ast.node {
             Node::Block { statements } => statements.last().unwrap_or(ast),
             _ => ast,
@@ -56,10 +56,10 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expected {
     }
 }
 
-impl TryFrom<(&Box<AST>, &HashMap<String, String>)> for Expected {
+impl TryFrom<(&Box<AST>, &VarMapping)> for Expected {
     type Error = Vec<TypeErr>;
 
-    fn try_from((ast, mappings): (&Box<AST>, &HashMap<String, String>)) -> TypeResult<Expected> {
+    fn try_from((ast, mappings): (&Box<AST>, &VarMapping)) -> TypeResult<Expected> {
         Expected::try_from((ast.deref(), mappings))
     }
 }
@@ -79,18 +79,18 @@ impl Any for Expect {
     fn any() -> Self { Type { name: Name::any() } }
 }
 
-impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
+impl TryFrom<(&AST, &VarMapping)> for Expect {
     type Error = Vec<TypeErr>;
 
     /// Also substitutes any identifiers with new ones from the environment if the environment
     /// has a mapping.
     /// This means that we forget about shadowed variables and continue with the new ones.
-    fn try_from((ast, mappings): (&AST, &HashMap<String, String>)) -> TypeResult<Expect> {
+    fn try_from((ast, mappings): (&AST, &VarMapping)) -> TypeResult<Expect> {
         let ast = ast.map(&|node: &Node| {
             if let Node::Id { lit } = node {
-                if let Some(name) = mappings.get(lit) {
+                if let Some(offset) = mappings.get(lit) {
                     // Always use name currently defined in environment
-                    Node::Id { lit: name.clone() }
+                    Node::Id { lit: format_var_map(lit, offset) }
                 } else {
                     node.clone()
                 }
@@ -99,14 +99,7 @@ impl TryFrom<(&AST, &HashMap<String, String>)> for Expect {
             }
         });
 
-        Ok(match &ast.node {
-            Node::Int { .. } | Node::ENum { .. } => Type { name: Name::from(INT) },
-            Node::Real { .. } => Type { name: Name::from(FLOAT) },
-            Node::Bool { .. } => Type { name: Name::from(BOOL) },
-            Node::Str { .. } => Type { name: Name::from(STRING) },
-            Node::Undefined => Expect::none(),
-            _ => Expression { ast },
-        })
+        Ok(Expression { ast })
     }
 }
 

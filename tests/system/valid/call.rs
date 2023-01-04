@@ -4,3 +4,8 @@ use crate::system::{OutTestRet, test_directory};
 fn call_with_class_child() -> OutTestRet {
     test_directory(true, &["call"], &["call", "target"], "call_with_class_child")
 }
+
+#[test]
+fn input() -> OutTestRet {
+    test_directory(true, &["call"], &["call", "target"], "input")
+}

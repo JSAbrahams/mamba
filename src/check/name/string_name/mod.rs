@@ -139,7 +139,7 @@ impl IsSuperSet<StringName> for StringName {
 
 impl From<&StringName> for Name {
     fn from(name: &StringName) -> Self {
-        Name { names: HashSet::from_iter(vec![TrueName::from(name)]), any: false }
+        Name { names: HashSet::from_iter(vec![TrueName::from(name)]), is_interchangeable: false }
     }
 }
 
