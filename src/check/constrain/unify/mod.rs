@@ -29,7 +29,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
                     count - 1,
                     all_constraints.len(),
                     newline_delimited(e.clone().into_iter().map(|e| {
-                        let pos = e.pos.map_or_else(|| String::new(), |pos| format!(" at {pos}: "));
+                        let pos = e.pos.map_or_else(String::new, |pos| format!(" at {pos}: "));
                         format!("{pos}{}", e.msg)
                     }))
                 );

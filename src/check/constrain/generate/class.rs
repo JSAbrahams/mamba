@@ -30,7 +30,7 @@ pub fn gen_class(
             // Self is defined top level in type alias
             let var = AST::new(ty.pos, Id { lit: String::from(SELF) });
             let name = Some(Name::try_from(isa)?); // For now assume super
-            let env = identifier_from_var(&var, &name, &None, false, ctx, constr, &env)?;
+            let env = identifier_from_var(&var, &name, &None, false, ctx, constr, env)?;
 
             constrain_class_body(conditions, isa, &env, ctx, constr)
         }
