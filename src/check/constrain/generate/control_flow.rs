@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
+use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
@@ -54,14 +54,12 @@ pub fn gen_flow(
             constr.new_set();
             let then_env = generate(then, env, ctx, constr)?;
             let then_exp = Expected::try_from((then, &constr.var_mapping))?;
-            if env.is_expr {
-                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
-            }
 
             constr.new_set();
             let else_env = generate(el, env, ctx, constr)?;
             if env.is_expr {
                 let el = Expected::try_from((el, &constr.var_mapping))?;
+                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
                 constr.add("else branch equal to if", &el, &then_exp);
             }
 
@@ -136,6 +134,12 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
 
                 let exp_body = Expected::try_from((body, &constr.var_mapping))?;
                 constr.add("match arm body", &exp_body, &exp_ast);
+
+                if env.is_expr {
+                    let outer_exp = Expected::try_from((ast, &constr.var_mapping))?;
+                    let con = Constraint::new_variant("match arm body and outer", &outer_exp, &exp_body, ConstrVariant::Right);
+                    constr.add_constr(&con);
+                }
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
         }
