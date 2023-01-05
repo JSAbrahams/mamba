@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::collection::gen_collection_lookup;
@@ -51,20 +51,20 @@ pub fn gen_flow(
 
             let if_expr_exp = Expected::try_from((ast, &constr.var_mapping))?;
 
-            let outer_lvl = constr.level();
-            constr.new_set();
+            constr.branch_point();
             let then_env = generate(then, env, ctx, constr)?;
             if env.is_expr {
-                let then_expr_exp = Expected::try_from((el, &constr.var_mapping))?;
-                constr.add("else branch equal to if", &if_expr_exp, &then_expr_exp);
+                let then_exp = Expected::try_from((then, &constr.var_mapping))?;
+                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
             }
 
-            constr.new_set_from(outer_lvl); // don't inherit then branch
+            constr.branch();
             let else_env = generate(el, env, ctx, constr)?;
             if env.is_expr {
-                let el_expr_exp = Expected::try_from((el, &constr.var_mapping))?;
-                constr.add("else branch equal to if", &if_expr_exp, &el_expr_exp);
+                let el = Expected::try_from((el, &constr.var_mapping))?;
+                constr.add("else branch equal to if", &el, &if_expr_exp);
             }
+            constr.reset_branches();
 
             Ok(env.union(&then_env.intersect(&else_env)))
         }
@@ -86,6 +86,7 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             let col_env = generate(col, env, ctx, constr)?;
+
             let is_define_mode = col_env.is_def_mode;
             let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
@@ -112,9 +113,11 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
     let is_define_mode = env.is_def_mode;
     let exp_ast = Expected::try_from((ast, &constr.var_mapping))?;
 
+    constr.branch_point();
     for case in cases {
         match &case.node {
             Node::Case { cond, body } => {
+                constr.branch();
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
                 generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
 
@@ -132,12 +135,13 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
 
                 if env.is_expr {
                     let outer_exp = Expected::try_from((ast, &constr.var_mapping))?;
-                    let con = Constraint::new_variant("match arm body and outer", &outer_exp, &exp_body, ConstrVariant::Right);
-                    constr.add_constr(&con);
+                    constr.add("match arm body and outer", &outer_exp, &exp_body);
                 }
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])
         }
     }
+
+    constr.reset_branches();
     Ok(())
 }

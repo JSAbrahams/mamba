@@ -19,7 +19,6 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
-            let with_lvl = constr.new_set();
             let resource_exp = Expected::try_from((resource, &constr.var_mapping))?;
             constr.add("with as", &resource_exp, &Expected::try_from((alias, &constr.var_mapping))?);
             constr.add("with as", &resource_exp, &Expected::new(resource.pos, &Expect::any()));
@@ -31,7 +30,7 @@ pub fn gen_resources(
 
             let resource_env = generate(resource, env, ctx, constr)?;
 
-            constr.new_set();
+            constr.branch_point();
             let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
             let resource_env = identifier_from_var(
                 alias,
@@ -44,11 +43,9 @@ pub fn gen_resources(
             )?;
 
             generate(expr, &resource_env, ctx, constr)?;
-            constr.exit_set_to(with_lvl);
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
-            let with_lvl = constr.new_set();
             constr.add(
                 "with",
                 &Expected::try_from((resource, &constr.var_mapping))?,
@@ -57,7 +54,6 @@ pub fn gen_resources(
 
             let resource_env = generate(resource, env, ctx, constr)?;
 
-            constr.exit_set_to(with_lvl);
             generate(expr, &resource_env, ctx, constr)?;
             Ok(env.clone())
         }

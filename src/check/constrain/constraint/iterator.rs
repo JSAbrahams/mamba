@@ -11,8 +11,7 @@ pub struct Constraints {
 
 impl From<&Vec<Constraint>> for Constraints {
     fn from(constraints: &Vec<Constraint>) -> Self {
-        let constraints = VecDeque::from(constraints.clone());
-        Constraints { constraints }
+        Constraints { constraints: VecDeque::from(constraints.clone()) }
     }
 }
 

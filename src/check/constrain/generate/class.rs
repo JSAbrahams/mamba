@@ -51,12 +51,9 @@ pub fn constrain_class_body(
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    let class_lvl = constr.new_set();
-
     let name = StringName::try_from(ty)?;
     let class_env = env.in_class(&name);
     gen_vec(statements, &class_env, true, ctx, constr)?;
 
-    constr.exit_set_to(class_lvl);
     Ok(env.clone())
 }

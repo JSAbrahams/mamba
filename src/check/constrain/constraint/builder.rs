@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use itertools::enumerate;
+
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -15,31 +17,27 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
     }
 }
 
-/// Constraint Builder.
+/// The constraint builder allows us to build sets of constraints.
 ///
-/// Allows us to build sets of constraints.
 /// This allows us to constrain different parts of the program which may rely on
 /// the same logic, without interfering with each other. E.g. different
 /// functions within the same class.
 ///
-/// The level indicates how deep we are. A level of 0 indicates that we are at
-/// the top-level of a script.
-///
 /// We use sets to type check all possible execution paths.
 /// We can have multiple sets open at a time.
-/// When a constraint is added, we add it to each open path.
 #[derive(Debug)]
 pub struct ConstrBuilder {
-    finished: Vec<Vec<Constraint>>,
     constraints: Vec<Vec<(Constraint, usize)>>,
+    branch_point: usize,
+    joined: bool,
+
     pub var_mapping: VarMapping,
 }
 
 impl ConstrBuilder {
-    /// Create constraint builder with a single set.
+    /// Create constraint builder with a single set present.
     pub fn new() -> ConstrBuilder {
-        trace!("Created set at level {}", 0);
-        ConstrBuilder { finished: vec![], constraints: vec![vec![]], var_mapping: HashMap::new() }
+        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![vec![]], var_mapping: HashMap::new() }
     }
 
     pub fn is_top_level(&self) -> bool { self.constraints.len() == 1 }
@@ -55,16 +53,10 @@ impl ConstrBuilder {
         self.var_mapping.insert(String::from(var), offset);
     }
 
-    /// Get marker of current level without creating a new set.
-    pub fn level(&self) -> usize { self.constraints.len() - 1 }
-
-    /// Create new set, and get bookmark of previous set.
-    pub fn new_set(&mut self) -> usize {
-        let inherited_constraints = self.constraints.last().expect("Can never be empty");
-        self.constraints.push(inherited_constraints.clone());
-
-        trace!("Created set at level {}", self.constraints.len() - 1);
-        self.constraints.len()
+    /// Set new branch point
+    pub fn branch_point(&mut self) {
+        self.branch_point += 1;
+        self.joined = false;
     }
 
     /// Create new set starting at stated level.
@@ -73,30 +65,21 @@ impl ConstrBuilder {
     /// Typically in match arms or if arms, where we want branches to be disjoint.
     /// At the same time, we want all branches to inherit from an older set.
     /// When inheriting, we also discard any constraints added while in a level we wish to skip.
-    pub fn new_set_from(&mut self, level: usize) -> usize {
-        self.exit_set_to(level);
-        self.new_set()
+    pub fn branch(&mut self) {
+        let inherited_constraints: Vec<(Constraint, usize)> = if self.joined {
+            self.constraints.last().expect("Is never empty").to_vec()
+        } else {
+            self.constraints.last().expect("Is never empty")
+                .into_iter().filter(|(_, lvl)| *lvl < self.branch_point).cloned().collect()
+        };
+
+        self.constraints.push(inherited_constraints.clone());
     }
 
-    /// Return to specified level.
-    pub fn exit_set_to(&mut self, level: usize) {
-        if level > self.constraints.len() {
-            panic!("Exiting constraint set which doesn't exist\nlevel: {}, constraints: {}, finished: {}",
-                   level, self.constraints.len(), self.finished.len());
-        }
-
-        for _ in level..self.level() {
-            // filter count constr added at level higher than current
-            let inherited_constraints: Vec<_> = self.constraints
-                .get(level)
-                .expect(format!("New set from {level} while self has {} sets", self.constraints.len()).as_str())
-                .iter().cloned()
-                .filter(|(_, lvl)| *lvl > level)
-                .map(|(c, _)| c)
-                .collect();
-
-            self.finished.push(inherited_constraints)
-        }
+    /// Reset all branches so that they are again all added to.
+    pub fn reset_branches(&mut self) {
+        self.branch_point = self.constraints.len() - 1;
+        self.joined = true;
     }
 
     /// Add new constraint to constraint builder with a message.
@@ -104,26 +87,31 @@ impl ConstrBuilder {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
 
-    /// Add constraint to currently all op sets.
-    /// The open sets are the sets at levels between the self.level and active ceiling.
+    /// Add constraint up to last branch point, and latest branch
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        let lvl = self.level();
-        for constraints in &mut self.constraints {
-            constraints.push((constraint.clone(), lvl));
+        let mut lvls = vec![];
+        let last_branch = self.constraints.len() - 1;
+        if self.joined {
+            for (i, constraints) in enumerate(&mut self.constraints) {
+                constraints.push((constraint.clone(), self.branch_point));
+                lvls.push(i);
+            }
+        } else {
+            // only push to last branch
+            self.constraints[last_branch].push((constraint.clone(), self.branch_point));
+            lvls.push(last_branch);
         }
 
-        let lvls = comma_delm(0..=lvl);
+        let lvls = comma_delm(lvls);
         trace!("Constr[{}]: {} == {}, {}: {}", lvls, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
-        let mut finished = self.finished;
-        let mut constraints = self.constraints.into_iter().map(|constraints| {
-            constraints.into_iter().map(|(constraint, _)| constraint).collect()
-        }).collect();
+        let constraints: Vec<_> = self.constraints.into_iter()
+            .map(|constraints| constraints.iter().map(|(c, _)| c.clone()).collect())
+            .collect();
 
-        finished.append(&mut constraints);
-        finished.iter().map(Constraints::from).collect()
+        constraints.iter().map(Constraints::from).collect()
     }
 }
 
@@ -162,23 +150,23 @@ mod tests {
 
         let all_constr = builder.all_constr();
         assert_eq!(all_constr.len(), 1);
-
-        assert_eq!(all_constr[0].constraints, vec![c1, c2, c3])
+        assert_eq_constr!(all_constr[0].constraints, vec![c1, c2, c3])
     }
 
     #[test]
-    fn disjoint_sets() {
+    fn disjoint_set_if() {
         let mut builder = ConstrBuilder::new();
         let (c1, c2, c3, c4) = (constr!(1), constr!(2), constr!(3), constr!(4));
 
         builder.add_constr(&c1); // anything before if branches (including cond)
 
-        let old_set = builder.level();
+        builder.branch_point();
         builder.add_constr(&c2); // then branch of if
 
-        builder.new_set_from(old_set);
+        builder.branch();
         builder.add_constr(&c3); // else branch of if
 
+        builder.reset_branches();
         builder.add_constr(&c4); // anything after if
 
         let all_constr = builder.all_constr();
@@ -186,5 +174,81 @@ mod tests {
 
         assert_eq_constr!(all_constr[0].constraints, [&c1, &c2, &c4]);
         assert_eq_constr!(all_constr[1].constraints, [&c1, &c3, &c4]);
+    }
+
+    #[test]
+    fn disjoint_set_match() {
+        let mut builder = ConstrBuilder::new();
+        let (c1, c2, c3, c4, c5) = (constr!(1), constr!(2), constr!(3), constr!(4), constr!(5));
+
+        builder.add_constr(&c1); // anything before match branches (including expr)
+
+        builder.branch_point();
+        builder.add_constr(&c2); // first branch
+
+        builder.branch();
+        builder.add_constr(&c3); // second branch
+
+        builder.branch();
+        builder.add_constr(&c4); // third branch
+
+        builder.reset_branches();
+        builder.add_constr(&c5); // anything after match
+
+        let all_constr = builder.all_constr();
+        assert_eq!(all_constr.len(), 3);
+
+        assert_eq_constr!(all_constr[0].constraints, [&c1, &c2, &c5]);
+        assert_eq_constr!(all_constr[1].constraints, [&c1, &c3, &c5]);
+        assert_eq_constr!(all_constr[2].constraints, [&c1, &c4, &c5]);
+    }
+
+    #[test]
+    fn disjoint_set_nested_match() {
+        let mut builder = ConstrBuilder::new();
+        let (c1, c2, _, c4, c5) = (constr!(1), constr!(2), constr!(3), constr!(4), constr!(5));
+        let (c31, c32, c33, c34, c35) = (constr!(31), constr!(32), constr!(33), constr!(34), constr!(35));
+
+        builder.add_constr(&c1); // anything before match branches (including expr)
+
+        builder.branch_point();
+        builder.add_constr(&c2); // first branch
+
+        builder.branch();
+        {   // second branch
+            builder.branch_point();
+            builder.add_constr(&c31);
+
+            builder.branch();
+            builder.add_constr(&c32);
+
+            builder.branch();
+            builder.add_constr(&c33);
+
+            builder.branch();
+            builder.add_constr(&c34);
+
+            builder.branch();
+            builder.add_constr(&c35);
+        }
+
+        builder.branch();
+        builder.add_constr(&c4); // third branch
+
+        builder.reset_branches();
+        builder.add_constr(&c5); // anything after match
+
+        let all_constr = builder.all_constr();
+        assert_eq!(all_constr.len(), 7);
+
+        assert_eq_constr!(all_constr[0].constraints, [&c1, &c2, &c5]);
+
+        assert_eq_constr!(all_constr[1].constraints, [&c1, &c31, &c5]);
+        assert_eq_constr!(all_constr[2].constraints, [&c1, &c32, &c5]);
+        assert_eq_constr!(all_constr[3].constraints, [&c1, &c33, &c5]);
+        assert_eq_constr!(all_constr[4].constraints, [&c1, &c34, &c5]);
+        assert_eq_constr!(all_constr[5].constraints, [&c1, &c35, &c5]);
+
+        assert_eq_constr!(all_constr[6].constraints, [&c1, &c4, &c5]);
     }
 }

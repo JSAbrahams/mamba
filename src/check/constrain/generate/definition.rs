@@ -28,8 +28,6 @@ pub fn gen_def(
 ) -> Constrained {
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
-            let fun_lvl = constr.new_set();
-
             let non_nullable_class_vars: HashSet<String> = match &id.node {
                 Node::Id { lit } if *lit == function::INIT => {
                     if let Some(class) = &env.class {
@@ -98,7 +96,6 @@ pub fn gen_def(
                 return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
             }
 
-            constr.exit_set_to(fun_lvl);
             Ok(env.clone())
         }
         Node::FunArg { .. } => {
