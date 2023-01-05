@@ -51,16 +51,19 @@ pub fn gen_flow(
 
             let if_expr_exp = Expected::try_from((ast, &constr.var_mapping))?;
 
+            let outer_lvl = constr.level();
             constr.new_set();
             let then_env = generate(then, env, ctx, constr)?;
-            let then_exp = Expected::try_from((then, &constr.var_mapping))?;
+            if env.is_expr {
+                let then_expr_exp = Expected::try_from((el, &constr.var_mapping))?;
+                constr.add("else branch equal to if", &if_expr_exp, &then_expr_exp);
+            }
 
-            constr.new_set();
+            constr.new_set_from(outer_lvl); // don't inherit then branch
             let else_env = generate(el, env, ctx, constr)?;
             if env.is_expr {
-                let el = Expected::try_from((el, &constr.var_mapping))?;
-                constr.add("then branch equal to if", &then_exp, &if_expr_exp);
-                constr.add("else branch equal to if", &el, &then_exp);
+                let el_expr_exp = Expected::try_from((el, &constr.var_mapping))?;
+                constr.add("else branch equal to if", &if_expr_exp, &el_expr_exp);
             }
 
             Ok(env.union(&then_env.intersect(&else_env)))
@@ -70,7 +73,6 @@ pub fn gen_flow(
             constr.add_constr(&Constraint::truthy("if else", &left));
 
             generate(cond, env, ctx, constr)?;
-            constr.new_set();
             generate(then, env, ctx, constr)?;
             Ok(env.clone())
         }
@@ -83,24 +85,19 @@ pub fn gen_flow(
         }
 
         Node::For { expr, col, body } => {
-            let loop_lvl = constr.new_set();
             let col_env = generate(col, env, ctx, constr)?;
-
             let is_define_mode = col_env.is_def_mode;
             let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
             generate(body, &lookup_env.in_loop().is_def_mode(is_define_mode), ctx, constr)?;
-            constr.exit_set_to(loop_lvl);
             Ok(env.clone())
         }
         Node::While { cond, body } => {
-            let while_lvl = constr.new_set();
             let cond_exp = Expected::try_from((cond, &constr.var_mapping))?;
             constr.add_constr(&Constraint::truthy("while condition", &cond_exp));
 
             generate(cond, env, ctx, constr)?;
             generate(body, &env.in_loop(), ctx, constr)?;
-            constr.exit_set_to(while_lvl);
             Ok(env.clone())
         }
 
@@ -118,8 +115,6 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
     for case in cases {
         match &case.node {
             Node::Case { cond, body } => {
-                constr.new_set();
-
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
                 generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
 

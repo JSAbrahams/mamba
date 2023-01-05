@@ -6,7 +6,7 @@ use crate::check::result::{TypeErr, TypeResult};
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    constraints: VecDeque<Constraint>,
+    pub(in super) constraints: VecDeque<Constraint>,
 }
 
 impl From<&Vec<Constraint>> for Constraints {

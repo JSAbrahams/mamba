@@ -73,6 +73,16 @@ fn matches_in_if() -> OutTestRet {
 }
 
 #[test]
+fn shadow_in_if_arms() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "shadow_in_if_arms")
+}
+
+#[test]
+fn shadow_in_if_arms_then() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "shadow_in_if_arms_then")
+}
+
+#[test]
 fn while_ast_verify() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "while")
 }
