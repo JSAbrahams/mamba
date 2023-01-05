@@ -1,5 +1,5 @@
 class MyErr1: Exception("Something went wrong")
-class MyErr2(msg: String): Exception(msg)
+class MyErr2(msg: Str): Exception(msg)
 
 def f(x: Int) -> Int raise [MyErr1, MyErr2] => x
 

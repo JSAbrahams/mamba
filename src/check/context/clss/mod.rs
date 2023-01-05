@@ -22,7 +22,7 @@ use crate::common::position::Position;
 
 pub const INT: &str = "Int";
 pub const FLOAT: &str = "Float";
-pub const STRING: &str = "String";
+pub const STRING: &str = "Str";
 pub const BOOL: &str = "Bool";
 pub const ENUM: &str = "Enum";
 pub const COMPLEX: &str = "Complex";

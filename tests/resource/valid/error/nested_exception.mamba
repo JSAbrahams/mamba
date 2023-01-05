@@ -1,5 +1,5 @@
-class MyException1(msg: String): Exception(msg)
-class MyException2(msg: String): Exception(msg)
+class MyException1(msg: Str): Exception(msg)
+class MyException2(msg: Str): Exception(msg)
 
 def f(x: Int) -> Int raise [MyException1, MyException2] =>
     match x

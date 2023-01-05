@@ -1,4 +1,4 @@
-def my_fun() -> String =>
+def my_fun() -> Str =>
     print("a statement")
     "a"
 

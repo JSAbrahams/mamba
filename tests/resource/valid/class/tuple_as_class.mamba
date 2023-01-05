@@ -1,1 +1,1 @@
-class MyTuple: (Int, Int, String)
+class MyTuple: (Int, Int, Str)

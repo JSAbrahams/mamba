@@ -16,11 +16,7 @@ impl Display for GenericParameter {
             f,
             "{}{}",
             self.name,
-            if let Some(parent) = &self.parent {
-                format!(" isa {}", parent)
-            } else {
-                String::new()
-            }
+            if let Some(parent) = &self.parent { format!(" isa {parent}") } else { String::new() }
         )
     }
 }

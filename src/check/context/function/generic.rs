@@ -85,11 +85,8 @@ impl TryFrom<&AST> for GenericFunction {
                         let mut has_default = false;
                         for arg in args.clone() {
                             if has_default && !arg.has_default {
-                                return Err(vec![TypeErr::new(
-                                    arg.pos,
-                                    "Cannot have argument with default followed by argument with \
-                                     no default.",
-                                )]);
+                                let msg = "Cannot have argument with default followed by argument with no default.";
+                                return Err(vec![TypeErr::new(arg.pos, &msg)]);
                             }
                             has_default = arg.has_default;
                         }

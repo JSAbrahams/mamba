@@ -1,4 +1,4 @@
-type MyType: String
+type MyType: Str
 
 def a: MyType := "my_string"
 print(a)
