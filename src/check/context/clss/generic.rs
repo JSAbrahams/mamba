@@ -160,7 +160,7 @@ impl TryFrom<&AST> for GenericClass {
                     })
                     .flat_map(|(pos, parent)| {
                         if temp_parents.contains(&parent) {
-                            Some((pos, format!("Duplicate parent: {}", parent)))
+                            Some((pos, format!("Duplicate parent: {parent}")))
                         } else {
                             temp_parents.insert(parent);
                             None
@@ -178,10 +178,8 @@ impl TryFrom<&AST> for GenericClass {
                     if class_args.is_empty() {
                         class_args.append(&mut function.arguments.clone())
                     } else {
-                        return Err(vec![TypeErr::new(
-                            class.pos,
-                            "Cannot have constructor and class arguments",
-                        )]);
+                        let msg = "Cannot have constructor and class arguments";
+                        return Err(vec![TypeErr::new(class.pos, &msg)]);
                     }
                 }
 
@@ -298,8 +296,7 @@ fn get_fields_and_functions(
 
                 for generic_field in &stmt_fields {
                     if generic_field.ty.is_none() {
-                        let msg =
-                            format!("Class field '{}' was not assigned a type", generic_field.name);
+                        let msg = format!("Class field '{}' was not assigned a type", generic_field.name);
                         return Err(vec![TypeErr::new(generic_field.pos, &msg)]);
                     }
                 }

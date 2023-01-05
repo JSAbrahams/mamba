@@ -51,7 +51,7 @@ impl TryFromPos<&FunUnion> for Function {
         if fun_union.union.len() == (1_usize) {
             Ok(fun_union.union.iter().next().unwrap().clone())
         } else {
-            let msg = format!("Expected single function but was {}", fun_union);
+            let msg = format!("Expected single function but was {fun_union}");
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }

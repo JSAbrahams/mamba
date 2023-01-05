@@ -31,7 +31,7 @@ pub struct Field {
 impl Display for Field {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let ty = if self.ty.is_empty() { String::new() } else { format!(": {}", self.ty) };
-        write!(f, "{}{}", &self.name, ty)
+        write!(f, "{}{ty}", &self.name)
     }
 }
 
@@ -42,7 +42,7 @@ impl LookupField<&str, Field> for Context {
             let generics = HashMap::new();
             Field::try_from((generic_field, &generics, pos))
         } else {
-            let msg = format!("Field {} is undefined.", field);
+            let msg = format!("Field {field} is undefined.");
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }
