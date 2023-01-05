@@ -103,7 +103,7 @@ pub fn gen_call(
                     &fun_ret_exp,
                 );
 
-                check_raises_caught(constr, &fun.raises.names, env, ctx, ast.pos)?;
+                check_raises_caught(&fun.raises.names, env, ctx, ast.pos)?;
                 env.clone()
             })
         }

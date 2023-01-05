@@ -40,8 +40,6 @@ impl ConstrBuilder {
         ConstrBuilder { branch_point: 0, joined: false, constraints: vec![vec![]], var_mapping: HashMap::new() }
     }
 
-    pub fn is_top_level(&self) -> bool { self.constraints.len() == 1 }
-
     /// Insert variable for mapping in current constraint set.
     ///
     /// This prevents shadowed variables from contaminating previous constraints.
