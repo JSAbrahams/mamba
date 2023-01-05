@@ -1,4 +1,4 @@
-class Err(def msg: String): Exception(msg)
+class Err(def msg: Str): Exception(msg)
 
 def f(x: Int) -> Int raise[Err] => if x > 0 then return 10 else raise Err("Expected positive number.")
 

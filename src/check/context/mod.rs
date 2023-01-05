@@ -140,7 +140,7 @@ mod tests {
         let context = Context::try_from(files.as_slice()).unwrap();
         let context = context.into_with_primitives().unwrap();
 
-        context.class(&StringName::from("String"), Position::default()).unwrap();
+        context.class(&StringName::from("Str"), Position::default()).unwrap();
         context.class(&StringName::from("Bool"), Position::default()).unwrap();
         context.class(&StringName::from("Float"), Position::default()).unwrap();
         context.class(&StringName::from("Int"), Position::default()).unwrap();
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(args.len(), 2);
         assert_eq!(args[0].ty.clone().unwrap(), Name::from("Int"));
         assert_eq!(args[1].ty.clone().unwrap(), Name::from("Int")
-            .union(&Name::from("String"))
+            .union(&Name::from("Str"))
             .union(&Name::from("Float")));
     }
 
@@ -173,7 +173,7 @@ mod tests {
 
         assert_eq!(int_fun.arguments.len(), 1);
         assert_eq!(int_fun.arguments[0].ty.clone().unwrap(), Name::from("Int")
-            .union(&Name::from("String"))
+            .union(&Name::from("Str"))
             .union(&Name::from("Float")));
 
         assert_eq!(int_fun.ret_ty, Name::from("Int"))

@@ -1,5 +1,5 @@
-class MyErr(def message: String): Exception
-class MyOtherErr(def message: String): Exception
+class MyErr(def message: Str): Exception
+class MyOtherErr(def message: Str): Exception
 
 def function_may_throw_err() -> Int raise [MyErr] => 10
 

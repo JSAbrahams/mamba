@@ -84,22 +84,22 @@ We can do the same for any field. We showcase this using a simple dummy `Server`
 ```mamba
 from ipaddress import IPv4Address
 
-class ServerError(def message: String): Exception(message)
+class ServerError(def message: Str): Exception(message)
 
 def fin always_the_same_message := "Connected!"
 
 class MyServer(def ip_address: IPv4Address)
-    def is_connected: Bool     := False
-    def _last_message: String  := "temp"
+    def is_connected: Bool  := False
+    def _last_message: Str  := "temp"
 
-    def last_sent(fin self) -> String raise [ServerError] =>
+    def last_sent(fin self) -> Str raise [ServerError] =>
         self._last_message
 
     def connect(self) =>
         self.is_connected := True
         print(always_the_same_message)
 
-    def send(self, message: String) raise [ServerError] =>
+    def send(self, message: Str) raise [ServerError] =>
         if self.is_connected then
             self._last_message := message
         else
@@ -139,13 +139,13 @@ from ipaddress import IPv4Address
 type ConnMyServer: MyServer when self.is_connected
 type DisConnMyServer: MyServer when not self.is_connected
 
-class ServerErr(def message: String): Exception(message)
+class ServerErr(def message: Str): Exception(message)
 
 class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
-    def is_connected: Bool     := False
-    def _last_message: String? := None
+    def is_connected: Bool  := False
+    def _last_message: Str? := None
 
-    def last_sent(self) -> String raise [ServerErr] => 
+    def last_sent(self) -> Str raise [ServerErr] => 
         if self.last_message != None then 
             self._last_message
         else
@@ -153,12 +153,12 @@ class MyServer(self: DisConnMyServer, def ip_address: IPv4Address)
 
     def connect(self: DisConnMyServer) => self.is_connected := True
 
-    def send(self: ConnMyServer, message: String) => self._last_message := message
+    def send(self: ConnMyServer, message: Str) => self._last_message := message
 
     def disconnect(self: ConnMyServer) => self.is_connected := False
 ```
 
-Within the then branch of the if statement, we know that `self._last_message` is a `String`.
+Within the then branch of the if statement, we know that `self._last_message` is a `Str`.
 This is because we performed a check in the if condition.
 
 Also Notice how above, we define the type of `self`.
@@ -196,7 +196,7 @@ def factorial(x: PosInt) -> PosInt => match x
 ```
 
 In short, types allow us to specify the domain and co-domain of functions with regards to the type of input, say, `Int`
-or `String`. During execution, a check is done to verify that the variable does conform to the requirements of the
+or `Str`. During execution, a check is done to verify that the variable does conform to the requirements of the
 refined type. If it does not, an exception is raised.
 
 Type refinement allows us to do some additional things:

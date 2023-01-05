@@ -51,7 +51,7 @@ impl TryFromPos<&FieldUnion> for Field {
         if field_union.union.len() == (1_usize) {
             Ok(field_union.union.iter().next().unwrap().clone())
         } else {
-            let msg = format!("Expected single field but was {}", field_union);
+            let msg = format!("Expected single field but was {field_union}");
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }

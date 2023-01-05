@@ -1,4 +1,4 @@
-def f(x: Int) -> String =>
+def f(x: Int) -> Str =>
     match x
         1 => "One"
         2 => "Two"

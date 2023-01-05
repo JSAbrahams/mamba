@@ -1,4 +1,4 @@
-class MyException(msg: String): Exception(msg)
+class MyException(msg: Str): Exception(msg)
 
 def g() -> Int raise [MyException] =>
     raise MyException("A")

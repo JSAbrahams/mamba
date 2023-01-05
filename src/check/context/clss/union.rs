@@ -54,7 +54,7 @@ impl GetField<FieldUnion> for ClassUnion {
             self.union.iter().map(|c| c.field(name, ctx, pos)).collect::<Result<_, _>>()?;
 
         if union.is_empty() {
-            let msg = format!("'{}' does not define attribute '{}'", Name::from(self), name);
+            let msg = format!("'{}' does not define attribute '{name}'", Name::from(self));
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
 
@@ -69,7 +69,7 @@ impl GetFun<FunUnion> for ClassUnion {
             self.union.iter().map(|c| c.fun(name, ctx, pos)).collect::<Result<_, _>>()?;
 
         if union.is_empty() {
-            let msg = format!("'{}' does not define function '{}'", Name::from(self), name);
+            let msg = format!("'{}' does not define function '{name}'", Name::from(self));
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
         Ok(FunUnion::from(&union))
@@ -137,7 +137,7 @@ impl LookupClass<&Name, ClassUnion> for Context {
     /// If NameUnion is empty.
     fn class(&self, name: &Name, pos: Position) -> TypeResult<ClassUnion> {
         if name.is_empty() {
-            return Err(vec![TypeErr::new(pos, &format!("Unexpected '{}'", name))]);
+            return Err(vec![TypeErr::new(pos, &format!("Unexpected '{name}'"))]);
         }
 
         let union = name.names.iter().map(|n| self.class(n, pos)).collect::<Result<_, _>>()?;

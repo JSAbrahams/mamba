@@ -95,7 +95,7 @@ mod test {
 
     #[test]
     fn from_py() {
-        let source = "def f(a: int, b, c: str, d: str = 'default') -> complex: pass";
+        let source = "def f(a: int, b, c: Str, d: Str = 'default') -> complex: pass";
         let (_, statements) =
             python_parser::file_input(python_parser::make_strspan(&source)).expect("parse source");
 
@@ -121,12 +121,12 @@ mod test {
         assert!(generic_function.arguments[1].mutable);
 
         assert_eq!(generic_function.arguments[2].name, String::from("c"));
-        assert_eq!(generic_function.arguments[2].ty, Some(Name::from("String")));
+        assert_eq!(generic_function.arguments[2].ty, Some(Name::from("Str")));
         assert!(!generic_function.arguments[2].has_default);
         assert!(generic_function.arguments[2].mutable);
 
         assert_eq!(generic_function.arguments[3].name, String::from("d"));
-        assert_eq!(generic_function.arguments[3].ty, Some(Name::from("String")));
+        assert_eq!(generic_function.arguments[3].ty, Some(Name::from("Str")));
         assert!(generic_function.arguments[3].has_default);
         assert!(generic_function.arguments[3].mutable);
     }
