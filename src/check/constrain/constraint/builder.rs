@@ -37,7 +37,8 @@ pub struct ConstrBuilder {
 impl ConstrBuilder {
     /// Create constraint builder with a single set present.
     pub fn new() -> ConstrBuilder {
-        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![vec![]], var_mapping: HashMap::new() }
+        let var_mapping = VarMapping::new();
+        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![vec![]], var_mapping }
     }
 
     /// Insert variable for mapping in current constraint set.
@@ -81,14 +82,21 @@ impl ConstrBuilder {
     }
 
     /// Add new constraint to constraint builder with a message.
+    ///
+    /// See [Self::add_constr] for mode details.
     pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected) {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
 
-    /// Add constraint up to last branch point, and latest branch
+    /// Add constraint up to last branch point, and latest branch.
+    ///
+    /// Use internal variable mappings to map variables.
+    /// The location at which this function is called is important, since variable mappings are
+    /// stateful.
     pub fn add_constr(&mut self, constraint: &Constraint) {
-        let mut lvls = vec![];
-        let last_branch = self.constraints.len() - 1;
+        let (mut lvls, last_branch) = (vec![], self.constraints.len() - 1);
+        let constraint = constraint.map_exp(&self.var_mapping);
+
         if self.joined {
             for (i, constraints) in enumerate(&mut self.constraints) {
                 constraints.push((constraint.clone(), self.branch_point));
@@ -117,15 +125,14 @@ impl ConstrBuilder {
 mod tests {
     use crate::check::constrain::constraint::builder::ConstrBuilder;
     use crate::check::constrain::constraint::Constraint;
-    use crate::check::constrain::constraint::expected::{Expect, Expected};
-    use crate::check::name::Any;
+    use crate::check::constrain::constraint::expected::Expected;
     use crate::common::position::Position;
 
     macro_rules! constr {
         ($msg:expr) => {{
             Constraint::new(format!("{}", $msg).as_str(),
-                            &Expected::new(Position::default(), &Expect::any()),
-                            &Expected::new(Position::default(), &Expect::any()))
+                            &Expected::any(Position::default()),
+                            &Expected::any(Position::default()))
         }}
     }
 

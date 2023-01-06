@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::Hash;
@@ -11,7 +10,6 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
-use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::common::result::an_or_a;
@@ -32,6 +30,38 @@ impl Expected {
     pub fn and_or_a(&self, and_or_a: bool) -> Expected {
         Expected { an_or_a: and_or_a, ..self.clone() }
     }
+
+    pub fn map_exp(&self, var_mapping: &VarMapping) -> Expected {
+        Expected::new(self.pos, &match &self.expect {
+            Expression { ast } => {
+                let ast = match &ast.node {
+                    Node::Block { statements } => statements.last().unwrap_or(ast),
+                    _ => ast,
+                };
+                Expression {
+                    ast: ast.map(&|node: &Node| if let Node::Id { lit } = node {
+                        let offset = var_mapping.get(lit).unwrap_or(&0_usize);
+                        Node::Id { lit: format_var_map(lit, offset) }
+                    } else {
+                        node.clone()
+                    })
+                }
+            }
+            Collection { ty } => Collection { ty: Box::from(ty.map_exp(var_mapping)) },
+            Tuple { elements } => Tuple { elements: elements.iter().map(|e| e.map_exp(var_mapping)).collect() },
+            Function { name, args } => Function { name: name.clone(), args: args.iter().map(|a| a.map_exp(var_mapping)).collect() },
+            Access { entity, name } => Access { entity: Box::from(entity.map_exp(var_mapping)), name: Box::from(name.map_exp(var_mapping)) },
+            other => other.clone()
+        })
+    }
+
+    pub fn any(pos: Position) -> Expected {
+        Expected::new(pos, &Type { name: Name::any() })
+    }
+
+    pub fn none(pos: Position) -> Expected {
+        Expected::new(pos, &Type { name: Name::from(NONE) })
+    }
 }
 
 impl AsRef<Expected> for Expected {
@@ -40,27 +70,15 @@ impl AsRef<Expected> for Expected {
     }
 }
 
-impl TryFrom<(&AST, &VarMapping)> for Expected {
-    type Error = Vec<TypeErr>;
-
-    /// Creates Expected from AST.
-    ///
-    /// If primitive or Constructor, constructs Type.
-    fn try_from((ast, mappings): (&AST, &VarMapping)) -> TypeResult<Expected> {
-        let ast = match &ast.node {
-            Node::Block { statements } => statements.last().unwrap_or(ast),
-            _ => ast,
-        };
-
-        Ok(Expected::new(ast.pos, &Expect::try_from((ast, mappings))?))
+impl From<&Box<AST>> for Expected {
+    fn from(value: &Box<AST>) -> Self {
+        Self::from(value.deref())
     }
 }
 
-impl TryFrom<(&Box<AST>, &VarMapping)> for Expected {
-    type Error = Vec<TypeErr>;
-
-    fn try_from((ast, mappings): (&Box<AST>, &VarMapping)) -> TypeResult<Expected> {
-        Expected::try_from((ast.deref(), mappings))
+impl From<&AST> for Expected {
+    fn from(ast: &AST) -> Expected {
+        Expected::new(ast.pos, &Expression { ast: ast.clone() })
     }
 }
 
@@ -73,34 +91,6 @@ pub enum Expect {
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
     Type { name: Name },
-}
-
-impl Any for Expect {
-    fn any() -> Self { Type { name: Name::any() } }
-}
-
-impl TryFrom<(&AST, &VarMapping)> for Expect {
-    type Error = Vec<TypeErr>;
-
-    /// Also substitutes any identifiers with new ones from the environment if the environment
-    /// has a mapping.
-    /// This means that we forget about shadowed variables and continue with the new ones.
-    fn try_from((ast, mappings): (&AST, &VarMapping)) -> TypeResult<Expect> {
-        let ast = ast.map(&|node: &Node| {
-            if let Node::Id { lit } = node {
-                if let Some(offset) = mappings.get(lit) {
-                    // Always use name currently defined in environment
-                    Node::Id { lit: format_var_map(lit, offset) }
-                } else {
-                    node.clone()
-                }
-            } else {
-                node.clone()
-            }
-        });
-
-        Ok(Expression { ast })
-    }
 }
 
 impl Display for Expected {
@@ -163,10 +153,6 @@ impl Expect {
         }
     }
 
-    pub fn none() -> Expect {
-        Type { name: Name::from(NONE) }
-    }
-
     pub fn is_none(&self) -> bool {
         match &self {
             Type { name } => name.is_null(),
@@ -177,10 +163,7 @@ impl Expect {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::convert::TryFrom;
-
-    use crate::check::constrain::constraint::expected::Expect;
+    use crate::check::constrain::constraint::expected::{Expect, Expected};
     use crate::common::position::{CaretPos, Position};
     use crate::parse::ast::{AST, Node};
     use crate::parse::parse_direct;
@@ -188,10 +171,9 @@ mod tests {
     #[test]
     fn test_expected_from_int_constructor_call() {
         let ast = parse_direct("Int(10)").unwrap();
-        let mappings = HashMap::new();
-        let expect = Expect::try_from((&ast[0], &mappings)).unwrap();
+        let expect = Expected::from(&ast[0]);
 
-        assert_eq!(expect, Expect::Expression {
+        assert_eq!(expect.expect, Expect::Expression {
             ast: AST::new(
                 Position::new(CaretPos::new(1, 1), CaretPos::new(1, 8)),
                 Node::FunctionCall {

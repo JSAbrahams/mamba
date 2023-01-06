@@ -5,8 +5,8 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, function, LookupClass};
@@ -14,7 +14,7 @@ use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
-use crate::check::name::{Any, match_name, Name, Nullable};
+use crate::check::name::{match_name, Name, Nullable};
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -75,7 +75,7 @@ pub fn gen_def(
                 if let Some(ret_ty) = ret_ty {
                     let name = Name::try_from(ret_ty)?;
                     let ret_ty_raises_exp = Expected::new(body.pos, &Type { name: name.clone() });
-                    constr.add("fun body type", &ret_ty_raises_exp, &Expected::try_from((body, &constr.var_mapping))?);
+                    constr.add("fun body type", &ret_ty_raises_exp, &Expected::from(body));
 
                     let ret_ty_exp = Expected::new(ret_ty.pos, &Type { name });
                     let body_env = body_env.return_type(&ret_ty_exp).is_expr(true);
@@ -170,7 +170,7 @@ pub fn identifier_from_var(
             env_with_var = env_with_var.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
         }
     } else {
-        let any = Expected::new(var.pos, &Expect::any());
+        let any = Expected::any(var.pos);
         for (f_mut, f_name) in identifier.fields(var.pos)? {
             constr.insert_var(&f_name);
             env_with_var = env_with_var.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
@@ -186,22 +186,20 @@ pub fn identifier_from_var(
             }
         }
         if let Some(expr) = expr {
-            let expr_expt = Expected::try_from((expr, &constr.var_mapping))?;
             for tup_exp in &tup_exps {
-                constr.add("tuple and expression", &expr_expt, tup_exp);
+                constr.add("tuple and expression", &Expected::from(expr), tup_exp);
             }
         }
     }
 
-    let var_expect = Expected::try_from((var, &constr.var_mapping))?;
+    let var_expect = Expected::from(var).map_exp(&constr.var_mapping);
     if let Some(ty) = ty {
         let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
         constr.add("variable and type", &ty_exp, &var_expect);
     }
     if let Some(expr) = expr {
-        let expr_expect = Expected::try_from((expr, &constr.var_mapping))?;
         let msg = format!("variable and expression: `{}`", expr.node);
-        constr.add(&msg, &var_expect, &expr_expect);
+        constr.add(&msg, &var_expect, &Expected::from(expr));
     }
 
 

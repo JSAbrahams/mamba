@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
@@ -41,11 +40,7 @@ pub fn gen_stmt(
         Node::Return { expr } => {
             if let Some(expected_ret_ty) = &env.return_type {
                 generate(expr, env, ctx, constr)?;
-                constr.add(
-                    "return",
-                    expected_ret_ty,
-                    &Expected::try_from((expr, &constr.var_mapping))?,
-                );
+                constr.add("return", expected_ret_ty, &Expected::from(expr));
                 Ok(env.clone())
             } else if !env.in_fun {
                 Err(vec![TypeErr::new(ast.pos, "Return outside function")])

@@ -1,5 +1,6 @@
 use std::fmt::{Display, Error, Formatter};
 
+use crate::check::constrain::constraint::builder::VarMapping;
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{clss, function};
@@ -61,6 +62,12 @@ impl Constraint {
             is_sub: false,
             superset: superset.clone(),
         }
+    }
+
+    pub fn map_exp(&self, var_mapping: &VarMapping) -> Self {
+        let left = self.left.map_exp(var_mapping);
+        let right = self.right.map_exp(var_mapping);
+        Constraint { left, right, ..self.clone() }
     }
 
     /// Flag constraint iff flagged is 0, else ignored.

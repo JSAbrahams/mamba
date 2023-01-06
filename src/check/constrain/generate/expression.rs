@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::{constrain_args, identifier_from_var};
 use crate::check::constrain::generate::env::Environment;
@@ -26,18 +26,14 @@ pub fn gen_expr(
             match_id(expr, ty, *mutable, env, ctx, constr),
         Node::Id { .. } => match_id(ast, &None, false, env, ctx, constr),
         Node::Question { left, right } => {
-            constr.add(
-                "question",
-                &Expected::try_from((left, &constr.var_mapping))?,
-                &Expected::new(left.pos, &Expect::none()),
-            );
+            constr.add("question", &Expected::from(left), &Expected::none(left.pos));
 
             generate(left, env, ctx, constr)?;
             generate(right, env, ctx, constr)?;
             Ok(env.clone())
         }
         Node::Pass => if let Some(expected_ret_ty) = &env.return_type {
-            constr.add("pass", &Expected::new(ast.pos, &Expect::none()), expected_ret_ty);
+            constr.add("pass", &Expected::none(ast.pos), expected_ret_ty);
             Ok(env.clone())
         } else {
             Ok(env.clone())

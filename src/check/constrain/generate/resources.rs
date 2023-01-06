@@ -1,13 +1,13 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Type;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::definition::identifier_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
-use crate::check::name::{Any, Name};
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -19,13 +19,12 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
-            let resource_exp = Expected::try_from((resource, &constr.var_mapping))?;
-            constr.add("with as", &resource_exp, &Expected::try_from((alias, &constr.var_mapping))?);
-            constr.add("with as", &resource_exp, &Expected::new(resource.pos, &Expect::any()));
+            constr.add("with alias", &Expected::from(resource), &Expected::from(alias));
+            constr.add("with resource", &Expected::from(resource), &Expected::any(resource.pos));
 
             if let Some(ty) = ty {
                 let ty_exp = Type { name: Name::try_from(ty)? };
-                constr.add("with as", &resource_exp, &Expected::new(ty.pos, &ty_exp));
+                constr.add("with alias type", &Expected::from(resource), &Expected::new(ty.pos, &ty_exp));
             }
 
             let resource_env = generate(resource, env, ctx, constr)?;
@@ -46,14 +45,9 @@ pub fn gen_resources(
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
-            constr.add(
-                "with",
-                &Expected::try_from((resource, &constr.var_mapping))?,
-                &Expected::new(resource.pos, &Expect::any()),
-            );
+            constr.add("with", &Expected::from(resource), &Expected::any(resource.pos));
 
             let resource_env = generate(resource, env, ctx, constr)?;
-
             generate(expr, &resource_env, ctx, constr)?;
             Ok(env.clone())
         }
