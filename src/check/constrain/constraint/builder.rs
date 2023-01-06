@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use itertools::enumerate;
 
-use crate::check::constrain::constraint::Constraint;
+use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::common::delimit::comma_delm;
@@ -88,14 +88,32 @@ impl ConstrBuilder {
         self.add_constr(&Constraint::new(msg, parent, child));
     }
 
+    /// Add new constraint and specify whether one wants the constraint builder to perform any
+    /// internal mapping.
+    ///
+    /// Useful if one want to have greater control over the order over how variables are mapped
+    /// within the [Expected].
+    pub fn add_map(&mut self, msg: &str, parent: &Expected, child: &Expected, var_map: bool) {
+        self.add_constr_map(&Constraint::new(msg, parent, child), var_map);
+    }
+
     /// Add constraint up to last branch point, and latest branch.
     ///
     /// Use internal variable mappings to map variables.
-    /// The location at which this function is called is important, since variable mappings are
-    /// stateful.
     pub fn add_constr(&mut self, constraint: &Constraint) {
+        self.add_constr_map(constraint, true)
+    }
+
+    /// Add new constraint and specify whether one wants the constraint builder to perform any
+    /// internal mapping.
+    ///
+    /// Useful if one want to have greater control over the order over how variables are mapped
+    /// within the [Expected].
+    pub fn add_constr_map(&mut self, constraint: &Constraint, var_map: bool) {
         let (mut lvls, last_branch) = (vec![], self.constraints.len() - 1);
-        let constraint = constraint.map_exp(&self.var_mapping);
+        let constraint = if var_map {
+            constraint.map_exp(&self.var_mapping)
+        } else { constraint.clone() };
 
         if self.joined {
             for (i, constraints) in enumerate(&mut self.constraints) {

@@ -33,6 +33,10 @@ impl Default for ConstrVariant {
     }
 }
 
+pub trait MapExp {
+    fn map_exp(&self, var_mapping: &VarMapping) -> Self;
+}
+
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let superset = match &self.superset {
@@ -41,6 +45,14 @@ impl Display for Constraint {
         };
 
         write!(f, "{} {superset} {}", self.left, self.right)
+    }
+}
+
+impl MapExp for Constraint {
+    fn map_exp(&self, var_mapping: &VarMapping) -> Self {
+        let left = self.left.map_exp(var_mapping);
+        let right = self.right.map_exp(var_mapping);
+        Constraint { left, right, ..self.clone() }
     }
 }
 
@@ -62,12 +74,6 @@ impl Constraint {
             is_sub: false,
             superset: superset.clone(),
         }
-    }
-
-    pub fn map_exp(&self, var_mapping: &VarMapping) -> Self {
-        let left = self.left.map_exp(var_mapping);
-        let right = self.right.map_exp(var_mapping);
-        Constraint { left, right, ..self.clone() }
     }
 
     /// Flag constraint iff flagged is 0, else ignored.

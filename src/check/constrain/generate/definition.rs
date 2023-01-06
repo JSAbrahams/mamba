@@ -7,6 +7,7 @@ use permutate::Permutator;
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::MapExp;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, function, LookupClass};

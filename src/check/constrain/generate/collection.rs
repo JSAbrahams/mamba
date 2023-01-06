@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
+use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
@@ -101,15 +101,15 @@ pub fn gen_collection_lookup(lookup: &AST, col: &AST, env: &Environment, constr:
     let mut env = env.clone();
 
     // Make col constraint before inserting environment, in case shadowed here
-    let col_exp = Expected::from(col);
-
+    let col_exp = Expected::from(col).map_exp(&constr.var_mapping);
     for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
         constr.insert_var(&var);
         env = env.insert_var(mutable, &var, &Expected::any(lookup.pos), &constr.var_mapping);
     }
 
     let col_ty_exp = Expected::new(col.pos, &Collection { ty: Box::from(Expected::from(lookup)) });
-    constr.add("collection lookup", &col_ty_exp, &col_exp);
+    let col_ty_exp = col_ty_exp.map_exp(&constr.var_mapping);
+    constr.add_map("collection lookup", &col_ty_exp, &col_exp, false);
 
     Ok(env)
 }

@@ -7,6 +7,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expect::*;
+use crate::check::constrain::constraint::MapExp;
 use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
@@ -22,22 +23,16 @@ pub struct Expected {
     an_or_a: bool,
 }
 
-impl Expected {
-    pub fn new(pos: Position, expect: &Expect) -> Expected {
-        Expected { pos, expect: expect.clone(), an_or_a: true }
-    }
-
-    pub fn and_or_a(&self, and_or_a: bool) -> Expected {
-        Expected { an_or_a: and_or_a, ..self.clone() }
-    }
-
-    pub fn map_exp(&self, var_mapping: &VarMapping) -> Expected {
+impl MapExp for Expected {
+    fn map_exp(&self, var_mapping: &VarMapping) -> Self {
         Expected::new(self.pos, &match &self.expect {
             Expression { ast } => {
                 let ast = match &ast.node {
-                    Node::Block { statements } => statements.last().unwrap_or(ast),
-                    _ => ast,
+                    Node::Block { statements } if statements.is_empty() => ast.clone(),
+                    Node::Block { statements } => statements.last().cloned().expect("unreachable"),
+                    _ => ast.clone(),
                 };
+
                 Expression {
                     ast: ast.map(&|node: &Node| if let Node::Id { lit } = node {
                         let offset = var_mapping.get(lit).unwrap_or(&0_usize);
@@ -53,6 +48,16 @@ impl Expected {
             Access { entity, name } => Access { entity: Box::from(entity.map_exp(var_mapping)), name: Box::from(name.map_exp(var_mapping)) },
             other => other.clone()
         })
+    }
+}
+
+impl Expected {
+    pub fn new(pos: Position, expect: &Expect) -> Expected {
+        Expected { pos, expect: expect.clone(), an_or_a: true }
+    }
+
+    pub fn and_or_a(&self, and_or_a: bool) -> Expected {
+        Expected { an_or_a: and_or_a, ..self.clone() }
     }
 
     pub fn any(pos: Position) -> Expected {
