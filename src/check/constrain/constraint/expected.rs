@@ -110,7 +110,7 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
-            Expression { ast } => write!(f, "`{}`", ast.node),
+            Expression { ast } => write!(f, "{}", ast.node),
             Collection { ty, .. } => write!(f, "{{{}}}", ty.and_or_a(false)),
             Tuple { elements } => {
                 let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();

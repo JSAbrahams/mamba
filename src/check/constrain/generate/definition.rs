@@ -203,7 +203,6 @@ pub fn identifier_from_var(
         constr.add(&msg, &var_expect, &Expected::from(expr));
     }
 
-
     Ok(env_with_var)
 }
 

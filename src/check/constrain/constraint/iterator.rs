@@ -16,10 +16,6 @@ impl From<&Vec<Constraint>> for Constraints {
 }
 
 impl Constraints {
-    pub fn new() -> Constraints {
-        Constraints { constraints: VecDeque::new() }
-    }
-
     pub fn len(&self) -> usize { self.constraints.len() }
 
     pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
@@ -50,8 +46,4 @@ impl Constraints {
         self.constraints.push_back(constraint.flag());
         Ok(())
     }
-}
-
-impl Default for Constraints {
-    fn default() -> Self { Constraints::new() }
 }

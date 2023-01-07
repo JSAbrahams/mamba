@@ -241,11 +241,13 @@ fn property_call(
         }
     };
 
+    let entity = Box::new(Expected::from(&ast_without_access));
+    let msg = format!("access property of {entity}");
     let access = Expected::new(
         ast_without_access.pos.union(access.pos),
-        &Access { entity: Box::new(Expected::from(&ast_without_access)), name: Box::new(access) },
+        &Access { entity, name: Box::new(access) },
     );
-    constr.add("access property", &access, &entire_call_as_ast);
+    constr.add(&msg, &access, &entire_call_as_ast);
 
     generate(&ast_without_access, env, ctx, constr)?;
     Ok(env.clone())
