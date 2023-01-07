@@ -33,8 +33,8 @@ impl Default for ConstrVariant {
     }
 }
 
-pub trait MapExp {
-    fn map_exp(&self, var_mapping: &VarMapping) -> Self;
+pub(super) trait MapExp {
+    fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self;
 }
 
 impl Display for Constraint {
@@ -49,9 +49,9 @@ impl Display for Constraint {
 }
 
 impl MapExp for Constraint {
-    fn map_exp(&self, var_mapping: &VarMapping) -> Self {
-        let left = self.left.map_exp(var_mapping);
-        let right = self.right.map_exp(var_mapping);
+    fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self {
+        let left = self.left.map_exp(var_mapping, global_var_mapping);
+        let right = self.right.map_exp(var_mapping, global_var_mapping);
         Constraint { left, right, ..self.clone() }
     }
 }

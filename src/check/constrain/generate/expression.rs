@@ -26,14 +26,14 @@ pub fn gen_expr(
             match_id(expr, ty, *mutable, env, ctx, constr),
         Node::Id { .. } => match_id(ast, &None, false, env, ctx, constr),
         Node::Question { left, right } => {
-            constr.add("question", &Expected::from(left), &Expected::none(left.pos));
+            constr.add("question", &Expected::from(left), &Expected::none(left.pos), env);
 
             generate(left, env, ctx, constr)?;
             generate(right, env, ctx, constr)?;
             Ok(env.clone())
         }
         Node::Pass => if let Some(expected_ret_ty) = &env.return_type {
-            constr.add("pass", &Expected::none(ast.pos), expected_ret_ty);
+            constr.add("pass", &Expected::none(ast.pos), expected_ret_ty, env);
             Ok(env.clone())
         } else {
             Ok(env.clone())

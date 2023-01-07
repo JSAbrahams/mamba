@@ -3,15 +3,19 @@ use std::collections::VecDeque;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
+    pub pos: Position,
+    pub msg: String,
+
     pub(in super) constraints: VecDeque<Constraint>,
 }
 
-impl From<&Vec<Constraint>> for Constraints {
-    fn from(constraints: &Vec<Constraint>) -> Self {
-        Constraints { constraints: VecDeque::from(constraints.clone()) }
+impl From<(Position, String, Vec<Constraint>)> for Constraints {
+    fn from((pos, msg, constraints): (Position, String, Vec<Constraint>)) -> Self {
+        Constraints { pos, msg, constraints: VecDeque::from(constraints) }
     }
 }
 

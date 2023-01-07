@@ -8,7 +8,7 @@ class MyClass2:
 
 x: MyClass2 = MyClass2()
 if True:
+    x.f2()
+else:
     x: MyClass1 = MyClass1()
     x.f1()
-else:
-    x.f2()

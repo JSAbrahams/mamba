@@ -5,12 +5,14 @@ use itertools::enumerate;
 use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::generate::env::Environment;
 use crate::common::delimit::comma_delm;
+use crate::common::position::Position;
 
 pub type VarMapping = HashMap<String, usize>;
 
 pub fn format_var_map(var: &str, offset: &usize) -> String {
-    if *offset == 0usize {
+    if *offset == 0_usize {
         String::from(var)
     } else {
         format!("{var}@{offset}")
@@ -27,7 +29,7 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
 /// We can have multiple sets open at a time.
 #[derive(Debug)]
 pub struct ConstrBuilder {
-    constraints: Vec<Vec<(Constraint, usize)>>,
+    constraints: Vec<(Position, String, Vec<(Constraint, usize)>)>,
     branch_point: usize,
     joined: bool,
 
@@ -38,7 +40,8 @@ impl ConstrBuilder {
     /// Create constraint builder with a single set present.
     pub fn new() -> ConstrBuilder {
         let var_mapping = VarMapping::new();
-        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![vec![]], var_mapping }
+        let (pos, msg) = (Position::default(), String::from("Script"));
+        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping }
     }
 
     /// Insert variable for mapping in current constraint set.
@@ -50,10 +53,14 @@ impl ConstrBuilder {
     pub fn insert_var(&mut self, var: &str) {
         let offset = self.var_mapping.get(var).map_or(0, |o| o + 1);
         self.var_mapping.insert(String::from(var), offset);
+
+        let mapped_var = format_var_map(var, self.var_mapping.get(var).unwrap());
+        trace!("Inserted {var} in constraint builder: {var} => {mapped_var}");
     }
 
-    /// Set new branch point
+    /// Set new branch point.
     pub fn branch_point(&mut self) {
+        trace!("Branch point created at level {}", self.constraints.len() - 1);
         self.branch_point += 1;
         self.joined = false;
     }
@@ -64,19 +71,21 @@ impl ConstrBuilder {
     /// Typically in match arms or if arms, where we want branches to be disjoint.
     /// At the same time, we want all branches to inherit from an older set.
     /// When inheriting, we also discard any constraints added while in a level we wish to skip.
-    pub fn branch(&mut self) {
+    pub fn branch(&mut self, msg: &str, pos: Position) {
+        trace!("Branching from level {}", self.branch_point - 1);
         let inherited_constraints: Vec<(Constraint, usize)> = if self.joined {
-            self.constraints.last().expect("Is never empty").to_vec()
+            self.constraints.last().expect("Is never empty").2.to_vec()
         } else {
-            self.constraints.last().expect("Is never empty")
-                .into_iter().filter(|(_, lvl)| *lvl < self.branch_point).cloned().collect()
+            self.constraints.last().expect("Is never empty").2
+                .iter().filter(|(_, lvl)| *lvl < self.branch_point).cloned().collect()
         };
 
-        self.constraints.push(inherited_constraints.clone());
+        self.constraints.push((pos, String::from(msg), inherited_constraints.clone()));
     }
 
     /// Reset all branches so that they are again all added to.
     pub fn reset_branches(&mut self) {
+        trace!("Reset branches: Now adding to {} branches in parallel", self.constraints.len());
         self.branch_point = self.constraints.len() - 1;
         self.joined = true;
     }
@@ -84,8 +93,20 @@ impl ConstrBuilder {
     /// Add new constraint to constraint builder with a message.
     ///
     /// See [Self::add_constr] for mode details.
-    pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected) {
-        self.add_constr(&Constraint::new(msg, parent, child));
+    pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected, env: &Environment) {
+        self.add_constr_map(&Constraint::new(msg, parent, child), &env.var_mapping);
+    }
+
+    /// Add new constraint and specify whether one wants the constraint builder to perform any
+    /// internal mapping.
+    ///
+    /// Given environment used for variable substitution.
+    /// This takes precedence over the global variable mapping.
+    ///
+    /// Useful if one want to have greater control over the order over how variables are mapped
+    /// within the [Expected].
+    pub fn add_constr(&mut self, constraint: &Constraint, env: &Environment) {
+        self.add_constr_map(constraint, &env.var_mapping)
     }
 
     /// Add new constraint and specify whether one wants the constraint builder to perform any
@@ -93,36 +114,18 @@ impl ConstrBuilder {
     ///
     /// Useful if one want to have greater control over the order over how variables are mapped
     /// within the [Expected].
-    pub fn add_map(&mut self, msg: &str, parent: &Expected, child: &Expected, var_map: bool) {
-        self.add_constr_map(&Constraint::new(msg, parent, child), var_map);
-    }
-
-    /// Add constraint up to last branch point, and latest branch.
-    ///
-    /// Use internal variable mappings to map variables.
-    pub fn add_constr(&mut self, constraint: &Constraint) {
-        self.add_constr_map(constraint, true)
-    }
-
-    /// Add new constraint and specify whether one wants the constraint builder to perform any
-    /// internal mapping.
-    ///
-    /// Useful if one want to have greater control over the order over how variables are mapped
-    /// within the [Expected].
-    pub fn add_constr_map(&mut self, constraint: &Constraint, var_map: bool) {
+    fn add_constr_map(&mut self, constraint: &Constraint, var_map: &VarMapping) {
         let (mut lvls, last_branch) = (vec![], self.constraints.len() - 1);
-        let constraint = if var_map {
-            constraint.map_exp(&self.var_mapping)
-        } else { constraint.clone() };
+        let constraint = constraint.map_exp(var_map, &self.var_mapping);
 
         if self.joined {
-            for (i, constraints) in enumerate(&mut self.constraints) {
+            for (i, (_, _, constraints)) in enumerate(&mut self.constraints) {
                 constraints.push((constraint.clone(), self.branch_point));
                 lvls.push(i);
             }
         } else {
             // only push to last branch
-            self.constraints[last_branch].push((constraint.clone(), self.branch_point));
+            self.constraints[last_branch].2.push((constraint.clone(), self.branch_point));
             lvls.push(last_branch);
         }
 
@@ -131,11 +134,13 @@ impl ConstrBuilder {
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
-        let constraints: Vec<_> = self.constraints.into_iter()
-            .map(|constraints| constraints.iter().map(|(c, _)| c.clone()).collect())
+        let constraints: Vec<(Position, String, Vec<Constraint>)> = self.constraints.into_iter()
+            .map(|(pos, msg, constraints)| {
+                (pos, msg, constraints.iter().map(|(c, _)| c.clone()).collect())
+            })
             .collect();
 
-        constraints.iter().map(Constraints::from).collect()
+        constraints.into_iter().map(Constraints::from).collect()
     }
 }
 
@@ -144,6 +149,7 @@ mod tests {
     use crate::check::constrain::constraint::builder::ConstrBuilder;
     use crate::check::constrain::constraint::Constraint;
     use crate::check::constrain::constraint::expected::Expected;
+    use crate::check::constrain::generate::env::Environment;
     use crate::common::position::Position;
 
     macro_rules! constr {
@@ -167,9 +173,9 @@ mod tests {
         let mut builder = ConstrBuilder::new();
         let (c1, c2, c3) = (constr!(1), constr!(2), constr!(3));
 
-        builder.add_constr(&c1);
-        builder.add_constr(&c2);
-        builder.add_constr(&c3);
+        builder.add_constr(&c1, &Environment::default());
+        builder.add_constr(&c2, &Environment::default());
+        builder.add_constr(&c3, &Environment::default());
 
         let all_constr = builder.all_constr();
         assert_eq!(all_constr.len(), 1);
@@ -181,16 +187,16 @@ mod tests {
         let mut builder = ConstrBuilder::new();
         let (c1, c2, c3, c4) = (constr!(1), constr!(2), constr!(3), constr!(4));
 
-        builder.add_constr(&c1); // anything before if branches (including cond)
+        builder.add_constr(&c1, &Environment::default()); // anything before if branches (including cond)
 
         builder.branch_point();
-        builder.add_constr(&c2); // then branch of if
+        builder.add_constr(&c2, &Environment::default()); // then branch of if
 
-        builder.branch();
-        builder.add_constr(&c3); // else branch of if
+        builder.branch("", Position::default());
+        builder.add_constr(&c3, &Environment::default()); // else branch of if
 
         builder.reset_branches();
-        builder.add_constr(&c4); // anything after if
+        builder.add_constr(&c4, &Environment::default()); // anything after if
 
         let all_constr = builder.all_constr();
         assert_eq!(all_constr.len(), 2);
@@ -204,19 +210,19 @@ mod tests {
         let mut builder = ConstrBuilder::new();
         let (c1, c2, c3, c4, c5) = (constr!(1), constr!(2), constr!(3), constr!(4), constr!(5));
 
-        builder.add_constr(&c1); // anything before match branches (including expr)
+        builder.add_constr(&c1, &Environment::default()); // anything before match branches (including expr)
 
         builder.branch_point();
-        builder.add_constr(&c2); // first branch
+        builder.add_constr(&c2, &Environment::default()); // first branch
 
-        builder.branch();
-        builder.add_constr(&c3); // second branch
+        builder.branch("", Position::default());
+        builder.add_constr(&c3, &Environment::default()); // second branch
 
-        builder.branch();
-        builder.add_constr(&c4); // third branch
+        builder.branch("", Position::default());
+        builder.add_constr(&c4, &Environment::default()); // third branch
 
         builder.reset_branches();
-        builder.add_constr(&c5); // anything after match
+        builder.add_constr(&c5, &Environment::default()); // anything after match
 
         let all_constr = builder.all_constr();
         assert_eq!(all_constr.len(), 3);
@@ -232,34 +238,34 @@ mod tests {
         let (c1, c2, _, c4, c5) = (constr!(1), constr!(2), constr!(3), constr!(4), constr!(5));
         let (c31, c32, c33, c34, c35) = (constr!(31), constr!(32), constr!(33), constr!(34), constr!(35));
 
-        builder.add_constr(&c1); // anything before match branches (including expr)
+        builder.add_constr(&c1, &Environment::default()); // anything before match branches (including expr)
 
         builder.branch_point();
-        builder.add_constr(&c2); // first branch
+        builder.add_constr(&c2, &Environment::default()); // first branch
 
-        builder.branch();
+        builder.branch("", Position::default());
         {   // second branch
             builder.branch_point();
-            builder.add_constr(&c31);
+            builder.add_constr(&c31, &Environment::default());
 
-            builder.branch();
-            builder.add_constr(&c32);
+            builder.branch("", Position::default());
+            builder.add_constr(&c32, &Environment::default());
 
-            builder.branch();
-            builder.add_constr(&c33);
+            builder.branch("", Position::default());
+            builder.add_constr(&c33, &Environment::default());
 
-            builder.branch();
-            builder.add_constr(&c34);
+            builder.branch("", Position::default());
+            builder.add_constr(&c34, &Environment::default());
 
-            builder.branch();
-            builder.add_constr(&c35);
+            builder.branch("", Position::default());
+            builder.add_constr(&c35, &Environment::default());
         }
 
-        builder.branch();
-        builder.add_constr(&c4); // third branch
+        builder.branch("", Position::default());
+        builder.add_constr(&c4, &Environment::default()); // third branch
 
         builder.reset_branches();
-        builder.add_constr(&c5); // anything after match
+        builder.add_constr(&c5, &Environment::default()); // anything after match
 
         let all_constr = builder.all_constr();
         assert_eq!(all_constr.len(), 7);

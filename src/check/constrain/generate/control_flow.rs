@@ -45,28 +45,27 @@ pub fn gen_flow(
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
-            constr.add_constr(&Constraint::truthy("if condition", &Expected::from(cond)));
+            constr.add_constr(&Constraint::truthy("if condition", &Expected::from(cond)), env);
             generate(cond, env, ctx, constr)?;
-
             let if_expr_exp = Expected::from(ast);
 
             constr.branch_point();
             generate(then, env, ctx, constr)?;
             if env.is_expr {
-                constr.add("then branch equal to if", &Expected::from(then), &if_expr_exp);
+                constr.add("then branch equal to if", &Expected::from(then), &if_expr_exp, env);
             }
 
-            constr.branch();
+            constr.branch("if else branch", el.pos);
             generate(el, env, ctx, constr)?;
             if env.is_expr {
-                constr.add("else branch equal to if", &Expected::from(el), &if_expr_exp);
+                constr.add("else branch equal to if", &Expected::from(el), &if_expr_exp, env);
             }
 
             constr.reset_branches();
             Ok(env.clone())
         }
         Node::IfElse { cond, then, .. } => {
-            constr.add_constr(&Constraint::truthy("if condition", &Expected::from(cond)));
+            constr.add_constr(&Constraint::truthy("if condition", &Expected::from(cond)), env);
 
             generate(cond, env, ctx, constr)?;
             generate(then, env, ctx, constr)?;
@@ -88,7 +87,7 @@ pub fn gen_flow(
             Ok(env.clone())
         }
         Node::While { cond, body } => {
-            constr.add_constr(&Constraint::truthy("while condition", &Expected::from(cond)));
+            constr.add_constr(&Constraint::truthy("while condition", &Expected::from(cond)), env);
 
             generate(cond, env, ctx, constr)?;
             generate(body, &env.in_loop(), ctx, constr)?;
@@ -109,21 +108,21 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
     for case in cases {
         match &case.node {
             Node::Case { cond, body } => {
-                constr.branch();
+                constr.branch("match arm", case.pos);
                 let cond_env = generate(cond, &env.is_def_mode(true), ctx, constr)?;
-                generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
 
                 if let Node::ExpressionType { expr: ref cond, .. } = cond.node {
-                    if let Some(expr) = expr {
-                        constr.add("arm body", &Expected::from(expr), &Expected::from(cond));
+                    if let Some(expr) = &expr {
+                        constr.add("arm body", &Expected::from(expr), &Expected::from(cond), env);
                     }
                 }
 
+                generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
                 let exp_body = Expected::from(body);
-                constr.add("arm body", &exp_body, &Expected::from(ast));
+                constr.add("arm body", &exp_body, &Expected::from(ast), env);
 
                 if env.is_expr {
-                    constr.add("arm body and outer", &Expected::from(ast), &exp_body);
+                    constr.add("arm body and outer", &Expected::from(ast), &exp_body, env);
                 }
             }
             _ => return Err(vec![TypeErr::new(case.pos, "Expected case")])

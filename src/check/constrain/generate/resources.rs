@@ -19,12 +19,12 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
-            constr.add("with alias", &Expected::from(resource), &Expected::from(alias));
-            constr.add("with resource", &Expected::from(resource), &Expected::any(resource.pos));
+            constr.add("with alias", &Expected::from(resource), &Expected::from(alias), env);
+            constr.add("with resource", &Expected::from(resource), &Expected::any(resource.pos), env);
 
             if let Some(ty) = ty {
                 let ty_exp = Type { name: Name::try_from(ty)? };
-                constr.add("with alias type", &Expected::from(resource), &Expected::new(ty.pos, &ty_exp));
+                constr.add("with alias type", &Expected::from(resource), &Expected::new(ty.pos, &ty_exp), env);
             }
 
             let resource_env = generate(resource, env, ctx, constr)?;
@@ -45,7 +45,7 @@ pub fn gen_resources(
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
-            constr.add("with", &Expected::from(resource), &Expected::any(resource.pos));
+            constr.add("with", &Expected::from(resource), &Expected::any(resource.pos), env);
 
             let resource_env = generate(resource, env, ctx, constr)?;
             generate(expr, &resource_env, ctx, constr)?;

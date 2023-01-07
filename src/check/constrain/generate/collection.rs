@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::builder::ConstrBuilder;
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
@@ -17,12 +17,12 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
     match &ast.node {
         Node::Set { elements } | Node::List { elements } => {
             gen_vec(elements, env, false, ctx, constr)?;
-            constr_col(ast, constr, None)?;
+            constr_col(ast, env, constr, None)?;
             Ok(env.clone())
         }
         Node::Tuple { elements } => {
             let res = gen_vec(elements, env, env.is_def_mode, ctx, constr)?;
-            constr_col(ast, constr, None)?;
+            constr_col(ast, env, constr, None)?;
             Ok(res)
         }
 
@@ -36,14 +36,14 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
 
                 let item = Expected::from(left);
                 let col_exp = Expected::new(right.pos, &Collection { ty: Box::new(item) });
-                constr.add("comprehension collection type", &col_exp, &Expected::from(right));
+                constr.add("comprehension collection type", &col_exp, &Expected::from(right), env);
 
                 generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
                 if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
                     for cond in conditions {
                         generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
                         let cond = Expected::from(cond);
-                        constr.add_constr(&Constraint::truthy("comprehension condition", &cond));
+                        constr.add_constr(&Constraint::truthy("comprehension condition", &cond), &conds_env);
                     }
                 }
 
@@ -60,13 +60,13 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
 /// Generate constraint for collection by taking first element.
 ///
 /// The assumption here being that every element in the set has the same type.
-pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder, temp_type: Option<Name>)
+pub fn constr_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder, temp_type: Option<Name>)
                   -> TypeResult<()> {
     let (msg, col) = match &collection.node {
         Node::Set { elements } | Node::List { elements } => {
             let ty = if let Some(first) = elements.first() {
                 for element in elements {
-                    constr.add("collection item", &Expected::from(first), &Expected::from(element))
+                    constr.add("collection item", &Expected::from(first), &Expected::from(element), env)
                 }
                 Box::from(Expected::from(first))
             } else {
@@ -89,7 +89,7 @@ pub fn constr_col(collection: &AST, constr: &mut ConstrBuilder, temp_type: Optio
     };
 
     let col_exp = Expected::new(collection.pos, &col);
-    constr.add(msg, &col_exp, &Expected::from(collection));
+    constr.add(msg, &col_exp, &Expected::from(collection), env);
     Ok(())
 }
 
@@ -101,15 +101,13 @@ pub fn gen_collection_lookup(lookup: &AST, col: &AST, env: &Environment, constr:
     let mut env = env.clone();
 
     // Make col constraint before inserting environment, in case shadowed here
-    let col_exp = Expected::from(col).map_exp(&constr.var_mapping);
     for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
         constr.insert_var(&var);
         env = env.insert_var(mutable, &var, &Expected::any(lookup.pos), &constr.var_mapping);
     }
 
     let col_ty_exp = Expected::new(col.pos, &Collection { ty: Box::from(Expected::from(lookup)) });
-    let col_ty_exp = col_ty_exp.map_exp(&constr.var_mapping);
-    constr.add_map("collection lookup", &col_ty_exp, &col_exp, false);
+    constr.add("collection lookup", &col_ty_exp, &Expected::from(col), &env);
 
     Ok(env)
 }

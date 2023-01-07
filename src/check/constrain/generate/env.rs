@@ -54,17 +54,19 @@ impl Environment {
         let mut vars = self.vars.clone();
 
         let offset = if let Some(offset) = self.var_mapping.get(var) {
-            *offset
+            *offset + 1
         } else if let Some(offset) = var_mapping.get(var) {
             *offset
         } else {
-            0usize
+            0_usize
         };
 
         let mut var_mappings = self.var_mapping.clone();
         var_mappings.insert(String::from(var), offset);
 
-        vars.insert(format_var_map(var, &offset), expected_set);
+        let mapped_var = format_var_map(var, &offset);
+        trace!("Inserted {var} in environment: {var} => {mapped_var}");
+        vars.insert(mapped_var, expected_set);
         Environment { vars, var_mapping: var_mappings, ..self.clone() }
     }
 

@@ -24,7 +24,7 @@ pub struct Expected {
 }
 
 impl MapExp for Expected {
-    fn map_exp(&self, var_mapping: &VarMapping) -> Self {
+    fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self {
         Expected::new(self.pos, &match &self.expect {
             Expression { ast } => {
                 let ast = match &ast.node {
@@ -35,17 +35,34 @@ impl MapExp for Expected {
 
                 Expression {
                     ast: ast.map(&|node: &Node| if let Node::Id { lit } = node {
-                        let offset = var_mapping.get(lit).unwrap_or(&0_usize);
-                        Node::Id { lit: format_var_map(lit, offset) }
+                        let offset = if let Some(offset) = var_mapping.get(lit) {
+                            *offset
+                        } else if let Some(offset) = global_var_mapping.get(lit) {
+                            *offset
+                        } else {
+                            0_usize
+                        };
+
+                        Node::Id { lit: format_var_map(lit, &offset) }
                     } else {
                         node.clone()
                     })
                 }
             }
-            Collection { ty } => Collection { ty: Box::from(ty.map_exp(var_mapping)) },
-            Tuple { elements } => Tuple { elements: elements.iter().map(|e| e.map_exp(var_mapping)).collect() },
-            Function { name, args } => Function { name: name.clone(), args: args.iter().map(|a| a.map_exp(var_mapping)).collect() },
-            Access { entity, name } => Access { entity: Box::from(entity.map_exp(var_mapping)), name: Box::from(name.map_exp(var_mapping)) },
+            Collection { ty } => Collection {
+                ty: Box::from(ty.map_exp(var_mapping, global_var_mapping))
+            },
+            Tuple { elements } => Tuple {
+                elements: elements.iter().map(|e| e.map_exp(var_mapping, global_var_mapping)).collect()
+            },
+            Function { name, args } => Function {
+                name: name.clone(),
+                args: args.iter().map(|a| a.map_exp(var_mapping, global_var_mapping)).collect(),
+            },
+            Access { entity, name } => Access {
+                entity: Box::from(entity.map_exp(var_mapping, global_var_mapping)),
+                name: Box::from(name.map_exp(var_mapping, global_var_mapping)),
+            },
             other => other.clone()
         })
     }

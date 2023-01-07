@@ -83,6 +83,11 @@ fn shadow_in_if_arms_then() -> OutTestRet {
 }
 
 #[test]
+fn shadow_in_if_arms_else() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "shadow_in_if_arms_else")
+}
+
+#[test]
 fn while_ast_verify() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "while")
 }

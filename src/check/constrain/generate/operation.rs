@@ -24,7 +24,7 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            constr_col(right, constr, None)?;
+            constr_col(right, env, constr, None)?;
             gen_collection_lookup(left, right, env, constr)?;
 
             generate(right, env, ctx, constr)?;
@@ -46,16 +46,16 @@ pub fn gen_op(
         Node::Str { expressions, .. } => {
             gen_vec(expressions, env, false, ctx, constr)?;
             for expr in expressions {
-                constr.add_constr(&Constraint::stringy("string", &Expected::from(expr)));
+                constr.add_constr(&Constraint::stringy("string", &Expected::from(expr)), env);
             }
             primitive(ast, STRING, env, constr)
         }
         Node::Bool { .. } => {
-            constr.add_constr(&Constraint::truthy("bool", &Expected::from(ast)));
+            constr.add_constr(&Constraint::truthy("bool", &Expected::from(ast)), env);
             primitive(ast, BOOL, env, constr)
         }
         Node::Undefined => {
-            constr.add_constr(&Constraint::undefined("undefined", &Expected::from(ast)));
+            constr.add_constr(&Constraint::undefined("undefined", &Expected::from(ast)), env);
             Ok(env.clone())
         }
 
@@ -77,7 +77,7 @@ pub fn gen_op(
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
             let ty = Type { name: Name::from(FLOAT) };
-            constr.add("square root", &Expected::from(ast), &Expected::new(ast.pos, &ty));
+            constr.add("square root", &Expected::from(ast), &Expected::new(ast.pos, &ty), env);
 
             let access = Expected::new(expr.pos, &Access {
                 entity: Box::new(Expected::from(expr)),
@@ -87,34 +87,34 @@ pub fn gen_op(
                 )),
             });
 
-            constr.add("square root", &Expected::from(ast), &access);
+            constr.add("square root", &Expected::from(ast), &access, env);
             generate(expr, env, ctx, constr)
         }
 
         Node::BOneCmpl { expr } => {
-            constr.add("binary compliment", &Expected::from(expr), &Expected::any(expr.pos));
+            constr.add("binary compliment", &Expected::from(expr), &Expected::any(expr.pos), env);
             generate(expr, env, ctx, constr)?;
             Ok(env.clone())
         }
         Node::BAnd { left, right } | Node::BOr { left, right } | Node::BXOr { left, right } => {
-            constr.add("binary logical op", &Expected::from(left), &Expected::any(left.pos));
-            constr.add("binary logical op", &Expected::from(right), &Expected::any(right.pos));
+            constr.add("binary logical op", &Expected::from(left), &Expected::any(left.pos), env);
+            constr.add("binary logical op", &Expected::from(right), &Expected::any(right.pos), env);
 
             bin_op(left, right, env, ctx, constr)
         }
         Node::BLShift { left, right } | Node::BRShift { left, right } => {
-            constr.add("binary shift", &Expected::from(left), &Expected::any(right.pos));
+            constr.add("binary shift", &Expected::from(left), &Expected::any(right.pos), env);
 
             let name = Name::from(INT);
             let l_exp = Expected::from(right);
-            constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Type { name }));
+            constr.add("binary shift", &l_exp, &Expected::new(right.pos, &Type { name }), env);
 
             bin_op(left, right, env, ctx, constr)
         }
 
         Node::Is { left, right } | Node::IsN { left, right } => {
             let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
-            constr.add("and", &Expected::from(ast), &bool);
+            constr.add("and", &Expected::from(ast), &bool, env);
             bin_op(left, right, env, ctx, constr)
         }
         Node::IsA { left, right } | Node::IsNA { left, right } => if let Node::Id { .. } = right.node {
@@ -131,18 +131,18 @@ pub fn gen_op(
 
         Node::Not { expr } => {
             let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
-            constr.add("and", &Expected::from(ast), &bool);
-            constr.add_constr(&Constraint::truthy("not", &Expected::from(expr)));
+            constr.add("and", &Expected::from(ast), &bool, env);
+            constr.add_constr(&Constraint::truthy("not", &Expected::from(expr)), env);
 
             generate(expr, env, ctx, constr)?;
             Ok(env.clone())
         }
         Node::And { left, right } | Node::Or { left, right } => {
             let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
-            constr.add("and", &Expected::from(ast), &bool);
+            constr.add("and", &Expected::from(ast), &bool, env);
 
-            constr.add_constr(&Constraint::truthy("and", &Expected::from(left)));
-            constr.add_constr(&Constraint::truthy("and", &Expected::from(right)));
+            constr.add_constr(&Constraint::truthy("and", &Expected::from(left)), env);
+            constr.add_constr(&Constraint::truthy("and", &Expected::from(right)), env);
             bin_op(left, right, env, ctx, constr)
         }
 
@@ -170,15 +170,15 @@ pub fn constr_range(
     let name = Name::from(INT);
     let int_exp = &Expected::new(from.pos, &Type { name });
 
-    constr.add(&format!("{range_slice} from"), &Expected::from(from), int_exp);
-    constr.add(&format!("{range_slice} to"), &Expected::from(to), int_exp);
+    constr.add(&format!("{range_slice} from"), &Expected::from(from), int_exp, env);
+    constr.add(&format!("{range_slice} to"), &Expected::from(to), int_exp, env);
     if let Some(step) = step {
-        constr.add(&format!("{range_slice} step"), &Expected::from(step), int_exp);
+        constr.add(&format!("{range_slice} step"), &Expected::from(step), int_exp, env);
     }
 
     if contr_coll {
         let col = Expected::new(ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
-        constr.add("range collection", &col, &Expected::from(ast));
+        constr.add("range collection", &col, &Expected::from(ast), env);
     }
 
     generate(from, env, ctx, constr)?;
@@ -189,7 +189,7 @@ pub fn constr_range(
 
 fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
     let msg = format!("{ty} primitive");
-    constr.add(&msg, &Expected::from(ast), &Expected::new(ast.pos, &Type { name: Name::from(ty) }));
+    constr.add(&msg, &Expected::from(ast), &Expected::new(ast.pos, &Type { name: Name::from(ty) }), env);
     Ok(env.clone())
 }
 
@@ -202,7 +202,7 @@ fn impl_magic(
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
-    constr.add(format!("{fun} operation").as_str(), &Expected::from(ast), &access(fun, left, right));
+    constr.add(format!("{fun} operation").as_str(), &Expected::from(ast), &access(fun, left, right), env);
     gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)
 }
 
@@ -216,11 +216,11 @@ fn impl_bool_op(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     if fun != EQ && fun != NEQ {
-        constr.add("bool operation", &Expected::from(ast), &access(fun, left, right));
+        constr.add("bool operation", &Expected::from(ast), &access(fun, left, right), env);
     }
 
     let ty = Type { name: Name::from(BOOL) };
-    constr.add("bool operation", &Expected::from(ast), &Expected::new(ast.pos, &ty));
+    constr.add("bool operation", &Expected::from(ast), &Expected::new(ast.pos, &ty), env);
     bin_op(left, right, env, ctx, constr)
 }
 

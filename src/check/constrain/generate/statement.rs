@@ -40,7 +40,7 @@ pub fn gen_stmt(
         Node::Return { expr } => {
             if let Some(expected_ret_ty) = &env.return_type {
                 generate(expr, env, ctx, constr)?;
-                constr.add("return", expected_ret_ty, &Expected::from(expr));
+                constr.add("return", expected_ret_ty, &Expected::from(expr), env);
                 Ok(env.clone())
             } else if !env.in_fun {
                 Err(vec![TypeErr::new(ast.pos, "Return outside function")])
