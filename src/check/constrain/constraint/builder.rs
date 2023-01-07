@@ -94,7 +94,7 @@ impl ConstrBuilder {
     ///
     /// See [Self::add_constr] for mode details.
     pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected, env: &Environment) {
-        self.add_constr_map(&Constraint::new(msg, parent, child), &env.var_mapping);
+        self.add_constr_map(&Constraint::new(msg, parent, child), &env.var_mapping, false);
     }
 
     /// Add new constraint and specify whether one wants the constraint builder to perform any
@@ -106,7 +106,7 @@ impl ConstrBuilder {
     /// Useful if one want to have greater control over the order over how variables are mapped
     /// within the [Expected].
     pub fn add_constr(&mut self, constraint: &Constraint, env: &Environment) {
-        self.add_constr_map(constraint, &env.var_mapping)
+        self.add_constr_map(constraint, &env.var_mapping, false)
     }
 
     /// Add new constraint and specify whether one wants the constraint builder to perform any
@@ -114,9 +114,13 @@ impl ConstrBuilder {
     ///
     /// Useful if one want to have greater control over the order over how variables are mapped
     /// within the [Expected].
-    fn add_constr_map(&mut self, constraint: &Constraint, var_map: &VarMapping) {
+    pub fn add_constr_map(&mut self, constraint: &Constraint, var_map: &VarMapping, ignore_map: bool) {
         let (mut lvls, last_branch) = (vec![], self.constraints.len() - 1);
-        let constraint = constraint.map_exp(var_map, &self.var_mapping);
+        let constraint = if ignore_map {
+            constraint.clone()
+        } else {
+            constraint.map_exp(var_map, &self.var_mapping)
+        };
 
         if self.joined {
             for (i, (_, _, constraints)) in enumerate(&mut self.constraints) {

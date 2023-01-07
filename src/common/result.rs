@@ -62,7 +62,7 @@ pub fn format_err(f: &mut Formatter,
                  pos.start.pos,
         )?;
 
-        format_location(f, 0, "", None, pos, source)
+        format_location(f, 0, None, pos, source)
     } else {
         writeln!(f, "{msg}\n {RIGHT_ARROW} {}", path.strip_suffix(MAIN_SEPARATOR).unwrap_or(path))
     }?;
@@ -71,7 +71,7 @@ pub fn format_err(f: &mut Formatter,
     for cause in causes {
         let msg = cause.msg.as_str();
         if first && pos.map_or(false, |pos| pos != cause.pos) {
-            format_location(f, 1, "due to ", Some(msg), cause.pos, source)?;
+            format_location(f, 1, Some(msg), cause.pos, source)?;
         } else {
             let offset_str = String::from_utf8(vec![b' '; OFFSET_WIDTH]).unwrap();
             writeln!(f, "{offset_str} {HOOK_ARROW} {msg}")?;
@@ -84,14 +84,13 @@ pub fn format_err(f: &mut Formatter,
 
 pub fn format_location(f: &mut Formatter,
                        offset: usize,
-                       prefix: &str,
                        msg: Option<&str>,
                        pos: Position,
                        source: &Option<String>) -> fmt::Result {
     let offset_str = String::from_utf8(vec![b' '; OFFSET_WIDTH * offset]).unwrap();
 
     let msg = if let Some(msg) = msg {
-        format!("{offset_str} {HOOK_ARROW} {prefix}{msg}\n")
+        format!("{offset_str} {HOOK_ARROW} {msg}\n")
     } else {
         String::new()
     };
