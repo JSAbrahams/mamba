@@ -11,6 +11,7 @@ pub struct Environment {
     pub in_fun: bool,
     pub is_expr: bool,
     pub is_def_mode: bool,
+    pub is_destruct_mode: bool,
     pub return_type: Option<Expected>,
 
     pub raises_caught: HashSet<TrueName>,
@@ -39,6 +40,10 @@ impl Environment {
     /// Causes all identifiers to be treated as definitions.
     pub fn is_def_mode(&self, is_def_mode: bool) -> Environment {
         Environment { is_def_mode, ..self.clone() }
+    }
+
+    pub fn is_destruct_mode(&self, is_destruct_mode: bool) -> Self {
+        Environment { is_destruct_mode, ..self.clone() }
     }
 
     pub fn is_expr(&self, is_expr: bool) -> Environment {
@@ -109,6 +114,12 @@ impl Environment {
         };
 
         self.vars.get(&var_name).cloned()
+    }
+
+    pub fn remove_var(&self, var: &str) -> Self {
+        let mut vars = self.vars.clone();
+        vars.remove(var);
+        Environment { vars, ..self.clone() }
     }
 
     /// Get a name for a temporary type.

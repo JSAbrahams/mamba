@@ -27,7 +27,8 @@ pub fn gen_resources(
                 constr.add("with alias type", &Expected::from(resource), &Expected::new(ty.pos, &ty_exp), env);
             }
 
-            let resource_env = generate(resource, env, ctx, constr)?;
+            let resource_env = generate(resource, &env.is_destruct_mode(true), ctx, constr)?
+                .is_destruct_mode(false);
 
             constr.branch_point();
             let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
@@ -41,7 +42,7 @@ pub fn gen_resources(
                 &resource_env.is_def_mode(true),
             )?;
 
-            generate(expr, &resource_env, ctx, constr)?;
+            generate(expr, &resource_env.is_def_mode(false), ctx, constr)?;
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {

@@ -48,6 +48,8 @@ fn match_id(ast: &AST, ty: &OptAST, mutable: bool, env: &Environment, ctx: &Cont
         Node::Id { lit } => if env.is_def_mode {
             let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
             identifier_from_var(ast, &ty, &None, mutable, ctx, constr, env)
+        } else if env.is_destruct_mode {
+            Ok(env.remove_var(lit))
         } else if env.get_var(lit, &constr.var_mapping).is_some() {
             Ok(env.clone())
         } else {
