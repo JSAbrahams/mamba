@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
+use crate::check::name::Name;
 use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::builder::convert_builder;
 use crate::generate::convert::call::convert_call;
@@ -14,6 +15,7 @@ use crate::generate::convert::handle::convert_handle;
 use crate::generate::convert::range_slice::convert_range_slice;
 use crate::generate::convert::state::{Imports, State};
 use crate::generate::convert::ty::convert_ty;
+use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
 mod builder;
@@ -33,7 +35,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     let must_assign_to = state.must_assign_to.clone();
     let is_last_must_be_ret = state.is_last_must_be_ret;
 
-    let state = &state.must_assign_to(None).is_last_must_be_ret(false);
+    let old_state = state.clone();
+    let state = &state.must_assign_to(None, None).is_last_must_be_ret(false);
 
     let core = match &ast.node {
         NodeTy::Import { from, import, alias } => Core::Import {
@@ -98,8 +101,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             Core::Return { expr: Box::from(convert_node(expr, imp, state, ctx)?) }
         }
 
-        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &state.is_last_must_be_ret(is_last_must_be_ret).must_assign_to(must_assign_to.as_ref()), ctx)?,
-        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &state.expand_ty(false).is_last_must_be_ret(is_last_must_be_ret).must_assign_to(must_assign_to.as_ref()), ctx)?,
+        NodeTy::IfElse { .. } => convert_cntrl_flow(ast, imp, &old_state, ctx)?,
+        NodeTy::Match { .. } => convert_cntrl_flow(ast, imp, &old_state, ctx)?,
         NodeTy::While { .. } | NodeTy::For { .. } | NodeTy::Break | NodeTy::Continue => convert_cntrl_flow(ast, imp, state, ctx)?,
 
         NodeTy::Not { expr } => Core::Not { expr: Box::from(convert_node(expr, imp, state, ctx)?) },
@@ -261,8 +264,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         _ => Core::Empty,
     };
 
-    let core = if let Some(assign_to) = must_assign_to {
-        append_assign(&core, &assign_to)
+    let core = if let Some((assign_to, name)) = must_assign_to {
+        append_assign(&core, &assign_to, &name, imp)
     } else { core };
 
     let core = if is_last_must_be_ret {
@@ -272,11 +275,11 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
     Ok(core)
 }
 
-fn append_assign(core: &Core, assign_to: &Core) -> Core {
+fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut Imports) -> Core {
     match &core {
         Core::Block { ref statements } => match statements.last() {
             Some(last) => {
-                let last = append_assign(last, assign_to);
+                let last = append_assign(last, assign_to, name, imp);
                 let (mut statements, idx): (Vec<Core>, usize) = (statements.clone(), statements.len() - 1);
                 statements[idx] = last;
                 Core::Block { statements }
@@ -285,36 +288,36 @@ fn append_assign(core: &Core, assign_to: &Core) -> Core {
         }
         Core::IfElse { cond, then, el } => Core::IfElse {
             cond: cond.clone(),
-            then: Box::from(append_assign(then, assign_to)),
-            el: Box::from(append_assign(el, assign_to)),
+            then: Box::from(append_assign(then, assign_to, name, imp)),
+            el: Box::from(append_assign(el, assign_to, name, imp)),
         },
         Core::Match { expr, cases } => Core::Match {
             expr: expr.clone(),
-            cases: cases.iter().map(|c| append_assign(c, assign_to)).collect(),
+            cases: cases.iter().map(|c| append_assign(c, assign_to, name, imp)).collect(),
         },
         Core::Case { expr, body } => Core::Case {
             expr: expr.clone(),
-            body: Box::from(append_assign(body, assign_to)),
+            body: Box::from(append_assign(body, assign_to, name, imp)),
         },
         Core::TryExcept { setup, attempt, except } => Core::TryExcept {
             setup: setup.clone(),
-            attempt: Box::from(append_assign(attempt, assign_to)),
-            except: except.iter().map(|e| append_assign(e, assign_to)).collect(),
+            attempt: Box::from(append_assign(attempt, assign_to, name, imp)),
+            except: except.iter().map(|e| append_assign(e, assign_to, name, imp)).collect(),
         },
         Core::ExceptId { id, class, body } => Core::ExceptId {
             id: id.clone(),
             class: class.clone(),
-            body: Box::from(append_assign(body, assign_to)),
+            body: Box::from(append_assign(body, assign_to, name, imp)),
         },
         Core::Except { class, body } => Core::Except {
             class: class.clone(),
-            body: Box::from(append_assign(body, assign_to)),
+            body: Box::from(append_assign(body, assign_to, name, imp)),
         },
         expr if skip_assign(expr) => core.clone(),
-        _ => Core::Assign {
-            left: Box::from(assign_to.clone()),
-            right: Box::from(core.clone()),
-            op: CoreOp::Assign,
+        _ => Core::VarDef {
+            var: Box::from(assign_to.clone()),
+            ty: name.clone().map(|name| Box::from(name.to_py(imp))),
+            expr: Option::from(Box::from(core.clone()))
         },
     }
 }

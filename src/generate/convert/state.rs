@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use itertools::Itertools;
 
+use crate::check::name::Name;
 use crate::generate::ast::node::Core;
 use crate::generate::GenArguments;
 
@@ -17,7 +18,7 @@ pub struct State {
     pub annotate: bool,
 
     pub is_last_must_be_ret: bool,
-    pub must_assign_to: Option<Core>,
+    pub must_assign_to: Option<(Core, Option<Name>)>,
     pub is_remove_last_ret: bool,
 }
 
@@ -68,8 +69,12 @@ impl State {
         State { def_as_fun_arg, ..self.clone() }
     }
 
-    pub fn must_assign_to(&self, assign_to: Option<&Core>) -> State {
-        State { must_assign_to: assign_to.cloned(), ..self.clone() }
+    pub fn must_assign_to(&self, must_assign_to: Option<&Core>, name: Option<Name>) -> State {
+        if let Some(must_assign_to) = must_assign_to {
+            State { must_assign_to: Some((must_assign_to.clone(), name)), ..self.clone() }
+        } else {
+            State { must_assign_to: None, ..self.clone() }
+        }
     }
 }
 

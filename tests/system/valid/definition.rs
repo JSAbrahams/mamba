@@ -21,8 +21,23 @@ fn assign_with_if() -> OutTestRet {
 }
 
 #[test]
+fn assign_with_if_different_types() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_if_different_types")
+}
+
+#[test]
 fn assign_with_match() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "assign_with_match")
+}
+
+#[test]
+fn assign_with_match_different_types() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_match_different_types")
+}
+
+#[test]
+fn assign_with_match_type_annotation() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "assign_with_match_type_annotation")
 }
 
 #[test]

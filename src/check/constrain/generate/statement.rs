@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::iter::FromIterator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
@@ -23,7 +22,7 @@ pub fn gen_stmt(
         Node::Raise { error } => match &error.node {
             Node::FunctionCall { name, .. } => if let Node::Id { lit } = &name.node {
                 let raises = HashSet::from_iter([TrueName::from(lit.as_str())]);
-                check_raises_caught(constr, &raises, env, ctx, ast.pos)?;
+                check_raises_caught(&raises, env, ctx, ast.pos)?;
                 Ok(env.clone())
             } else {
                 Err(vec![TypeErr::new(name.pos, &format!("Malformed raise: {}", name.node))])
@@ -41,11 +40,7 @@ pub fn gen_stmt(
         Node::Return { expr } => {
             if let Some(expected_ret_ty) = &env.return_type {
                 generate(expr, env, ctx, constr)?;
-                constr.add(
-                    "return",
-                    expected_ret_ty,
-                    &Expected::try_from((expr, &constr.var_mapping))?,
-                );
+                constr.add("return", expected_ret_ty, &Expected::from(expr), env);
                 Ok(env.clone())
             } else if !env.in_fun {
                 Err(vec![TypeErr::new(ast.pos, "Return outside function")])
@@ -57,13 +52,13 @@ pub fn gen_stmt(
     }
 }
 
-/// Check whether a set of raises is properly dealt with.
+/// Check whether a set of raises is properly dealt with if in function body.
 ///
 /// Makes use of the [Environment::raises_caught] field.
 /// For each raises, checks whether it or a parent of it is caught.
 /// If we are a top-level script, we perform no check as raises do not need to be caught here.
-pub fn check_raises_caught(constr: &ConstrBuilder, raises: &HashSet<TrueName>, env: &Environment, ctx: &Context, pos: Position) -> Constrained<()> {
-    if !constr.is_top_level() {
+pub fn check_raises_caught(raises: &HashSet<TrueName>, env: &Environment, ctx: &Context, pos: Position) -> Constrained<()> {
+    if env.in_fun {
         let errs: Vec<TypeErr> = raises.iter()
             .filter(|raise_name| {
                 !if let Ok(raise_class) = ctx.class(*raise_name, pos) {
@@ -79,5 +74,6 @@ pub fn check_raises_caught(constr: &ConstrBuilder, raises: &HashSet<TrueName>, e
 
         if !errs.is_empty() { return Err(errs); }
     }
+
     Ok(())
 }

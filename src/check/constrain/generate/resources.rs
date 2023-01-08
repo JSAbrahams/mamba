@@ -1,13 +1,13 @@
 use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::Type;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
-use crate::check::constrain::generate::definition::identifier_from_var;
+use crate::check::constrain::generate::definition::id_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
-use crate::check::name::{Any, Name};
+use crate::check::name::Name;
 use crate::check::result::TypeErr;
 use crate::parse::ast::{AST, Node};
 
@@ -19,45 +19,29 @@ pub fn gen_resources(
 ) -> Constrained {
     match &ast.node {
         Node::With { resource, alias: Some((alias, mutable, ty)), expr } => {
-            let with_lvl = constr.new_set();
-            let resource_exp = Expected::try_from((resource, &constr.var_mapping))?;
-            constr.add("with as", &resource_exp, &Expected::try_from((alias, &constr.var_mapping))?);
-            constr.add("with as", &resource_exp, &Expected::new(resource.pos, &Expect::any()));
+            constr.add("with alias", &Expected::from(resource), &Expected::from(alias), env);
+            constr.add("with resource", &Expected::from(resource), &Expected::any(resource.pos), env);
 
             if let Some(ty) = ty {
                 let ty_exp = Type { name: Name::try_from(ty)? };
-                constr.add("with as", &resource_exp, &Expected::new(ty.pos, &ty_exp));
+                constr.add("with alias type", &Expected::from(resource), &Expected::new(ty.pos, &ty_exp), env);
             }
 
-            let resource_env = generate(resource, env, ctx, constr)?;
+            let resource_env = generate(resource, &env.is_destruct_mode(true), ctx, constr)?
+                .is_destruct_mode(false)
+                .is_def_mode(true);
 
-            constr.new_set();
+            constr.branch_point();
             let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
-            let resource_env = identifier_from_var(
-                alias,
-                &ty,
-                &Some(alias.clone()),
-                *mutable,
-                ctx,
-                constr,
-                &resource_env.is_def_mode(true),
-            )?;
+            let resource_env = id_from_var(alias, &ty, &Some(alias.clone()), *mutable, ctx, constr, &resource_env)?;
+            generate(expr, &resource_env.is_def_mode(false), ctx, constr)?;
 
-            generate(expr, &resource_env, ctx, constr)?;
-            constr.exit_set_to(with_lvl);
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {
-            let with_lvl = constr.new_set();
-            constr.add(
-                "with",
-                &Expected::try_from((resource, &constr.var_mapping))?,
-                &Expected::new(resource.pos, &Expect::any()),
-            );
+            constr.add("with", &Expected::from(resource), &Expected::any(resource.pos), env);
 
             let resource_env = generate(resource, env, ctx, constr)?;
-
-            constr.exit_set_to(with_lvl);
             generate(expr, &resource_env, ctx, constr)?;
             Ok(env.clone())
         }

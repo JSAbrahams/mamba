@@ -172,11 +172,13 @@ fn function_access(
         }
     }
 
-    let added = unify_fun_arg(&possible_args, args, constraints, accessed.pos)?;
+    let added = unify_fun_arg(entity_name, name, &possible_args, args, constraints, accessed.pos)?;
     unify_link(constraints, finished, ctx, total + added + pushed)
 }
 
 fn unify_fun_arg(
+    entity_name: &Name,
+    name: &StringName,
     ctx_f_args: &[HashSet<FunctionArg>],
     args: &[Expected],
     constr: &mut Constraints,
@@ -206,11 +208,16 @@ fn unify_fun_arg(
                 added += 1;
             }
             EitherOrBoth::Left(fun_arg) if !fun_arg.iter().any(|a| !a.has_default) => {
-                let msg = format!("Expected argument for '{}'", comma_delm(fun_arg));
+                let msg = format!("Expected argument for '{}' in Method {name} of {entity_name}",
+                                  comma_delm(fun_arg));
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             EitherOrBoth::Right(_) => {
-                let msg = format!("Function takes only {} {}", ctx_f_args.len(), if ctx_f_args.len() == 1 { "argument" } else { "arguments" });
+                let msg = format!("Method {name} of {entity_name} takes only {} {}, received {}: {}",
+                                  ctx_f_args.len(),
+                                  if ctx_f_args.len() == 1 { "argument" } else { "arguments" },
+                                  args.len(),
+                                  comma_delm(args));
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             _ => {}

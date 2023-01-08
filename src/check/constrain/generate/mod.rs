@@ -28,7 +28,7 @@ mod resources;
 mod statement;
 mod ty;
 
-mod env;
+pub(super) mod env;
 
 pub type Constrained<T = Environment> = Result<T, Vec<TypeErr>>;
 

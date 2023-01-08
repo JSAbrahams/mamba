@@ -3,11 +3,11 @@ def f() -> int:
 
 if True:
     try:
-        x = f()
+        x: int = f()
     except Exception as err:
-        x = 3
+        x: int = 3
 else:
     try:
-        x = f()
+        x: int = f()
     except Exception as err:
-        x = 3
+        x: int = 3

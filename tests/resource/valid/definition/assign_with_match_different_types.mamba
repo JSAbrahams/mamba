@@ -1,0 +1,8 @@
+class MyClass
+class MyClass1
+class MyClass2
+
+def a:= match 40
+    2 => MyClass()
+    4 => MyClass1()
+    _ => MyClass2()

@@ -57,7 +57,6 @@ fn if_in_for_loop() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // not sure if the check stage should pass as of yet
 fn if_two_types() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "if_two_types")
 }
@@ -70,6 +69,21 @@ fn match_dont_remove_shadowed() -> OutTestRet {
 #[test]
 fn matches_in_if() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "matches_in_if")
+}
+
+#[test]
+fn shadow_in_if_arms() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "shadow_in_if_arms")
+}
+
+#[test]
+fn shadow_in_if_arms_then() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "shadow_in_if_arms_then")
+}
+
+#[test]
+fn shadow_in_if_arms_else() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "shadow_in_if_arms_else")
 }
 
 #[test]

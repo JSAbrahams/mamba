@@ -21,7 +21,7 @@ pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
     let (_, errs): (Vec<_>, Vec<_>) = all_constraints
         .iter()
         .map(|constraints| {
-            trace!("[unifying set {}\\{}]", count, all_constraints.len());
+            trace!("[unifying set {}\\{}: {} (branched at {})]", count, all_constraints.len(), constraints.msg, constraints.pos);
             count += 1;
             unify_link(&mut constraints.clone(), &mut finished, ctx, constraints.len()).map_err(|e| {
                 trace!(

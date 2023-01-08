@@ -1,0 +1,6 @@
+class MyClass
+    def __str__(self) -> Str => "M"
+
+def a := if True then 20 else MyClass()
+
+print(a)
