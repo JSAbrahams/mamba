@@ -1,4 +1,4 @@
 def a := { 20, 30, 40 }
 def b := { "do", "re", "mi" }
 
-def i := { x => x + 10 | x in j }
+def k := { { x => y | x in a } | y in b }

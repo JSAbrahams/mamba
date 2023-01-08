@@ -1,0 +1,3 @@
+def j := { 10 => 200, 30 => 5 }
+
+def f(key: Int) -> Str? => j(key)

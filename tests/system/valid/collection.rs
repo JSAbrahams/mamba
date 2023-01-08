@@ -33,6 +33,11 @@ fn dictionary_builder_verify() -> OutTestRet {
 }
 
 #[test]
+fn dictionary_return_is_optional() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "dictionary_return_is_optional")
+}
+
+#[test]
 fn nested_list_builder() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "nested_list_builder")
 }

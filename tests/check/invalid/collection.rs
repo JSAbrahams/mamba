@@ -4,6 +4,30 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn dictionary_builder_nested() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_builder_nested.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn dictionary_key_error_not_caught() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_key_error_not_caught.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn dictionary_use_value_as_other_type() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_use_value_as_other_type.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn dictionary_wrong_key_type() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_wrong_key_type.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn list_builder_illegal_op_cond() {
     let source = resource_content(false, &["type", "collection"], "list_builder_illegal_op_cond.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
