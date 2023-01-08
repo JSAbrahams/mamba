@@ -5,7 +5,6 @@ use itertools::multipeek;
 
 use crate::common::position::Position;
 use crate::common::result::WithCause;
-use crate::parse::ast::AST;
 use crate::parse::lex::token::Lex;
 use crate::parse::lex::token::Token;
 use crate::parse::result::eof_expected_one_of;
@@ -80,31 +79,31 @@ impl<'a> LexIterator<'a> {
         last_pos
     }
 
-    pub fn parse(
+    pub fn parse<T>(
         &mut self,
-        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<T>,
         cause: &str,
         start: Position,
-    ) -> ParseResult<Box<AST>> {
+    ) -> ParseResult<T> {
         parse_fun(self).map_err(|err| Box::from(err.with_cause(cause, start)))
     }
 
-    pub fn parse_vec(
+    pub fn parse_vec<T>(
         &mut self,
-        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<T>>,
         cause: &str,
         start: Position,
-    ) -> ParseResult<Vec<AST>> {
+    ) -> ParseResult<Vec<T>> {
         parse_fun(self).map_err(|err| Box::from(err.with_cause(cause, start)))
     }
 
-    pub fn parse_if(
+    pub fn parse_if<T>(
         &mut self,
         token: &Token,
-        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<T>,
         err_msg: &str,
         start: Position,
-    ) -> ParseResult<Option<Box<AST>>> {
+    ) -> ParseResult<Option<T>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;
@@ -114,13 +113,13 @@ impl<'a> LexIterator<'a> {
         }
     }
 
-    pub fn parse_vec_if(
+    pub fn parse_vec_if<T>(
         &mut self,
         token: &Token,
-        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<AST>>,
+        parse_fun: &dyn Fn(&mut LexIterator) -> ParseResult<Vec<T>>,
         err_msg: &str,
         start: Position,
-    ) -> ParseResult<Vec<AST>> {
+    ) -> ParseResult<Vec<T>> {
         match self.it.peek() {
             Some(tp) if Token::same_type(&tp.token, token) => {
                 self.eat(token, err_msg)?;

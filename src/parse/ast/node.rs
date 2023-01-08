@@ -63,6 +63,12 @@ impl Display for Node {
             Node::TypeFun { .. } => String::from("type function"),
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),
+            Node::Dict { elements } => {
+                format!("{{{}}}", comma_delm(elements.iter().map(|(from, to)| {
+                    format!("{} => {}", from.node, to.node)
+                })))
+            }
+            Node::DictBuilder { .. } => String::from("dictionary builder"),
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }

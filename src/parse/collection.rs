@@ -1,3 +1,4 @@
+use crate::common::position::Position;
 use crate::parse::ast::AST;
 use crate::parse::ast::Node;
 use crate::parse::expression::is_start_expression;
@@ -12,7 +13,7 @@ pub fn parse_collection(it: &mut LexIterator) -> ParseResult {
         &|it, lex| match lex.token {
             Token::LRBrack => parse_tuple(it),
             Token::LSBrack => parse_list(it),
-            Token::LCBrack => parse_set(it),
+            Token::LCBrack => parse_set_or_dict(it),
             _ => Err(Box::from(expected_one_of(
                 &[Token::LRBrack, Token::LSBrack, Token::LCBrack],
                 lex,
@@ -37,7 +38,7 @@ pub fn parse_tuple(it: &mut LexIterator) -> ParseResult {
     }))
 }
 
-fn parse_set(it: &mut LexIterator) -> ParseResult {
+fn parse_set_or_dict(it: &mut LexIterator) -> ParseResult {
     let start = it.start_pos("set")?;
     it.eat(&Token::LCBrack, "set")?;
 
@@ -47,9 +48,14 @@ fn parse_set(it: &mut LexIterator) -> ParseResult {
     }
 
     let item = it.parse(&parse_expression, "set", start)?;
+    if it.eat_if(&Token::BTo).is_some() {
+        let to = it.parse(&parse_expression, "dictionary entry to", start)?;
+        return parse_dict(it, &(*item.clone(), *to.clone()), start);
+    }
+
     if it.eat_if(&Token::Ver).is_some() {
-        let conditions = it.parse_vec(&parse_expressions, "set", start)?;
-        let end = it.eat(&Token::RCBrack, "set")?;
+        let conditions = it.parse_vec(&parse_expressions, "set builder", start)?;
+        let end = it.eat(&Token::RCBrack, "set builder")?;
         let node = Node::SetBuilder { item, conditions };
         return Ok(Box::from(AST::new(start.union(end), node)));
     }
@@ -60,6 +66,41 @@ fn parse_set(it: &mut LexIterator) -> ParseResult {
     let end = it.eat(&Token::RCBrack, "set")?;
     let node = Node::Set { elements };
     Ok(Box::from(AST::new(start.union(end), node)))
+}
+
+fn parse_dict(it: &mut LexIterator, first: &(AST, AST), start: Position) -> ParseResult {
+    if it.eat_if(&Token::Ver).is_some() {
+        let conditions = it.parse_vec(&parse_expressions, "dictionary builder", start)?;
+        let end = it.eat(&Token::RCBrack, "dictionary builder")?;
+        let node = Node::DictBuilder { from: Box::from(first.clone().0), to: Box::from(first.1.clone()), conditions };
+        return Ok(Box::from(AST::new(start.union(end), node)));
+    }
+
+    let mut elements = vec![first.clone()];
+    elements.append(&mut it.parse_vec_if(&Token::Comma, &parse_dict_entries, "dictionary", start)?);
+    let end = it.eat(&Token::RCBrack, "dictionary")?;
+
+    let node = Node::Dict { elements };
+    Ok(Box::from(AST::new(start.union(end), node)))
+}
+
+pub fn parse_dict_entries(it: &mut LexIterator) -> ParseResult<Vec<(AST, AST)>> {
+    let start = it.start_pos("dictionary entries")?;
+    let mut entries = vec![];
+    it.peek_while_fn(&is_start_expression, &mut |it, _| {
+        entries.push(it.parse(&parse_dict_entry, "dictionary entries", start)?);
+        it.eat_if(&Token::Comma);
+        Ok(())
+    })?;
+    Ok(entries)
+}
+
+fn parse_dict_entry(it: &mut LexIterator) -> ParseResult<(AST, AST)> {
+    let start = it.start_pos("dictionary entry")?;
+    let from = it.parse(&parse_expression, "dictionary entry from", start)?;
+    it.eat(&Token::BTo, "dictionary entry")?;
+    let to = it.parse(&parse_expression, "dictionary entry to", start)?;
+    Ok((*from, *to))
 }
 
 fn parse_list(it: &mut LexIterator) -> ParseResult {

@@ -13,7 +13,7 @@ fn core_list() {
 #[test]
 #[ignore]
 fn core_map() {
-    let source = resource_content(true, &["collection"], "map.mamba");
+    let source = resource_content(true, &["collection"], "dictionary.mamba");
     to_py!(source);
 }
 

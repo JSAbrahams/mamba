@@ -22,11 +22,13 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
             gen_col(ast, env, constr)?;
             Ok(env.clone())
         }
+        Node::Dict { .. } => Ok(env.clone()),
         Node::Tuple { elements } => {
             let res = gen_vec(elements, env, env.is_def_mode, ctx, constr)?;
             gen_col(ast, env, constr)?;
             Ok(res)
         }
+        Node::DictBuilder { .. } => Ok(env.clone()),
         Node::SetBuilder { item, conditions } => {
             let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
 

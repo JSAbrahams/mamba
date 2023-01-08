@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Write};
 
-use crate::common::delimit::custom_delimited;
+use crate::common::delimit::{comma_delm, custom_delimited};
 use crate::generate::ast::node::Core;
 
 pub mod node;
@@ -142,6 +142,13 @@ fn to_py(core: &Core, ind: usize) -> String {
             format!("{}({})", to_py(function, ind), comma_delimited(args, ind))
         }
 
+        Core::DictComprehension { from, to, col, conds } if conds.is_empty() => {
+            format!("{{{}: {} for {}}}", to_py(from, ind), to_py(to, ind), to_py(col, ind))
+        }
+        Core::DictComprehension { from, to, col, conds } => {
+            let conds: Vec<String> = conds.iter().map(|cond| to_py(cond, ind)).collect();
+            format!("{{{}: {} for {} if {}}}", to_py(from, ind), to_py(to, ind), to_py(col, ind), custom_delimited(conds, " and ", ""))
+        }
         Core::Comprehension { expr, col, conds } if conds.is_empty() => {
             format!("{} for {}", to_py(expr, ind), to_py(col, ind))
         }
@@ -152,6 +159,12 @@ fn to_py(core: &Core, ind: usize) -> String {
 
         Core::Tuple { elements } => format!("({})", comma_delimited(elements, ind)),
         Core::TupleLiteral { elements } => comma_delimited(elements, ind),
+        Core::Dictionary { elements } => {
+            let elements: Vec<String> = elements.iter().map(|(from, to)| {
+                format!("{}: {}", to_py(from, ind), to_py(to, ind))
+            }).collect();
+            format!("{{{}}}", comma_delm(elements))
+        }
         Core::Set { elements } => format!("{{{}}}", comma_delimited(elements, ind)),
         Core::List { elements } => format!("[{}]", comma_delimited(elements, ind)),
 
