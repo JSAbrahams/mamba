@@ -19,6 +19,8 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
     }
 }
 
+type ConstraintLvls = Vec<(Constraint, usize)>;
+
 /// The constraint builder allows us to build sets of constraints.
 ///
 /// This allows us to constrain different parts of the program which may rely on
@@ -29,7 +31,7 @@ pub fn format_var_map(var: &str, offset: &usize) -> String {
 /// We can have multiple sets open at a time.
 #[derive(Debug)]
 pub struct ConstrBuilder {
-    constraints: Vec<(Position, String, Vec<(Constraint, usize)>)>,
+    constraints: Vec<(Position, String, ConstraintLvls)>,
     branch_point: usize,
     joined: bool,
 
@@ -73,14 +75,14 @@ impl ConstrBuilder {
     /// When inheriting, we also discard any constraints added while in a level we wish to skip.
     pub fn branch(&mut self, msg: &str, pos: Position) {
         trace!("Branching from level {}", self.branch_point - 1);
-        let inherited_constraints: Vec<(Constraint, usize)> = if self.joined {
+        let inherited_constraints: ConstraintLvls = if self.joined {
             self.constraints.last().expect("Is never empty").2.to_vec()
         } else {
             self.constraints.last().expect("Is never empty").2
                 .iter().filter(|(_, lvl)| *lvl < self.branch_point).cloned().collect()
         };
 
-        self.constraints.push((pos, String::from(msg), inherited_constraints.clone()));
+        self.constraints.push((pos, String::from(msg), inherited_constraints));
     }
 
     /// Reset all branches so that they are again all added to.

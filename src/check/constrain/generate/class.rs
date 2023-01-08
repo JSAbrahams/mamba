@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
-use crate::check::constrain::generate::definition::identifier_from_var;
+use crate::check::constrain::generate::definition::id_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::arg::python::SELF;
 use crate::check::context::Context;
@@ -30,7 +30,7 @@ pub fn gen_class(
             // Self is defined top level in type alias
             let var = AST::new(ty.pos, Id { lit: String::from(SELF) });
             let name = Some(Name::try_from(isa)?); // For now assume super
-            let env = identifier_from_var(&var, &name, &None, false, ctx, constr, env)?;
+            let env = id_from_var(&var, &name, &None, false, ctx, constr, env)?;
 
             constrain_class_body(conditions, isa, &env, ctx, constr)
         }
@@ -55,5 +55,10 @@ pub fn constrain_class_body(
     let class_env = env.in_class(&name);
     gen_vec(statements, &class_env, true, ctx, constr)?;
 
-    Ok(env.clone())
+    // preserve mapping of self outside class to prevent contamination
+    if let Some(self_map) = constr.var_mapping.get(SELF) {
+        Ok(env.override_mapping(SELF, *self_map))
+    } else {
+        Ok(env.clone())
+    }
 }

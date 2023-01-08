@@ -6,7 +6,6 @@ fn assign_to_nullable_field() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Generics have not properly been implemented
 fn generics() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generics")
 }
@@ -39,6 +38,11 @@ fn import_ast_verify() -> OutTestRet {
 #[test]
 fn generic_unknown_type_unused() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "generic_unknown_type_unused")
+}
+
+#[test]
+fn same_var_different_type() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "same_var_different_type")
 }
 
 #[test]

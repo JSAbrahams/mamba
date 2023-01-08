@@ -104,9 +104,9 @@ pub fn gen_def(
 
         Node::VariableDef { mutable, var, ty, expr: expression, .. } => if let Some(ty) = ty {
             let name = Name::try_from(ty)?;
-            identifier_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
+            id_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
         } else {
-            identifier_from_var(var, &None, expression, *mutable, ctx, constr, env)
+            id_from_var(var, &None, expression, *mutable, ctx, constr, env)
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected definition")]),
@@ -134,11 +134,15 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(arg.pos, &msg)]);
                     }
 
-                    let name = Some(Name::from(class_name)); // ignore type alias for now for self
-                    env_with_args = identifier_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
+                    let name = Some(if let Some(ty) = ty {
+                        Name::try_from(ty)?
+                    } else {
+                        Name::from(class_name)
+                    });
+                    env_with_args = id_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
                 } else {
                     let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
-                    env_with_args = identifier_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
+                    env_with_args = id_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
                 }
             }
             _ => return Err(vec![TypeErr::new(arg.pos, "Expected function argument")]),
@@ -148,7 +152,7 @@ pub fn constrain_args(
     Ok(env_with_args.is_expr(exp_expression))
 }
 
-pub fn identifier_from_var(
+pub fn id_from_var(
     var: &AST,
     ty: &Option<Name>,
     expr: &Option<Box<AST>>,

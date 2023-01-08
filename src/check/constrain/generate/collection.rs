@@ -108,7 +108,7 @@ pub fn gen_collection_lookup(lookup: &AST, col: &AST, env: &Environment, constr:
         env = env.insert_var(mutable, &var, &Expected::any(lookup.pos), &constr.var_mapping);
     }
 
-    let col_ty_exp = Expected::new(col.pos, &Collection { ty: Box::from(Expected::from(lookup).clone()) })
+    let col_ty_exp = Expected::new(col.pos, &Collection { ty: Box::from(Expected::from(lookup)) })
         .map_exp(&env.var_mapping, &constr.var_mapping);
     let constraint = Constraint::new("collection lookup", &col_ty_exp, &col_exp);
     constr.add_constr_map(&constraint, &env.var_mapping, true);

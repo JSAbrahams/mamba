@@ -50,6 +50,12 @@ impl Environment {
         Environment { is_expr, ..self.clone() }
     }
 
+    pub fn override_mapping(&self, var: &str, mapping: usize) -> Self {
+        let mut var_mapping = self.var_mapping.clone();
+        var_mapping.insert(String::from(var), mapping);
+        Environment { var_mapping, ..self.clone() }
+    }
+
     /// Insert a variable.
     ///
     /// If the var was previously defined, it is renamed, and the rename mapping is stored.

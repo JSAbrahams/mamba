@@ -198,7 +198,6 @@ mod test {
     }
 
     #[test]
-    #[ignore]
     fn list_expression() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "list.mamba");
         parse(&source).map(|_| ())

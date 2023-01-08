@@ -25,7 +25,6 @@ class MyInterface(SuperInterface):
     def higher_order(self) -> int:
         pass
 
-# some class
 class MyClass(MyType, MyInterface):
     required_field: int = 100
     private_field: int = 20

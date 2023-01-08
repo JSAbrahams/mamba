@@ -4,7 +4,7 @@ use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::Type;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
-use crate::check::constrain::generate::definition::identifier_from_var;
+use crate::check::constrain::generate::definition::id_from_var;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::name::Name;
@@ -28,21 +28,14 @@ pub fn gen_resources(
             }
 
             let resource_env = generate(resource, &env.is_destruct_mode(true), ctx, constr)?
-                .is_destruct_mode(false);
+                .is_destruct_mode(false)
+                .is_def_mode(true);
 
             constr.branch_point();
             let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
-            let resource_env = identifier_from_var(
-                alias,
-                &ty,
-                &Some(alias.clone()),
-                *mutable,
-                ctx,
-                constr,
-                &resource_env.is_def_mode(true),
-            )?;
-
+            let resource_env = id_from_var(alias, &ty, &Some(alias.clone()), *mutable, ctx, constr, &resource_env)?;
             generate(expr, &resource_env.is_def_mode(false), ctx, constr)?;
+
             Ok(env.clone())
         }
         Node::With { resource, expr, .. } => {

@@ -66,14 +66,9 @@ impl Constraint {
 
     pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: ConstrVariant)
                        -> Constraint {
-        Constraint {
-            left: parent.clone(),
-            right: child.clone(),
-            msg: String::from(msg),
-            is_flag: false,
-            is_sub: false,
-            superset: superset.clone(),
-        }
+        let msg = String::from(msg);
+        let (left, right) = (parent.clone(), child.clone());
+        Constraint { left, right, msg, is_flag: false, is_sub: false, superset }
     }
 
     /// Flag constraint iff flagged is 0, else ignored.

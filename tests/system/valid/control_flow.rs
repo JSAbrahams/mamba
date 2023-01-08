@@ -57,7 +57,6 @@ fn if_in_for_loop() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // not sure if the check stage should pass as of yet
 fn if_two_types() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "if_two_types")
 }
