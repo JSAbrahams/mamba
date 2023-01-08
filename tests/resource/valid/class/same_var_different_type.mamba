@@ -1,0 +1,7 @@
+class C1
+    def a: Str := "str"
+    def f(self) -> Str => self.a
+
+class C2
+    def a: Int := 10
+    def f(self) -> Str => self.a

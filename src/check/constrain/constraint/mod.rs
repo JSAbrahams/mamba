@@ -1,5 +1,6 @@
 use std::fmt::{Display, Error, Formatter};
 
+use crate::check::constrain::constraint::builder::VarMapping;
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{clss, function};
@@ -32,6 +33,10 @@ impl Default for ConstrVariant {
     }
 }
 
+pub(super) trait MapExp {
+    fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self;
+}
+
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let superset = match &self.superset {
@@ -40,6 +45,14 @@ impl Display for Constraint {
         };
 
         write!(f, "{} {superset} {}", self.left, self.right)
+    }
+}
+
+impl MapExp for Constraint {
+    fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self {
+        let left = self.left.map_exp(var_mapping, global_var_mapping);
+        let right = self.right.map_exp(var_mapping, global_var_mapping);
+        Constraint { left, right, ..self.clone() }
     }
 }
 
@@ -53,14 +66,9 @@ impl Constraint {
 
     pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: ConstrVariant)
                        -> Constraint {
-        Constraint {
-            left: parent.clone(),
-            right: child.clone(),
-            msg: String::from(msg),
-            is_flag: false,
-            is_sub: false,
-            superset: superset.clone(),
-        }
+        let msg = String::from(msg);
+        let (left, right) = (parent.clone(), child.clone());
+        Constraint { left, right, msg, is_flag: false, is_sub: false, superset }
     }
 
     /// Flag constraint iff flagged is 0, else ignored.

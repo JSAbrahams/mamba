@@ -3,24 +3,23 @@ use std::collections::VecDeque;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::result::{TypeErr, TypeResult};
+use crate::common::position::Position;
 
 #[derive(Clone, Debug)]
 pub struct Constraints {
-    constraints: VecDeque<Constraint>,
+    pub pos: Position,
+    pub msg: String,
+
+    pub(in super) constraints: VecDeque<Constraint>,
 }
 
-impl From<&Vec<Constraint>> for Constraints {
-    fn from(constraints: &Vec<Constraint>) -> Self {
-        let constraints = VecDeque::from(constraints.clone());
-        Constraints { constraints }
+impl From<(Position, String, Vec<Constraint>)> for Constraints {
+    fn from((pos, msg, constraints): (Position, String, Vec<Constraint>)) -> Self {
+        Constraints { pos, msg, constraints: VecDeque::from(constraints) }
     }
 }
 
 impl Constraints {
-    pub fn new() -> Constraints {
-        Constraints { constraints: VecDeque::new() }
-    }
-
     pub fn len(&self) -> usize { self.constraints.len() }
 
     pub fn pop_constr(&mut self) -> Option<Constraint> { self.constraints.pop_front() }
@@ -51,8 +50,4 @@ impl Constraints {
         self.constraints.push_back(constraint.flag());
         Ok(())
     }
-}
-
-impl Default for Constraints {
-    fn default() -> Self { Constraints::new() }
 }

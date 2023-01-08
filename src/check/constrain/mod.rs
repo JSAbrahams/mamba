@@ -64,7 +64,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // not sure if the check stage should pass as of yet
     fn it_stmt_as_expression_none() {
         let src = "def a := if True then 10 else None";
         let ast = parse(src).unwrap();

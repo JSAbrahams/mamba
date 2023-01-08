@@ -1,4 +1,4 @@
-def a := match 40
+def a: Int := match 40
     2 => 3
     4 => 30
     _ => 300

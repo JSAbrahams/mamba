@@ -1,0 +1,11 @@
+class MyClass1
+    def f1(self) => pass
+class MyClass2
+    def f2(self) => pass
+
+def x := MyClass2()
+if True then
+    def x := MyClass1()
+    x.f1()
+else
+    x.f2()

@@ -56,7 +56,6 @@ fn assign_to_function_call() {
 }
 
 #[test]
-#[ignore] // Ignore mutability for now
 fn assign_to_inner_non_mut() {
     let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
@@ -69,7 +68,6 @@ fn assign_to_inner_non_mut2() {
 }
 
 #[test]
-#[ignore]
 fn assign_to_inner_non_mut3() {
     let source = resource_content(false, &["type", "definition"], "assign_to_inner_non_mut3.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

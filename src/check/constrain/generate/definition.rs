@@ -5,8 +5,8 @@ use std::ops::Deref;
 use permutate::Permutator;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
-use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{clss, Context, function, LookupClass};
@@ -14,7 +14,7 @@ use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
-use crate::check::name::{Any, match_name, Name, Nullable};
+use crate::check::name::{match_name, Name, Nullable};
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -28,8 +28,6 @@ pub fn gen_def(
 ) -> Constrained {
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
-            let fun_lvl = constr.new_set();
-
             let non_nullable_class_vars: HashSet<String> = match &id.node {
                 Node::Id { lit } if *lit == function::INIT => {
                     if let Some(class) = &env.class {
@@ -77,7 +75,7 @@ pub fn gen_def(
                 if let Some(ret_ty) = ret_ty {
                     let name = Name::try_from(ret_ty)?;
                     let ret_ty_raises_exp = Expected::new(body.pos, &Type { name: name.clone() });
-                    constr.add("fun body type", &ret_ty_raises_exp, &Expected::try_from((body, &constr.var_mapping))?);
+                    constr.add("fun body type", &ret_ty_raises_exp, &Expected::from(body), env);
 
                     let ret_ty_exp = Expected::new(ret_ty.pos, &Type { name });
                     let body_env = body_env.return_type(&ret_ty_exp).is_expr(true);
@@ -98,7 +96,6 @@ pub fn gen_def(
                 return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
             }
 
-            constr.exit_set_to(fun_lvl);
             Ok(env.clone())
         }
         Node::FunArg { .. } => {
@@ -107,9 +104,9 @@ pub fn gen_def(
 
         Node::VariableDef { mutable, var, ty, expr: expression, .. } => if let Some(ty) = ty {
             let name = Name::try_from(ty)?;
-            identifier_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
+            id_from_var(var, &Some(name), expression, *mutable, ctx, constr, env)
         } else {
-            identifier_from_var(var, &None, expression, *mutable, ctx, constr, env)
+            id_from_var(var, &None, expression, *mutable, ctx, constr, env)
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Expected definition")]),
@@ -137,11 +134,15 @@ pub fn constrain_args(
                         return Err(vec![TypeErr::new(arg.pos, &msg)]);
                     }
 
-                    let name = Some(Name::from(class_name)); // ignore type alias for now for self
-                    env_with_args = identifier_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
+                    let name = Some(if let Some(ty) = ty {
+                        Name::try_from(ty)?
+                    } else {
+                        Name::from(class_name)
+                    });
+                    env_with_args = id_from_var(var, &name, default, *mutable, ctx, constr, &env_with_args)?
                 } else {
                     let ty = if let Some(ty) = ty { Some(Name::try_from(ty)?) } else { None };
-                    env_with_args = identifier_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
+                    env_with_args = id_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
                 }
             }
             _ => return Err(vec![TypeErr::new(arg.pos, "Expected function argument")]),
@@ -151,7 +152,7 @@ pub fn constrain_args(
     Ok(env_with_args.is_expr(exp_expression))
 }
 
-pub fn identifier_from_var(
+pub fn id_from_var(
     var: &AST,
     ty: &Option<Name>,
     expr: &Option<Box<AST>>,
@@ -163,52 +164,48 @@ pub fn identifier_from_var(
     if let Some(expr) = expr {
         generate(expr, &env.is_expr(true), ctx, constr)?;
     }
-    let mut env_with_var = env.clone();
+    let mut env = env.clone();
 
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
     if let Some(ty) = ty {
         for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
             let ty = Expected::new(var.pos, &Type { name: name.clone() });
             constr.insert_var(&f_name);
-            env_with_var = env_with_var.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+            env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
         }
     } else {
-        let any = Expected::new(var.pos, &Expect::any());
+        let any = Expected::any(var.pos);
         for (f_mut, f_name) in identifier.fields(var.pos)? {
             constr.insert_var(&f_name);
-            env_with_var = env_with_var.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
+            env = env.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
         }
     };
 
     if identifier.is_tuple() {
-        let tup_exps = identifier_to_tuple(var.pos, &identifier, &env_with_var, constr)?;
+        let tup_exps = identifier_to_tuple(var.pos, &identifier, &env, constr)?;
         if let Some(ty) = ty {
             let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
             for tup_exp in &tup_exps {
-                constr.add("type and tuple", &ty_exp, tup_exp);
+                constr.add("type and tuple", &ty_exp, tup_exp, &env);
             }
         }
         if let Some(expr) = expr {
-            let expr_expt = Expected::try_from((expr, &constr.var_mapping))?;
             for tup_exp in &tup_exps {
-                constr.add("tuple and expression", &expr_expt, tup_exp);
+                constr.add("tuple and expression", &Expected::from(expr), tup_exp, &env);
             }
         }
     }
 
-    let var_expect = Expected::try_from((var, &constr.var_mapping))?;
     if let Some(ty) = ty {
         let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
-        constr.add("variable and type", &ty_exp, &var_expect);
+        constr.add("variable and type", &ty_exp, &Expected::from(var), &env);
     }
     if let Some(expr) = expr {
-        let expr_expect = Expected::try_from((expr, &constr.var_mapping))?;
         let msg = format!("variable and expression: `{}`", expr.node);
-        constr.add(&msg, &var_expect, &expr_expect);
+        constr.add(&msg, &Expected::from(var), &Expected::from(expr), &env);
     }
 
-
-    Ok(env_with_var)
+    Ok(env)
 }
 
 // Returns every possible tuple. Elements of a tuple are not to be confused with
