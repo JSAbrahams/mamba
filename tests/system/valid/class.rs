@@ -71,7 +71,6 @@ fn parent() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Context doesn't construct alias with original class fields
 fn types() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "types")
 }
