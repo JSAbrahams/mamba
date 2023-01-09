@@ -11,7 +11,13 @@ fn dictionary_builder_nested() {
 
 #[test]
 fn dictionary_key_error_not_caught() {
-    let source = resource_content(false, &["type", "collection"], "dictionary_key_error_not_caught.mamba");
+    let source = resource_content(false, &["type", "collection"], "dictionary_assume_not_optional.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn dictionary_not_sliceable() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_not_sliceable.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
@@ -66,6 +72,12 @@ fn list_builder_with_undefined_var() {
 #[test]
 fn list_builder_with_no_expr() {
     let source = resource_content(false, &["type", "collection"], "list_builder_with_no_expr.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn set_behind_function_not_subscriptable() {
+    let source = resource_content(false, &["type", "collection"], "set_behind_function_not_subscriptable.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

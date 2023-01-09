@@ -22,7 +22,13 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
             gen_col(ast, env, constr)?;
             Ok(env.clone())
         }
-        Node::Dict { .. } => Ok(env.clone()),
+        Node::Dict { elements } => {
+            let elements: Vec<AST> = elements.iter().flat_map(|(from, to)| [from.clone(), to.clone()]).collect();
+            gen_vec(&elements, env, false, ctx, constr)?;
+
+            constr_col(ast, env, constr, None)?;
+            Ok(env.clone())
+        }
         Node::Tuple { elements } => {
             let res = gen_vec(elements, env, env.is_def_mode, ctx, constr)?;
             gen_col(ast, env, constr)?;
@@ -89,6 +95,9 @@ fn gen_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder) -> C
     let (col_ty, col_items_ty) = match &collection.node {
         Node::Set { elements } => (SET, gen_col_items(elements, env, constr)?),
         Node::List { elements } => (LIST, gen_col_items(elements, env, constr)?),
+        Node::Dict { elements } => {
+            unimplemented!();
+        }
         Node::Tuple { elements } => {
             let mut names = vec![];
             for element in elements {
