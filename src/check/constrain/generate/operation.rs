@@ -175,8 +175,10 @@ pub fn constr_range(
     }
 
     if contr_coll {
-        let col = Expected::collection(ast.pos, &Name::from(INT));
-        constr.add("range collection", &col, &Expected::from(ast), env);
+        let helper_ty = constr.temp_name();
+        let (col_exp1, col_exp2) = Constraint::collection("range collection", &Expected::from(ast), &Name::from(INT), &helper_ty);
+        constr.add_constr(&col_exp1, env);
+        constr.add_constr(&col_exp2, env);
     }
 
     generate(from, env, ctx, constr)?;

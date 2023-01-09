@@ -100,11 +100,12 @@ pub fn gen_call(
             let name = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
             constr.add("index range", &Expected::new(range.pos, &Type { name }), &Expected::from(range), env);
 
-            let temp_type = constr.temp_name();
-            let exp_col = Expected::collection(item.pos, &temp_type);
-            constr.add("type of indexed collection", &exp_col, &Expected::from(item), env);
+            let (temp_type, helper_ty) = (constr.temp_name(), constr.temp_name());
+            let exp_col = Expected::from(item);
+            let (exp_col1, exp_col2) = Constraint::collection("index of collection", &exp_col, &temp_type, &helper_ty);
+            constr.add_constr(&exp_col1, env);
+            constr.add_constr(&exp_col2, env);
 
-            // Must be after above constraint
             let exp_col_ty = Expected::new(ast.pos, &Type { name: temp_type });
             constr.add("index of collection", &exp_col_ty, &Expected::from(ast), env);
 

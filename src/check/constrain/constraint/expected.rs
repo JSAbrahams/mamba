@@ -8,7 +8,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::MapExp;
-use crate::check::context::clss::{COLLECTION, NONE};
+use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::common::delimit::comma_delm;
@@ -80,11 +80,6 @@ impl Expected {
 
     pub fn none(pos: Position) -> Expected {
         Expected::new(pos, &Type { name: Name::from(NONE) })
-    }
-
-    pub fn collection(pos: Position, ty: &Name) -> Expected {
-        let name = Name::from(&StringName::new(COLLECTION, &[ty.clone()]));
-        Expected::new(pos, &Type { name })
     }
 }
 

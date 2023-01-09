@@ -41,13 +41,13 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
             | (Type { .. }, Function { .. })
             | (_, Access { .. }) => unify_function(constraint, constraints, finished, ctx, total),
 
-            (Expression { .. }, _)
-            | (_, Expression { .. }) => unify_expression(constraint, constraints, finished, ctx, count, total),
+            (Expression { .. }, _) | (_, Expression { .. }) =>
+                unify_expression(constraint, constraints, finished, ctx, count, total),
 
-            (Tuple { .. }, _)
-            | (_, Tuple { .. }) => unify_type(constraint, constraints, finished, ctx, total),
-            (Type { .. }, _)
-            | (_, Type { .. }) => unify_type(constraint, constraints, finished, ctx, total),
+            (Tuple { .. }, _) | (_, Tuple { .. }) =>
+                unify_type(constraint, constraints, finished, ctx, total),
+            (Type { .. }, _) | (_, Type { .. }) =>
+                unify_type(constraint, constraints, finished, ctx, total),
 
             _ => {
                 reinsert(constraints, constraint, total)?;

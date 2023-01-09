@@ -37,12 +37,13 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
                 };
 
                 let item = Expected::from(left);
-                let temp_name = constr.temp_name();
+                let (temp_name, helper_ty) = (constr.temp_name(), constr.temp_name());
                 let temp_ty = Expected::new(left.pos, &Type { name: temp_name.clone() });
                 constr.add("temporary builder type", &item, &temp_ty, env);
 
-                let col_exp = Expected::collection(right.pos, &temp_name);
-                constr.add("comprehension collection type", &col_exp, &Expected::from(right), env);
+                let (col_exp1, col_exp2) = Constraint::collection("comprehension collection type", &Expected::from(right), &temp_name, &helper_ty);
+                constr.add_constr(&col_exp1, env);
+                constr.add_constr(&col_exp2, env);
 
                 generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
                 if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
@@ -108,15 +109,22 @@ fn constraint_collection_items(elements: &[AST], env: &Environment, constr: &mut
 /// Constrain lookup an collection.
 ///
 /// Adds constraint of collection of type lookup, and the given collection.
-pub fn gen_collection_lookup(lookup: &AST, _col: &AST, env: &Environment, constr: &mut ConstrBuilder)
+pub fn gen_collection_lookup(lookup: &AST, col: &AST, env: &Environment, constr: &mut ConstrBuilder)
                              -> Constrained {
     let mut env = env.clone();
+
+    let (temp_name, helper_ty) = (constr.temp_name(), constr.temp_name());
+    let exp_lookup_temp = Expected::new(lookup.pos, &Type { name: temp_name.clone() });
+    constr.add("lookup type", &exp_lookup_temp, &Expected::from(lookup), &env);
 
     for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
         constr.insert_var(&var);
         env = env.insert_var(mutable, &var, &Expected::any(lookup.pos), &constr.var_mapping);
     }
 
+    let (col_exp1, col_exp2) = Constraint::collection("collection lookup", &Expected::from(col), &temp_name, &helper_ty);
+    constr.add_constr(&col_exp1, &env);
+    constr.add_constr(&col_exp2, &env);
     Ok(env)
 }
 

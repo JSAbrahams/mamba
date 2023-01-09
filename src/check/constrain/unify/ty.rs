@@ -41,7 +41,10 @@ pub fn unify_type(
                 }
                 return unify_link(constraints, finished, ctx, total);
             } else if r_ty.contains_temp() {
-                unimplemented!("{l_ty} => {r_ty}");
+                for (old, new) in r_ty.temp_map(l_ty, left.pos)? {
+                    substitute_ty(left.pos, &new, right.pos, &old, constraints, count, total)?;
+                }
+                return unify_link(constraints, finished, ctx, total);
             }
 
             if l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any() || r_ty == &Name::any() {
@@ -206,7 +209,6 @@ fn recursive_substitute_ty(
     })
 }
 
-/// Substitute all in vector, and also returns True if any substituted.
 fn substitute_vec_ty(
     side: &str,
     old_to_new: &HashMap<Name, Name>,
