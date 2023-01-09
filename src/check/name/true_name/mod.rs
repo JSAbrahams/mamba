@@ -185,6 +185,10 @@ impl TrueName {
     pub fn new(lit: &str, generics: &[Name]) -> TrueName {
         TrueName::from(&StringName::new(lit, generics))
     }
+
+    pub fn trim(&self, ty: &str) -> Option<TrueName> {
+        self.variant.trim(ty).map(|variant| TrueName { variant, ..self.clone() })
+    }
 }
 
 #[cfg(test)]

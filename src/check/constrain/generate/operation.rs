@@ -24,7 +24,7 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            constr_col(right, env, constr, None)?;
+            constr_col(right, env, constr)?;
             gen_collection_lookup(left, right, env, constr)?;
 
             generate(right, env, ctx, constr)?;
@@ -167,9 +167,7 @@ pub fn constr_range(
         }
     };
 
-    let name = Name::from(INT);
-    let int_exp = &Expected::new(from.pos, &Type { name });
-
+    let int_exp = &Expected::new(from.pos, &Type { name: Name::from(INT) });
     constr.add(&format!("{range_slice} from"), &Expected::from(from), int_exp, env);
     constr.add(&format!("{range_slice} to"), &Expected::from(to), int_exp, env);
     if let Some(step) = step {
@@ -177,7 +175,7 @@ pub fn constr_range(
     }
 
     if contr_coll {
-        let col = Expected::new(ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
+        let col = Expected::collection(ast.pos, &Name::from(INT));
         constr.add("range collection", &col, &Expected::from(ast), env);
     }
 

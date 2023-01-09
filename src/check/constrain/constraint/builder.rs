@@ -35,6 +35,7 @@ pub struct ConstrBuilder {
     branch_point: usize,
     joined: bool,
 
+    temp_type: usize,
     pub var_mapping: VarMapping,
 }
 
@@ -43,7 +44,7 @@ impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
         let var_mapping = VarMapping::new();
         let (pos, msg) = (Position::default(), String::from("Script"));
-        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping }
+        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping, temp_type: 0 }
     }
 
     /// Insert variable for mapping in current constraint set.
@@ -58,6 +59,15 @@ impl ConstrBuilder {
 
         let mapped_var = format_var_map(var, self.var_mapping.get(var).unwrap());
         trace!("Inserted {var} in constraint builder: {var} => {mapped_var}");
+    }
+
+    /// Get a name for a temporary type.
+    ///
+    /// Useful for when we don't know what a type should be during the generation stage.
+    /// The unification stage should then identify these.
+    pub fn temp_var(&mut self) -> String {
+        self.temp_type += 1;
+        format_var_map("", &self.temp_type)
     }
 
     /// Set new branch point.
@@ -140,13 +150,12 @@ impl ConstrBuilder {
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
-        let constraints: Vec<(Position, String, Vec<Constraint>)> = self.constraints.into_iter()
+        self.constraints.into_iter()
             .map(|(pos, msg, constraints)| {
                 (pos, msg, constraints.iter().map(|(c, _)| c.clone()).collect())
             })
-            .collect();
-
-        constraints.into_iter().map(Constraints::from).collect()
+            .map(Constraints::from)
+            .collect()
     }
 }
 

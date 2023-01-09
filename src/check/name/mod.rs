@@ -316,6 +316,11 @@ impl Name {
         Name { names, ..self.clone() }
     }
 
+    pub fn trim(&self, ty: &str) -> Self {
+        let names = self.names.iter().flat_map(|n| n.trim(ty)).collect();
+        Name { names, ..self.clone() }
+    }
+
     pub fn as_direct(&self) -> HashSet<StringName> {
         self.names.iter().map(StringName::from).collect()
     }

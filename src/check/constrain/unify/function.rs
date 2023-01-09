@@ -191,7 +191,7 @@ fn unify_fun_arg(
                 let names = ctx_f_arg
                     .iter()
                     .map(|f_arg| {
-                        f_arg.ty.clone().ok_or({
+                        f_arg.ty.clone().ok_or_else(|| {
                             vec![TypeErr::new(pos, &format!("Argument '{f_arg}' has no type"))]
                         })
                     })

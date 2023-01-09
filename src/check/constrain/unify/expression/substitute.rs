@@ -80,11 +80,6 @@ fn recursive_substitute(
             let (any_substituted, elements) = substitute_vec(side, old, new, elements);
             (any_substituted, Expected::new(inspected.pos, &Expect::Tuple { elements }))
         }
-        Expect::Collection { ty } => {
-            let (subs_ty, ty) = recursive_substitute(side, ty, old, new);
-            let expect = Expect::Collection { ty: Box::from(ty) };
-            (subs_ty, Expected::new(inspected.pos, &expect))
-        }
         Expect::Function { name, args } => {
             let (any_substituted, args) = substitute_vec(side, old, new, args);
             let func = Expect::Function { name: name.clone(), args };

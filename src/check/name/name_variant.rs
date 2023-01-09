@@ -3,7 +3,7 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::{Hash, Hasher};
 
 use crate::check::context::{clss, Context};
-use crate::check::name::{ColType, IsSuperSet};
+use crate::check::name::{ColType, Empty, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::{IsTemp, TrueName};
@@ -141,6 +141,39 @@ impl IsTemp for NameVariant {
             string_name.is_temp()
         } else {
             false
+        }
+    }
+}
+
+impl NameVariant {
+    pub fn trim(&self, ty: &str) -> Option<Self> {
+        match &self {
+            NameVariant::Single(old) => {
+                if old.name == ty {
+                    None
+                } else {
+                    let generics: Vec<Name> = old.generics.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
+                    let new = StringName::new(&old.name, generics.as_slice());
+                    Some(NameVariant::Single(new))
+                }
+            }
+            NameVariant::Tuple(elements) => {
+                let elements: Vec<Name> = elements.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
+                if elements.is_empty() {
+                    None
+                } else {
+                    Some(NameVariant::Tuple(elements))
+                }
+            }
+            NameVariant::Fun(args, ret) => {
+                let args: Vec<Name> = args.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
+                let ret = ret.trim(ty);
+                if args.is_empty() || ty.is_empty() {
+                    None
+                } else {
+                    Some(NameVariant::Fun(args, Box::from(ret)))
+                }
+            }
         }
     }
 }

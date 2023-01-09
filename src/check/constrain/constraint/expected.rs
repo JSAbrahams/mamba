@@ -8,7 +8,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::check::constrain::constraint::builder::{format_var_map, VarMapping};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::MapExp;
-use crate::check::context::clss::NONE;
+use crate::check::context::clss::{COLLECTION, NONE};
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::common::delimit::comma_delm;
@@ -49,9 +49,6 @@ impl MapExp for Expected {
                     })
                 }
             }
-            Collection { ty } => Collection {
-                ty: Box::from(ty.map_exp(var_mapping, global_var_mapping))
-            },
             Tuple { elements } => Tuple {
                 elements: elements.iter().map(|e| e.map_exp(var_mapping, global_var_mapping)).collect()
             },
@@ -84,6 +81,11 @@ impl Expected {
     pub fn none(pos: Position) -> Expected {
         Expected::new(pos, &Type { name: Name::from(NONE) })
     }
+
+    pub fn collection(pos: Position, ty: &Name) -> Expected {
+        let name = Name::from(&StringName::new(COLLECTION, &[ty.clone()]));
+        Expected::new(pos, &Type { name })
+    }
 }
 
 impl AsRef<Expected> for Expected {
@@ -107,7 +109,6 @@ impl From<&AST> for Expected {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
     Expression { ast: AST },
-    Collection { ty: Box<Expected> },
     Tuple { elements: Vec<Expected> },
     Function { name: StringName, args: Vec<Expected> },
     Field { name: String },
@@ -128,7 +129,6 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
             Expression { ast } => write!(f, "{}", ast.node),
-            Collection { ty, .. } => write!(f, "{{{}}}", ty.and_or_a(false)),
             Tuple { elements } => {
                 let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
                 write!(f, "({})", comma_delm(elements))
@@ -151,7 +151,6 @@ impl Expect {
     /// or Type in latter, then also true.
     pub fn same_value(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l.expect.same_value(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) => {
                 le == re && ln == rn

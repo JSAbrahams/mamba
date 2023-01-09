@@ -19,7 +19,6 @@ pub struct Environment {
     pub class: Option<StringName>,
 
     pub unassigned: HashSet<String>,
-    temp_type: usize,
 
     pub vars: HashMap<String, HashSet<(bool, Expected)>>,
     pub var_mapping: VarMapping,
@@ -126,17 +125,6 @@ impl Environment {
         let mut vars = self.vars.clone();
         vars.remove(var);
         Environment { vars, ..self.clone() }
-    }
-
-    /// Get a name for a temporary type.
-    ///
-    /// Useful for when we don't know what a type should be during the generation stage.
-    /// The unification stage should then identify these.
-    pub fn temp_var(&self) -> (String, Environment) {
-        (
-            format_var_map("", &(self.temp_type + 1)),
-            Environment { temp_type: self.temp_type + 1, ..self.clone() },
-        )
     }
 
     /// Denote a set of variables which should be assigned to at some point.
