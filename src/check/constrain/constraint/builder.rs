@@ -136,7 +136,7 @@ impl ConstrBuilder {
         }
 
         let lvls = comma_delm(lvls);
-        trace!("Constr[{}]: {} == {}, {}: {}", lvls, constraint.left.pos, constraint.right.pos, constraint.msg, constraint);
+        trace!("Constr[{}]: {} == {}, {}: {}", lvls, constraint.parent.pos, constraint.child.pos, constraint.msg, constraint);
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {

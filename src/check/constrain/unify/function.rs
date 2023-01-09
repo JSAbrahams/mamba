@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use itertools::{EitherOrBoth, enumerate, Itertools};
 
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -29,7 +29,7 @@ pub fn unify_function(
     ctx: &Context,
     total: usize,
 ) -> Unified {
-    let (left, right) = (&constraint.left, &constraint.right);
+    let (left, right) = (&constraint.parent, &constraint.child);
     match (&left.expect, &right.expect) {
         (Function { args, .. }, Type { name }) | (Type { name }, Function { args, .. }) => {
             let arguments_union: Vec<Vec<Name>> = name
@@ -75,8 +75,7 @@ pub fn unify_function(
         (_, Access { entity, name }) =>
             access(constraints, finished, ctx, constraint, entity, name, false, total),
 
-        _ if constraint.superset == ConstrVariant::Left => Err(unify_type_message(&constraint.msg, left, right)),
-        _ => Err(unify_type_message(&constraint.msg, right, left))
+        _ => Err(unify_type_message(&constraint.msg, left, right))
     }
 }
 
@@ -91,7 +90,7 @@ fn access(
     access_left: bool,
     total: usize,
 ) -> Unified {
-    let (left, right) = (&constraint.left, &constraint.right);
+    let (left, right) = (&constraint.parent, &constraint.child);
     let (left, right) = if access_left { (left, right) } else { (right, left) };
 
     if let Type { name: entity_name } = &entity.expect {

@@ -1,7 +1,7 @@
 use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Collection, Tuple, Type};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -23,33 +23,28 @@ pub fn unify_type(
     ctx: &Context,
     total: usize,
 ) -> Unified {
-    let (left, right) = (&constraint.left, &constraint.right);
+    let (left, right) = (&constraint.parent, &constraint.child);
     let count = if constraints.len() <= total { total - constraints.len() } else { 0 };
 
     match (&left.expect, &right.expect) {
         (Type { name: l_ty }, Type { name: r_ty }) => {
-            let left_is_super = (constraint.superset == ConstrVariant::Left)
-                && l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any();
-            let right_is_super = (constraint.superset == ConstrVariant::Right)
-                && r_ty.is_superset_of(l_ty, ctx, left.pos)? || r_ty == &Name::any();
-
             if l_ty.is_temporary() {
                 substitute_ty(right.pos, r_ty, left.pos, l_ty, constraints, count, total)?;
-                unify_link(constraints, finished, ctx, total)
+                return unify_link(constraints, finished, ctx, total);
             } else if r_ty.is_temporary() {
                 substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
-                unify_link(constraints, finished, ctx, total)
-            } else if left_is_super || right_is_super {
+                return unify_link(constraints, finished, ctx, total);
+            }
+
+            if l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any() || r_ty == &Name::any() {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
 
                 finished.push_ty(ctx, left.pos, l_ty)?;
                 finished.push_ty(ctx, right.pos, r_ty)?;
                 unify_link(constraints, finished, ctx, total)
-            } else if constraint.superset == ConstrVariant::Left {
-                Err(unify_type_message(&constraint.msg, left, right))
             } else {
-                Err(unify_type_message(&constraint.msg, right, left))
+                Err(unify_type_message(&constraint.msg, left, right))
             }
         }
 

@@ -1,7 +1,7 @@
 use EitherOrBoth::Both;
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::constrain::constraint::{Constraint, ConstrVariant};
+use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Expression, Tuple};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
@@ -16,7 +16,7 @@ use crate::parse::ast::{AST, Node};
 pub mod substitute;
 
 pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, finished: &mut Finished, ctx: &Context, count: usize, total: usize) -> Unified {
-    let (left, right) = (&constraint.left, &constraint.right);
+    let (left, right) = (&constraint.parent, &constraint.child);
     match (&left.expect, &right.expect) {
         // Not sure if necessary, but exception made for tuple
         (Tuple { elements }, Expression { ast: AST { node: Node::Tuple { elements: ast_elements }, .. } }) |
@@ -37,8 +37,7 @@ pub fn unify_expression(constraint: &Constraint, constraints: &mut Constraints, 
             }
         }
 
-        (Expression { .. }, _) if constraint.superset == ConstrVariant::Left =>
-            substitute(constraints, right, left, count, total)?,
+        (Expression { .. }, _) => substitute(constraints, right, left, count, total)?,
         _ => substitute(constraints, left, right, count, total)?
     }
 

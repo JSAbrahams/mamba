@@ -17,7 +17,7 @@ use crate::check::context::Context;
 /// constraints each time we do a recursive call to unify link.
 pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &Context, total: usize) -> Unified {
     if let Some(constraint) = &constraints.pop_constr() {
-        let (left, right) = (&constraint.left, &constraint.right);
+        let (left, right) = (&constraint.parent, &constraint.child);
 
         let pos = format!("{}={} ", left.pos, right.pos);
         let count = if constraints.len() <= total { total - constraints.len() } else { 0 };
@@ -70,7 +70,7 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
 /// The amount of attempts is a counter which states how often we allow
 /// reinserts.
 pub fn reinsert(constr: &mut Constraints, constraint: &Constraint, total: usize) -> Unified<()> {
-    let pos = format!("({}={}) ", constraint.left.pos.start, constraint.right.pos.start);
+    let pos = format!("({}={}) ", constraint.parent.pos.start, constraint.child.pos.start);
     let count = format!("[reinserting {}\\{}] ", total - constr.len(), total);
     trace!("{:width$}{}{}", pos, count, constraint, width = 17);
 
