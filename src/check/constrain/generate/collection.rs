@@ -112,19 +112,19 @@ fn constraint_collection_items(elements: &[AST], env: &Environment, constr: &mut
 pub fn gen_collection_lookup(lookup: &AST, col: &AST, env: &Environment, constr: &mut ConstrBuilder)
                              -> Constrained {
     let mut env = env.clone();
-
     let (temp_name, helper_ty) = (constr.temp_name(), constr.temp_name());
-    let exp_lookup_temp = Expected::new(lookup.pos, &Type { name: temp_name.clone() });
-    constr.add("lookup type", &exp_lookup_temp, &Expected::from(lookup), &env);
+
+    let (col_exp1, col_exp2) = Constraint::collection("collection lookup", &Expected::from(col), &temp_name, &helper_ty);
+    constr.add_constr(&col_exp1, &env);
+    constr.add_constr(&col_exp2, &env);
 
     for (mutable, var) in Identifier::try_from(lookup)?.fields(lookup.pos)? {
         constr.insert_var(&var);
         env = env.insert_var(mutable, &var, &Expected::any(lookup.pos), &constr.var_mapping);
     }
 
-    let (col_exp1, col_exp2) = Constraint::collection("collection lookup", &Expected::from(col), &temp_name, &helper_ty);
-    constr.add_constr(&col_exp1, &env);
-    constr.add_constr(&col_exp2, &env);
+    let exp_lookup_temp = Expected::new(lookup.pos, &Type { name: temp_name.clone() });
+    constr.add("lookup type", &exp_lookup_temp, &Expected::from(lookup), &env);
     Ok(env)
 }
 

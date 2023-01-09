@@ -66,9 +66,10 @@ impl ConstrBuilder {
     ///
     /// Useful for when we don't know what a type should be during the generation stage.
     /// The unification stage should then identify these.
+    /// Has two leading [TEMP] to differentiate them from mappings.
     pub fn temp_name(&mut self) -> Name {
         self.temp_name_offset += 1;
-        Name::from(format_var_map("", &self.temp_name_offset).as_str())
+        Name::from(format!("@{}", format_var_map("", &self.temp_name_offset)).as_str())
     }
 
     /// Set new branch point.

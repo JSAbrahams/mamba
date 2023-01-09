@@ -1,11 +1,11 @@
-b = {1,2}
+b: set[int] = {1,2}
 for b in b:
     print(b + 5)
     new: int = b + 1
     new = 30
     print(new)
 
-e = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+e: set[int] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 for d in e:
     print(d)
     print(d - 1)
@@ -26,6 +26,3 @@ for i in range(a, b, 1):
 c: int = 2451
 for i in range(a, c + 1, 20):
     print("world")
-
-# for i in ([1, 2], {3, 4}) do
-#    print(i)
