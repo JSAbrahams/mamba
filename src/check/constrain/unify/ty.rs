@@ -11,7 +11,7 @@ use crate::check::constrain::Unified;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{Any, IsSuperSet, Name, Substitute};
+use crate::check::name::{Any, ContainsTemp, IsSuperSet, Name, Substitute};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
@@ -35,6 +35,13 @@ pub fn unify_type(
             } else if r_ty.is_temporary() {
                 substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
                 return unify_link(constraints, finished, ctx, total);
+            } else if l_ty.contains_temp() {
+                for (old, new) in l_ty.temp_map(r_ty, left.pos)? {
+                    substitute_ty(left.pos, &new, right.pos, &old, constraints, count, total)?;
+                }
+                return unify_link(constraints, finished, ctx, total);
+            } else if r_ty.contains_temp() {
+                unimplemented!("{l_ty} => {r_ty}");
             }
 
             if l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any() || r_ty == &Name::any() {

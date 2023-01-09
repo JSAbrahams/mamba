@@ -37,11 +37,11 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
                 };
 
                 let item = Expected::from(left);
-                let temp_name = constr.temp_var();
-                let temp_ty = Expected::new(left.pos, &Type { name: Name::from(temp_name.as_str()) });
+                let temp_name = constr.temp_name();
+                let temp_ty = Expected::new(left.pos, &Type { name: temp_name.clone() });
                 constr.add("temporary builder type", &item, &temp_ty, env);
 
-                let col_exp = Expected::collection(right.pos, &Name::from(temp_name.as_str()));
+                let col_exp = Expected::collection(right.pos, &temp_name);
                 constr.add("comprehension collection type", &col_exp, &Expected::from(right), env);
 
                 generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
@@ -95,10 +95,10 @@ fn constraint_collection_items(elements: &[AST], env: &Environment, constr: &mut
     let mut name = Name::empty();
     for element in elements {
         let exp_element = Expected::from(element);
-        let new_name = constr.temp_var();
-        name = name.union(&Name::from(new_name.as_str()));
+        let new_name = constr.temp_name();
+        name = name.union(&new_name);
 
-        let exp_ty = Expected::new(element.pos, &Type { name: Name::from(new_name.as_str()) });
+        let exp_ty = Expected::new(element.pos, &Type { name: new_name });
         constr.add("collection element", &exp_ty, &exp_element, env);
     }
 

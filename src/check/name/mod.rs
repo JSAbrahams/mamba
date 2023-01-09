@@ -12,7 +12,7 @@ use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsTemp, TrueName};
+use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -59,6 +59,10 @@ pub trait Substitute {
 
 pub trait ColType {
     fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>>;
+}
+
+pub trait ContainsTemp {
+    fn contains_temp(&self) -> bool;
 }
 
 #[derive(Debug, Clone, Eq)]
@@ -305,6 +309,12 @@ impl Substitute for Name {
     }
 }
 
+impl ContainsTemp for Name {
+    fn contains_temp(&self) -> bool {
+        self.names.iter().any(TrueName::contains_temp)
+    }
+}
+
 impl Name {
     pub fn trim_any(&self) -> Self {
         let names = self.names.iter().filter(|n| **n != TrueName::any()).cloned().collect();
@@ -338,13 +348,24 @@ impl Name {
     /// True if this was a temporary name, which is a name which starts with '@'.
     pub fn is_temporary(&self) -> bool {
         if let Some(name) = Vec::from_iter(&self.names).first() {
-            match &name.variant {
+            return match &name.variant {
                 NameVariant::Single(stringname) => stringname.name.starts_with(TEMP),
                 _ => false,
-            }
-        } else {
-            false
+            };
         }
+        false
+    }
+
+    pub fn temp_map(&self, other: &Name, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+        self.temp_map_with_mapping(other, HashMap::new(), pos)
+    }
+
+    pub(crate) fn temp_map_with_mapping(&self, other: &Name, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+        self.names.iter().fold(Ok(mapping), |acc, s_n| {
+            other.names.iter().fold(acc, |acc, o_n| if let Ok(acc) = acc {
+                s_n.temp_map(&o_n.variant, acc, pos)
+            } else { acc })
+        })
     }
 }
 

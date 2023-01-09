@@ -6,7 +6,7 @@ use std::iter::FromIterator;
 
 use crate::check::context::{clss, Context};
 use crate::check::context::clss::NONE;
-use crate::check::name::{Any, ColType, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
+use crate::check::name::{Any, ColType, ContainsTemp, Empty, IsSuperSet, Mutable, Name, Nullable, Substitute, Union};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
 use crate::check::result::TypeResult;
@@ -24,6 +24,10 @@ pub struct TrueName {
 
 pub trait IsTemp {
     fn is_temp(&self) -> bool;
+}
+
+pub trait TempMap {
+    fn temp_map(&self, other: &NameVariant, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>>;
 }
 
 impl PartialOrd<Self> for TrueName {
@@ -178,6 +182,18 @@ impl From<&Vec<TrueName>> for Name {
 impl IsTemp for TrueName {
     fn is_temp(&self) -> bool {
         self.variant.is_temp()
+    }
+}
+
+impl ContainsTemp for TrueName {
+    fn contains_temp(&self) -> bool {
+        self.variant.contains_temp()
+    }
+}
+
+impl TempMap for TrueName {
+    fn temp_map(&self, other: &NameVariant, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+        self.variant.temp_map(other, mapping, pos)
     }
 }
 

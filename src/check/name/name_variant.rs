@@ -1,13 +1,17 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 use std::hash::{Hash, Hasher};
 
+use itertools::EitherOrBoth::{Both, Left, Right};
+use itertools::Itertools;
+
 use crate::check::context::{clss, Context};
-use crate::check::name::{ColType, Empty, IsSuperSet};
+use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsTemp, TrueName};
-use crate::check::result::TypeResult;
+use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
@@ -141,6 +145,80 @@ impl IsTemp for NameVariant {
             string_name.is_temp()
         } else {
             false
+        }
+    }
+}
+
+impl ContainsTemp for NameVariant {
+    fn contains_temp(&self) -> bool {
+        match &self {
+            NameVariant::Single(string_name) =>
+                string_name.is_temp() || string_name.generics.iter().any(Name::contains_temp),
+            NameVariant::Tuple(elements) => elements.iter().any(Name::contains_temp),
+            NameVariant::Fun(args, ret) =>
+                args.iter().any(Name::contains_temp) || ret.contains_temp()
+        }
+    }
+}
+
+impl TempMap for NameVariant {
+    fn temp_map(&self, other: &NameVariant, mut mapping: HashMap<Name, Name>, pos: Position)
+                -> TypeResult<HashMap<Name, Name>> {
+        macro_rules! map_names {
+            ($l_names:expr, $r_names:expr) => {{
+                for unified_gen in $l_names.iter().zip_longest($r_names) {
+                    match unified_gen {
+                        Both(left, right) => {
+                            mapping = left.temp_map_with_mapping(right, mapping, pos)?;
+                        }
+                        Left(unbound) => {
+                            let msg = format!("while unifying {self} and {other}, no generic for {unbound}");
+                            return Err(vec![TypeErr::new(pos, &msg)])
+                        }
+                        Right(unbound) => {
+                            let msg = format!("while unifying {self} and {other}, no generic for {unbound}");
+                            return Err(vec![TypeErr::new(pos, &msg)])
+                        }
+                    }
+                }
+
+                mapping
+            }}
+        }
+
+        match (&self, other) {
+            (NameVariant::Single(s_name), NameVariant::Single(o_name)) => {
+                if s_name.is_temp() {
+                    mapping.insert(Name::from(s_name.name.as_str()), Name::from(other));
+                }
+                Ok(map_names!(&s_name.generics, &o_name.generics))
+            }
+            (NameVariant::Tuple(s_elements), NameVariant::Tuple(o_elements)) =>
+                Ok(map_names!(s_elements, o_elements)),
+            (NameVariant::Fun(s_args, s_ret), NameVariant::Fun(o_args, o_ret)) => {
+                let mapping = map_names!(s_args, o_args);
+                s_ret.temp_map_with_mapping(o_ret, mapping, pos)
+            }
+
+            (NameVariant::Single(_), _) => {
+                // If self is StringName, just insert directly
+                mapping.insert(Name::from(self), Name::from(other));
+                Ok(mapping)
+            }
+            (NameVariant::Tuple(elements), _) =>
+                elements.iter().fold(Ok(mapping), |acc, n| if let Ok(acc) = acc {
+                    n.temp_map_with_mapping(&Name::from(other), acc, pos)
+                } else {
+                    acc
+                }),
+            (NameVariant::Fun(args, ret), _) => {
+                let mapping = args.iter().fold(Ok(mapping), |acc, n| if let Ok(acc) = acc {
+                    n.temp_map_with_mapping(&Name::from(other), acc, pos)
+                } else {
+                    acc
+                })?;
+                ret.temp_map_with_mapping(&Name::from(other), mapping, pos)
+            }
         }
     }
 }

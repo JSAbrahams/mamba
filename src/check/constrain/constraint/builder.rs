@@ -6,6 +6,7 @@ use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::name::Name;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
@@ -35,7 +36,7 @@ pub struct ConstrBuilder {
     branch_point: usize,
     joined: bool,
 
-    temp_type: usize,
+    temp_name_offset: usize,
     pub var_mapping: VarMapping,
 }
 
@@ -44,7 +45,7 @@ impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
         let var_mapping = VarMapping::new();
         let (pos, msg) = (Position::default(), String::from("Script"));
-        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping, temp_type: 0 }
+        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping, temp_name_offset: 0 }
     }
 
     /// Insert variable for mapping in current constraint set.
@@ -65,9 +66,9 @@ impl ConstrBuilder {
     ///
     /// Useful for when we don't know what a type should be during the generation stage.
     /// The unification stage should then identify these.
-    pub fn temp_var(&mut self) -> String {
-        self.temp_type += 1;
-        format_var_map("", &self.temp_type)
+    pub fn temp_name(&mut self) -> Name {
+        self.temp_name_offset += 1;
+        Name::from(format_var_map("", &self.temp_name_offset).as_str())
     }
 
     /// Set new branch point.
