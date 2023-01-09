@@ -374,14 +374,23 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::check::context::{clss, Context, LookupClass};
-    use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, RANGE, STRING, TUPLE};
+    use crate::check::context::clss::{BOOL, COLLECTION, FLOAT, HasParent, INT, RANGE, SET, STRING, TUPLE};
     use crate::check::ident::Identifier;
-    use crate::check::name::{ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
+    use crate::check::name::{Any, ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
     use crate::check::name::name_variant::NameVariant;
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
+
+    #[test]
+    fn collect_any_superset_of_set_int() {
+        let union_1 = Name::from(&StringName::new(COLLECTION, &[Name::any()]));
+        let union_2 = Name::from(&StringName::new(SET, &[Name::from(INT)]));
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+    }
 
     #[test]
     fn test_is_superset_numbers() {

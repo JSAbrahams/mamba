@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::{GetFun, HasParent};
+use crate::check::context::clss::{ANY, GetFun, HasParent};
 use crate::check::context::function::union::FunUnion;
 use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, TEMP, Union};
 use crate::check::name::Name;
@@ -126,14 +126,15 @@ impl From<&str> for StringName {
 
 impl IsSuperSet<StringName> for StringName {
     fn is_superset_of(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(ctx.class(other, pos)?.has_parent(self, ctx, pos)?
-            && self
-            .generics
-            .iter()
-            .flat_map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
-            .collect::<Result<Vec<bool>, _>>()?
-            .iter()
-            .all(|b| *b))
+        Ok(self.name == ANY ||
+            ctx.class(other, pos)?.has_parent(self, ctx, pos)?
+                && self
+                .generics
+                .iter()
+                .flat_map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
+                .collect::<Result<Vec<bool>, _>>()?
+                .iter()
+                .all(|b| *b))
     }
 }
 
