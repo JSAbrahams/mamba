@@ -30,7 +30,8 @@ pub const SET: &str = "set";
 pub const LIST: &str = "list";
 pub const TUPLE: &str = "tuple";
 
-pub const CALLABLE: &str = "callable";
+pub const CALLABLE: &str = "Callable";
+pub const UNION: &str = "Union";
 
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
@@ -115,6 +116,7 @@ pub fn python_to_concrete(name: &str) -> String {
         LIST => String::from(clss::LIST),
         TUPLE => String::from(clss::TUPLE),
 
+        UNION => String::from(clss::UNION),
         CALLABLE => String::from(clss::CALLABLE),
         NONE => String::from(clss::NONE),
         EXCEPTION => String::from(clss::EXCEPTION),

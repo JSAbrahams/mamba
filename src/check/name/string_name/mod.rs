@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::{ANY, GetFun, HasParent};
+use crate::check::context::clss::{ANY, GetFun, HasParent, UNION};
 use crate::check::context::function::union::FunUnion;
 use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, TEMP, Union};
 use crate::check::name::Name;
@@ -166,16 +166,15 @@ impl Substitute for StringName {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<StringName> {
         if let Some(name) = generics.get(&Name::from(self)) {
             let string_names = name.as_direct();
-            if string_names.len() > 1 {
+            if string_names.is_empty() {
                 let msg = format!("Cannot substitute type union {name}");
-                return Err(vec![TypeErr::new(pos, &msg)]);
+                Err(vec![TypeErr::new(pos, &msg)])
+            } else if string_names.len() == 1 {
+                Ok(string_names.iter().next().expect("Unreachable").clone())
+            } else {
+                let names: Vec<Name> = string_names.iter().map(Name::from).collect();
+                Ok(StringName::new(UNION, &names.as_slice()))
             }
-
-            if let Some(string_name) = string_names.iter().next() {
-                return Ok(string_name.clone());
-            }
-
-            Err(vec![TypeErr::new(pos, &format!("{name} incorrect name"))])
         } else {
             Ok(StringName {
                 name: self.name.clone(),

@@ -58,24 +58,17 @@ impl From<TypeErr> for Vec<TypeErr> {
 impl TypeErr {
     /// New TypeErr with message at given position
     pub fn new(position: Position, msg: &str) -> TypeErr {
-        TypeErr {
-            pos: Some(position),
-            msg: String::from(msg),
-            path: None,
-            source: None,
-            causes: vec![],
-        }
+        let pos = Some(position);
+        TypeErr { pos, msg: String::from(msg), path: None, source: None, causes: vec![] }
     }
 
     /// New TypeErr with message at random position
     pub fn new_no_pos(msg: &str) -> TypeErr {
-        TypeErr {
-            pos: None,
-            msg: String::from(msg),
-            path: None,
-            source: None,
-            causes: vec![],
-        }
+        TypeErr { pos: None, msg: String::from(msg), path: None, source: None, causes: vec![] }
+    }
+
+    pub fn append_msg(&self, msg: &str) -> Self {
+        TypeErr { msg: format!("{} {msg}", self.msg), ..self.clone() }
     }
 }
 

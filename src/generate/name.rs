@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use itertools::Itertools;
 
 use crate::check::context::clss::concrete_to_python;
+use crate::check::context::clss::python::UNION;
 use crate::check::name::{Name, Nullable};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
@@ -17,9 +18,9 @@ pub trait ToPy {
 impl ToPy for Name {
     fn to_py(&self, imp: &mut Imports) -> Core {
         if self.names.len() > 1 {
-            imp.add_from_import("typing", "Union");
+            imp.add_from_import("typing", UNION);
             let generics: Vec<Core> = self.names.iter().map(|name| name.to_py(imp)).collect();
-            core_type("Union", &generics)
+            core_type(UNION, &generics)
         } else if let Some(name) = self.names.iter().next() {
             name.to_py(imp)
         } else {

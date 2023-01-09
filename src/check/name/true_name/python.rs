@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use python_parser::ast::{Expression, SetItem, Subscript};
 
-use crate::check::context::clss::python::python_to_concrete;
+use crate::check::context::clss::python::{python_to_concrete, UNION};
 use crate::check::name::{Empty, Name};
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::true_name::TrueName;
@@ -26,7 +26,7 @@ impl From<&Expression> for TrueName {
                 };
 
                 // Union not expected
-                if &lit == "Union" {
+                if &lit == UNION {
                     TrueName::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(to_ty_name).collect();

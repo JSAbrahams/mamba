@@ -44,6 +44,11 @@ fn set_verify() -> OutTestRet {
 }
 
 #[test]
+fn set_union() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "set_union")
+}
+
+#[test]
 fn tuple_verify() -> OutTestRet {
     let args = Arguments { annotate: false }; // Type annotations in output wrong
     test_directory_args(true, &["collection"], &["collection", "target"], "tuple", &args)

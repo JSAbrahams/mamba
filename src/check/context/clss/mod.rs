@@ -35,6 +35,7 @@ pub const LIST: &str = "List";
 pub const TUPLE: &str = "Tuple";
 
 pub const CALLABLE: &str = "Callable";
+pub const UNION: &str = "Union";
 
 pub const ANY: &str = "Any";
 pub const NONE: &str = "None";
@@ -206,7 +207,10 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
         Ok(Class {
             is_py_type: generic.is_py_type,
-            name: generic.name.substitute(generics, pos)?,
+            name: generic.name.substitute(generics, pos).map_err(|err| err
+                .iter()
+                .map(|e| e.append_msg(&format!("in {}", generic.name)))
+                .collect::<Vec<TypeErr>>())?,
             concrete: generic.concrete,
             args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
             parents: generic.parents.iter().map(|g| g.name.clone()).collect(),
@@ -288,6 +292,7 @@ pub fn concrete_to_python(name: &str) -> String {
         CALLABLE => String::from(python::CALLABLE),
         NONE => String::from(python::NONE),
         EXCEPTION => String::from(python::EXCEPTION),
+        UNION => String::from(python::UNION),
         other => String::from(other),
     }
 }
