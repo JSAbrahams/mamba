@@ -83,6 +83,10 @@ impl Position {
         )
     }
 
+    pub fn invisible() -> Self {
+        Position::new(CaretPos::new(0, 0), CaretPos::new(0, 0))
+    }
+
     #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
         Position { start: self.start.offset(offset), end: self.end.offset(offset) }

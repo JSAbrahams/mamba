@@ -26,7 +26,7 @@ impl Finished {
         // trim temp should not be needed, underlying issue with current logic
         let name = IGNORED_NAMES.iter().fold(name.clone(), |acc, ignored| acc.trim(ignored));
         let name = name.trim_any().trim_temp();
-        if name == Name::empty() {
+        if name == Name::empty() || pos == Position::invisible() {
             return Ok(());
         }
 

@@ -305,7 +305,7 @@ impl Substitute for Name {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
-        Ok(Name { names, is_interchangeable: self.is_interchangeable })
+        Ok(Name { names, ..self.clone() })
     }
 }
 

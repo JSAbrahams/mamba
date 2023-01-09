@@ -175,8 +175,8 @@ pub fn constr_range(
     }
 
     if contr_coll {
-        let helper_ty = constr.temp_name();
-        let (col_exp1, col_exp2) = Constraint::collection("range collection", &Expected::from(ast), &Name::from(INT), &helper_ty);
+        let (helper_ty, col_ty) = (constr.temp_name(), Name::from(INT));
+        let (col_exp1, col_exp2) = Constraint::collection(range_slice, &Expected::from(ast), &col_ty, &helper_ty);
         constr.add_constr(&col_exp1, env);
         constr.add_constr(&col_exp2, env);
     }
@@ -202,8 +202,9 @@ fn impl_magic(
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
+    let res = gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)?;
     constr.add(format!("{fun} operation").as_str(), &Expected::from(ast), &access(fun, left, right), env);
-    gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)
+    Ok(res)
 }
 
 fn impl_bool_op(

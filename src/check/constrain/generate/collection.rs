@@ -153,6 +153,6 @@ mod tests {
         };
 
         assert_eq!(expr.ty, Some(Name::from("Int")));
-        assert_eq!(col.ty, Some(Name::from("range_iterator")));
+        assert_eq!(col.ty, Some(Name::from("Int")));
     }
 }

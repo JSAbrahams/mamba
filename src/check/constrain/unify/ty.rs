@@ -150,7 +150,7 @@ fn substitute_ty(
                 let pos = format!("({}={}) ", constr.parent.pos, constr.child.pos);
                 let side = if $left { "l" } else { "r" };
                 trace!(
-                    "{:width$} [subbed {}\\{} {}]  {}  =>  {}",
+                    "{:width$} [subbed type {}\\{} {}]  {}  =>  {}",
                     pos,
                     constraint_pos,
                     total,
@@ -203,7 +203,7 @@ fn recursive_substitute_ty(
         }
         Type { name } => {
             let new_name = name.substitute(old_to_new, pos)?;
-            (*name != new_name, Expected::new(inspected.pos, &Type { name: new_name }))
+            (name != &new_name, Expected::new(inspected.pos, &Type { name: new_name }))
         }
         _ => (false, inspected.clone()),
     })

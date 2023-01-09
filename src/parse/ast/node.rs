@@ -30,7 +30,11 @@ impl Display for Node {
         let name = match &self {
             Node::Import { .. } => String::from("import"),
             Node::Class { .. } => String::from("class"),
-            Node::Generic { .. } => String::from("generic"),
+            Node::Generic { id, isa } => if let Some(isa) = isa {
+                format!("{}: {}", id.node, isa.node)
+            } else {
+                format!("{}", id.node)
+            },
             Node::Parent { .. } => String::from("parent"),
             Node::Reassign { .. } => String::from("reassign"),
             Node::VariableDef { .. } => String::from("variable definition"),
@@ -51,7 +55,11 @@ impl Display for Node {
             Node::TypeAlias { .. } => String::from("type alias"),
             Node::TypeTup { .. } => String::from("type tuple"),
             Node::TypeUnion { .. } => String::from("type union"),
-            Node::Type { .. } => String::from("type"),
+            Node::Type { id, generics } => if generics.is_empty() {
+                format!("{}", id.node)
+            } else {
+                format!("{}[{}]", id.node, comma_delm(generics.iter().map(|e| e.node.clone())))
+            },
             Node::TypeFun { .. } => String::from("type function"),
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),

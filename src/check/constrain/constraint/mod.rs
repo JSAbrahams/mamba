@@ -7,6 +7,7 @@ use crate::check::context::{clss, function};
 use crate::check::context::function::{ITER, NEXT};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::common::position::Position;
 
 pub mod builder;
 pub mod expected;
@@ -70,7 +71,7 @@ impl Constraint {
             entity: Box::from(expected.clone()),
             name: Box::new(Expected::new(expected.pos, &fun)),
         });
-        let iter_ty = Expected::new(expected.pos, &Type { name: helper_ty.clone() });
+        let iter_ty = Expected::new(Position::invisible(), &Type { name: helper_ty.clone() });
         let iter_constr = Constraint::new(msg, &iter_ty, &col_iterator);
 
         let fun = Function { name: StringName::from(NEXT), args: vec![iter_ty.clone()] };
