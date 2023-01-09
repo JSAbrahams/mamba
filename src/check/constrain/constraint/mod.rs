@@ -16,21 +16,8 @@ pub struct Constraint {
     pub is_flag: bool,
     pub is_sub: bool,
     pub msg: String,
-    pub left: Expected,
-    pub right: Expected,
-    pub superset: ConstrVariant,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ConstrVariant {
-    Left,
-    Right,
-}
-
-impl Default for ConstrVariant {
-    fn default() -> Self {
-        ConstrVariant::Left
-    }
+    pub parent: Expected,
+    pub child: Expected,
 }
 
 pub(super) trait MapExp {
@@ -39,20 +26,15 @@ pub(super) trait MapExp {
 
 impl Display for Constraint {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let superset = match &self.superset {
-            ConstrVariant::Left => ">=",
-            ConstrVariant::Right => "<="
-        };
-
-        write!(f, "{} {superset} {}", self.left, self.right)
+        write!(f, "{} >= {}", self.parent, self.child)
     }
 }
 
 impl MapExp for Constraint {
     fn map_exp(&self, var_mapping: &VarMapping, global_var_mapping: &VarMapping) -> Self {
-        let left = self.left.map_exp(var_mapping, global_var_mapping);
-        let right = self.right.map_exp(var_mapping, global_var_mapping);
-        Constraint { left, right, ..self.clone() }
+        let left = self.parent.map_exp(var_mapping, global_var_mapping);
+        let right = self.child.map_exp(var_mapping, global_var_mapping);
+        Constraint { parent: left, child: right, ..self.clone() }
     }
 }
 
@@ -61,14 +43,8 @@ impl Constraint {
     ///
     /// By default, the left side is assumed to be the superset of the right side.
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
-        Constraint::new_variant(msg, parent, child, ConstrVariant::default())
-    }
-
-    pub fn new_variant(msg: &str, parent: &Expected, child: &Expected, superset: ConstrVariant)
-                       -> Constraint {
-        let msg = String::from(msg);
-        let (left, right) = (parent.clone(), child.clone());
-        Constraint { left, right, msg, is_flag: false, is_sub: false, superset }
+        let (parent, child) = (parent.clone(), child.clone());
+        Constraint { parent, child, msg: String::from(msg), is_flag: false, is_sub: false }
     }
 
     /// Flag constraint iff flagged is 0, else ignored.
