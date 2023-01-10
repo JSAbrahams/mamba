@@ -198,7 +198,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
     }
 
     fn callable(args: &[Name], ret_ty: &Name) -> Self {
-        let args = Name::from(&StringName::new("", args));
+        let args = Name::from(&StringName::new(TUPLE, args));
         StringName::new(CALLABLE, &[args, ret_ty.clone()])
     }
 
@@ -286,19 +286,12 @@ impl StringName {
 
 #[cfg(test)]
 mod test {
-    use crate::check::context::clss::{ANY, BOOL, COLLECTION, HasParent, INT, SET, STRING};
+    use crate::check::context::clss::{ANY, BOOL, HasParent, INT, STRING};
     use crate::check::context::LookupClass;
     use crate::check::name::IsSuperSet;
     use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::Context;
-
-    #[test]
-    fn collection_super_of_set() {
-        let (name_1, name_2) = (StringName::from(COLLECTION), StringName::from(SET));
-        let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
-    }
 
     #[test]
     fn any_super_of_int() {

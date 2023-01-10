@@ -82,17 +82,20 @@ pub trait GetFun<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        if self.name == *other {
+        if self.name == *other || other.name.as_str() == ANY {
             return Ok(true); // parent of self, of course
-        } else if self.name.name == *other.name && self.name.generics.len() == other.generics.len() {
+
+            // necessary evil, no way to specify variable generics for tuples
+        } else if (self.name.name == TUPLE && (other.name == TUPLE || other.name == COLLECTION)) ||
+            (self.name.name == *other.name && self.name.generics.len() == other.generics.len()) {
             // Contender! check generics
-            let mut all_super = false;
+            let mut all_super = true;
             for (s_name, o_name) in self.name.generics.iter().zip(&other.generics) {
                 for s_name in &s_name.names {
-                    all_super |= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
+                    all_super &= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
                 }
             }
-            if all_super { return Ok(true); }
+            if all_super { return Ok(all_super); }
         }
 
         Ok(self
