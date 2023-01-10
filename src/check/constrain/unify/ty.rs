@@ -1,20 +1,14 @@
 use std::collections::HashMap;
 
-use EitherOrBoth::Both;
-use itertools::{EitherOrBoth, Itertools};
-
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::{Expect, Expected};
-use crate::check::constrain::constraint::expected::Expect::{Tuple, Type};
+use crate::check::constrain::constraint::expected::Expect::Type;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
-use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::{Any, ContainsTemp, IsSuperSet, Name, Substitute};
-use crate::check::name::name_variant::NameVariant;
-use crate::check::name::true_name::IsTemp;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::common::result::WithCause;
@@ -59,70 +53,6 @@ pub fn unify_type(
             } else {
                 Err(unify_type_message("two types", &constraint.msg, left, right))
             }
-        }
-
-        (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
-            for name_ty in &name.names {
-                match &name_ty.variant {
-                    NameVariant::Single(name) if name.is_temp() => {
-                        substitute(constraints, right, left, count, total)?;
-                    }
-                    NameVariant::Tuple(names) => {
-                        if names.len() != elements.len() {
-                            let msg = format!(
-                                "in {}, expected tuple with {} elements, was {}",
-                                constraint.msg,
-                                names.len(),
-                                elements.len()
-                            );
-                            return Err(unify_type_message("type and tuple", &msg, left, right));
-                        }
-
-                        for pair in names.iter().cloned().zip_longest(elements.iter()) {
-                            match &pair {
-                                Both(name, exp) => {
-                                    let expect = Type { name: name.clone() };
-                                    let l_ty = Expected::new(left.pos, &expect);
-                                    constraints.push("tuple", &l_ty, exp)
-                                }
-                                _ => {
-                                    let msg = format!(
-                                        "in {}, cannot assign {} elements to a tuple of size {}",
-                                        constraint.msg,
-                                        elements.len(),
-                                        names.len()
-                                    );
-                                    return Err(unify_type_message("type and tuple", &msg, left, right));
-                                }
-                            }
-                        }
-                    }
-                    _ => {
-                        let msg = format!("Expected {name}, was {right}");
-                        return Err(unify_type_message("type and tuple", &msg, left, right));
-                    }
-                }
-            }
-
-            unify_link(constraints, finished, ctx, total)
-        }
-
-        (Tuple { elements: l_ty }, Tuple { elements: r_ty }) => {
-            for pair in l_ty.iter().zip_longest(r_ty.iter()) {
-                match &pair {
-                    Both(name, exp) => constraints.push("tuple", name, exp),
-                    _ => {
-                        let msg = format!(
-                            "in {}, tuple sizes differ. Expected {} elements, was {}",
-                            constraint.msg,
-                            l_ty.len(),
-                            r_ty.len()
-                        );
-                        return Err(unify_type_message("two tuples", &msg, left, right));
-                    }
-                }
-            }
-            unify_link(constraints, finished, ctx, total + 1)
         }
 
         _ => Err(unify_type_message("types", &constraint.msg, left, right))
@@ -196,10 +126,6 @@ fn recursive_substitute_ty(
 
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(inspected.pos, &expect))
-        }
-        Tuple { elements } => {
-            let (any_substituted, elements) = substitute_vec_ty(side, old_to_new, elements, pos)?;
-            (any_substituted, Expected::new(inspected.pos, &Tuple { elements }))
         }
         Expect::Function { name, args } => {
             let (any_substituted, args) = substitute_vec_ty(side, old_to_new, args, pos)?;

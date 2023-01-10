@@ -76,10 +76,6 @@ fn recursive_substitute(
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(inspected.pos, &expect))
         }
-        Expect::Tuple { elements } => {
-            let (any_substituted, elements) = substitute_vec(side, old, new, elements);
-            (any_substituted, Expected::new(inspected.pos, &Expect::Tuple { elements }))
-        }
         Expect::Function { name, args } => {
             let (any_substituted, args) = substitute_vec(side, old, new, args);
             let func = Expect::Function { name: name.clone(), args };

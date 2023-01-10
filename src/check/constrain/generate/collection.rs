@@ -6,7 +6,7 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::clss::{COLLECTION, LIST, SET};
+use crate::check::context::clss::{COLLECTION, LIST, SET, TUPLE};
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
 use crate::check::name::{Any, Empty, Name, Union};
@@ -82,13 +82,7 @@ fn gen_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder) -> C
     let (col_ty, col_items_ty) = match &collection.node {
         Node::Set { elements } => (SET, gen_col_items(elements, env, constr)?),
         Node::List { elements } => (LIST, gen_col_items(elements, env, constr)?),
-        Node::Tuple { elements } => {
-            let exp = Tuple { elements: elements.iter().map(Expected::from).collect() };
-            let col_exp = Expected::new(collection.pos, &exp);
-            constr.add("tuple", &col_exp, &Expected::from(collection), env);
-            return Ok(env.clone());
-        }
-
+        Node::Tuple { elements } => (TUPLE, gen_col_items(elements, env, constr)?),
         _ => (COLLECTION, Name::any())
     };
 

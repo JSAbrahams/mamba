@@ -2,8 +2,6 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use permutate::Permutator;
-
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
@@ -225,24 +223,8 @@ fn identifier_to_tuple(
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
-        Identifier::Multi(idens) => {
-            // Every item in the tuple is a union of expected
-            let tuple_unions: Vec<Vec<Expected>> =
-                idens.iter().map(|i| identifier_to_tuple(pos, i, env, constr)).collect::<Result<_, _>>()?;
-
-            // .. So we create permutation of every possible tuple combination
-            let tuple_unions: Vec<Vec<&Expected>> =
-                tuple_unions.iter().map(|list| list.iter().map(AsRef::as_ref).collect()).collect();
-            let tuple_unions: Vec<&[&Expected]> = tuple_unions.iter().map(AsRef::as_ref).collect();
-            let permutations = Permutator::new(&tuple_unions[..]);
-
-            Ok(permutations
-                .into_iter()
-                .map(|elements| {
-                    let elements = elements.into_iter().cloned().collect();
-                    Expected::new(pos, &Tuple { elements })
-                })
-                .collect())
+        Identifier::Multi(_idens) => {
+            unimplemented!()
         }
     }
 }

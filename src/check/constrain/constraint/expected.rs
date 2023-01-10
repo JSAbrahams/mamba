@@ -49,9 +49,6 @@ impl MapExp for Expected {
                     })
                 }
             }
-            Tuple { elements } => Tuple {
-                elements: elements.iter().map(|e| e.map_exp(var_mapping, global_var_mapping)).collect()
-            },
             Function { name, args } => Function {
                 name: name.clone(),
                 args: args.iter().map(|a| a.map_exp(var_mapping, global_var_mapping)).collect(),
@@ -104,7 +101,6 @@ impl From<&AST> for Expected {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
     Expression { ast: AST },
-    Tuple { elements: Vec<Expected> },
     Function { name: StringName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
@@ -124,10 +120,6 @@ impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
             Expression { ast } => write!(f, "{}", ast.node),
-            Tuple { elements } => {
-                let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
-                write!(f, "({})", comma_delm(elements))
-            }
             Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
