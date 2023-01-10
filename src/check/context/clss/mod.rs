@@ -14,7 +14,8 @@ use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::{Empty, Name, Substitute};
+use crate::check::context::parent::generic::GenericParent;
+use crate::check::name::{Any, Empty, Name, Substitute};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -80,12 +81,24 @@ pub trait GetFun<T> {
 }
 
 impl HasParent<&StringName> for Class {
-    fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(&self.name == name
-            || self
+    fn has_parent(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
+        if self.name == *other {
+            return Ok(true); // parent of self, of course
+        } else if self.name.name == *other.name && self.name.generics.len() == other.generics.len() {
+            // Contender! check generics
+            let mut all_super = false;
+            for (s_name, o_name) in self.name.generics.iter().zip(&other.generics) {
+                for s_name in &s_name.names {
+                    all_super |= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
+                }
+            }
+            if all_super { return Ok(true); }
+        }
+
+        Ok(self
             .parents
             .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+            .map(|p| ctx.class(p, pos)?.has_parent(other, ctx, pos))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
             .any(|b| *b))
@@ -94,13 +107,13 @@ impl HasParent<&StringName> for Class {
 
 impl HasParent<&TrueName> for Class {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        self.has_parent(&StringName::from(name), ctx, pos)
+        self.has_parent(&name.variant, ctx, pos)
     }
 }
 
 impl HasParent<&Name> for Class {
     fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        if name.contains(&TrueName::from(&self.name)) {
+        if name.contains(&TrueName::from(&self.name)) || name == &Name::any() {
             return Ok(true);
         }
 
@@ -203,6 +216,7 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
         let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
         let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
         let try_function = |fun: &GenericFunction| Function::try_from((fun, generics, pos));
+        let try_parent = |parent: &GenericParent| TrueName::try_from((parent, generics, pos));
 
         Ok(Class {
             is_py_type: generic.is_py_type,
@@ -212,7 +226,7 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
                 .collect::<Vec<TypeErr>>())?,
             concrete: generic.concrete,
             args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
-            parents: generic.parents.iter().map(|g| g.name.clone()).collect(),
+            parents: generic.parents.iter().map(try_parent).collect::<Result<_, _>>()?,
             fields: generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
             functions: generic.functions.iter().map(try_function).collect::<Result<_, _>>()?,
         })

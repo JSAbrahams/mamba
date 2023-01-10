@@ -25,7 +25,7 @@ pub trait IsTemp {
     fn is_temp(&self) -> bool;
 }
 
-pub trait TempMap {
+pub trait MatchTempName {
     fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>>;
 }
 
@@ -149,7 +149,7 @@ impl ContainsTemp for TrueName {
     }
 }
 
-impl TempMap for TrueName {
+impl MatchTempName for TrueName {
     fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
         self.variant.temp_map(other, mapping, pos)
     }

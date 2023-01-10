@@ -11,7 +11,7 @@ use itertools::Itertools;
 use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
+use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -399,6 +399,15 @@ impl Name {
                 s_n.temp_map(&o_n.variant, acc, pos)
             } else { acc })
         })
+    }
+
+    pub(crate) fn match_name_helper(&self, other: &Name, mapping: &mut HashMap<Name, Name>, pos: Position) -> TypeResult<()> {
+        for name in &self.names {
+            for other_name in &other.names {
+                name.variant.match_name_helper(&other_name.variant, mapping, pos)?;
+            }
+        }
+        Ok(())
     }
 }
 

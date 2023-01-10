@@ -8,11 +8,11 @@ use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
 
 use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::{ANY, CALLABLE, GetFun, HasParent, TUPLE, UNION};
+use crate::check::context::clss::{CALLABLE, GetFun, HasParent, TUPLE, UNION};
 use crate::check::context::function::union::FunUnion;
 use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, Substitute, TEMP, TupleCallable, Union};
 use crate::check::name::Name;
-use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
+use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -52,12 +52,11 @@ impl Ord for StringName {
 
 impl Display for StringName {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        let generics = if self.generics.is_empty() {
+        write!(f, "{}{}", self.name, if self.generics.is_empty() {
             String::new()
         } else {
             format!("[{}]", comma_delm(&self.generics))
-        };
-        write!(f, "{}{}", self.name, generics)
+        })
     }
 }
 
@@ -103,15 +102,7 @@ impl From<&str> for StringName {
 
 impl IsSuperSet<StringName> for StringName {
     fn is_superset_of(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(self.name == ANY ||
-            ctx.class(other, pos)?.has_parent(self, ctx, pos)?
-                && self
-                .generics
-                .iter()
-                .flat_map(|n| other.generics.iter().map(move |o| n.is_superset_of(o, ctx, pos)))
-                .collect::<Result<Vec<bool>, _>>()?
-                .iter()
-                .all(|b| *b))
+        ctx.class(other, pos)?.has_parent(self, ctx, pos)
     }
 }
 
@@ -177,7 +168,7 @@ impl ContainsTemp for StringName {
     }
 }
 
-impl TempMap for StringName {
+impl MatchTempName for StringName {
     fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
         let mut mapping = mapping.clone();
         if self.name.starts_with(TEMP) {
@@ -270,16 +261,51 @@ impl StringName {
             Some(StringName::new(&self.name, generics.as_slice()))
         }
     }
+
+    pub fn match_name(&self, other: &StringName, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+        let mut mapping = HashMap::new();
+        self.match_name_helper(other, &mut mapping, pos)?;
+        Ok(mapping)
+    }
+
+    pub(crate) fn match_name_helper(&self, other: &StringName, mapping: &mut HashMap<Name, Name>, pos: Position) -> TypeResult<()> {
+        mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
+        for either in self.generics.iter().zip_longest(&other.generics) {
+            match either {
+                Both(self_generic, other_generic) => {
+                    self_generic.match_name_helper(other_generic, mapping, pos)?;
+                }
+                _ => {
+                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::check::context::clss::{BOOL, HasParent, INT, STRING};
+    use crate::check::context::clss::{ANY, BOOL, COLLECTION, HasParent, INT, SET, STRING};
     use crate::check::context::LookupClass;
     use crate::check::name::IsSuperSet;
     use crate::check::name::string_name::StringName;
     use crate::common::position::Position;
     use crate::Context;
+
+    #[test]
+    fn collection_super_of_set() {
+        let (name_1, name_2) = (StringName::from(COLLECTION), StringName::from(SET));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
+
+    #[test]
+    fn any_super_of_int() {
+        let (name_1, name_2) = (StringName::from(ANY), StringName::from(INT));
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+    }
 
     #[test]
     fn bool_not_super_of_int() {

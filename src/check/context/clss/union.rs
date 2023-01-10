@@ -167,7 +167,7 @@ mod test {
     }
 
     #[test]
-    fn tuple_has_collection_parent() -> TypeResult<()> {
+    fn tuple_with_generics_has_collection_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
         let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);

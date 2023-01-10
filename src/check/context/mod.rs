@@ -227,4 +227,17 @@ mod tests {
 
         context.class(&StringName::from("Other"), Position::default()).unwrap();
     }
+
+    #[test]
+    pub fn tuple_argument() {
+        let file = parse("def f(b: (Int, Int))").unwrap();
+        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+
+        let f = context.function(&StringName::from("f"), Position::default()).expect("function exists");
+        let arg = f.arguments.first().expect("first argument").clone();
+        let arg_ty = arg.ty.expect("argument has type").clone();
+
+        let tuple = StringName::new("Tuple", &[Name::from("Int"), Name::from("Int")]);
+        assert_eq!(arg_ty, Name::from(&tuple));
+    }
 }
