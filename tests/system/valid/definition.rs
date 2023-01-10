@@ -7,6 +7,7 @@ fn long_f_string() -> OutTestRet {
 
 #[test]
 fn assign_tuples() -> OutTestRet {
+    loggerv::Logger::new().module_path(false).verbosity(3).init().unwrap();
     test_directory(true, &["definition"], &["definition", "target"], "assign_tuples")
 }
 

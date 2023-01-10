@@ -14,7 +14,7 @@ use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Name, Nullable};
 use crate::check::name::true_name::TrueName;
-use crate::check::result::{TypeErr, TypeResult};
+use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 
@@ -179,21 +179,6 @@ pub fn id_from_var(
         }
     };
 
-    if identifier.is_tuple() {
-        let tup_exps = identifier_to_tuple(var.pos, &identifier, &env, constr)?;
-        if let Some(ty) = ty {
-            let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
-            for tup_exp in &tup_exps {
-                constr.add("type and tuple", &ty_exp, tup_exp, &env);
-            }
-        }
-        if let Some(expr) = expr {
-            for tup_exp in &tup_exps {
-                constr.add("tuple and expression", &Expected::from(expr), tup_exp, &env);
-            }
-        }
-    }
-
     if let Some(ty) = ty {
         let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
         constr.add("variable and type", &ty_exp, &Expected::from(var), &env);
@@ -204,27 +189,4 @@ pub fn id_from_var(
     }
 
     Ok(env)
-}
-
-// Returns every possible tuple. Elements of a tuple are not to be confused with
-// the union of types derived from the current environment.
-fn identifier_to_tuple(
-    pos: Position,
-    iden: &Identifier,
-    env: &Environment,
-    constr: &mut ConstrBuilder,
-) -> TypeResult<Vec<Expected>> {
-    match &iden {
-        Identifier::Single(_, var) => {
-            if let Some(expected) = env.get_var(&var.object(pos)?, &constr.var_mapping) {
-                Ok(expected.iter().map(|(_, exp)| exp.clone()).collect())
-            } else {
-                let msg = format!("'{iden}' is undefined in this scope");
-                Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
-        Identifier::Multi(_idens) => {
-            unimplemented!()
-        }
-    }
 }

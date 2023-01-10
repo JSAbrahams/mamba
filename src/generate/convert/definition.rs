@@ -39,11 +39,9 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                     ty: if matches!(var, Core::TupleLiteral { .. }) {
                         None
                     } else {
-                        match (ty, expression) {
-                            (Some(ty), _) => Some(Box::from(convert_node(ty, imp, &state, ctx)?)),
-                            (_, Some(expr)) if state.annotate => {
-                                expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from)
-                            }
+                        match expression {
+                            Some(expr) if state.annotate =>
+                                expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
                             _ => None,
                         }
                     },

@@ -2,10 +2,10 @@ use std::collections::BTreeMap;
 
 use itertools::Itertools;
 
+use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
-use crate::check::context::clss::python::UNION;
+use crate::check::context::clss::python::{CALLABLE, TUPLE, UNION};
 use crate::check::name::{Name, Nullable};
-use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::generate::ast::node::Core;
@@ -41,32 +41,26 @@ impl ToPy for TrueName {
     }
 }
 
-impl ToPy for NameVariant {
-    fn to_py(&self, imp: &mut Imports) -> Core {
-        match &self {
-            NameVariant::Single(name) => name.to_py(imp),
-            NameVariant::Tuple(names) => {
-                imp.add_from_import("typing", "Tuple");
-                let generics: Vec<Core> = names.iter().map(|name| name.to_py(imp)).collect();
-                core_type("Tuple", &generics)
-            }
-            NameVariant::Fun(args, ret) => {
-                imp.add_from_import("typing", "Callable");
-                let args = args.iter().map(|name| name.to_py(imp)).collect();
-                let ret = ret.to_py(imp);
-
-                let generics = vec![Core::Type { lit: String::new(), generics: args }, ret];
-                core_type("Callable", &generics)
-            }
-        }
-    }
-}
-
 impl ToPy for StringName {
     fn to_py(&self, imp: &mut Imports) -> Core {
-        let lit = concrete_to_python(&self.name);
-        let generics: Vec<Core> = self.generics.iter().map(|name| name.to_py(imp)).collect();
-        core_type(&lit, &generics)
+        match self.name.as_str() {
+            clss::TUPLE => {
+                imp.add_from_import("typing", TUPLE);
+                let generics: Vec<Core> = self.generics.iter().map(|name| name.to_py(imp)).collect();
+                core_type(TUPLE, &generics)
+            }
+            clss::CALLABLE => {
+                imp.add_from_import("typing", CALLABLE);
+                let args = self.generics.get(0).map_or_else(|| Core::Empty, |args| args.to_py(imp));
+                let ret = self.generics.get(1).map_or_else(|| Core::Empty, |name| name.to_py(imp));
+                core_type(CALLABLE, &[args, ret])
+            }
+            _ => {
+                let lit = concrete_to_python(&self.name);
+                let generics: Vec<Core> = self.generics.iter().map(|name| name.to_py(imp)).collect();
+                core_type(&lit, &generics)
+            }
+        }
     }
 }
 
@@ -102,10 +96,8 @@ fn core_type(lit: &str, generics: &[Core]) -> Core {
 mod tests {
     use std::collections::HashSet;
 
-    use crate::check::name::{Name, Nullable};
-    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::{Name, Nullable, TupleCallable};
     use crate::check::name::string_name::StringName;
-    use crate::check::name::true_name::TrueName;
     use crate::generate::ast::node::Core;
     use crate::generate::convert::state::Imports;
     use crate::generate::name::{core_type, ToPy};
@@ -186,12 +178,11 @@ mod tests {
         let (a, b) = (StringName::from("a"), StringName::from("b"));
         let (c, d, e) = (StringName::from("c"), StringName::from("d"), StringName::from("e"));
 
-        let tuple = NameVariant::Tuple(vec![Name::from(&a), Name::from(&b)]);
-        let callable =
-            NameVariant::Fun(vec![Name::from(&c), Name::from(&d)], Box::from(Name::from(&e)));
-        let nullable = TrueName::from(&callable).as_nullable();
+        let tuple = Name::tuple(&[Name::from(&a), Name::from(&b)]);
+        let callable = Name::callable(&[Name::from(&c), Name::from(&d)], &Name::from(&e));
+        let nullable = callable.as_nullable();
 
-        let name = Name::from(&HashSet::from([Name::from(&tuple), Name::from(&nullable)]));
+        let name = Name::from(&HashSet::from([tuple, nullable]));
 
         let mut imports = Imports::new();
         let core_name = name.to_py(&mut imports);

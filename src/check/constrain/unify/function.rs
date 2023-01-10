@@ -14,8 +14,7 @@ use crate::check::constrain::unify::ty::unify_type_message;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::{GetField, GetFun};
-use crate::check::name::{Empty, Name, Union};
-use crate::check::name::name_variant::NameVariant;
+use crate::check::name::{Empty, Name, TupleCallable, Union};
 use crate::check::name::string_name::StringName;
 use crate::check::result::TypeErr;
 use crate::common::delimit::comma_delm;
@@ -36,12 +35,11 @@ pub fn unify_function(
                 .names
                 .iter()
                 .cloned()
-                .map(|n| match n.variant {
-                    NameVariant::Fun(arguments, _) => Ok(arguments),
-                    other => {
-                        let msg = format!("A '{other}' does not take arguments");
-                        Err(vec![TypeErr::new(right.pos, &msg)])
-                    }
+                .map(|n| if n.is_callable() {
+                    n.args(right.pos)
+                } else {
+                    let msg = format!("A '{n}' does not take arguments");
+                    Err(vec![TypeErr::new(right.pos, &msg)])
                 })
                 .collect::<Result<_, _>>()?;
 

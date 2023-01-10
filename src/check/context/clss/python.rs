@@ -28,8 +28,8 @@ pub const RANGE: &str = "range";
 pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
 pub const LIST: &str = "list";
-pub const TUPLE: &str = "tuple";
 
+pub const TUPLE: &str = "Tuple";
 pub const CALLABLE: &str = "Callable";
 pub const UNION: &str = "Union";
 
@@ -135,7 +135,6 @@ mod test {
 
     use crate::check::context::clss::generic::GenericClass;
     use crate::check::name::{Empty, Name};
-    use crate::check::name::name_variant::NameVariant;
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
 
@@ -250,10 +249,7 @@ mod test {
         let mut iter = generic_class
             .parents
             .iter()
-            .sorted_by_key(|p| match &p.name.variant {
-                NameVariant::Single(string_name) => string_name.name.clone(),
-                other => panic!("Expected Single, was {:?}", other),
-            })
+            .sorted_by_key(|p| p.name.variant.clone())
             .into_iter();
 
         let parent2 = iter.next().expect("parent in class");

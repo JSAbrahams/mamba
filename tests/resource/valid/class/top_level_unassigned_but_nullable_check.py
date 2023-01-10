@@ -1,7 +1,5 @@
-from typing import Optional
-
 class X:
-    y: Optional[int] = None
+    y = None
 
     def __init__(self):
         print("No assignments here!")

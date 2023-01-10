@@ -82,7 +82,22 @@ fn gen_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder) -> C
     let (col_ty, col_items_ty) = match &collection.node {
         Node::Set { elements } => (SET, gen_col_items(elements, env, constr)?),
         Node::List { elements } => (LIST, gen_col_items(elements, env, constr)?),
-        Node::Tuple { elements } => (TUPLE, gen_col_items(elements, env, constr)?),
+        Node::Tuple { elements } => {
+            let mut names = vec![];
+            for element in elements {
+                let exp_element = Expected::from(element);
+                let new_name = constr.temp_name();
+                names.push(new_name.clone());
+
+                let exp_ty = Expected::new(element.pos, &Type { name: new_name });
+                constr.add("collection element", &exp_ty, &exp_element, env);
+            }
+
+            let col_exp = Type { name: Name::from(&StringName::new(TUPLE, &names)) };
+            let col_exp = Expected::new(collection.pos, &col_exp);
+            constr.add("collection", &col_exp, &Expected::from(collection), env);
+            return Ok(env.clone());
+        }
         _ => (COLLECTION, Name::any())
     };
 

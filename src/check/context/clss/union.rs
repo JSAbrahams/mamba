@@ -9,8 +9,7 @@ use crate::check::context::field::Field;
 use crate::check::context::field::union::FieldUnion;
 use crate::check::context::function::Function;
 use crate::check::context::function::union::FunUnion;
-use crate::check::name::{Empty, Name};
-use crate::check::name::name_variant::NameVariant;
+use crate::check::name::{Empty, Name, TupleCallable};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeResult;
@@ -27,19 +26,19 @@ impl From<&ClassUnion> for Name {
         let names: HashSet<Name> = class_union
             .union
             .iter()
-            .map(|u| match u.name.name.as_str() {
+            .map(|u| match u.name.name.as_str() { // very odd map
                 clss::TUPLE => {
                     let args = u.name.generics.get(0).cloned().unwrap_or_else(|| Name::from(""));
-                    let args = if let Some(NameVariant::Tuple(names)) = args.names.iter().next().map(|t| &t.variant) {
-                        names.clone()
+                    let args = args.names.iter().next().map_or_else(|| vec![], |name| if name.is_tuple() {
+                        name.elements(Position::invisible()).expect("Unreachable")
                     } else {
                         vec![]
-                    };
+                    });
 
                     let ret = u.name.generics.get(1).cloned().unwrap_or_else(|| Name::from(""));
-                    Name::from(&NameVariant::Fun(args, Box::from(ret)))
+                    Name::callable(args.as_slice(), &ret)
                 }
-                clss::CALLABLE => Name::from(&NameVariant::Tuple(u.name.generics.clone())),
+                clss::CALLABLE => Name::tuple(u.name.generics.clone().as_slice()),
                 _ => Name::from(&u.name)
             })
             .collect();
@@ -149,8 +148,7 @@ impl LookupClass<&Name, ClassUnion> for Context {
 mod test {
     use crate::check::context::{clss, LookupClass};
     use crate::check::context::clss::HasParent;
-    use crate::check::name::Name;
-    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::{Name, TupleCallable};
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
@@ -172,10 +170,7 @@ mod test {
     fn namevariant_tuple_has_collection_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Tuple(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ])));
+        let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
         let tuple = ctx.class(&name, pos).expect("Tuple");
 
         let collection = StringName::new(clss::COLLECTION, &[Name::from("Int"), Name::from("Float")]);
@@ -187,10 +182,7 @@ mod test {
     fn namevariant_tuple_has_tuple_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Tuple(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ])));
+        let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
         let tuple = ctx.class(&name, pos).expect("Tuple");
 
         let collection = StringName::new(clss::TUPLE, &[Name::from("Int"), Name::from("Float")]);
@@ -202,10 +194,7 @@ mod test {
     fn tuple_not_parent_wrong_types() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Tuple(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ])));
+        let name = Name::tuple(&[Name::from("Int"), Name::from("Float"), ]);
         let tuple = ctx.class(&name, pos).expect("Tuple");
 
         let collection = StringName::new(clss::TUPLE, &[Name::from("Int"), Name::from("String")]);
@@ -217,10 +206,8 @@ mod test {
     fn namevariant_callable_has_callable_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Fun(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ], Box::from(Name::from("Float")))));
+        let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
+                                  &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
 
         let args = Name::from(&StringName::new(clss::TUPLE, &[Name::from("Int"), Name::from("Float")]));
@@ -233,13 +220,11 @@ mod test {
     fn namevariant_callable_has_callable_parent_tuple_arg() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Fun(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ], Box::from(Name::from("Float")))));
+        let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
+                                  &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
 
-        let args = Name::from(&NameVariant::Tuple(vec![Name::from("Int"), Name::from("Float")]));
+        let args = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
         let collection = StringName::new(clss::CALLABLE, &[args, Name::from("Float")]);
         assert!(callable.has_parent(&TrueName::from(&collection), &ctx, pos)?);
         Ok(())
@@ -249,10 +234,8 @@ mod test {
     fn callable_parent_wrong_ret_type() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Fun(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ], Box::from(Name::from("Float")))));
+        let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
+                                  &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
 
         let args = Name::from(&StringName::new(clss::TUPLE, &[Name::from("Int"), Name::from("Float")]));
@@ -265,10 +248,8 @@ mod test {
     fn callable_parent_wrong_arg_type() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
-        let name = Name::from(&TrueName::from(&NameVariant::Fun(vec![
-            Name::from("Int"),
-            Name::from("Float"),
-        ], Box::from(Name::from("Float")))));
+        let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
+                                  &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
 
         let args = Name::from(&StringName::new(clss::TUPLE, &[Name::from("String"), Name::from("Float")]));

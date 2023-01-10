@@ -32,8 +32,8 @@ pub const RANGE: &str = "Range";
 pub const SLICE: &str = "Slice";
 pub const SET: &str = "Set";
 pub const LIST: &str = "List";
-pub const TUPLE: &str = "Tuple";
 
+pub const TUPLE: &str = "Tuple";
 pub const CALLABLE: &str = "Callable";
 pub const UNION: &str = "Union";
 

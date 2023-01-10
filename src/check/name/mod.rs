@@ -10,14 +10,12 @@ use itertools::Itertools;
 
 use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
-use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{TempMap, TrueName};
+use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
-pub mod name_variant;
 pub mod string_name;
 pub mod true_name;
 
@@ -65,7 +63,19 @@ pub trait ContainsTemp {
     fn contains_temp(&self) -> bool;
 }
 
-#[derive(Debug, Clone, Eq)]
+pub trait TupleCallable<T1, T2, T3> {
+    fn tuple(names: &[Name]) -> Self;
+    fn callable(args: &[Name], ret_ty: &Name) -> Self;
+
+    fn is_tuple(&self) -> T1;
+    fn is_callable(&self) -> T1;
+
+    fn elements(&self, pos: Position) -> TypeResult<T2>;
+    fn args(&self, pos: Position) -> TypeResult<T2>;
+    fn ret_ty(&self, pos: Position) -> TypeResult<T3>;
+}
+
+#[derive(Debug, Clone, Eq, Default)]
 pub struct Name {
     pub names: HashSet<TrueName>,
     pub is_interchangeable: bool,
@@ -105,18 +115,10 @@ pub fn match_type_direct(
     name: &TrueName,
     pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
-    match &name.variant {
-        NameVariant::Single { .. } | NameVariant::Fun { .. } => {
-            if let Identifier::Single(mutable, id) = &identifier {
-                let mut mapping = HashMap::with_capacity(1);
-                mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
-                Ok(mapping)
-            } else {
-                let msg = format!("Cannot match {identifier} with a '{name}'");
-                Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
-        NameVariant::Tuple(elements) => match identifier {
+    if name.is_tuple() {
+        let elements = name.elements(pos)?;
+
+        match identifier {
             Identifier::Single(mutable, id) => {
                 let mut mapping = HashMap::with_capacity(1);
                 mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
@@ -126,7 +128,7 @@ pub fn match_type_direct(
                 let sets: Vec<HashMap<_, _>> = fields
                     .iter()
                     .zip(elements)
-                    .map(|(identifier, ty)| match_name(identifier, ty, pos))
+                    .map(|(identifier, ty)| match_name(identifier, &ty, pos))
                     .collect::<Result<_, _>>()?;
                 Ok(sets.into_iter().flatten().collect())
             }
@@ -134,7 +136,16 @@ pub fn match_type_direct(
                 let msg = format!("Expected tuple of {}, was {}", elements.len(), idens.len());
                 Err(vec![TypeErr::new(pos, &msg)])
             }
-        },
+        }
+    } else {
+        if let Identifier::Single(mutable, id) = &identifier {
+            let mut mapping = HashMap::with_capacity(1);
+            mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
+            Ok(mapping)
+        } else {
+            let msg = format!("Cannot match {identifier} with a '{name}'");
+            Err(vec![TypeErr::new(pos, &msg)])
+        }
     }
 }
 
@@ -315,6 +326,36 @@ impl ContainsTemp for Name {
     }
 }
 
+impl TupleCallable<HashSet<bool>, HashSet<Vec<Name>>, HashSet<Name>> for Name {
+    fn tuple(names: &[Name]) -> Self {
+        Self { names: HashSet::from([TrueName::tuple(names)]), ..Default::default() }
+    }
+
+    fn callable(args: &[Name], ret_ty: &Name) -> Self {
+        Self { names: HashSet::from([TrueName::callable(args, ret_ty)]), ..Default::default() }
+    }
+
+    fn is_tuple(&self) -> HashSet<bool> {
+        self.names.iter().map(|n| n.is_tuple()).collect()
+    }
+
+    fn is_callable(&self) -> HashSet<bool> {
+        self.names.iter().map(|n| n.is_callable()).collect()
+    }
+
+    fn elements(&self, pos: Position) -> TypeResult<HashSet<Vec<Name>>> {
+        self.names.iter().map(|n| n.elements(pos)).collect()
+    }
+
+    fn args(&self, pos: Position) -> TypeResult<HashSet<Vec<Name>>> {
+        self.names.iter().map(|n| n.args(pos)).collect()
+    }
+
+    fn ret_ty(&self, pos: Position) -> TypeResult<HashSet<Name>> {
+        self.names.iter().map(|n| n.ret_ty(pos)).collect()
+    }
+}
+
 impl Name {
     pub fn trim_any(&self) -> Self {
         let names = self.names.iter().filter(|n| **n != TrueName::any()).cloned().collect();
@@ -343,10 +384,7 @@ impl Name {
     /// True if this was a temporary name, which is a name which starts with '@'.
     pub fn is_temporary(&self) -> bool {
         if let Some(name) = Vec::from_iter(&self.names).first() {
-            return match &name.variant {
-                NameVariant::Single(stringname) => stringname.name.starts_with(TEMP),
-                _ => false,
-            };
+            return name.variant.is_temp();
         }
         false
     }
@@ -371,8 +409,7 @@ mod tests {
     use crate::check::context::{clss, Context, LookupClass};
     use crate::check::context::clss::{BOOL, COLLECTION, FLOAT, HasParent, INT, RANGE, SET, STRING, TUPLE};
     use crate::check::ident::Identifier;
-    use crate::check::name::{Any, ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
-    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::{Any, ColType, Empty, IsSuperSet, match_name, Name, Nullable, TupleCallable, Union};
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
@@ -571,26 +608,26 @@ mod tests {
 
     #[test]
     fn test_tuple_equal() {
-        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
-        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
+        let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
+        let name2 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
         assert_eq!(name1, name2)
     }
 
     #[test]
     fn test_tuple_not_equal_size() {
-        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
-        let name2 = Name::from(&NameVariant::Tuple(vec![
+        let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
+        let name2 = Name::tuple(&[
             Name::from("A1"),
             Name::from("A2"),
             Name::from("A2"),
-        ]));
+        ]);
         assert_ne!(name1, name2)
     }
 
     #[test]
     fn test_tuple_not_equal() {
-        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
-        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
+        let name2 = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
         assert_ne!(name1, name2)
     }
 
@@ -623,7 +660,7 @@ mod tests {
     #[test]
     fn test_match_name_type_is_tuple() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
-        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
         let matchings = match_name(&iden, &name, Position::default())?;
 
         assert_eq!(matchings.len(), 1);
@@ -640,7 +677,7 @@ mod tests {
         let iden2 = Identifier::from((false, "abc2"));
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
-        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
 
         let matchings = match_name(&iden3, &name, Position::default())?;
 
@@ -663,7 +700,7 @@ mod tests {
         let iden3 = Identifier::from((false, "abc2"));
         let iden4 = Identifier::from(&vec![iden, iden2, iden3]);
 
-        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
 
         let matchings = match_name(&iden4, &name, Position::default());
         assert!(matchings.is_err());
@@ -675,11 +712,11 @@ mod tests {
         let iden2 = Identifier::from((false, "abc2"));
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
-        let name = Name::from(&NameVariant::Tuple(vec![
+        let name = Name::tuple(&[
             Name::from("A2"),
             Name::from("A1"),
             Name::from("A0"),
-        ]));
+        ]);
 
         let matchings = match_name(&iden3, &name, Position::default());
         assert!(matchings.is_err());

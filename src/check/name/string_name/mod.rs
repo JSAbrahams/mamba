@@ -5,12 +5,11 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::{ANY, GetFun, HasParent, UNION};
+use crate::check::context::clss::{ANY, CALLABLE, GetFun, HasParent, TUPLE, UNION};
 use crate::check::context::function::union::FunUnion;
-use crate::check::name::{ColType, Empty, IsSuperSet, Substitute, TEMP, Union};
+use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, Substitute, TEMP, TupleCallable, Union};
 use crate::check::name::Name;
-use crate::check::name::name_variant::NameVariant;
-use crate::check::name::true_name::{IsTemp, TrueName};
+use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -18,47 +17,16 @@ use crate::common::position::Position;
 pub mod generic;
 
 /// Useful to denote class and function names, where Tuples and Anonymous functions are not permitted.
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StringName {
     pub name: String,
     pub generics: Vec<Name>,
 }
 
-impl PartialEq for StringName {
-    /// Tuple and Callable are converted to their full names internally before checking equality.
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && {
-            // Force conversion
-            let s_generics: Vec<Name> = self.generics.iter().map(Name::full_name).collect();
-            let o_generics: Vec<Name> = other.generics.iter().map(Name::full_name).collect();
-
-            s_generics == o_generics
-        }
-    }
-}
-
-impl Name {
-    fn full_name(&self) -> Self {
-        Name { names: self.names.iter().map(TrueName::full_name).collect(), ..self.clone() }
-    }
-}
-
-impl TrueName {
-    fn full_name(&self) -> Self {
-        TrueName { variant: self.variant.full_name(), ..self.clone() }
-    }
-}
-
-impl NameVariant {
-    fn full_name(&self) -> Self {
-        NameVariant::Single(StringName::from(self))
-    }
-}
-
 impl Hash for StringName {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
-        self.generics.iter().map(Name::full_name).for_each(|n| n.hash(state));
+        self.generics.iter().for_each(|n| n.hash(state));
     }
 }
 
@@ -115,6 +83,12 @@ impl ColType for StringName {
         } else {
             Err(vec![TypeErr::new(pos, &format!("'{self}' is undefined"))])
         }
+    }
+}
+
+impl From<&TrueName> for StringName {
+    fn from(value: &TrueName) -> Self {
+        value.variant.clone()
     }
 }
 
@@ -194,9 +168,86 @@ impl IsTemp for StringName {
     }
 }
 
+impl ContainsTemp for StringName {
+    fn contains_temp(&self) -> bool {
+        self.name.starts_with(TEMP) || self.generics.iter().clone().any(|n| n.contains_temp())
+    }
+}
+
+impl TempMap for StringName {
+    fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+        todo!()
+    }
+}
+
+impl TupleCallable<bool, Vec<Name>, Name> for StringName {
+    fn tuple(names: &[Name]) -> Self {
+        StringName::new(TUPLE, names)
+    }
+
+    fn callable(args: &[Name], ret_ty: &Name) -> Self {
+        let args = Name::from(&StringName::new("", args));
+        StringName::new(CALLABLE, &[args, ret_ty.clone()])
+    }
+
+    fn is_tuple(&self) -> bool {
+        self.name == TUPLE
+    }
+
+    fn is_callable(&self) -> bool {
+        self.name == CALLABLE
+    }
+
+    fn elements(&self, pos: Position) -> TypeResult<Vec<Name>> {
+        if self.name == TUPLE {
+            Ok(self.generics.clone())
+        } else {
+            Err(vec![TypeErr::new(pos, &format!("{self} is not a tuple"))])
+        }
+    }
+
+    fn args(&self, pos: Position) -> TypeResult<Vec<Name>> {
+        if self.name == CALLABLE {
+            if self.generics.len() == 2 {
+                let args = self.generics.get(0).expect("Unreachable");
+                if let Some(first) = args.names.iter().next() {
+                    Ok(first.variant.generics.clone())
+                } else {
+                    panic!("Malformed callable args: {self}")
+                }
+            } else {
+                Err(vec![TypeErr::new(pos, &format!("{self} is not a malformed callable"))])
+            }
+        } else {
+            Err(vec![TypeErr::new(pos, &format!("{self} is not a callable"))])
+        }
+    }
+
+    fn ret_ty(&self, pos: Position) -> TypeResult<Name> {
+        if self.name == CALLABLE {
+            if self.generics.len() == 2 {
+                Ok(self.generics.get(1).expect("Unreachable").clone())
+            } else {
+                Err(vec![TypeErr::new(pos, &format!("{self} is not a malformed callable"))])
+            }
+        } else {
+            Err(vec![TypeErr::new(pos, &format!("{self} is not a callable"))])
+        }
+    }
+}
+
 impl StringName {
     pub fn new(lit: &str, generics: &[Name]) -> StringName {
         StringName { name: String::from(lit), generics: Vec::from(generics) }
+    }
+
+    pub fn trim(&self, ty: &str) -> Option<Self> {
+        if self.name == ty {
+            None
+        } else {
+            let generics: Vec<Name> = self.generics.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
+            Some(StringName::new(&self.name, generics.as_slice()))
+        }
     }
 }
 
