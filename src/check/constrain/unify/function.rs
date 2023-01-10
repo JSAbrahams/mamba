@@ -75,7 +75,7 @@ pub fn unify_function(
         (_, Access { entity, name }) =>
             access(constraints, finished, ctx, constraint, entity, name, false, total),
 
-        _ => Err(unify_type_message(&constraint.msg, left, right))
+        _ => Err(unify_type_message("access", &constraint.msg, left, right))
     }
 }
 

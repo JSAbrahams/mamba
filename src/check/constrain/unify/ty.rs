@@ -8,11 +8,13 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::{Tuple, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
+use crate::check::constrain::unify::expression::substitute::substitute;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
 use crate::check::name::{Any, ContainsTemp, IsSuperSet, Name, Substitute};
 use crate::check::name::name_variant::NameVariant;
+use crate::check::name::true_name::IsTemp;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::common::result::WithCause;
@@ -55,22 +57,25 @@ pub fn unify_type(
                 finished.push_ty(ctx, right.pos, r_ty)?;
                 unify_link(constraints, finished, ctx, total)
             } else {
-                Err(unify_type_message(&constraint.msg, left, right))
+                Err(unify_type_message("two types", &constraint.msg, left, right))
             }
         }
 
         (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
             for name_ty in &name.names {
                 match &name_ty.variant {
+                    NameVariant::Single(name) if name.is_temp() => {
+                        substitute(constraints, right, left, count, total)?;
+                    }
                     NameVariant::Tuple(names) => {
                         if names.len() != elements.len() {
                             let msg = format!(
-                                "In {}, expected tuple with {} elements, was {}",
+                                "in {}, expected tuple with {} elements, was {}",
                                 constraint.msg,
                                 names.len(),
                                 elements.len()
                             );
-                            return Err(unify_type_message(&msg, left, right));
+                            return Err(unify_type_message("type and tuple", &msg, left, right));
                         }
 
                         for pair in names.iter().cloned().zip_longest(elements.iter()) {
@@ -82,19 +87,19 @@ pub fn unify_type(
                                 }
                                 _ => {
                                     let msg = format!(
-                                        "In {}, Cannot assign {} elements to a tuple of size {}",
+                                        "in {}, cannot assign {} elements to a tuple of size {}",
                                         constraint.msg,
                                         elements.len(),
                                         names.len()
                                     );
-                                    return Err(unify_type_message(&msg, left, right));
+                                    return Err(unify_type_message("type and tuple", &msg, left, right));
                                 }
                             }
                         }
                     }
                     _ => {
-                        let msg = format!("Unifying type and tuple: Expected {name}, was {right}");
-                        return Err(unify_type_message(&msg, left, right));
+                        let msg = format!("Expected {name}, was {right}");
+                        return Err(unify_type_message("type and tuple", &msg, left, right));
                     }
                 }
             }
@@ -108,24 +113,24 @@ pub fn unify_type(
                     Both(name, exp) => constraints.push("tuple", name, exp),
                     _ => {
                         let msg = format!(
-                            "In {}, Tuple sizes differ. Expected {} elements, was {}",
+                            "in {}, tuple sizes differ. Expected {} elements, was {}",
                             constraint.msg,
                             l_ty.len(),
                             r_ty.len()
                         );
-                        return Err(unify_type_message(&msg, left, right));
+                        return Err(unify_type_message("two tuples", &msg, left, right));
                     }
                 }
             }
             unify_link(constraints, finished, ctx, total + 1)
         }
 
-        _ => Err(unify_type_message(&constraint.msg, left, right))
+        _ => Err(unify_type_message("types", &constraint.msg, left, right))
     }
 }
 
-pub fn unify_type_message(cause_msg: &str, sup: &Expected, child: &Expected) -> Vec<TypeErr> {
-    let msg = format!("Expected {sup}, was {child}");
+pub fn unify_type_message(prepend: &str, cause_msg: &str, sup: &Expected, child: &Expected) -> Vec<TypeErr> {
+    let msg = format!("In {prepend}, expected {sup}, was {child}");
     vec![TypeErr::new(child.pos, &msg).with_cause(cause_msg, sup.pos)]
 }
 

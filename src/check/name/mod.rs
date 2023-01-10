@@ -12,7 +12,7 @@ use crate::check::context::{clss, Context};
 use crate::check::ident::Identifier;
 use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsTemp, TempMap, TrueName};
+use crate::check::name::true_name::{TempMap, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -318,11 +318,6 @@ impl ContainsTemp for Name {
 impl Name {
     pub fn trim_any(&self) -> Self {
         let names = self.names.iter().filter(|n| **n != TrueName::any()).cloned().collect();
-        Name { names, ..self.clone() }
-    }
-
-    pub fn trim_temp(&self) -> Self {
-        let names = self.names.iter().filter(|n| !n.is_temp()).cloned().collect();
         Name { names, ..self.clone() }
     }
 

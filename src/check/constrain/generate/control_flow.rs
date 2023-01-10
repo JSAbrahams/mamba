@@ -4,7 +4,7 @@ use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
-use crate::check::constrain::generate::collection::gen_collection_lookup;
+use crate::check::constrain::generate::collection::gen_col_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::Context;
 use crate::check::name::true_name::TrueName;
@@ -81,7 +81,7 @@ pub fn gen_flow(
 
         Node::For { expr, col, body } => {
             let col_env = generate(col, env, ctx, constr)?;
-            let lookup_env = gen_collection_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
+            let lookup_env = gen_col_lookup(expr, col, &col_env.is_def_mode(true), constr)?;
 
             generate(body, &lookup_env.in_loop().is_def_mode(false), ctx, constr)?;
             Ok(env.clone())

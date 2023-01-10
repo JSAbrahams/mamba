@@ -7,6 +7,7 @@ use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::function::unify_function;
 use crate::check::constrain::unify::ty::unify_type;
 use crate::check::context::Context;
+use crate::check::name::ContainsTemp;
 
 /// Unifies all constraints.
 ///
@@ -26,10 +27,10 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            finished.push_ty(ctx, right.pos, name)?;
+            if !name.contains_temp() { finished.push_ty(ctx, right.pos, name)?; }
         }
         if let Type { name } = &right.expect {
-            finished.push_ty(ctx, left.pos, name)?;
+            if !name.contains_temp() { finished.push_ty(ctx, left.pos, name)?; }
         }
 
         match (&left.expect, &right.expect) {
