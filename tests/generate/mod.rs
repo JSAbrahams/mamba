@@ -4,7 +4,7 @@ macro_rules! to_py {
         let checked = check_all(&[*ast]).expect("Type checker should pass");
         let ast_ty = checked.first().expect("Input as lost by checker");
         let core = gen(&ast_ty).unwrap();
-        core.to_source();
+        format!("{core}")
     }};
 }
 

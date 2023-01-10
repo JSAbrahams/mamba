@@ -81,8 +81,7 @@ pub trait GetFun<T> {
 
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(self.name.name == COLLECTION && self.name.name == name.name
-            || &self.name == name
+        Ok(&self.name == name
             || self
             .parents
             .iter()

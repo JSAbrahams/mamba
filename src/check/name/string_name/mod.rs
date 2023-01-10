@@ -4,6 +4,9 @@ use std::fmt::{Display, Error, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
+use itertools::EitherOrBoth::Both;
+use itertools::Itertools;
+
 use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{ANY, CALLABLE, GetFun, HasParent, TUPLE, UNION};
 use crate::check::context::function::union::FunUnion;
@@ -176,7 +179,25 @@ impl ContainsTemp for StringName {
 
 impl TempMap for StringName {
     fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
-        todo!()
+        let mut mapping = mapping.clone();
+        if self.name.starts_with(TEMP) {
+            mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
+        } else if self.name != other.name {
+            return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+        }
+
+        for either in self.generics.iter().zip_longest(&other.generics) {
+            match either {
+                Both(self_generic, other_generic) => {
+                    mapping = self_generic.temp_map_with_mapping(other_generic, mapping, pos)?;
+                }
+                _ => {
+                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                }
+            }
+        }
+
+        Ok(mapping)
     }
 }
 
@@ -213,7 +234,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
                 if let Some(first) = args.names.iter().next() {
                     Ok(first.variant.generics.clone())
                 } else {
-                    panic!("Malformed callable args: {self}")
+                    panic!("Malformed callable args: {}", self);
                 }
             } else {
                 Err(vec![TypeErr::new(pos, &format!("{self} is not a malformed callable"))])

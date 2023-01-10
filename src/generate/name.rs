@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use itertools::Itertools;
 
 use crate::check::context::clss;
@@ -70,26 +68,17 @@ impl ToPy for StringName {
 /// - Ignores capitalization of generics.
 /// - Types with no literal are at the front.
 fn core_type(lit: &str, generics: &[Core]) -> Core {
-    let names: BTreeMap<String, Core> = generics
-        .iter()
-        .map(|core| match core {
-            Core::Type { lit, generics } => (lit.clone(), core_type(lit, generics)),
-            Core::Id { lit } => (lit.clone(), core.clone()),
-            _ => (String::from(""), core.clone()),
+    let generics: Vec<Core> = generics.iter()
+        .map(|core| match &core {
+            Core::Type { lit, generics } => core_type(lit, generics),
+            _ => core.clone()
         })
-        .collect();
+        .sorted_by_key(|c| match c {
+            Core::Type { lit, .. } => lit.clone(),
+            _ => String::new()
+        }).collect();
 
-    let generics: Vec<Core> = names
-        .into_iter()
-        .sorted_by_key(|(name, _)| name.clone().to_lowercase())
-        .map(|(_, core)| core)
-        .collect();
-
-    if generics.is_empty() {
-        Core::Id { lit: String::from(lit) }
-    } else {
-        Core::Type { lit: String::from(lit), generics }
-    }
+    Core::Type { lit: String::from(lit), generics }
 }
 
 #[cfg(test)]

@@ -167,7 +167,7 @@ mod test {
     }
 
     #[test]
-    fn namevariant_tuple_has_collection_parent() -> TypeResult<()> {
+    fn tuple_has_collection_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
         let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
@@ -179,7 +179,7 @@ mod test {
     }
 
     #[test]
-    fn namevariant_tuple_has_tuple_parent() -> TypeResult<()> {
+    fn tuple_has_tuple_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
         let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
@@ -203,7 +203,7 @@ mod test {
     }
 
     #[test]
-    fn namevariant_callable_has_callable_parent() -> TypeResult<()> {
+    fn callable_has_callable_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
         let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
@@ -217,7 +217,7 @@ mod test {
     }
 
     #[test]
-    fn namevariant_callable_has_callable_parent_tuple_arg() -> TypeResult<()> {
+    fn callable_has_callable_parent_tuple_arg() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
         let pos = Position::default();
         let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
