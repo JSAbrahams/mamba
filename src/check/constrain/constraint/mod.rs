@@ -65,7 +65,7 @@ impl Constraint {
     /// - A constraint which constraint a call to [ITER] with an iterator, which has an unknown type at this point.
     ///   To over-bridge this, a temporary type name must be given using [helper_ty].
     /// - A constraint which constraints [NEXT] call to temporary type with given [col_ty]
-    pub fn collection(msg: &str, expected: &Expected, col_ty: &Name, iter_ty: &Name) -> (Constraint, Constraint) {
+    pub fn iterable(msg: &str, expected: &Expected, col_ty: &Name, iter_ty: &Name) -> (Constraint, Constraint) {
         let fun = Function { name: StringName::from(ITER), args: vec![expected.clone()] };
         let col_iterator = Expected::new(expected.pos, &Access {
             entity: Box::from(expected.clone()),

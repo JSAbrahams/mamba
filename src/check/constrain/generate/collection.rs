@@ -27,18 +27,29 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
             gen_col(ast, env, constr)?;
             Ok(res)
         }
-
         Node::SetBuilder { item, conditions } => {
             let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
-            let set = AST::new(ast.pos, Node::Set { elements: vec![*item.clone()] });
+
+            let item = deconstruct_builder(item);
+            let set = AST::new(ast.pos, Node::Set { elements: vec![item] });
             gen_col(&set, &builder_env, constr)
         }
         Node::ListBuilder { item, conditions } => {
             let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
-            let set = AST::new(ast.pos, Node::List { elements: vec![*item.clone()] });
+
+            let item = deconstruct_builder(item);
+            let set = AST::new(ast.pos, Node::List { elements: vec![item] });
             gen_col(&set, &builder_env, constr)
         }
         _ => Err(vec![TypeErr::new(ast.pos, "Expected collection")]),
+    }
+}
+
+fn deconstruct_builder(ast: &AST) -> AST {
+    match &ast.node {
+        Node::SetBuilder { item, .. } => *item.clone(),
+        Node::ListBuilder { item, .. } => *item.clone(),
+        _ => ast.clone()
     }
 }
 
@@ -55,11 +66,10 @@ fn gen_builder(ast: &AST, item: &AST, conditions: &[AST], env: &Environment, ctx
         let temp_ty = Expected::new(left.pos, &Type { name: temp_name.clone() });
         constr.add("temporary builder type", &item, &temp_ty, env);
 
-        let (col_exp1, col_exp2) = Constraint::collection("comprehension collection type", &Expected::from(right), &temp_name, &helper_ty);
+        let (col_exp1, col_exp2) = Constraint::iterable("comprehension collection type", &Expected::from(right), &temp_name, &helper_ty);
         constr.add_constr(&col_exp1, env);
         constr.add_constr(&col_exp2, env);
 
-        generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
         if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
             for cond in conditions {
                 generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
@@ -132,7 +142,7 @@ pub fn gen_col_lookup(lookup: &AST, col: &AST, env: &Environment, constr: &mut C
     let mut env = env.clone();
     let (temp_name, helper_ty) = (constr.temp_name(), constr.temp_name());
 
-    let (col_exp1, col_exp2) = Constraint::collection("collection lookup", &Expected::from(col), &temp_name, &helper_ty);
+    let (col_exp1, col_exp2) = Constraint::iterable("collection lookup", &Expected::from(col), &temp_name, &helper_ty);
     constr.add_constr(&col_exp1, &env);
     constr.add_constr(&col_exp2, &env);
 

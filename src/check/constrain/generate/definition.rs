@@ -203,10 +203,13 @@ pub fn id_from_var(
                 constr.insert_var(&name);
                 let ty = Expected::new(var.pos, &Type { name: temp_name.clone() });
                 env = env.insert_var(mutable && *f_mut, &name, &ty, &constr.var_mapping);
+
+                let var = AST::new(var.pos, Id { lit: name.clone() });
+                constr.add("variable with only expression", &Expected::from(&var), &ty, &env);
             }
 
             let exp_expr = if temp_names.len() > 1 {
-                // if tuple literal, deconstruct elements in generate stage ...
+                // if tuple literal, deconstruct elements in generate stage
                 if let Node::Tuple { elements } = &expr.node {
                     if elements.len() == temp_names.len() {
                         for (i, (expr, ty)) in enumerate(elements.iter().zip(&temp_names)) {
@@ -215,17 +218,13 @@ pub fn id_from_var(
 
                             let msg = format!("tuple literal element {}", i);
                             constr.add(&msg, &expr_ty, &expr_exp, &env);
-
-                            let (_, name) = fields.get(i).expect("Unreachable");
-                            let var = AST::new(var.pos, Id { lit: name.clone() });
-                            constr.add("variable with only expression", &Expected::from(&var), &Expected::from(expr), &env);
                         }
                     } else {
                         let msg = format!("Cannot join tuple literal. Expected {} elements, was {}",
                                           temp_names.len(), elements.len());
                         return Err(vec![TypeErr::new(expr.pos, &msg)]);
                     }
-                } // ... else function call
+                }
 
                 Expected::new(expr.pos, &Type { name: Name::tuple(&temp_names) })
             } else if let Some(first) = temp_names.first() {

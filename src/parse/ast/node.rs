@@ -66,11 +66,15 @@ impl Display for Node {
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
-            Node::SetBuilder { .. } => String::from("set builder"),
+            Node::SetBuilder { item, conditions } => {
+                format!("{{ {} | {} }}", item.node, comma_delm(conditions.iter().map(|e| e.node.clone())))
+            }
             Node::List { elements } => {
                 format!("[{}]", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
-            Node::ListBuilder { .. } => String::from("list builder"),
+            Node::ListBuilder { item, conditions } => {
+                format!("[ {} | {} ]", item.node, comma_delm(conditions.iter().map(|e| e.node.clone())))
+            }
             Node::Tuple { elements } => {
                 format!("({})", comma_delm(elements.iter().map(|e| e.node.clone())))
             }

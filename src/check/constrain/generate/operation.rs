@@ -174,7 +174,7 @@ pub fn constr_range(
 
     if contr_coll {
         let (helper_ty, col_ty) = (constr.temp_name(), Name::from(INT));
-        let (col_exp1, col_exp2) = Constraint::collection(range_slice, &Expected::from(ast), &col_ty, &helper_ty);
+        let (col_exp1, col_exp2) = Constraint::iterable(range_slice, &Expected::from(ast), &col_ty, &helper_ty);
         constr.add_constr(&col_exp1, env);
         constr.add_constr(&col_exp2, env);
     }

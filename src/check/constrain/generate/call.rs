@@ -102,7 +102,7 @@ pub fn gen_call(
 
             let (temp_type, helper_ty) = (constr.temp_name(), constr.temp_name());
             let exp_col = Expected::from(item);
-            let (exp_col1, exp_col2) = Constraint::collection("index of collection", &exp_col, &temp_type, &helper_ty);
+            let (exp_col1, exp_col2) = Constraint::iterable("index of collection", &exp_col, &temp_type, &helper_ty);
             constr.add_constr(&exp_col1, env);
             constr.add_constr(&exp_col2, env);
 
