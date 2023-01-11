@@ -1,7 +1,6 @@
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Error, Formatter};
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::iter::FromIterator;
 
 use itertools::EitherOrBoth::Both;
@@ -20,34 +19,10 @@ use crate::common::position::Position;
 pub mod generic;
 
 /// Useful to denote class and function names, where Tuples and Anonymous functions are not permitted.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct StringName {
     pub name: String,
     pub generics: Vec<Name>,
-}
-
-impl Hash for StringName {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-        self.generics.iter().for_each(|n| n.hash(state));
-    }
-}
-
-impl PartialOrd<Self> for StringName {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let cmp = self.name.partial_cmp(&other.name);
-        if let Some(Ordering::Equal) = cmp {
-            self.generics.partial_cmp(&other.generics)
-        } else {
-            cmp
-        }
-    }
-}
-
-impl Ord for StringName {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Equal)
-    }
 }
 
 impl Display for StringName {

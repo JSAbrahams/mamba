@@ -77,7 +77,7 @@ pub trait TupleCallable<T1, T2, T3> {
     fn ret_ty(&self, pos: Position) -> TypeResult<T3>;
 }
 
-#[derive(Debug, Clone, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Name {
     pub names: HashSet<TrueName>,
     pub is_interchangeable: bool,
@@ -171,6 +171,8 @@ impl Mutable for Name {
 
 impl Union<Name> for Name {
     fn union(&self, name: &Name) -> Self {
+        trace!("Union! {self} with {name}");
+
         let nullable = name.names.contains(&TrueName::from(clss::NONE));
         let names: HashSet<TrueName> = self.names.union(&name.names).cloned().collect();
         let names = if nullable {
@@ -225,17 +227,12 @@ impl From<&HashSet<Name>> for Name {
     }
 }
 
-impl PartialEq<Self> for Name {
-    fn eq(&self, other: &Self) -> bool {
-        self.names.len() == other.names.len()
-            && self.names.iter().all(|name| other.names.contains(name))
-    }
-}
-
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.names.len().hash(state);
-        self.names.iter().for_each(|n| n.hash(state))
+        self.names.iter()
+            .sorted_by_key(|name| &name.variant)
+            .for_each(|n| n.hash(state))
     }
 }
 
