@@ -10,7 +10,7 @@ use itertools::Itertools;
 use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{CALLABLE, GetFun, HasParent, TUPLE, UNION};
 use crate::check::context::function::union::FunUnion;
-use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, Substitute, TEMP, TupleCallable, Union};
+use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, NameMap, Substitute, TEMP, TupleCallable, Union};
 use crate::check::name::Name;
 use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
@@ -168,30 +168,6 @@ impl ContainsTemp for StringName {
     }
 }
 
-impl MatchTempName for StringName {
-    fn temp_map(&self, other: &StringName, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
-        let mut mapping = mapping.clone();
-        if self.name.starts_with(TEMP) {
-            mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
-        } else if self.name != other.name {
-            return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
-        }
-
-        for either in self.generics.iter().zip_longest(&other.generics) {
-            match either {
-                Both(self_generic, other_generic) => {
-                    mapping = self_generic.temp_map_with_mapping(other_generic, mapping, pos)?;
-                }
-                _ => {
-                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
-                }
-            }
-        }
-
-        Ok(mapping)
-    }
-}
-
 impl TupleCallable<bool, Vec<Name>, Name> for StringName {
     fn tuple(names: &[Name]) -> Self {
         StringName::new(TUPLE, names)
@@ -248,6 +224,30 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
     }
 }
 
+impl MatchTempName for StringName {
+    fn temp_map(&self, other: &StringName, mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
+        let mut mapping = mapping.clone();
+        if self.name.starts_with(TEMP) {
+            mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
+        } else if self.name != other.name {
+            return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+        }
+
+        for either in self.generics.iter().zip_longest(&other.generics) {
+            match either {
+                Both(self_generic, other_generic) => {
+                    mapping = self_generic.temp_map_with_mapping(other_generic, mapping, pos)?;
+                }
+                _ => {
+                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                }
+            }
+        }
+
+        Ok(mapping)
+    }
+}
+
 impl StringName {
     pub fn new(lit: &str, generics: &[Name]) -> StringName {
         StringName { name: String::from(lit), generics: Vec::from(generics) }
@@ -262,13 +262,13 @@ impl StringName {
         }
     }
 
-    pub fn match_name(&self, other: &StringName, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+    pub fn match_name(&self, other: &StringName, pos: Position) -> TypeResult<NameMap> {
         let mut mapping = HashMap::new();
         self.match_name_helper(other, &mut mapping, pos)?;
         Ok(mapping)
     }
 
-    pub(crate) fn match_name_helper(&self, other: &StringName, mapping: &mut HashMap<Name, Name>, pos: Position) -> TypeResult<()> {
+    pub(crate) fn match_name_helper(&self, other: &StringName, mapping: &mut NameMap, pos: Position) -> TypeResult<()> {
         mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
         for either in self.generics.iter().zip_longest(&other.generics) {
             match either {

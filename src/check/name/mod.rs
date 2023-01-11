@@ -24,6 +24,8 @@ pub mod python;
 
 pub const TEMP: char = '@';
 
+pub type NameMap = HashMap<Name, Name>;
+
 pub trait Union<T> {
     fn union(&self, value: &T) -> Self;
 }
@@ -52,7 +54,7 @@ pub trait Mutable {
 }
 
 pub trait Substitute {
-    fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Self> where Self: Sized;
+    fn substitute(&self, generics: &NameMap, pos: Position) -> TypeResult<Self> where Self: Sized;
 }
 
 pub trait ColType {
@@ -115,9 +117,7 @@ pub fn match_type_direct(
     name: &TrueName,
     pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
-    if name.is_tuple() {
-        let elements = name.elements(pos)?;
-
+    if let Ok(elements) = name.elements(pos) {
         match identifier {
             Identifier::Single(mutable, id) => {
                 let mut mapping = HashMap::with_capacity(1);
@@ -393,7 +393,7 @@ impl Name {
         self.temp_map_with_mapping(other, HashMap::new(), pos)
     }
 
-    pub(crate) fn temp_map_with_mapping(&self, other: &Name, mapping: HashMap<Name, Name>, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+    pub(crate) fn temp_map_with_mapping(&self, other: &Name, mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
         self.names.iter().fold(Ok(mapping), |acc, s_n| {
             other.names.iter().fold(acc, |acc, o_n| if let Ok(acc) = acc {
                 s_n.temp_map(&o_n.variant, acc, pos)
@@ -401,7 +401,7 @@ impl Name {
         })
     }
 
-    pub(crate) fn match_name_helper(&self, other: &Name, mapping: &mut HashMap<Name, Name>, pos: Position) -> TypeResult<()> {
+    pub(crate) fn match_name_helper(&self, other: &Name, mapping: &mut NameMap, pos: Position) -> TypeResult<()> {
         for name in &self.names {
             for other_name in &other.names {
                 name.variant.match_name_helper(&other_name.variant, mapping, pos)?;

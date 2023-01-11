@@ -1,0 +1,8 @@
+class MyClass
+    def my_field: Int := 10
+
+def f() -> (MyClass, Int) =>
+    (MyClass(), 10)
+
+def (a, b) := f()
+a.my_field := 20

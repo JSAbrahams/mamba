@@ -75,7 +75,7 @@ impl Environment {
         var_mappings.insert(String::from(var), offset);
 
         let mapped_var = format_var_map(var, &offset);
-        trace!("Inserted {var} in environment: {var} => {mapped_var}");
+        trace!("Inserted {var} in environment: {var} => {mapped_var} ({expect})");
         vars.insert(mapped_var, expected_set);
         Environment { vars, var_mapping: var_mappings, ..self.clone() }
     }

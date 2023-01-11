@@ -1,5 +1,5 @@
 a: bool = True
-b = a
+b: bool = a
 
 c: bool = False or True and False
 d: bool = c and b and a

@@ -110,7 +110,9 @@ pub enum Expect {
 impl Display for Expected {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match &self.expect {
-            Type { name } if self.an_or_a => write!(f, "{}{}", an_or_a(name), name),
+            Type { name } if self.an_or_a && !name.is_temporary() => {
+                write!(f, "{}{}", an_or_a(name), name)
+            }
             _ => write!(f, "{}", self.expect)
         }
     }
@@ -119,7 +121,7 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
-            Expression { ast } => write!(f, "{}", ast.node),
+            Expression { ast } => write!(f, "`{}`", ast.node),
             Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();

@@ -83,12 +83,12 @@ pub trait GetFun<T> {
 impl HasParent<&StringName> for Class {
     fn has_parent(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
         if self.name == *other || other.name.as_str() == ANY {
-            return Ok(true); // parent of self, of course
-
-            // necessary evil, no way to specify variable generics for tuples
+            return Ok(true);
         } else if (self.name.name == TUPLE && (other.name == TUPLE || other.name == COLLECTION)) ||
             (self.name.name == *other.name && self.name.generics.len() == other.generics.len()) {
+
             // Contender! check generics
+            // Tuple check is necessary evil, no way to specify variable generics for tuples
             let mut all_super = true;
             for (s_name, o_name) in self.name.generics.iter().zip(&other.generics) {
                 for s_name in &s_name.names {

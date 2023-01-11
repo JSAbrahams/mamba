@@ -46,6 +46,7 @@ type OptASTTy = Option<Box<ASTTy>>;
 pub enum NodeTy {
     Import { from: Option<Box<ASTTy>>, import: Vec<ASTTy>, alias: Vec<ASTTy> },
     Class { ty: Box<ASTTy>, args: Vec<ASTTy>, parents: Vec<ASTTy>, body: OptASTTy },
+    Generic { id: Box<ASTTy>, isa: OptASTTy },
     Parent { ty: Box<ASTTy>, args: Vec<ASTTy> },
     Reassign { left: Box<ASTTy>, right: Box<ASTTy>, op: NodeOp },
     VariableDef { mutable: bool, var: Box<ASTTy>, ty: OptASTTy, expr: OptASTTy, forward: Vec<ASTTy> },

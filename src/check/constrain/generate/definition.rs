@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
+use itertools::enumerate;
+
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
@@ -12,11 +14,12 @@ use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
 use crate::check::ident::Identifier;
-use crate::check::name::{match_name, Name, Nullable};
+use crate::check::name::{match_name, Name, Nullable, TupleCallable};
 use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
+use crate::parse::ast::Node::Id;
 
 pub fn gen_def(
     ast: &AST,
@@ -27,7 +30,7 @@ pub fn gen_def(
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
             let non_nullable_class_vars: HashSet<String> = match &id.node {
-                Node::Id { lit } if *lit == function::INIT => {
+                Id { lit } if *lit == function::INIT => {
                     if let Some(class) = &env.class {
                         let class = ctx.class(class, id.pos)?;
                         let fields: Vec<&Field> = class
@@ -162,30 +165,85 @@ pub fn id_from_var(
     if let Some(expr) = expr {
         generate(expr, &env.is_expr(true), ctx, constr)?;
     }
+
     let mut env = env.clone();
-
     let identifier = Identifier::try_from(var.deref())?.as_mutable(mutable);
-    if let Some(ty) = ty {
-        for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
-            let ty = Expected::new(var.pos, &Type { name: name.clone() });
-            constr.insert_var(&f_name);
-            env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
-        }
-    } else {
-        let any = Expected::any(var.pos);
-        for (f_mut, f_name) in identifier.fields(var.pos)? {
-            constr.insert_var(&f_name);
-            env = env.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
-        }
-    };
+    match (ty, expr) {
+        (Some(ty), Some(expr)) => {
+            let mut names = vec![];
+            for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
+                names.push(name.clone());
 
-    if let Some(ty) = ty {
-        let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
-        constr.add("variable and type", &ty_exp, &Expected::from(var), &env);
-    }
-    if let Some(expr) = expr {
-        let msg = format!("variable and expression: `{}`", expr.node);
-        constr.add(&msg, &Expected::from(var), &Expected::from(expr), &env);
+                constr.insert_var(&f_name);
+                let ty = Expected::new(var.pos, &Type { name: name.clone() });
+                env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+            }
+
+            let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
+            constr.add("variable with type and...", &ty_exp, &Expected::from(var), &env);
+            constr.add("variable with expression", &ty_exp, &Expected::from(expr), &env);
+        }
+        (Some(ty), None) => {
+            for (f_name, (f_mut, name)) in match_name(&identifier, ty, var.pos)? {
+                constr.insert_var(&f_name);
+                let ty = Expected::new(var.pos, &Type { name: name.clone() });
+                env = env.insert_var(mutable && f_mut, &f_name, &ty, &constr.var_mapping);
+            }
+
+            let ty_exp = Expected::new(var.pos, &Type { name: ty.clone() });
+            constr.add("variable with only type", &ty_exp, &Expected::from(var), &env);
+        }
+        (None, Some(expr)) => {
+            let mut temp_names = vec![];
+            let fields = identifier.fields(var.pos)?;
+            for (f_mut, name) in &fields {
+                let temp_name = constr.temp_name();
+                temp_names.push(temp_name.clone());
+
+                constr.insert_var(&name);
+                let ty = Expected::new(var.pos, &Type { name: temp_name.clone() });
+                env = env.insert_var(mutable && *f_mut, &name, &ty, &constr.var_mapping);
+            }
+
+            let exp_expr = if temp_names.len() > 1 {
+                // if tuple literal, deconstruct elements in generate stage ...
+                if let Node::Tuple { elements } = &expr.node {
+                    if elements.len() == temp_names.len() {
+                        for (i, (expr, ty)) in enumerate(elements.iter().zip(&temp_names)) {
+                            let expr_exp = Expected::from(expr);
+                            let expr_ty = Expected::new(expr.pos, &Type { name: ty.clone() });
+
+                            let msg = format!("tuple literal element {}", i);
+                            constr.add(&msg, &expr_ty, &expr_exp, &env);
+
+                            let (_, name) = fields.get(i).expect("Unreachable");
+                            let var = AST::new(var.pos, Id { lit: name.clone() });
+                            constr.add("variable with only expression", &Expected::from(&var), &Expected::from(expr), &env);
+                        }
+                    } else {
+                        let msg = format!("Cannot join tuple literal. Expected {} elements, was {}",
+                                          temp_names.len(), elements.len());
+                        return Err(vec![TypeErr::new(expr.pos, &msg)]);
+                    }
+                } // ... else function call
+
+                Expected::new(expr.pos, &Type { name: Name::tuple(&temp_names) })
+            } else if let Some(first) = temp_names.first() {
+                Expected::new(expr.pos, &Type { name: first.clone() })
+            } else {
+                panic!("cannot have empty identifier")
+            };
+
+            constr.add("variable with only expression", &Expected::from(var), &Expected::from(expr), &env);
+            constr.add("variable with only expression", &exp_expr, &Expected::from(expr), &env);
+        }
+        (None, None) => {
+            let any = Expected::any(var.pos);
+            for (f_mut, f_name) in identifier.fields(var.pos)? {
+                constr.insert_var(&f_name);
+                env = env.insert_var(mutable && f_mut, &f_name, &any, &constr.var_mapping);
+            }
+        }
     }
 
     Ok(env)

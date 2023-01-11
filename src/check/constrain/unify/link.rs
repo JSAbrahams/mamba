@@ -2,7 +2,7 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Expression, Function, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
-use crate::check::constrain::unify::expression::unify_expression;
+use crate::check::constrain::unify::expression::sub;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::function::unify_function;
 use crate::check::constrain::unify::ty::unify_type;
@@ -37,16 +37,23 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
             // trivially equal
             (left, right) if left == right => unify_link(constraints, finished, ctx, total),
 
-            (Function { .. }, Type { .. })
-            | (Access { .. }, _)
-            | (Type { .. }, Function { .. })
-            | (_, Access { .. }) => unify_function(constraint, constraints, finished, ctx, total),
+            (Function { .. }, Type { .. }) | (Type { .. }, Function { .. })
+            | (Access { .. }, _) | (_, Access { .. }) => {
+                unify_function(constraint, constraints, finished, ctx, total)
+            }
 
-            (Expression { .. }, _) | (_, Expression { .. }) =>
-                unify_expression(constraint, constraints, finished, ctx, count, total),
+            (Expression { .. }, _) => {
+                sub(constraints, right, left, count, total)?;
+                unify_link(constraints, finished, ctx, total)
+            }
+            (_, Expression { .. }) => {
+                sub(constraints, left, right, count, total)?;
+                unify_link(constraints, finished, ctx, total)
+            }
 
-            (Type { .. }, _) | (_, Type { .. }) =>
-                unify_type(constraint, constraints, finished, ctx, total),
+            (Type { .. }, _) | (_, Type { .. }) => {
+                unify_type(constraint, constraints, finished, ctx, total)
+            }
 
             _ => {
                 reinsert(constraints, constraint, total)?;

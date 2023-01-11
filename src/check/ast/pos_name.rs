@@ -45,6 +45,10 @@ impl From<(&NodeTy, &PosNameMap)> for NodeTy {
                 parents: parents.iter().map(|p| p.map(names)).collect(),
                 body: body.clone().map(|b| Box::from(b.map(names))),
             },
+            NodeTy::Generic { id, isa } => NodeTy::Generic {
+                id: Box::from(id.map(names)),
+                isa: isa.clone().map(|isa| Box::from(isa.map(names))),
+            },
             NodeTy::Parent { ty, args } => NodeTy::Parent {
                 ty: Box::from(ty.map(names)),
                 args: args.iter().map(|a| a.map(names)).collect(),

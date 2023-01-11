@@ -5,6 +5,9 @@ use crate::check::name::{Empty, Name, Union};
 use crate::check::result::TypeResult;
 use crate::common::position::Position;
 
+/// Types with which we should not annotate the [crate::check::ASTTy].
+///
+/// The types may be used internally by the check stage.
 const IGNORED_NAMES: [&str; 1] = [COLLECTION];
 
 #[derive(Debug, Clone)]

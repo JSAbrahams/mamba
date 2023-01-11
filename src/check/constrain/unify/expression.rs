@@ -2,6 +2,8 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
 
+pub type SubRes<T = Expected> = (bool, T);
+
 /// Substitute old expression with new.
 ///
 /// Only expression are ever substituted, everything else is left as is.
@@ -12,13 +14,8 @@ use crate::check::constrain::Unified;
 ///
 /// If identifier override detected, only substitute right hand side of
 /// unification before ceasing substitution.
-pub fn substitute(
-    constraints: &mut Constraints,
-    new: &Expected,
-    old: &Expected,
-    offset: usize,
-    total: usize,
-) -> Unified<()> {
+pub fn sub(constraints: &mut Constraints, new: &Expected, old: &Expected,
+           offset: usize, total: usize) -> Unified<()> {
     let mut constraint_pos = offset;
     trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
 
@@ -42,8 +39,8 @@ pub fn substitute(
             }};
         }
 
-        let (sub_l, left) = recursive_substitute("l", &constr.parent, old, new);
-        let (sub_r, right) = recursive_substitute("r", &constr.child, old, new);
+        let (sub_l, left) = sub_recursive("l", &constr.parent, old, new);
+        let (sub_r, right) = sub_recursive("r", &constr.child, old, new);
 
         constr.parent = left;
         constr.child = right;
@@ -58,26 +55,21 @@ pub fn substitute(
     Ok(())
 }
 
-fn recursive_substitute(
-    side: &str,
-    inspected: &Expected,
-    old: &Expected,
-    new: &Expected,
-) -> (bool, Expected) {
+fn sub_recursive(side: &str, inspected: &Expected, old: &Expected, new: &Expected) -> SubRes {
     if inspected.expect.same_value(&old.expect) {
         return (true, new.clone());
     }
 
     match &inspected.expect {
         Expect::Access { entity, name } => {
-            let (subs_e, entity) = recursive_substitute(side, entity, old, new);
-            let (sub_n, name) = recursive_substitute(side, name, old, new);
+            let (subs_e, entity) = sub_recursive(side, entity, old, new);
+            let (sub_n, name) = sub_recursive(side, name, old, new);
 
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(inspected.pos, &expect))
         }
         Expect::Function { name, args } => {
-            let (any_substituted, args) = substitute_vec(side, old, new, args);
+            let (any_substituted, args) = sub_vec(side, old, new, args);
             let func = Expect::Function { name: name.clone(), args };
             (any_substituted, Expected::new(inspected.pos, &func))
         }
@@ -86,15 +78,10 @@ fn recursive_substitute(
 }
 
 /// Substitute all in vector, and also returns True if any substituted.
-fn substitute_vec(
-    side: &str,
-    old: &Expected,
-    new: &Expected,
-    elements: &[Expected],
-) -> (bool, Vec<Expected>) {
+fn sub_vec(side: &str, old: &Expected, new: &Expected, elements: &[Expected]) -> SubRes<Vec<Expected>> {
     let elements = elements
         .iter()
-        .map(|e| recursive_substitute(side, e, old, new));
+        .map(|e| sub_recursive(side, e, old, new));
 
     (elements.clone().any(|(i, _)| i), elements.map(|(_, i)| i).collect())
 }

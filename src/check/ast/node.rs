@@ -36,9 +36,9 @@ impl From<&Node> for NodeTy {
                 parents: parents.iter().map(ASTTy::from).collect(),
                 body: body.clone().map(ASTTy::from).map(Box::from),
             },
-            Node::Generic { id, .. } => NodeTy::Type {
+            Node::Generic { id, isa } => NodeTy::Generic {
                 id: Box::from(ASTTy::from(id)),
-                generics: vec![],
+                isa: isa.clone().map(ASTTy::from).map(Box::from),
             },
             Node::Parent { ty, args } => NodeTy::Parent {
                 ty: Box::from(ASTTy::from(ty)),

@@ -227,9 +227,7 @@ fn property_call(
     let entire_call_as_ast = Expected::from(&entire_call_as_ast);
 
     let ast_without_access = match instance.len().cmp(&1) {
-        Ordering::Less => {
-            return Err(vec![TypeErr::new(last_inst.pos, "Internal error in access")]);
-        }
+        Ordering::Less => panic!("Internal error in access"),
         Ordering::Equal => last_inst.clone(),
         Ordering::Greater => {
             let last = instance.remove(instance.len() - 1);
