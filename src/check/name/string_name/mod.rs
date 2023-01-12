@@ -8,7 +8,6 @@ use itertools::Itertools;
 
 use crate::check::context::{Context, function, LookupClass};
 use crate::check::context::clss::{CALLABLE, GetFun, HasParent, TUPLE, UNION};
-use crate::check::context::function::union::FunUnion;
 use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, NameMap, Substitute, TEMP, TupleCallable, Union};
 use crate::check::name::Name;
 use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
@@ -45,9 +44,14 @@ impl ColType for StringName {
                 let iter_name = fun.ret_ty;
                 if let Ok(iter_class) = ctx.class(&iter_name, pos) {
                     let next_name = StringName::from(function::python::NEXT);
-                    let fun: FunUnion = iter_class.fun(&next_name, ctx, pos)?;
-                    let ret_name =
-                        fun.union.iter().fold(Name::empty(), |name, i| name.union(&i.ret_ty));
+
+                    let ret_name = iter_class.iter()
+                        .map(|c| c.fun(&next_name, ctx, pos))
+                        .map(|f| f.map(|f| f.ret_ty))
+                        .collect::<TypeResult<Vec<Name>>>()?
+                        .iter()
+                        .fold(Name::empty(), |acc, n| acc.union(n));
+
                     Ok(Some(ret_name))
                 } else {
                     let msg = format!("Cannot find iterator '{iter_name}' for iterable type '{self}'");

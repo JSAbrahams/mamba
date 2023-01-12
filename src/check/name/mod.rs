@@ -9,6 +9,7 @@ use std::iter::FromIterator;
 use itertools::Itertools;
 
 use crate::check::context::{clss, Context};
+use crate::check::context::clss::Class;
 use crate::check::ident::Identifier;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
@@ -144,6 +145,12 @@ pub fn match_type_direct(
     } else {
         let msg = format!("Cannot match {identifier} with a '{name}'");
         Err(vec![TypeErr::new(pos, &msg)])
+    }
+}
+
+impl From<&HashSet<Class>> for Name {
+    fn from(classes: &HashSet<Class>) -> Self {
+        Name { names: classes.iter().map(|c| TrueName::from(&c.name)).collect(), is_interchangeable: false }
     }
 }
 
@@ -297,7 +304,7 @@ impl Nullable for Name {
 
 impl Empty for Name {
     fn is_empty(&self) -> bool {
-        self == &Name::empty()
+        self == &Name::empty() || self.names.iter().all(TrueName::is_empty)
     }
 
     fn empty() -> Name {

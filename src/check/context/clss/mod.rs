@@ -44,7 +44,6 @@ pub const EXCEPTION: &str = "Exception";
 
 pub mod generic;
 pub mod python;
-pub mod union;
 
 /// Concrete type.
 ///
@@ -136,6 +135,16 @@ impl HasParent<&Name> for Class {
         }
 
         Ok(false)
+    }
+}
+
+impl LookupClass<&Name, HashSet<Class>> for Context {
+    fn class(&self, class_name: &Name, pos: Position) -> TypeResult<HashSet<Class>> {
+        if class_name.is_empty() {
+            let msg = format!("Tried to get class for {class_name}");
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
+        class_name.names.iter().map(|name| self.class(name, pos)).collect::<TypeResult<_>>()
     }
 }
 
