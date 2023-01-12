@@ -6,8 +6,8 @@ assignees: ''
 
 ---
 
-### Issue, or potential issue
+## Issue, or potential issue
 
-### Potential solutions
+## Potential solutions
 
-### Additional Context
+## Additional Context

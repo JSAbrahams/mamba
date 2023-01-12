@@ -7,8 +7,8 @@ assignees: ''
 
 ---
 
-### Current Issue
+## Current Issue
 
-### High-level description of the feature
+## High-level description of the feature
 
-### Description of potential implementation
+## Description of potential implementation
