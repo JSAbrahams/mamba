@@ -54,31 +54,26 @@ fn retrieve_nested_builder_item(ast: &AST) -> AST {
 }
 
 fn gen_builder(ast: &AST, item: &AST, conditions: &[AST], env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
-    let conds_env = generate(item, &env.is_def_mode(true), ctx, constr)?;
     if let Some(cond) = conditions.first() {
         let Node::In { left, right } = &cond.node else {
             let msg = format!("Expected in, was {}", cond.node);
             return Err(vec![TypeErr::new(cond.pos, &msg)]);
         };
 
-        let item = Expected::from(left);
-        let (temp_name, helper_ty) = (constr.temp_name(), constr.temp_name());
-        let temp_ty = Expected::new(left.pos, &Type { name: temp_name.clone() });
-        constr.add("temporary builder type", &item, &temp_ty, env);
+        generate(right, env, ctx, constr)?;
+        let conds_env = generate(left, &env.is_def_mode(true), ctx, constr)?.is_def_mode(false);
+        let conds_env = constr_col_lookup(left, right, &conds_env, constr)?;
 
-        let (col_exp1, col_exp2) = Constraint::iterable("comprehension collection type", &Expected::from(right), &temp_name, &helper_ty);
-        constr.add_constr(&col_exp1, env);
-        constr.add_constr(&col_exp2, env);
+        generate(item, &conds_env, ctx, constr)?;
 
         if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
             for cond in conditions {
-                generate(cond, &conds_env.is_def_mode(false), ctx, constr)?;
+                generate(cond, &conds_env, ctx, constr)?;
                 let cond = Expected::from(cond);
                 constr.add_constr(&Constraint::truthy("comprehension condition", &cond), &conds_env);
             }
         }
 
-        // if define mode, propagate out conditions environment
         Ok(if env.is_def_mode { conds_env } else { env.clone() })
     } else {
         Err(vec![TypeErr::new(ast.pos, "Builder must have a least one element")])
@@ -137,8 +132,8 @@ fn gen_col_items(elements: &[AST], env: &Environment, constr: &mut ConstrBuilder
 /// Constrain lookup an collection.
 ///
 /// Adds constraint of collection of type lookup, and the given collection.
-pub fn gen_col_lookup(lookup: &AST, col: &AST, env: &Environment, constr: &mut ConstrBuilder)
-                      -> Constrained {
+pub fn constr_col_lookup(lookup: &AST, col: &AST, env: &Environment, constr: &mut ConstrBuilder)
+                         -> Constrained {
     let mut env = env.clone();
     let (temp_name, helper_ty) = (constr.temp_name(), constr.temp_name());
 

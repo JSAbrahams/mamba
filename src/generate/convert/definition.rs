@@ -24,9 +24,9 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                     vararg: false,
                     var: Box::from(var),
                     ty: match ty {
+                        _ if !state.annotate => None,
                         Some(ty) => Some(Box::from(convert_node(ty, imp, &state, ctx)?)),
-                        None if state.annotate => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
-                        _ => None
+                        None => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
                     },
                     default: match expression {
                         Some(expression) => Some(Box::from(convert_node(expression, imp, &state, ctx)?)),
@@ -36,26 +36,19 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
             } else {
                 Core::VarDef {
                     var: Box::from(var.clone()),
-                    ty: if matches!(var, Core::TupleLiteral { .. }) {
-                        None
-                    } else {
-                        match expression {
-                            Some(expr) if state.annotate =>
-                                expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
-                            _ => None,
-                        }
+                    ty: match expression {
+                        Some(expr) if state.annotate && !matches!(var, Core::TupleLiteral { .. }) =>
+                            expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
+                        _ => None,
                     },
                     expr: match (&var, expression) {
-                        (_, Some(expr)) => {
-                            let expr_core = convert_node(expr, imp, &state, ctx)?;
-                            match expr_core {
-                                Core::IfElse { .. } | Core::Match { .. } => {
-                                    // redo convert but with assign to state
-                                    let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
-                                    return convert_node(expr, imp, &state, ctx);
-                                }
-                                _ => Some(Box::from(expr_core))
+                        (_, Some(expr)) => match convert_node(expr, imp, &state, ctx)? {
+                            Core::IfElse { .. } | Core::Match { .. } => {
+                                // redo convert but with assign to state
+                                let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
+                                return convert_node(expr, imp, &state, ctx);
                             }
+                            other => Some(Box::from(other))
                         }
                         (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
                             elements: vec![Core::None; elements.len()],

@@ -2,7 +2,7 @@ use itertools::Itertools;
 
 use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
-use crate::check::context::clss::python::{CALLABLE, TUPLE, UNION};
+use crate::check::context::clss::python::{ANY, CALLABLE, TUPLE, UNION};
 use crate::check::name::{Name, Nullable};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
@@ -59,7 +59,11 @@ impl ToPy for StringName {
                 let ret = self.generics.get(1).map_or_else(|| Core::Empty, |name| name.to_py(imp));
                 core_type(CALLABLE, &[args, ret])
             }
-            _ => {
+            other => {
+                if other == clss::ANY {
+                    imp.add_from_import("typing", ANY);
+                }
+
                 let lit = concrete_to_python(&self.name);
                 let generics: Vec<Core> = self.generics.iter().map(|name| name.to_py(imp)).collect();
                 core_type(&lit, &generics)

@@ -306,6 +306,8 @@ pub fn concrete_to_python(name: &str) -> String {
         NONE => String::from(python::NONE),
         EXCEPTION => String::from(python::EXCEPTION),
         UNION => String::from(python::UNION),
+        ANY => String::from(python::ANY),
+
         other => String::from(other),
     }
 }

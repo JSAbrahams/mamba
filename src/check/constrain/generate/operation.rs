@@ -5,7 +5,7 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
-use crate::check::constrain::generate::collection::gen_col_lookup;
+use crate::check::constrain::generate::collection::constr_col_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, SLICE, STRING};
@@ -24,9 +24,9 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            gen_col_lookup(left, right, env, constr)?;
             generate(right, env, ctx, constr)?;
             generate(left, env, ctx, constr)?;
+            constr_col_lookup(left, right, env, constr)?;
             Ok(env.clone())
         }
         Node::Range { .. } => {
