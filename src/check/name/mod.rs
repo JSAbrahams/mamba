@@ -378,6 +378,15 @@ impl Name {
         false
     }
 
+    pub fn as_name(&self, true_name: &TrueName, pos: Position) -> TypeResult<Name> {
+        self.names.get(true_name)
+            .map(|true_name| Name::from(true_name))
+            .ok_or_else(|| {
+                let msg = format!("{self} does not define {true_name}");
+                vec![TypeErr::new(pos, &msg)]
+            })
+    }
+
     pub fn temp_map(&self, other: &Name, pos: Position) -> TypeResult<HashMap<Name, Name>> {
         self.temp_map_with_mapping(other, HashMap::new(), pos)
     }

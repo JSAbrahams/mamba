@@ -11,6 +11,7 @@ use crate::check::constrain::constraint::MapExp;
 use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::common::result::an_or_a;
@@ -77,6 +78,13 @@ impl Expected {
 
     pub fn none(pos: Position) -> Expected {
         Expected::new(pos, &Type { name: Name::from(NONE) })
+    }
+
+    pub fn ty(&self) -> TypeResult<Name> {
+        match &self.expect {
+            Type { name } => Ok(name.clone()),
+            _ => Err(vec![TypeErr::new(self.pos, &format!("Expected type, was {self}"))])
+        }
     }
 }
 

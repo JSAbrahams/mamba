@@ -97,7 +97,7 @@ impl Union<StringName> for Name {
 
 impl Empty for StringName {
     fn is_empty(&self) -> bool {
-        self == &StringName::empty()
+        self == &StringName::empty() || (self.name == TUPLE && self.generics.is_empty())
     }
 
     fn empty() -> StringName {

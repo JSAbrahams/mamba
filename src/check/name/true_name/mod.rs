@@ -114,7 +114,7 @@ impl Union<TrueName> for Name {
 }
 
 impl Empty for TrueName {
-    fn is_empty(&self) -> bool { self == &TrueName::empty() }
+    fn is_empty(&self) -> bool { self.variant.is_empty() }
     fn empty() -> TrueName { TrueName::from(&StringName::empty()) }
 }
 

@@ -1,4 +1,5 @@
 use crate::check::ast::pos_name::PosNameMap;
+use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::COLLECTION;
 use crate::check::name::{Empty, Name, Union};
@@ -25,7 +26,7 @@ impl Finished {
     /// If already present at position, then union is created between current [Name] and given
     /// [Name].
     /// Ignores [Any] type, and trims from union.
-    pub fn push_ty(&mut self, ctx: &Context, pos: Position, name: &Name) -> TypeResult<()> {
+    pub fn push_ty(&mut self, ctx: &Context, pos: Position, exp: &Expected, name: &Name) -> TypeResult<()> {
         // trim temp should not be needed, underlying issue with current logic
         let name = IGNORED_NAMES.iter().fold(name.clone(), |acc, ignored| acc.trim(ignored));
         let name = name.trim_any();
@@ -45,7 +46,7 @@ impl Finished {
             });
 
         if self.pos_to_name.insert(pos, name.clone()).is_none() {
-            trace!("{:width$}type at {}: {}", "", pos, name, width = 0);
+            trace!("{} at {} has type: {}", exp, pos, name);
         }
         Ok(())
     }
