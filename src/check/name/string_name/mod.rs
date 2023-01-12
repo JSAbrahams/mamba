@@ -116,7 +116,7 @@ impl Substitute for StringName {
                 Ok(string_names.iter().next().expect("Unreachable").clone())
             } else {
                 let names: Vec<Name> = string_names.iter().map(Name::from).collect();
-                Ok(StringName::new(UNION, &names.as_slice()))
+                Ok(StringName::new(UNION, names.as_slice()))
             }
         } else {
             Ok(StringName {
@@ -200,8 +200,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
 }
 
 impl MatchTempName for StringName {
-    fn temp_map(&self, other: &StringName, mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
-        let mut mapping = mapping.clone();
+    fn temp_map(&self, other: &StringName, mut mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
         if self.name.starts_with(TEMP) {
             mapping.insert(Name::from(self.name.as_str()), Name::from(other));
         } else if self.name != other.name {

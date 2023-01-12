@@ -24,7 +24,7 @@ impl From<&Expression> for TrueName {
                 };
 
                 // Union not expected
-                if &lit == UNION {
+                if lit == UNION {
                     TrueName::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(to_ty_name).collect();

@@ -179,7 +179,7 @@ impl TryFrom<&AST> for GenericClass {
                         class_args.append(&mut function.arguments.clone())
                     } else {
                         let msg = "Cannot have constructor and class arguments";
-                        return Err(vec![TypeErr::new(class.pos, &msg)]);
+                        return Err(vec![TypeErr::new(class.pos, msg)]);
                     }
                 }
 

@@ -77,7 +77,7 @@ pub trait TupleCallable<T1, T2, T3> {
     fn ret_ty(&self, pos: Position) -> TypeResult<T3>;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Eq, Default)]
 pub struct Name {
     pub names: HashSet<TrueName>,
     pub is_interchangeable: bool,
@@ -137,15 +137,13 @@ pub fn match_type_direct(
                 Err(vec![TypeErr::new(pos, &msg)])
             }
         }
+    } else if let Identifier::Single(mutable, id) = &identifier {
+        let mut mapping = HashMap::with_capacity(1);
+        mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
+        Ok(mapping)
     } else {
-        if let Identifier::Single(mutable, id) = &identifier {
-            let mut mapping = HashMap::with_capacity(1);
-            mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
-            Ok(mapping)
-        } else {
-            let msg = format!("Cannot match {identifier} with a '{name}'");
-            Err(vec![TypeErr::new(pos, &msg)])
-        }
+        let msg = format!("Cannot match {identifier} with a '{name}'");
+        Err(vec![TypeErr::new(pos, &msg)])
     }
 }
 
@@ -216,6 +214,12 @@ impl From<&HashSet<Name>> for Name {
             final_name = final_name.union(name);
         }
         final_name
+    }
+}
+
+impl PartialEq for Name {
+    fn eq(&self, other: &Self) -> bool {
+        self.names.eq(&other.names) // order doesn't matter for partialeq
     }
 }
 
@@ -379,12 +383,10 @@ impl Name {
     }
 
     pub fn as_name(&self, true_name: &TrueName, pos: Position) -> TypeResult<Name> {
-        self.names.get(true_name)
-            .map(|true_name| Name::from(true_name))
-            .ok_or_else(|| {
-                let msg = format!("{self} does not define {true_name}");
-                vec![TypeErr::new(pos, &msg)]
-            })
+        self.names.get(true_name).map(Name::from).ok_or_else(|| {
+            let msg = format!("{self} does not define {true_name}");
+            vec![TypeErr::new(pos, &msg)]
+        })
     }
 
     pub fn temp_map(&self, other: &Name, pos: Position) -> TypeResult<HashMap<Name, Name>> {

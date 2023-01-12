@@ -137,9 +137,9 @@ impl TryFrom<&AST> for GenericFunctionArg {
     }
 }
 
-pub fn argument_name(ast: &AST) -> Result<String, TypeErr> {
+pub fn argument_name(ast: &AST) -> TypeResult<String> {
     match &ast.node {
         Node::Id { lit } => Ok(lit.clone()),
-        _ => Err(TypeErr::new(ast.pos, "Expected identifier in argument"))
+        _ => Err(vec![TypeErr::new(ast.pos, "Expected identifier in argument")])
     }
 }

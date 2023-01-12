@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::common::position::CaretPos;
 use crate::parse::lex::token::{Lex, Token};
 
-pub type LexResult<T = Vec<Lex>> = std::result::Result<T, LexErr>;
+pub type LexResult<T = Vec<Lex>> = Result<T, LexErr>;
 
 #[derive(Debug, Clone)]
 pub struct LexErr {
@@ -29,8 +29,8 @@ impl LexErr {
 impl Display for LexErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let source_line = match &self.source {
-            Some(source) => source.lines().nth(self.pos.line as usize - 1).unwrap_or("<unknown>"),
-            None => "<unknown>",
+            Some(source) if self.pos.line > 0 => source.lines().nth(self.pos.line - 1).unwrap_or("<unknown>"),
+            _ => "<unknown>",
         };
 
         write!(
@@ -42,8 +42,8 @@ impl Display for LexErr {
             self.msg,
             self.pos.line,
             source_line,
-            String::from_utf8(vec![b' '; self.pos.pos as usize]).unwrap(),
-            String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width) as usize])
+            String::from_utf8(vec![b' '; self.pos.pos]).unwrap(),
+            String::from_utf8(vec![b'^'; self.token.clone().map_or(1, Token::width)])
                 .unwrap()
         )
     }

@@ -200,9 +200,9 @@ pub fn id_from_var(
                 let temp_name = constr.temp_name();
                 temp_names.push(temp_name.clone());
 
-                constr.insert_var(&name);
+                constr.insert_var(name);
                 let ty = Expected::new(var.pos, &Type { name: temp_name.clone() });
-                env = env.insert_var(mutable && *f_mut, &name, &ty, &constr.var_mapping);
+                env = env.insert_var(mutable && *f_mut, name, &ty, &constr.var_mapping);
 
                 let var = AST::new(var.pos, Id { lit: name.clone() });
                 constr.add("variable with only expression", &Expected::from(&var), &ty, &env);

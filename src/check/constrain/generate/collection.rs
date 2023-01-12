@@ -146,7 +146,7 @@ pub fn constr_col_lookup(lookup: &AST, col: &AST, env: &Environment, constr: &mu
         env = env.insert_var(mutable, &var, &Expected::any(lookup.pos), &constr.var_mapping);
     }
 
-    let exp_lookup_temp = Expected::new(lookup.pos, &Type { name: temp_name.clone() });
+    let exp_lookup_temp = Expected::new(lookup.pos, &Type { name: temp_name });
     constr.add("lookup type", &exp_lookup_temp, &Expected::from(lookup), &env);
     Ok(env)
 }

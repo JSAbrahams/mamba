@@ -29,7 +29,7 @@ impl From<&ClassUnion> for Name {
             .map(|u| match u.name.name.as_str() { // very odd map
                 clss::TUPLE => {
                     let args = u.name.generics.get(0).cloned().unwrap_or_else(|| Name::from(""));
-                    let args = args.names.iter().next().map_or_else(|| vec![], |name| if name.is_tuple() {
+                    let args = args.names.iter().next().map_or_else(Vec::new, |name| if name.is_tuple() {
                         name.elements(Position::invisible()).expect("Unreachable")
                     } else {
                         vec![]

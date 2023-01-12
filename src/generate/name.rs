@@ -17,11 +17,7 @@ impl ToPy for Name {
     fn to_py(&self, imp: &mut Imports) -> Core {
         if self.names.len() > 1 {
             imp.add_from_import("typing", UNION);
-            let generics: Vec<Name> = self.names.iter()
-                .sorted_by_key(|name| name.clone())
-                .map(Name::from)
-                .collect();
-
+            let generics: Vec<Name> = self.names.iter().sorted().map(Name::from).collect();
             core_type(UNION, &generics, imp)
         } else if let Some(name) = self.names.iter().next() {
             name.to_py(imp)
@@ -46,7 +42,10 @@ impl ToPy for StringName {
     fn to_py(&self, imp: &mut Imports) -> Core {
         match self.name.as_str() {
             clss::UNION => {
-                self.generics.iter().fold(Name::empty(), |acc, n| acc.union(n)).to_py(imp)
+                self.generics
+                    .iter()
+                    .sorted()
+                    .fold(Name::empty(), |acc, n| acc.union(n)).to_py(imp)
             }
             clss::TUPLE => {
                 imp.add_from_import("typing", TUPLE);
@@ -54,8 +53,8 @@ impl ToPy for StringName {
             }
             clss::CALLABLE => {
                 imp.add_from_import("typing", CALLABLE);
-                let args = self.generics.get(0).cloned().unwrap_or_else(|| Name::empty());
-                let ret = self.generics.get(1).cloned().unwrap_or_else(|| Name::empty());
+                let args = self.generics.get(0).cloned().unwrap_or_else(Name::empty);
+                let ret = self.generics.get(1).cloned().unwrap_or_else(Name::empty);
                 core_type(CALLABLE, &[args, ret], imp)
             }
             other => {

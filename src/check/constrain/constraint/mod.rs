@@ -76,7 +76,7 @@ impl Constraint {
 
         let fun = Function { name: StringName::from(NEXT), args: vec![iter_ty.clone()] };
         let next_access = Access {
-            entity: Box::from(iter_ty.clone()),
+            entity: Box::from(iter_ty),
             name: Box::new(Expected::new(expected.pos, &fun)),
         };
 
