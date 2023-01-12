@@ -89,13 +89,13 @@ impl HasParent<&StringName> for Class {
 
             // Contender! check generics
             // Tuple check is necessary evil, no way to specify variable generics for tuples
-            let mut all_super = true;
+            let mut all_generic_super = true;
             for (s_name, o_name) in self.name.generics.iter().zip(&other.generics) {
                 for s_name in &s_name.names {
-                    all_super &= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
+                    all_generic_super &= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
                 }
             }
-            if all_super { return Ok(all_super); }
+            if all_generic_super { return Ok(all_generic_super); }
         }
 
         Ok(self
@@ -223,10 +223,7 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
 
         Ok(Class {
             is_py_type: generic.is_py_type,
-            name: generic.name.substitute(generics, pos).map_err(|err| err
-                .iter()
-                .map(|e| e.append_msg(&format!("in {}", generic.name)))
-                .collect::<Vec<TypeErr>>())?,
+            name: generic.name.substitute(generics, pos)?,
             concrete: generic.concrete,
             args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
             parents: generic.parents.iter().map(try_parent).collect::<Result<_, _>>()?,

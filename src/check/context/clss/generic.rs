@@ -72,7 +72,7 @@ impl Any for GenericClass {
             is_py_type: false,
             name: StringName::new(function::STR, &[]),
             pure: false,
-            pos: Default::default(),
+            pos: Position::invisible(),
             arguments: vec![],
             raises: Name::empty(),
             in_class: None,
@@ -82,7 +82,7 @@ impl Any for GenericClass {
         GenericClass {
             is_py_type: false,
             name: StringName::new(clss::ANY, &[]),
-            pos: Default::default(),
+            pos: Position::invisible(),
             concrete: true,
             args: vec![],
             fields: Default::default(),
@@ -139,7 +139,7 @@ impl TryFrom<&AST> for GenericClass {
                         is_py_type: false,
                         name: String::from(arg::SELF),
                         has_default: false,
-                        pos: Default::default(),
+                        pos: Position::invisible(),
                         vararg: false,
                         mutable: true,
                         ty: Some(Name::from(&name)),
@@ -187,7 +187,7 @@ impl TryFrom<&AST> for GenericClass {
                     class_args.push(GenericFunctionArg {
                         is_py_type: false,
                         name: String::from(arg::SELF),
-                        pos: Default::default(),
+                        pos: Position::invisible(),
                         has_default: false,
                         vararg: false,
                         mutable: true,
@@ -237,7 +237,7 @@ impl TryFrom<&AST> for GenericClass {
                     args: vec![GenericFunctionArg {
                         is_py_type: false,
                         name: String::from(arg::SELF),
-                        pos: Default::default(),
+                        pos: Position::invisible(),
                         has_default: false,
                         vararg: false,
                         mutable: true,
@@ -256,7 +256,7 @@ impl TryFrom<&AST> for GenericClass {
                 args: vec![GenericFunctionArg {
                     is_py_type: false,
                     name: String::from(arg::SELF),
-                    pos: Default::default(),
+                    pos: Position::invisible(),
                     has_default: false,
                     vararg: false,
                     mutable: true,

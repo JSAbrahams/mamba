@@ -272,14 +272,14 @@ mod test {
     fn any_super_of_int() {
         let (name_1, name_2) = (StringName::from(ANY), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
     fn bool_not_super_of_int() {
         let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -287,8 +287,8 @@ mod test {
         let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let bool_class = ctx.class(&name_1, Position::default()).expect("bool class");
-        assert!(!bool_class.has_parent(&name_2, &ctx, Position::default()).unwrap())
+        let bool_class = ctx.class(&name_1, Position::invisible()).expect("bool class");
+        assert!(!bool_class.has_parent(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -296,8 +296,8 @@ mod test {
         let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let int_class = ctx.class(&name_2, Position::default()).expect("int class");
-        assert!(!int_class.has_parent(&name_1, &ctx, Position::default()).unwrap())
+        let int_class = ctx.class(&name_2, Position::invisible()).expect("int class");
+        assert!(!int_class.has_parent(&name_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -305,14 +305,14 @@ mod test {
         let (name_1, name_2) = (StringName::from(STRING), StringName::from(STRING));
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let string_class = ctx.class(&name_2, Position::default()).expect("int class");
-        assert!(string_class.has_parent(&name_1, &ctx, Position::default()).unwrap())
+        let string_class = ctx.class(&name_2, Position::invisible()).expect("int class");
+        assert!(string_class.has_parent(&name_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
     fn string_not_super_of_int() {
         let (name_1, name_2) = (StringName::from(STRING), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 }

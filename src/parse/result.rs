@@ -81,7 +81,7 @@ pub fn custom(msg: &str, position: Position) -> ParseErr {
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
-        pos: Position::default(),
+        pos: Position::invisible(),
         msg: match tokens {
             tokens if tokens.len() > 1 => format!(
                 "Expected one of [{}] tokens while parsing {}{parsing}",

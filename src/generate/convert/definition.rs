@@ -137,7 +137,7 @@ mod test {
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
-            AST { pos: Position::default(), node: $node }
+            AST { pos: Position::invisible(), node: $node }
         }};
     }
 

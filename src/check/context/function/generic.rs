@@ -127,7 +127,7 @@ mod test {
 
     #[test]
     fn from_non_fundef_node() {
-        let ast = AST::new(Position::default(), Node::Pass);
+        let ast = AST::new(Position::invisible(), Node::Pass);
         assert!(GenericFunction::try_from(&ast).is_err())
     }
 

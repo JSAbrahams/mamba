@@ -35,12 +35,7 @@ pub fn unify_function(
                 .names
                 .iter()
                 .cloned()
-                .map(|n| if n.is_callable() {
-                    n.args(right.pos)
-                } else {
-                    let msg = format!("A '{n}' does not take arguments");
-                    Err(vec![TypeErr::new(right.pos, &msg)])
-                })
+                .map(|n| n.args(right.pos))
                 .collect::<Result<_, _>>()?;
 
             let mut count = 0;

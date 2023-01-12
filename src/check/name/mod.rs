@@ -439,7 +439,7 @@ mod tests {
         let union_2 = Name::from(&StringName::new(SET, &[Name::from(INT)]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -454,7 +454,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -463,8 +463,8 @@ mod tests {
         let name2 = Name::from(&HashSet::from([INT]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name1.is_superset_of(&name2, &ctx, Position::default()).unwrap());
-        assert!(!name2.is_superset_of(&name1, &ctx, Position::default()).unwrap());
+        assert!(name1.is_superset_of(&name2, &ctx, Position::invisible()).unwrap());
+        assert!(!name2.is_superset_of(&name1, &ctx, Position::invisible()).unwrap());
     }
 
     #[test]
@@ -473,7 +473,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -482,7 +482,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -491,7 +491,7 @@ mod tests {
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -500,7 +500,7 @@ mod tests {
         let union_2 = Name::from(RANGE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -509,7 +509,7 @@ mod tests {
         let union_2 = Name::from(STRING);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -518,7 +518,7 @@ mod tests {
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -528,7 +528,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -538,21 +538,21 @@ mod tests {
         let union_2 = Name::from(&true_name);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
     fn is_superset_self() {
         let (name_1, name_2) = (Name::from(TUPLE), Name::from(TUPLE));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
     fn int_not_superset_string() {
         let (name_1, name_2) = (Name::from(INT), Name::from(STRING));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -576,7 +576,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -653,7 +653,7 @@ mod tests {
     fn test_match_name() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
         let name = Name::from("MyType3");
-        let matchings = match_name(&iden, &name, Position::default())?;
+        let matchings = match_name(&iden, &name, Position::invisible())?;
 
         assert_eq!(matchings.len(), 1);
         let (mutable, matching) = matchings["abc"].clone();
@@ -670,7 +670,7 @@ mod tests {
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
         let name = Name::from("MyType3");
-        let err = match_name(&iden3, &name, Position::default());
+        let err = match_name(&iden3, &name, Position::invisible());
 
         assert!(err.is_err())
     }
@@ -679,7 +679,7 @@ mod tests {
     fn test_match_name_type_is_tuple() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
         let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
-        let matchings = match_name(&iden, &name, Position::default())?;
+        let matchings = match_name(&iden, &name, Position::invisible())?;
 
         assert_eq!(matchings.len(), 1);
         let (mutable, matching) = matchings["abc"].clone();
@@ -697,7 +697,7 @@ mod tests {
 
         let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
 
-        let matchings = match_name(&iden3, &name, Position::default())?;
+        let matchings = match_name(&iden3, &name, Position::invisible())?;
 
         assert_eq!(matchings.len(), 2);
         let (mutable1, matching1) = matchings["abc"].clone();
@@ -720,7 +720,7 @@ mod tests {
 
         let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
 
-        let matchings = match_name(&iden4, &name, Position::default());
+        let matchings = match_name(&iden4, &name, Position::invisible());
         assert!(matchings.is_err());
     }
 
@@ -736,7 +736,7 @@ mod tests {
             Name::from("A0"),
         ]);
 
-        let matchings = match_name(&iden3, &name, Position::default());
+        let matchings = match_name(&iden3, &name, Position::invisible());
         assert!(matchings.is_err());
     }
 
@@ -746,7 +746,7 @@ mod tests {
         let int_name = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, Position::default())?;
+        let collection_ty = range_name.col_type(&ctx, Position::invisible())?;
         assert_eq!(collection_ty, Some(int_name));
         Ok(())
     }
@@ -757,8 +757,8 @@ mod tests {
         let int_name = StringName::from(INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let clss = ctx.class(&int_name, Position::default())?;
-        assert!(clss.has_parent(&float_name, &ctx, Position::default())?);
+        let clss = ctx.class(&int_name, Position::invisible())?;
+        assert!(clss.has_parent(&float_name, &ctx, Position::invisible())?);
         Ok(())
     }
 
@@ -768,8 +768,8 @@ mod tests {
         let int_name = Name::from(INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let clss = ctx.class(&float_name, Position::default())?;
-        assert!(!clss.has_parent(&int_name, &ctx, Position::default())?);
+        let clss = ctx.class(&float_name, Position::invisible())?;
+        assert!(!clss.has_parent(&int_name, &ctx, Position::invisible())?);
         Ok(())
     }
 
@@ -778,7 +778,7 @@ mod tests {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, Position::default());
+        let collection_ty = range_name.col_type(&ctx, Position::invisible());
         assert!(collection_ty.is_err());
     }
 

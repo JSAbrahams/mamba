@@ -166,7 +166,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
 
             let mut exprs: Vec<(CaretPos, String)> = vec![];
             let mut build_cur_expr = 0;
-            let mut cur_offset = CaretPos::default();
+            let mut cur_offset = CaretPos::start();
             let mut cur_expr = String::new();
 
             for c in it {

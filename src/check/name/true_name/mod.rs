@@ -209,7 +209,7 @@ mod test {
         let name_2 = TrueName::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod test {
         let name_2 = TrueName::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -227,6 +227,6 @@ mod test {
         let name_2 = TrueName::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 }

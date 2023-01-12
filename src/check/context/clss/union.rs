@@ -158,7 +158,7 @@ mod test {
     #[test]
     fn tuple_with_generics_has_collection_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
         let tuple = ctx.class(&name, pos).expect("Tuple");
 
@@ -170,7 +170,7 @@ mod test {
     #[test]
     fn tuple_has_tuple_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::tuple(&[Name::from("Int"), Name::from("Float")]);
         let tuple = ctx.class(&name, pos).expect("Tuple");
 
@@ -182,7 +182,7 @@ mod test {
     #[test]
     fn tuple_not_parent_wrong_types() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::tuple(&[Name::from("Int"), Name::from("Float"), ]);
         let tuple = ctx.class(&name, pos).expect("Tuple");
 
@@ -194,7 +194,7 @@ mod test {
     #[test]
     fn callable_has_callable_parent() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
                                   &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
@@ -208,7 +208,7 @@ mod test {
     #[test]
     fn callable_has_callable_parent_tuple_arg() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
                                   &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
@@ -222,7 +222,7 @@ mod test {
     #[test]
     fn callable_parent_wrong_ret_type() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
                                   &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");
@@ -236,7 +236,7 @@ mod test {
     #[test]
     fn callable_parent_wrong_arg_type() -> TypeResult<()> {
         let ctx = Context::default().into_with_std_lib()?.into_with_primitives()?;
-        let pos = Position::default();
+        let pos = Position::invisible();
         let name = Name::callable(&[Name::from("Int"), Name::from("Float")],
                                   &Name::from("Float"));
         let callable = ctx.class(&name, pos).expect("Callable");

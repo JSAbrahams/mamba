@@ -44,7 +44,7 @@ impl ConstrBuilder {
     /// Create constraint builder with a single set present.
     pub fn new() -> ConstrBuilder {
         let var_mapping = VarMapping::new();
-        let (pos, msg) = (Position::default(), String::from("Script"));
+        let (pos, msg) = (Position::invisible(), String::from("Script"));
         ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping, temp_name_offset: 0 }
     }
 
@@ -172,8 +172,8 @@ mod tests {
     macro_rules! constr {
         ($msg:expr) => {{
             Constraint::new(format!("{}", $msg).as_str(),
-                            &Expected::any(Position::default()),
-                            &Expected::any(Position::default()))
+                            &Expected::any(Position::invisible()),
+                            &Expected::any(Position::invisible()))
         }}
     }
 
@@ -209,7 +209,7 @@ mod tests {
         builder.branch_point();
         builder.add_constr(&c2, &Environment::default()); // then branch of if
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c3, &Environment::default()); // else branch of if
 
         builder.reset_branches();
@@ -232,10 +232,10 @@ mod tests {
         builder.branch_point();
         builder.add_constr(&c2, &Environment::default()); // first branch
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c3, &Environment::default()); // second branch
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c4, &Environment::default()); // third branch
 
         builder.reset_branches();
@@ -260,25 +260,25 @@ mod tests {
         builder.branch_point();
         builder.add_constr(&c2, &Environment::default()); // first branch
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         {   // second branch
             builder.branch_point();
             builder.add_constr(&c31, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c32, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c33, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c34, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c35, &Environment::default());
         }
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c4, &Environment::default()); // third branch
 
         builder.reset_branches();
