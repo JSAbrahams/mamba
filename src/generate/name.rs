@@ -3,7 +3,7 @@ use itertools::Itertools;
 use crate::check::context::clss;
 use crate::check::context::clss::concrete_to_python;
 use crate::check::context::clss::python::{ANY, CALLABLE, TUPLE, UNION};
-use crate::check::name::{Name, Nullable};
+use crate::check::name::{Empty, Name, Nullable, Union};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::generate::ast::node::Core;
@@ -17,14 +17,12 @@ impl ToPy for Name {
     fn to_py(&self, imp: &mut Imports) -> Core {
         if self.names.len() > 1 {
             imp.add_from_import("typing", UNION);
-            let generics: Vec<Core> = self
-                .names
-                .iter()
-                .sorted_by_key(|name| name.variant.name.clone())
-                .map(|name| name.to_py(imp))
+            let generics: Vec<Name> = self.names.iter()
+                .sorted_by_key(|name| name.clone())
+                .map(Name::from)
                 .collect();
 
-            core_type(UNION, &generics)
+            core_type(UNION, &generics, imp)
         } else if let Some(name) = self.names.iter().next() {
             name.to_py(imp)
         } else {
@@ -37,8 +35,7 @@ impl ToPy for TrueName {
     fn to_py(&self, imp: &mut Imports) -> Core {
         if self.is_nullable() {
             imp.add_from_import("typing", "Optional");
-            let generics: Vec<Core> = vec![self.variant.to_py(imp)];
-            core_type("Optional", &generics)
+            core_type("Optional", &[Name::from(&self.variant)], imp)
         } else {
             self.variant.to_py(imp)
         }
@@ -48,16 +45,18 @@ impl ToPy for TrueName {
 impl ToPy for StringName {
     fn to_py(&self, imp: &mut Imports) -> Core {
         match self.name.as_str() {
+            clss::UNION => {
+                self.generics.iter().fold(Name::empty(), |acc, n| acc.union(n)).to_py(imp)
+            }
             clss::TUPLE => {
                 imp.add_from_import("typing", TUPLE);
-                let generics: Vec<Core> = self.generics.iter().map(|name| name.to_py(imp)).collect();
-                core_type(TUPLE, &generics)
+                core_type(TUPLE, &self.generics, imp)
             }
             clss::CALLABLE => {
                 imp.add_from_import("typing", CALLABLE);
-                let args = self.generics.get(0).map_or_else(|| Core::Empty, |args| args.to_py(imp));
-                let ret = self.generics.get(1).map_or_else(|| Core::Empty, |name| name.to_py(imp));
-                core_type(CALLABLE, &[args, ret])
+                let args = self.generics.get(0).cloned().unwrap_or_else(|| Name::empty());
+                let ret = self.generics.get(1).cloned().unwrap_or_else(|| Name::empty());
+                core_type(CALLABLE, &[args, ret], imp)
             }
             other => {
                 if other == clss::ANY {
@@ -65,20 +64,15 @@ impl ToPy for StringName {
                 }
 
                 let lit = concrete_to_python(&self.name);
-                let generics: Vec<Core> = self.generics.iter().map(|name| name.to_py(imp)).collect();
-                core_type(&lit, &generics)
+                core_type(&lit, &self.generics, imp)
             }
         }
     }
 }
 
-fn core_type(lit: &str, generics: &[Core]) -> Core {
+fn core_type(lit: &str, generics: &[Name], imp: &mut Imports) -> Core {
     Core::Type {
         lit: String::from(lit),
-        generics: generics.iter().map(|core| match &core {
-            Core::Id { lit } => core_type(lit.as_str(), &[]),
-            Core::Type { lit, generics } => core_type(lit, generics),
-            _ => core.clone()
-        }).collect(),
+        generics: generics.iter().map(|core| core.to_py(imp)).collect(),
     }
 }
