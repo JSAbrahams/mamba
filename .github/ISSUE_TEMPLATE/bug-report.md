@@ -7,12 +7,12 @@ assignees: ''
 
 ---
 
-### Description of Bug
+## Description of Bug
 
-### How to Reproduce
+## How to Reproduce
 
 _Steps to reproduce the behaviour, with steps and resulting error._
 
-### Expected behavior
+## Expected behavior
 
-### Additional context
+## Additional context
