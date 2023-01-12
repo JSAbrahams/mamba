@@ -171,26 +171,18 @@ impl Mutable for Name {
 
 impl Union<Name> for Name {
     fn union(&self, name: &Name) -> Self {
-        trace!("Union! {self} with {name}");
-
-        let nullable = name.names.contains(&TrueName::from(clss::NONE));
         let names: HashSet<TrueName> = self.names.union(&name.names).cloned().collect();
-        let names = if nullable {
-            let names: HashSet<TrueName> = names
-                .iter()
-                .map(|name| if *name != TrueName::from(clss::NONE) { name.as_nullable() } else { name.clone() })
-                .collect();
-
-            if names.len() > 1 {
-                names.into_iter().filter(|name| *name != TrueName::from(clss::NONE)).collect()
+        Name {
+            names: if names.iter().any(TrueName::is_null) && names.len() > 1 {
+                names.iter()
+                    .filter(|n| !n.is_null())
+                    .map(TrueName::as_nullable)
+                    .collect()
             } else {
-                names // In case None only name
-            }
-        } else {
-            names
-        };
-
-        Name { names, is_interchangeable: self.is_interchangeable || name.is_interchangeable }
+                names
+            },
+            is_interchangeable: self.is_interchangeable || name.is_interchangeable,
+        }
     }
 }
 
@@ -420,6 +412,26 @@ mod tests {
     use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
+
+    #[test]
+    fn union_none_nullable_str_is_nullable_str() {
+        let name_1 = Name::from("None");
+        let name_2 = Name::from(&TrueName::from("Str").as_nullable());
+
+        let union = name_1.union(&name_2);
+        assert_eq!(union.names.len(), 1);
+        assert_eq!(*union.names.iter().next().unwrap(), TrueName::from("Str").as_nullable());
+    }
+
+    #[test]
+    fn union_none_str_is_nullable_str() {
+        let name_1 = Name::from("None");
+        let name_2 = Name::from(&TrueName::from("Str"));
+
+        let union = name_1.union(&name_2);
+        assert_eq!(union.names.len(), 1);
+        assert_eq!(*union.names.iter().next().unwrap(), TrueName::from("Str").as_nullable());
+    }
 
     #[test]
     fn collect_any_superset_of_set_int() {

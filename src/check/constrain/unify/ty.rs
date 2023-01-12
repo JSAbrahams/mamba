@@ -22,19 +22,19 @@ pub fn unify_type(constraint: &Constraint, constr: &mut Constraints, finished: &
     match (&left.expect, &right.expect) {
         (Type { name: l_ty }, Type { name: r_ty }) => {
             if l_ty.is_temporary() {
-                substitute_ty(right.pos, r_ty, left.pos, l_ty, constr, count, total)?;
+                sub_ty(right.pos, r_ty, left.pos, l_ty, constr, count, total)?;
                 return unify_link(constr, finished, ctx, total);
             } else if r_ty.is_temporary() {
-                substitute_ty(left.pos, l_ty, right.pos, r_ty, constr, count, total)?;
+                sub_ty(left.pos, l_ty, right.pos, r_ty, constr, count, total)?;
                 return unify_link(constr, finished, ctx, total);
             } else if l_ty.contains_temp() {
                 for (old, new) in l_ty.temp_map(r_ty, left.pos)? {
-                    substitute_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
+                    sub_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
                 }
                 return unify_link(constr, finished, ctx, total);
             } else if r_ty.contains_temp() {
                 for (old, new) in r_ty.temp_map(l_ty, left.pos)? {
-                    substitute_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
+                    sub_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
                 }
                 return unify_link(constr, finished, ctx, total);
             }
@@ -42,9 +42,6 @@ pub fn unify_type(constraint: &Constraint, constr: &mut Constraints, finished: &
             if l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any() || r_ty == &Name::any() {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
-
-                finished.push_ty(ctx, left.pos, l_ty)?;
-                finished.push_ty(ctx, right.pos, r_ty)?;
                 unify_link(constr, finished, ctx, total)
             } else {
                 Err(unify_type_message("two types", &constraint.msg, left, right))
@@ -60,8 +57,8 @@ pub fn unify_type_message(prepend: &str, cause_msg: &str, sup: &Expected, child:
     vec![TypeErr::new(child.pos, &msg).with_cause(cause_msg, sup.pos)]
 }
 
-fn substitute_ty(new_pos: Position, new: &Name, old_pos: Position, old: &Name, constr: &mut Constraints,
-                 offset: usize, total: usize) -> Unified<()> {
+fn sub_ty(new_pos: Position, new: &Name, old_pos: Position, old: &Name, constr: &mut Constraints,
+          offset: usize, total: usize) -> Unified<()> {
     let mut constraint_pos = offset;
     let old_to_new = HashMap::from([(old.clone(), new.clone())]);
     trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
@@ -86,8 +83,8 @@ fn substitute_ty(new_pos: Position, new: &Name, old_pos: Position, old: &Name, c
             }};
         }
 
-        let (sub_l, parent) = recursive_substitute_ty("l", &con.parent, &old_to_new, new_pos)?;
-        let (sub_r, child) = recursive_substitute_ty("r", &con.child, &old_to_new, old_pos)?;
+        let (sub_l, parent) = recursive_sub_ty("l", &con.parent, &old_to_new, new_pos)?;
+        let (sub_r, child) = recursive_sub_ty("r", &con.child, &old_to_new, old_pos)?;
 
         con.parent = parent;
         con.child = child;
@@ -102,18 +99,18 @@ fn substitute_ty(new_pos: Position, new: &Name, old_pos: Position, old: &Name, c
     Ok(())
 }
 
-fn recursive_substitute_ty(side: &str, inspected: &Expected, old_to_new: &NameMap, pos: Position)
-                           -> TypeResult<SubRes> {
+fn recursive_sub_ty(side: &str, inspected: &Expected, old_to_new: &NameMap, pos: Position)
+                    -> TypeResult<SubRes> {
     Ok(match &inspected.expect {
         Expect::Access { entity, name } => {
-            let (subs_e, entity) = recursive_substitute_ty(side, entity, old_to_new, pos)?;
-            let (sub_n, name) = recursive_substitute_ty(side, name, old_to_new, pos)?;
+            let (subs_e, entity) = recursive_sub_ty(side, entity, old_to_new, pos)?;
+            let (sub_n, name) = recursive_sub_ty(side, name, old_to_new, pos)?;
 
             let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
             (subs_e || sub_n, Expected::new(inspected.pos, &expect))
         }
         Expect::Function { name, args } => {
-            let (any_substituted, args) = substitute_vec_ty(side, old_to_new, args, pos)?;
+            let (any_substituted, args) = sub_ty_vec(side, old_to_new, args, pos)?;
             let func = Expect::Function { name: name.clone(), args };
             (any_substituted, Expected::new(inspected.pos, &func))
         }
@@ -125,11 +122,11 @@ fn recursive_substitute_ty(side: &str, inspected: &Expected, old_to_new: &NameMa
     })
 }
 
-fn substitute_vec_ty(side: &str, old_to_new: &NameMap, elements: &[Expected], pos: Position)
-                     -> TypeResult<SubRes<Vec<Expected>>> {
+fn sub_ty_vec(side: &str, old_to_new: &NameMap, elements: &[Expected], pos: Position)
+              -> TypeResult<SubRes<Vec<Expected>>> {
     let elements: Vec<(bool, Expected)> = elements
         .iter()
-        .map(|e| recursive_substitute_ty(side, e, old_to_new, pos))
+        .map(|e| recursive_sub_ty(side, e, old_to_new, pos))
         .collect::<TypeResult<_>>()?;
 
     Ok((elements.iter().clone().any(|(i, _)| *i), elements.into_iter().map(|(_, i)| i).collect()))

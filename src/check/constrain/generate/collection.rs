@@ -30,14 +30,14 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
         Node::SetBuilder { item, conditions } => {
             let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
 
-            let item = deconstruct_builder(item);
+            let item = retrieve_nested_builder_item(item);
             let set = AST::new(ast.pos, Node::Set { elements: vec![item] });
             gen_col(&set, &builder_env, constr)
         }
         Node::ListBuilder { item, conditions } => {
             let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
 
-            let item = deconstruct_builder(item);
+            let item = retrieve_nested_builder_item(item);
             let set = AST::new(ast.pos, Node::List { elements: vec![item] });
             gen_col(&set, &builder_env, constr)
         }
@@ -45,7 +45,7 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
     }
 }
 
-fn deconstruct_builder(ast: &AST) -> AST {
+fn retrieve_nested_builder_item(ast: &AST) -> AST {
     match &ast.node {
         Node::SetBuilder { item, .. } => *item.clone(),
         Node::ListBuilder { item, .. } => *item.clone(),

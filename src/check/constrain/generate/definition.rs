@@ -220,7 +220,7 @@ pub fn id_from_var(
                             constr.add(&msg, &expr_ty, &expr_exp, &env);
                         }
                     } else {
-                        let msg = format!("Cannot join tuple literal. Expected {} elements, was {}",
+                        let msg = format!("Expected tuple of {} elements, was {}",
                                           temp_names.len(), elements.len());
                         return Err(vec![TypeErr::new(expr.pos, &msg)]);
                     }

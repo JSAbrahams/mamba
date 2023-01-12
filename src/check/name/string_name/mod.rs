@@ -139,7 +139,7 @@ impl IsTemp for StringName {
 
 impl ContainsTemp for StringName {
     fn contains_temp(&self) -> bool {
-        self.name.starts_with(TEMP) || self.generics.iter().clone().any(|n| n.contains_temp())
+        self.is_temp() || self.generics.iter().clone().any(|n| n.contains_temp())
     }
 }
 
@@ -203,7 +203,7 @@ impl MatchTempName for StringName {
     fn temp_map(&self, other: &StringName, mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
         let mut mapping = mapping.clone();
         if self.name.starts_with(TEMP) {
-            mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
+            mapping.insert(Name::from(self.name.as_str()), Name::from(other));
         } else if self.name != other.name {
             return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
         }
