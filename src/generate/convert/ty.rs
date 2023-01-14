@@ -1,6 +1,7 @@
 use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::clss::concrete_to_python;
+use crate::check::context::clss::python::{CALLABLE, UNION};
 use crate::generate::ast::node::Core;
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
@@ -36,7 +37,7 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) 
             }
         },
         NodeTy::TypeFun { args, ret_ty } => {
-            imp.add_from_import("typing", "Callable");
+            imp.add_from_import("typing", CALLABLE);
             Core::Type {
                 lit: String::from("Callable"),
                 generics: vec![
@@ -46,9 +47,9 @@ pub fn convert_ty(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) 
             }
         }
         NodeTy::TypeUnion { types } => {
-            imp.add_from_import("typing", "Union");
+            imp.add_from_import("typing", UNION);
             Core::Type {
-                lit: String::from("Union"),
+                lit: String::from(UNION),
                 generics: convert_vec(types, imp, state, ctx)?,
             }
         }

@@ -154,7 +154,7 @@ fn extract_class(
         Core::Id { lit } => TrueName::from(lit.as_str()),
         _ => TrueName::empty()
     };
-    let class = ctx.class(&class_name, Position::default()).ok();
+    let class = ctx.class(&class_name, Position::invisible()).ok();
 
     let parent_names = if state.interface && !has_abstract_parent(&class, ctx) {
         imp.add_from_import("abc", "ABC");
@@ -178,7 +178,7 @@ fn extract_class(
 fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
     if let Some(clss) = clss {
         clss.parents.iter().any(|parent| {
-            let clss = ctx.class(parent, Position::default()).ok();
+            let clss = ctx.class(parent, Position::invisible()).ok();
             is_abstract(&clss, ctx)
         })
     } else {
@@ -189,7 +189,7 @@ fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
 fn is_abstract(clss: &Option<Class>, ctx: &Context) -> bool {
     if let Some(clss) = clss {
         !clss.concrete || clss.parents.iter().any(|parent| {
-            let clss = ctx.class(parent, Position::default()).ok();
+            let clss = ctx.class(parent, Position::invisible()).ok();
             has_abstract_parent(&clss, ctx)
         })
     } else {
@@ -307,7 +307,7 @@ mod tests {
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
-            AST { pos: Position::default(), node: $node }
+            AST { pos: Position::invisible(), node: $node }
         }};
     }
 

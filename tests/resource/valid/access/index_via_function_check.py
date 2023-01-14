@@ -8,5 +8,5 @@ def i() -> range:
 def j() -> range:
     return range(0, 2 + 1, 3)
 
-x = [1, 2, 3]
+x: list[int] = [1, 2, 3]
 x[f()]

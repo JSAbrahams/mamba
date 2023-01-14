@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::fmt::{Display, Formatter, Write};
 
 use crate::common::delimit::custom_delimited;
 use crate::generate::ast::node::Core;
@@ -7,7 +7,7 @@ pub mod node;
 
 pub const IND_SPACES: usize = 4;
 
-impl Core {
+impl Display for Core {
     /// Convert [Core](mamba::generate.ast::construct::Core) to a String which represent
     /// python source code.
     ///
@@ -22,7 +22,7 @@ impl Core {
     /// ```
     /// # use mamba::generate::ast::node::Core;
     /// let core_node = Core::Return { expr: Box::from(Core::None) };
-    /// let py_source = core_node.to_source();
+    /// let py_source = format!("{core_node}");
     ///
     /// assert_eq!(py_source, "return None\n");
     /// ```
@@ -37,10 +37,10 @@ impl Core {
     ///  el: Box::from(Core::Str { string: String::from("c") })
     /// };
     ///
-    /// assert_eq!(core_node.to_source(), "if a: \n    \"b\"\nelse: \n    \"c\"\n");
+    /// assert_eq!(format!("{core_node}"), "if a: \n    \"b\"\nelse: \n    \"c\"\n");
     /// ```
-    pub fn to_source(&self) -> String {
-        format!("{}\n", to_py(self, 0))
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", to_py(self, 0))
     }
 }
 

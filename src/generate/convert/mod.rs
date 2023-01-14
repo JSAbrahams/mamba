@@ -243,7 +243,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
 
         NodeTy::TypeDef { .. } | NodeTy::TypeAlias { .. } => convert_class(ast, imp, state, ctx)?,
         NodeTy::Class { .. } => convert_class(ast, imp, state, ctx)?,
-        NodeTy::Generic { .. } => Core::Empty,
         NodeTy::Parent { .. } => convert_class(ast, imp, state, ctx)?,
 
         NodeTy::Condition { .. } => return Err(Box::from(UnimplementedErr::new(ast, "condition"))),
@@ -317,7 +316,7 @@ fn append_assign(core: &Core, assign_to: &Core, name: &Option<Name>, imp: &mut I
         _ => Core::VarDef {
             var: Box::from(assign_to.clone()),
             ty: name.clone().map(|name| Box::from(name.to_py(imp))),
-            expr: Option::from(Box::from(core.clone()))
+            expr: Option::from(Box::from(core.clone())),
         },
     }
 }
@@ -384,7 +383,7 @@ mod tests {
 
     macro_rules! to_pos_unboxed {
         ($node:expr) => {{
-            AST { pos: Position::default(), node: $node }
+            AST { pos: Position::invisible(), node: $node }
         }};
     }
 

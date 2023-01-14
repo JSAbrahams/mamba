@@ -28,9 +28,11 @@ pub const RANGE: &str = "range";
 pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
 pub const LIST: &str = "list";
-pub const TUPLE: &str = "tuple";
 
-pub const CALLABLE: &str = "callable";
+pub const TUPLE: &str = "Tuple";
+pub const CALLABLE: &str = "Callable";
+pub const UNION: &str = "Union";
+pub const ANY: &str = "Any";
 
 pub const NONE: &str = "None";
 pub const EXCEPTION: &str = "Exception";
@@ -66,7 +68,7 @@ impl TryFrom<&Classdef> for GenericClass {
         let class = StringName::new(python_to_concrete(&class_def.name).as_str(), &generic_names);
         let functions: Vec<GenericFunction> = functions
             .into_iter()
-            .map(|f| f.in_class(Some(&class), false, Position::default()))
+            .map(|f| f.in_class(Some(&class), false, Position::invisible()))
             .collect::<Result<_, _>>()?;
         let args = functions
             .iter()
@@ -76,17 +78,17 @@ impl TryFrom<&Classdef> for GenericClass {
         Ok(GenericClass {
             is_py_type: true,
             name: class.clone(),
-            pos: Position::default(),
+            pos: Position::invisible(),
             concrete: false,
             args,
             fields: fields
                 .into_iter()
-                .flat_map(|f| f.in_class(Some(&class.clone()), false, Position::default()))
+                .flat_map(|f| f.in_class(Some(&class.clone()), false, Position::invisible()))
                 .collect(),
             functions: functions
                 .into_iter()
                 .filter(|f| f.name != StringName::from(INIT))
-                .map(|f| f.in_class(Some(&class), false, Position::default()))
+                .map(|f| f.in_class(Some(&class), false, Position::invisible()))
                 .filter_map(Result::ok)
                 .collect(),
             parents: class_def
@@ -115,9 +117,11 @@ pub fn python_to_concrete(name: &str) -> String {
         LIST => String::from(clss::LIST),
         TUPLE => String::from(clss::TUPLE),
 
+        UNION => String::from(clss::UNION),
         CALLABLE => String::from(clss::CALLABLE),
         NONE => String::from(clss::NONE),
         EXCEPTION => String::from(clss::EXCEPTION),
+        ANY => String::from(clss::ANY),
 
         other => String::from(other),
     }
@@ -133,7 +137,6 @@ mod test {
 
     use crate::check::context::clss::generic::GenericClass;
     use crate::check::name::{Empty, Name};
-    use crate::check::name::name_variant::NameVariant;
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
 
@@ -248,10 +251,7 @@ mod test {
         let mut iter = generic_class
             .parents
             .iter()
-            .sorted_by_key(|p| match &p.name.variant {
-                NameVariant::Single(string_name) => string_name.name.clone(),
-                other => panic!("Expected Single, was {:?}", other),
-            })
+            .sorted_by_key(|p| p.name.variant.clone())
             .into_iter();
 
         let parent2 = iter.next().expect("parent in class");

@@ -89,3 +89,13 @@ fn ternary() -> OutTestRet {
 fn function_ret_super() -> OutTestRet {
     test_directory(true, &["definition"], &["definition", "target"], "function_ret_super")
 }
+
+#[test]
+fn tuple_modify_mut() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "tuple_modify_mut")
+}
+
+#[test]
+fn tuple_non_lit_modify_mut() -> OutTestRet {
+    test_directory(true, &["definition"], &["definition", "target"], "tuple_non_lit_modify_mut")
+}

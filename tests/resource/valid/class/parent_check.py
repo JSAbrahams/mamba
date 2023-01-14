@@ -8,7 +8,7 @@ class MyType(ABC):
 
 
 class MyClass1(MyType):
-    other: int = None
+    other = None
 
     def __init__(self):
         MyType.__init__(self, "asdf")

@@ -154,7 +154,7 @@ mod test {
     #[test]
     fn to_ty() {
         let node = Node::Pass;
-        let ast = AST::new(Position::default(), node.clone());
+        let ast = AST::new(Position::invisible(), node.clone());
         let ast_ty = ASTTy::from(&ast).with_ty(&Name::from("Dummy"));
 
         assert_eq!(ast_ty.ty, Some(Name::from("Dummy")));

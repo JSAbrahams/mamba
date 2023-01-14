@@ -30,7 +30,11 @@ impl Display for Node {
         let name = match &self {
             Node::Import { .. } => String::from("import"),
             Node::Class { .. } => String::from("class"),
-            Node::Generic { .. } => String::from("generic"),
+            Node::Generic { id, isa } => if let Some(isa) = isa {
+                format!("{}: {}", id.node, isa.node)
+            } else {
+                format!("{}", id.node)
+            },
             Node::Parent { .. } => String::from("parent"),
             Node::Reassign { .. } => String::from("reassign"),
             Node::VariableDef { .. } => String::from("variable definition"),
@@ -51,18 +55,26 @@ impl Display for Node {
             Node::TypeAlias { .. } => String::from("type alias"),
             Node::TypeTup { .. } => String::from("type tuple"),
             Node::TypeUnion { .. } => String::from("type union"),
-            Node::Type { .. } => String::from("type"),
+            Node::Type { id, generics } => if generics.is_empty() {
+                format!("{}", id.node)
+            } else {
+                format!("{}[{}]", id.node, comma_delm(generics.iter().map(|e| e.node.clone())))
+            },
             Node::TypeFun { .. } => String::from("type function"),
             Node::Condition { .. } => String::from("condition"),
             Node::FunArg { .. } => String::from("function argument"),
             Node::Set { elements } => {
                 format!("{{{}}}", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
-            Node::SetBuilder { .. } => String::from("set builder"),
+            Node::SetBuilder { item, conditions } => {
+                format!("{{ {} | {} }}", item.node, comma_delm(conditions.iter().map(|e| e.node.clone())))
+            }
             Node::List { elements } => {
                 format!("[{}]", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
-            Node::ListBuilder { .. } => String::from("list builder"),
+            Node::ListBuilder { item, conditions } => {
+                format!("[ {} | {} ]", item.node, comma_delm(conditions.iter().map(|e| e.node.clone())))
+            }
             Node::Tuple { elements } => {
                 format!("({})", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
@@ -736,7 +748,7 @@ mod test {
 
     macro_rules! map_ne {
         ($node:expr, $new_node: expr, $old: expr, $new: expr) => {{
-            let ast = AST::new(Position::default(), $node);
+            let ast = AST::new(Position::invisible(), $node);
             let ast2 = ast.map(&|node| {
                 if let Node::Id { lit } = node {
                     if *lit == String::from($old) {
@@ -756,7 +768,7 @@ mod test {
 
     macro_rules! map_eq {
         ($node:expr, $new_node: expr, $old: expr, $new: expr) => {{
-            let ast = AST::new(Position::default(), $node);
+            let ast = AST::new(Position::invisible(), $node);
             let ast2 = ast.map(&|node| {
                 if let Node::Id { lit } = node {
                     if *lit == String::from($old) {
@@ -853,8 +865,8 @@ mod test {
     fn tuple_equal_structure() {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(Position::default(), Node::Id { lit: String::from("aa") }),
-                AST::new(Position::default(), Node::Id { lit: String::from("ba") }),
+                AST::new(Position::invisible(), Node::Id { lit: String::from("aa") }),
+                AST::new(Position::invisible(), Node::Id { lit: String::from("ba") }),
             ],
         };
 
@@ -863,7 +875,7 @@ mod test {
 
     #[test]
     fn tuple_not_equal_structure() {
-        let pos = Position::default();
+        let pos = Position::invisible();
         let node1 = Node::Tuple {
             elements: vec![
                 AST::new(pos, Node::Id { lit: String::from("aa") }),
@@ -896,19 +908,19 @@ mod test {
     #[test]
     fn import_equal_value() {
         two_ast!(Node::Import {
-            from: Some(Box::from(AST::new(Position::default(), Node::Break))),
-            import: vec![AST::new(Position::default(), Node::Continue)],
-            alias: vec![AST::new(Position::default(), Node::Pass)],
+            from: Some(Box::from(AST::new(Position::invisible(), Node::Break))),
+            import: vec![AST::new(Position::invisible(), Node::Continue)],
+            alias: vec![AST::new(Position::invisible(), Node::Pass)],
         });
     }
 
     #[test]
     fn class_equal_value() {
         let node = Node::Class {
-            ty: Box::new(AST::new(Position::default(), Node::Continue)),
-            args: vec![AST::new(Position::default(), Node::ReturnEmpty)],
-            parents: vec![AST::new(Position::default(), Node::Pass)],
-            body: Some(Box::from(AST::new(Position::default(), Node::new_self()))),
+            ty: Box::new(AST::new(Position::invisible(), Node::Continue)),
+            args: vec![AST::new(Position::invisible(), Node::ReturnEmpty)],
+            parents: vec![AST::new(Position::invisible(), Node::Pass)],
+            body: Some(Box::from(AST::new(Position::invisible(), Node::new_self()))),
         };
 
         two_ast!(node);
@@ -917,8 +929,8 @@ mod test {
     #[test]
     fn generic_equal_value() {
         let node = Node::Generic {
-            id: Box::new(AST::new(Position::default(), Node::ReturnEmpty)),
-            isa: Some(Box::from(AST::new(Position::default(), Node::Continue))),
+            id: Box::new(AST::new(Position::invisible(), Node::ReturnEmpty)),
+            isa: Some(Box::from(AST::new(Position::invisible(), Node::Continue))),
         };
 
         two_ast!(node);
@@ -927,8 +939,8 @@ mod test {
     #[test]
     fn parent_equal_value() {
         let node = Node::Parent {
-            ty: Box::new(AST::new(Position::default(), Node::new_self())),
-            args: vec![AST::new(Position::default(), Node::Pass)],
+            ty: Box::new(AST::new(Position::invisible(), Node::new_self())),
+            args: vec![AST::new(Position::invisible(), Node::Pass)],
         };
 
         two_ast!(node);
@@ -937,8 +949,8 @@ mod test {
     #[test]
     fn reassign_equal_value() {
         let node = Node::Reassign {
-            left: Box::new(AST::new(Position::default(), Node::Pass)),
-            right: Box::new(AST::new(Position::default(), Node::ReturnEmpty)),
+            left: Box::new(AST::new(Position::invisible(), Node::Pass)),
+            right: Box::new(AST::new(Position::invisible(), Node::ReturnEmpty)),
             op: NodeOp::Sub,
         };
 
@@ -947,9 +959,9 @@ mod test {
 
     #[test]
     fn def_equal_value() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
-        let second = Box::from(AST::new(Position::default(), Node::Break));
-        let third = Box::from(AST::new(Position::default(), Node::Pass));
+        let first = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
+        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
 
         two_ast!(Node::VariableDef {
             mutable: false,
@@ -965,7 +977,7 @@ mod test {
             ret: Some(third.clone()),
             raises: vec![*first.clone(), *second.clone()],
             body: Some(Box::from(AST::new(
-                Position::default(),
+                Position::invisible(),
                 Node::Raise { error: third.clone() }
             )))
         });
@@ -973,36 +985,36 @@ mod test {
 
     #[test]
     fn anon_fun_same_value() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
-        let second = Box::from(AST::new(Position::default(), Node::Break));
+        let first = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
 
         two_ast!(Node::AnonFun { args: vec![*first.clone()], body: second.clone() });
     }
 
     #[test]
     fn anon_raise_same_value() {
-        let second = Box::from(AST::new(Position::default(), Node::Break));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
         two_ast!(Node::Raise { error: second.clone() });
     }
 
     #[test]
     fn handle_same_value() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
-        let second = Box::from(AST::new(Position::default(), Node::Break));
-        let third = Box::from(AST::new(Position::default(), Node::Pass));
+        let first = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
+        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
 
         two_ast!(Node::Handle { cases: vec![*first.clone()], expr_or_stmt: second.clone() });
         two_ast!(Node::With {
             resource: first.clone(),
             alias: Some((second.clone(), false, Some(third.clone()))),
-            expr: Box::from(AST::new(Position::default(), Node::Pass))
+            expr: Box::from(AST::new(Position::invisible(), Node::Pass))
         });
     }
 
     #[test]
     fn call_same_value() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
-        let second = Box::from(AST::new(Position::default(), Node::Break));
+        let first = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
 
         two_ast!(Node::FunctionCall { name: first.clone(), args: vec![*second.clone()] });
         two_ast!(Node::PropertyCall { instance: first.clone(), property: second.clone() });
@@ -1020,8 +1032,8 @@ mod test {
 
     #[test]
     fn expression_type_equal_value() {
-        let expr = Box::from(AST::new(Position::default(), Node::Continue));
-        let expr2 = Box::from(AST::new(Position::default(), Node::Pass));
+        let expr = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let expr2 = Box::from(AST::new(Position::invisible(), Node::Pass));
         two_ast!(Node::ExpressionType {
             expr: expr.clone(),
             mutable: false,
@@ -1031,9 +1043,9 @@ mod test {
 
     #[test]
     fn type_equal_value() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
-        let second = Box::from(AST::new(Position::default(), Node::Break));
-        let third = Box::from(AST::new(Position::default(), Node::Pass));
+        let first = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
+        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
 
         two_ast!(Node::TypeDef {
             ty: first.clone(),
@@ -1064,7 +1076,7 @@ mod test {
         two_ast!(Node::ENum { num: String::from("werw"), exp: String::from("reter") });
         two_ast!(Node::Str {
             lit: String::from("yuk"),
-            expressions: vec![AST::new(Position::default(), Node::Continue)]
+            expressions: vec![AST::new(Position::invisible(), Node::Continue)]
         });
     }
 
@@ -1073,18 +1085,18 @@ mod test {
         two_ast_ne!(
             Node::Str {
                 lit: String::from("yuk"),
-                expressions: vec![AST::new(Position::default(), Node::Continue)]
+                expressions: vec![AST::new(Position::invisible(), Node::Continue)]
             },
             Node::Str {
                 lit: String::from("yuk"),
-                expressions: vec![AST::new(Position::default(), Node::Pass)]
+                expressions: vec![AST::new(Position::invisible(), Node::Pass)]
             }
         );
     }
 
     #[test]
     fn collection_same_value() {
-        let item = Box::from(AST::new(Position::default(), Node::Id { lit: String::from("asdf") }));
+        let item = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
 
         two_ast!(Node::Set { elements: vec![*item.clone()] });
         two_ast!(Node::List { elements: vec![*item.clone()] });
@@ -1097,9 +1109,9 @@ mod test {
     #[test]
     fn block_same_value() {
         let first =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("asdf") }));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
         let second =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("lkjh") }));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("lkjh") }));
 
         two_ast!(Node::Block { statements: vec![*first.clone(), *second.clone()] });
     }
@@ -1114,9 +1126,9 @@ mod test {
 
     #[test]
     fn binary_op_same_value() {
-        let left = Box::from(AST::new(Position::default(), Node::Id { lit: String::from("asdf") }));
+        let left = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
         let right =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("lkjh") }));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("lkjh") }));
 
         two_ast!(Node::Add { left: left.clone(), right: right.clone() });
         two_ast!(Node::Sub { left: left.clone(), right: right.clone() });
@@ -1153,7 +1165,7 @@ mod test {
     #[test]
     fn unary_op_same_value() {
         let expr =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("qwerty") }));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("qwerty") }));
 
         two_ast!(Node::AddU { expr: expr.clone() });
         two_ast!(Node::SubU { expr: expr.clone() });
@@ -1165,9 +1177,9 @@ mod test {
     #[test]
     fn contrl_flow_same_value() {
         let cond =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("qwerty") }));
-        let body = Box::from(AST::new(Position::default(), Node::ReturnEmpty));
-        let third = Box::from(AST::new(Position::default(), Node::Continue));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("qwerty") }));
+        let body = Box::from(AST::new(Position::invisible(), Node::ReturnEmpty));
+        let third = Box::from(AST::new(Position::invisible(), Node::Continue));
 
         two_ast!(Node::IfElse { cond: cond.clone(), then: body.clone(), el: Some(third.clone()) });
         two_ast!(Node::Match { cond: cond.clone(), cases: vec![*body.clone(), *third.clone()] });
@@ -1196,17 +1208,17 @@ mod test {
 
     #[test]
     fn return_equal_value() {
-        two_ast!(Node::Return { expr: Box::from(AST::new(Position::default(), Node::Continue)) });
+        two_ast!(Node::Return { expr: Box::from(AST::new(Position::invisible(), Node::Continue)) });
     }
 
     #[test]
     fn question_equal_value() {
         two_ast!(Node::QuestionOp {
-            expr: Box::from(AST::new(Position::default(), Node::Continue))
+            expr: Box::from(AST::new(Position::invisible(), Node::Continue))
         });
         two_ast!(Node::Question {
-            left: Box::from(AST::new(Position::default(), Node::Continue)),
-            right: Box::from(AST::new(Position::default(), Node::Break))
+            left: Box::from(AST::new(Position::invisible(), Node::Continue)),
+            right: Box::from(AST::new(Position::invisible(), Node::Break))
         });
     }
 
@@ -1214,8 +1226,8 @@ mod test {
     fn block_end_with_expression_is_expression() {
         let node = Node::Block {
             statements: vec![
-                AST::new(Position::default(), Node::Pass),
-                AST::new(Position::default(), Node::Int { lit: String::from("3") }),
+                AST::new(Position::invisible(), Node::Pass),
+                AST::new(Position::invisible(), Node::Int { lit: String::from("3") }),
             ],
         };
         assert!(node.is_expression())
@@ -1225,8 +1237,8 @@ mod test {
     fn block_end_with_statement_not_expression() {
         let node = Node::Block {
             statements: vec![
-                AST::new(Position::default(), Node::Int { lit: String::from("3") }),
-                AST::new(Position::default(), Node::Pass),
+                AST::new(Position::invisible(), Node::Int { lit: String::from("3") }),
+                AST::new(Position::invisible(), Node::Pass),
             ],
         };
         assert!(!node.is_expression())
@@ -1240,8 +1252,8 @@ mod test {
     #[test]
     fn if_is_not_expression() {
         let node = Node::IfElse {
-            cond: Box::new(AST::new(Position::default(), Node::Bool { lit: true })),
-            then: Box::new(AST::new(Position::default(), Node::Pass)),
+            cond: Box::new(AST::new(Position::invisible(), Node::Bool { lit: true })),
+            then: Box::new(AST::new(Position::invisible(), Node::Pass)),
             el: None,
         };
         assert!(!node.is_expression())
@@ -1250,18 +1262,18 @@ mod test {
     #[test]
     fn if_else_is_not_expression() {
         let node = Node::IfElse {
-            cond: Box::new(AST::new(Position::default(), Node::Bool { lit: true })),
-            then: Box::new(AST::new(Position::default(), Node::Pass)),
-            el: Some(Box::new(AST::new(Position::default(), Node::Pass))),
+            cond: Box::new(AST::new(Position::invisible(), Node::Bool { lit: true })),
+            then: Box::new(AST::new(Position::invisible(), Node::Pass)),
+            el: Some(Box::new(AST::new(Position::invisible(), Node::Pass))),
         };
         assert!(node.is_expression())
     }
 
     #[test]
     fn expression_is_expression() {
-        let first = Box::from(AST::new(Position::default(), Node::Continue));
-        let second = Box::from(AST::new(Position::default(), Node::Break));
-        let third = Box::from(AST::new(Position::default(), Node::Pass));
+        let first = Box::from(AST::new(Position::invisible(), Node::Continue));
+        let second = Box::from(AST::new(Position::invisible(), Node::Break));
+        let third = Box::from(AST::new(Position::invisible(), Node::Pass));
 
         assert!(Node::AnonFun { args: vec![*first.clone()], body: second.clone() }.is_expression());
         assert!(Node::PropertyCall { instance: first.clone(), property: second.clone() }
@@ -1296,9 +1308,9 @@ mod test {
 
     #[test]
     fn operator_is_expression() {
-        let left = Box::from(AST::new(Position::default(), Node::Id { lit: String::from("left") }));
+        let left = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("left") }));
         let right =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("right") }));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("right") }));
 
         assert!(Node::Add { left: left.clone(), right: right.clone() }.is_expression());
         assert!(Node::AddU { expr: left.clone() }.is_expression());
@@ -1334,9 +1346,9 @@ mod test {
 
     #[test]
     fn is_operator() {
-        let left = Box::from(AST::new(Position::default(), Node::Id { lit: String::from("asdf") }));
+        let left = Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("asdf") }));
         let right =
-            Box::from(AST::new(Position::default(), Node::Id { lit: String::from("lkjh") }));
+            Box::from(AST::new(Position::invisible(), Node::Id { lit: String::from("lkjh") }));
 
         assert!(Node::Add { left: left.clone(), right: right.clone() }.is_operator());
         assert!(Node::AddU { expr: left.clone() }.is_operator());

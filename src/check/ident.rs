@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn from_id() -> TypeResult<()> {
-        let ast = AST::new(Position::default(), Node::Id { lit: String::from("r") });
+        let ast = AST::new(Position::invisible(), Node::Id { lit: String::from("r") });
         let iden = Identifier::try_from(&ast)?;
         assert_eq!(iden, Identifier::from((true, "r")));
         Ok(())
@@ -190,7 +190,7 @@ mod tests {
         );
 
         assert_eq!(
-            call.without_obj("a", Position::default())?,
+            call.without_obj("a", Position::invisible())?,
             IdentiCall::Call(
                 Box::from(IdentiCall::Iden(String::from("b"))),
                 Box::from(IdentiCall::Iden(String::from("c"))),
@@ -207,7 +207,7 @@ mod tests {
         );
 
         assert_eq!(
-            call.without_obj("a", Position::default())?,
+            call.without_obj("a", Position::invisible())?,
             IdentiCall::Iden(String::from("b"))
         );
         Ok(())
@@ -216,9 +216,9 @@ mod tests {
     #[test]
     fn from_expression_type() -> TypeResult<()> {
         let ast = AST::new(
-            Position::default(),
+            Position::invisible(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(Position::default(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(Position::invisible(), Node::Id { lit: String::from("h") })),
                 mutable: false,
                 ty: None,
             },
@@ -232,9 +232,9 @@ mod tests {
     #[test]
     fn from_expression_type_as_mutable() -> TypeResult<()> {
         let ast = AST::new(
-            Position::default(),
+            Position::invisible(),
             Node::ExpressionType {
-                expr: Box::new(AST::new(Position::default(), Node::Id { lit: String::from("h") })),
+                expr: Box::new(AST::new(Position::invisible(), Node::Id { lit: String::from("h") })),
                 mutable: false,
                 ty: None,
             },
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn from_int_error() {
-        let ast = AST::new(Position::default(), Node::Int { lit: String::from("r") });
+        let ast = AST::new(Position::invisible(), Node::Int { lit: String::from("r") });
         let res = Identifier::try_from(&ast);
         assert!(res.is_err())
     }
@@ -256,11 +256,11 @@ mod tests {
     fn from_tuple() -> TypeResult<()> {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(Position::default(), Node::Id { lit: String::from("a") }),
-                AST::new(Position::default(), Node::Id { lit: String::from("b") }),
+                AST::new(Position::invisible(), Node::Id { lit: String::from("a") }),
+                AST::new(Position::invisible(), Node::Id { lit: String::from("b") }),
             ],
         };
-        let ast = AST::new(Position::default(), node);
+        let ast = AST::new(Position::invisible(), node);
         match Identifier::try_from(&ast)? {
             Identifier::Single(_, _) => panic!("Expected multi"),
             Identifier::Multi(idens) => {
@@ -276,11 +276,11 @@ mod tests {
     fn from_tuple_with_int_err() {
         let node = Node::Tuple {
             elements: vec![
-                AST::new(Position::default(), Node::Int { lit: String::from("a") }),
-                AST::new(Position::default(), Node::Id { lit: String::from("b") }),
+                AST::new(Position::invisible(), Node::Int { lit: String::from("a") }),
+                AST::new(Position::invisible(), Node::Id { lit: String::from("b") }),
             ],
         };
-        let ast = AST::new(Position::default(), node);
+        let ast = AST::new(Position::invisible(), node);
         let iden = Identifier::try_from(&ast);
         assert!(iden.is_err());
     }

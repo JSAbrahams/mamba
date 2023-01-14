@@ -1,5 +1,6 @@
 from typing import Union
 
+
 class float(complex):
     def __init__(self, arg: Union[str, int, float]) -> float: pass
 
@@ -31,8 +32,11 @@ class float(complex):
     def __pow__(self, power: Union[int, float]) -> float: pass
 
     def __ge__(self, other: Union[int, float]) -> bool: pass
+
     def __gt__(self, other: Union[int, float]) -> bool: pass
+
     def __le__(self, other: Union[int, float]) -> bool: pass
+
     def __lt__(self, other: Union[int, float]) -> bool: pass
 
     def __str__(self) -> str: pass

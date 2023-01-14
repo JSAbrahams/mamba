@@ -11,6 +11,7 @@ use crate::check::constrain::constraint::MapExp;
 use crate::check::context::clss::NONE;
 use crate::check::name::{Any, Name, Nullable};
 use crate::check::name::string_name::StringName;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 use crate::common::result::an_or_a;
@@ -49,12 +50,6 @@ impl MapExp for Expected {
                     })
                 }
             }
-            Collection { ty } => Collection {
-                ty: Box::from(ty.map_exp(var_mapping, global_var_mapping))
-            },
-            Tuple { elements } => Tuple {
-                elements: elements.iter().map(|e| e.map_exp(var_mapping, global_var_mapping)).collect()
-            },
             Function { name, args } => Function {
                 name: name.clone(),
                 args: args.iter().map(|a| a.map_exp(var_mapping, global_var_mapping)).collect(),
@@ -84,6 +79,13 @@ impl Expected {
     pub fn none(pos: Position) -> Expected {
         Expected::new(pos, &Type { name: Name::from(NONE) })
     }
+
+    pub fn ty(&self) -> TypeResult<Name> {
+        match &self.expect {
+            Type { name } => Ok(name.clone()),
+            _ => Err(vec![TypeErr::new(self.pos, &format!("Expected type, was {self}"))])
+        }
+    }
 }
 
 impl AsRef<Expected> for Expected {
@@ -107,8 +109,6 @@ impl From<&AST> for Expected {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expect {
     Expression { ast: AST },
-    Collection { ty: Box<Expected> },
-    Tuple { elements: Vec<Expected> },
     Function { name: StringName, args: Vec<Expected> },
     Field { name: String },
     Access { entity: Box<Expected>, name: Box<Expected> },
@@ -118,7 +118,9 @@ pub enum Expect {
 impl Display for Expected {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match &self.expect {
-            Type { name } if self.an_or_a => write!(f, "{}{}", an_or_a(name), name),
+            Type { name } if self.an_or_a && !name.is_temporary() => {
+                write!(f, "{}{}", an_or_a(name), name)
+            }
             _ => write!(f, "{}", self.expect)
         }
     }
@@ -127,12 +129,7 @@ impl Display for Expected {
 impl Display for Expect {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match &self {
-            Expression { ast } => write!(f, "{}", ast.node),
-            Collection { ty, .. } => write!(f, "{{{}}}", ty.and_or_a(false)),
-            Tuple { elements } => {
-                let elements: Vec<Expected> = elements.iter().map(|a| a.and_or_a(false)).collect();
-                write!(f, "({})", comma_delm(elements))
-            }
+            Expression { ast } => write!(f, "`{}`", ast.node),
             Access { entity, name } => write!(f, "{}.{}", entity.and_or_a(false), name.and_or_a(false)),
             Function { name, args } => {
                 let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
@@ -151,7 +148,6 @@ impl Expect {
     /// or Type in latter, then also true.
     pub fn same_value(&self, other: &Self) -> bool {
         match (self, other) {
-            (Collection { ty: l }, Collection { ty: r }) => l.expect.same_value(&r.expect),
             (Field { name: l }, Field { name: r }) => l == r,
             (Access { entity: le, name: ln }, Access { entity: re, name: rn }) => {
                 le == re && ln == rn

@@ -209,9 +209,9 @@ mod tests {
 
     #[test]
     fn test_peek_followed_by() {
-        let l1 = Lex::new(CaretPos::default().offset_pos(0), Token::Neq);
-        let l2 = Lex::new(CaretPos::default().offset_pos(1), Token::Neq);
-        let l3 = Lex::new(CaretPos::default().offset_pos(2), Token::Eq);
+        let l1 = Lex::new(CaretPos::start().offset_pos(0), Token::Neq);
+        let l2 = Lex::new(CaretPos::start().offset_pos(1), Token::Neq);
+        let l3 = Lex::new(CaretPos::start().offset_pos(2), Token::Eq);
         let lex = vec![l1, l2, l3];
         let mut it = LexIterator::new(lex.iter().peekable());
 
@@ -226,8 +226,8 @@ mod tests {
 
     #[test]
     fn test_peek_followed_by_leaves_iter_unmodified() {
-        let l1 = Lex::new(CaretPos::default().offset_pos(0), Token::Neq);
-        let l2 = Lex::new(CaretPos::default().offset_pos(1), Token::Eq);
+        let l1 = Lex::new(CaretPos::start().offset_pos(0), Token::Neq);
+        let l2 = Lex::new(CaretPos::start().offset_pos(1), Token::Eq);
         let lex = vec![l1, l2];
         let mut lex_iter = LexIterator::new(lex.iter().peekable());
 

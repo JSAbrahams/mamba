@@ -6,6 +6,7 @@ use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::generate::env::Environment;
+use crate::check::name::Name;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
@@ -35,6 +36,7 @@ pub struct ConstrBuilder {
     branch_point: usize,
     joined: bool,
 
+    temp_name_offset: usize,
     pub var_mapping: VarMapping,
 }
 
@@ -42,8 +44,8 @@ impl ConstrBuilder {
     /// Create constraint builder with a single set present.
     pub fn new() -> ConstrBuilder {
         let var_mapping = VarMapping::new();
-        let (pos, msg) = (Position::default(), String::from("Script"));
-        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping }
+        let (pos, msg) = (Position::invisible(), String::from("Script"));
+        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping, temp_name_offset: 0 }
     }
 
     /// Insert variable for mapping in current constraint set.
@@ -58,6 +60,15 @@ impl ConstrBuilder {
 
         let mapped_var = format_var_map(var, self.var_mapping.get(var).unwrap());
         trace!("Inserted {var} in constraint builder: {var} => {mapped_var}");
+    }
+
+    /// Get a name for a temporary type.
+    ///
+    /// Useful for when we don't know what a type should be during the generation stage.
+    /// The unification stage should then identify these.
+    pub fn temp_name(&mut self) -> Name {
+        self.temp_name_offset += 1;
+        Name::from(format_var_map("", &self.temp_name_offset).as_str())
     }
 
     /// Set new branch point.
@@ -140,13 +151,12 @@ impl ConstrBuilder {
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
-        let constraints: Vec<(Position, String, Vec<Constraint>)> = self.constraints.into_iter()
+        self.constraints.into_iter()
             .map(|(pos, msg, constraints)| {
                 (pos, msg, constraints.iter().map(|(c, _)| c.clone()).collect())
             })
-            .collect();
-
-        constraints.into_iter().map(Constraints::from).collect()
+            .map(Constraints::from)
+            .collect()
     }
 }
 
@@ -161,8 +171,8 @@ mod tests {
     macro_rules! constr {
         ($msg:expr) => {{
             Constraint::new(format!("{}", $msg).as_str(),
-                            &Expected::any(Position::default()),
-                            &Expected::any(Position::default()))
+                            &Expected::any(Position::invisible()),
+                            &Expected::any(Position::invisible()))
         }}
     }
 
@@ -198,7 +208,7 @@ mod tests {
         builder.branch_point();
         builder.add_constr(&c2, &Environment::default()); // then branch of if
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c3, &Environment::default()); // else branch of if
 
         builder.reset_branches();
@@ -221,10 +231,10 @@ mod tests {
         builder.branch_point();
         builder.add_constr(&c2, &Environment::default()); // first branch
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c3, &Environment::default()); // second branch
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c4, &Environment::default()); // third branch
 
         builder.reset_branches();
@@ -249,25 +259,25 @@ mod tests {
         builder.branch_point();
         builder.add_constr(&c2, &Environment::default()); // first branch
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         {   // second branch
             builder.branch_point();
             builder.add_constr(&c31, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c32, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c33, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c34, &Environment::default());
 
-            builder.branch("", Position::default());
+            builder.branch("", Position::invisible());
             builder.add_constr(&c35, &Environment::default());
         }
 
-        builder.branch("", Position::default());
+        builder.branch("", Position::invisible());
         builder.add_constr(&c4, &Environment::default()); // third branch
 
         builder.reset_branches();

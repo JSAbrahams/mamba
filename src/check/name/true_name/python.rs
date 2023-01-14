@@ -2,9 +2,8 @@ use std::ops::Deref;
 
 use python_parser::ast::{Expression, SetItem, Subscript};
 
-use crate::check::context::clss::python::python_to_concrete;
-use crate::check::name::{Empty, Name};
-use crate::check::name::name_variant::NameVariant;
+use crate::check::context::clss::python::{python_to_concrete, UNION};
+use crate::check::name::{Empty, Name, TupleCallable};
 use crate::check::name::true_name::TrueName;
 
 impl From<&Expression> for TrueName {
@@ -16,8 +15,7 @@ impl From<&Expression> for TrueName {
                     SetItem::Star(_) => None,
                     SetItem::Unique(expr) => Some(expr)
                 });
-                let variant = NameVariant::Tuple(expressions.map(Name::from).collect());
-                TrueName::from(&variant)
+                TrueName::tuple(expressions.map(Name::from).collect::<Vec<_>>().as_slice())
             }
             Expression::Subscript(id, exprs) => {
                 let lit = match &id.deref() {
@@ -26,7 +24,7 @@ impl From<&Expression> for TrueName {
                 };
 
                 // Union not expected
-                if &lit == "Union" {
+                if lit == UNION {
                     TrueName::empty()
                 } else {
                     let generics: Vec<_> = exprs.iter().map(to_ty_name).collect();

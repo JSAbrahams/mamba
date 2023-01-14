@@ -47,7 +47,6 @@ fn f_strings() -> CheckTestRet {
 }
 
 #[test]
-#[ignore]
 fn collection_in_f_strings() -> CheckTestRet {
     let source = resource_content(true, &["definition"], "collection_in_f_strings.mamba");
     check_test(&source)

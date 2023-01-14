@@ -39,8 +39,8 @@ pub fn parse(input: &str) -> ParseResult {
         }
     }
 
-    let start = statements.first().map_or_else(Position::default, |stmt| stmt.pos);
-    let end = statements.last().map_or_else(Position::default, |stmt| stmt.pos);
+    let start = statements.first().map_or_else(Position::invisible, |stmt| stmt.pos);
+    let end = statements.last().map_or_else(Position::invisible, |stmt| stmt.pos);
 
     Ok(Box::from(AST::new(start.union(end), Node::Block { statements })))
 }

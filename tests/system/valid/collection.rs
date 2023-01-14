@@ -3,6 +3,11 @@ use mamba::Arguments;
 use crate::system::{OutTestRet, test_directory, test_directory_args};
 
 #[test]
+fn collection_type() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "collection_type")
+}
+
+#[test]
 fn infer_collection_type() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "infer_collection_type")
 }
@@ -36,6 +41,11 @@ fn nested_set_builder() -> OutTestRet {
 #[test]
 fn set_verify() -> OutTestRet {
     test_directory(true, &["collection"], &["collection", "target"], "set")
+}
+
+#[test]
+fn set_union() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "set_union")
 }
 
 #[test]

@@ -9,15 +9,14 @@ use std::iter::FromIterator;
 use itertools::Itertools;
 
 use crate::check::context::{clss, Context};
+use crate::check::context::clss::Class;
 use crate::check::ident::Identifier;
-use crate::check::name::name_variant::NameVariant;
 use crate::check::name::string_name::StringName;
-use crate::check::name::true_name::{IsTemp, TrueName};
+use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
-pub mod name_variant;
 pub mod string_name;
 pub mod true_name;
 
@@ -25,6 +24,8 @@ pub mod generic;
 pub mod python;
 
 pub const TEMP: char = '@';
+
+pub type NameMap = HashMap<Name, Name>;
 
 pub trait Union<T> {
     fn union(&self, value: &T) -> Self;
@@ -54,14 +55,30 @@ pub trait Mutable {
 }
 
 pub trait Substitute {
-    fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Self> where Self: Sized;
+    fn substitute(&self, generics: &NameMap, pos: Position) -> TypeResult<Self> where Self: Sized;
 }
 
 pub trait ColType {
     fn col_type(&self, ctx: &Context, pos: Position) -> TypeResult<Option<Name>>;
 }
 
-#[derive(Debug, Clone, Eq)]
+pub trait ContainsTemp {
+    fn contains_temp(&self) -> bool;
+}
+
+pub trait TupleCallable<T1, T2, T3> {
+    fn tuple(names: &[Name]) -> Self;
+    fn callable(args: &[Name], ret_ty: &Name) -> Self;
+
+    fn is_tuple(&self) -> T1;
+    fn is_callable(&self) -> T1;
+
+    fn elements(&self, pos: Position) -> TypeResult<T2>;
+    fn args(&self, pos: Position) -> TypeResult<T2>;
+    fn ret_ty(&self, pos: Position) -> TypeResult<T3>;
+}
+
+#[derive(Debug, Clone, Eq, Default)]
 pub struct Name {
     pub names: HashSet<TrueName>,
     pub is_interchangeable: bool,
@@ -101,18 +118,8 @@ pub fn match_type_direct(
     name: &TrueName,
     pos: Position,
 ) -> TypeResult<HashMap<String, (bool, Name)>> {
-    match &name.variant {
-        NameVariant::Single { .. } | NameVariant::Fun { .. } => {
-            if let Identifier::Single(mutable, id) = &identifier {
-                let mut mapping = HashMap::with_capacity(1);
-                mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
-                Ok(mapping)
-            } else {
-                let msg = format!("Cannot match {identifier} with a '{name}'");
-                Err(vec![TypeErr::new(pos, &msg)])
-            }
-        }
-        NameVariant::Tuple(elements) => match identifier {
+    if let Ok(elements) = name.elements(pos) {
+        match identifier {
             Identifier::Single(mutable, id) => {
                 let mut mapping = HashMap::with_capacity(1);
                 mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
@@ -122,7 +129,7 @@ pub fn match_type_direct(
                 let sets: Vec<HashMap<_, _>> = fields
                     .iter()
                     .zip(elements)
-                    .map(|(identifier, ty)| match_name(identifier, ty, pos))
+                    .map(|(identifier, ty)| match_name(identifier, &ty, pos))
                     .collect::<Result<_, _>>()?;
                 Ok(sets.into_iter().flatten().collect())
             }
@@ -130,7 +137,20 @@ pub fn match_type_direct(
                 let msg = format!("Expected tuple of {}, was {}", elements.len(), idens.len());
                 Err(vec![TypeErr::new(pos, &msg)])
             }
-        },
+        }
+    } else if let Identifier::Single(mutable, id) = &identifier {
+        let mut mapping = HashMap::with_capacity(1);
+        mapping.insert(id.clone().object(pos)?, (*mutable, Name::from(name)));
+        Ok(mapping)
+    } else {
+        let msg = format!("Cannot match {identifier} with a '{name}'");
+        Err(vec![TypeErr::new(pos, &msg)])
+    }
+}
+
+impl From<&HashSet<Class>> for Name {
+    fn from(classes: &HashSet<Class>) -> Self {
+        Name { names: classes.iter().map(|c| TrueName::from(&c.name)).collect(), is_interchangeable: false }
     }
 }
 
@@ -156,24 +176,18 @@ impl Mutable for Name {
 
 impl Union<Name> for Name {
     fn union(&self, name: &Name) -> Self {
-        let nullable = name.names.contains(&TrueName::from(clss::NONE));
         let names: HashSet<TrueName> = self.names.union(&name.names).cloned().collect();
-        let names = if nullable {
-            let names: HashSet<TrueName> = names
-                .iter()
-                .map(|name| if *name != TrueName::from(clss::NONE) { name.as_nullable() } else { name.clone() })
-                .collect();
-
-            if names.len() > 1 {
-                names.into_iter().filter(|name| *name != TrueName::from(clss::NONE)).collect()
+        Name {
+            names: if names.iter().any(TrueName::is_null) && names.len() > 1 {
+                names.iter()
+                    .filter(|n| !n.is_null())
+                    .map(TrueName::as_nullable)
+                    .collect()
             } else {
-                names // In case None only name
-            }
-        } else {
-            names
-        };
-
-        Name { names, is_interchangeable: self.is_interchangeable || name.is_interchangeable }
+                names
+            },
+            is_interchangeable: self.is_interchangeable || name.is_interchangeable,
+        }
     }
 }
 
@@ -210,17 +224,18 @@ impl From<&HashSet<Name>> for Name {
     }
 }
 
-impl PartialEq<Self> for Name {
+impl PartialEq for Name {
     fn eq(&self, other: &Self) -> bool {
-        self.names.len() == other.names.len()
-            && self.names.iter().all(|name| other.names.contains(name))
+        self.names.eq(&other.names) // order doesn't matter for partialeq
     }
 }
 
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.names.len().hash(state);
-        self.names.iter().for_each(|n| n.hash(state))
+        self.names.iter()
+            .sorted_by_key(|name| &name.variant)
+            .for_each(|n| n.hash(state))
     }
 }
 
@@ -289,7 +304,7 @@ impl Nullable for Name {
 
 impl Empty for Name {
     fn is_empty(&self) -> bool {
-        self == &Name::empty()
+        self == &Name::empty() || self.names.iter().all(TrueName::is_empty)
     }
 
     fn empty() -> Name {
@@ -301,7 +316,43 @@ impl Substitute for Name {
     fn substitute(&self, generics: &HashMap<Name, Name>, pos: Position) -> TypeResult<Name> {
         let names =
             self.names.iter().map(|n| n.substitute(generics, pos)).collect::<Result<_, _>>()?;
-        Ok(Name { names, is_interchangeable: self.is_interchangeable })
+        Ok(Name { names, ..self.clone() })
+    }
+}
+
+impl ContainsTemp for Name {
+    fn contains_temp(&self) -> bool {
+        self.names.iter().any(TrueName::contains_temp)
+    }
+}
+
+impl TupleCallable<HashSet<bool>, HashSet<Vec<Name>>, HashSet<Name>> for Name {
+    fn tuple(names: &[Name]) -> Self {
+        Self { names: HashSet::from([TrueName::tuple(names)]), ..Default::default() }
+    }
+
+    fn callable(args: &[Name], ret_ty: &Name) -> Self {
+        Self { names: HashSet::from([TrueName::callable(args, ret_ty)]), ..Default::default() }
+    }
+
+    fn is_tuple(&self) -> HashSet<bool> {
+        self.names.iter().map(|n| n.is_tuple()).collect()
+    }
+
+    fn is_callable(&self) -> HashSet<bool> {
+        self.names.iter().map(|n| n.is_callable()).collect()
+    }
+
+    fn elements(&self, pos: Position) -> TypeResult<HashSet<Vec<Name>>> {
+        self.names.iter().map(|n| n.elements(pos)).collect()
+    }
+
+    fn args(&self, pos: Position) -> TypeResult<HashSet<Vec<Name>>> {
+        self.names.iter().map(|n| n.args(pos)).collect()
+    }
+
+    fn ret_ty(&self, pos: Position) -> TypeResult<HashSet<Name>> {
+        self.names.iter().map(|n| n.ret_ty(pos)).collect()
     }
 }
 
@@ -311,8 +362,8 @@ impl Name {
         Name { names, ..self.clone() }
     }
 
-    pub fn trim_temp(&self) -> Self {
-        let names = self.names.iter().filter(|n| !n.is_temp()).cloned().collect();
+    pub fn trim(&self, ty: &str) -> Self {
+        let names = self.names.iter().flat_map(|n| n.trim(ty)).collect();
         Name { names, ..self.clone() }
     }
 
@@ -333,13 +384,37 @@ impl Name {
     /// True if this was a temporary name, which is a name which starts with '@'.
     pub fn is_temporary(&self) -> bool {
         if let Some(name) = Vec::from_iter(&self.names).first() {
-            match &name.variant {
-                NameVariant::Single(stringname) => stringname.name.starts_with(TEMP),
-                _ => false,
-            }
-        } else {
-            false
+            return name.variant.is_temp();
         }
+        false
+    }
+
+    pub fn as_name(&self, true_name: &TrueName, pos: Position) -> TypeResult<Name> {
+        self.names.get(true_name).map(Name::from).ok_or_else(|| {
+            let msg = format!("{self} does not define {true_name}");
+            vec![TypeErr::new(pos, &msg)]
+        })
+    }
+
+    pub fn temp_map(&self, other: &Name, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+        self.temp_map_with_mapping(other, HashMap::new(), pos)
+    }
+
+    pub(crate) fn temp_map_with_mapping(&self, other: &Name, mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
+        self.names.iter().fold(Ok(mapping), |acc, s_n| {
+            other.names.iter().fold(acc, |acc, o_n| if let Ok(acc) = acc {
+                s_n.temp_map(&o_n.variant, acc, pos)
+            } else { acc })
+        })
+    }
+
+    pub(crate) fn match_name_helper(&self, other: &Name, mapping: &mut NameMap, pos: Position) -> TypeResult<()> {
+        for name in &self.names {
+            for other_name in &other.names {
+                name.variant.match_name_helper(&other_name.variant, mapping, pos)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -348,14 +423,42 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::check::context::{clss, Context, LookupClass};
-    use crate::check::context::clss::{BOOL, FLOAT, HasParent, INT, RANGE, STRING, TUPLE};
+    use crate::check::context::clss::{BOOL, COLLECTION, FLOAT, HasParent, INT, RANGE, SET, STRING, TUPLE};
     use crate::check::ident::Identifier;
-    use crate::check::name::{ColType, Empty, IsSuperSet, match_name, Name, Nullable, Union};
-    use crate::check::name::name_variant::NameVariant;
+    use crate::check::name::{Any, ColType, Empty, IsSuperSet, match_name, Name, Nullable, TupleCallable, Union};
     use crate::check::name::string_name::StringName;
     use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
+
+    #[test]
+    fn union_none_nullable_str_is_nullable_str() {
+        let name_1 = Name::from("None");
+        let name_2 = Name::from(&TrueName::from("Str").as_nullable());
+
+        let union = name_1.union(&name_2);
+        assert_eq!(union.names.len(), 1);
+        assert_eq!(*union.names.iter().next().unwrap(), TrueName::from("Str").as_nullable());
+    }
+
+    #[test]
+    fn union_none_str_is_nullable_str() {
+        let name_1 = Name::from("None");
+        let name_2 = Name::from(&TrueName::from("Str"));
+
+        let union = name_1.union(&name_2);
+        assert_eq!(union.names.len(), 1);
+        assert_eq!(*union.names.iter().next().unwrap(), TrueName::from("Str").as_nullable());
+    }
+
+    #[test]
+    fn collect_any_superset_of_set_int() {
+        let union_1 = Name::from(&StringName::new(COLLECTION, &[Name::any()]));
+        let union_2 = Name::from(&StringName::new(SET, &[Name::from(INT)]));
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
+    }
 
     #[test]
     fn test_is_superset_numbers() {
@@ -369,7 +472,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -378,8 +481,8 @@ mod tests {
         let name2 = Name::from(&HashSet::from([INT]));
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name1.is_superset_of(&name2, &ctx, Position::default()).unwrap());
-        assert!(!name2.is_superset_of(&name1, &ctx, Position::default()).unwrap());
+        assert!(name1.is_superset_of(&name2, &ctx, Position::invisible()).unwrap());
+        assert!(!name2.is_superset_of(&name1, &ctx, Position::invisible()).unwrap());
     }
 
     #[test]
@@ -388,7 +491,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -397,7 +500,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -406,7 +509,7 @@ mod tests {
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -415,7 +518,7 @@ mod tests {
         let union_2 = Name::from(RANGE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -424,7 +527,7 @@ mod tests {
         let union_2 = Name::from(STRING);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -433,7 +536,7 @@ mod tests {
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -443,7 +546,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -453,21 +556,21 @@ mod tests {
         let union_2 = Name::from(&true_name);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::default()).unwrap())
+        assert!(!union_1.is_superset_of(&union_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
     fn is_superset_self() {
         let (name_1, name_2) = (Name::from(TUPLE), Name::from(TUPLE));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
     fn int_not_superset_string() {
         let (name_1, name_2) = (Name::from(INT), Name::from(STRING));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::default()).unwrap())
+        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -491,7 +594,7 @@ mod tests {
         let union_2 = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::default()).unwrap())
+        assert!(!union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
     }
 
     #[test]
@@ -541,26 +644,26 @@ mod tests {
 
     #[test]
     fn test_tuple_equal() {
-        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
-        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
+        let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
+        let name2 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
         assert_eq!(name1, name2)
     }
 
     #[test]
     fn test_tuple_not_equal_size() {
-        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
-        let name2 = Name::from(&NameVariant::Tuple(vec![
+        let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
+        let name2 = Name::tuple(&[
             Name::from("A1"),
             Name::from("A2"),
             Name::from("A2"),
-        ]));
+        ]);
         assert_ne!(name1, name2)
     }
 
     #[test]
     fn test_tuple_not_equal() {
-        let name1 = Name::from(&NameVariant::Tuple(vec![Name::from("A1"), Name::from("A2")]));
-        let name2 = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name1 = Name::tuple(&[Name::from("A1"), Name::from("A2")]);
+        let name2 = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
         assert_ne!(name1, name2)
     }
 
@@ -568,7 +671,7 @@ mod tests {
     fn test_match_name() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
         let name = Name::from("MyType3");
-        let matchings = match_name(&iden, &name, Position::default())?;
+        let matchings = match_name(&iden, &name, Position::invisible())?;
 
         assert_eq!(matchings.len(), 1);
         let (mutable, matching) = matchings["abc"].clone();
@@ -585,7 +688,7 @@ mod tests {
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
         let name = Name::from("MyType3");
-        let err = match_name(&iden3, &name, Position::default());
+        let err = match_name(&iden3, &name, Position::invisible());
 
         assert!(err.is_err())
     }
@@ -593,8 +696,8 @@ mod tests {
     #[test]
     fn test_match_name_type_is_tuple() -> TypeResult<()> {
         let iden = Identifier::from((false, "abc"));
-        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
-        let matchings = match_name(&iden, &name, Position::default())?;
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
+        let matchings = match_name(&iden, &name, Position::invisible())?;
 
         assert_eq!(matchings.len(), 1);
         let (mutable, matching) = matchings["abc"].clone();
@@ -610,9 +713,9 @@ mod tests {
         let iden2 = Identifier::from((false, "abc2"));
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
-        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
 
-        let matchings = match_name(&iden3, &name, Position::default())?;
+        let matchings = match_name(&iden3, &name, Position::invisible())?;
 
         assert_eq!(matchings.len(), 2);
         let (mutable1, matching1) = matchings["abc"].clone();
@@ -633,9 +736,9 @@ mod tests {
         let iden3 = Identifier::from((false, "abc2"));
         let iden4 = Identifier::from(&vec![iden, iden2, iden3]);
 
-        let name = Name::from(&NameVariant::Tuple(vec![Name::from("A2"), Name::from("A1")]));
+        let name = Name::tuple(&[Name::from("A2"), Name::from("A1")]);
 
-        let matchings = match_name(&iden4, &name, Position::default());
+        let matchings = match_name(&iden4, &name, Position::invisible());
         assert!(matchings.is_err());
     }
 
@@ -645,13 +748,13 @@ mod tests {
         let iden2 = Identifier::from((false, "abc2"));
         let iden3 = Identifier::from(&vec![iden, iden2]);
 
-        let name = Name::from(&NameVariant::Tuple(vec![
+        let name = Name::tuple(&[
             Name::from("A2"),
             Name::from("A1"),
             Name::from("A0"),
-        ]));
+        ]);
 
-        let matchings = match_name(&iden3, &name, Position::default());
+        let matchings = match_name(&iden3, &name, Position::invisible());
         assert!(matchings.is_err());
     }
 
@@ -661,7 +764,7 @@ mod tests {
         let int_name = Name::from(INT);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, Position::default())?;
+        let collection_ty = range_name.col_type(&ctx, Position::invisible())?;
         assert_eq!(collection_ty, Some(int_name));
         Ok(())
     }
@@ -672,8 +775,8 @@ mod tests {
         let int_name = StringName::from(INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let clss = ctx.class(&int_name, Position::default())?;
-        assert!(clss.has_parent(&float_name, &ctx, Position::default())?);
+        let clss = ctx.class(&int_name, Position::invisible())?;
+        assert!(clss.has_parent(&float_name, &ctx, Position::invisible())?);
         Ok(())
     }
 
@@ -683,8 +786,8 @@ mod tests {
         let int_name = Name::from(INT);
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let clss = ctx.class(&float_name, Position::default())?;
-        assert!(!clss.has_parent(&int_name, &ctx, Position::default())?);
+        let clss = ctx.class(&float_name, Position::invisible())?;
+        assert!(!clss.has_parent(&int_name, &ctx, Position::invisible())?);
         Ok(())
     }
 
@@ -693,7 +796,7 @@ mod tests {
         let range_name = Name::from(clss::SLICE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
-        let collection_ty = range_name.col_type(&ctx, Position::default());
+        let collection_ty = range_name.col_type(&ctx, Position::invisible());
         assert!(collection_ty.is_err());
     }
 

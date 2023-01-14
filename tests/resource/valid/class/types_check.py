@@ -13,10 +13,10 @@ SomeState = NewType("SomeState", MyClass)
 OtherState = NewType("OtherState", MyClass)
 
 class SuperInterface(ABC):
-    bar: int = None
+    bar = None
 
 class MyInterface(SuperInterface):
-    required_field: int = None
+    required_field = None
 
     def __init__(self):
         SuperInterface.__init__(self)

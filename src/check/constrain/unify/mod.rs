@@ -11,9 +11,9 @@ pub mod finished;
 
 mod link;
 
-mod expression;
 mod function;
 mod ty;
+mod expression;
 
 pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
     let mut count = 1;
