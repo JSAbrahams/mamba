@@ -123,11 +123,6 @@ fn field_access(
 
     let mut pushed = 0;
     for entity_name in &entity_name.names {
-        if entity_name.is_empty() {
-            let msg = format!("{entity_name} does not define {name}");
-            return Err(vec![TypeErr::new(accessed.pos, &msg)]);
-        }
-
         let field = ctx.class(entity_name, accessed.pos)
             .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?
             .field(name, ctx, accessed.pos)
@@ -161,11 +156,6 @@ fn function_access(
 
     let mut pushed = 0;
     for entity_name in &entity_name.names {
-        if entity_name.is_empty() {
-            let msg = format!("{entity_name} does not define {name}");
-            return Err(vec![TypeErr::new(accessed.pos, &msg)]);
-        }
-
         let class = ctx.class(entity_name, accessed.pos)
             .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?;
         let fun = class.fun(name, ctx, accessed.pos)
