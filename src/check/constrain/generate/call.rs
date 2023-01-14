@@ -100,18 +100,16 @@ pub fn gen_call(
             let name = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
             constr.add("index range", &Expected::new(range.pos, &Type { name }), &Expected::from(range), env);
 
-            let (temp_type, env) = env.temp_var();
-            let temp_collection_type = Type { name: Name::from(temp_type.as_str()) };
+            let (temp_type, helper_ty) = (constr.temp_name(), constr.temp_name());
+            let exp_col = Expected::from(item);
+            let (exp_col1, exp_col2) = Constraint::iterable("index of collection", &exp_col, &temp_type, &helper_ty);
+            constr.add_constr(&exp_col1, env);
+            constr.add_constr(&exp_col2, env);
 
-            let exp_col = Collection { ty: Box::from(Expected::new(ast.pos, &temp_collection_type)) };
-            let exp_col = Expected::new(ast.pos, &exp_col);
-            constr.add("type of indexed collection", &exp_col, &Expected::from(item), &env);
+            let exp_col_ty = Expected::new(ast.pos, &Type { name: temp_type });
+            constr.add("index of collection", &exp_col_ty, &Expected::from(ast), env);
 
-            // Must be after above constraint
-            let exp_col_ty = Expected::new(ast.pos, &temp_collection_type);
-            constr.add("index of collection", &exp_col_ty, &Expected::from(ast), &env);
-
-            generate(item, &env, ctx, constr)?;
+            generate(item, env, ctx, constr)?;
             Ok(env.clone())
         }
 
@@ -229,9 +227,7 @@ fn property_call(
     let entire_call_as_ast = Expected::from(&entire_call_as_ast);
 
     let ast_without_access = match instance.len().cmp(&1) {
-        Ordering::Less => {
-            return Err(vec![TypeErr::new(last_inst.pos, "Internal error in access")]);
-        }
+        Ordering::Less => panic!("Internal error in access"),
         Ordering::Equal => last_inst.clone(),
         Ordering::Greater => {
             let last = instance.remove(instance.len() - 1);

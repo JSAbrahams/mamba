@@ -95,6 +95,10 @@ pub fn format_location(f: &mut Formatter,
         String::new()
     };
 
+    if pos == Position::invisible() {
+        return writeln!(f, "{msg}");
+    }
+
     let (before_def, line_def, after_def) = (String::new(), String::from("<unknown>\n"), String::from("\n"));
     let (source_before, source_line, source_after) = if let Some(source) = source {
         let before_line_pos = max(pos.start.line as i32 - 2, usize::MAX as i32) as usize;

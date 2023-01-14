@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
@@ -81,7 +81,7 @@ pub fn custom(msg: &str, position: Position) -> ParseErr {
 
 pub fn eof_expected_one_of(tokens: &[Token], parsing: &str) -> ParseErr {
     ParseErr {
-        pos: Position::default(),
+        pos: Position::invisible(),
         msg: match tokens {
             tokens if tokens.len() > 1 => format!(
                 "Expected one of [{}] tokens while parsing {}{parsing}",
@@ -111,7 +111,7 @@ fn title_case(s: &str) -> String {
 
 impl Display for ParseErr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let causes = &self.causes[0..min(self.causes.len() - 1, SYNTAX_ERR_MAX_DEPTH)];
+        let causes = &self.causes[0..min(max(self.causes.len() as i32 - 1, 0) as usize, SYNTAX_ERR_MAX_DEPTH)];
         format_err(f, &self.msg, &self.path, Some(self.pos), &self.source, causes)
     }
 }

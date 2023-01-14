@@ -32,7 +32,9 @@ mod tests {
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
 
         let pos_bool = Position::new(CaretPos::new(1, 4), CaretPos::new(1, 8));
-        assert_eq!(finished[&pos_bool], Name::from("Bool"));
+        // is interchangeable since call to __bool__() in Bool
+        assert_eq!(finished[&pos_bool], Name::from("Bool").is_interchangeable(true));
+
         let pos_10 = Position::new(CaretPos::new(1, 14), CaretPos::new(1, 16));
         assert_eq!(finished[&pos_10], Name::from("Int"));
         let pos_20 = Position::new(CaretPos::new(1, 22), CaretPos::new(1, 24));
@@ -52,7 +54,8 @@ mod tests {
         let pos_10 = Position::new(CaretPos::new(1, 23), CaretPos::new(1, 25));
         assert_eq!(finished[&pos_10], Name::from("Int"));
         let pos_bool = Position::new(CaretPos::new(1, 13), CaretPos::new(1, 17));
-        assert_eq!(finished[&pos_bool], Name::from("Bool"));
+        // is interchangeable since call to __bool__() in Bool
+        assert_eq!(finished[&pos_bool], Name::from("Bool").is_interchangeable(true));
 
         let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 33));
         assert_eq!(finished[&pos_if], Name::from("Int"));
@@ -74,7 +77,8 @@ mod tests {
         let pos_10 = Position::new(CaretPos::new(1, 23), CaretPos::new(1, 25));
         assert_eq!(finished[&pos_10], Name::from("Int"));
         let pos_bool = Position::new(CaretPos::new(1, 13), CaretPos::new(1, 17));
-        assert_eq!(finished[&pos_bool], Name::from("Bool"));
+        // is interchangeable since call to __bool__() in Bool
+        assert_eq!(finished[&pos_bool], Name::from("Bool").is_interchangeable(true));
 
         let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 35));
         assert_eq!(finished[&pos_if], Name::from("Int").as_nullable());

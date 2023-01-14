@@ -36,7 +36,7 @@ impl From<&Funcdef> for GenericFunction {
             is_py_type: true,
             name: StringName::from(convert_name(&func_def.name).as_str()),
             pure: false,
-            pos: Position::default(),
+            pos: Position::invisible(),
             arguments: func_def
                 .parameters
                 .positional_args

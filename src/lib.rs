@@ -188,7 +188,7 @@ pub fn mamba_to_python(
         .map(|(ast_ty, (src, path))| {
             gen_arguments(ast_ty, &gen_args, &ctx)
                 .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
-                .map(|core| core.to_source())
+                .map(|core| format!("{core}"))
         })
         .partition(Result::is_ok);
 

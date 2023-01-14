@@ -3,7 +3,7 @@ class Y:
         self.a = a
 
 class X:
-    y: Y = None
+    y = None
     def __init__(self, a: float):
         self.y = Y(a)
 

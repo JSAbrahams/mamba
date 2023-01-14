@@ -7,7 +7,7 @@ class MyType2:
         self.b = b
 
 class MyClass1(MyType, MyType2):
-    other: int = None
+    other = None
 
     def __init__(self):
         MyType.__init__(self, "asdf")

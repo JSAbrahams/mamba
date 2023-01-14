@@ -25,7 +25,7 @@ impl From<&Argument> for GenericParent {
         };
 
         let name = TrueName::from(&name);
-        GenericParent { is_py_type: true, name, pos: Position::default() }
+        GenericParent { is_py_type: true, name, pos: Position::invisible() }
     }
 }
 

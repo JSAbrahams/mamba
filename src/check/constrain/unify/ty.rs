@@ -1,159 +1,133 @@
-use EitherOrBoth::Both;
-use itertools::{EitherOrBoth, Itertools};
+use std::collections::HashMap;
 
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::Expect::{Collection, Tuple, Type};
-use crate::check::constrain::constraint::expected::Expected;
+use crate::check::constrain::constraint::expected::{Expect, Expected};
+use crate::check::constrain::constraint::expected::Expect::Type;
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
-use crate::check::constrain::unify::expression::substitute::substitute;
+use crate::check::constrain::unify::expression::SubRes;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::unify_link;
 use crate::check::context::{Context, LookupClass};
-use crate::check::name::{Any, ColType, IsSuperSet, Name};
-use crate::check::name::name_variant::NameVariant;
+use crate::check::name::{Any, ContainsTemp, IsSuperSet, Name, NameMap, Substitute};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::common::result::WithCause;
 
-pub fn unify_type(
-    constraint: &Constraint,
-    constraints: &mut Constraints,
-    finished: &mut Finished,
-    ctx: &Context,
-    total: usize,
-) -> Unified {
+pub fn unify_type(constraint: &Constraint, constr: &mut Constraints, finished: &mut Finished,
+                  ctx: &Context, total: usize) -> Unified {
     let (left, right) = (&constraint.parent, &constraint.child);
-    let count = if constraints.len() <= total { total - constraints.len() } else { 0 };
+    let count = if constr.len() <= total { total - constr.len() } else { 0 };
 
     match (&left.expect, &right.expect) {
         (Type { name: l_ty }, Type { name: r_ty }) => {
             if l_ty.is_temporary() {
-                substitute_ty(right.pos, r_ty, left.pos, l_ty, constraints, count, total)?;
-                return unify_link(constraints, finished, ctx, total);
+                sub_ty(right.pos, r_ty, left.pos, l_ty, constr, count, total)?;
+                return unify_link(constr, finished, ctx, total);
             } else if r_ty.is_temporary() {
-                substitute_ty(left.pos, l_ty, right.pos, r_ty, constraints, count, total)?;
-                return unify_link(constraints, finished, ctx, total);
+                sub_ty(left.pos, l_ty, right.pos, r_ty, constr, count, total)?;
+                return unify_link(constr, finished, ctx, total);
+            } else if l_ty.contains_temp() {
+                for (old, new) in l_ty.temp_map(r_ty, left.pos)? {
+                    sub_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
+                }
+                return unify_link(constr, finished, ctx, total);
+            } else if r_ty.contains_temp() {
+                for (old, new) in r_ty.temp_map(l_ty, left.pos)? {
+                    sub_ty(left.pos, &new, right.pos, &old, constr, count, total)?;
+                }
+                return unify_link(constr, finished, ctx, total);
             }
 
             if l_ty.is_superset_of(r_ty, ctx, left.pos)? || l_ty == &Name::any() || r_ty == &Name::any() {
                 ctx.class(l_ty, left.pos)?;
                 ctx.class(r_ty, right.pos)?;
-
-                finished.push_ty(ctx, left.pos, l_ty)?;
-                finished.push_ty(ctx, right.pos, r_ty)?;
-                unify_link(constraints, finished, ctx, total)
+                unify_link(constr, finished, ctx, total)
             } else {
-                Err(unify_type_message(&constraint.msg, left, right))
+                Err(unify_type_message("two types", &constraint.msg, left, right))
             }
         }
 
-        (Type { name }, Tuple { elements }) | (Tuple { elements }, Type { name }) => {
-            for name_ty in &name.names {
-                match &name_ty.variant {
-                    NameVariant::Tuple(names) => {
-                        if names.len() != elements.len() {
-                            let msg = format!(
-                                "In {}, expected tuple with {} elements, was {}",
-                                constraint.msg,
-                                names.len(),
-                                elements.len()
-                            );
-                            return Err(unify_type_message(&msg, left, right));
-                        }
-
-                        for pair in names.iter().cloned().zip_longest(elements.iter()) {
-                            match &pair {
-                                Both(name, exp) => {
-                                    let expect = Type { name: name.clone() };
-                                    let l_ty = Expected::new(left.pos, &expect);
-                                    constraints.push("tuple", &l_ty, exp)
-                                }
-                                _ => {
-                                    let msg = format!(
-                                        "In {}, Cannot assign {} elements to a tuple of size {}",
-                                        constraint.msg,
-                                        elements.len(),
-                                        names.len()
-                                    );
-                                    return Err(unify_type_message(&msg, left, right));
-                                }
-                            }
-                        }
-                    }
-                    _ => {
-                        let msg = format!("Unifying type and tuple: Expected {name}, was {right}");
-                        return Err(unify_type_message(&msg, left, right));
-                    }
-                }
-            }
-
-            unify_link(constraints, finished, ctx, total)
-        }
-
-        (Collection { ty: l_ty }, Collection { ty: r_ty }) => {
-            constraints.push("collection parameters", l_ty, r_ty);
-            unify_link(constraints, finished, ctx, total + 1)
-        }
-        (Tuple { elements: l_ty }, Tuple { elements: r_ty }) => {
-            for pair in l_ty.iter().zip_longest(r_ty.iter()) {
-                match &pair {
-                    Both(name, exp) => constraints.push("tuple", name, exp),
-                    _ => {
-                        let msg = format!(
-                            "In {}, Tuple sizes differ. Expected {} elements, was {}",
-                            constraint.msg,
-                            l_ty.len(),
-                            r_ty.len()
-                        );
-                        return Err(unify_type_message(&msg, left, right));
-                    }
-                }
-            }
-            unify_link(constraints, finished, ctx, total + 1)
-        }
-
-        (l_exp, r_exp) => match (l_exp, r_exp) {
-            (Collection { ty }, Type { name }) => {
-                if let Some(col_ty) = name.col_type(ctx, right.pos)? {
-                    let expect = Type { name: col_ty };
-                    constraints.push("collection type", ty, &Expected::new(left.pos, &expect));
-                    unify_link(constraints, finished, ctx, total + 1)
-                } else {
-                    Err(unify_type_message(&constraint.msg, left, right))
-                }
-            }
-            (Type { name }, Collection { ty }) => {
-                if let Some(col_ty) = name.col_type(ctx, left.pos)? {
-                    let expect = Type { name: col_ty };
-                    constraints.push("collection type", &Expected::new(left.pos, &expect), ty);
-                    unify_link(constraints, finished, ctx, total + 1)
-                } else {
-                    Err(unify_type_message(&constraint.msg, left, right))
-                }
-            }
-
-            _ if l_exp.is_none() && r_exp.is_none() => unify_link(constraints, finished, ctx, total),
-            _ => Err(unify_type_message(&constraint.msg, left, right))
-        },
+        _ => Err(unify_type_message("types", &constraint.msg, left, right))
     }
 }
 
-pub fn unify_type_message(cause_msg: &str, sup: &Expected, child: &Expected) -> Vec<TypeErr> {
-    let msg = format!("Expected {sup}, was {child}");
+pub fn unify_type_message(prepend: &str, cause_msg: &str, sup: &Expected, child: &Expected) -> Vec<TypeErr> {
+    let msg = format!("In {prepend}, expected {sup}, was {child}");
     vec![TypeErr::new(child.pos, &msg).with_cause(cause_msg, sup.pos)]
 }
 
-fn substitute_ty(
-    new_pos: Position,
-    new: &Name,
-    old_pos: Position,
-    old: &Name,
-    constraints: &mut Constraints,
-    offset: usize,
-    total: usize,
-) -> TypeResult<()> {
-    let new = Expected::new(new_pos, &Type { name: new.clone() });
-    let old = Expected::new(old_pos, &Type { name: old.clone() });
-    substitute(constraints, &new, &old, offset, total)
+fn sub_ty(new_pos: Position, new: &Name, old_pos: Position, old: &Name, constr: &mut Constraints,
+          offset: usize, total: usize) -> Unified<()> {
+    let mut constraint_pos = offset;
+    let old_to_new = HashMap::from([(old.clone(), new.clone())]);
+    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
+
+    for _ in 0..constr.len() {
+        let mut con = constr.pop_constr().expect("Cannot be empty");
+        constraint_pos += 1;
+        macro_rules! replace {
+            ($left:expr, $new:expr) => {{
+                let pos = format!("({}={}) ", con.parent.pos, con.child.pos);
+                let side = if $left { "l" } else { "r" };
+                trace!(
+                    "{:width$} [subbed type {}\\{} {}]  {}  =>  {}",
+                    pos,
+                    constraint_pos,
+                    total,
+                    side,
+                    con,
+                    $new,
+                    width = 32
+                );
+            }};
+        }
+
+        let (sub_l, parent) = recursive_sub_ty("l", &con.parent, &old_to_new, new_pos)?;
+        let (sub_r, child) = recursive_sub_ty("r", &con.child, &old_to_new, old_pos)?;
+
+        con.parent = parent;
+        con.child = child;
+        if sub_l || sub_r {
+            replace!(sub_l, con)
+        }
+
+        con.is_sub = con.is_sub || sub_l || sub_r;
+        constr.push_constr(&con);
+    }
+
+    Ok(())
+}
+
+fn recursive_sub_ty(side: &str, inspected: &Expected, old_to_new: &NameMap, pos: Position)
+                    -> TypeResult<SubRes> {
+    Ok(match &inspected.expect {
+        Expect::Access { entity, name } => {
+            let (subs_e, entity) = recursive_sub_ty(side, entity, old_to_new, pos)?;
+            let (sub_n, name) = recursive_sub_ty(side, name, old_to_new, pos)?;
+
+            let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
+            (subs_e || sub_n, Expected::new(inspected.pos, &expect))
+        }
+        Expect::Function { name, args } => {
+            let (any_substituted, args) = sub_ty_vec(side, old_to_new, args, pos)?;
+            let func = Expect::Function { name: name.clone(), args };
+            (any_substituted, Expected::new(inspected.pos, &func))
+        }
+        Type { name } => {
+            let new_name = name.substitute(old_to_new, pos)?;
+            (name != &new_name, Expected::new(inspected.pos, &Type { name: new_name }))
+        }
+        _ => (false, inspected.clone()),
+    })
+}
+
+fn sub_ty_vec(side: &str, old_to_new: &NameMap, elements: &[Expected], pos: Position)
+              -> TypeResult<SubRes<Vec<Expected>>> {
+    let elements: Vec<(bool, Expected)> = elements
+        .iter()
+        .map(|e| recursive_sub_ty(side, e, old_to_new, pos))
+        .collect::<TypeResult<_>>()?;
+
+    Ok((elements.iter().clone().any(|(i, _)| *i), elements.into_iter().map(|(_, i)| i).collect()))
 }

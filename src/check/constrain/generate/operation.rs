@@ -5,7 +5,7 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
-use crate::check::constrain::generate::collection::{constr_col, gen_collection_lookup};
+use crate::check::constrain::generate::collection::constr_col_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, SLICE, STRING};
@@ -24,11 +24,9 @@ pub fn gen_op(
 ) -> Constrained {
     match &ast.node {
         Node::In { left, right } => {
-            constr_col(right, env, constr, None)?;
-            gen_collection_lookup(left, right, env, constr)?;
-
             generate(right, env, ctx, constr)?;
             generate(left, env, ctx, constr)?;
+            constr_col_lookup(left, right, env, constr)?;
             Ok(env.clone())
         }
         Node::Range { .. } => {
@@ -167,9 +165,7 @@ pub fn constr_range(
         }
     };
 
-    let name = Name::from(INT);
-    let int_exp = &Expected::new(from.pos, &Type { name });
-
+    let int_exp = &Expected::new(from.pos, &Type { name: Name::from(INT) });
     constr.add(&format!("{range_slice} from"), &Expected::from(from), int_exp, env);
     constr.add(&format!("{range_slice} to"), &Expected::from(to), int_exp, env);
     if let Some(step) = step {
@@ -177,8 +173,10 @@ pub fn constr_range(
     }
 
     if contr_coll {
-        let col = Expected::new(ast.pos, &Collection { ty: Box::from(int_exp.clone()) });
-        constr.add("range collection", &col, &Expected::from(ast), env);
+        let (helper_ty, col_ty) = (constr.temp_name(), Name::from(INT));
+        let (col_exp1, col_exp2) = Constraint::iterable(range_slice, &Expected::from(ast), &col_ty, &helper_ty);
+        constr.add_constr(&col_exp1, env);
+        constr.add_constr(&col_exp2, env);
     }
 
     generate(from, env, ctx, constr)?;
@@ -202,8 +200,9 @@ fn impl_magic(
     ctx: &Context,
     constr: &mut ConstrBuilder,
 ) -> Constrained {
+    let res = gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)?;
     constr.add(format!("{fun} operation").as_str(), &Expected::from(ast), &access(fun, left, right), env);
-    gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)
+    Ok(res)
 }
 
 fn impl_bool_op(

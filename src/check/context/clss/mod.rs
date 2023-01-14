@@ -14,7 +14,8 @@ use crate::check::context::field::Field;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::{Empty, Name, Substitute};
+use crate::check::context::parent::generic::GenericParent;
+use crate::check::name::{Any, Empty, Name, Substitute};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -32,9 +33,10 @@ pub const RANGE: &str = "Range";
 pub const SLICE: &str = "Slice";
 pub const SET: &str = "Set";
 pub const LIST: &str = "List";
-pub const TUPLE: &str = "Tuple";
 
+pub const TUPLE: &str = "Tuple";
 pub const CALLABLE: &str = "Callable";
+pub const UNION: &str = "Union";
 
 pub const ANY: &str = "Any";
 pub const NONE: &str = "None";
@@ -42,7 +44,6 @@ pub const EXCEPTION: &str = "Exception";
 
 pub mod generic;
 pub mod python;
-pub mod union;
 
 /// Concrete type.
 ///
@@ -79,13 +80,27 @@ pub trait GetFun<T> {
 }
 
 impl HasParent<&StringName> for Class {
-    fn has_parent(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        Ok(self.name.name == COLLECTION && self.name.name == name.name
-            || &self.name == name
-            || self
+    fn has_parent(&self, other: &StringName, ctx: &Context, pos: Position) -> TypeResult<bool> {
+        if self.name == *other || other.name.as_str() == ANY {
+            return Ok(true);
+        } else if (self.name.name == TUPLE && (other.name == TUPLE || other.name == COLLECTION)) ||
+            (self.name.name == *other.name && self.name.generics.len() == other.generics.len()) {
+
+            // Contender! check generics
+            // Tuple check is necessary evil, no way to specify variable generics for tuples
+            let mut all_generic_super = true;
+            for (s_name, o_name) in self.name.generics.iter().zip(&other.generics) {
+                for s_name in &s_name.names {
+                    all_generic_super &= ctx.class(s_name, pos)?.has_parent(o_name, ctx, pos)?;
+                }
+            }
+            if all_generic_super { return Ok(all_generic_super); }
+        }
+
+        Ok(self
             .parents
             .iter()
-            .map(|p| ctx.class(p, pos)?.has_parent(name, ctx, pos))
+            .map(|p| ctx.class(p, pos)?.has_parent(other, ctx, pos))
             .collect::<Result<Vec<bool>, _>>()?
             .iter()
             .any(|b| *b))
@@ -94,13 +109,13 @@ impl HasParent<&StringName> for Class {
 
 impl HasParent<&TrueName> for Class {
     fn has_parent(&self, name: &TrueName, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        self.has_parent(&StringName::from(name), ctx, pos)
+        self.has_parent(&name.variant, ctx, pos)
     }
 }
 
 impl HasParent<&Name> for Class {
     fn has_parent(&self, name: &Name, ctx: &Context, pos: Position) -> TypeResult<bool> {
-        if name.contains(&TrueName::from(&self.name)) {
+        if name.contains(&TrueName::from(&self.name)) || name == &Name::any() {
             return Ok(true);
         }
 
@@ -120,6 +135,16 @@ impl HasParent<&Name> for Class {
         }
 
         Ok(false)
+    }
+}
+
+impl LookupClass<&Name, HashSet<Class>> for Context {
+    fn class(&self, class_name: &Name, pos: Position) -> TypeResult<HashSet<Class>> {
+        if class_name.is_empty() {
+            let msg = format!("Tried to get class for {class_name}");
+            return Err(vec![TypeErr::new(pos, &msg)]);
+        }
+        class_name.names.iter().map(|name| self.class(name, pos)).collect::<TypeResult<_>>()
     }
 }
 
@@ -203,13 +228,14 @@ impl TryFrom<(&GenericClass, &HashMap<Name, Name>, Position)> for Class {
         let try_arg = |a: &GenericFunctionArg| FunctionArg::try_from((a, generics, pos));
         let try_field = |field: &GenericField| Field::try_from((field, generics, pos));
         let try_function = |fun: &GenericFunction| Function::try_from((fun, generics, pos));
+        let try_parent = |parent: &GenericParent| TrueName::try_from((parent, generics, pos));
 
         Ok(Class {
             is_py_type: generic.is_py_type,
             name: generic.name.substitute(generics, pos)?,
             concrete: generic.concrete,
             args: generic.args.iter().map(try_arg).collect::<Result<_, _>>()?,
-            parents: generic.parents.iter().map(|g| g.name.clone()).collect(),
+            parents: generic.parents.iter().map(try_parent).collect::<Result<_, _>>()?,
             fields: generic.fields.iter().map(try_field).collect::<Result<_, _>>()?,
             functions: generic.functions.iter().map(try_function).collect::<Result<_, _>>()?,
         })
@@ -288,6 +314,9 @@ pub fn concrete_to_python(name: &str) -> String {
         CALLABLE => String::from(python::CALLABLE),
         NONE => String::from(python::NONE),
         EXCEPTION => String::from(python::EXCEPTION),
+        UNION => String::from(python::UNION),
+        ANY => String::from(python::ANY),
+
         other => String::from(other),
     }
 }

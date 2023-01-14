@@ -1,14 +1,13 @@
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::Expect::{
-    Access, Collection, Expression, Function, Tuple, Type,
-};
+use crate::check::constrain::constraint::expected::Expect::{Access, Expression, Function, Type};
 use crate::check::constrain::constraint::iterator::Constraints;
 use crate::check::constrain::Unified;
-use crate::check::constrain::unify::expression::unify_expression;
+use crate::check::constrain::unify::expression::sub;
 use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::function::unify_function;
 use crate::check::constrain::unify::ty::unify_type;
 use crate::check::context::Context;
+use crate::check::name::ContainsTemp;
 
 /// Unifies all constraints.
 ///
@@ -28,30 +27,31 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            finished.push_ty(ctx, right.pos, name)?;
+            if !name.contains_temp() { finished.push_ty(ctx, right.pos, right, name)?; }
         }
         if let Type { name } = &right.expect {
-            finished.push_ty(ctx, left.pos, name)?;
+            if !name.contains_temp() { finished.push_ty(ctx, left.pos, left, name)?; }
         }
 
         match (&left.expect, &right.expect) {
             // trivially equal
             (left, right) if left == right => unify_link(constraints, finished, ctx, total),
 
-            (Function { .. }, Type { .. })
-            | (Access { .. }, _)
-            | (Type { .. }, Function { .. })
-            | (_, Access { .. }) => unify_function(constraint, constraints, finished, ctx, total),
-
-            (Expression { .. }, _) | (_, Expression { .. }) => {
-                unify_expression(constraint, constraints, finished, ctx, count, total)
+            (Function { .. }, Type { .. }) | (Type { .. }, Function { .. })
+            | (Access { .. }, _) | (_, Access { .. }) => {
+                unify_function(constraint, constraints, finished, ctx, total)
             }
 
-            (Tuple { .. }, _) | (_, Tuple { .. }) => {
-                unify_type(constraint, constraints, finished, ctx, total)
+            (Expression { .. }, _) => {
+                sub(constraints, right, left, count, total)?;
+                unify_link(constraints, finished, ctx, total)
             }
-            (Type { .. }, _) | (_, Type { .. }) => unify_type(constraint, constraints, finished, ctx, total),
-            (Collection { .. }, Collection { .. }) => {
+            (_, Expression { .. }) => {
+                sub(constraints, left, right, count, total)?;
+                unify_link(constraints, finished, ctx, total)
+            }
+
+            (Type { .. }, _) | (_, Type { .. }) => {
                 unify_type(constraint, constraints, finished, ctx, total)
             }
 

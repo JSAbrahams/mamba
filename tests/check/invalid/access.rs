@@ -23,6 +23,24 @@ fn slice_begin_wrong_type() {
 }
 
 #[test]
+fn empty_define_f() {
+    let source = resource_content(false, &["type", "access"], "empty_define_f.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn empty_define_field() {
+    let source = resource_content(false, &["type", "access"], "empty_define_field.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn empty_define_str() {
+    let source = resource_content(false, &["type", "access"], "empty_define_str.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn slice_end_wrong_type() {
     let source = resource_content(false, &["type", "access"], "slice_end_wrong_type.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

@@ -86,7 +86,7 @@ impl TryFrom<&AST> for GenericFunction {
                         for arg in args.clone() {
                             if has_default && !arg.has_default {
                                 let msg = "Cannot have argument with default followed by argument with no default.";
-                                return Err(vec![TypeErr::new(arg.pos, &msg)]);
+                                return Err(vec![TypeErr::new(arg.pos, msg)]);
                             }
                             has_default = arg.has_default;
                         }
@@ -127,7 +127,7 @@ mod test {
 
     #[test]
     fn from_non_fundef_node() {
-        let ast = AST::new(Position::default(), Node::Pass);
+        let ast = AST::new(Position::invisible(), Node::Pass);
         assert!(GenericFunction::try_from(&ast).is_err())
     }
 

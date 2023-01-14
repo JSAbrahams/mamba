@@ -1,0 +1,3 @@
+def x: List[Int] := [0, 2, 51]
+
+def y: Int := x[0]

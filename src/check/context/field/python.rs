@@ -4,6 +4,7 @@ use python_parser::ast::{Expression, SetItem};
 
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::name::Name;
+use crate::common::position::Position;
 
 impl From<(&Vec<Expression>, &Option<Expression>)> for GenericFields {
     fn from((ids, ty): (&Vec<Expression>, &Option<Expression>)) -> GenericFields {
@@ -38,7 +39,7 @@ impl From<&Expression> for GenericFields {
                 Expression::Name(name) => vec![GenericField {
                     is_py_type: true,
                     name: name.clone(),
-                    pos: Default::default(),
+                    pos: Position::invisible(),
                     mutable: true,
                     in_class: None,
                     ty: None,
@@ -57,7 +58,7 @@ impl From<&Expression> for GenericFields {
                             Expression::Name(name) => GenericField {
                                 is_py_type: true,
                                 name: name.clone(),
-                                pos: Default::default(),
+                                pos: Position::invisible(),
                                 mutable: false,
                                 in_class: None,
                                 ty: None,

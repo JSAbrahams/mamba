@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 class Err1(Exception):
     def __init__(self, msg: str):
@@ -14,7 +14,7 @@ class MyType:
 
 class MyClass2(MyType):
     z_modified: str = "asdf"
-    other_field: int = 10
+    other_field: Union[float, int] = 10
 
     def __init__(self, other_field: int, z: int):
         MyType.__init__(self, "the quick brown fox jumped over the slow donkey")
@@ -31,7 +31,7 @@ class MyClass2(MyType):
 
         a = None
         try:
-            a = self.error_function()
+            a: int = self.error_function()
         except Err1 as err1:
             print(err1)
             a = -1

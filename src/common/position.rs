@@ -1,7 +1,7 @@
 use std::cmp::{max, min, Ordering};
 use std::fmt::{Display, Error, Formatter};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Default, Copy)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Copy)]
 /// A position represents a rectangle in the source code.
 pub struct Position {
     pub start: CaretPos,
@@ -83,6 +83,10 @@ impl Position {
         )
     }
 
+    pub fn invisible() -> Self {
+        Position::new(CaretPos::new(0, 0), CaretPos::new(0, 0))
+    }
+
     #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
         Position { start: self.start.offset(offset), end: self.end.offset(offset) }
@@ -107,6 +111,10 @@ impl CaretPos {
     /// Create new endpoint with given line and position.
     pub fn new(line: usize, pos: usize) -> CaretPos {
         CaretPos { line, pos }
+    }
+
+    pub fn start() -> Self {
+        CaretPos::new(1, 1)
     }
 
     #[must_use]
@@ -137,12 +145,6 @@ impl CaretPos {
 impl From<CaretPos> for Position {
     fn from(caret_pos: CaretPos) -> Self {
         Position::new(caret_pos, caret_pos)
-    }
-}
-
-impl Default for CaretPos {
-    fn default() -> Self {
-        CaretPos { line: 1, pos: 1 }
     }
 }
 

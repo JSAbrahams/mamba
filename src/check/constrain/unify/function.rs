@@ -1,7 +1,4 @@
-use std::cmp::max;
-use std::collections::HashSet;
-
-use itertools::{EitherOrBoth, enumerate, Itertools};
+use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::{Access, Field, Function, Type};
@@ -12,11 +9,12 @@ use crate::check::constrain::unify::finished::Finished;
 use crate::check::constrain::unify::link::{reinsert, unify_link};
 use crate::check::constrain::unify::ty::unify_type_message;
 use crate::check::context::{Context, LookupClass};
-use crate::check::context::arg::FunctionArg;
+use crate::check::context::arg::{FunctionArg, SELF};
 use crate::check::context::clss::{GetField, GetFun};
-use crate::check::name::{Empty, Name, Union};
-use crate::check::name::name_variant::NameVariant;
+use crate::check::context::function::STR;
+use crate::check::name::{Empty, Mutable, Name, TupleCallable};
 use crate::check::name::string_name::StringName;
+use crate::check::name::true_name::TrueName;
 use crate::check::result::TypeErr;
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -36,13 +34,7 @@ pub fn unify_function(
                 .names
                 .iter()
                 .cloned()
-                .map(|n| match n.variant {
-                    NameVariant::Fun(arguments, _) => Ok(arguments),
-                    other => {
-                        let msg = format!("A '{other}' does not take arguments");
-                        Err(vec![TypeErr::new(right.pos, &msg)])
-                    }
-                })
+                .map(|n| n.args(right.pos))
                 .collect::<Result<_, _>>()?;
 
             let mut count = 0;
@@ -75,7 +67,7 @@ pub fn unify_function(
         (_, Access { entity, name }) =>
             access(constraints, finished, ctx, constraint, entity, name, false, total),
 
-        _ => Err(unify_type_message(&constraint.msg, left, right))
+        _ => Err(unify_type_message("access", &constraint.msg, left, right))
     }
 }
 
@@ -124,12 +116,18 @@ fn field_access(
     msg: &str,
     total: usize,
 ) -> Unified {
+    if entity_name.is_empty() {
+        let msg = format!("{entity_name} does not define {name}");
+        return Err(vec![TypeErr::new(accessed.pos, &msg)]);
+    }
+
     let mut pushed = 0;
-    let fields = ctx.class(entity_name, accessed.pos)
-        .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?
-        .field(name, ctx, accessed.pos)
-        .map_err(|errs| access_field_cause(&errs, other, entity_name, name, msg))?;
-    for field in fields.union {
+    for entity_name in &entity_name.names {
+        let field = ctx.class(entity_name, accessed.pos)
+            .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?
+            .field(name, ctx, accessed.pos)
+            .map_err(|errs| access_field_cause(&errs, other, entity_name, name, msg))?;
+
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
         constraints.push("field access", &field_ty_exp, other);
         pushed += 1;
@@ -151,34 +149,32 @@ fn function_access(
     msg: &str,
     total: usize,
 ) -> Unified {
-    let class = ctx.class(entity_name, accessed.pos)
-        .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?;
-    let function_union = class.fun(name, ctx, accessed.pos)
-        .map_err(|errs| access_fun_cause(&errs, other, entity_name, name, args, msg))?;
+    if entity_name.is_empty() {
+        let msg = format!("{entity_name} does not define {name}");
+        return Err(vec![TypeErr::new(accessed.pos, &msg)]);
+    }
 
     let mut pushed = 0;
-    for function in &function_union.union {
-        let fun_ty_exp = Expected::new(accessed.pos, &Type { name: function.ret_ty.clone() });
+    for entity_name in &entity_name.names {
+        let class = ctx.class(entity_name, accessed.pos)
+            .map_err(|errs| access_class_cause(&errs, other, accessed, entity_name, msg))?;
+        let fun = class.fun(name, ctx, accessed.pos)
+            .map_err(|errs| access_fun_cause(&errs, other, entity_name, name, args, msg))?;
+
+        let fun_ty_exp = Expected::new(accessed.pos, &Type { name: fun.ret_ty.clone() });
         constraints.push("function access", other, &fun_ty_exp);
         pushed += 1;
+
+        pushed += unify_fun_arg(entity_name, name, &fun.arguments, args, constraints, accessed.pos)?;
     }
 
-    let largest = function_union.union.iter().fold(0, |m, f| max(m, f.arguments.len()));
-    let mut possible_args: Vec<HashSet<FunctionArg>> = vec![HashSet::new(); largest];
-    for fun in function_union.union {
-        for (i, arg) in enumerate(fun.arguments) {
-            possible_args[i].insert(arg);
-        }
-    }
-
-    let added = unify_fun_arg(entity_name, name, &possible_args, args, constraints, accessed.pos)?;
-    unify_link(constraints, finished, ctx, total + added + pushed)
+    unify_link(constraints, finished, ctx, total + pushed)
 }
 
 fn unify_fun_arg(
-    entity_name: &Name,
+    entity_name: &TrueName,
     name: &StringName,
-    ctx_f_args: &[HashSet<FunctionArg>],
+    ctx_f_args: &[FunctionArg],
     args: &[Expected],
     constr: &mut Constraints,
     pos: Position,
@@ -188,27 +184,42 @@ fn unify_fun_arg(
     for either_or_both in ctx_f_args.iter().zip_longest(args.iter()) {
         match either_or_both {
             EitherOrBoth::Both(ctx_f_arg, expected) => {
-                let names = ctx_f_arg
-                    .iter()
-                    .map(|f_arg| {
-                        f_arg.ty.clone().ok_or({
-                            vec![TypeErr::new(pos, &format!("Argument '{f_arg}' has no type"))]
-                        })
-                    })
-                    .collect::<Result<Vec<Name>, _>>()?;
+                let Some(arg_name) = &ctx_f_arg.ty else {
+                    let msg = format!("Argument '{ctx_f_arg}' has no type");
+                    return Err(vec![TypeErr::new(pos, &msg)]);
+                };
+                let ctx_arg_ty = Expected::new(expected.pos, &Type { name: arg_name.is_interchangeable(true) });
 
-                // Constraint should pass if just one is superset of function arg
-                let name = names
-                    .iter()
-                    .fold(Name::empty(), |name, f_name| name.union(f_name))
-                    .is_interchangeable(true);
-                let ctx_arg_ty = Expected::new(expected.pos, &Type { name });
-                constr.push("function argument", &ctx_arg_ty, expected);
+                // self is special, because self is equal to entity name
+                let expected = if ctx_f_arg.name == SELF {
+                    if let Type { name } = &expected.expect {
+                        let entity_name = if ctx_f_arg.mutable { entity_name.as_mutable() } else { entity_name.clone() };
+                        Expected::new(expected.pos, &Type { name: name.as_name(&entity_name, pos)? })
+                    } else { expected.clone() }
+                } else { expected.clone() };
+
+                if let Ok(Ok(tuple_union)) = expected.ty().map(|name| name.elements(expected.pos)) {
+                    // exception for tuple, since that is variable generic count
+                    if name == &StringName::from(STR) {
+                        for tuple_element in tuple_union.iter().flatten() {
+                            let expected = Expected::new(expected.pos, &Type { name: tuple_element.clone() });
+                            let msg = format!("tuple element define {STR}");
+                            let stringy = Constraint::stringy(&msg, &expected);
+                            constr.push_constr(&stringy);
+                        }
+                    } else {
+                        let msg = format!("function argument: {}", ctx_f_arg.name);
+                        constr.push(&msg, &ctx_arg_ty, &expected);
+                    }
+                } else {
+                    let msg = format!("function argument: {}", ctx_f_arg.name);
+                    constr.push(&msg, &ctx_arg_ty, &expected);
+                }
+
                 added += 1;
             }
-            EitherOrBoth::Left(fun_arg) if !fun_arg.iter().any(|a| !a.has_default) => {
-                let msg = format!("Expected argument for '{}' in Method {name} of {entity_name}",
-                                  comma_delm(fun_arg));
+            EitherOrBoth::Left(fun_arg) if !fun_arg.has_default => {
+                let msg = format!("Expected argument for '{fun_arg}' in method {name} of {entity_name}");
                 return Err(vec![TypeErr::new(pos, &msg)]);
             }
             EitherOrBoth::Right(_) => {
@@ -226,17 +237,17 @@ fn unify_fun_arg(
     Ok(added)
 }
 
-fn access_class_cause(errs: &[TypeErr], other: &Expected, actual: &Expected, entity_name: &Name, cause: &str) -> Vec<TypeErr> {
+fn access_class_cause(errs: &[TypeErr], other: &Expected, actual: &Expected, entity_name: &TrueName, cause: &str) -> Vec<TypeErr> {
     let msg = format!("In {cause}, we expect {entity_name}, was {actual}");
     access_cause(errs, other, &msg, cause)
 }
 
-fn access_field_cause(errs: &[TypeErr], other: &Expected, entity_name: &Name, field_name: &str, cause: &str) -> Vec<TypeErr> {
+fn access_field_cause(errs: &[TypeErr], other: &Expected, entity_name: &TrueName, field_name: &str, cause: &str) -> Vec<TypeErr> {
     let msg = format!("We expect {other}, but {entity_name} does not define {field_name}");
     access_cause(errs, other, &msg, cause)
 }
 
-fn access_fun_cause(errs: &[TypeErr], other: &Expected, entity_name: &Name, fun_name: &StringName, args: &[Expected], cause: &str) -> Vec<TypeErr> {
+fn access_fun_cause(errs: &[TypeErr], other: &Expected, entity_name: &TrueName, fun_name: &StringName, args: &[Expected], cause: &str) -> Vec<TypeErr> {
     let args: Vec<Expected> = args.iter().map(|a| a.and_or_a(false)).collect();
     let msg = format!("We expect {other}, but {entity_name} does not define {fun_name}({})", comma_delm(args));
     access_cause(errs, other, &msg, cause)

@@ -73,6 +73,6 @@ impl State {
 
     pub fn space(&mut self) {
         self.pos = self.pos.offset_pos(1);
-        self.line_indent += if self.token_this_line { 0 } else { 1 };
+        self.line_indent += i32::from(!self.token_this_line);
     }
 }
