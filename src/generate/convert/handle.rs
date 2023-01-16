@@ -3,6 +3,7 @@ use crate::check::ast::NodeTy;
 use crate::generate::ast::node::Core;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
+use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
@@ -11,19 +12,12 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
 
         NodeTy::Handle { expr_or_stmt, cases } => {
             let (var, ty) = if let NodeTy::VariableDef { var, ty, .. } = &expr_or_stmt.node {
-                (
-                    Some(Box::from(convert_node(var, imp, state, ctx)?)),
-                    if let Some(ty) = ty {
-                        Some(Box::from(convert_node(ty, imp, state, ctx)?))
-                    } else {
-                        None
-                    },
-                )
+                (Some(Box::from(convert_node(var, imp, state, ctx)?)), ty.as_ref().map(|ty| ty.to_py(imp)).map(Box::from))
             } else {
                 (None, None)
             };
-            let assign_state = state.must_assign_to(var.as_deref(), expr_or_stmt.ty.clone());
 
+            let assign_state = state.must_assign_to(var.as_deref(), expr_or_stmt.ty.clone());
             Core::TryExcept {
                 setup: var.map(|var| Box::from(Core::VarDef { var, ty, expr: None })),
                 attempt: Box::from(convert_node(&expr_or_stmt.clone(), imp, state, ctx)?),
@@ -41,11 +35,7 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                         match &cond.node {
                             NodeTy::ExpressionType { expr, ty, .. } => {
                                 let expr = Box::from(convert_node(expr, imp, state, ctx)?);
-                                let Some(ty) = ty else {
-                                    let msg = format!("Must have condition, was {cond:?}");
-                                    return Err(Box::from(UnimplementedErr::new(cond, &msg)));
-                                };
-                                let class = Box::from(convert_node(ty, imp, state, ctx)?);
+                                let class = Box::from(ty.as_ref().map_or(Core::Empty, |ty| ty.to_py(imp)));
                                 let body = Box::from(convert_node(body, imp, &assign_state, ctx)?);
 
                                 except.push(if *expr == Core::UnderScore {

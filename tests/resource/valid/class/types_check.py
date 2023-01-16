@@ -1,22 +1,27 @@
 from abc import ABC, abstractmethod
 from typing import Callable, NewType
 
+
 class MyGeneric(str):
     def __init__(self):
         str.__init__(self)
+
 
 class MyType:
     def __init__(self, some_field: str):
         self.some_field = some_field
 
+
 SomeState = NewType("SomeState", MyClass)
 OtherState = NewType("OtherState", MyClass)
 
+
 class SuperInterface(ABC):
-    bar = None
+    bar: int = None
+
 
 class MyInterface(SuperInterface):
-    required_field = None
+    required_field: int = None
 
     def __init__(self):
         SuperInterface.__init__(self)
@@ -24,6 +29,7 @@ class MyInterface(SuperInterface):
     @abstractmethod
     def higher_order(self) -> int:
         pass
+
 
 class MyClass(MyType, MyInterface):
     required_field: int = 100

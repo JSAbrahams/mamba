@@ -7,13 +7,13 @@ use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
 use crate::check::context::{arg, function, LookupClass};
 use crate::check::context::clss::Class;
-use crate::check::name::Empty;
-use crate::check::name::true_name::TrueName;
+use crate::check::name::string_name::StringName;
 use crate::common::position::Position;
 use crate::generate::ast::node::{Core, CoreOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
 use crate::generate::convert::state::{Imports, State};
+use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
 /// Desugar a class.
@@ -27,42 +27,33 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
     match &ast.node {
         NodeTy::TypeAlias { ty, isa, .. } => {
             imp.add_from_import("typing", "NewType");
-            let lit = if let Core::Type { lit, .. } = convert_node(ty, imp, state, ctx)? {
-                lit
-            } else {
-                let msg = format!("Expected identifier, was {ty:?}");
-                return Err(Box::from(UnimplementedErr::new(ty, &msg)));
-            };
+            let lit = ty.name.clone();
 
             Ok(Core::Assign {
                 left: Box::new(Core::Id { lit: lit.clone() }),
                 right: Box::new(Core::FunctionCall {
                     function: Box::new(Core::Id { lit: String::from("NewType") }),
-                    args: vec![Core::Str { string: lit }, convert_node(isa, imp, state, ctx)?],
+                    args: vec![Core::Str { string: lit }, isa.to_py(imp)],
                 }),
                 op: CoreOp::Assign,
             })
         }
         NodeTy::TypeDef { ty, body, isa } => {
-            let parents = if let Some(isa) = isa { vec![isa.deref().clone()] } else { vec![] };
+            let parents = isa.as_ref().map_or_else(Vec::new, |isa| vec![isa.to_py(imp)]);
             extract_class(ty, body, &[], &parents, imp, &state.in_interface(true), ctx)
         }
         NodeTy::Class { ty, body, args, parents } => {
-            extract_class(ty, body, args, parents, imp, &state.in_interface(false), ctx)
+            let parents = convert_vec(parents, imp, state, ctx)?;
+            extract_class(ty, body, args, &parents, imp, &state.in_interface(false), ctx)
         }
 
-        NodeTy::Parent { ty, args } => {
-            if args.is_empty() {
-                convert_node(ty, imp, state, ctx)
-            } else {
-                Ok(Core::FunctionCall {
-                    function: Box::from(match convert_node(ty, imp, state, ctx)? {
-                        Core::Type { lit, .. } => Core::Id { lit }, // ignore generics
-                        other => other,
-                    }),
-                    args: convert_vec(args, imp, state, ctx)?,
-                })
-            }
+        NodeTy::Parent { ty, args } => if args.is_empty() {
+            Ok(ty.to_py(imp))
+        } else {
+            Ok(Core::FunctionCall {
+                function: Box::from(ty.to_py(imp)),
+                args: convert_vec(args, imp, state, ctx)?,
+            })
         }
 
         other => {
@@ -81,29 +72,22 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
 ///
 /// If creating a new constructor, it is inserted after the last found variable.
 fn extract_class(
-    ty: &ASTTy,
+    ty: &StringName,
     body: &Option<Box<ASTTy>>,
     args: &[ASTTy],
-    parents: &[ASTTy],
+    parents: &[Core],
     imp: &mut Imports,
     state: &State,
     ctx: &Context,
 ) -> GenResult {
-    let id = match &ty.node {
-        NodeTy::Type { id, .. } => convert_node(id, imp, state, ctx)?,
-        _ => return Err(Box::from(UnimplementedErr::new(ty, "Other than type as class identifier"))),
-    };
-
     let body = body.clone().map(|body| convert_node(body.deref(), imp, state, ctx));
     let body = if let Some(body) = body { Some(body?) } else { None };
-    let mut body_name_stmts: HashMap<Core, (usize, Core)> = match body {
-        Some(Core::Block { statements }) => statements,
-        Some(other) => vec![other],
-        None => vec![],
-    }
-        .iter()
-        .enumerate()
-        .map(|(i, stmt)| {
+    let mut body_name_stmts: HashMap<Core, (usize, Core)> =
+        match body {
+            Some(Core::Block { statements }) => statements,
+            Some(other) => vec![other],
+            None => vec![],
+        }.iter().enumerate().map(|(i, stmt)| {
             // function two further to leave place for init
             let (pos, key) = match stmt {
                 Core::FunDef { id, .. } => (i + 2, Core::Id { lit: id.clone() }),
@@ -112,17 +96,15 @@ fn extract_class(
                 _ => (i, Core::Id { lit: String::from("@") }),
             };
             (key, (pos, stmt.clone()))
-        })
-        .collect();
+        }).collect();
 
     let args = convert_vec(args, imp, &state.def_as_fun_arg(true), ctx)?;
-    let parents = convert_vec(parents, imp, state, ctx)?;
 
     let old_init = body_name_stmts
         .iter()
         .find(|(name, _)| matches!(name, Core::Id { lit } if *lit == function::python::INIT))
         .map(|(_, (_, function))| function);
-    if let Some(new_init) = init(&old_init, &args, &parents)? {
+    if let Some(new_init) = init(&old_init, &args, parents)? {
         let init = Core::Id { lit: String::from(function::python::INIT) };
         let pos = if let Some((pos, _)) = body_name_stmts.get(&init) {
             *pos // leave pos untouched
@@ -142,19 +124,15 @@ fn extract_class(
         .iter()
         .map(|parent| match parent.clone() {
             Core::FunctionCall { function, .. } => match *function {
-                Core::Id { .. } => Ok(*function),
-                _ => Err(Box::from(UnimplementedErr::new(ty, "Parent"))),
+                Core::Type { lit, .. } => Ok(Core::Id { lit }),
+                other => panic!("Expected type in parent, was {}", other)
             },
             Core::Type { .. } => Ok(parent.clone()),
-            _ => Err(Box::from(UnimplementedErr::new(ty, "Parent"))),
+            other => panic!("Expected type in parent, was {}", other)
         })
         .collect::<GenResult<Vec<Core>>>()?;
 
-    let class_name = match &id {
-        Core::Id { lit } => TrueName::from(lit.as_str()),
-        _ => TrueName::empty()
-    };
-    let class = ctx.class(&class_name, Position::invisible()).ok();
+    let class = ctx.class(ty, Position::invisible()).ok();
 
     let parent_names = if state.interface && !has_abstract_parent(&class, ctx) {
         imp.add_from_import("abc", "ABC");
@@ -172,7 +150,13 @@ fn extract_class(
 
     let statements = if body_stmts.is_empty() { vec![Core::Pass] } else { body_stmts };
     let body = Core::Block { statements };
-    Ok(Core::ClassDef { name: Box::from(id), parent_names, body: Box::from(body) })
+
+    if let Core::Type { lit, .. } = ty.to_py(imp) {
+        let name = Box::from(Core::Id { lit });
+        Ok(Core::ClassDef { name, parent_names, body: Box::from(body) })
+    } else {
+        panic!("class name should be type")
+    }
 }
 
 fn has_abstract_parent(clss: &Option<Class>, ctx: &Context) -> bool {
@@ -207,7 +191,7 @@ fn init(
         .map(|parent| {
             let (lit, mut arg) = match parent {
                 Core::FunctionCall { function, args } => match function.deref() {
-                    Core::Id { lit } => (lit.clone(), args.clone()),
+                    Core::Type { lit, .. } => (lit.clone(), args.clone()),
                     _ => (String::from(""), args.clone()),
                 },
                 Core::Type { lit, .. } => (lit.clone(), vec![]),

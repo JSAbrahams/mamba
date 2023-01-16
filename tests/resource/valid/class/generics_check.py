@@ -1,20 +1,24 @@
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
+
 
 class Err1(Exception):
     def __init__(self, msg: str):
         Exception.__init__(self, msg)
 
+
 class Err2(Exception):
     def __init__(self, msg: str):
         Exception.__init__(self, msg)
+
 
 class MyType:
     def __init__(self, super_field: str):
         self.super_field = super_field
 
+
 class MyClass2(MyType):
     z_modified: str = "asdf"
-    other_field: Union[float, int] = 10
+    other_field: int = 10
 
     def __init__(self, other_field: int, z: int):
         MyType.__init__(self, "the quick brown fox jumped over the slow donkey")
@@ -29,7 +33,7 @@ class MyClass2(MyType):
 
         my_bool: bool = True
 
-        a = None
+        a: int = None
         try:
             a: int = self.error_function()
         except Err1 as err1:
@@ -39,22 +43,32 @@ class MyClass2(MyType):
             print(err2)
             a = -2
 
-    def error_function(self) -> int: return 200
+    def error_function(self) -> int:
+        return 200
 
-    def connect(self): self.other_field = 200
+    def connect(self):
+        self.other_field = 200
 
-    def _fun_b(self): print("this function is private!")
+    def _fun_b(self):
+        print("this function is private!")
 
-    def factorial(self, x: int = 0) -> int: return x * self.factorial(x - 1)
+    def factorial(self, x: int = 0) -> int:
+        return x * self.factorial(x - 1)
 
-    def factorial_infinite(self, x: int) -> int: return x * self.factorial(x)
+    def factorial_infinite(self, x: int) -> int:
+        return x * self.factorial(x)
 
-    def a(self) -> int: return self.b(10)
+    def a(self) -> int:
+        return self.b(10)
 
-    def b(self, c: int) -> int: return self.a()
+    def b(self, c: int) -> int:
+        return self.a()
 
-    def c(self, d: int) -> int: return self.b(self.c(20))
+    def c(self, d: int) -> int:
+        return self.b(self.c(20))
 
-    def some_higher_order(self, fun: Callable[[int], int]) -> Optional[int]: return fun(10)
+    def some_higher_order(self, fun: Callable[[int], int]) -> Optional[int]:
+        return fun(10)
 
-    def fancy(self) -> Optional[int]: return self.some_higher_order(lambda x: x * 2)
+    def fancy(self) -> Optional[int]:
+        return self.some_higher_order(lambda x: x * 2)

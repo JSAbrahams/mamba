@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::check::name::Name;
+use crate::check::name::{Name, TupleCallable};
 use crate::check::name::string_name::StringName;
-use crate::check::result::TypeErr;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::parse::ast::{AST, Node};
 
 impl TryFrom<&Box<AST>> for StringName {
@@ -26,6 +26,15 @@ impl TryFrom<&AST> for StringName {
                 }
                 _ => Err(vec![TypeErr::new(id.pos, &format!("Expected identifier, was {}", ast.node))])
             },
+            Node::TypeFun { args, ret_ty } => {
+                let args: Vec<Name> = args.iter().map(Name::try_from).collect::<TypeResult<_>>()?;
+                let ret_ty = Name::try_from(ret_ty)?;
+                Ok(StringName::callable(&args, &ret_ty))
+            }
+            Node::TypeTup { types } => {
+                let generics: Vec<Name> = types.iter().map(Name::try_from).collect::<TypeResult<_>>()?;
+                Ok(StringName::tuple(&generics))
+            }
             Node::Parent { ty, .. } => StringName::try_from(ty),
             _ => {
                 let msg = format!("Expected class name, was {}", ast.node);
