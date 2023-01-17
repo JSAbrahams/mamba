@@ -146,7 +146,10 @@ pub fn constrain_args(
                     env_with_args = id_from_var(var, &ty, default, *mutable, ctx, constr, &env_with_args)?;
                 }
             }
-            _ => return Err(vec![TypeErr::new(arg.pos, "Expected function argument")]),
+            _ => {
+                let msg = format!("Expected function argument, was {}", arg.node);
+                return Err(vec![TypeErr::new(arg.pos, &msg)]);
+            }
         }
     }
 
@@ -216,7 +219,7 @@ pub fn id_from_var(
                             let expr_exp = Expected::from(expr);
                             let expr_ty = Expected::new(expr.pos, &Type { name: ty.clone() });
 
-                            let msg = format!("tuple literal element {}", i);
+                            let msg = format!("tuple literal element {i}");
                             constr.add(&msg, &expr_ty, &expr_exp, &env);
                         }
                     } else {

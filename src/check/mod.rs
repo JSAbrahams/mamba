@@ -30,7 +30,7 @@ pub fn check(ast: &AST, ctx: &Context) -> TypeResult {
     );
 
     let finished = constraints(ast, ctx)?;
-    Ok(ASTTy::from((ast, &finished.pos_to_name)))
+    Ok(ASTTy::from((ast, &finished)))
 }
 
 pub fn check_all(asts: &[AST]) -> TypeResult<Vec<ASTTy>> {

@@ -4,7 +4,7 @@ a: int = 10
 b: int = 20
 
 c: int = a + b
-d: int = 10 - c
+d: float = 10 - c
 f: float = 2.4 * d
 h: float = f / a
 j: int = 100 // 10

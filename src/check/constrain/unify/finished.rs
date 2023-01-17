@@ -1,4 +1,5 @@
-use crate::check::ast::pos_name::PosNameMap;
+use std::collections::HashMap;
+
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::COLLECTION;
@@ -11,16 +12,14 @@ use crate::common::position::Position;
 /// The types may be used internally by the check stage.
 const IGNORED_NAMES: [&str; 1] = [COLLECTION];
 
-#[derive(Debug, Clone)]
+pub(crate) type PosNameMap = HashMap<Position, Name>;
+
+#[derive(Debug, Clone, Default)]
 pub struct Finished {
     pub(crate) pos_to_name: PosNameMap,
 }
 
 impl Finished {
-    pub fn new() -> Finished {
-        Finished { pos_to_name: PosNameMap::default() }
-    }
-
     /// Push name associated with specific position in [AST].
     ///
     /// If already present at position, then union is created between current [Name] and given
@@ -39,10 +38,10 @@ impl Finished {
         }
 
         let name = self.pos_to_name.get(&pos)
-            .map_or(name.clone(), |old_name| if old_name.is_interchangeable {
+            .map_or(name.trim_super(ctx), |old_name| if old_name.is_interchangeable {
                 old_name.clone()
             } else {
-                old_name.union(&name)
+                old_name.union(&name).trim_super(ctx)
             });
 
         if self.pos_to_name.insert(pos, name.clone()).is_none() {

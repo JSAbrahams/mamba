@@ -2,9 +2,11 @@ class MyErr1(Exception):
     def __init__(self):
         Exception.__init__(self, "Something went wrong")
 
+
 class MyErr2(Exception):
     def __init__(self, msg: str):
         Exception.__init__(self, msg)
+
 
 def f(x: int) -> int:
     if x < 0:
@@ -15,7 +17,8 @@ def f(x: int) -> int:
         else:
             return x + 2
 
-a = None
+
+a: int = None
 try:
     a: int = f(10)
 except MyErr1 as err:

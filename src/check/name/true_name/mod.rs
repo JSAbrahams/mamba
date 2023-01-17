@@ -198,10 +198,19 @@ impl TrueName {
 #[cfg(test)]
 mod test {
     use crate::check::context::clss::{BOOL, COMPLEX, INT, STRING};
-    use crate::check::name::IsSuperSet;
+    use crate::check::name::{IsSuperSet, Nullable};
     use crate::check::name::true_name::TrueName;
     use crate::common::position::Position;
     use crate::Context;
+
+    #[test]
+    fn nullable_is_super() {
+        let name_1 = TrueName::from("Str").as_nullable();
+        let name_2 = TrueName::from("Str");
+
+        let ctx = Context::default().into_with_primitives().unwrap();
+        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+    }
 
     #[test]
     fn bool_not_super_of_int() {
