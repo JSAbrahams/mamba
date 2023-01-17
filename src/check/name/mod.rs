@@ -367,6 +367,22 @@ impl Name {
         Name { names, ..self.clone() }
     }
 
+    /// Trim Name by removing any in the set which are superset of other members in the set.
+    pub fn trim_super(&self, ctx: &Context) -> Self {
+        let names = if self.names.len() > 1 {
+            self.names
+                .iter()
+                .filter(|n| self.names.iter().any(|o_n| {
+                    !o_n.is_superset_of(n, ctx, Position::invisible()).unwrap_or(true)
+                }))
+                .cloned()
+                .collect()
+        } else {
+            self.names.clone()
+        };
+        Self { names, ..self.clone() }
+    }
+
     pub fn as_direct(&self) -> HashSet<StringName> {
         self.names.iter().map(StringName::from).collect()
     }
@@ -430,6 +446,40 @@ mod tests {
     use crate::check::name::true_name::TrueName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
+
+    #[test]
+    fn trim_super_nullable() {
+        let name_1 = Name::from("Str");
+        let name_2 = Name::from(&TrueName::from("Str").as_nullable());
+
+        let union = name_1.union(&name_2);
+        assert_eq!(union, Name::from(&HashSet::from([name_1, name_2.clone()])));
+
+        let ctx = Context::default().into_with_primitives().unwrap().into_with_std_lib().unwrap();
+        let union = union.trim_super(&ctx);
+        assert_eq!(union, Name::from(&HashSet::from([name_2])));
+    }
+
+    #[test]
+    fn trim_super_float_int_is_float() {
+        let name_1 = Name::from("Float");
+        let name_2 = Name::from("Int");
+
+        let union = name_1.union(&name_2);
+        assert_eq!(union, Name::from(&HashSet::from([name_1.clone(), name_2])));
+
+        let ctx = Context::default().into_with_primitives().unwrap().into_with_std_lib().unwrap();
+        let union = union.trim_super(&ctx);
+        assert_eq!(union, Name::from(&HashSet::from([name_1])));
+    }
+
+    #[test]
+    fn trim_super_of_self() {
+        let name_1 = Name::from("Float");
+        let ctx = Context::default().into_with_primitives().unwrap().into_with_std_lib().unwrap();
+        let union = name_1.trim_super(&ctx);
+        assert_eq!(union, Name::from(&HashSet::from([name_1])));
+    }
 
     #[test]
     fn union_none_nullable_str_is_nullable_str() {

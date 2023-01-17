@@ -1,5 +1,4 @@
-from typing import Union
-a: Union[float, int] = 10
+a: float = 10
 
 a += 2
 a -= 3

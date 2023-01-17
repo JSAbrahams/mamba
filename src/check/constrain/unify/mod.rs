@@ -17,7 +17,7 @@ mod expression;
 
 pub fn unify(all_constraints: &[Constraints], ctx: &Context) -> Unified {
     let mut count = 1;
-    let mut finished = Finished::new();
+    let mut finished = Finished::default();
     let (_, errs): (Vec<_>, Vec<_>) = all_constraints
         .iter()
         .map(|constraints| {

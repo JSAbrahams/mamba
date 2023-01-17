@@ -153,7 +153,7 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
     }
 
     fn callable(args: &[Name], ret_ty: &Name) -> Self {
-        let args = Name::from(&StringName::new(TUPLE, args));
+        let args = Name::from(&StringName::new("", args));
         StringName::new(CALLABLE, &[args, ret_ty.clone()])
     }
 

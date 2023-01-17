@@ -21,7 +21,7 @@ pub struct UnimplementedErr {
 
 impl UnimplementedErr {
     pub fn new(ast: &ASTTy, msg: &str) -> UnimplementedErr {
-        let msg = format!("The {msg} construct has not yet been implemented as of v{VERSION}.");
+        let msg = format!("The {msg} construct has not yet been implemented as of v{VERSION}");
         UnimplementedErr { position: ast.pos, msg, source: None, path: None }
     }
 }

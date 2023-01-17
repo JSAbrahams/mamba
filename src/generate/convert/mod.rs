@@ -14,7 +14,6 @@ use crate::generate::convert::definition::convert_def;
 use crate::generate::convert::handle::convert_handle;
 use crate::generate::convert::range_slice::convert_range_slice;
 use crate::generate::convert::state::{Imports, State};
-use crate::generate::convert::ty::convert_ty;
 use crate::generate::name::ToPy;
 use crate::generate::result::{GenResult, UnimplementedErr};
 
@@ -26,7 +25,6 @@ mod control_flow;
 mod definition;
 mod handle;
 mod range_slice;
-mod ty;
 
 pub mod state;
 
@@ -74,10 +72,8 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         }
         NodeTy::Str { lit, .. } => Core::FStr { string: lit.clone() },
 
-        NodeTy::QuestionOp { .. } => convert_ty(ast, imp, state, ctx)?,
-
         NodeTy::Undefined => Core::None,
-        NodeTy::ExpressionType { .. } => convert_ty(ast, imp, state, ctx)?,
+        NodeTy::ExpressionType { expr, .. } => convert_node(expr, imp, &state.expand_ty(true), ctx)?,
         NodeTy::Id { lit } => Core::Id { lit: concrete_to_python(lit) },
         NodeTy::Bool { lit } => Core::Bool { boolean: *lit },
 
@@ -235,11 +231,6 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
             left: Box::from(convert_node(left, imp, state, ctx)?),
             right: Box::from(convert_node(right, imp, state, ctx)?),
         },
-
-        NodeTy::TypeTup { .. }
-        | NodeTy::Type { .. }
-        | NodeTy::TypeFun { .. }
-        | NodeTy::TypeUnion { .. } => convert_ty(ast, imp, state, ctx)?,
 
         NodeTy::TypeDef { .. } | NodeTy::TypeAlias { .. } => convert_class(ast, imp, state, ctx)?,
         NodeTy::Class { .. } => convert_class(ast, imp, state, ctx)?,

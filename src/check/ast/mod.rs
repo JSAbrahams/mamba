@@ -1,12 +1,13 @@
 use std::ops::Deref;
 
+use crate::check::constrain::unify::finished::Finished;
 use crate::check::name::Name;
+use crate::check::name::string_name::StringName;
 use crate::common::position::Position;
 use crate::parse::ast::AST;
 use crate::parse::ast::node_op::NodeOp;
 
 pub mod node;
-pub mod pos_name;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct ASTTy {
@@ -15,21 +16,36 @@ pub struct ASTTy {
     pub ty: Option<Name>,
 }
 
-impl From<&AST> for ASTTy {
-    fn from(ast: &AST) -> Self {
-        ASTTy { pos: ast.pos, node: NodeTy::from(&ast.node), ty: None }
+impl From<(&Box<AST>, &Finished)> for ASTTy {
+    fn from((ast, finished): (&Box<AST>, &Finished)) -> Self {
+        ASTTy::from((ast.deref(), finished))
     }
 }
 
-impl From<Box<AST>> for ASTTy {
-    fn from(ast: Box<AST>) -> Self {
-        ASTTy::from(ast.deref())
+impl From<(Box<AST>, &Finished)> for ASTTy {
+    fn from((ast, finished): (Box<AST>, &Finished)) -> Self {
+        ASTTy::from((ast.deref(), finished))
+    }
+}
+
+impl From<(&AST, &Finished)> for ASTTy {
+    fn from((ast, finished): (&AST, &Finished)) -> Self {
+        let node = NodeTy::from((&ast.node, finished));
+        ASTTy { node, ty: finished.pos_to_name.get(&ast.pos).cloned(), pos: ast.pos }
+    }
+}
+
+impl From<&AST> for ASTTy {
+    fn from(ast: &AST) -> Self {
+        let node = NodeTy::from((&ast.node, &Finished::default()));
+        ASTTy { node, ty: None, pos: ast.pos }
     }
 }
 
 impl From<&Box<AST>> for ASTTy {
     fn from(ast: &Box<AST>) -> Self {
-        ASTTy::from(ast.deref())
+        let node = NodeTy::from((&ast.node, &Finished::default()));
+        ASTTy { node, ty: None, pos: ast.pos }
     }
 }
 
@@ -41,33 +57,29 @@ impl ASTTy {
 }
 
 type OptASTTy = Option<Box<ASTTy>>;
+type OptName = Option<Name>;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeTy {
     Import { from: Option<Box<ASTTy>>, import: Vec<ASTTy>, alias: Vec<ASTTy> },
-    Class { ty: Box<ASTTy>, args: Vec<ASTTy>, parents: Vec<ASTTy>, body: OptASTTy },
-    Generic { id: Box<ASTTy>, isa: OptASTTy },
-    Parent { ty: Box<ASTTy>, args: Vec<ASTTy> },
+    Class { ty: StringName, args: Vec<ASTTy>, parents: Vec<ASTTy>, body: OptASTTy },
+    Parent { ty: StringName, args: Vec<ASTTy> },
     Reassign { left: Box<ASTTy>, right: Box<ASTTy>, op: NodeOp },
-    VariableDef { mutable: bool, var: Box<ASTTy>, ty: OptASTTy, expr: OptASTTy, forward: Vec<ASTTy> },
-    FunDef { pure: bool, id: Box<ASTTy>, args: Vec<ASTTy>, ret: OptASTTy, raises: Vec<ASTTy>, body: OptASTTy },
+    VariableDef { mutable: bool, var: Box<ASTTy>, ty: OptName, expr: OptASTTy, forward: Vec<ASTTy> },
+    FunDef { pure: bool, id: Box<ASTTy>, args: Vec<ASTTy>, ret: OptName, raises: Vec<ASTTy>, body: OptASTTy },
     AnonFun { args: Vec<ASTTy>, body: Box<ASTTy> },
     Raises { expr_or_stmt: Box<ASTTy>, errors: Vec<ASTTy> },
     Raise { error: Box<ASTTy> },
     Handle { expr_or_stmt: Box<ASTTy>, cases: Vec<ASTTy> },
-    With { resource: Box<ASTTy>, alias: Option<(Box<ASTTy>, bool, Option<Box<ASTTy>>)>, expr: Box<ASTTy> },
-    FunctionCall { name: Box<ASTTy>, args: Vec<ASTTy> },
+    With { resource: Box<ASTTy>, alias: Option<(Box<ASTTy>, bool, OptName)>, expr: Box<ASTTy> },
+    FunctionCall { name: StringName, args: Vec<ASTTy> },
     PropertyCall { instance: Box<ASTTy>, property: Box<ASTTy> },
     Id { lit: String },
-    ExpressionType { expr: Box<ASTTy>, mutable: bool, ty: OptASTTy },
-    TypeDef { ty: Box<ASTTy>, isa: OptASTTy, body: OptASTTy },
-    TypeAlias { ty: Box<ASTTy>, isa: Box<ASTTy>, conditions: Vec<ASTTy> },
-    TypeTup { types: Vec<ASTTy> },
-    TypeUnion { types: Vec<ASTTy> },
-    Type { id: Box<ASTTy>, generics: Vec<ASTTy> },
-    TypeFun { args: Vec<ASTTy>, ret_ty: Box<ASTTy> },
+    ExpressionType { expr: Box<ASTTy>, mutable: bool, ty: OptName },
+    TypeDef { ty: StringName, isa: OptName, body: OptASTTy },
+    TypeAlias { ty: StringName, isa: Name, conditions: Vec<ASTTy> },
     Condition { cond: Box<ASTTy>, el: OptASTTy },
-    FunArg { vararg: bool, mutable: bool, var: Box<ASTTy>, ty: OptASTTy, default: OptASTTy },
+    FunArg { vararg: bool, mutable: bool, var: Box<ASTTy>, ty: OptName, default: OptASTTy },
     Set { elements: Vec<ASTTy> },
     SetBuilder { item: Box<ASTTy>, conditions: Vec<ASTTy> },
     List { elements: Vec<ASTTy> },
@@ -127,29 +139,15 @@ pub enum NodeTy {
     Pass,
     Question { left: Box<ASTTy>, right: Box<ASTTy> },
     QuestionOp { expr: Box<ASTTy> },
+    Empty,
 }
 
 #[cfg(test)]
 mod test {
     use crate::{AST, ASTTy};
-    use crate::check::ast::NodeTy;
     use crate::check::name::Name;
-    use crate::common::position::{CaretPos, Position};
+    use crate::common::position::Position;
     use crate::parse::ast::Node;
-
-    #[test]
-    fn from_ast() {
-        let node = Node::Pass;
-        let pos = Position::from(CaretPos::new(4, 8));
-        let ast = AST::new(pos, node.clone());
-
-        let ast_ty = ASTTy::from(&ast);
-        let ast_ty2 = ASTTy::from(&Box::from(ast));
-
-        assert_eq!(ast_ty, ast_ty2);
-        assert_eq!(ast_ty.node, NodeTy::from(&node));
-        assert_eq!(ast_ty.pos, pos);
-    }
 
     #[test]
     fn to_ty() {

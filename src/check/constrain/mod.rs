@@ -5,10 +5,10 @@ use crate::check::context::Context;
 use crate::check::result::TypeErr;
 use crate::parse::ast::AST;
 
-pub mod constraint;
+pub(super) mod constraint;
 
 mod generate;
-mod unify;
+pub(super) mod unify;
 
 pub type Unified<T = Finished> = Result<T, Vec<TypeErr>>;
 

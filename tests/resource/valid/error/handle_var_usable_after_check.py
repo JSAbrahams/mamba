@@ -3,10 +3,12 @@ class MyErr(Exception):
         Exception.__init__(self)
         self.message = message
 
+
 def function_may_throw_err() -> int:
     return 10
 
-a = None
+
+a: int = None
 try:
     a: int = function_may_throw_err()
 except MyErr as err:

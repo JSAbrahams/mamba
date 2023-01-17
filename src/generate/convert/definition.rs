@@ -2,7 +2,8 @@ use std::ops::Deref;
 
 use crate::{ASTTy, Context};
 use crate::check::ast::NodeTy;
-use crate::check::context::{arg, function};
+use crate::check::context::arg::python::SELF;
+use crate::check::context::function;
 use crate::generate::ast::node::{Core, CoreFunOp};
 use crate::generate::convert::common::convert_vec;
 use crate::generate::convert::convert_node;
@@ -12,57 +13,49 @@ use crate::generate::result::{GenResult, UnimplementedErr};
 
 pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context) -> GenResult {
     match &ast.node {
-        NodeTy::VariableDef { var, expr: expression, ty, .. } => {
+        NodeTy::VariableDef { var, expr, ty, .. } => {
             let var = convert_node(var, imp, &state.tuple_literal(), ctx)?;
             let state = state.in_tup(match var.clone() {
                 Core::Tuple { elements } => elements.len(),
                 _ => 1,
             });
 
+            let annotate = state.annotate && state.expand_ty && !matches!(var, Core::TupleLiteral { .. });
+            let ty = match (ty, expr) {
+                (Some(ty), _) if annotate => Some(Box::from(ty.to_py(imp))),
+                (_, Some(expr)) if annotate => expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
+                _ => None,
+            };
+
             Ok(if state.def_as_fun_arg {
-                Core::FunArg {
-                    vararg: false,
-                    var: Box::from(var),
-                    ty: match ty {
-                        _ if !state.annotate => None,
-                        Some(ty) => Some(Box::from(convert_node(ty, imp, &state, ctx)?)),
-                        None => ast.ty.clone().map(|name| name.to_py(imp)).map(Box::from),
-                    },
-                    default: match expression {
-                        Some(expression) => Some(Box::from(convert_node(expression, imp, &state, ctx)?)),
-                        None => None,
-                    },
-                }
+                let default = match expr {
+                    Some(expression) => Some(Box::from(convert_node(expression, imp, &state, ctx)?)),
+                    None => None,
+                };
+                Core::FunArg { vararg: false, var: Box::from(var), ty, default }
             } else {
-                Core::VarDef {
-                    var: Box::from(var.clone()),
-                    ty: match expression {
-                        Some(expr) if state.annotate && !matches!(var, Core::TupleLiteral { .. }) =>
-                            expr.clone().ty.map(|name| name.to_py(imp)).map(Box::from),
-                        _ => None,
-                    },
-                    expr: match (&var, expression) {
-                        (_, Some(expr)) => match convert_node(expr, imp, &state, ctx)? {
-                            Core::IfElse { .. } | Core::Match { .. } => {
-                                // redo convert but with assign to state
-                                let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
-                                return convert_node(expr, imp, &state, ctx);
-                            }
-                            other => Some(Box::from(other))
+                let expr = match (&var, expr) {
+                    (_, Some(expr)) => match convert_node(expr, imp, &state, ctx)? {
+                        Core::IfElse { .. } | Core::Match { .. } => {
+                            // redo convert but with assign to state
+                            let state = state.must_assign_to(Some(&var.clone()), expr.ty.clone());
+                            return convert_node(expr, imp, &state, ctx);
                         }
-                        (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
-                            elements: vec![Core::None; elements.len()],
-                        })),
-                        (_, None) => None,
-                    },
-                }
+                        other => Some(Box::from(other))
+                    }
+                    (Core::TupleLiteral { elements }, None) => Some(Box::from(Core::Tuple {
+                        elements: vec![Core::None; elements.len()],
+                    })),
+                    (_, None) => None,
+                };
+                Core::VarDef { var: Box::from(var), ty, expr }
             })
         }
         NodeTy::FunDef { id, args: fun_args, body: expression, ret: ret_ty, .. } => {
             let arg = convert_vec(fun_args, imp, state, ctx)?;
             let ty = match ret_ty {
-                Some(ret_ty) => Some(Box::from(convert_node(ret_ty, imp, state, ctx)?)),
-                None => None,
+                Some(ret_ty) if state.annotate => Some(Box::from(ret_ty.to_py(imp))),
+                _ => None,
             };
             let (dec, body) = if state.interface && expression.is_none() {
                 imp.add_from_import("abc", "abstractmethod");
@@ -96,21 +89,20 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                 _ => Err(Box::from(UnimplementedErr::new(id, "Non-id function"))),
             }
         }
-        NodeTy::FunArg { vararg, var, ty, default, .. } => Ok(Core::FunArg {
-            vararg: *vararg,
-            var: Box::from(convert_node(var, imp, state, ctx)?),
-            ty: match ty {
-                Some(ty) if state.expand_ty => match &var.node {
-                    NodeTy::Id { lit } if lit == &String::from(arg::SELF) => None,
-                    _ => Some(Box::from(convert_node(ty, imp, state, ctx)?)),
+        NodeTy::FunArg { vararg, var, ty, default, .. } => {
+            let var = convert_node(var, imp, state, ctx)?;
+            let annotate = state.annotate && state.expand_ty && var != Core::Id { lit: String::from(SELF) };
+
+            Ok(Core::FunArg {
+                vararg: *vararg,
+                var: Box::from(var),
+                ty: if annotate { ty.as_ref().map(|ty| ty.to_py(imp)).map(Box::from) } else { None },
+                default: match default {
+                    Some(default) => Some(Box::from(convert_node(default, imp, state, ctx)?)),
+                    None => None,
                 },
-                _ => None,
-            },
-            default: match default {
-                Some(default) => Some(Box::from(convert_node(default, imp, state, ctx)?)),
-                None => None,
-            },
-        }),
+            })
+        }
         definition => {
             let msg = format!("Expected definition, was {definition:?}");
             Err(Box::from(UnimplementedErr::new(ast, &msg)))
