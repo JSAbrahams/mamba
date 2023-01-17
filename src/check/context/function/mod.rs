@@ -74,7 +74,7 @@ impl LookupFunction<&StringName, Function> for Context {
             let class = Class::try_from((generic_class, &generics, pos))?;
             Ok(class.constructor(true))
         } else {
-            let msg = format!("Function {} is undefined.", function);
+            let msg = format!("Function {function} is undefined.");
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }
@@ -160,25 +160,23 @@ impl Function {
                     if let Some(arg_ty) = &fun_param.ty {
                         if !arg_ty.is_superset_of(arg, ctx, pos)? {
                             let msg = format!(
-                                "'{}' given to argument {}, which expected a '{}'",
-                                arg, fun_param, arg_ty
+                                "'{arg}' given to argument {fun_param}, which expected a '{arg_ty}'"
                             );
                             return Err(vec![TypeErr::new(pos, &msg)]);
                         }
                     } else {
-                        let msg = format!("Type of function parameter {} unknown.", fun_param);
+                        let msg = format!("Type of function parameter {fun_param} unknown.");
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     },
                 EitherOrBoth::Left(fun_param) =>
                     if !fun_param.has_default {
-                        let msg = format!("Expected an argument for {}.", fun_param);
+                        let msg = format!("Expected an argument for {fun_param}.");
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     },
                 EitherOrBoth::Right(_) => {
                     let msg = format!(
-                        "{} arguments given to {}\nExpected at most {} arguments.",
+                        "{} arguments given to {self}\nExpected at most {} arguments.",
                         args.len(),
-                        self,
                         self.arguments.len()
                     );
                     return Err(vec![TypeErr::new(pos, &msg)]);
@@ -195,7 +193,7 @@ impl Function {
         pos: Position,
     ) -> TypeResult<Function> {
         if self_arg.is_empty() {
-            let msg = format!("'{}' self argument of '{}' cannot be empty", arg::SELF, name);
+            let msg = format!("'{}' self argument of '{name}' cannot be empty", arg::SELF);
             return Err(vec![TypeErr::new(pos, &msg)]);
         }
 

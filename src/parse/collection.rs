@@ -50,7 +50,7 @@ fn parse_set_or_dict(it: &mut LexIterator) -> ParseResult {
     let item = it.parse(&parse_expression, "set", start)?;
     if it.eat_if(&Token::BTo).is_some() {
         let to = it.parse(&parse_expression, "dictionary entry to", start)?;
-        return parse_dict(it, &(*item.clone(), *to.clone()), start);
+        return parse_dict(it, &(*item.clone(), *to), start);
     }
 
     if it.eat_if(&Token::Ver).is_some() {

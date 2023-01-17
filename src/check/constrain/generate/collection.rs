@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::ops::Deref;
 
 use crate::check::constrain::constraint::builder::ConstrBuilder;
 use crate::check::constrain::constraint::Constraint;
@@ -6,7 +7,7 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::clss::{COLLECTION, LIST, SET, TUPLE};
+use crate::check::context::clss::{COLLECTION, DICT, LIST, SET, TUPLE};
 use crate::check::context::Context;
 use crate::check::ident::Identifier;
 use crate::check::name::{Any, Empty, Name, Union};
@@ -26,7 +27,7 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
             let elements: Vec<AST> = elements.iter().flat_map(|(from, to)| [from.clone(), to.clone()]).collect();
             gen_vec(&elements, env, false, ctx, constr)?;
 
-            constr_col(ast, env, constr, None)?;
+            gen_col(ast, env, constr)?;
             Ok(env.clone())
         }
         Node::Tuple { elements } => {
@@ -34,16 +35,21 @@ pub fn gen_coll(ast: &AST, env: &Environment, ctx: &Context, constr: &mut Constr
             gen_col(ast, env, constr)?;
             Ok(res)
         }
-        Node::DictBuilder { .. } => Ok(env.clone()),
+        Node::DictBuilder { from, to, conditions } => {
+            let builder_env = gen_builder(ast, from, Some(to), conditions, env, ctx, constr)?;
+
+            let set = AST::new(ast.pos, Node::Dict { elements: vec![(from.deref().clone(), to.deref().clone())] });
+            gen_col(&set, &builder_env, constr)
+        }
         Node::SetBuilder { item, conditions } => {
-            let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
+            let builder_env = gen_builder(ast, item, None, conditions, env, ctx, constr)?;
 
             let item = retrieve_nested_builder_item(item);
             let set = AST::new(ast.pos, Node::Set { elements: vec![item] });
             gen_col(&set, &builder_env, constr)
         }
         Node::ListBuilder { item, conditions } => {
-            let builder_env = gen_builder(ast, item, conditions, env, ctx, constr)?;
+            let builder_env = gen_builder(ast, item, None, conditions, env, ctx, constr)?;
 
             let item = retrieve_nested_builder_item(item);
             let set = AST::new(ast.pos, Node::List { elements: vec![item] });
@@ -61,7 +67,7 @@ fn retrieve_nested_builder_item(ast: &AST) -> AST {
     }
 }
 
-fn gen_builder(ast: &AST, item: &AST, conditions: &[AST], env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
+fn gen_builder(ast: &AST, item: &AST, pair: Option<&AST>, conditions: &[AST], env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
     if let Some(cond) = conditions.first() {
         let Node::In { left, right } = &cond.node else {
             let msg = format!("Expected in, was {}", cond.node);
@@ -73,6 +79,9 @@ fn gen_builder(ast: &AST, item: &AST, conditions: &[AST], env: &Environment, ctx
         let conds_env = constr_col_lookup(left, right, &conds_env, constr)?;
 
         generate(item, &conds_env, ctx, constr)?;
+        if let Some(pair) = pair {
+            generate(pair, &conds_env, ctx, constr)?;
+        }
 
         if let Some(conditions) = conditions.strip_prefix(&[cond.clone()]) {
             for cond in conditions {
@@ -96,7 +105,29 @@ fn gen_col(collection: &AST, env: &Environment, constr: &mut ConstrBuilder) -> C
         Node::Set { elements } => (SET, gen_col_items(elements, env, constr)?),
         Node::List { elements } => (LIST, gen_col_items(elements, env, constr)?),
         Node::Dict { elements } => {
-            unimplemented!();
+            let (mut from_names, mut to_names) = (vec![], vec![]);
+            for (from, to) in elements {
+                let exp_from = Expected::from(from);
+                let name_from = constr.temp_name();
+                from_names.push(name_from.clone());
+
+                let exp_from_ty = Expected::new(from.pos, &Type { name: name_from });
+                constr.add("collection element", &exp_from_ty, &exp_from, env);
+
+                let exp_to = Expected::from(to);
+                let name_to = constr.temp_name();
+                to_names.push(name_to.clone());
+
+                let exp_to_ty = Expected::new(to.pos, &Type { name: name_to });
+                constr.add("collection element", &exp_to_ty, &exp_to, env);
+            }
+
+            let from_name = from_names.iter().fold(Name::empty(), |acc, n| acc.union(n));
+            let to_name = to_names.iter().fold(Name::empty(), |acc, n| acc.union(n));
+            let col_exp = Type { name: Name::from(&StringName::new(DICT, &[from_name, to_name])) };
+            let col_exp = Expected::new(collection.pos, &col_exp);
+            constr.add("collection", &col_exp, &Expected::from(collection), env);
+            return Ok(env.clone());
         }
         Node::Tuple { elements } => {
             let mut names = vec![];

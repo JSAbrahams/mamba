@@ -57,3 +57,17 @@ class tuple_iterator(Generic[T]):
     def __init__(self): pass
 
     def __next__(self) -> T: pass
+
+
+class dict(Generic[T, R]):
+    def __init__(self): pass
+
+    def __iter__(self): dictkeyiterator[T]:
+
+    pass
+
+
+class dictkeyiterator(Generic[T]):
+    def __init__(self): pass
+
+    def __next__(self) -> T: pass
