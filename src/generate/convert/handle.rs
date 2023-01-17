@@ -12,7 +12,8 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
 
         NodeTy::Handle { expr_or_stmt, cases } => {
             let (var, ty) = if let NodeTy::VariableDef { var, ty, .. } = &expr_or_stmt.node {
-                (Some(Box::from(convert_node(var, imp, state, ctx)?)), ty.as_ref().map(|ty| ty.to_py(imp)).map(Box::from))
+                let ty = ty.as_ref().map(|ty| ty.to_py(imp)).map(Box::from);
+                (Some(Box::from(convert_node(var, imp, state, ctx)?)), ty)
             } else {
                 (None, None)
             };
@@ -35,7 +36,8 @@ pub fn convert_handle(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Conte
                         match &cond.node {
                             NodeTy::ExpressionType { expr, ty, .. } => {
                                 let expr = Box::from(convert_node(expr, imp, state, ctx)?);
-                                let class = Box::from(ty.as_ref().map_or(Core::Empty, |ty| ty.to_py(imp)));
+                                let class = Box::from(ty.as_ref()
+                                    .map_or_else(|| panic!("handle case must have class"), |ty| ty.to_py(imp)));
                                 let body = Box::from(convert_node(body, imp, &assign_state, ctx)?);
 
                                 except.push(if *expr == Core::UnderScore {

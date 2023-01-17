@@ -47,14 +47,11 @@ pub fn convert_class(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Contex
             extract_class(ty, body, args, &parents, imp, &state.in_interface(false), ctx)
         }
 
-        NodeTy::Parent { ty, args } => if args.is_empty() {
-            Ok(ty.to_py(imp))
-        } else {
-            Ok(Core::FunctionCall {
-                function: Box::from(ty.to_py(imp)),
-                args: convert_vec(args, imp, state, ctx)?,
-            })
-        }
+        NodeTy::Parent { ty, args } if args.is_empty() => Ok(ty.to_py(imp)),
+        NodeTy::Parent { ty, args } => Ok(Core::FunctionCall {
+            function: Box::from(ty.to_py(imp)),
+            args: convert_vec(args, imp, state, ctx)?,
+        }),
 
         other => {
             let msg = format!("Expected class or type definition, was {other:?}");

@@ -219,7 +219,7 @@ pub fn id_from_var(
                             let expr_exp = Expected::from(expr);
                             let expr_ty = Expected::new(expr.pos, &Type { name: ty.clone() });
 
-                            let msg = format!("tuple literal element {}", i);
+                            let msg = format!("tuple literal element {i}");
                             constr.add(&msg, &expr_ty, &expr_exp, &env);
                         }
                     } else {

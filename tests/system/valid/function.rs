@@ -1,6 +1,11 @@
 use crate::system::{OutTestRet, test_directory};
 
 #[test]
+fn callable_fun_arg() -> OutTestRet {
+    test_directory(true, &["function"], &["function", "target"], "callable_fun_arg")
+}
+
+#[test]
 fn call_ast_verify() -> OutTestRet {
     test_directory(true, &["function"], &["function", "target"], "calls")
 }
