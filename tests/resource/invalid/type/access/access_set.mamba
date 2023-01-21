@@ -1,0 +1,3 @@
+def my_set := { 2, 3, 4 }
+
+my_set[0]
