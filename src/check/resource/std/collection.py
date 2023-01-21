@@ -68,12 +68,27 @@ class dict(Generic[T, R]):
 
     def __getitem__(self, item: T) -> R: pass
 
-    def __iter__(self): dictkeyiterator[T]:
+    def __iter__(self) -> dictkeyiterator[T]: pass
 
-    pass
+    def keys(self) -> dict_keys[T]: pass
 
+    def values(self) -> dict_values[R]: pass
 
-class dictkeyiterator(Generic[T]):
+class dict_keys(Generic[T]):
+    def __init__(self): pass
+    def __iter__(self) -> dict_keyiterator[T]: pass
+
+class dict_values(Generic[T]):
+    def __init__(self): pass
+
+    def __iter__(self) > dict_valueiterator[T]: pass
+
+class dict_keyiterator(Generic[T]):
+    def __init__(self): pass
+
+    def __next__(self) -> T: pass
+
+class dict_valueiterator(Generic[T]):
     def __init__(self): pass
 
     def __next__(self) -> T: pass
