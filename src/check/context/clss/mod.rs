@@ -73,11 +73,11 @@ pub trait HasParent<T> {
 }
 
 pub trait GetField<T> {
-    fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<T>;
+    fn field(&self, name: &str, pos: Position) -> TypeResult<T>;
 }
 
 pub trait GetFun<T> {
-    fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<T>;
+    fn fun(&self, name: &StringName, pos: Position) -> TypeResult<T>;
 }
 
 impl HasParent<&StringName> for Class {
@@ -159,11 +159,12 @@ impl LookupClass<&StringName, Class> for Context {
     /// Look up union of GenericClass and substitute generics to yield set of classes.
     ///
     /// Substitutes all generics in the class when found.
+    /// Also constructs class complete with all fields and functions from parents.
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
         if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name) {
             let mut generics = HashMap::new();
-            if class.name == TUPLE || class.name == COLLECTION {
-                // Tuple and collection exception, variable generic count
+            if class.name == TUPLE {
+                // Tuple exception, variable generic count
                 let mut generic_keys: Vec<Name> = vec![];
                 for (i, gen) in enumerate(&class.generics) {
                     generic_keys.push(Name::from(format!("G{i}").as_str()));
@@ -177,7 +178,6 @@ impl LookupClass<&StringName, Class> for Context {
             }
 
             let placeholders = generic_class.name.clone();
-
             for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
                 match name {
                     EitherOrBoth::Both(placeholder, name) => {
@@ -194,7 +194,14 @@ impl LookupClass<&StringName, Class> for Context {
                 }
             }
 
-            Class::try_from((generic_class, &generics, pos))
+            let clss = Class::try_from((generic_class, &generics, pos))?;
+            let clss = clss.parents
+                .iter()
+                .map(|p| self.class(p, pos))
+                .collect::<TypeResult<Vec<Class>>>()?
+                .iter()
+                .fold(clss, |acc, parent| acc.inherit(parent));
+            Ok(clss)
         } else {
             let msg = format!("Type '{class}' is undefined.");
             Err(vec![TypeErr::new(pos, &msg)])
@@ -260,18 +267,24 @@ impl Class {
             ret_ty: Name::from(&self.name),
         }
     }
+
+    /// Inherit all fields and functions from other, except those that are defined by self.
+    pub fn inherit(&self, other: &Class) -> Class {
+        let other_fun: HashSet<Function> = other.functions.iter().filter(|f| {
+            self.functions.iter().all(|s_f| s_f.name.name != f.name.name)
+        }).cloned().collect();
+        Class {
+            functions: self.functions.union(&other_fun).cloned().collect(),
+            fields: self.fields.union(&other.fields).cloned().collect(),
+            ..self.clone()
+        }
+    }
 }
 
 impl GetField<Field> for Class {
-    fn field(&self, name: &str, ctx: &Context, pos: Position) -> TypeResult<Field> {
+    fn field(&self, name: &str, pos: Position) -> TypeResult<Field> {
         if let Some(field) = self.fields.iter().find(|f| f.name == name) {
             return Ok(field.clone());
-        }
-
-        for parent in &self.parents {
-            if let Ok(ok) = ctx.class(parent, pos)?.field(name, ctx, pos) {
-                return Ok(ok);
-            }
         }
         Err(vec![TypeErr::new(pos, &format!("'{self}' does not define '{name}'"))])
     }
@@ -282,15 +295,9 @@ impl GetFun<Function> for Class {
     ///
     /// If class does not implement function, traverse parents until function
     /// found.
-    fn fun(&self, name: &StringName, ctx: &Context, pos: Position) -> TypeResult<Function> {
+    fn fun(&self, name: &StringName, pos: Position) -> TypeResult<Function> {
         if let Some(function) = self.functions.iter().find(|f| &f.name == name) {
             return Ok(function.clone());
-        }
-
-        for parent in &self.parents {
-            if let Ok(function) = ctx.class(parent, pos)?.fun(name, ctx, pos) {
-                return Ok(function);
-            }
         }
         Err(vec![TypeErr::new(pos, &format!("'{self}' does not define '{name}'"))])
     }

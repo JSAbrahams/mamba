@@ -7,7 +7,7 @@ class MyClass2[C, A: MyGeneric]: MyType[A, C]("the quick brown fox jumped over t
     def fin z_modified: Str := "asdf"
     def other_field: Int := 10
 
-    def init(self, other_field: Int, z: Int) raise [Err1] =>
+    def __init__(self, other_field: Int, z: Int) raise [Err1] =>
         if z > 10 then raise Err1("Something is wrong!")
         self.z_modified := "fdsa"
 

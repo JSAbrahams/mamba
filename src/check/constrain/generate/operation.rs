@@ -5,11 +5,12 @@ use crate::check::constrain::constraint::Constraint;
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
-use crate::check::constrain::generate::collection::constr_col_lookup;
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::clss::{BOOL, FLOAT, INT, RANGE, SLICE, STRING};
-use crate::check::context::function::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SQRT, SUB};
+use crate::check::context::function::python::{ADD, DIV, EQ, FDIV, GE, GEQ, LE, LEQ, MOD, MUL, NEQ, POW, SUB};
+use crate::check::context::function::python::CONTAINS;
+use crate::check::context::function::SQRT;
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
@@ -23,54 +24,49 @@ pub fn gen_op(
     constr: &mut ConstrBuilder,
 ) -> Constrained {
     match &ast.node {
-        Node::In { left, right } => {
-            generate(right, env, ctx, constr)?;
-            generate(left, env, ctx, constr)?;
-            constr_col_lookup(left, right, env, constr)?;
-            Ok(env.clone())
-        }
+        Node::In { left, right } => gen_magic(CONTAINS, ast, right, left, env, ctx, constr),
         Node::Range { .. } => {
-            primitive(ast, RANGE, env, constr)?;
-            constr_range(ast, env, ctx, constr, "range")
+            gen_primitive(ast, RANGE, env, constr)?;
+            gen_range(ast, env, ctx, constr, "range")
         }
         Node::Slice { .. } => {
-            primitive(ast, SLICE, env, constr)?;
-            constr_range(ast, env, ctx, constr, "slice")
+            gen_primitive(ast, SLICE, env, constr)?;
+            gen_range(ast, env, ctx, constr, "slice")
         }
 
-        Node::Real { .. } => primitive(ast, FLOAT, env, constr),
-        Node::Int { .. } => primitive(ast, INT, env, constr),
-        Node::ENum { .. } => primitive(ast, INT, env, constr),
+        Node::Real { .. } => gen_primitive(ast, FLOAT, env, constr),
+        Node::Int { .. } => gen_primitive(ast, INT, env, constr),
+        Node::ENum { .. } => gen_primitive(ast, INT, env, constr),
         Node::Str { expressions, .. } => {
             gen_vec(expressions, env, false, ctx, constr)?;
             for expr in expressions {
                 constr.add_constr(&Constraint::stringy("string", &Expected::from(expr)), env);
             }
-            primitive(ast, STRING, env, constr)
+            gen_primitive(ast, STRING, env, constr)
         }
         Node::Bool { .. } => {
             constr.add_constr(&Constraint::truthy("bool", &Expected::from(ast)), env);
-            primitive(ast, BOOL, env, constr)
+            gen_primitive(ast, BOOL, env, constr)
         }
         Node::Undefined => {
             constr.add_constr(&Constraint::undefined("undefined", &Expected::from(ast)), env);
             Ok(env.clone())
         }
 
-        Node::Add { left, right } => impl_magic(ADD, ast, left, right, env, ctx, constr),
-        Node::Sub { left, right } => impl_magic(SUB, ast, left, right, env, ctx, constr),
-        Node::Mul { left, right } => impl_magic(MUL, ast, left, right, env, ctx, constr),
-        Node::Div { left, right } => impl_magic(DIV, ast, left, right, env, ctx, constr),
-        Node::FDiv { left, right } => impl_magic(FDIV, ast, left, right, env, ctx, constr),
-        Node::Pow { left, right } => impl_magic(POW, ast, left, right, env, ctx, constr),
-        Node::Mod { left, right } => impl_magic(MOD, ast, left, right, env, ctx, constr),
+        Node::Add { left, right } => gen_magic(ADD, ast, left, right, env, ctx, constr),
+        Node::Sub { left, right } => gen_magic(SUB, ast, left, right, env, ctx, constr),
+        Node::Mul { left, right } => gen_magic(MUL, ast, left, right, env, ctx, constr),
+        Node::Div { left, right } => gen_magic(DIV, ast, left, right, env, ctx, constr),
+        Node::FDiv { left, right } => gen_magic(FDIV, ast, left, right, env, ctx, constr),
+        Node::Pow { left, right } => gen_magic(POW, ast, left, right, env, ctx, constr),
+        Node::Mod { left, right } => gen_magic(MOD, ast, left, right, env, ctx, constr),
 
-        Node::Le { left, right } => impl_bool_op(LE, ast, left, right, env, ctx, constr),
-        Node::Ge { left, right } => impl_bool_op(GE, ast, left, right, env, ctx, constr),
-        Node::Leq { left, right } => impl_bool_op(LEQ, ast, left, right, env, ctx, constr),
-        Node::Geq { left, right } => impl_bool_op(GEQ, ast, left, right, env, ctx, constr),
-        Node::Neq { left, right } => impl_bool_op(EQ, ast, left, right, env, ctx, constr),
-        Node::Eq { left, right } => impl_bool_op(EQ, ast, left, right, env, ctx, constr),
+        Node::Le { left, right } => gen_magic(LE, ast, left, right, env, ctx, constr),
+        Node::Ge { left, right } => gen_magic(GE, ast, left, right, env, ctx, constr),
+        Node::Leq { left, right } => gen_magic(LEQ, ast, left, right, env, ctx, constr),
+        Node::Geq { left, right } => gen_magic(GEQ, ast, left, right, env, ctx, constr),
+        Node::Neq { left, right } => gen_magic(NEQ, ast, left, right, env, ctx, constr),
+        Node::Eq { left, right } => gen_magic(EQ, ast, left, right, env, ctx, constr),
 
         Node::AddU { expr } | Node::SubU { expr } => generate(expr, env, ctx, constr),
         Node::Sqrt { expr } => {
@@ -129,7 +125,7 @@ pub fn gen_op(
 
         Node::Not { expr } => {
             let bool = Expected::new(ast.pos, &Type { name: Name::from(BOOL) });
-            constr.add("and", &Expected::from(ast), &bool, env);
+            constr.add("not", &Expected::from(ast), &bool, env);
             constr.add_constr(&Constraint::truthy("not", &Expected::from(expr)), env);
 
             generate(expr, env, ctx, constr)?;
@@ -148,7 +144,7 @@ pub fn gen_op(
     }
 }
 
-pub fn constr_range(
+pub fn gen_range(
     ast: &AST,
     env: &Environment,
     ctx: &Context,
@@ -177,13 +173,13 @@ pub fn constr_range(
     Ok(env.clone())
 }
 
-fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
+fn gen_primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder) -> Constrained {
     let msg = format!("{ty} primitive");
     constr.add(&msg, &Expected::from(ast), &Expected::new(ast.pos, &Type { name: Name::from(ty) }), env);
     Ok(env.clone())
 }
 
-pub fn impl_magic(
+pub fn gen_magic(
     fun: &str,
     ast: &AST,
     left: &AST,
@@ -195,24 +191,6 @@ pub fn impl_magic(
     let res = gen_vec(&[right.clone(), left.clone()], env, env.is_def_mode, ctx, constr)?;
     constr.add(format!("{fun} operation").as_str(), &Expected::from(ast), &access(fun, left, right), env);
     Ok(res)
-}
-
-fn impl_bool_op(
-    fun: &str,
-    ast: &AST,
-    left: &AST,
-    right: &AST,
-    env: &Environment,
-    ctx: &Context,
-    constr: &mut ConstrBuilder,
-) -> Constrained {
-    if fun != EQ && fun != NEQ {
-        constr.add("bool operation", &Expected::from(ast), &access(fun, left, right), env);
-    }
-
-    let ty = Type { name: Name::from(BOOL) };
-    constr.add("bool operation", &Expected::from(ast), &Expected::new(ast.pos, &ty), env);
-    bin_op(left, right, env, ctx, constr)
 }
 
 fn access(fun: &str, left: &AST, right: &AST) -> Expected {

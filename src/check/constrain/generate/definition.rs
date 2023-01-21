@@ -9,10 +9,11 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, function, LookupClass};
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::arg::SELF;
 use crate::check::context::clss::HasParent;
 use crate::check::context::field::Field;
+use crate::check::context::function::python::INIT;
 use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Name, Nullable, TupleCallable};
 use crate::check::name::true_name::TrueName;
@@ -30,7 +31,7 @@ pub fn gen_def(
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
             let non_nullable_class_vars: HashSet<String> = match &id.node {
-                Id { lit } if *lit == function::INIT => {
+                Id { lit } if *lit == INIT => {
                     if let Some(class) = &env.class {
                         let class = ctx.class(class, id.pos)?;
                         let fields: Vec<&Field> = class
@@ -40,7 +41,7 @@ pub fn gen_def(
                             .collect();
                         fields.iter().map(|f| f.name.clone()).collect()
                     } else {
-                        let msg = format!("Cannot have {} function outside class", function::INIT);
+                        let msg = format!("Cannot have {INIT} function outside class");
                         return Err(vec![TypeErr::new(id.pos, &msg)]);
                     }
                 }

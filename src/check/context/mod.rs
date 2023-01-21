@@ -96,10 +96,10 @@ mod tests {
         let clss = ctx.class(&list_type, pos)?;
         assert_eq!(clss.name, list_type);
 
-        let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
+        let iter_name = clss.fun(&StringName::from("__iter__"), pos)?.ret_ty;
         for name in iter_name.as_direct() {
             let iter_class = ctx.class(&name, pos)?;
-            let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
+            let next_ty = iter_class.fun(&StringName::from("__next__"), pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))
         }
 
@@ -116,10 +116,10 @@ mod tests {
         let clss = ctx.class(&set_type, pos)?;
         assert_eq!(clss.name, set_type);
 
-        let iter_name = clss.fun(&StringName::from("__iter__"), &ctx, pos)?.ret_ty;
+        let iter_name = clss.fun(&StringName::from("__iter__"), pos)?.ret_ty;
         for name in iter_name.as_direct() {
             let iter_class = ctx.class(&name, pos)?;
-            let next_ty = iter_class.fun(&StringName::from("__next__"), &ctx, pos)?.ret_ty;
+            let next_ty = iter_class.fun(&StringName::from("__next__"), pos)?.ret_ty;
             assert_eq!(next_ty, Name::from("Custom"))
         }
 

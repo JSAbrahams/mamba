@@ -9,7 +9,7 @@ use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::context::clss::{COLLECTION, DICT, LIST, SET, TUPLE};
 use crate::check::context::Context;
-use crate::check::context::function::{ITER, NEXT};
+use crate::check::context::function::python::{ITER, NEXT};
 use crate::check::ident::Identifier;
 use crate::check::name::{Any, Empty, Name, Union};
 use crate::check::name::string_name::StringName;

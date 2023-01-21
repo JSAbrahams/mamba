@@ -17,28 +17,9 @@ use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
 
-pub const INIT: &str = "init";
 pub const PRINT: &str = "print";
 
-pub const ADD: &str = "+";
-pub const DIV: &str = "/";
-pub const EQ: &str = "=";
-pub const FDIV: &str = "//";
-pub const GE: &str = ">";
-pub const GEQ: &str = ">=";
-pub const LE: &str = "<";
-pub const LEQ: &str = "<=";
-pub const MOD: &str = "mod";
-pub const MUL: &str = "*";
-pub const NEQ: &str = "/=";
-pub const POW: &str = "^";
-pub const SUB: &str = "-";
 pub const SQRT: &str = "sqrt";
-
-pub const STR: &str = python::STR;
-pub const TRUTHY: &str = python::TRUTHY;
-pub const NEXT: &str = python::NEXT;
-pub const ITER: &str = python::ITER;
 
 pub mod union;
 pub mod generic;

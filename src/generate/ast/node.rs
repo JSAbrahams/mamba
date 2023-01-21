@@ -139,19 +139,19 @@ pub enum CoreFunOp {
 impl CoreFunOp {
     pub fn from(lit: &str) -> Option<CoreFunOp> {
         Some(match lit {
-            function::GE => CoreFunOp::Ge,
-            function::GEQ => CoreFunOp::Geq,
-            function::LE => CoreFunOp::Le,
-            function::LEQ => CoreFunOp::Leq,
-            function::EQ => CoreFunOp::Eq,
-            function::NEQ => CoreFunOp::Neq,
-            function::ADD => CoreFunOp::Add,
-            function::SUB => CoreFunOp::Sub,
-            function::POW => CoreFunOp::Pow,
-            function::MUL => CoreFunOp::Mul,
-            function::MOD => CoreFunOp::Mod,
-            function::DIV => CoreFunOp::Div,
-            function::FDIV => CoreFunOp::FDiv,
+            function::python::GE => CoreFunOp::Ge,
+            function::python::GEQ => CoreFunOp::Geq,
+            function::python::LE => CoreFunOp::Le,
+            function::python::LEQ => CoreFunOp::Leq,
+            function::python::EQ => CoreFunOp::Eq,
+            function::python::NEQ => CoreFunOp::Neq,
+            function::python::ADD => CoreFunOp::Add,
+            function::python::SUB => CoreFunOp::Sub,
+            function::python::POW => CoreFunOp::Pow,
+            function::python::MUL => CoreFunOp::Mul,
+            function::python::MOD => CoreFunOp::Mod,
+            function::python::DIV => CoreFunOp::Div,
+            function::python::FDIV => CoreFunOp::FDiv,
             _ => return None
         })
     }
