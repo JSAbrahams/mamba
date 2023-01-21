@@ -82,12 +82,22 @@ pub fn convert_node(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context
         }
         NodeTy::Tuple { elements } => Core::Tuple { elements: convert_vec(elements, imp, state, ctx)? },
         NodeTy::List { elements } => Core::List { elements: convert_vec(elements, imp, state, ctx)? },
+        NodeTy::Dict { elements } => {
+            let mut converted = vec![];
+            for (from, to) in elements {
+                let from = convert_node(from, imp, state, ctx)?;
+                let to = convert_node(to, imp, state, ctx)?;
+                converted.push((from, to));
+            }
+            Core::Dictionary { elements: converted }
+        }
         NodeTy::Set { elements } => Core::Set { elements: convert_vec(elements, imp, state, ctx)? },
         NodeTy::Index { item, range } => Core::Index {
             item: Box::from(convert_node(item, imp, state, ctx)?),
             range: Box::from(convert_node(range, imp, state, ctx)?),
         },
 
+        NodeTy::DictBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
         NodeTy::ListBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
         NodeTy::SetBuilder { .. } => convert_builder(ast, imp, state, ctx)?,
 

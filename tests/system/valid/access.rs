@@ -6,7 +6,6 @@ fn simple_index() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // Dictionaries not implemented yet
 fn dictionary_access() -> OutTestRet {
     test_directory(true, &["access"], &["access", "target"], "dictionary_access")
 }

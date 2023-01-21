@@ -32,7 +32,7 @@ impl Display for FunctionArg {
             f,
             "{}{}{}",
             self.name,
-            if let Some(ty) = &self.ty { format!(": {}", ty) } else { String::new() },
+            if let Some(ty) = &self.ty { format!(": {ty}") } else { String::new() },
             if self.has_default { "?" } else { "" }
         )
     }

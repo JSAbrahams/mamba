@@ -57,6 +57,8 @@ pub enum Node {
     TypeFun { args: Vec<AST>, ret_ty: Box<AST> },
     Condition { cond: Box<AST>, el: OptAST },
     FunArg { vararg: bool, mutable: bool, var: Box<AST>, ty: OptAST, default: OptAST },
+    Dict { elements: Vec<(AST, AST)> },
+    DictBuilder { from: Box<AST>, to: Box<AST>, conditions: Vec<AST> },
     Set { elements: Vec<AST> },
     SetBuilder { item: Box<AST>, conditions: Vec<AST> },
     List { elements: Vec<AST> },

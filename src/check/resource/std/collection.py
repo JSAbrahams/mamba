@@ -34,6 +34,8 @@ class list(Generic[T], collection[T]):
 
     def __iter__(self) -> list_iterator[T]: pass
 
+    def __getitem__(self, item: Union[int, slice]) -> T: pass
+
     def __bool__(self) -> bool: pass
 
     def __str__(self) -> str: pass
@@ -50,10 +52,43 @@ class Tuple(Generic[T], collection[T]):
 
     def __iter__(self) -> tuple_iterator[T]: pass
 
+    def __getitem__(self, item: Union[int, slice]) -> T: pass
+
     def __str__(self) -> str: pass
 
 
 class tuple_iterator(Generic[T]):
+    def __init__(self): pass
+
+    def __next__(self) -> T: pass
+
+
+class dict(Generic[T, R]):
+    def __init__(self): pass
+
+    def __getitem__(self, item: T) -> R: pass
+
+    def __iter__(self) -> dictkeyiterator[T]: pass
+
+    def keys(self) -> dict_keys[T]: pass
+
+    def values(self) -> dict_values[R]: pass
+
+class dict_keys(Generic[T]):
+    def __init__(self): pass
+    def __iter__(self) -> dict_keyiterator[T]: pass
+
+class dict_values(Generic[T]):
+    def __init__(self): pass
+
+    def __iter__(self) > dict_valueiterator[T]: pass
+
+class dict_keyiterator(Generic[T]):
+    def __init__(self): pass
+
+    def __next__(self) -> T: pass
+
+class dict_valueiterator(Generic[T]):
     def __init__(self): pass
 
     def __next__(self) -> T: pass

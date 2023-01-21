@@ -185,7 +185,7 @@ fn unify_fun_arg(
         match either_or_both {
             EitherOrBoth::Both(ctx_f_arg, expected) => {
                 let Some(arg_name) = &ctx_f_arg.ty else {
-                    let msg = format!("Argument '{ctx_f_arg}' has no type");
+                    let msg = format!("Argument '{ctx_f_arg}' in context has no type");
                     return Err(vec![TypeErr::new(pos, &msg)]);
                 };
                 let ctx_arg_ty = Expected::new(expected.pos, &Type { name: arg_name.is_interchangeable(true) });

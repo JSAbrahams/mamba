@@ -128,6 +128,16 @@ impl From<(&Node, &Finished)> for NodeTy {
                 ty: ty.as_ref().and_then(|ty| Name::try_from(ty).ok()),
                 default: default.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
             },
+            Node::Dict { elements } => NodeTy::Dict {
+                elements: elements.iter().map(|(from, to)|
+                    (ASTTy::from(from), ASTTy::from(to))
+                ).collect()
+            },
+            Node::DictBuilder { from, to, conditions } => NodeTy::DictBuilder {
+                from: Box::from(ASTTy::from(from)),
+                to: Box::from(ASTTy::from(to)),
+                conditions: conditions.iter().map(ASTTy::from).collect(),
+            },
             Node::Set { elements } => {
                 NodeTy::Set { elements: elements.iter().map(|ast| ASTTy::from((ast, finished))).collect() }
             }

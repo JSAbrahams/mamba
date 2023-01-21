@@ -28,6 +28,7 @@ pub const RANGE: &str = "range";
 pub const SLICE: &str = "slice";
 pub const SET: &str = "set";
 pub const LIST: &str = "list";
+pub const DICT: &str = "dict";
 
 pub const TUPLE: &str = "Tuple";
 pub const CALLABLE: &str = "Callable";
@@ -116,6 +117,7 @@ pub fn python_to_concrete(name: &str) -> String {
         SET => String::from(clss::SET),
         LIST => String::from(clss::LIST),
         TUPLE => String::from(clss::TUPLE),
+        DICT => String::from(clss::DICT),
 
         UNION => String::from(clss::UNION),
         CALLABLE => String::from(clss::CALLABLE),
