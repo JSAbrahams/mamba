@@ -10,7 +10,7 @@ pub fn custom_delimited<I, D>(iterable: I, delimiter: &str, prepend: &str) -> St
     }
 
     let mut s = String::from(prepend);
-    iterable.into_iter().for_each(|item| write!(&mut s, "{}{}", item, delimiter).unwrap());
+    iterable.into_iter().for_each(|item| write!(&mut s, "{item}{delimiter}").unwrap());
     String::from(s.trim_end_matches(delimiter))
 }
 

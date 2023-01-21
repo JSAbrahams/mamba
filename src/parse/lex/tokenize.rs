@@ -224,7 +224,7 @@ pub fn into_tokens(c: char, it: &mut Peekable<Chars>, state: &mut State) -> LexR
             state.space();
             Ok(vec![])
         }
-        c => Err(LexErr::new(state.pos, None, &format!("unrecognized character: {}", c))),
+        c => Err(LexErr::new(state.pos, None, &format!("unrecognized character: {c}"))),
     }
 }
 

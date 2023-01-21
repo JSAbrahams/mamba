@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::context::{arg, Context, function, LookupFunction};
+use crate::check::context::{arg, Context, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
@@ -35,10 +35,10 @@ pub const POW: &str = "^";
 pub const SUB: &str = "-";
 pub const SQRT: &str = "sqrt";
 
-pub const STR: &str = function::python::STR;
-pub const TRUTHY: &str = function::python::TRUTHY;
-pub const NEXT: &str = function::python::NEXT;
-pub const ITER: &str = function::python::ITER;
+pub const STR: &str = python::STR;
+pub const TRUTHY: &str = python::TRUTHY;
+pub const NEXT: &str = python::NEXT;
+pub const ITER: &str = python::ITER;
 
 pub mod union;
 pub mod generic;
@@ -103,7 +103,7 @@ impl Display for Function {
         } else {
             format!(" raises [{}]", &self.raises)
         };
-        write!(f, "{: >8} : ({}){}{}", self.name, comma_delm(&self.arguments), ret, raises)
+        write!(f, "{: >8} : ({}){ret}{raises}", self.name, comma_delm(&self.arguments))
     }
 }
 

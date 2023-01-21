@@ -50,7 +50,7 @@ pub fn relative_files(in_path: &Path) -> Result<Vec<OsString>, String> {
     let pattern_path = in_path.to_owned().join("**").join("*.mamba");
     let pattern = pattern_path.as_os_str().to_string_lossy();
     let glob = glob(pattern.as_ref())
-        .map_err(|e| format!("Unable to recursively find files: {}", e))?;
+        .map_err(|e| format!("Unable to recursively find files: {e}"))?;
 
     let mut relative_paths = vec![];
     for absolute_result in glob {
