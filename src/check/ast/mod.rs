@@ -80,6 +80,8 @@ pub enum NodeTy {
     TypeAlias { ty: StringName, isa: Name, conditions: Vec<ASTTy> },
     Condition { cond: Box<ASTTy>, el: OptASTTy },
     FunArg { vararg: bool, mutable: bool, var: Box<ASTTy>, ty: OptName, default: OptASTTy },
+    Dict { elements: Vec<(ASTTy, ASTTy)> },
+    DictBuilder { from: Box<ASTTy>, to: Box<ASTTy>, conditions: Vec<ASTTy> },
     Set { elements: Vec<ASTTy> },
     SetBuilder { item: Box<ASTTy>, conditions: Vec<ASTTy> },
     List { elements: Vec<ASTTy> },

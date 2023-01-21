@@ -31,11 +31,11 @@ pub fn gen_op(
         }
         Node::Range { .. } => {
             primitive(ast, RANGE, env, constr)?;
-            constr_range(ast, env, ctx, constr, "range", true)
+            constr_range(ast, env, ctx, constr, "range")
         }
         Node::Slice { .. } => {
             primitive(ast, SLICE, env, constr)?;
-            constr_range(ast, env, ctx, constr, "slice", false)
+            constr_range(ast, env, ctx, constr, "slice")
         }
 
         Node::Real { .. } => primitive(ast, FLOAT, env, constr),
@@ -154,7 +154,6 @@ pub fn constr_range(
     ctx: &Context,
     constr: &mut ConstrBuilder,
     range_slice: &str,
-    contr_coll: bool,
 ) -> Constrained {
     let (from, to, step) = match &ast.node {
         Node::Range { from, to, step, .. } if range_slice == "range" => (from, to, step),
@@ -172,13 +171,6 @@ pub fn constr_range(
         constr.add(&format!("{range_slice} step"), &Expected::from(step), int_exp, env);
     }
 
-    if contr_coll {
-        let (helper_ty, col_ty) = (constr.temp_name(), Name::from(INT));
-        let (col_exp1, col_exp2) = Constraint::iterable(range_slice, &Expected::from(ast), &col_ty, &helper_ty);
-        constr.add_constr(&col_exp1, env);
-        constr.add_constr(&col_exp2, env);
-    }
-
     generate(from, env, ctx, constr)?;
     generate(to, env, ctx, constr)?;
     if let Some(step) = step { generate(step, env, ctx, constr)?; }
@@ -191,7 +183,7 @@ fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder)
     Ok(env.clone())
 }
 
-fn impl_magic(
+pub fn impl_magic(
     fun: &str,
     ast: &AST,
     left: &AST,

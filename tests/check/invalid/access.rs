@@ -10,6 +10,12 @@ fn access_list_with_string() {
 }
 
 #[test]
+fn access_set() {
+    let source = resource_content(false, &["type", "access"], "access_set.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 #[ignore] // Cannot parse dictionaries yet
 fn access_string_dict_with_int() {
     let source = resource_content(false, &["type", "access"], "access_string_dict_with_int.mamba");

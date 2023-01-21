@@ -23,9 +23,18 @@ fn list_verify() -> OutTestRet {
 }
 
 #[test]
-#[ignore] // No set/map builder construct yet
-fn map_verify() -> OutTestRet {
-    test_directory(true, &["collection"], &["collection", "target"], "map")
+fn dictionary_verify() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "dictionary")
+}
+
+#[test]
+fn dictionary_builder_verify() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "dictionary_builder")
+}
+
+#[test]
+fn dictionary_in_fun() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "dictionary_in_fun")
 }
 
 #[test]

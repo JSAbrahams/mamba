@@ -12,6 +12,8 @@ class str:
 
     def __iter__(self) -> str_iterator: pass
 
+    def __getitem__(self, item: int) -> str: pass
+
     def is_digit(self) -> bool: pass
 
 

@@ -67,8 +67,8 @@ pub fn generate(
 
         With { .. } => gen_resources(ast, env, ctx, constr),
 
-        SetBuilder { .. } | ListBuilder { .. } => gen_coll(ast, env, ctx, constr),
-        Set { .. } | List { .. } | Tuple { .. } => gen_coll(ast, env, ctx, constr),
+        SetBuilder { .. } | ListBuilder { .. } | DictBuilder { .. } => gen_coll(ast, env, ctx, constr),
+        Set { .. } | List { .. } | Tuple { .. } | Dict { .. } => gen_coll(ast, env, ctx, constr),
 
         Range { .. } | Slice { .. } => gen_op(ast, env, ctx, constr),
         Real { .. } | Int { .. } | ENum { .. } => gen_op(ast, env, ctx, constr),

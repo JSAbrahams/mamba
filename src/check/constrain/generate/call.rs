@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -12,10 +11,12 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
+use crate::check::constrain::generate::operation::impl_magic;
 use crate::check::constrain::generate::statement::check_raises_caught;
-use crate::check::context::{arg, clss, Context, function, LookupClass, LookupFunction};
+use crate::check::context::{arg, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::arg::python::SELF;
+use crate::check::context::function::python::GET_ITEM;
 use crate::check::ident::{IdentiCall, Identifier};
 use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
@@ -95,22 +96,7 @@ pub fn gen_call(
             property_call(&mut vec![instance.deref().clone()], property, env, ctx, constr)
         }
         Node::Index { item, range } => {
-            generate(range, env, ctx, constr)?;
-
-            let name = Name::from(&HashSet::from([clss::INT, clss::SLICE]));
-            constr.add("index range", &Expected::new(range.pos, &Type { name }), &Expected::from(range), env);
-
-            let (temp_type, helper_ty) = (constr.temp_name(), constr.temp_name());
-            let exp_col = Expected::from(item);
-            let (exp_col1, exp_col2) = Constraint::iterable("index of collection", &exp_col, &temp_type, &helper_ty);
-            constr.add_constr(&exp_col1, env);
-            constr.add_constr(&exp_col2, env);
-
-            let exp_col_ty = Expected::new(ast.pos, &Type { name: temp_type });
-            constr.add("index of collection", &exp_col_ty, &Expected::from(ast), env);
-
-            generate(item, env, ctx, constr)?;
-            Ok(env.clone())
+            impl_magic(GET_ITEM, ast, item, range, env, ctx, constr)
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),
