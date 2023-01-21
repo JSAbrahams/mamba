@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 use itertools::{EitherOrBoth, Itertools};
 
-use crate::check::context::{arg, Context, function, LookupFunction};
+use crate::check::context::{arg, Context, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
@@ -35,10 +35,10 @@ pub const POW: &str = "^";
 pub const SUB: &str = "-";
 pub const SQRT: &str = "sqrt";
 
-pub const STR: &str = function::python::STR;
-pub const TRUTHY: &str = function::python::TRUTHY;
-pub const NEXT: &str = function::python::NEXT;
-pub const ITER: &str = function::python::ITER;
+pub const STR: &str = python::STR;
+pub const TRUTHY: &str = python::TRUTHY;
+pub const NEXT: &str = python::NEXT;
+pub const ITER: &str = python::ITER;
 
 pub mod union;
 pub mod generic;
@@ -74,7 +74,7 @@ impl LookupFunction<&StringName, Function> for Context {
             let class = Class::try_from((generic_class, &generics, pos))?;
             Ok(class.constructor(true))
         } else {
-            let msg = format!("Function {} is undefined.", function);
+            let msg = format!("Function {function} is undefined.");
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }
@@ -103,7 +103,7 @@ impl Display for Function {
         } else {
             format!(" raises [{}]", &self.raises)
         };
-        write!(f, "{: >8} : ({}){}{}", self.name, comma_delm(&self.arguments), ret, raises)
+        write!(f, "{: >8} : ({}){ret}{raises}", self.name, comma_delm(&self.arguments))
     }
 }
 
@@ -160,18 +160,17 @@ impl Function {
                     if let Some(arg_ty) = &fun_param.ty {
                         if !arg_ty.is_superset_of(arg, ctx, pos)? {
                             let msg = format!(
-                                "'{}' given to argument {}, which expected a '{}'",
-                                arg, fun_param, arg_ty
+                                "'{arg}' given to argument {fun_param}, which expected a '{arg_ty}'"
                             );
                             return Err(vec![TypeErr::new(pos, &msg)]);
                         }
                     } else {
-                        let msg = format!("Type of function parameter {} unknown.", fun_param);
+                        let msg = format!("Type of function parameter {fun_param} unknown.");
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     },
                 EitherOrBoth::Left(fun_param) =>
                     if !fun_param.has_default {
-                        let msg = format!("Expected an argument for {}.", fun_param);
+                        let msg = format!("Expected an argument for {fun_param}.");
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     },
                 EitherOrBoth::Right(_) => {

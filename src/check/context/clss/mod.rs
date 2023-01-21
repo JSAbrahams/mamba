@@ -165,8 +165,8 @@ impl LookupClass<&StringName, Class> for Context {
                 // Tuple and collection exception, variable generic count
                 let mut generic_keys: Vec<Name> = vec![];
                 for (i, gen) in enumerate(&class.generics) {
-                    generic_keys.push(Name::from(format!("G{}", i).as_str()));
-                    generics.insert(Name::from(format!("G{}", i).as_str()), gen.clone());
+                    generic_keys.push(Name::from(format!("G{i}").as_str()));
+                    generics.insert(Name::from(format!("G{i}").as_str()), gen.clone());
                 }
 
                 let name = StringName::new(class.name.as_str(), &generic_keys);
@@ -183,11 +183,11 @@ impl LookupClass<&StringName, Class> for Context {
                         generics.insert(placeholder.clone(), name.clone());
                     }
                     EitherOrBoth::Left(placeholder) => {
-                        let msg = format!("No argument for generic {} in {}", placeholder, class);
+                        let msg = format!("No argument for generic {placeholder} in {class}");
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                     EitherOrBoth::Right(placeholder) => {
-                        let msg = format!("Gave unexpected generic {} to {}", placeholder, class);
+                        let msg = format!("Gave unexpected generic {placeholder} to {class}");
                         return Err(vec![TypeErr::new(pos, &msg)]);
                     }
                 }
@@ -195,7 +195,7 @@ impl LookupClass<&StringName, Class> for Context {
 
             Class::try_from((generic_class, &generics, pos))
         } else {
-            let msg = format!("Type '{}' is undefined.", class);
+            let msg = format!("Type '{class}' is undefined.");
             Err(vec![TypeErr::new(pos, &msg)])
         }
     }
@@ -272,7 +272,7 @@ impl GetField<Field> for Class {
                 return Ok(ok);
             }
         }
-        Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
+        Err(vec![TypeErr::new(pos, &format!("'{self}' does not define '{name}'"))])
     }
 }
 
@@ -291,7 +291,7 @@ impl GetFun<Function> for Class {
                 return Ok(function);
             }
         }
-        Err(vec![TypeErr::new(pos, &format!("'{}' does not define '{}'", self, name))])
+        Err(vec![TypeErr::new(pos, &format!("'{self}' does not define '{name}'"))])
     }
 }
 
