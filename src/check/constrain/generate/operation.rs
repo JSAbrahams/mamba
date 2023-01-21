@@ -183,7 +183,7 @@ fn primitive(ast: &AST, ty: &str, env: &Environment, constr: &mut ConstrBuilder)
     Ok(env.clone())
 }
 
-fn impl_magic(
+pub fn impl_magic(
     fun: &str,
     ast: &AST,
     left: &AST,
