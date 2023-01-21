@@ -273,9 +273,13 @@ impl Class {
         let other_fun: HashSet<Function> = other.functions.iter().filter(|f| {
             self.functions.iter().all(|s_f| s_f.name.name != f.name.name)
         }).cloned().collect();
+        let other_fields: HashSet<Field> = other.fields.iter().filter(|f| {
+            self.fields.iter().all(|s_f| s_f.name != f.name)
+        }).cloned().collect();
+
         Class {
             functions: self.functions.union(&other_fun).cloned().collect(),
-            fields: self.fields.union(&other.fields).cloned().collect(),
+            fields: self.fields.union(&other_fields).cloned().collect(),
             ..self.clone()
         }
     }
