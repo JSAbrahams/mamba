@@ -11,13 +11,6 @@ fn core_list() {
 }
 
 #[test]
-#[ignore]
-fn core_map() {
-    let source = resource_content(true, &["collection"], "dictionary.mamba");
-    to_py!(source);
-}
-
-#[test]
 fn core_set() {
     let source = resource_content(true, &["collection"], "set.mamba");
     to_py!(source);

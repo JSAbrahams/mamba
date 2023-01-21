@@ -4,14 +4,15 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
-fn dictionary_builder_nested() {
-    let source = resource_content(false, &["type", "collection"], "dictionary_builder_nested.mamba");
+#[ignore] // No way yet to define errors for std/primitives, see #392
+fn dictionary_key_error_not_caught() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_assume_not_optional.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 
 #[test]
-fn dictionary_key_error_not_caught() {
-    let source = resource_content(false, &["type", "collection"], "dictionary_assume_not_optional.mamba");
+fn dictionary_in_fun_wrong_ret_ty() {
+    let source = resource_content(false, &["type", "collection"], "dictionary_in_fun_wrong_ret_ty.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
 

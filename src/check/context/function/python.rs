@@ -30,6 +30,8 @@ pub const ITER: &str = "__iter__";
 
 pub const SUPER: &str = "super";
 
+pub const GET_ITEM: &str = "__getitem__";
+
 impl From<&Funcdef> for GenericFunction {
     fn from(func_def: &Funcdef) -> GenericFunction {
         GenericFunction {

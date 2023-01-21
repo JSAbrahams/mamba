@@ -245,9 +245,8 @@ mod test {
     }
 
     #[test]
-    #[ignore]
-    fn parse_map() -> ParseResult<()> {
-        let source = resource_content(true, &["collection"], "map.mamba");
+    fn dictionary() -> ParseResult<()> {
+        let source = resource_content(true, &["collection"], "dictionary.mamba");
         parse(&source).map(|_| ())
     }
 

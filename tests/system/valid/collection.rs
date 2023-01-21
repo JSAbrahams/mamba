@@ -33,8 +33,8 @@ fn dictionary_builder_verify() -> OutTestRet {
 }
 
 #[test]
-fn dictionary_return_is_optional() -> OutTestRet {
-    test_directory(true, &["collection"], &["collection", "target"], "dictionary_return_is_optional")
+fn dictionary_in_fun() -> OutTestRet {
+    test_directory(true, &["collection"], &["collection", "target"], "dictionary_in_fun")
 }
 
 #[test]
