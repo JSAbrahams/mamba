@@ -2,7 +2,7 @@ class Y(x: Int)
 
 class X
     def y: Y
-    def init(a: Int) =>
+    def __init__(a: Int) =>
         self.y = Y(a)
 
 x = X(10)
