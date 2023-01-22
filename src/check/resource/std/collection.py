@@ -84,14 +84,15 @@ class dict_keys(Generic[T]):
 
     def __iter__(self) -> dict_keyiterator[T]: pass
 
+    def __contains__(self, item: T) -> bool: pass
+
 
 class dict_values(Generic[T]):
     def __init__(self): pass
 
-    def __iter__(self) >
+    def __iter__(self) -> dict_valueiterator[T]: pass
 
-    dict_valueiterator[T]:
-    pass
+    def __contains__(self, item: T) -> bool: pass
 
 
 class dict_keyiterator(Generic[T]):
