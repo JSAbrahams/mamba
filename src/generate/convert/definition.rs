@@ -75,7 +75,7 @@ pub fn convert_def(ast: &ASTTy, imp: &mut Imports, state: &State, ctx: &Context)
                     let id = match c_id.as_ref() {
                         Core::Id { ref lit, .. } => match lit.as_str() {
                             "size" => String::from("__size__"),
-                            function::INIT => String::from("__init__"),
+                            function::python::INIT => String::from("__init__"),
                             other => String::from(other),
                         },
                         other => {

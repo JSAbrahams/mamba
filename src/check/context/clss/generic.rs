@@ -4,11 +4,11 @@ use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
-use crate::check::context::{arg, clss, function};
+use crate::check::context::{arg, clss};
 use crate::check::context::arg::generic::{ClassArgument, GenericFunctionArg};
 use crate::check::context::field::generic::{GenericField, GenericFields};
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::function::INIT;
+use crate::check::context::function::python::{INIT, STR};
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::{Any, Empty, Name};
 use crate::check::name::string_name::StringName;
@@ -70,7 +70,7 @@ impl Any for GenericClass {
         let mut functions = HashSet::new();
         functions.insert(GenericFunction {
             is_py_type: false,
-            name: StringName::new(function::STR, &[]),
+            name: StringName::new(STR, &[]),
             pure: false,
             pos: Position::invisible(),
             arguments: vec![],

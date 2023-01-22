@@ -4,6 +4,24 @@ use mamba::parse::parse;
 use crate::common::resource_content;
 
 #[test]
+fn in_dict_wrong_ty() {
+    let source = resource_content(false, &["type", "operation"], "in_dict_wrong_ty.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn in_list_wrong_ty() {
+    let source = resource_content(false, &["type", "operation"], "in_list_wrong_ty.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn in_set_wrong_ty() {
+    let source = resource_content(false, &["type", "operation"], "in_set_wrong_ty.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn isa_not_id() {
     let source = resource_content(false, &["type", "operation"], "isa_not_id.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

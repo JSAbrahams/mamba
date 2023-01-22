@@ -1,2 +1,2 @@
 class MyClass(arg1: SomeType)
-    def init(self) => print("cannot have two constructors")
+    def __init__(self) => print("cannot have two constructors")

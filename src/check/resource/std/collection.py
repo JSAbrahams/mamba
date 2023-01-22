@@ -6,6 +6,8 @@ class collection(Generic[T]):
 
     def __iter__(self) -> collection_iter[T]: pass
 
+    def __contains__(self, item: T) -> bool: pass
+
 
 class collection_iter(Generic[T]):
     def __init__(self): pass
@@ -70,23 +72,34 @@ class dict(Generic[T, R]):
 
     def __iter__(self) -> dictkeyiterator[T]: pass
 
+    def __contains__(self, item: T) -> bool: pass
+
     def keys(self) -> dict_keys[T]: pass
 
     def values(self) -> dict_values[R]: pass
 
+
 class dict_keys(Generic[T]):
     def __init__(self): pass
+
     def __iter__(self) -> dict_keyiterator[T]: pass
+
+    def __contains__(self, item: T) -> bool: pass
+
 
 class dict_values(Generic[T]):
     def __init__(self): pass
 
-    def __iter__(self) > dict_valueiterator[T]: pass
+    def __iter__(self) -> dict_valueiterator[T]: pass
+
+    def __contains__(self, item: T) -> bool: pass
+
 
 class dict_keyiterator(Generic[T]):
     def __init__(self): pass
 
     def __next__(self) -> T: pass
+
 
 class dict_valueiterator(Generic[T]):
     def __init__(self): pass

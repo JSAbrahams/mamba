@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
-use crate::check::context::{arg, function};
+use crate::check::context::arg;
+use crate::check::context::function::python::INIT;
 use crate::common::position::Position;
 use crate::parse::ast::node_op::NodeOp;
 
@@ -126,7 +127,7 @@ impl Node {
     }
 
     pub fn new_init() -> Node {
-        Node::Id { lit: String::from(function::INIT) }
+        Node::Id { lit: String::from(INIT) }
     }
 }
 

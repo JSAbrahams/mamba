@@ -6,3 +6,5 @@ class bool:
     def __str__(self) -> str: pass
 
     def __eq__(self, other: bool) -> bool:  pass
+
+    def __ne__(self, other: bool) -> bool:  pass

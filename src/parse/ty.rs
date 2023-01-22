@@ -15,10 +15,6 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 let end = it.eat(&Token::_Self, "identifier")?;
                 Ok(Box::from(AST::new(end, Node::new_self())))
             }
-            Token::Init => {
-                let end = it.eat(&Token::Init, "identifier")?;
-                Ok(Box::from(AST::new(end, Node::new_init())))
-            }
             Token::Id(id) => {
                 let end = it.eat(&Token::Id(id.clone()), "identifier")?;
                 Ok(Box::from(AST::new(end, Node::Id { lit: id.clone() })))
@@ -36,12 +32,12 @@ pub fn parse_id(it: &mut LexIterator) -> ParseResult {
                 Ok(Box::from(AST::new(end, Node::Tuple { elements })))
             }
             _ => Err(Box::from(expected_one_of(
-                &[Token::_Self, Token::Init, Token::Id(String::new()), Token::LRBrack],
+                &[Token::_Self, Token::Id(String::new()), Token::LRBrack],
                 lex,
                 "identifier",
             )))
         },
-        &[Token::_Self, Token::Init, Token::Id(String::new())],
+        &[Token::_Self, Token::Id(String::new())],
         "identifier",
     )
 }

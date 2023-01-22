@@ -3,7 +3,8 @@ use std::fmt::{Display, Error, Formatter};
 use crate::check::constrain::constraint::builder::VarMapping;
 use crate::check::constrain::constraint::expected::Expect::{Access, Function, Type};
 use crate::check::constrain::constraint::expected::Expected;
-use crate::check::context::{clss, function};
+use crate::check::context::clss;
+use crate::check::context::function::python::{STR, TRUTHY};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 
@@ -51,11 +52,11 @@ impl Constraint {
     fn flag(&self) -> Constraint { Constraint { is_flag: true, ..self.clone() } }
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
-        Self::access(msg, expected, &Name::from(clss::STRING), &StringName::from(function::STR))
+        Self::access(msg, expected, &Name::from(clss::STRING), &StringName::from(STR))
     }
 
     pub fn truthy(msg: &str, expected: &Expected) -> Constraint {
-        Self::access(msg, expected, &Name::from(clss::BOOL), &StringName::from(function::TRUTHY))
+        Self::access(msg, expected, &Name::from(clss::BOOL), &StringName::from(TRUTHY))
     }
 
     fn access(msg: &str, expected: &Expected, ty_name: &Name, fun_name: &StringName) -> Constraint {

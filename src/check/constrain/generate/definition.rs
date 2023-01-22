@@ -9,14 +9,15 @@ use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::generate::{Constrained, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::context::{clss, Context, function, LookupClass};
+use crate::check::context::{clss, Context, LookupClass};
 use crate::check::context::arg::SELF;
-use crate::check::context::clss::HasParent;
+use crate::check::context::clss::{Class, HasParent};
 use crate::check::context::field::Field;
+use crate::check::context::function::python::INIT;
 use crate::check::ident::Identifier;
 use crate::check::name::{match_name, Name, Nullable, TupleCallable};
 use crate::check::name::true_name::TrueName;
-use crate::check::result::TypeErr;
+use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 use crate::parse::ast::{AST, Node};
 use crate::parse::ast::Node::Id;
@@ -30,17 +31,20 @@ pub fn gen_def(
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
             let non_nullable_class_vars: HashSet<String> = match &id.node {
-                Id { lit } if *lit == function::INIT => {
+                Id { lit } if *lit == INIT => {
                     if let Some(class) = &env.class {
                         let class = ctx.class(class, id.pos)?;
+                        let parents: Vec<Class> = class.parents.iter().map(|p| ctx.class(p, id.pos)).collect::<TypeResult<_>>()?;
+
                         let fields: Vec<&Field> = class
                             .fields
                             .iter()
+                            .filter(|f| !parents.iter().any(|p| p.fields.contains(f)))
                             .filter(|f| !f.ty.is_nullable() && !f.assigned_to)
                             .collect();
                         fields.iter().map(|f| f.name.clone()).collect()
                     } else {
-                        let msg = format!("Cannot have {} function outside class", function::INIT);
+                        let msg = format!("Cannot have {INIT} function outside class");
                         return Err(vec![TypeErr::new(id.pos, &msg)]);
                     }
                 }
@@ -91,7 +95,11 @@ pub fn gen_def(
             let unassigned: Vec<String> = body_env
                 .unassigned
                 .iter()
-                .map(|v| format!("Non nullable class variable '{v}' not assigned to in constructor"))
+                .map(|v| if let Some(class) = &env.class {
+                    format!("Non nullable attribute '{v}' of {class} not assigned to in constructor")
+                } else {
+                    panic!("Cannot have unassigned outside class")
+                })
                 .collect();
             if !unassigned.is_empty() {
                 return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());

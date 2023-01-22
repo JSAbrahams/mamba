@@ -11,7 +11,7 @@ use crate::check::constrain::constraint::expected::{Expect, Expected};
 use crate::check::constrain::constraint::expected::Expect::*;
 use crate::check::constrain::generate::{Constrained, gen_vec, generate};
 use crate::check::constrain::generate::env::Environment;
-use crate::check::constrain::generate::operation::impl_magic;
+use crate::check::constrain::generate::operation::gen_magic;
 use crate::check::constrain::generate::statement::check_raises_caught;
 use crate::check::context::{arg, Context, function, LookupClass, LookupFunction};
 use crate::check::context::arg::FunctionArg;
@@ -96,7 +96,7 @@ pub fn gen_call(
             property_call(&mut vec![instance.deref().clone()], property, env, ctx, constr)
         }
         Node::Index { item, range } => {
-            impl_magic(GET_ITEM, ast, item, range, env, ctx, constr)
+            gen_magic(GET_ITEM, ast, item, range, env, ctx, constr)
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),

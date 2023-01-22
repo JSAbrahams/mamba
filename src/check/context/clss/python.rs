@@ -8,7 +8,7 @@ use crate::check::context::clss;
 use crate::check::context::clss::generic::GenericClass;
 use crate::check::context::field::generic::GenericFields;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::context::function::INIT;
+use crate::check::context::function::python::INIT;
 use crate::check::context::parameter::python::GenericParameters;
 use crate::check::context::parent::generic::GenericParent;
 use crate::check::name::Name;
