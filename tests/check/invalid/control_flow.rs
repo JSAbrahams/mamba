@@ -74,3 +74,15 @@ fn undefined_var_in_match_arm() {
     let source = resource_content(false, &["type", "control_flow"], "undefined_var_in_match_arm.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();
 }
+
+#[test]
+fn variable_defined_in_then() {
+    let source = resource_content(false, &["type", "control_flow"], "variable_defined_in_then.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn variable_defined_in_else() {
+    let source = resource_content(false, &["type", "control_flow"], "variable_defined_in_else.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}

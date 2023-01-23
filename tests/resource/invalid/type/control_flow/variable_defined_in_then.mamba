@@ -1,0 +1,6 @@
+if False then
+    def x := 10
+else
+    print("something")
+
+x + 10

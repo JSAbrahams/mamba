@@ -61,7 +61,7 @@ pub fn gen_flow(
             }
 
             constr.reset_branches();
-            Ok(then_env.union(&else_env))
+            Ok(env.intersection(&then_env.union(&else_env)))
         }
         Node::IfElse { cond, then, .. } => {
             constr.add_constr(&Constraint::truthy("if condition", &Expected::from(cond)), env);
