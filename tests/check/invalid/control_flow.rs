@@ -10,6 +10,24 @@ fn access_match_arms_variable() {
 }
 
 #[test]
+fn class_field_assigned_to_only_one_arm_match() {
+    let source = resource_content(false, &["type", "control_flow"], "class_field_assigned_to_only_one_arm_match.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn class_field_assigned_to_only_then() {
+    let source = resource_content(false, &["type", "control_flow"], "class_field_assigned_to_only_then.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn class_field_assigned_to_only_else() {
+    let source = resource_content(false, &["type", "control_flow"], "class_field_assigned_to_only_else.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn float_and() {
     let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
     check_all(&[*parse(&source).unwrap()]).unwrap_err();

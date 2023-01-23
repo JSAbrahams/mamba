@@ -141,4 +141,39 @@ impl Environment {
         unassigned.remove(var);
         Environment { unassigned, ..self.clone() }
     }
+
+    /// Union with unassigned of other.
+    pub fn union(&self, other: &Environment) -> Environment {
+        let unassigned = self.unassigned.union(&other.unassigned);
+        Environment { unassigned: unassigned.cloned().collect(), ..self.clone() }
+    }
+
+    /// Intersection with unassigned of other.
+    pub fn intersection(&self, other: &Environment) -> Environment {
+        let unassigned = self.unassigned.intersection(&other.unassigned);
+        Environment { unassigned: unassigned.cloned().collect(), ..self.clone() }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use crate::check::constrain::generate::env::Environment;
+
+    #[test]
+    fn union_unassigned() {
+        let (env1, env2) = (Environment::default(), Environment::default());
+        let env1 = env1.with_unassigned(HashSet::from([String::from("a")]));
+        let env2 = env2.with_unassigned(HashSet::from([String::from("a")]));
+        assert_eq!(env1.unassigned.len(), 1);
+
+        let env1 = env1.assigned_to(&String::from("a"));
+        assert_eq!(env1.unassigned.len(), 0);
+        assert_eq!(env2.unassigned.len(), 1);
+
+        let env3 = env1.union(&env2);
+        assert!(env3.unassigned.contains(&String::from("a")));
+        assert_eq!(env3.unassigned.len(), 1);
+    }
 }

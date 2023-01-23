@@ -40,8 +40,7 @@ pub fn gen_flow(
             let outer_env = generate(expr_or_stmt, &env.raises_caught(&raises), ctx, constr)?
                 .raises_caught(&raises_before);
 
-            constrain_cases(ast, &None, cases, &outer_env, ctx, constr)?;
-            Ok(outer_env.clone())
+            constrain_cases(ast, &None, cases, &outer_env, ctx, constr)
         }
 
         Node::IfElse { cond, then, el: Some(el) } => {
@@ -50,19 +49,19 @@ pub fn gen_flow(
             let if_expr_exp = Expected::from(ast);
 
             constr.branch_point();
-            generate(then, env, ctx, constr)?;
+            let then_env = generate(then, env, ctx, constr)?;
             if env.is_expr {
                 constr.add("then branch equal to if", &if_expr_exp, &Expected::from(then), env);
             }
 
             constr.branch("if else branch", el.pos);
-            generate(el, env, ctx, constr)?;
+            let else_env = generate(el, env, ctx, constr)?;
             if env.is_expr {
                 constr.add("else branch equal to if", &if_expr_exp, &Expected::from(el), env);
             }
 
             constr.reset_branches();
-            Ok(env.clone())
+            Ok(then_env.union(&else_env))
         }
         Node::IfElse { cond, then, .. } => {
             constr.add_constr(&Constraint::truthy("if condition", &Expected::from(cond)), env);
@@ -75,8 +74,7 @@ pub fn gen_flow(
         Node::Case { .. } => Err(vec![TypeErr::new(ast.pos, "Case cannot be top level")]),
         Node::Match { cond, cases } => {
             let outer_env = generate(cond, env, ctx, constr)?;
-            constrain_cases(ast, &Some(*cond.clone()), cases, &outer_env, ctx, constr)?;
-            Ok(env.clone())
+            constrain_cases(ast, &Some(*cond.clone()), cases, &outer_env, ctx, constr)
         }
 
         Node::For { expr, col, body } => {
@@ -103,10 +101,11 @@ pub fn gen_flow(
     }
 }
 
-fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained<()> {
+fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Environment, ctx: &Context, constr: &mut ConstrBuilder) -> Constrained {
     let is_define_mode = env.is_def_mode;
     constr.branch_point();
 
+    let mut envs = vec![];
     for case in cases {
         match &case.node {
             Node::Case { cond, body } => {
@@ -119,7 +118,8 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
                     }
                 }
 
-                generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
+                let body_env = generate(body, &cond_env.is_def_mode(is_define_mode), ctx, constr)?;
+                envs.push(body_env);
                 let exp_body = Expected::from(body);
                 constr.add("arm body", &exp_body, &Expected::from(ast), env);
 
@@ -132,5 +132,10 @@ fn constrain_cases(ast: &AST, expr: &Option<AST>, cases: &Vec<AST>, env: &Enviro
     }
 
     constr.reset_branches();
-    Ok(())
+    let env_union = envs.into_iter().reduce(|e1, e2| e1.union(&e2));
+    if let Some(env_union) = env_union {
+        Ok(env.intersection(&env_union))
+    } else {
+        Ok(env.clone())
+    }
 }
