@@ -30,7 +30,7 @@ pub fn gen_def(
 ) -> Constrained {
     match &ast.node {
         Node::FunDef { args: fun_args, ret: ret_ty, body, raises, id, .. } => {
-            let non_nullable_class_vars: HashSet<String> = match &id.node {
+            let (class, non_nullable_class_vars) = match &id.node {
                 Id { lit } if *lit == INIT => {
                     if let Some(class) = &env.class {
                         let class = ctx.class(class, id.pos)?;
@@ -42,13 +42,13 @@ pub fn gen_def(
                             .filter(|f| !parents.iter().any(|p| p.fields.contains(f)))
                             .filter(|f| !f.ty.is_nullable() && !f.assigned_to)
                             .collect();
-                        fields.iter().map(|f| f.name.clone()).collect()
+                        (Some(class.clone()), fields.iter().map(|f| f.name.clone()).collect())
                     } else {
                         let msg = format!("Cannot have {INIT} function outside class");
                         return Err(vec![TypeErr::new(id.pos, &msg)]);
                     }
                 }
-                _ => HashSet::new(),
+                _ => (None, HashSet::new()),
             };
 
             let body_env = constrain_args(fun_args, env, ctx, constr)?
@@ -92,17 +92,15 @@ pub fn gen_def(
                 body_env
             };
 
-            let unassigned: Vec<String> = body_env
-                .unassigned
-                .iter()
-                .map(|v| if let Some(class) = &env.class {
-                    format!("Non nullable attribute '{v}' of {class} not assigned to in constructor")
-                } else {
-                    panic!("Cannot have unassigned outside class")
-                })
-                .collect();
-            if !unassigned.is_empty() {
-                return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
+            if let Some(class) = class {
+                let unassigned: Vec<String> = body_env
+                    .unassigned
+                    .iter()
+                    .map(|v| format!("Non nullable attribute '{v}' of {class} not assigned to in constructor"))
+                    .collect();
+                if !unassigned.is_empty() {
+                    return Err(unassigned.iter().map(|msg| TypeErr::new(id.pos, msg)).collect());
+                }
             }
 
             Ok(env.clone())

@@ -1,0 +1,8 @@
+class MyClass
+    def x: Int
+
+    def __init__(self) =>
+        if False then
+            print("something")
+        else
+            self.x := 10
