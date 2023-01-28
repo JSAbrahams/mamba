@@ -36,7 +36,9 @@ impl Display for Node {
                 format!("{}", id.node)
             },
             Node::Parent { .. } => String::from("parent"),
-            Node::Reassign { .. } => String::from("reassign"),
+            Node::Reassign { left, right, op } => {
+                format!("{} {} {}", left.node, op, right.node)
+            }
             Node::VariableDef { .. } => String::from("variable definition"),
             Node::FunDef { .. } => String::from("function definition"),
             Node::AnonFun { .. } => String::from("anonymous function"),

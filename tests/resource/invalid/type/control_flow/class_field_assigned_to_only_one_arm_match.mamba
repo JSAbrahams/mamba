@@ -1,0 +1,10 @@
+class MyClass
+    def x: Int
+
+    def __init__(self) =>
+        match 10
+            2 => self.x := 2
+            3 => self.x := 3
+            4 => print("o")
+            5 => print("o")
+            _ => print("p")

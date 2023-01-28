@@ -11,6 +11,16 @@ fn assign_match() -> OutTestRet {
 }
 
 #[test]
+fn class_field_assigned_to_both_branches_if() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "class_field_assigned_to_both_branches_if")
+}
+
+#[test]
+fn class_field_assigned_to_exhaustive_match() -> OutTestRet {
+    test_directory(true, &["control_flow"], &["control_flow", "target"], "class_field_assigned_to_exhaustive_match")
+}
+
+#[test]
 fn double_assign_if() -> OutTestRet {
     test_directory(true, &["control_flow"], &["control_flow", "target"], "double_assign_if")
 }
