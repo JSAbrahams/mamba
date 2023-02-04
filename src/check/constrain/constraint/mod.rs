@@ -16,6 +16,7 @@ pub mod iterator;
 pub struct Constraint {
     pub is_flag: bool,
     pub is_sub: bool,
+    pub propagate: bool,
     pub msg: String,
     pub parent: Expected,
     pub child: Expected,
@@ -45,11 +46,16 @@ impl Constraint {
     /// By default, the left side is assumed to be the superset of the right side.
     pub fn new(msg: &str, parent: &Expected, child: &Expected) -> Constraint {
         let (parent, child) = (parent.clone(), child.clone());
-        Constraint { parent, child, msg: String::from(msg), is_flag: false, is_sub: false }
+        Constraint { parent, child, msg: String::from(msg), is_flag: false, is_sub: false, propagate: true }
     }
 
-    /// Flag constraint iff flagged is 0, else ignored.
+    /// Flag constraint if flagged is 0, else ignored.
     fn flag(&self) -> Constraint { Constraint { is_flag: true, ..self.clone() } }
+
+    /// Specify whether type on right side should be propagated out.
+    pub(crate) fn propagate(&self, propagate: bool) -> Constraint {
+        Constraint { propagate, ..self.clone() }
+    }
 
     pub fn stringy(msg: &str, expected: &Expected) -> Constraint {
         Self::access(msg, expected, &Name::from(clss::STRING), &StringName::from(STR))

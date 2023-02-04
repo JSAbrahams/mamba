@@ -93,7 +93,7 @@ fn sub_ty(new_pos: Position, new: &Name, old_pos: Position, old: &Name, constr: 
         }
 
         con.is_sub = con.is_sub || sub_l || sub_r;
-        constr.push_constr(&con);
+        constr.push_back(&con);
     }
 
     Ok(())

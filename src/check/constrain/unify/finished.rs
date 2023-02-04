@@ -25,7 +25,7 @@ impl Finished {
     /// If already present at position, then union is created between current [Name] and given
     /// [Name].
     /// Ignores [Any] type, and trims from union.
-    pub fn push_ty(&mut self, ctx: &Context, pos: Position, exp: &Expected, name: &Name) -> TypeResult<()> {
+    pub fn push_ty(&mut self, ctx: &Context, pos: Position, exp: &Expected, name: &Name, propagate: bool) -> TypeResult<()> {
         // trim temp should not be needed, underlying issue with current logic
         let name = IGNORED_NAMES.iter().fold(name.clone(), |acc, ignored| acc.trim(ignored));
         let name = name.trim_any();
@@ -37,12 +37,11 @@ impl Finished {
             ctx.class(class, pos)?;
         }
 
-        let name = self.pos_to_name.get(&pos)
-            .map_or(name.trim_super(ctx), |old_name| if old_name.is_interchangeable {
-                old_name.clone()
-            } else {
-                old_name.union(&name).trim_super(ctx)
-            });
+        let name = self.pos_to_name.get(&pos).map_or(name.trim_super(ctx), |old_name| if propagate {
+            old_name.union(&name).trim_super(ctx)
+        } else {
+            old_name.clone()
+        });
 
         if self.pos_to_name.insert(pos, name.clone()).is_none() {
             trace!("{} at {} has type: {}", exp, pos, name);

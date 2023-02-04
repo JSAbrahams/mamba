@@ -44,7 +44,8 @@ pub fn unify_function(
                         EitherOrBoth::Both(arg, expected) => {
                             count += 1;
                             let arg_ty = Expected::new(left.pos, &Type { name: arg.clone() });
-                            constraints.push("anonymous function argument", &arg_ty, expected)
+                            let constr = Constraint::new("anonymous function argument", &arg_ty, expected);
+                            constraints.push_front(&constr.propagate(false));
                         }
                         EitherOrBoth::Left(_) | EitherOrBoth::Right(_) => {
                             let msg = format!(
@@ -129,7 +130,8 @@ fn field_access(
             .map_err(|errs| access_field_cause(&errs, other, entity_name, name, msg))?;
 
         let field_ty_exp = Expected::new(accessed.pos, &Type { name: field.ty });
-        constraints.push("field access", &field_ty_exp, other);
+        let constr = Constraint::new("field access", &field_ty_exp, other);
+        constraints.push_front(&constr.propagate(false));
         pushed += 1;
     }
 
@@ -162,7 +164,8 @@ fn function_access(
             .map_err(|errs| access_fun_cause(&errs, other, entity_name, name, args, msg))?;
 
         let fun_ty_exp = Expected::new(accessed.pos, &Type { name: fun.ret_ty.clone() });
-        constraints.push("function access", other, &fun_ty_exp);
+        let constr = Constraint::new("function access", other, &fun_ty_exp);
+        constraints.push_front(&constr.propagate(false));
         pushed += 1;
 
         pushed += unify_fun_arg(entity_name, name, &fun.arguments, args, constraints, accessed.pos)?;
@@ -184,11 +187,11 @@ fn unify_fun_arg(
     for either_or_both in ctx_f_args.iter().zip_longest(args.iter()) {
         match either_or_both {
             EitherOrBoth::Both(ctx_f_arg, expected) => {
-                let Some(arg_name) = &ctx_f_arg.ty else {
+                let Some(arg_name) = ctx_f_arg.ty.clone() else {
                     let msg = format!("Argument '{ctx_f_arg}' in context has no type");
                     return Err(vec![TypeErr::new(pos, &msg)]);
                 };
-                let ctx_arg_ty = Expected::new(expected.pos, &Type { name: arg_name.is_interchangeable(true) });
+                let ctx_arg_ty = Expected::new(expected.pos, &Type { name: arg_name });
 
                 // self is special, because self is equal to entity name
                 let expected = if ctx_f_arg.name == SELF {
@@ -205,15 +208,17 @@ fn unify_fun_arg(
                             let expected = Expected::new(expected.pos, &Type { name: tuple_element.clone() });
                             let msg = format!("tuple element define {STR}");
                             let stringy = Constraint::stringy(&msg, &expected);
-                            constr.push_constr(&stringy);
+                            constr.push_back(&stringy.propagate(false));
                         }
                     } else {
                         let msg = format!("function arg in {name}: {}", ctx_f_arg.name);
-                        constr.push(&msg, &ctx_arg_ty, &expected);
+                        let constraint = Constraint::new(&msg, &ctx_arg_ty, &expected);
+                        constr.push_front(&constraint.propagate(false));
                     }
                 } else {
                     let msg = format!("function arg in {name}: {}", ctx_f_arg.name);
-                    constr.push(&msg, &ctx_arg_ty, &expected);
+                    let constraint = Constraint::new(&msg, &ctx_arg_ty, &expected);
+                    constr.push_front(&constraint.propagate(false));
                 }
 
                 added += 1;

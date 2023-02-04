@@ -81,7 +81,6 @@ pub trait TupleCallable<T1, T2, T3> {
 #[derive(Debug, Clone, Eq, Default)]
 pub struct Name {
     pub names: HashSet<TrueName>,
-    pub is_interchangeable: bool,
 }
 
 impl Any for Name {
@@ -150,7 +149,7 @@ pub fn match_type_direct(
 
 impl From<&HashSet<Class>> for Name {
     fn from(classes: &HashSet<Class>) -> Self {
-        Name { names: classes.iter().map(|c| TrueName::from(&c.name)).collect(), is_interchangeable: false }
+        Name { names: classes.iter().map(|c| TrueName::from(&c.name)).collect() }
     }
 }
 
@@ -185,8 +184,7 @@ impl Union<Name> for Name {
                     .collect()
             } else {
                 names
-            },
-            is_interchangeable: self.is_interchangeable || name.is_interchangeable,
+            }
         }
     }
 }
@@ -255,8 +253,7 @@ impl Display for Name {
 
 impl From<&TrueName> for Name {
     fn from(name: &TrueName) -> Self {
-        let names: HashSet<TrueName> = HashSet::from_iter(vec![name.clone()]);
-        Name { names, is_interchangeable: false }
+        Name { names: HashSet::from_iter(vec![name.clone()]) }
     }
 }
 
@@ -277,14 +274,14 @@ impl IsSuperSet<Name> for Name {
             let is_superset = |s_name: &TrueName| s_name.is_superset_of(name, ctx, pos);
             let any_superset: Vec<_> = self.names.iter().map(is_superset).collect::<Result<_, _>>()?;
 
-            if !other.is_interchangeable && any_superset.clone().iter().all(|b| !*b) {
+            if any_superset.clone().iter().all(|b| !*b) {
                 return Ok(false); // not a single of self was super
             }
 
             self_is_super_of |= any_superset.iter().any(|b| *b);
         }
 
-        Ok(if other.is_interchangeable { self_is_super_of } else { true })
+        Ok(self_is_super_of)
     }
 }
 
@@ -308,7 +305,7 @@ impl Empty for Name {
     }
 
     fn empty() -> Name {
-        Name { names: HashSet::new(), is_interchangeable: false }
+        Name { names: HashSet::new() }
     }
 }
 
@@ -385,12 +382,6 @@ impl Name {
 
     pub fn as_direct(&self) -> HashSet<StringName> {
         self.names.iter().map(StringName::from).collect()
-    }
-
-    /// Any means that if one check if another [is_superset_of] self, then it will be true if it is
-    /// just a superset of one.
-    pub fn is_interchangeable(&self, is_interchangeable: bool) -> Self {
-        Name { is_interchangeable, ..self.clone() }
     }
 
     pub fn contains(&self, item: &TrueName) -> bool {
@@ -554,17 +545,8 @@ mod tests {
     }
 
     #[test]
-    fn is_superset_any_only_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
-        let union_2 = Name::from(BOOL);
-
-        let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(union_2.is_superset_of(&union_1, &ctx, Position::invisible()).unwrap())
-    }
-
-    #[test]
     fn is_superset_any_no_one() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]).is_interchangeable(true);
+        let union_1 = Name::from(&vec![TrueName::from(BOOL), TrueName::from(INT)]);
         let union_2 = Name::from(RANGE);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -573,7 +555,7 @@ mod tests {
 
     #[test]
     fn is_superset_any_no_one_2() {
-        let union_1 = Name::from(&vec![TrueName::from(INT)]).is_interchangeable(true);
+        let union_1 = Name::from(&vec![TrueName::from(INT)]);
         let union_2 = Name::from(STRING);
 
         let ctx = Context::default().into_with_primitives().unwrap();
@@ -582,7 +564,7 @@ mod tests {
 
     #[test]
     fn is_superset_any_nullable() {
-        let union_1 = Name::from(&vec![TrueName::from(BOOL).as_nullable(), TrueName::from(INT)]).is_interchangeable(true);
+        let union_1 = Name::from(&vec![TrueName::from(BOOL).as_nullable(), TrueName::from(INT)]);
         let union_2 = Name::from(BOOL);
 
         let ctx = Context::default().into_with_primitives().unwrap();
