@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     pub fn lookup_custom_list_type() -> TypeResult<()> {
-        let generics = &[Name::from("Custom")];
+        let generics = &[Name::from("Str")];
         let list_type = StringName::new("List", generics);
         let ctx = Context::default().into_with_primitives().unwrap();
 
@@ -100,7 +100,7 @@ mod tests {
         for name in iter_name.as_direct() {
             let iter_class = ctx.class(&name, pos)?;
             let next_ty = iter_class.fun(&StringName::from("__next__"), pos)?.ret_ty;
-            assert_eq!(next_ty, Name::from("Custom"))
+            assert_eq!(next_ty, Name::from("Str"))
         }
 
         Ok(())
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     pub fn lookup_custom_set_type() -> TypeResult<()> {
-        let generics = &[Name::from("Custom")];
+        let generics = &[Name::from("Str")];
         let set_type = StringName::new("Set", generics);
         let ctx = Context::default().into_with_primitives().unwrap();
 
@@ -120,7 +120,7 @@ mod tests {
         for name in iter_name.as_direct() {
             let iter_class = ctx.class(&name, pos)?;
             let next_ty = iter_class.fun(&StringName::from("__next__"), pos)?.ret_ty;
-            assert_eq!(next_ty, Name::from("Custom"))
+            assert_eq!(next_ty, Name::from("Str"))
         }
 
         Ok(())
