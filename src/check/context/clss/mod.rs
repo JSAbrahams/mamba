@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
-use itertools::{EitherOrBoth, enumerate, Itertools};
+use itertools::enumerate;
 
 use crate::check::context::{Context, LookupClass};
 use crate::check::context::arg::FunctionArg;
@@ -15,7 +15,7 @@ use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::Function;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::parent::generic::GenericParent;
-use crate::check::name::{Any, Empty, Name, Substitute};
+use crate::check::name::{Any, Empty, match_generics, Name, Substitute};
 use crate::check::name::string_name::StringName;
 use crate::check::name::true_name::TrueName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -162,8 +162,8 @@ impl LookupClass<&StringName, Class> for Context {
     /// Also constructs class complete with all fields and functions from parents.
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
         if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name) {
-            let mut generics = HashMap::new();
             if class.name == TUPLE {
+                let mut generics = HashMap::new();
                 // Tuple exception, variable generic count
                 let mut generic_keys: Vec<Name> = vec![];
                 for (i, gen) in enumerate(&class.generics) {
@@ -177,23 +177,7 @@ impl LookupClass<&StringName, Class> for Context {
                 return class;
             }
 
-            let placeholders = generic_class.name.clone();
-            for name in placeholders.generics.iter().zip_longest(class.generics.iter()) {
-                match name {
-                    EitherOrBoth::Both(placeholder, name) => {
-                        generics.insert(placeholder.clone(), name.clone());
-                    }
-                    EitherOrBoth::Left(placeholder) => {
-                        let msg = format!("No argument for generic {placeholder} in {class}");
-                        return Err(vec![TypeErr::new(pos, &msg)]);
-                    }
-                    EitherOrBoth::Right(placeholder) => {
-                        let msg = format!("Gave unexpected generic {placeholder} to {class}");
-                        return Err(vec![TypeErr::new(pos, &msg)]);
-                    }
-                }
-            }
-
+            let generics = match_generics(&generic_class.name, class, pos)?;
             let clss = Class::try_from((generic_class, &generics, pos))?;
             let clss = clss.parents
                 .iter()

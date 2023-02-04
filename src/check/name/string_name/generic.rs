@@ -36,6 +36,11 @@ impl TryFrom<&AST> for StringName {
                 Ok(StringName::tuple(&generics))
             }
             Node::Parent { ty, .. } => StringName::try_from(ty),
+            Node::Index { item, range } => {
+                let string_name = StringName::try_from(item)?;
+                let generics: Vec<Name> = range.iter().map(Name::try_from).collect::<TypeResult<_>>()?;
+                Ok(StringName::new(&string_name.name, &generics))
+            }
             _ => {
                 let msg = format!("Expected class name, was {:?}", ast.node);
                 Err(vec![TypeErr::new(ast.pos, &msg)])

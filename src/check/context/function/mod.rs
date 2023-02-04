@@ -10,7 +10,7 @@ use crate::check::context::{arg, Context, LookupFunction};
 use crate::check::context::arg::FunctionArg;
 use crate::check::context::clss::Class;
 use crate::check::context::function::generic::GenericFunction;
-use crate::check::name::{Empty, IsSuperSet, Substitute};
+use crate::check::name::{Empty, IsSuperSet, match_generics, Substitute};
 use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
 use crate::check::result::{TypeErr, TypeResult};
@@ -47,11 +47,11 @@ impl LookupFunction<&StringName, Function> for Context {
     /// If function does not exist, treat function as constructor and see if
     /// there exists a class with the same true_name.
     fn function(&self, function: &StringName, pos: Position) -> TypeResult<Function> {
-        let generics = HashMap::new();
-
-        if let Some(generic_fun) = self.functions.iter().find(|c| &c.name == function) {
+        if let Some(generic_fun) = self.functions.iter().find(|c| c.name.name == function.name) {
+            let generics = match_generics(&generic_fun.name, function, pos)?;
             Function::try_from((generic_fun, &generics, pos))
-        } else if let Some(generic_class) = self.classes.iter().find(|c| &c.name == function) {
+        } else if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == function.name) {
+            let generics = match_generics(&generic_class.name, function, pos)?;
             let class = Class::try_from((generic_class, &generics, pos))?;
             Ok(class.constructor(true))
         } else {

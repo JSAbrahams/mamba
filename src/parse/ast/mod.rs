@@ -67,7 +67,7 @@ pub enum Node {
     Tuple { elements: Vec<AST> },
     Range { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
     Slice { from: Box<AST>, to: Box<AST>, inclusive: bool, step: OptAST },
-    Index { item: Box<AST>, range: Box<AST> },
+    Index { item: Box<AST>, range: Vec<AST> },
     Block { statements: Vec<AST> },
     Real { lit: String },
     Int { lit: String },

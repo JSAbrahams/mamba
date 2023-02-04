@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
-use itertools::Itertools;
+use itertools::{EitherOrBoth, Itertools};
 
 use crate::check::context::{clss, Context};
 use crate::check::context::clss::Class;
@@ -432,6 +432,26 @@ impl Name {
         }
         Ok(())
     }
+}
+
+pub fn match_generics(name: &StringName, other_name: &StringName, pos: Position) -> TypeResult<HashMap<Name, Name>> {
+    let mut generics = HashMap::new();
+    for either_or_both in name.generics.iter().zip_longest(other_name.generics.iter()) {
+        match either_or_both {
+            EitherOrBoth::Both(placeholder, name) => {
+                generics.insert(placeholder.clone(), name.clone());
+            }
+            EitherOrBoth::Left(placeholder) => {
+                let msg = format!("No argument for generic {placeholder} in {name}");
+                return Err(vec![TypeErr::new(pos, &msg)]);
+            }
+            EitherOrBoth::Right(placeholder) => {
+                let msg = format!("Gave unexpected generic {placeholder} to {name}");
+                return Err(vec![TypeErr::new(pos, &msg)]);
+            }
+        }
+    }
+    Ok(generics)
 }
 
 #[cfg(test)]

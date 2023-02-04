@@ -125,10 +125,15 @@ fn parse_post_expr(pre: &AST, it: &mut LexIterator) -> ParseResult {
 }
 
 fn parse_index(pre: &AST, it: &mut LexIterator) -> ParseResult {
-    it.eat(&Token::LSBrack, "index")?;
+    let start = it.eat(&Token::LSBrack, "index")?;
 
     let item = Box::from(pre.clone());
-    let range = it.parse(&parse_expression, "index", pre.pos)?;
+    let mut range = vec![];
+    it.peek_while_not_token(&Token::RSBrack, &mut |it, _| {
+        range.push(*it.parse(&parse_expression, "index argument", start)?);
+        it.eat_if(&Token::Comma);
+        Ok(())
+    })?;
 
     let node = Node::Index { item, range };
     let end = it.eat(&Token::RSBrack, "index")?;
