@@ -64,9 +64,9 @@ fn parse_arguments(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::parse_direct;
 
     #[test]
     fn op_assign() {
@@ -167,12 +167,12 @@ mod test {
     #[test]
     fn direct_call_missing_closing_bracket() {
         let source = String::from("a(b");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn regular_call_missing_closing_bracket() {
         let source = String::from("instance.a(b");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 }

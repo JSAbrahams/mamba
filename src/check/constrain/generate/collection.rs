@@ -217,13 +217,13 @@ mod tests {
     use crate::check::ast::NodeTy;
     use crate::check::check_all;
     use crate::check::name::Name;
-    use crate::parse::parse;
+    use crate::parse::ast::AST;
 
     #[test]
     fn for_col_variable_ty() {
         let src = "def a := 0 ..= 2\nfor i in a do\n    print(\"hello\")";
-        let ast = parse(src).unwrap();
-        let result = check_all(&[*ast]).unwrap();
+        let ast = src.parse::<AST>().unwrap();
+        let result = check_all(&[ast]).unwrap();
 
         let statements = if let NodeTy::Block { statements } = &result[0].node {
             statements.clone()

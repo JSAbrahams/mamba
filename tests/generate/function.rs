@@ -1,6 +1,6 @@
 use mamba::check::check_all;
 use mamba::generate::gen;
-use mamba::parse::parse;
+use mamba::parse::ast::AST;
 
 use crate::common::*;
 

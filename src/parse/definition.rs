@@ -207,8 +207,8 @@ fn parse_variable_def(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::Node;
+    use crate::parse::ast::{AST, Node};
+    use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -485,60 +485,60 @@ mod test {
     #[test]
     fn def_mut_private_wrong_order() {
         let source = String::from("def mut private a ");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn def_missing_id() {
         let source = String::from("def");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn def_fun_no_closing_brack() {
         let source = String::from("def f(a");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn def_fun_missing_arrow() {
         let source = String::from("def f(a) a * 10");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn def_fun_missing_brackets() {
         let source = String::from("def f => print a");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn handle_no_branches() {
         let source = String::from("def a handle");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn handle_no_indentation() {
         let source = String::from("def a handle\nerr: Err => b");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn function_definitions() -> ParseResult<()> {
         let source = resource_content(true, &["function"], "definition.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn function_calling() -> ParseResult<()> {
         let source = resource_content(true, &["function"], "calls.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn type_annotation_in_tuple() {
         let source = resource_content(false, &["syntax"], "type_annotation_in_tuple.mamba");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 }

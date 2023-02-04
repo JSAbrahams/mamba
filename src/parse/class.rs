@@ -138,15 +138,14 @@ pub fn parse_type_def(it: &mut LexIterator) -> ParseResult {
 #[cfg(test)]
 mod test {
     use crate::common::result::WithSource;
-    use crate::parse::ast::Node;
-    use crate::parse::parse;
+    use crate::parse::ast::{AST, Node};
     use crate::parse::result::{ParseErr, ParseResult};
     use crate::test_util::resource_content;
 
     #[test]
     fn import_verify() {
         let source = String::from("import d");
-        let ast = parse(&source).unwrap();
+        let ast = source.parse::<AST>().unwrap();
 
         let (from, import, alias) = match ast.node {
             Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -165,7 +164,7 @@ mod test {
     #[test]
     fn import_as_verify() {
         let source = String::from("import d as e");
-        let ast = parse(&source).unwrap();
+        let ast = source.parse::<AST>().unwrap();
 
         let (from, import, alias) = match ast.node {
             Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -185,7 +184,7 @@ mod test {
     #[test]
     fn from_import_as_verify() {
         let source = String::from("from c import d,f as e,g");
-        let ast = parse(&source).unwrap();
+        let ast = source.parse::<AST>().unwrap();
 
         let (from, import, alias) = match ast.node {
             Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -207,7 +206,7 @@ mod test {
     #[test]
     fn parse_class_alias() {
         let source = String::from("class MyErr1: Exception(\"Something went wrong\")");
-        let ast = parse(&source).unwrap();
+        let ast = source.parse::<AST>().unwrap();
 
         let (ty, args, parents, body) = match ast.node {
             Node::Block { statements: modules, .. } => match &modules.first().expect("script empty.").node {
@@ -251,37 +250,37 @@ mod test {
     #[test]
     fn parse_class() -> ParseResult<()> {
         let source = resource_content(true, &["class"], "types.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn parse_imports_class() -> ParseResult<()> {
         let source = resource_content(true, &["class"], "import.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn single_line_class() {
         let source = String::from("class MyClass");
-        parse(&source).unwrap();
+        source.parse::<AST>().unwrap();
     }
 
     #[test]
     fn two_classes_no_newline_after() {
         let source = String::from("class MyClass\nclass MyClass1");
-        parse(&source).unwrap();
+        source.parse::<AST>().unwrap();
     }
 
     #[test]
     fn two_classes_newline_after() {
         let source = String::from("class MyClass\nclass MyClass1\n");
-        parse(&source).unwrap();
+        source.parse::<AST>().unwrap();
     }
 
     #[test]
     fn class_with_single_line_body_no_newline() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10";
-        parse(&source)
+        source.parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
@@ -289,7 +288,7 @@ mod test {
     #[test]
     fn class_with_single_line_body_newline() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10\n";
-        parse(&source)
+        source.parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
@@ -297,7 +296,7 @@ mod test {
     #[test]
     fn class_with_body_class_right_after() -> Result<(), ParseErr> {
         let source = "class MyClass\n    def var := 10\nclass MyClass1\n";
-        parse(&source)
+        source.parse::<AST>()
             .map_err(|e| e.with_source(&Some(String::from(source)), &None))
             .map(|_| ())
     }
@@ -305,6 +304,6 @@ mod test {
     #[test]
     fn top_lvl_class_access() {
         let source = resource_content(false, &["syntax"], "top_lvl_class_access.mamba");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 }
