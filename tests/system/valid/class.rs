@@ -16,6 +16,17 @@ fn assign_types_nested() -> OutTestRet {
 }
 
 #[test]
+fn assign_with_generic() -> OutTestRet {
+    loggerv::Logger::new().module_path(false).verbosity(3).init().unwrap();
+    test_directory(true, &["class"], &["class", "target"], "assign_with_generic")
+}
+
+#[test]
+fn assign_with_generic_two_generics() -> OutTestRet {
+    test_directory(true, &["class"], &["class", "target"], "assign_with_generic_two_generics")
+}
+
+#[test]
 fn class_super_one_line_init() -> OutTestRet {
     test_directory(true, &["class"], &["class", "target"], "class_super_one_line_init")
 }

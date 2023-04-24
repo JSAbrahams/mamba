@@ -1,0 +1,4 @@
+class MyClass[T, T2]
+    def f(x: T) -> T2 => "{x} is something"
+
+def x := MyClass[Int, String]()

@@ -86,7 +86,9 @@ impl Display for Node {
             Node::Tuple { elements } => {
                 format!("({})", comma_delm(elements.iter().map(|e| e.node.clone())))
             }
-            Node::Index { item, range } => format!("{}[{}]", item.node, range.node),
+            Node::Index { item, range } => {
+                format!("{}[{}]", item.node, comma_delm(range.iter().map(|a| a.node.clone())))
+            }
             Node::Range { .. } => String::from("range"),
             Node::Slice { .. } => String::from("slice"),
             Node::Block { .. } => String::from("Code block"),

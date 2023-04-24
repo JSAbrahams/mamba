@@ -320,7 +320,11 @@ impl From<(&Node, &Finished)> for NodeTy {
             },
             Node::Index { item, range } => NodeTy::Index {
                 item: Box::from(ASTTy::from((item, finished))),
-                range: Box::from(ASTTy::from((range, finished))),
+                range: if let Some(range) = range.first() {
+                    Box::from(ASTTy::from((range, finished)))
+                } else {
+                    Box::from(ASTTy { pos: item.pos, node: NodeTy::Empty, ty: None })
+                },
             },
             Node::Real { lit } => NodeTy::Real { lit: lit.clone() },
             Node::Int { lit } => NodeTy::Int { lit: lit.clone() },

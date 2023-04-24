@@ -95,8 +95,12 @@ pub fn gen_call(
         Node::PropertyCall { instance, property } => {
             property_call(&mut vec![instance.deref().clone()], property, env, ctx, constr)
         }
-        Node::Index { item, range } => {
+        Node::Index { item, range } => if range.len() > 1 {
+            return Err(vec![TypeErr::new(ast.pos, "Range cannot have multiple elements")]);
+        } else if let Some(range) = range.first() {
             gen_magic(GET_ITEM, ast, item, range, env, ctx, constr)
+        } else {
+            return Err(vec![TypeErr::new(ast.pos, "Range must have one elements")]);
         }
 
         _ => Err(vec![TypeErr::new(ast.pos, "Was expecting call")]),

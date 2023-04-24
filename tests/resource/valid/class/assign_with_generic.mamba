@@ -1,0 +1,4 @@
+class MyClass[T]
+    def f(x: T) -> T => x
+
+def x := MyClass[Int]()
