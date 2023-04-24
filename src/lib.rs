@@ -6,7 +6,6 @@ extern crate loggerv;
 
 use std::convert::TryFrom;
 use std::fs::create_dir;
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 use crate::check::ast::ASTTy;
@@ -16,7 +15,6 @@ use crate::check::result::TypeErr;
 use crate::common::result::WithSource;
 use crate::generate::{gen_arguments, GenArguments};
 use crate::parse::ast::AST;
-use crate::parse::parse;
 
 pub mod common;
 
@@ -145,9 +143,8 @@ pub fn mamba_to_python(
     let (asts, parse_errs): (Vec<_>, Vec<_>) = source
         .iter()
         .map(|(src, path)| {
-            parse(src)
+            src.parse::<AST>()
                 .map_err(|err| err.with_source(&Some(src.clone()), &path.clone()))
-                .map(|ok| ok.deref().clone())
         })
         .partition(Result::is_ok);
 

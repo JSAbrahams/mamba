@@ -54,9 +54,9 @@ pub fn parse_handle(expr_or_stmt: AST, it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::Node;
+    use crate::parse::ast::{AST, Node};
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -188,7 +188,7 @@ mod test {
     #[test]
     fn import_verify() {
         let source = String::from("import c");
-        let ast = parse(&source).unwrap();
+        let ast = source.parse::<AST>().unwrap();
 
         let imports = match ast.node {
             Node::Block { statements: modules, .. } => modules,
@@ -209,7 +209,7 @@ mod test {
     #[test]
     fn import_as_verify() {
         let source = String::from("import a, b as c, d");
-        let ast = parse(&source).unwrap();
+        let ast = source.parse::<AST>().unwrap();
 
         let imports = match ast.node {
             Node::Block { statements: modules, .. } => modules,
@@ -234,61 +234,61 @@ mod test {
     #[test]
     fn range_missing_from() {
         let source = String::from(".. b");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn range_inc_missing_from() {
         let source = String::from("..= b");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn range_missing_to() {
         let source = String::from("a ..");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn range_incl_missing_to() {
         let source = String::from("a ..=");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn reassign_missing_value() {
         let source = String::from("a :=");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn quest_or_missing_alternative() {
         let source = String::from("a ?or");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn quest_or_on_nothing() {
         let source = String::from("?or");
-        parse(&source).unwrap_err();
+        source.parse::<AST>().unwrap_err();
     }
 
 
     #[test]
     fn handle_verify() -> ParseResult<()> {
         let source = resource_content(true, &["error"], "handle.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn raises_verify() -> ParseResult<()> {
         let source = resource_content(true, &["error"], "raise.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn with_verify() -> ParseResult<()> {
         let source = resource_content(true, &["error"], "with.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 }

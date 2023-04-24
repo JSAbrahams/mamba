@@ -84,7 +84,7 @@ mod tests {
     use crate::check::name::string_name::StringName;
     use crate::check::result::TypeResult;
     use crate::common::position::Position;
-    use crate::parse::parse;
+    use crate::parse::ast::AST;
 
     #[test]
     pub fn lookup_custom_list_type() -> TypeResult<()> {
@@ -192,46 +192,46 @@ mod tests {
 
     #[test]
     pub fn test_import_parse() {
-        let file = parse("import IPv4Address").unwrap();
-        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+        let file = "import IPv4Address".parse::<AST>().unwrap();
+        let context = Context::try_from(vec![file].as_slice()).unwrap();
 
         context.class(&StringName::from("IPv4Address"), Position::invisible()).unwrap();
     }
 
     #[test]
     pub fn test_import_as_parse() {
-        let file = parse("import IPv4Address as Other").unwrap();
-        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+        let file = "import IPv4Address as Other".parse::<AST>().unwrap();
+        let context = Context::try_from(vec![file].as_slice()).unwrap();
 
         context.class(&StringName::from("Other"), Position::invisible()).unwrap();
     }
 
     #[test]
     pub fn test_import_as_too_many_parse() {
-        let file = parse("import IPv4Address as Other, Other2").unwrap();
-        Context::try_from(vec![*file.clone()].as_slice()).unwrap_err();
+        let file = "import IPv4Address as Other, Other2".parse::<AST>().unwrap();
+        Context::try_from(vec![file].as_slice()).unwrap_err();
     }
 
     #[test]
     pub fn test_from_import_parse() {
-        let file = parse("from ipaddress import IPv4Address").unwrap();
-        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+        let file = "from ipaddress import IPv4Address".parse::<AST>().unwrap();
+        let context = Context::try_from(vec![file].as_slice()).unwrap();
 
         context.class(&StringName::from("IPv4Address"), Position::invisible()).unwrap();
     }
 
     #[test]
     pub fn test_from_import_as_parse() {
-        let file = parse("from ipaddress import IPv4Address as Other").unwrap();
-        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+        let file = "from ipaddress import IPv4Address as Other".parse::<AST>().unwrap();
+        let context = Context::try_from(vec![file].as_slice()).unwrap();
 
         context.class(&StringName::from("Other"), Position::invisible()).unwrap();
     }
 
     #[test]
     pub fn tuple_argument() {
-        let file = parse("def f(b: (Int, Int))").unwrap();
-        let context = Context::try_from(vec![*file.clone()].as_slice()).unwrap();
+        let file = "def f(b: (Int, Int))".parse::<AST>().unwrap();
+        let context = Context::try_from(vec![file].as_slice()).unwrap();
 
         let f = context.function(&StringName::from("f"), Position::invisible()).expect("function exists");
         let arg = f.arguments.first().expect("first argument").clone();

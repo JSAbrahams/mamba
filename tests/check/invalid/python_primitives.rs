@@ -4,14 +4,14 @@ use mamba::check::check_all;
 use mamba::check::context::{Context, LookupClass};
 use mamba::check::name::string_name::StringName;
 use mamba::common::position::Position;
-use mamba::parse::parse;
+use mamba::parse::ast::AST;
 
 use crate::common::resource_content;
 
 #[test]
 fn float_and() {
     let source = resource_content(false, &["type", "control_flow"], "float_and.mamba");
-    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+    check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
 }
 
 #[test]
