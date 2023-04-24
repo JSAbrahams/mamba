@@ -91,8 +91,8 @@ fn parse_expression_maybe_type(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
     use crate::parse::ast::{AST, Node};
+    use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -213,6 +213,6 @@ mod test {
     #[test]
     fn match_stmt() {
         let source = resource_content(true, &["control_flow"], "match_stmt.mamba");
-        parse(&source).unwrap();
+        source.parse::<AST>().unwrap();
     }
 }

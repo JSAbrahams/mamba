@@ -59,13 +59,13 @@ mod tests {
     use crate::check::ast::NodeTy;
     use crate::check::check_all;
     use crate::check::name::{Name, Union};
-    use crate::parse::parse;
+    use crate::parse::ast::AST;
 
     #[test]
     fn if_stmt_no_type() {
         let src = "if True then 10 else 20";
-        let ast = parse(src).unwrap();
-        let result = check_all(&[*ast]).unwrap();
+        let ast = src.parse::<AST>().unwrap();
+        let result = check_all(&[ast]).unwrap();
 
         assert_eq!(result.len(), 1);
 
@@ -76,8 +76,8 @@ mod tests {
     #[test]
     fn it_stmt_as_expression() {
         let src = "def a := if True then 10 else 20";
-        let ast = parse(src).unwrap();
-        let result = check_all(&[*ast]).unwrap();
+        let ast = src.parse::<AST>().unwrap();
+        let result = check_all(&[ast]).unwrap();
 
         let NodeTy::Block { statements } = &result[0].node else {
             panic!()
@@ -94,8 +94,8 @@ mod tests {
     #[ignore] // not sure if the check stage should pass as of yet
     fn it_stmt_as_expression_int_and_str() {
         let src = "def a := if True then 10 else \"asdf\"";
-        let ast = parse(src).unwrap();
-        let result = check_all(&[*ast]).unwrap();
+        let ast = src.parse::<AST>().unwrap();
+        let result = check_all(&[ast]).unwrap();
 
         let NodeTy::Block { statements } = &result[0].node else {
             panic!()
