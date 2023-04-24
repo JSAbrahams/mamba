@@ -58,8 +58,8 @@ fn parse_for(it: &mut LexIterator) -> ParseResult {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::Node;
+    use crate::parse::ast::{AST, Node};
+    use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -200,21 +200,25 @@ mod test {
 
     #[test]
     fn while_statements() -> ParseResult<()> {
-        parse(&resource_content(true, &["control_flow"], "while.mamba")).map(|_| ())
+        let src = resource_content(true, &["control_flow"], "while.mamba");
+        src.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn assigns_and_while() {
-        parse(&resource_content(false, &["syntax"], "assign_and_while.mamba")).unwrap_err();
+        let src = resource_content(false, &["syntax"], "assign_and_while.mamba");
+        src.parse::<AST>().unwrap_err();
     }
 
     #[test]
     fn for_statements() {
-        parse(&resource_content(true, &["control_flow"], "for_statements.mamba")).unwrap();
+        let src = resource_content(true, &["control_flow"], "for_statements.mamba");
+        src.parse::<AST>().unwrap();
     }
 
     #[test]
     fn if_stmt() {
-        parse(&resource_content(true, &["control_flow"], "if.mamba")).unwrap();
+        let src = resource_content(true, &["control_flow"], "if.mamba");
+        src.parse::<AST>().unwrap();
     }
 }

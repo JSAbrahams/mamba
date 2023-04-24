@@ -23,12 +23,12 @@ mod tests {
     use crate::check::context::Context;
     use crate::check::name::{Name, Nullable};
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::parse;
+    use crate::parse::ast::AST;
 
     #[test]
     fn if_stmt_no_type() {
         let src = "if True then 10 else 20";
-        let ast = parse(src).unwrap();
+        let ast = src.parse().unwrap();
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
 
         let pos_bool = Position::new(CaretPos::new(1, 4), CaretPos::new(1, 8));
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn it_stmt_as_expression() {
         let src = "def a := if True then 10 else 20";
-        let ast = parse(src).unwrap();
+        let ast = src.parse().unwrap();
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
 
         let pos_20 = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 33));
@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn it_stmt_as_expression_none() {
         let src = "def a := if True then 10 else None";
-        let ast = parse(src).unwrap();
+        let ast = src.parse::<AST>().unwrap();
         let finished = constraints(&ast, &Context::default().into_with_primitives().unwrap()).unwrap().pos_to_name;
 
         let pos_none = Position::new(CaretPos::new(1, 31), CaretPos::new(1, 35));

@@ -141,8 +141,8 @@ pub fn parse_expressions(it: &mut LexIterator) -> ParseResult<Vec<AST>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::{parse, parse_direct};
-    use crate::parse::ast::Node;
+    use crate::parse::ast::{AST, Node};
+    use crate::parse::parse_direct;
     use crate::parse::result::ParseResult;
     use crate::test_util::resource_content;
 
@@ -241,24 +241,24 @@ mod test {
     #[test]
     fn list_expression() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "list.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn dictionary() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "dictionary.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn parse_set() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "set.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 
     #[test]
     fn parse_tuple() -> ParseResult<()> {
         let source = resource_content(true, &["collection"], "tuple.mamba");
-        parse(&source).map(|_| ())
+        source.parse::<AST>().map(|_| ())
     }
 }
