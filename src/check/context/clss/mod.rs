@@ -161,6 +161,15 @@ impl LookupClass<&StringName, Class> for Context {
     /// Substitutes all generics in the class when found.
     /// Also constructs class complete with all fields and functions from parents.
     fn class(&self, class: &StringName, pos: Position) -> TypeResult<Class> {
+        for generic in &class.generics {
+            // check generic exists
+            for string_name in generic.names.iter().map(|true_name| &true_name.variant) {
+                if string_name.generics.is_empty() {
+                    self.class(&Name::from(string_name), pos)?;
+                }
+            }
+        }
+
         if let Some(generic_class) = self.classes.iter().find(|c| c.name.name == class.name) {
             let mut generics = HashMap::new();
             if class.name == TUPLE {

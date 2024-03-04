@@ -127,6 +127,18 @@ fn top_level_class_not_assigned_to() {
 }
 
 #[test]
+fn undefined_parent() {
+    let source = resource_content(false, &["type", "class"], "undefined_parent.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
+fn undefined_parent_in_tuple() {
+    let source = resource_content(false, &["type", "class"], "undefined_parent_in_tuple.mamba");
+    check_all(&[*parse(&source).unwrap()]).unwrap_err();
+}
+
+#[test]
 fn wrong_generic_type() {
     let source = resource_content(false, &["type", "class"], "wrong_generic_type.mamba");
     check_all(&[source.parse::<AST>().unwrap()]).unwrap_err();
