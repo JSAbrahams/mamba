@@ -132,8 +132,7 @@ impl Substitute for TrueName {
 
 impl From<&Vec<TrueName>> for Name {
     fn from(names: &Vec<TrueName>) -> Self {
-        let names: HashSet<TrueName> = HashSet::from_iter(names.iter().cloned());
-        Name { names, is_interchangeable: false }
+        Name { names: HashSet::from_iter(names.iter().cloned()) }
     }
 }
 

@@ -49,7 +49,7 @@ pub fn sub(constraints: &mut Constraints, new: &Expected, old: &Expected,
         }
 
         constr.is_sub = constr.is_sub || sub_l || sub_r;
-        constraints.push_constr(&constr);
+        constraints.push_back(&constr);
     }
 
     Ok(())

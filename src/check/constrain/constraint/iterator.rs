@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use crate::check::constrain::constraint::Constraint;
-use crate::check::constrain::constraint::expected::Expected;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
 
@@ -27,13 +26,12 @@ impl Constraints {
     /// Push constraint at front so that it will be analysed next.
     ///
     /// Only used during unification stage.
-    pub fn push(&mut self, msg: &str, left: &Expected, right: &Expected) {
-        let constraint = Constraint::new(msg, left, right);
-        trace!("{:width$}[gen {}] {}", "", msg, constraint, width = 17);
-        self.constraints.push_front(constraint)
+    pub fn push_front(&mut self, constr: &Constraint) {
+        trace!("{:width$}[gen {}] {}", "", constr.msg, constr, width = 17);
+        self.constraints.push_front(constr.clone())
     }
 
-    pub fn push_constr(&mut self, constr: &Constraint) {
+    pub fn push_back(&mut self, constr: &Constraint) {
         self.constraints.push_back(constr.clone())
     }
 

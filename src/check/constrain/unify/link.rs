@@ -27,10 +27,14 @@ pub fn unify_link(constraints: &mut Constraints, finished: &mut Finished, ctx: &
         trace!("{:width$}[{}{}]  {}", pos, unify, msg, constraint, width = 27);
 
         if let Type { name } = &left.expect {
-            if !name.contains_temp() { finished.push_ty(ctx, right.pos, right, name)?; }
+            if !name.contains_temp() {
+                finished.push_ty(ctx, right.pos, right, name, constraint.propagate)?;
+            }
         }
         if let Type { name } = &right.expect {
-            if !name.contains_temp() { finished.push_ty(ctx, left.pos, left, name)?; }
+            if !name.contains_temp() {
+                finished.push_ty(ctx, left.pos, left, name, constraint.propagate)?;
+            }
         }
 
         match (&left.expect, &right.expect) {

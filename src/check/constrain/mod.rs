@@ -33,7 +33,7 @@ mod tests {
 
         let pos_bool = Position::new(CaretPos::new(1, 4), CaretPos::new(1, 8));
         // is interchangeable since call to __bool__() in Bool
-        assert_eq!(finished[&pos_bool], Name::from("Bool").is_interchangeable(true));
+        assert_eq!(finished[&pos_bool], Name::from("Bool"));
 
         let pos_10 = Position::new(CaretPos::new(1, 14), CaretPos::new(1, 16));
         assert_eq!(finished[&pos_10], Name::from("Int"));
@@ -55,7 +55,7 @@ mod tests {
         assert_eq!(finished[&pos_10], Name::from("Int"));
         let pos_bool = Position::new(CaretPos::new(1, 13), CaretPos::new(1, 17));
         // is interchangeable since call to __bool__() in Bool
-        assert_eq!(finished[&pos_bool], Name::from("Bool").is_interchangeable(true));
+        assert_eq!(finished[&pos_bool], Name::from("Bool"));
 
         let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 33));
         assert_eq!(finished[&pos_if], Name::from("Int"));
@@ -78,7 +78,7 @@ mod tests {
         assert_eq!(finished[&pos_10], Name::from("Int"));
         let pos_bool = Position::new(CaretPos::new(1, 13), CaretPos::new(1, 17));
         // is interchangeable since call to __bool__() in Bool
-        assert_eq!(finished[&pos_bool], Name::from("Bool").is_interchangeable(true));
+        assert_eq!(finished[&pos_bool], Name::from("Bool"));
 
         let pos_if = Position::new(CaretPos::new(1, 10), CaretPos::new(1, 35));
         assert_eq!(finished[&pos_if], Name::from("Int").as_nullable());

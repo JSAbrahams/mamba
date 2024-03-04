@@ -51,13 +51,13 @@ pub fn gen_flow(
             constr.branch_point();
             let then_env = generate(then, env, ctx, constr)?;
             if env.is_expr {
-                constr.add("then branch equal to if", &if_expr_exp, &Expected::from(then), env);
+                constr.add("then branch equal to if", &Expected::from(then), &if_expr_exp, env);
             }
 
             constr.branch("if else branch", el.pos);
             let else_env = generate(el, env, ctx, constr)?;
             if env.is_expr {
-                constr.add("else branch equal to if", &if_expr_exp, &Expected::from(el), env);
+                constr.add("else branch equal to if", &Expected::from(el), &if_expr_exp, env);
             }
 
             constr.reset_branches();
