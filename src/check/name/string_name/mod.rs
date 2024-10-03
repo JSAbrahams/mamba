@@ -6,11 +6,13 @@ use std::iter::FromIterator;
 use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
 
-use crate::check::context::{Context, function, LookupClass};
-use crate::check::context::clss::{CALLABLE, GetFun, HasParent, TUPLE, UNION};
-use crate::check::name::{ColType, ContainsTemp, Empty, IsSuperSet, NameMap, Substitute, TEMP, TupleCallable, Union};
-use crate::check::name::Name;
+use crate::check::context::clss::{GetFun, HasParent, CALLABLE, TUPLE, UNION};
+use crate::check::context::{function, Context, LookupClass};
 use crate::check::name::true_name::{IsTemp, MatchTempName, TrueName};
+use crate::check::name::Name;
+use crate::check::name::{
+    ColType, ContainsTemp, Empty, IsSuperSet, NameMap, Substitute, TupleCallable, Union, TEMP,
+};
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::delimit::comma_delm;
 use crate::common::position::Position;
@@ -26,11 +28,16 @@ pub struct StringName {
 
 impl Display for StringName {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "{}{}", self.name, if self.generics.is_empty() {
-            String::new()
-        } else {
-            format!("[{}]", comma_delm(&self.generics))
-        })
+        write!(
+            f,
+            "{}{}",
+            self.name,
+            if self.generics.is_empty() {
+                String::new()
+            } else {
+                format!("[{}]", comma_delm(&self.generics))
+            }
+        )
     }
 }
 
@@ -45,7 +52,8 @@ impl ColType for StringName {
                 if let Ok(iter_class) = ctx.class(&iter_name, pos) {
                     let next_name = StringName::from(function::python::NEXT);
 
-                    let ret_name = iter_class.iter()
+                    let ret_name = iter_class
+                        .iter()
                         .map(|c| c.fun(&next_name, pos))
                         .map(|f| f.map(|f| f.ret_ty))
                         .collect::<TypeResult<Vec<Name>>>()?
@@ -54,7 +62,8 @@ impl ColType for StringName {
 
                     Ok(Some(ret_name))
                 } else {
-                    let msg = format!("Cannot find iterator '{iter_name}' for iterable type '{self}'");
+                    let msg =
+                        format!("Cannot find iterator '{iter_name}' for iterable type '{self}'");
                     Err(vec![TypeErr::new(pos, &msg)])
                 }
             } else {
@@ -75,7 +84,10 @@ impl From<&TrueName> for StringName {
 
 impl From<&str> for StringName {
     fn from(name: &str) -> Self {
-        StringName { name: String::from(name), generics: vec![] }
+        StringName {
+            name: String::from(name),
+            generics: vec![],
+        }
     }
 }
 
@@ -87,7 +99,10 @@ impl IsSuperSet<StringName> for StringName {
 
 impl From<&StringName> for Name {
     fn from(name: &StringName) -> Self {
-        Name { names: HashSet::from_iter(vec![TrueName::from(name)]), is_interchangeable: false }
+        Name {
+            names: HashSet::from_iter(vec![TrueName::from(name)]),
+            is_interchangeable: false,
+        }
     }
 }
 
@@ -95,7 +110,10 @@ impl Union<StringName> for Name {
     fn union(&self, name: &StringName) -> Self {
         let mut names = self.names.clone();
         names.insert(TrueName::from(name));
-        Name { names, ..self.clone() }
+        Name {
+            names,
+            ..self.clone()
+        }
     }
 }
 
@@ -183,10 +201,16 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
                     panic!("Malformed callable args: {}", self);
                 }
             } else {
-                Err(vec![TypeErr::new(pos, &format!("{self} is not a malformed callable"))])
+                Err(vec![TypeErr::new(
+                    pos,
+                    &format!("{self} is not a malformed callable"),
+                )])
             }
         } else {
-            Err(vec![TypeErr::new(pos, &format!("{self} is not a callable"))])
+            Err(vec![TypeErr::new(
+                pos,
+                &format!("{self} is not a callable"),
+            )])
         }
     }
 
@@ -195,20 +219,34 @@ impl TupleCallable<bool, Vec<Name>, Name> for StringName {
             if self.generics.len() == 2 {
                 Ok(self.generics.get(1).expect("Unreachable").clone())
             } else {
-                Err(vec![TypeErr::new(pos, &format!("{self} is not a malformed callable"))])
+                Err(vec![TypeErr::new(
+                    pos,
+                    &format!("{self} is not a malformed callable"),
+                )])
             }
         } else {
-            Err(vec![TypeErr::new(pos, &format!("{self} is not a callable"))])
+            Err(vec![TypeErr::new(
+                pos,
+                &format!("{self} is not a callable"),
+            )])
         }
     }
 }
 
 impl MatchTempName for StringName {
-    fn temp_map(&self, other: &StringName, mut mapping: NameMap, pos: Position) -> TypeResult<NameMap> {
+    fn temp_map(
+        &self,
+        other: &StringName,
+        mut mapping: NameMap,
+        pos: Position,
+    ) -> TypeResult<NameMap> {
         if self.name.starts_with(TEMP) {
             mapping.insert(Name::from(self.name.as_str()), Name::from(other));
         } else if self.name != other.name {
-            return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+            return Err(vec![TypeErr::new(
+                pos,
+                &format!("Cannot unify {self} and {other}"),
+            )]);
         }
 
         for either in self.generics.iter().zip_longest(&other.generics) {
@@ -217,7 +255,10 @@ impl MatchTempName for StringName {
                     mapping = self_generic.temp_map_with_mapping(other_generic, mapping, pos)?;
                 }
                 _ => {
-                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                    return Err(vec![TypeErr::new(
+                        pos,
+                        &format!("Cannot unify {self} and {other}"),
+                    )]);
                 }
             }
         }
@@ -228,14 +269,22 @@ impl MatchTempName for StringName {
 
 impl StringName {
     pub fn new(lit: &str, generics: &[Name]) -> StringName {
-        StringName { name: String::from(lit), generics: Vec::from(generics) }
+        StringName {
+            name: String::from(lit),
+            generics: Vec::from(generics),
+        }
     }
 
     pub fn trim(&self, ty: &str) -> Option<Self> {
         if self.name == ty {
             None
         } else {
-            let generics: Vec<Name> = self.generics.iter().map(|n| n.trim(ty)).filter(|n| !n.is_empty()).collect();
+            let generics: Vec<Name> = self
+                .generics
+                .iter()
+                .map(|n| n.trim(ty))
+                .filter(|n| !n.is_empty())
+                .collect();
             Some(StringName::new(&self.name, generics.as_slice()))
         }
     }
@@ -246,15 +295,26 @@ impl StringName {
         Ok(mapping)
     }
 
-    pub(crate) fn match_name_helper(&self, other: &StringName, mapping: &mut NameMap, pos: Position) -> TypeResult<()> {
-        mapping.insert(Name::from(self.name.as_str()), Name::from(other.name.as_str()));
+    pub(crate) fn match_name_helper(
+        &self,
+        other: &StringName,
+        mapping: &mut NameMap,
+        pos: Position,
+    ) -> TypeResult<()> {
+        mapping.insert(
+            Name::from(self.name.as_str()),
+            Name::from(other.name.as_str()),
+        );
         for either in self.generics.iter().zip_longest(&other.generics) {
             match either {
                 Both(self_generic, other_generic) => {
                     self_generic.match_name_helper(other_generic, mapping, pos)?;
                 }
                 _ => {
-                    return Err(vec![TypeErr::new(pos, &format!("Cannot unify {self} and {other}"))]);
+                    return Err(vec![TypeErr::new(
+                        pos,
+                        &format!("Cannot unify {self} and {other}"),
+                    )]);
                 }
             }
         }
@@ -264,10 +324,10 @@ impl StringName {
 
 #[cfg(test)]
 mod test {
-    use crate::check::context::clss::{ANY, BOOL, HasParent, INT, STRING};
+    use crate::check::context::clss::{HasParent, ANY, BOOL, INT, STRING};
     use crate::check::context::LookupClass;
-    use crate::check::name::IsSuperSet;
     use crate::check::name::string_name::StringName;
+    use crate::check::name::IsSuperSet;
     use crate::common::position::Position;
     use crate::Context;
 
@@ -275,14 +335,18 @@ mod test {
     fn any_super_of_int() {
         let (name_1, name_2) = (StringName::from(ANY), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
     fn bool_not_super_of_int() {
         let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(!name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
@@ -290,8 +354,12 @@ mod test {
         let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let bool_class = ctx.class(&name_1, Position::invisible()).expect("bool class");
-        assert!(!bool_class.has_parent(&name_2, &ctx, Position::invisible()).unwrap())
+        let bool_class = ctx
+            .class(&name_1, Position::invisible())
+            .expect("bool class");
+        assert!(!bool_class
+            .has_parent(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
@@ -299,8 +367,12 @@ mod test {
         let (name_1, name_2) = (StringName::from(BOOL), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let int_class = ctx.class(&name_2, Position::invisible()).expect("int class");
-        assert!(!int_class.has_parent(&name_1, &ctx, Position::invisible()).unwrap())
+        let int_class = ctx
+            .class(&name_2, Position::invisible())
+            .expect("int class");
+        assert!(!int_class
+            .has_parent(&name_1, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
@@ -308,14 +380,20 @@ mod test {
         let (name_1, name_2) = (StringName::from(STRING), StringName::from(STRING));
         let ctx = Context::default().into_with_primitives().unwrap();
 
-        let string_class = ctx.class(&name_2, Position::invisible()).expect("int class");
-        assert!(string_class.has_parent(&name_1, &ctx, Position::invisible()).unwrap())
+        let string_class = ctx
+            .class(&name_2, Position::invisible())
+            .expect("int class");
+        assert!(string_class
+            .has_parent(&name_1, &ctx, Position::invisible())
+            .unwrap())
     }
 
     #[test]
     fn string_not_super_of_int() {
         let (name_1, name_2) = (StringName::from(STRING), StringName::from(INT));
         let ctx = Context::default().into_with_primitives().unwrap();
-        assert!(!name_1.is_superset_of(&name_2, &ctx, Position::invisible()).unwrap())
+        assert!(!name_1
+            .is_superset_of(&name_2, &ctx, Position::invisible())
+            .unwrap())
     }
 }

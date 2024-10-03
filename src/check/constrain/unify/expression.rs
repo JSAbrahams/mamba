@@ -14,10 +14,23 @@ pub type SubRes<T = Expected> = (bool, T);
 ///
 /// If identifier override detected, only substitute right hand side of
 /// unification before ceasing substitution.
-pub fn sub(constraints: &mut Constraints, new: &Expected, old: &Expected,
-           offset: usize, total: usize) -> Unified<()> {
+pub fn sub(
+    constraints: &mut Constraints,
+    new: &Expected,
+    old: &Expected,
+    offset: usize,
+    total: usize,
+) -> Unified<()> {
     let mut constraint_pos = offset;
-    trace!("{:width$} [subbing {}\\{}]  {}  <=  {}", "", offset, total, old, new, width = 30);
+    trace!(
+        "{:width$} [subbing {}\\{}]  {}  <=  {}",
+        "",
+        offset,
+        total,
+        old,
+        new,
+        width = 30
+    );
 
     for _ in 0..constraints.len() {
         let mut constr = constraints.pop_constr().expect("Cannot be empty");
@@ -65,12 +78,18 @@ fn sub_recursive(side: &str, inspected: &Expected, old: &Expected, new: &Expecte
             let (subs_e, entity) = sub_recursive(side, entity, old, new);
             let (sub_n, name) = sub_recursive(side, name, old, new);
 
-            let expect = Expect::Access { entity: Box::from(entity), name: Box::from(name) };
+            let expect = Expect::Access {
+                entity: Box::from(entity),
+                name: Box::from(name),
+            };
             (subs_e || sub_n, Expected::new(inspected.pos, &expect))
         }
         Expect::Function { name, args } => {
             let (any_substituted, args) = sub_vec(side, old, new, args);
-            let func = Expect::Function { name: name.clone(), args };
+            let func = Expect::Function {
+                name: name.clone(),
+                args,
+            };
             (any_substituted, Expected::new(inspected.pos, &func))
         }
         _ => (false, inspected.clone()),
@@ -78,10 +97,16 @@ fn sub_recursive(side: &str, inspected: &Expected, old: &Expected, new: &Expecte
 }
 
 /// Substitute all in vector, and also returns True if any substituted.
-fn sub_vec(side: &str, old: &Expected, new: &Expected, elements: &[Expected]) -> SubRes<Vec<Expected>> {
-    let elements = elements
-        .iter()
-        .map(|e| sub_recursive(side, e, old, new));
+fn sub_vec(
+    side: &str,
+    old: &Expected,
+    new: &Expected,
+    elements: &[Expected],
+) -> SubRes<Vec<Expected>> {
+    let elements = elements.iter().map(|e| sub_recursive(side, e, old, new));
 
-    (elements.clone().any(|(i, _)| i), elements.map(|(_, i)| i).collect())
+    (
+        elements.clone().any(|(i, _)| i),
+        elements.map(|(_, i)| i).collect(),
+    )
 }

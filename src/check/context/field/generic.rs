@@ -5,11 +5,11 @@ use std::ops::Deref;
 
 use crate::check::ident::Identifier;
 use crate::check::name::match_name;
-use crate::check::name::Name;
 use crate::check::name::string_name::StringName;
+use crate::check::name::Name;
 use crate::check::result::{TypeErr, TypeResult};
 use crate::common::position::Position;
-use crate::parse::ast::{AST, Node};
+use crate::parse::ast::{Node, AST};
 
 #[derive(Debug, Clone, Eq)]
 pub struct GenericField {
@@ -43,7 +43,13 @@ impl TryFrom<&AST> for GenericField {
 
     fn try_from(ast: &AST) -> TypeResult<GenericField> {
         match &ast.node {
-            Node::VariableDef { var, mutable, ty, expr, .. } => Ok(GenericField {
+            Node::VariableDef {
+                var,
+                mutable,
+                ty,
+                expr,
+                ..
+            } => Ok(GenericField {
                 is_py_type: false,
                 name: field_name(var.deref())?,
                 mutable: *mutable,
@@ -66,7 +72,13 @@ impl TryFrom<&AST> for GenericFields {
     fn try_from(ast: &AST) -> TypeResult<GenericFields> {
         Ok(GenericFields {
             fields: match &ast.node {
-                Node::VariableDef { var, ty, mutable, expr, .. } => {
+                Node::VariableDef {
+                    var,
+                    ty,
+                    mutable,
+                    expr,
+                    ..
+                } => {
                     let identifier = Identifier::try_from(var.deref())?;
                     match &ty {
                         Some(ty) => {
@@ -113,14 +125,23 @@ impl GenericField {
         pos: Position,
     ) -> TypeResult<GenericField> {
         if class.is_some() {
-            Ok(GenericField { in_class: class.cloned(), ..self })
+            Ok(GenericField {
+                in_class: class.cloned(),
+                ..self
+            })
         } else {
-            Err(vec![TypeErr::new(pos, &String::from("Field must be in class"))])
+            Err(vec![TypeErr::new(
+                pos,
+                &String::from("Field must be in class"),
+            )])
         }
     }
 
     pub fn with_ty(&self, name: &Name) -> Self {
-        GenericField { ty: Some(name.clone()), ..self.clone() }
+        GenericField {
+            ty: Some(name.clone()),
+            ..self.clone()
+        }
     }
 }
 

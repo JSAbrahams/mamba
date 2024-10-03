@@ -17,26 +17,42 @@ pub struct FunUnion {
 
 impl PartialEq for FunUnion {
     fn eq(&self, other: &Self) -> bool {
-        self.union.clone().iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<&Function>>()
-            == other.union.clone().iter().sorted_by_key(|f| f.name.clone()).collect::<Vec<&Function>>()
+        self.union
+            .clone()
+            .iter()
+            .sorted_by_key(|f| f.name.clone())
+            .collect::<Vec<&Function>>()
+            == other
+                .union
+                .clone()
+                .iter()
+                .sorted_by_key(|f| f.name.clone())
+                .collect::<Vec<&Function>>()
     }
 }
 
 impl Hash for FunUnion {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.union.iter().sorted_by_key(|f| &f.name).for_each(|f| f.hash(state))
+        self.union
+            .iter()
+            .sorted_by_key(|f| &f.name)
+            .for_each(|f| f.hash(state))
     }
 }
 
 impl From<&HashSet<Function>> for FunUnion {
     fn from(fun_set: &HashSet<Function>) -> Self {
-        FunUnion { union: fun_set.clone() }
+        FunUnion {
+            union: fun_set.clone(),
+        }
     }
 }
 
 impl From<&HashSet<FunUnion>> for FunUnion {
     fn from(fun_set: &HashSet<FunUnion>) -> Self {
-        FunUnion { union: fun_set.iter().flat_map(|f| f.union.clone()).collect() }
+        FunUnion {
+            union: fun_set.iter().flat_map(|f| f.union.clone()).collect(),
+        }
     }
 }
 

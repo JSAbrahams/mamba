@@ -14,8 +14,8 @@ use crate::check::constrain::generate::statement::gen_stmt;
 use crate::check::constrain::generate::ty::gen_ty;
 use crate::check::context::Context;
 use crate::check::result::TypeErr;
-use crate::parse::ast::AST;
 use crate::parse::ast::Node::*;
+use crate::parse::ast::AST;
 
 mod call;
 mod class;
@@ -67,7 +67,9 @@ pub fn generate(
 
         With { .. } => gen_resources(ast, env, ctx, constr),
 
-        SetBuilder { .. } | ListBuilder { .. } | DictBuilder { .. } => gen_coll(ast, env, ctx, constr),
+        SetBuilder { .. } | ListBuilder { .. } | DictBuilder { .. } => {
+            gen_coll(ast, env, ctx, constr)
+        }
         Set { .. } | List { .. } | Tuple { .. } | Dict { .. } => gen_coll(ast, env, ctx, constr),
 
         Range { .. } | Slice { .. } => gen_op(ast, env, ctx, constr),
@@ -100,7 +102,9 @@ pub fn generate(
         Return { .. } | ReturnEmpty => gen_stmt(ast, env, ctx, constr),
         Raise { .. } => gen_stmt(ast, env, ctx, constr),
 
-        Import { .. } | Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => Ok(env.clone()),
+        Import { .. } | Generic { .. } | Parent { .. } | DocStr { .. } | Underscore => {
+            Ok(env.clone())
+        }
     }
 }
 

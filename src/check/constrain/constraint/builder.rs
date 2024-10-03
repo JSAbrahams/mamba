@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use itertools::enumerate;
 
-use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::constraint::expected::Expected;
 use crate::check::constrain::constraint::iterator::Constraints;
+use crate::check::constrain::constraint::{Constraint, MapExp};
 use crate::check::constrain::generate::env::Environment;
 use crate::check::name::Name;
 use crate::common::delimit::comma_delm;
@@ -45,7 +45,13 @@ impl ConstrBuilder {
     pub fn new() -> ConstrBuilder {
         let var_mapping = VarMapping::new();
         let (pos, msg) = (Position::invisible(), String::from("Script"));
-        ConstrBuilder { branch_point: 0, joined: false, constraints: vec![(pos, msg, vec![])], var_mapping, temp_name_offset: 0 }
+        ConstrBuilder {
+            branch_point: 0,
+            joined: false,
+            constraints: vec![(pos, msg, vec![])],
+            var_mapping,
+            temp_name_offset: 0,
+        }
     }
 
     /// Insert variable for mapping in current constraint set.
@@ -73,7 +79,10 @@ impl ConstrBuilder {
 
     /// Set new branch point.
     pub fn branch_point(&mut self) {
-        trace!("Branch point created at level {}", self.constraints.len() - 1);
+        trace!(
+            "Branch point created at level {}",
+            self.constraints.len() - 1
+        );
         self.branch_point += 1;
         self.joined = false;
     }
@@ -89,16 +98,26 @@ impl ConstrBuilder {
         let inherited_constraints: ConstraintLvls = if self.joined {
             self.constraints.last().expect("Is never empty").2.to_vec()
         } else {
-            self.constraints.last().expect("Is never empty").2
-                .iter().filter(|(_, lvl)| *lvl < self.branch_point).cloned().collect()
+            self.constraints
+                .last()
+                .expect("Is never empty")
+                .2
+                .iter()
+                .filter(|(_, lvl)| *lvl < self.branch_point)
+                .cloned()
+                .collect()
         };
 
-        self.constraints.push((pos, String::from(msg), inherited_constraints));
+        self.constraints
+            .push((pos, String::from(msg), inherited_constraints));
     }
 
     /// Reset all branches so that they are again all added to.
     pub fn reset_branches(&mut self) {
-        trace!("Reset branches: Now adding to {} branches in parallel", self.constraints.len());
+        trace!(
+            "Reset branches: Now adding to {} branches in parallel",
+            self.constraints.len()
+        );
         self.branch_point = self.constraints.len() - 1;
         self.joined = true;
     }
@@ -107,7 +126,11 @@ impl ConstrBuilder {
     ///
     /// See [Self::add_constr] for mode details.
     pub fn add(&mut self, msg: &str, parent: &Expected, child: &Expected, env: &Environment) {
-        self.add_constr_map(&Constraint::new(msg, parent, child), &env.var_mapping, false);
+        self.add_constr_map(
+            &Constraint::new(msg, parent, child),
+            &env.var_mapping,
+            false,
+        );
     }
 
     /// Add new constraint and specify whether one wants the constraint builder to perform any
@@ -127,7 +150,12 @@ impl ConstrBuilder {
     ///
     /// Useful if one want to have greater control over the order over how variables are mapped
     /// within the [Expected].
-    pub fn add_constr_map(&mut self, constraint: &Constraint, var_map: &VarMapping, ignore_map: bool) {
+    pub fn add_constr_map(
+        &mut self,
+        constraint: &Constraint,
+        var_map: &VarMapping,
+        ignore_map: bool,
+    ) {
         let (mut lvls, last_branch) = (vec![], self.constraints.len() - 1);
         let constraint = if ignore_map {
             constraint.clone()
@@ -142,18 +170,32 @@ impl ConstrBuilder {
             }
         } else {
             // only push to last branch
-            self.constraints[last_branch].2.push((constraint.clone(), self.branch_point));
+            self.constraints[last_branch]
+                .2
+                .push((constraint.clone(), self.branch_point));
             lvls.push(last_branch);
         }
 
         let lvls = comma_delm(lvls);
-        trace!("Constr[{}]: {} == {}, {}: {}", lvls, constraint.parent.pos, constraint.child.pos, constraint.msg, constraint);
+        trace!(
+            "Constr[{}]: {} == {}, {}: {}",
+            lvls,
+            constraint.parent.pos,
+            constraint.child.pos,
+            constraint.msg,
+            constraint
+        );
     }
 
     pub fn all_constr(self) -> Vec<Constraints> {
-        self.constraints.into_iter()
+        self.constraints
+            .into_iter()
             .map(|(pos, msg, constraints)| {
-                (pos, msg, constraints.iter().map(|(c, _)| c.clone()).collect())
+                (
+                    pos,
+                    msg,
+                    constraints.iter().map(|(c, _)| c.clone()).collect(),
+                )
             })
             .map(Constraints::from)
             .collect()
@@ -163,17 +205,19 @@ impl ConstrBuilder {
 #[cfg(test)]
 mod tests {
     use crate::check::constrain::constraint::builder::ConstrBuilder;
-    use crate::check::constrain::constraint::Constraint;
     use crate::check::constrain::constraint::expected::Expected;
+    use crate::check::constrain::constraint::Constraint;
     use crate::check::constrain::generate::env::Environment;
     use crate::common::position::Position;
 
     macro_rules! constr {
         ($msg:expr) => {{
-            Constraint::new(format!("{}", $msg).as_str(),
-                            &Expected::any(Position::invisible()),
-                            &Expected::any(Position::invisible()))
-        }}
+            Constraint::new(
+                format!("{}", $msg).as_str(),
+                &Expected::any(Position::invisible()),
+                &Expected::any(Position::invisible()),
+            )
+        }};
     }
 
     macro_rules! assert_eq_constr {
@@ -181,7 +225,7 @@ mod tests {
             let left = $left.iter().map(|c| c.msg.clone()).collect::<Vec<_>>();
             let right = $right.iter().map(|c| c.msg.clone()).collect::<Vec<_>>();
             assert_eq!(left, right);
-        }}
+        }};
     }
 
     #[test]
@@ -252,7 +296,13 @@ mod tests {
     fn disjoint_set_nested_match() {
         let mut builder = ConstrBuilder::new();
         let (c1, c2, _, c4, c5) = (constr!(1), constr!(2), constr!(3), constr!(4), constr!(5));
-        let (c31, c32, c33, c34, c35) = (constr!(31), constr!(32), constr!(33), constr!(34), constr!(35));
+        let (c31, c32, c33, c34, c35) = (
+            constr!(31),
+            constr!(32),
+            constr!(33),
+            constr!(34),
+            constr!(35),
+        );
 
         builder.add_constr(&c1, &Environment::default()); // anything before match branches (including expr)
 
@@ -260,7 +310,8 @@ mod tests {
         builder.add_constr(&c2, &Environment::default()); // first branch
 
         builder.branch("", Position::invisible());
-        {   // second branch
+        {
+            // second branch
             builder.branch_point();
             builder.add_constr(&c31, &Environment::default());
 

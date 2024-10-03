@@ -1,12 +1,12 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::{AST, ASTTy};
 use crate::check::ast::NodeTy;
 use crate::check::constrain::unify::finished::Finished;
-use crate::check::name::{Empty, Name};
 use crate::check::name::string_name::StringName;
+use crate::check::name::{Empty, Name};
 use crate::parse::ast::Node;
+use crate::{ASTTy, AST};
 
 impl From<(&Box<AST>, &Finished)> for NodeTy {
     fn from((ast, finished): (&Box<AST>, &Finished)) -> Self {
@@ -31,27 +31,64 @@ impl From<(&Node, &Finished)> for NodeTy {
         let pos_to_name = &finished.pos_to_name;
 
         match node {
-            Node::Import { from, import, alias } => NodeTy::Import {
-                from: from.clone().map(|from| ASTTy::from((from, finished))).map(Box::from),
-                import: import.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
-                alias: alias.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+            Node::Import {
+                from,
+                import,
+                alias,
+            } => NodeTy::Import {
+                from: from
+                    .clone()
+                    .map(|from| ASTTy::from((from, finished)))
+                    .map(Box::from),
+                import: import
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+                alias: alias
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
-            Node::Class { ty, args, parents, body } => NodeTy::Class {
+            Node::Class {
+                ty,
+                args,
+                parents,
+                body,
+            } => NodeTy::Class {
                 ty: StringName::try_from(ty).unwrap_or_else(|_| StringName::empty()),
-                args: args.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
-                parents: parents.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
-                body: body.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                args: args
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+                parents: parents
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+                body: body
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
             Node::Parent { ty, args } => NodeTy::Parent {
                 ty: StringName::try_from(ty).unwrap_or_else(|_| StringName::empty()),
-                args: args.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                args: args
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
             Node::Reassign { left, right, op } => NodeTy::Reassign {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
                 op: op.clone(),
             },
-            Node::VariableDef { mutable, var, expr, forward, ty, .. } => NodeTy::VariableDef {
+            Node::VariableDef {
+                mutable,
+                var,
+                expr,
+                forward,
+                ty,
+                ..
+            } => NodeTy::VariableDef {
                 mutable: *mutable,
                 var: Box::from(ASTTy::from((var, finished))),
                 ty: if let Some(ty) = ty {
@@ -59,29 +96,64 @@ impl From<(&Node, &Finished)> for NodeTy {
                 } else {
                     pos_to_name.get(&var.pos).cloned()
                 },
-                expr: expr.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
-                forward: forward.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                expr: expr
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
+                forward: forward
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
-            Node::FunDef { pure, id, args, ret, raises, body } => NodeTy::FunDef {
+            Node::FunDef {
+                pure,
+                id,
+                args,
+                ret,
+                raises,
+                body,
+            } => NodeTy::FunDef {
                 pure: *pure,
                 id: Box::from(ASTTy::from((id, finished))),
-                args: args.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                args: args
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
                 ret: ret.as_ref().and_then(|ret_ty| Name::try_from(ret_ty).ok()),
-                raises: raises.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
-                body: body.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                raises: raises
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+                body: body
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
             Node::AnonFun { args, body } => NodeTy::AnonFun {
-                args: args.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                args: args
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
                 body: Box::from(ASTTy::from((body, finished))),
             },
             Node::Raise { error } => NodeTy::Raise {
-                error: Box::from(ASTTy::from((error, finished)))
+                error: Box::from(ASTTy::from((error, finished))),
             },
-            Node::Handle { expr_or_stmt, cases } => NodeTy::Handle {
+            Node::Handle {
+                expr_or_stmt,
+                cases,
+            } => NodeTy::Handle {
                 expr_or_stmt: Box::from(ASTTy::from((expr_or_stmt, finished))),
-                cases: cases.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                cases: cases
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
-            Node::With { resource, alias, expr } => NodeTy::With {
+            Node::With {
+                resource,
+                alias,
+                expr,
+            } => NodeTy::With {
                 resource: Box::from(ASTTy::from((resource, finished))),
                 alias: alias.clone().map(|(resource, alias, expr)| {
                     let resource = Box::from(ASTTy::from((resource, finished)));
@@ -92,7 +164,10 @@ impl From<(&Node, &Finished)> for NodeTy {
             },
             Node::FunctionCall { name, args } => NodeTy::FunctionCall {
                 name: StringName::try_from(name).unwrap_or_else(|_| StringName::empty()),
-                args: args.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                args: args
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
             Node::PropertyCall { instance, property } => NodeTy::PropertyCall {
                 instance: Box::from(ASTTy::from((instance, finished))),
@@ -108,75 +183,130 @@ impl From<(&Node, &Finished)> for NodeTy {
                 },
             },
             Node::TypeDef { ty, isa, body } => NodeTy::TypeDef {
-                ty: StringName::try_from(ty).ok().unwrap_or_else(StringName::empty),
+                ty: StringName::try_from(ty)
+                    .ok()
+                    .unwrap_or_else(StringName::empty),
                 isa: isa.as_ref().and_then(|isa| Name::try_from(isa).ok()),
-                body: body.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                body: body
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
-            Node::TypeAlias { ty, isa, conditions } => NodeTy::TypeAlias {
+            Node::TypeAlias {
+                ty,
+                isa,
+                conditions,
+            } => NodeTy::TypeAlias {
                 ty: StringName::try_from(ty).unwrap_or_else(|_| StringName::empty()),
                 isa: Name::try_from(isa).unwrap_or_else(|_| Name::empty()),
-                conditions: conditions.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                conditions: conditions
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
             Node::Condition { cond, el } => NodeTy::Condition {
                 cond: Box::from(ASTTy::from((cond, finished))),
-                el: el.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                el: el
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
-            Node::FunArg { vararg, mutable, var, default, ty } => NodeTy::FunArg {
+            Node::FunArg {
+                vararg,
+                mutable,
+                var,
+                default,
+                ty,
+            } => NodeTy::FunArg {
                 vararg: *vararg,
                 mutable: *mutable,
                 var: Box::from(ASTTy::from((var, finished))),
                 ty: ty.as_ref().and_then(|ty| Name::try_from(ty).ok()),
-                default: default.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                default: default
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
             Node::Dict { elements } => NodeTy::Dict {
-                elements: elements.iter().map(|(from, to)|
-                    (ASTTy::from(from), ASTTy::from(to))
-                ).collect()
+                elements: elements
+                    .iter()
+                    .map(|(from, to)| (ASTTy::from(from), ASTTy::from(to)))
+                    .collect(),
             },
-            Node::DictBuilder { from, to, conditions } => NodeTy::DictBuilder {
+            Node::DictBuilder {
+                from,
+                to,
+                conditions,
+            } => NodeTy::DictBuilder {
                 from: Box::from(ASTTy::from(from)),
                 to: Box::from(ASTTy::from(to)),
                 conditions: conditions.iter().map(ASTTy::from).collect(),
             },
-            Node::Set { elements } => {
-                NodeTy::Set { elements: elements.iter().map(|ast| ASTTy::from((ast, finished))).collect() }
-            }
+            Node::Set { elements } => NodeTy::Set {
+                elements: elements
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+            },
             Node::SetBuilder { item, conditions } => NodeTy::SetBuilder {
                 item: Box::from(ASTTy::from((item, finished))),
-                conditions: conditions.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                conditions: conditions
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
-            Node::List { elements } => {
-                NodeTy::List { elements: elements.iter().map(|ast| ASTTy::from((ast, finished))).collect() }
-            }
+            Node::List { elements } => NodeTy::List {
+                elements: elements
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+            },
             Node::ListBuilder { item, conditions } => NodeTy::ListBuilder {
                 item: Box::from(ASTTy::from((item, finished))),
-                conditions: conditions.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                conditions: conditions
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
-            Node::Tuple { elements } => {
-                NodeTy::Tuple { elements: elements.iter().map(|ast| ASTTy::from((ast, finished))).collect() }
-            }
-            Node::Range { from, to, inclusive, step } => NodeTy::Range {
+            Node::Tuple { elements } => NodeTy::Tuple {
+                elements: elements
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+            },
+            Node::Range {
+                from,
+                to,
+                inclusive,
+                step,
+            } => NodeTy::Range {
                 from: Box::from(ASTTy::from((from, finished))),
                 to: Box::from(ASTTy::from((to, finished))),
                 inclusive: *inclusive,
-                step: step.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                step: step
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
-            Node::Block { statements } => {
-                NodeTy::Block { statements: statements.iter().map(|ast| ASTTy::from((ast, finished))).collect() }
-            }
+            Node::Block { statements } => NodeTy::Block {
+                statements: statements
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
+            },
             Node::Add { left, right } => NodeTy::Add {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::AddU { expr } => NodeTy::AddU {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::Sub { left, right } => NodeTy::Sub {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::SubU { expr } => NodeTy::SubU {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::Mul { left, right } => NodeTy::Mul {
                 left: Box::from(ASTTy::from((left, finished))),
@@ -199,7 +329,7 @@ impl From<(&Node, &Finished)> for NodeTy {
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::Sqrt { expr } => NodeTy::Sqrt {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::BAnd { left, right } => NodeTy::BAnd {
                 left: Box::from(ASTTy::from((left, finished))),
@@ -214,7 +344,7 @@ impl From<(&Node, &Finished)> for NodeTy {
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::BOneCmpl { expr } => NodeTy::BOneCmpl {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::BLShift { left, right } => NodeTy::BLShift {
                 left: Box::from(ASTTy::from((left, finished))),
@@ -265,7 +395,7 @@ impl From<(&Node, &Finished)> for NodeTy {
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::Not { expr } => NodeTy::Not {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::And { left, right } => NodeTy::And {
                 left: Box::from(ASTTy::from((left, finished))),
@@ -278,11 +408,17 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::IfElse { cond, then, el } => NodeTy::IfElse {
                 cond: Box::from(ASTTy::from((cond, finished))),
                 then: Box::from(ASTTy::from((then, finished))),
-                el: el.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                el: el
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
             Node::Match { cond, cases } => NodeTy::Match {
                 cond: Box::from(ASTTy::from((cond, finished))),
-                cases: cases.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                cases: cases
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
             Node::Case { cond, body } => NodeTy::Case {
                 cond: Box::from(ASTTy::from((cond, finished))),
@@ -302,21 +438,29 @@ impl From<(&Node, &Finished)> for NodeTy {
                 body: Box::from(ASTTy::from((body, finished))),
             },
             Node::Return { expr } => NodeTy::Return {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::Question { left, right } => NodeTy::Question {
                 left: Box::from(ASTTy::from((left, finished))),
                 right: Box::from(ASTTy::from((right, finished))),
             },
             Node::QuestionOp { expr } => NodeTy::QuestionOp {
-                expr: Box::from(ASTTy::from((expr, finished)))
+                expr: Box::from(ASTTy::from((expr, finished))),
             },
             Node::Id { lit } => NodeTy::Id { lit: lit.clone() },
-            Node::Slice { from, to, inclusive, step } => NodeTy::Slice {
+            Node::Slice {
+                from,
+                to,
+                inclusive,
+                step,
+            } => NodeTy::Slice {
                 from: Box::from(ASTTy::from((from, finished))),
                 to: Box::from(ASTTy::from((to, finished))),
                 inclusive: *inclusive,
-                step: step.clone().map(|ast| ASTTy::from((ast, finished))).map(Box::from),
+                step: step
+                    .clone()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .map(Box::from),
             },
             Node::Index { item, range } => NodeTy::Index {
                 item: Box::from(ASTTy::from((item, finished))),
@@ -324,10 +468,16 @@ impl From<(&Node, &Finished)> for NodeTy {
             },
             Node::Real { lit } => NodeTy::Real { lit: lit.clone() },
             Node::Int { lit } => NodeTy::Int { lit: lit.clone() },
-            Node::ENum { num, exp } => NodeTy::ENum { num: num.clone(), exp: exp.clone() },
+            Node::ENum { num, exp } => NodeTy::ENum {
+                num: num.clone(),
+                exp: exp.clone(),
+            },
             Node::Str { lit, expressions } => NodeTy::Str {
                 lit: lit.clone(),
-                expressions: expressions.iter().map(|ast| ASTTy::from((ast, finished))).collect(),
+                expressions: expressions
+                    .iter()
+                    .map(|ast| ASTTy::from((ast, finished)))
+                    .collect(),
             },
             Node::DocStr { lit } => NodeTy::DocStr { lit: lit.clone() },
             Node::Bool { lit } => NodeTy::Bool { lit: *lit },
@@ -337,7 +487,7 @@ impl From<(&Node, &Finished)> for NodeTy {
             Node::Underscore => NodeTy::Underscore,
             Node::Undefined => NodeTy::Undefined,
             Node::Pass => NodeTy::Pass,
-            _ => NodeTy::Empty
+            _ => NodeTy::Empty,
         }
     }
 }

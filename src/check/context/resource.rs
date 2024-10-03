@@ -2,10 +2,10 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::check::context::clss::generic::GenericClass;
-use crate::check::context::Context;
 use crate::check::context::field::generic::GenericField;
 use crate::check::context::function::generic::GenericFunction;
 use crate::check::context::python::python_files;
+use crate::check::context::Context;
 use crate::check::result::TypeResult;
 
 impl Context {
@@ -15,7 +15,8 @@ impl Context {
         let (py_types, py_fields, py_functions) = python_files(&python_dir)?;
 
         let classes: HashSet<GenericClass> = self.classes.union(&py_types).cloned().collect();
-        let functions: HashSet<GenericFunction> = self.functions.union(&py_functions).cloned().collect();
+        let functions: HashSet<GenericFunction> =
+            self.functions.union(&py_functions).cloned().collect();
         let fields: HashSet<GenericField> = self.fields.union(&py_fields).cloned().collect();
 
         let python_dir = resource("std");
@@ -25,7 +26,11 @@ impl Context {
         let functions: HashSet<GenericFunction> = functions.union(&py_functions).cloned().collect();
         let fields: HashSet<GenericField> = fields.union(&py_fields).cloned().collect();
 
-        Ok(Context { classes, functions, fields })
+        Ok(Context {
+            classes,
+            functions,
+            fields,
+        })
     }
 
     /// Loads pre-defined Python standard library into Context.
@@ -36,7 +41,11 @@ impl Context {
         let types = self.classes.union(&py_types).cloned().collect();
         let functions = self.functions.union(&py_functions).cloned().collect();
         let fields = self.fields.union(&py_fields).cloned().collect();
-        Ok(Context { classes: types, functions, fields })
+        Ok(Context {
+            classes: types,
+            functions,
+            fields,
+        })
     }
 }
 

@@ -32,7 +32,11 @@ impl Display for FunctionArg {
             f,
             "{}{}{}",
             self.name,
-            if let Some(ty) = &self.ty { format!(": {ty}") } else { String::new() },
+            if let Some(ty) = &self.ty {
+                format!(": {ty}")
+            } else {
+                String::new()
+            },
             if self.has_default { "?" } else { "" }
         )
     }
@@ -42,7 +46,7 @@ impl TryFrom<(&GenericFunctionArg, &HashMap<Name, Name>, Position)> for Function
     type Error = Vec<TypeErr>;
 
     fn try_from(
-        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<Name, Name>, Position)
+        (fun_arg, generics, pos): (&GenericFunctionArg, &HashMap<Name, Name>, Position),
     ) -> Result<Self, Self::Error> {
         Ok(FunctionArg {
             is_py_type: fun_arg.is_py_type,
@@ -52,7 +56,7 @@ impl TryFrom<(&GenericFunctionArg, &HashMap<Name, Name>, Position)> for Function
             mutable: fun_arg.mutable,
             ty: match &fun_arg.ty {
                 Some(ty) => Some(ty.substitute(generics, pos)?),
-                None => None
+                None => None,
             },
         })
     }

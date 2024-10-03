@@ -59,11 +59,16 @@ pub fn transpile_dir(
 ) -> Result<PathBuf, Vec<String>> {
     let src_path = src.map_or(dir.join(SOURCE), |p| dir.join(p));
     if !src_path.is_file() && !src_path.is_dir() {
-        let msg =
-            format!("Source directory does not exist: {}", src_path.as_os_str().to_str().unwrap());
+        let msg = format!(
+            "Source directory does not exist: {}",
+            src_path.as_os_str().to_str().unwrap()
+        );
         return Err(vec![msg]);
     } else if src_path.is_file() && !src_path.exists() {
-        let msg = format!("Source file does not exist: {}", src_path.as_os_str().to_str().unwrap());
+        let msg = format!(
+            "Source file does not exist: {}",
+            src_path.as_os_str().to_str().unwrap()
+        );
         return Err(vec![msg]);
     }
 
@@ -76,17 +81,26 @@ pub fn transpile_dir(
 
     let relative_paths = io::relative_files(src_path.as_path()).map_err(|error| vec![error])?;
     let in_absolute_paths = if src_path.is_dir() {
-        relative_paths.iter().map(|os_string| src_path.join(os_string)).collect()
+        relative_paths
+            .iter()
+            .map(|os_string| src_path.join(os_string))
+            .collect()
     } else {
         vec![src_path.clone()]
     };
-    let out_absolute_paths: Vec<PathBuf> =
-        relative_paths.iter().map(|os_string| out_dir.join(os_string)).collect();
+    let out_absolute_paths: Vec<PathBuf> = relative_paths
+        .iter()
+        .map(|os_string| out_dir.join(os_string))
+        .collect();
 
     info!(
         "Transpiling {} file {}",
         out_absolute_paths.len(),
-        if out_absolute_paths.len() > 1 { "s" } else { "" }
+        if out_absolute_paths.len() > 1 {
+            "s"
+        } else {
+            ""
+        }
     );
 
     let mut sources = vec![];
@@ -96,8 +110,9 @@ pub fn transpile_dir(
     }
 
     let source_pairs = sources.iter().zip(in_absolute_paths.iter());
-    let source_option_pairs: Vec<_> =
-        source_pairs.map(|(source, path)| (source.clone(), Some(path.clone()))).collect();
+    let source_option_pairs: Vec<_> = source_pairs
+        .map(|(source, path)| (source.clone(), Some(path.clone())))
+        .collect();
 
     let pipeline_arg = PipelineArguments::from(arguments);
     let mamba_source = mamba_to_python(source_option_pairs.as_slice(), &src_path, &pipeline_arg)?;
@@ -116,7 +131,9 @@ pub struct PipelineArguments {
 
 impl From<&Arguments> for PipelineArguments {
     fn from(arguments: &Arguments) -> Self {
-        PipelineArguments { annotate: arguments.annotate }
+        PipelineArguments {
+            annotate: arguments.annotate,
+        }
     }
 }
 
@@ -137,8 +154,10 @@ pub fn mamba_to_python(
             })
             .unwrap_or(p)
     };
-    let source: Vec<(String, Option<PathBuf>)> =
-        source.iter().map(|(src, dir)| (src.clone(), dir.clone().map(strip_prefix))).collect();
+    let source: Vec<(String, Option<PathBuf>)> = source
+        .iter()
+        .map(|(src, dir)| (src.clone(), dir.clone().map(strip_prefix)))
+        .collect();
 
     let (asts, parse_errs): (Vec<_>, Vec<_>) = source
         .iter()
@@ -172,9 +191,16 @@ pub fn mamba_to_python(
 
     let type_errs: Vec<Vec<TypeErr>> = type_errs.into_iter().map(Result::unwrap_err).collect();
     if !type_errs.is_empty() {
-        return Err(type_errs.iter().flatten().map(|err| format!("{err}")).collect());
+        return Err(type_errs
+            .iter()
+            .flatten()
+            .map(|err| format!("{err}"))
+            .collect());
     }
-    let typed_ast = typed_ast.into_iter().map(Result::unwrap).collect::<Vec<ASTTy>>();
+    let typed_ast = typed_ast
+        .into_iter()
+        .map(Result::unwrap)
+        .collect::<Vec<ASTTy>>();
 
     trace!("Checked {} files", typed_ast.len());
 

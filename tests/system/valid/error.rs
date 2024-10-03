@@ -1,4 +1,4 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn handle() -> OutTestRet {
@@ -22,12 +22,22 @@ fn exception_in_fun() -> OutTestRet {
 
 #[test]
 fn handle_var_usable_after() -> OutTestRet {
-    test_directory(true, &["error"], &["error", "target"], "handle_var_usable_after")
+    test_directory(
+        true,
+        &["error"],
+        &["error", "target"],
+        "handle_var_usable_after",
+    )
 }
 
 #[test]
 fn exception_in_fun_super() -> OutTestRet {
-    test_directory(true, &["error"], &["error", "target"], "exception_in_fun_super")
+    test_directory(
+        true,
+        &["error"],
+        &["error", "target"],
+        "exception_in_fun_super",
+    )
 }
 
 #[test]

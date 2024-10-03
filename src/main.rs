@@ -5,11 +5,10 @@ extern crate clap;
 extern crate log;
 extern crate loggerv;
 
-
 use clap::App;
 use itertools::Itertools;
 
-use mamba::{Arguments, transpile_dir};
+use mamba::{transpile_dir, Arguments};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -32,7 +31,7 @@ pub fn main() -> Result<(), String> {
         .unwrap();
 
     let arguments = Arguments {
-        annotate: matches.is_present("annotate")
+        annotate: matches.is_present("annotate"),
     };
 
     info!("Mamba 🐍 {}", VERSION);
@@ -46,7 +45,7 @@ pub fn main() -> Result<(), String> {
             errors.iter().unique().for_each(|msg| eprintln!("{msg}"));
             match errors.first() {
                 Some(msg) => msg.clone(),
-                None => String::new()
+                None => String::new(),
             }
         })
         .map(|_| ())

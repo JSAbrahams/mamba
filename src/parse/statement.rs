@@ -1,6 +1,6 @@
-use crate::parse::ast::AST;
-use crate::parse::ast::Node;
 use crate::parse::ast::node_op::NodeOp;
+use crate::parse::ast::Node;
+use crate::parse::ast::AST;
 use crate::parse::control_flow_stmt::parse_cntrl_flow_stmt;
 use crate::parse::definition::parse_definition;
 use crate::parse::expr_or_stmt::parse_expr_or_stmt;
@@ -21,7 +21,9 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::Raise => {
                 it.eat(&Token::Raise, "statement")?;
                 let error = it.parse(&parse_expression, "statement", lex.pos)?;
-                let node = Node::Raise { error: error.clone() };
+                let node = Node::Raise {
+                    error: error.clone(),
+                };
                 Ok(Box::from(AST::new(lex.pos.union(error.pos), node)))
             }
             Token::Def => parse_definition(it),
@@ -29,12 +31,28 @@ pub fn parse_statement(it: &mut LexIterator) -> ParseResult {
             Token::For | Token::While => parse_cntrl_flow_stmt(it),
             Token::Ret => parse_return(it),
             _ => Err(Box::from(expected_one_of(
-                &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
+                &[
+                    Token::Pass,
+                    Token::Raise,
+                    Token::Def,
+                    Token::With,
+                    Token::For,
+                    Token::While,
+                    Token::Ret,
+                ],
                 lex,
                 "statement",
             ))),
         },
-        &[Token::Pass, Token::Raise, Token::Def, Token::With, Token::For, Token::While, Token::Ret],
+        &[
+            Token::Pass,
+            Token::Raise,
+            Token::Def,
+            Token::With,
+            Token::For,
+            Token::While,
+            Token::Ret,
+        ],
         "statement",
     )
 }
@@ -75,7 +93,14 @@ pub fn parse_import(it: &mut LexIterator) -> ParseResult {
         (Some(ast), _) => ast.pos,
         (..) => end,
     };
-    Ok(Box::from(AST::new(start.union(end), Node::Import { from, import, alias })))
+    Ok(Box::from(AST::new(
+        start.union(end),
+        Node::Import {
+            from,
+            import,
+            alias,
+        },
+    )))
 }
 
 pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
@@ -93,14 +118,38 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
 
     let (token, op) = if let Some(token) = it.peek_next() {
         match &token {
-            Lex { token: Token::Assign, .. } => (Token::Assign, NodeOp::Assign),
-            Lex { token: Token::AddAssign, .. } => (Token::AddAssign, NodeOp::Add),
-            Lex { token: Token::SubAssign, .. } => (Token::SubAssign, NodeOp::Sub),
-            Lex { token: Token::MulAssign, .. } => (Token::MulAssign, NodeOp::Mul),
-            Lex { token: Token::DivAssign, .. } => (Token::DivAssign, NodeOp::Div),
-            Lex { token: Token::PowAssign, .. } => (Token::PowAssign, NodeOp::Pow),
-            Lex { token: Token::BLShiftAssign, .. } => (Token::BLShiftAssign, NodeOp::BLShift),
-            Lex { token: Token::BRShiftAssign, .. } => (Token::BRShiftAssign, NodeOp::BRShift),
+            Lex {
+                token: Token::Assign,
+                ..
+            } => (Token::Assign, NodeOp::Assign),
+            Lex {
+                token: Token::AddAssign,
+                ..
+            } => (Token::AddAssign, NodeOp::Add),
+            Lex {
+                token: Token::SubAssign,
+                ..
+            } => (Token::SubAssign, NodeOp::Sub),
+            Lex {
+                token: Token::MulAssign,
+                ..
+            } => (Token::MulAssign, NodeOp::Mul),
+            Lex {
+                token: Token::DivAssign,
+                ..
+            } => (Token::DivAssign, NodeOp::Div),
+            Lex {
+                token: Token::PowAssign,
+                ..
+            } => (Token::PowAssign, NodeOp::Pow),
+            Lex {
+                token: Token::BLShiftAssign,
+                ..
+            } => (Token::BLShiftAssign, NodeOp::BLShift),
+            Lex {
+                token: Token::BRShiftAssign,
+                ..
+            } => (Token::BRShiftAssign, NodeOp::BRShift),
             lex => {
                 return Err(Box::from(expected_one_of(&expect, lex, "reassignment")));
             }
@@ -112,7 +161,11 @@ pub fn parse_reassignment(pre: &AST, it: &mut LexIterator) -> ParseResult {
 
     let right = it.parse(&parse_expression, "reassignment", start)?;
 
-    let node = Node::Reassign { left: Box::new(pre.clone()), right: right.clone(), op };
+    let node = Node::Reassign {
+        left: Box::new(pre.clone()),
+        right: right.clone(),
+        op,
+    };
     Ok(Box::from(AST::new(start.union(right.pos), node)))
 }
 
@@ -134,7 +187,11 @@ pub fn parse_with(it: &mut LexIterator) -> ParseResult {
     it.eat(&Token::Do, "with")?;
     let expr = it.parse(&parse_expr_or_stmt, "with", start)?;
 
-    let node = Node::With { resource, alias, expr: expr.clone() };
+    let node = Node::With {
+        resource,
+        alias,
+        expr: expr.clone(),
+    };
     Ok(Box::from(AST::new(start.union(expr.pos), node)))
 }
 
@@ -145,13 +202,18 @@ pub fn parse_return(it: &mut LexIterator) -> ParseResult {
     if let Some(end) = it.eat_if(&Token::NL) {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start.union(end), node)));
-    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof) || it.peek_next().is_none() {
+    } else if it.peek_if(&|lex| lex.token == Token::Dedent || lex.token == Token::Eof)
+        || it.peek_next().is_none()
+    {
         let node = Node::ReturnEmpty;
         return Ok(Box::from(AST::new(start, node)));
     }
 
     let expr = it.parse(&parse_expression, "return", start)?;
-    Ok(Box::from(AST::new(start.union(expr.pos), Node::Return { expr })))
+    Ok(Box::from(AST::new(
+        start.union(expr.pos),
+        Node::Return { expr },
+    )))
 }
 
 pub fn is_start_statement(tp: &Token) -> bool {
@@ -171,8 +233,8 @@ pub fn is_start_statement(tp: &Token) -> bool {
 #[cfg(test)]
 mod test {
     use crate::common::position::{CaretPos, Position};
-    use crate::parse::ast::Node;
     use crate::parse::ast::node_op::NodeOp;
+    use crate::parse::ast::Node;
     use crate::parse::parse_direct;
 
     #[test]
@@ -186,8 +248,16 @@ mod test {
             panic!("Expected reassignment, was: {:?}", ret.node)
         };
 
-        assert_eq!(expr.pos, Position::new(CaretPos::new(1, 8), CaretPos::new(1, 10)));
-        assert_eq!(expr.node, Node::Int { lit: String::from("20") });
+        assert_eq!(
+            expr.pos,
+            Position::new(CaretPos::new(1, 8), CaretPos::new(1, 10))
+        );
+        assert_eq!(
+            expr.node,
+            Node::Int {
+                lit: String::from("20")
+            }
+        );
     }
 
     #[test]
@@ -201,8 +271,18 @@ mod test {
             panic!("Expected reassignment, was {:?}", reassignment)
         };
 
-        assert_eq!(left.node, Node::Id { lit: String::from("a") });
-        assert_eq!(right.node, Node::Int { lit: String::from("1") });
+        assert_eq!(
+            left.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            right.node,
+            Node::Int {
+                lit: String::from("1")
+            }
+        );
         assert_eq!(*op, NodeOp::Assign);
     }
 
@@ -221,10 +301,25 @@ mod test {
             panic!("Expected propertycall, was {:?}", left)
         };
 
-        assert_eq!(instance.node, Node::Id { lit: String::from("a") });
-        assert_eq!(property.node, Node::Id { lit: String::from("b") });
+        assert_eq!(
+            instance.node,
+            Node::Id {
+                lit: String::from("a")
+            }
+        );
+        assert_eq!(
+            property.node,
+            Node::Id {
+                lit: String::from("b")
+            }
+        );
 
-        assert_eq!(right.node, Node::Int { lit: String::from("1") });
+        assert_eq!(
+            right.node,
+            Node::Int {
+                lit: String::from("1")
+            }
+        );
         assert_eq!(*op, NodeOp::Assign);
     }
 }

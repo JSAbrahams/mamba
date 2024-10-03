@@ -89,7 +89,10 @@ impl Position {
 
     #[must_use]
     pub fn offset(&self, offset: &CaretPos) -> Position {
-        Position { start: self.start.offset(offset), end: self.end.offset(offset) }
+        Position {
+            start: self.start.offset(offset),
+            end: self.end.offset(offset),
+        }
     }
 
     #[must_use]
@@ -119,26 +122,38 @@ impl CaretPos {
 
     #[must_use]
     pub fn offset(self, offset: &CaretPos) -> CaretPos {
-        CaretPos { line: self.line + offset.line - 1, pos: self.pos + offset.pos - 1 }
+        CaretPos {
+            line: self.line + offset.line - 1,
+            pos: self.pos + offset.pos - 1,
+        }
     }
 
     /// Create new [EndPoint] which is offset in the vertical direction by the
     /// given amount.
     #[must_use]
     pub fn offset_line(self, offset: usize) -> CaretPos {
-        CaretPos { line: (self.line as i32 + offset as i32) as usize, pos: self.pos }
+        CaretPos {
+            line: (self.line as i32 + offset as i32) as usize,
+            pos: self.pos,
+        }
     }
 
     /// Create new [EndPoint] which is offset in the horizontal direction by the
     /// given amount.
     #[must_use]
     pub fn offset_pos(self, offset: usize) -> CaretPos {
-        CaretPos { line: self.line, pos: self.pos + offset }
+        CaretPos {
+            line: self.line,
+            pos: self.pos + offset,
+        }
     }
 
     #[must_use]
     pub fn newline(self) -> CaretPos {
-        CaretPos { line: self.line + 1, pos: 1 }
+        CaretPos {
+            line: self.line + 1,
+            pos: 1,
+        }
     }
 }
 
@@ -219,8 +234,17 @@ mod test {
 
     #[test]
     fn partial_ord_caret_pos() {
-        assert_eq!(CaretPos::new(4, 5).partial_cmp(&CaretPos::new(4, 5)), Some(Ordering::Equal));
-        assert_eq!(CaretPos::new(4, 4).partial_cmp(&CaretPos::new(4, 5)), Some(Ordering::Less));
-        assert_eq!(CaretPos::new(4, 6).partial_cmp(&CaretPos::new(4, 5)), Some(Ordering::Greater));
+        assert_eq!(
+            CaretPos::new(4, 5).partial_cmp(&CaretPos::new(4, 5)),
+            Some(Ordering::Equal)
+        );
+        assert_eq!(
+            CaretPos::new(4, 4).partial_cmp(&CaretPos::new(4, 5)),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            CaretPos::new(4, 6).partial_cmp(&CaretPos::new(4, 5)),
+            Some(Ordering::Greater)
+        );
     }
 }

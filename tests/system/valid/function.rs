@@ -1,8 +1,13 @@
-use crate::system::{OutTestRet, test_directory};
+use crate::system::{test_directory, OutTestRet};
 
 #[test]
 fn callable_fun_arg() -> OutTestRet {
-    test_directory(true, &["function"], &["function", "target"], "callable_fun_arg")
+    test_directory(
+        true,
+        &["function"],
+        &["function", "target"],
+        "callable_fun_arg",
+    )
 }
 
 #[test]
@@ -17,17 +22,32 @@ fn definition_ast_verify() -> OutTestRet {
 
 #[test]
 fn function_with_defaults_ast_verify() -> OutTestRet {
-    test_directory(true, &["function"], &["function", "target"], "function_with_defaults")
+    test_directory(
+        true,
+        &["function"],
+        &["function", "target"],
+        "function_with_defaults",
+    )
 }
 
 #[test]
 fn function_raise_super() -> OutTestRet {
-    test_directory(true, &["function"], &["function", "target"], "function_raise_super")
+    test_directory(
+        true,
+        &["function"],
+        &["function", "target"],
+        "function_raise_super",
+    )
 }
 
 #[test]
 fn match_function() -> OutTestRet {
-    test_directory(true, &["function"], &["function", "target"], "match_function")
+    test_directory(
+        true,
+        &["function"],
+        &["function", "target"],
+        "match_function",
+    )
 }
 
 #[test]
@@ -37,10 +57,20 @@ fn print_string() -> OutTestRet {
 
 #[test]
 fn return_last_expression() -> OutTestRet {
-    test_directory(true, &["function"], &["function", "target"], "return_last_expression")
+    test_directory(
+        true,
+        &["function"],
+        &["function", "target"],
+        "return_last_expression",
+    )
 }
 
 #[test]
 fn ternary_function_call() -> OutTestRet {
-    test_directory(true, &["function"], &["function", "target"], "ternary_function_call")
+    test_directory(
+        true,
+        &["function"],
+        &["function", "target"],
+        "ternary_function_call",
+    )
 }
