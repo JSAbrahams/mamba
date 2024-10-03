@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         python: [ "3.10" ]
-        rust: [ "nightly" ]
+        rust: [ "1.81.0" ]
 
     runs-on: ${{ matrix.os }}
 
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: 1.81.0
           override: true
 
       - name: Grcov

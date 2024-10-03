@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest", "macos-latest", "windows-latest" ]
         python: [ "3.10" ]
-        rust: [ "nightly" ]
+        rust: [ "1.81.0" ]
 
     runs-on: ${{ matrix.os }}
 
@@ -35,18 +35,8 @@ jobs:
       - name: Install Rust ${{ matrix.rust }}
         run: rustup toolchain install ${{ matrix.rust }}
 
-      # Run tests
-      - name: Build Nightly
-        if: ${{ matrix.rust == 'nightly' }}
-        run: cargo +nightly build
-      - name: Run tests Nightly
-        if: ${{ matrix.rust == 'nightly' }}
-        run: cargo +nightly test --package mamba
-
       - name: Build
-        if: ${{ matrix.rust != 'nightly' }}
         run: cargo build
       - name: Run tests
-        if: ${{ matrix.rust != 'nightly' }}
         run: cargo test --package mamba
 
